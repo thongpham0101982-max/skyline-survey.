@@ -55,23 +55,23 @@ export function ExperienceRoster({
       {/* Main Roster Table */}
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
         <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-              <th className="py-2.5 px-3 w-12 text-center sticky left-0 bg-slate-50 z-10">STT</th>
-              <th className="py-2.5 px-3 min-w-[180px] sticky left-12 bg-slate-50 z-10">Họ và tên</th>
-              <th className="py-2.5 px-3 min-w-[170px]">Điểm danh</th>
-              <th className="py-2.5 px-3 min-w-[160px]">Vai trò</th>
+          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+            <tr className="border-b text-[11px] font-semibold">
+              <th className="py-2.5 px-3 w-12 text-center sticky left-0 bg-[#003B3A] z-10 font-semibold">STT</th>
+              <th className="py-2.5 px-3 min-w-[180px] sticky left-12 bg-[#003B3A] z-10 font-semibold">Họ và tên</th>
+              <th className="py-2.5 px-3 min-w-[170px] font-semibold">Điểm danh</th>
+              <th className="py-2.5 px-3 min-w-[160px] font-semibold">Vai trò</th>
               {criteria.map((c) => (
-                <th key={c.id} className="py-2.5 px-3 min-w-[140px] text-center">
+                <th key={c.id} className="py-2.5 px-3 min-w-[140px] text-center font-semibold">
                   {c.name}
                   {c.isRequired && <span className="text-red-500 ml-0.5">*</span>}
                 </th>
               ))}
-              <th className="py-2.5 px-3 w-28 text-center">Kết quả</th>
-              <th className="py-2.5 px-3 min-w-[180px]">Nhận xét cá nhân</th>
+              <th className="py-2.5 px-3 w-28 text-center font-semibold">Kết quả</th>
+              <th className="py-2.5 px-3 min-w-[180px] font-semibold">Nhận xét cá nhân</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+          <tbody className="divide-y divide-[#E2E8F0] text-slate-700 font-medium">
             {students.map((st, idx) => {
               const res = calculateStudentActivityResult(st.attendance, st.criteriaScores, criteria, st.role)
 

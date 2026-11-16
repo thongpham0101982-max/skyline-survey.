@@ -233,8 +233,8 @@ export default function ImportAndReconcileView({
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-500 text-left">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-left text-[11px] font-semibold">
                   <th className="py-2.5 font-bold">Năm học</th>
                   <th className="py-2.5 font-bold">Kỳ thi</th>
                   <th className="py-2.5 font-bold">Họ và tên (Bản ghi lịch sử)</th>
@@ -243,7 +243,7 @@ export default function ImportAndReconcileView({
                   <th className="py-2.5 font-bold text-right">Thao tác đối soát</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {unverifiedResults.map((r) => (
                   <React.Fragment key={r.id}>
                     <tr className="hover:bg-slate-50">
@@ -506,8 +506,8 @@ export default function ImportAndReconcileView({
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 text-left">
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-left text-[11px] font-semibold">
                     <th className="py-2.5 font-bold">Mã Phiên bản Quy chuẩn</th>
                     <th className="py-2.5 font-bold">Tên Bộ Quy chuẩn</th>
                     <th className="py-2.5 font-bold">Tổ chức Khảo thí</th>
@@ -516,7 +516,7 @@ export default function ImportAndReconcileView({
                     <th className="py-2.5 font-bold">Ngày áp dụng</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {ruleSets.map((rs) => (
                     <tr key={rs.id} className="hover:bg-slate-50">
                       <td className="py-2.5 font-mono font-bold text-teal-800">

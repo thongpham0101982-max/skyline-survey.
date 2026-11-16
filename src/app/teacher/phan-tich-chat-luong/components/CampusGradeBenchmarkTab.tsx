@@ -108,22 +108,22 @@ export function CampusGradeBenchmarkTab({
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50/90 border-b border-slate-200/80 text-slate-600 font-semibold uppercase text-[10px] tracking-wider">
-                <th className="py-3 px-3 text-center">Xếp hạng</th>
-                <th className="py-3 px-4">Lớp học</th>
-                <th className="py-3 px-3 text-center">Khối</th>
-                <th className="py-3 px-3 text-center">Hệ đào tạo</th>
-                <th className="py-3 px-3 text-center">Sĩ số / Đã chấm</th>
-                <th className="py-3 px-3 text-center">ĐTB Môn ({subjectName})</th>
-                <th className="py-3 px-3 text-center">ĐTB Khối Toàn Cơ sở</th>
-                <th className="py-3 px-3 text-center">Chênh lệch vs Khối (Δ)</th>
-                <th className="py-3 px-3 text-center">Tỉ lệ Đạt chuẩn SKL</th>
-                <th className="py-3 px-3 text-center">Tỉ lệ Khá - Giỏi</th>
-                <th className="py-3 px-3 text-center">Phụ trách</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b font-semibold text-[10px]">
+                <th className="py-3 px-3 text-center font-semibold">Xếp hạng</th>
+                <th className="py-3 px-4 font-semibold">Lớp học</th>
+                <th className="py-3 px-3 text-center font-semibold">Khối</th>
+                <th className="py-3 px-3 text-center font-semibold">Hệ đào tạo</th>
+                <th className="py-3 px-3 text-center font-semibold">Sĩ số / Đã chấm</th>
+                <th className="py-3 px-3 text-center font-semibold">ĐTB Môn ({subjectName})</th>
+                <th className="py-3 px-3 text-center font-semibold">ĐTB Khối Toàn Cơ sở</th>
+                <th className="py-3 px-3 text-center font-semibold">Chênh lệch vs Khối (Δ)</th>
+                <th className="py-3 px-3 text-center font-semibold">Tỉ lệ Đạt chuẩn SKL</th>
+                <th className="py-3 px-3 text-center font-semibold">Tỉ lệ Khá - Giỏi</th>
+                <th className="py-3 px-3 text-center font-semibold">Phụ trách</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
               {filteredData.map((item, idx) => {
                 const isMy = item.isMyClass
                 const delta = item.deltaVsCampusGradeAvg

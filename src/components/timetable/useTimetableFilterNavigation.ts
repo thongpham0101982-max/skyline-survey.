@@ -29,6 +29,7 @@ export function useTimetableFilterNavigation<TData>(
       scopeGroup: (searchParams?.get("scopeGroup") as any) || undefined,
       campusId: searchParams?.get("campusId") || undefined,
       levelCode: (searchParams?.get("levelCode") as any) || undefined,
+      studyProgram: searchParams?.get("studyProgram") || undefined,
       grade: searchParams?.get("grade") || undefined,
       classId: searchParams?.get("classId") || undefined,
       versionId: searchParams?.get("versionId") || undefined,

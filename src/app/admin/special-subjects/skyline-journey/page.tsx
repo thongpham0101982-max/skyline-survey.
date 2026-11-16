@@ -211,19 +211,19 @@ export default function AdminSkylineJourneyPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-teal-50 text-teal-950 border-b border-teal-200">
-                  <th className="p-3 font-extrabold">Học sinh</th>
-                  <th className="p-3 font-extrabold">Lớp / Khối</th>
-                  <th className="p-3 font-extrabold">GVBM được phân công</th>
-                  <th className="p-3 font-extrabold">Chặng Game vừa chơi</th>
-                  <th className="p-3 font-extrabold text-center">Điểm & YCCĐ</th>
-                  <th className="p-3 font-extrabold text-center">Trạng thái</th>
-                  <th className="p-3 font-extrabold">Chia sẻ / Nhận xét GVBM</th>
-                  <th className="p-3 font-extrabold text-right">Chi tiết lớp</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="p-3 font-semibold">Học sinh</th>
+                  <th className="p-3 font-semibold">Lớp / Khối</th>
+                  <th className="p-3 font-semibold">GVBM được phân công</th>
+                  <th className="p-3 font-semibold">Chặng Game vừa chơi</th>
+                  <th className="p-3 text-center font-semibold">Điểm & YCCĐ</th>
+                  <th className="p-3 text-center font-semibold">Trạng thái</th>
+                  <th className="p-3 font-semibold">Chia sẻ / Nhận xét GVBM</th>
+                  <th className="p-3 text-right font-semibold">Chi tiết lớp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {recentStudentResults.map((res: any) => (
                   <tr key={res.id} className="hover:bg-slate-50">
                     <td className="p-3">
@@ -336,19 +336,19 @@ export default function AdminSkylineJourneyPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
-                <th className="p-3 font-extrabold">Chặng</th>
-                <th className="p-3 font-extrabold">Mã bài học</th>
-                <th className="p-3 font-extrabold">Tên bài học</th>
-                <th className="p-3 font-extrabold">Cơ chế game</th>
-                <th className="p-3 font-extrabold text-center">Số HS đã chơi</th>
-                <th className="p-3 font-extrabold text-center">Hoàn thành</th>
-                <th className="p-3 font-extrabold text-center">Chờ GV xác nhận</th>
-                <th className="p-3 font-extrabold text-center">Cần bổ sung / Thử lại ≥2 lần</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="p-3 font-semibold">Chặng</th>
+                <th className="p-3 font-semibold">Mã bài học</th>
+                <th className="p-3 font-semibold">Tên bài học</th>
+                <th className="p-3 font-semibold">Cơ chế game</th>
+                <th className="p-3 text-center font-semibold">Số HS đã chơi</th>
+                <th className="p-3 text-center font-semibold">Hoàn thành</th>
+                <th className="p-3 text-center font-semibold">Chờ GV xác nhận</th>
+                <th className="p-3 text-center font-semibold">Cần bổ sung / Thử lại ≥2 lần</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {stageAnalytics.map((sa: any) => (
                 <tr key={sa.lessonCode} className="hover:bg-slate-50">
                   <td className="p-3 font-black text-teal-800">Chặng {sa.periodIndex}</td>
@@ -428,20 +428,20 @@ export default function AdminSkylineJourneyPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
-                  <th className="p-3 font-extrabold">Lớp</th>
-                  <th className="p-3 font-extrabold">Khối / Hệ</th>
-                  <th className="p-3 font-extrabold">Cơ sở</th>
-                  <th className="p-3 font-extrabold">GV Giáo dục Tài chính</th>
-                  <th className="p-3 font-extrabold text-center">Sĩ số</th>
-                  <th className="p-3 font-extrabold text-center">HS đã tham gia</th>
-                  <th className="p-3 font-extrabold text-center">Lượt chặng hoàn thành</th>
-                  <th className="p-3 font-extrabold text-center">Trạng thái lớp</th>
-                  <th className="p-3 font-extrabold text-right">Thao tác / Drill-down</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="p-3 font-semibold">Lớp</th>
+                  <th className="p-3 font-semibold">Khối / Hệ</th>
+                  <th className="p-3 font-semibold">Cơ sở</th>
+                  <th className="p-3 font-semibold">GV Giáo dục Tài chính</th>
+                  <th className="p-3 text-center font-semibold">Sĩ số</th>
+                  <th className="p-3 text-center font-semibold">HS đã tham gia</th>
+                  <th className="p-3 text-center font-semibold">Lượt chặng hoàn thành</th>
+                  <th className="p-3 text-center font-semibold">Trạng thái lớp</th>
+                  <th className="p-3 text-right font-semibold">Thao tác / Drill-down</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {classDrilldown.map((cls: any) => {
                   const rowKey = `${cls.grade}_${cls.campusId}_${cls.classId}`;
                   return (

@@ -45,6 +45,7 @@ export { questionsData, defaultQuestions }
 export default function PsychologyAssessmentForm({ student, onSave, isLocked, onPrintPsychologyPdf }: any) {
     const handlePrintOrExport = (isPdf = false) => {
         if (typeof onPrintPsychologyPdf === "function") {
+            const sectionScores = sections.map((_, i) => calculateSectionScore(i));
             onPrintPsychologyPdf(student, {
                 scores,
                 notes,

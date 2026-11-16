@@ -24,7 +24,6 @@ import {
   MessageSquare,
   Bookmark,
   Heart,
-  Globe,
   Loader2,
   ChevronRight,
   Lock,
@@ -32,35 +31,19 @@ import {
 } from "lucide-react"
 import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import { StudentSpecialSubjectsSection } from "@/components/student/StudentSpecialSubjectsSection"
+import { StudentCtqtGradesSection } from "@/components/student/StudentCtqtGradesSection"
+import { isBilingualOrCtqtSubject } from "@/lib/ctqt/studentProfilePortfolio"
 import { StudentCompetencyPortfolio } from "@/components/competency/StudentCompetencyPortfolio"
 import { resolveStudentSectionVisibility, resolveParentPortalUnlocked } from "@/lib/studentProfileSectionConfig"
+import {
+  normalizeStudentAchievementRow,
+  resolveAchievementCategoryLabel,
+  resolveAchievementLevelLabel,
+} from "@/lib/achievementFormatters"
 
-const getCategoryLabel = (cat: string) => {
-  if (!cat) return "Lĩnh vực khác"
-  const str = String(cat).toUpperCase()
-  if (str === "OLYMPIC") return "Olympic"
-  if (str === "KHKT") return "Khoa học kỹ thuật"
-  if (str === "THE_THAO") return "Thể dục thể thao"
-  if (str === "VAN_NGHE") return "Văn nghệ - Nghệ thuật"
-  if (str === "HOC_THUAT") return "Học thuật"
-  if (str === "STEM") return "STEM / Robotics"
-  return cat
-}
+const getCategoryLabel = (cat: string) => resolveAchievementCategoryLabel(cat)
 
-const getLevelLabel = (lvl: string) => {
-  if (!lvl) return "Cấp Trường"
-  const str = String(lvl).toUpperCase()
-  if (str === "VANG" || str === "NHAT") return "Giải Vàng / Hạng Nhất"
-  if (str === "BAC" || str === "NHI") return "Giải Bạc / Hạng Nhì"
-  if (str === "DONG" || str === "BA") return "Giải Đồng / Hạng Ba"
-  if (str === "KHUYEN_KHICH") return "Giải Khuyến Khích"
-  if (str === "CAP_QUOC_TE" || str === "5") return "Cấp Quốc tế"
-  if (str === "CAP_QUOC_GIA" || str === "4") return "Cấp Quốc gia"
-  if (str === "CAP_THANH_PHO" || str === "CAP_TINH" || str === "3") return "Cấp Thành phố / Tỉnh"
-  if (str === "CAP_QUAN" || str === "CAP_HUYEN" || str === "2") return "Cấp Quận / Huyện"
-  if (str === "CAP_TRUONG" || str === "1") return "Cấp Trường"
-  return lvl.startsWith("Cấp") || lvl.startsWith("Giải") ? lvl : `Giải/Cấp: ${lvl}`
-}
+const getLevelLabel = (lvl: string, cat?: string) => resolveAchievementLevelLabel(lvl, cat)
 
 export default function ParentStudentProfilePage({
   initialChildren = []
@@ -250,7 +233,10 @@ export default function ParentStudentProfilePage({
       entranceSurvey,
       learningSupportTargets,
       specialSubjectsPortfolio: profile?.specialSubjectsPortfolio || rawStudent?.specialSubjectsPortfolio || null,
-      specialGradeEntries: profile?.specialGradeEntries || rawStudent?.specialGradeEntries || []
+      specialGradeEntries: profile?.specialGradeEntries || rawStudent?.specialGradeEntries || [],
+      ctqtPortfolio: profile?.ctqtPortfolio || rawStudent?.ctqtPortfolio || null,
+      ctqtGradeEntries: profile?.ctqtGradeEntries || rawStudent?.ctqtGradeEntries || [],
+      ctqtCompetencyEntries: profile?.ctqtCompetencyEntries || rawStudent?.ctqtCompetencyEntries || []
     }),
     [
       selectedChild,
@@ -278,33 +264,24 @@ export default function ParentStudentProfilePage({
     ]
   )
 
-  // Process MOET & Bilingual periodic and term grades (synchronized with GVCN view)
-  const gradeData = useMemo(() => {
-    const isBilingualSub = (name: string, code: string) => {
-      const s = `${name} ${code}`.toLowerCase()
-      return (
-        s.includes("esl") ||
-        s.includes("english") ||
-        s.includes("tiếng anh tăng cường") ||
-        s.includes("tav") ||
-        s.includes("bilingual") ||
-        s.includes("song ngữ") ||
-        s.includes("maths") ||
-        s.includes("science") ||
-        s.includes("robotics")
-      )
-    }
+  const sectionVisibility = useMemo(
+    () => resolveStudentSectionVisibility(enrichedStudent, configMap),
+    [enrichedStudent, configMap]
+  )
 
+  // Process MOET periodic and term grades (Bilingual/CTQT subjects rendered via StudentCtqtGradesSection)
+  const gradeData = useMemo(() => {
     const periodicMap = new Map<
       string,
-      { name: string; code: string; ksdn: any; gk1: any; ck1: any; gk2: any; ck2: any }
+      { name: string; code: string; category: string; ksdn: any; gk1: any; ck1: any; gk2: any; ck2: any }
     >()
     subjectGradeEntries.forEach((entry: any) => {
       const sName = entry.subject?.subjectName || "Môn học"
       const sCode = entry.subject?.subjectCode || ""
+      const sCategory = entry.subject?.category || ""
       const key = (entry.subjectId || sName).trim()
       if (!periodicMap.has(key)) {
-        periodicMap.set(key, { name: sName, code: sCode, ksdn: null, gk1: null, ck1: null, gk2: null, ck2: null })
+        periodicMap.set(key, { name: sName, code: sCode, category: sCategory, ksdn: null, gk1: null, ck1: null, gk2: null, ck2: null })
       }
       const item = periodicMap.get(key)!
       const period = String(entry.evaluationPeriod || "").toUpperCase().trim()
@@ -319,13 +296,14 @@ export default function ParentStudentProfilePage({
       else if (period === "CK2" || period.includes("CUỐI KỲ 2") || period.includes("CUỐI KÌ 2")) item.ck2 = scoreVal
     })
 
-    const termMap = new Map<string, { name: string; code: string; hk1: any; hk2: any; cn: any }>()
+    const termMap = new Map<string, { name: string; code: string; category: string; hk1: any; hk2: any; cn: any }>()
     termScores.forEach((ts: any) => {
       const sName = ts.subject?.subjectName || "Môn học"
       const sCode = ts.subject?.subjectCode || ""
+      const sCategory = ts.subject?.category || ""
       const key = (ts.subjectId || sName).trim()
       if (!termMap.has(key)) {
-        termMap.set(key, { name: sName, code: sCode, hk1: null, hk2: null, cn: null })
+        termMap.set(key, { name: sName, code: sCode, category: sCategory, hk1: null, hk2: null, cn: null })
       }
       const item = termMap.get(key)!
       const sem = String(ts.semester || "").toUpperCase().trim()
@@ -339,17 +317,11 @@ export default function ParentStudentProfilePage({
     })
 
     const moetPeriodicRows = Array.from(periodicMap.values())
-      .filter(r => !isBilingualSub(r.name, r.code))
-      .sort((a, b) => a.name.localeCompare(b.name, "vi"))
-    const bilingualPeriodicRows = Array.from(periodicMap.values())
-      .filter(r => isBilingualSub(r.name, r.code))
+      .filter(r => !isBilingualOrCtqtSubject(r.name, r.code, r.category))
       .sort((a, b) => a.name.localeCompare(b.name, "vi"))
 
     const moetTermRows = Array.from(termMap.values())
-      .filter(r => !isBilingualSub(r.name, r.code))
-      .sort((a, b) => a.name.localeCompare(b.name, "vi"))
-    const bilingualTermRows = Array.from(termMap.values())
-      .filter(r => isBilingualSub(r.name, r.code))
+      .filter(r => !isBilingualOrCtqtSubject(r.name, r.code, r.category))
       .sort((a, b) => a.name.localeCompare(b.name, "vi"))
 
     const sumHK1 = termSummaries.find(
@@ -364,9 +336,7 @@ export default function ParentStudentProfilePage({
 
     return {
       moetPeriodicRows,
-      bilingualPeriodicRows,
       moetTermRows,
-      bilingualTermRows,
       sumHK1,
       sumHK2,
       sumCN
@@ -730,7 +700,6 @@ export default function ParentStudentProfilePage({
               {/* TAB 1: XEM CHI TIẾT HSHS (A4 PORTFOLIO ĐỒNG BỘ 100% VỚI GVCN LỚP) */}
               {activeTab === "hshs_detail" &&
                 (() => {
-                  const sectionVisibility = resolveStudentSectionVisibility(enrichedStudent, configMap)
                   const coverStudentData = {
                     studentName: enrichedStudent.studentName || "HỌC SINH SKY-LINE",
                     studentCode: enrichedStudent.studentCode || "",
@@ -1128,29 +1097,29 @@ export default function ParentStudentProfilePage({
 
                                         <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
                                           <table className="w-full text-left text-xs border-collapse">
-                                            <thead className="bg-slate-100 text-[9px] font-black text-slate-700 uppercase tracking-wider border-b border-slate-200">
-                                              <tr>
-                                                <th className="py-2 px-2.5 border-r border-slate-200 w-[180px]">
+                                            <thead className="bg-[#003B3A] text-[9px] border-b text-white border-[#003B3A]">
+                                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                <th className="py-2 px-2.5 border-r border-white/15 w-[180px] font-semibold">
                                                   Nhóm mục tiêu (Trọng số)
                                                 </th>
-                                                <th className="py-2 px-2.5 border-r border-slate-200 min-w-[220px]">
+                                                <th className="py-2 px-2.5 border-r border-white/15 min-w-[220px] font-semibold">
                                                   Mục tiêu cụ thể
                                                 </th>
-                                                <th className="py-2 px-2 text-center border-r border-slate-200 w-[115px]">
+                                                <th className="py-2 px-2 text-center border-r border-white/15 w-[115px] font-semibold">
                                                   Kết quả theo dõi
                                                 </th>
-                                                <th className="py-2 px-1.5 text-center border-r border-slate-200 w-[90px]">
+                                                <th className="py-2 px-1.5 text-center border-r border-white/15 w-[90px] font-semibold">
                                                   Mức hoàn thành MT (1-5)
                                                 </th>
-                                                <th className="py-2 px-1.5 text-center border-r border-slate-200 w-[90px]">
+                                                <th className="py-2 px-1.5 text-center border-r border-white/15 w-[90px] font-semibold">
                                                   Mức độ chủ động (1-5)
                                                 </th>
-                                                <th className="py-2 px-2 text-center w-[110px]">
+                                                <th className="py-2 px-2 text-center w-[110px] font-semibold">
                                                   Thái độ tham gia (1-5)
                                                 </th>
                                               </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100 font-medium text-slate-700 text-xs">
+                                            <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700 text-xs">
                                               {advisoryRows.map((r, rIdx) => (
                                                 <tr key={rIdx} className="hover:bg-slate-50/50">
                                                   {r.isFirstInCat && (
@@ -1251,20 +1220,20 @@ export default function ParentStudentProfilePage({
                                         ) : (
                                           <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
                                             <table className="w-full text-left text-xs border-collapse">
-                                              <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
-                                                <tr>
-                                                  <th className="py-2 px-3 text-center w-8">STT</th>
-                                                  <th className="py-2 px-3">Môn học</th>
-                                                  <th className="py-2 px-2 text-center bg-teal-50/50 text-[#00A19A]">
+                                              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                                                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                  <th className="py-2 px-3 text-center w-8 font-semibold">STT</th>
+                                                  <th className="py-2 px-3 font-semibold">Môn học</th>
+                                                  <th className="py-2 px-2 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">
                                                     KSĐN
                                                   </th>
-                                                  <th className="py-2 px-2 text-center">Giữa kỳ 1</th>
-                                                  <th className="py-2 px-2 text-center">Cuối kỳ 1</th>
-                                                  <th className="py-2 px-2 text-center">Giữa kỳ 2</th>
-                                                  <th className="py-2 px-2 text-center">Cuối kỳ 2</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Giữa kỳ 1</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Cuối kỳ 1</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Giữa kỳ 2</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Cuối kỳ 2</th>
                                                 </tr>
                                               </thead>
-                                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                                 {gradeData.moetPeriodicRows.map((r, idx) => (
                                                   <tr key={idx} className="hover:bg-slate-50/80">
                                                     <td className="py-2 px-3 text-center font-mono text-slate-400">
@@ -1310,18 +1279,18 @@ export default function ParentStudentProfilePage({
                                         ) : (
                                           <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
                                             <table className="w-full text-left text-xs border-collapse">
-                                              <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
-                                                <tr>
-                                                  <th className="py-2 px-3 text-center w-8">STT</th>
-                                                  <th className="py-2 px-3">Môn học</th>
-                                                  <th className="py-2 px-3 text-center">Học kỳ 1 (HK1)</th>
-                                                  <th className="py-2 px-3 text-center">Học kỳ 2 (HK2)</th>
-                                                  <th className="py-2 px-3 text-center bg-teal-50/60 text-[#00A19A]">
+                                              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                                                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                  <th className="py-2 px-3 text-center w-8 font-semibold">STT</th>
+                                                  <th className="py-2 px-3 font-semibold">Môn học</th>
+                                                  <th className="py-2 px-3 text-center font-semibold">Học kỳ 1 (HK1)</th>
+                                                  <th className="py-2 px-3 text-center font-semibold">Học kỳ 2 (HK2)</th>
+                                                  <th className="py-2 px-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">
                                                     Cả năm (CN)
                                                   </th>
                                                 </tr>
                                               </thead>
-                                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                                 {gradeData.moetTermRows.map((r, idx) => (
                                                   <tr key={idx} className="hover:bg-slate-50/80">
                                                     <td className="py-2 px-3 text-center font-mono text-slate-400">
@@ -1424,77 +1393,7 @@ export default function ParentStudentProfilePage({
 
                                 {/* SECTION IV: KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ */}
                                 {sectionVisibility.bilingualGrades && (
-                                  <div className="space-y-3">
-                                    <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                                        <Globe className="w-4 h-4 text-blue-600" />
-                                        <span>IV. KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ</span>
-                                      </div>
-                                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-                                        Hệ Song ngữ Sky-Line
-                                      </span>
-                                    </h3>
-
-                                    {gradeData.bilingualTermRows.length === 0 &&
-                                    gradeData.bilingualPeriodicRows.length === 0 ? (
-                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
-                                        Học sinh học chương trình Chất lượng cao / Đang cập nhật môn song ngữ.
-                                      </div>
-                                    ) : (
-                                      <div className="border border-blue-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
-                                        <table className="w-full text-left text-xs border-collapse">
-                                          <thead className="bg-blue-50/70 text-[10px] font-black text-blue-900 uppercase tracking-wider border-b border-blue-200">
-                                            <tr>
-                                              <th className="py-2.5 px-3 text-center w-8">STT</th>
-                                              <th className="py-2.5 px-3">Môn Song ngữ</th>
-                                              <th className="py-2.5 px-2 text-center">KSĐN / GK</th>
-                                              <th className="py-2.5 px-3 text-center">Học kỳ 1</th>
-                                              <th className="py-2.5 px-3 text-center">Học kỳ 2</th>
-                                              <th className="py-2.5 px-3 text-center bg-blue-100/60 text-blue-900">
-                                                Cả năm (CN)
-                                              </th>
-                                              <th className="py-2.5 px-3 text-center">Đánh giá Năng lực</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody className="divide-y divide-blue-50 font-semibold text-slate-700">
-                                            {(gradeData.bilingualTermRows.length > 0
-                                              ? gradeData.bilingualTermRows
-                                              : gradeData.bilingualPeriodicRows
-                                            ).map((r: any, idx: number) => {
-                                              const pItem = gradeData.bilingualPeriodicRows.find(p => p.name === r.name)
-                                              const ksdnVal = pItem ? pItem.ksdn || pItem.gk1 : "—"
-                                              return (
-                                                <tr key={idx} className="hover:bg-blue-50/30">
-                                                  <td className="py-2.5 px-3 text-center font-mono text-slate-400">
-                                                    {idx + 1}
-                                                  </td>
-                                                  <td className="py-2.5 px-3 font-bold text-slate-900">{r.name}</td>
-                                                  <td className="py-2.5 px-2 text-center font-black text-blue-700">
-                                                    {ksdnVal || "—"}
-                                                  </td>
-                                                  <td className="py-2.5 px-3 text-center font-black text-slate-800">
-                                                    {r.hk1 || "—"}
-                                                  </td>
-                                                  <td className="py-2.5 px-3 text-center font-black text-slate-800">
-                                                    {r.hk2 || "—"}
-                                                  </td>
-                                                  <td className="py-2.5 px-3 text-center font-black text-blue-900 bg-blue-50/40">
-                                                    {r.cn || "—"}
-                                                  </td>
-                                                  <td className="py-2.5 px-3 text-center">
-                                                    <span className="text-[10px] font-black bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded">
-                                                      Hoàn thành Tốt
-                                                    </span>
-                                                  </td>
-                                                </tr>
-                                              )
-                                            })}
-                                          </tbody>
-                                        </table>
-                                      </div>
-                                    )}
-                                  </div>
+                                  <StudentCtqtGradesSection student={enrichedStudent} />
                                 )}
 
                                 {/* SECTION V: THÀNH TÍCH & KHEN THƯỞNG */}
@@ -1510,38 +1409,47 @@ export default function ParentStudentProfilePage({
                                         Học sinh chưa có ghi nhận giải thưởng hoặc khen thưởng trong năm học.
                                       </div>
                                     ) : (
-                                      <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
-                                        <table className="w-full text-left text-xs">
-                                          <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
-                                            <tr>
-                                              <th className="py-2.5 px-3 text-center w-10">STT</th>
-                                              <th className="py-2.5 px-3">Tên Giải thưởng</th>
-                                              <th className="py-2.5 px-3">Lĩnh vực</th>
-                                              <th className="py-2.5 px-3 text-center">Hạng / Cấp giải</th>
+                                      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                                        <table className="w-full text-left border-collapse tabular-nums">
+                                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                              <th className="py-2.5 px-2.5 w-10 text-center text-teal-100 font-semibold">STT</th>
+                                              <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Mã HS</th>
+                                              <th className="py-2.5 px-2.5 text-white font-semibold">Học sinh</th>
+                                              <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Lớp &amp; Cơ sở</th>
+                                              <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Kỳ thi / Cuộc thi</th>
+                                              <th className="py-2.5 px-2.5 text-white font-semibold">Thành tích đạt được</th>
+                                              <th className="py-2.5 px-2.5 text-center text-[#5EEAD4] font-semibold">Mức giải</th>
+                                              <th className="py-2.5 px-2.5 text-teal-100 font-semibold">GV bồi dưỡng</th>
                                             </tr>
                                           </thead>
-                                          <tbody className="divide-y divide-slate-100 font-semibold">
+                                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                                             {achievements.map((item: any, idx: number) => {
-                                              const ach = item.achievement || item
-                                              const achName = ach.name || ach.title || "Giải thưởng"
-                                              const catName = getCategoryLabel(
-                                                ach.category || ach.exam?.category?.name || ach.examCategoryName
-                                              )
-                                              const levelName = getLevelLabel(ach.level || ach.exam?.round?.name)
+                                              const row = normalizeStudentAchievementRow(item, enrichedStudent)
                                               return (
-                                                <tr key={idx} className="hover:bg-amber-50/20">
-                                                  <td className="py-2.5 px-3 text-center font-mono text-slate-400 font-bold">
+                                                <tr key={row.linkId || idx} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                                                  <td className="py-2.5 px-2.5 text-center font-mono text-slate-400">
                                                     {idx + 1}
                                                   </td>
-                                                  <td className="py-2.5 px-3 font-bold text-slate-800">{achName}</td>
-                                                  <td className="py-2.5 px-3 text-[10px] font-black text-[#00A19A] uppercase">
-                                                    {catName}
+                                                  <td className="py-2.5 px-2.5 font-mono text-slate-600">{row.studentCode}</td>
+                                                  <td className="py-2.5 px-2.5 font-semibold text-slate-900">{row.studentName}</td>
+                                                  <td className="py-2.5 px-2.5">
+                                                    <span className="font-semibold text-[#003B3A]">{row.className}</span>
+                                                    <span className="block text-[11px] text-slate-400">{row.campusName}</span>
                                                   </td>
-                                                  <td className="py-2.5 px-3 text-center">
-                                                    <span className="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md">
-                                                      {levelName}
+                                                  <td className="py-2.5 px-2.5 text-slate-700">{row.examName}</td>
+                                                  <td className="py-2.5 px-2.5">
+                                                    <span className="font-semibold text-slate-900">{row.achievementName}</span>
+                                                    <span className="block text-[11px] text-slate-400">
+                                                      {row.categoryLabel} · {row.typeLabel}
                                                     </span>
                                                   </td>
+                                                  <td className="py-2.5 px-2.5 text-center">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${row.badgeClass}`}>
+                                                      {row.levelLabel}
+                                                    </span>
+                                                  </td>
+                                                  <td className="py-2.5 px-2.5 text-slate-600">{row.teacherName}</td>
                                                 </tr>
                                               )
                                             })}
@@ -1567,17 +1475,17 @@ export default function ParentStudentProfilePage({
                                     ) : (
                                       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs">
                                         <table className="w-full text-xs text-left border-collapse">
-                                          <thead>
-                                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
-                                              <th className="py-2.5 px-3 text-center w-10">STT</th>
-                                              <th className="py-2.5 px-3 min-w-[180px]">Tên hoạt động</th>
-                                              <th className="py-2.5 px-3 min-w-[130px]">Chủ đề GD</th>
-                                              <th className="py-2.5 px-3 min-w-[200px]">Nội dung giáo dục</th>
-                                              <th className="py-2.5 px-3 text-center min-w-[110px]">Vai trò</th>
-                                              <th className="py-2.5 px-3 text-center min-w-[110px]">Kết quả</th>
+                                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                            <tr className="border-b text-[11px] font-semibold">
+                                              <th className="py-2.5 px-3 text-center w-10 font-semibold">STT</th>
+                                              <th className="py-2.5 px-3 min-w-[180px] font-semibold">Tên hoạt động</th>
+                                              <th className="py-2.5 px-3 min-w-[130px] font-semibold">Chủ đề GD</th>
+                                              <th className="py-2.5 px-3 min-w-[200px] font-semibold">Nội dung giáo dục</th>
+                                              <th className="py-2.5 px-3 text-center min-w-[110px] font-semibold">Vai trò</th>
+                                              <th className="py-2.5 px-3 text-center min-w-[110px] font-semibold">Kết quả</th>
                                             </tr>
                                           </thead>
-                                          <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                          <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                                             {experientialActivities.map((act: any, idx: number) => (
                                               <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-colors">
                                                 <td className="py-3 px-3 text-center text-slate-400 font-bold">
@@ -1898,37 +1806,37 @@ export default function ParentStudentProfilePage({
 
                   {/* Bảng 1: Điểm kiểm tra định kỳ */}
                   <div className="space-y-2">
-                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                      1. Điểm kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2)
+                    <h3 className="text-xs font-black text-slate-800 tracking-wide">
+                      1. Điểm kiểm tra định kỳ chương trình MOET (KSĐN, GK1, CK1, GK2, CK2)
                     </h3>
-                    {gradeData.moetPeriodicRows.length === 0 && gradeData.bilingualPeriodicRows.length === 0 ? (
+                    {gradeData.moetPeriodicRows.length === 0 ? (
                       <p className="text-xs italic text-slate-400 py-4 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                        Chưa có dữ liệu điểm kiểm tra định kỳ.
+                        Chưa có dữ liệu điểm kiểm tra định kỳ chương trình MOET.
                       </p>
                     ) : (
-                      <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
                         <table className="w-full text-left border-collapse text-xs">
-                          <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[10px]">
-                              <th className="py-3 px-4 w-10 text-center">STT</th>
-                              <th className="py-3 px-4">Môn học</th>
-                              <th className="py-3 px-3 text-center text-[#00A19A]">KSĐN</th>
-                              <th className="py-3 px-3 text-center">Giữa kỳ 1</th>
-                              <th className="py-3 px-3 text-center">Cuối kỳ 1</th>
-                              <th className="py-3 px-3 text-center">Giữa kỳ 2</th>
-                              <th className="py-3 px-3 text-center">Cuối kỳ 2</th>
+                          <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="py-3 px-4 w-10 text-center text-white font-semibold">STT</th>
+                              <th className="py-3 px-4 text-white font-semibold">Môn học</th>
+                              <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">KSĐN</th>
+                              <th className="py-3 px-3 text-center text-teal-100 font-semibold">Giữa kỳ 1</th>
+                              <th className="py-3 px-3 text-center text-teal-100 font-semibold">Cuối kỳ 1</th>
+                              <th className="py-3 px-3 text-center text-teal-100 font-semibold">Giữa kỳ 2</th>
+                              <th className="py-3 px-3 text-center text-teal-100 font-semibold">Cuối kỳ 2</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 font-semibold">
-                            {[...gradeData.moetPeriodicRows, ...gradeData.bilingualPeriodicRows].map((r, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/70">
-                                <td className="py-2.5 px-4 text-center text-slate-400 font-mono">{idx + 1}</td>
-                                <td className="py-2.5 px-4 font-bold text-slate-800">{r.name}</td>
-                                <td className="py-2.5 px-3 text-center font-black text-[#00A19A]">{r.ksdn || "—"}</td>
-                                <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.gk1 || "—"}</td>
-                                <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.ck1 || "—"}</td>
-                                <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.gk2 || "—"}</td>
-                                <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.ck2 || "—"}</td>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums font-semibold">
+                            {gradeData.moetPeriodicRows.map((r, idx) => (
+                              <tr key={idx} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                                <td className="py-3 px-3 text-center text-slate-400 align-middle">{idx + 1}</td>
+                                <td className="py-3 px-3 font-bold text-slate-800 align-middle">{r.name}</td>
+                                <td className="py-3 px-3 text-center font-black text-[#00A19A] align-middle">{r.ksdn || "—"}</td>
+                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.gk1 || "—"}</td>
+                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.ck1 || "—"}</td>
+                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.gk2 || "—"}</td>
+                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.ck2 || "—"}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1939,33 +1847,33 @@ export default function ParentStudentProfilePage({
 
                   {/* Bảng 2: Điểm tổng kết học tập */}
                   <div className="space-y-2">
-                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                      2. Bảng điểm tổng kết môn học (HK1, HK2, Cả năm)
+                    <h3 className="text-xs font-black text-slate-800 tracking-wide">
+                      2. Bảng điểm tổng kết môn học chương trình MOET (HK1, HK2, Cả năm)
                     </h3>
-                    {gradeData.moetTermRows.length === 0 && gradeData.bilingualTermRows.length === 0 ? (
+                    {gradeData.moetTermRows.length === 0 ? (
                       <p className="text-xs italic text-slate-400 py-4 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                        Chưa có dữ liệu điểm tổng kết học kỳ.
+                        Chưa có dữ liệu điểm tổng kết học kỳ chương trình MOET.
                       </p>
                     ) : (
-                      <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
                         <table className="w-full text-left border-collapse text-xs">
-                          <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[10px]">
-                              <th className="py-3 px-4 w-10 text-center">STT</th>
-                              <th className="py-3 px-4">Môn học</th>
-                              <th className="py-3 px-4 text-center">Học kỳ 1 (HK1)</th>
-                              <th className="py-3 px-4 text-center">Học kỳ 2 (HK2)</th>
-                              <th className="py-3 px-4 text-center text-[#00A19A]">Cả năm (CN)</th>
+                          <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="py-3 px-4 w-10 text-center text-white font-semibold">STT</th>
+                              <th className="py-3 px-4 text-white font-semibold">Môn học</th>
+                              <th className="py-3 px-4 text-center text-teal-100 font-semibold">Học kỳ 1 (HK1)</th>
+                              <th className="py-3 px-4 text-center text-teal-100 font-semibold">Học kỳ 2 (HK2)</th>
+                              <th className="py-3 px-4 text-center text-[#5EEAD4] font-semibold">Cả năm (CN)</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 font-semibold">
-                            {[...gradeData.moetTermRows, ...gradeData.bilingualTermRows].map((r, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/70">
-                                <td className="py-2.5 px-4 text-center text-slate-400 font-mono">{idx + 1}</td>
-                                <td className="py-2.5 px-4 font-bold text-slate-800">{r.name}</td>
-                                <td className="py-2.5 px-4 text-center font-black text-slate-800">{r.hk1 || "—"}</td>
-                                <td className="py-2.5 px-4 text-center font-black text-slate-800">{r.hk2 || "—"}</td>
-                                <td className="py-2.5 px-4 text-center font-black text-[#00A19A]">{r.cn || "—"}</td>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums font-semibold">
+                            {gradeData.moetTermRows.map((r, idx) => (
+                              <tr key={idx} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                                <td className="py-3 px-3 text-center text-slate-400 align-middle">{idx + 1}</td>
+                                <td className="py-3 px-3 font-bold text-slate-800 align-middle">{r.name}</td>
+                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.hk1 || "—"}</td>
+                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.hk2 || "—"}</td>
+                                <td className="py-3 px-3 text-center font-black text-[#00A19A] align-middle">{r.cn || "—"}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1975,9 +1883,18 @@ export default function ParentStudentProfilePage({
                   </div>
 
                   {/* Môn học đặc thù Sky-Line */}
-                  <div className="pt-2">
-                    <StudentSpecialSubjectsSection student={enrichedStudent} />
-                  </div>
+                  {sectionVisibility.specialSubjects && (
+                    <div className="pt-2">
+                      <StudentSpecialSubjectsSection student={enrichedStudent} />
+                    </div>
+                  )}
+
+                  {/* Kết quả học tập Chương trình Song ngữ (CTQT & Report Card) */}
+                  {sectionVisibility.bilingualGrades && (
+                    <div className="pt-2">
+                      <StudentCtqtGradesSection student={enrichedStudent} />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2066,41 +1983,73 @@ export default function ParentStudentProfilePage({
 
               {/* TAB 6: THÀNH TÍCH & KHEN THƯỞNG */}
               {activeTab === "achievements" && (
-                <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xs space-y-6">
-                  <div className="border-b border-slate-100 pb-4">
-                    <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                      <Award className="w-5 h-5 text-[#00A19A]" />
-                      Thành tích Nổi bật &amp; Chứng chỉ
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Các giải thưởng học thuật, năng khiếu, thể thao và chứng chỉ quốc tế của học sinh.
-                    </p>
+                <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-xs space-y-4">
+                  <div className="border-b border-[#E2E8F0] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h2 className="text-sm font-bold text-[#003B3A] flex items-center gap-2">
+                        <Award className="w-4 h-4 text-[#00A19A]" />
+                        Thành tích &amp; khen thưởng của học sinh
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Danh sách các giải thưởng, huy chương &amp; chứng nhận học sinh đã đạt được
+                      </p>
+                    </div>
+                    {achievements.length > 0 && (
+                      <span className="text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] px-3 py-1 rounded-full tabular-nums self-start sm:self-auto">
+                        {achievements.length} giải thưởng
+                      </span>
+                    )}
                   </div>
 
                   {achievements.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {achievements.map((item: any, idx: number) => {
-                        const ach = item.achievement || item
-                        return (
-                          <div
-                            key={item.id || idx}
-                            className="p-4 rounded-2xl bg-amber-50/40 border border-amber-200/70 flex items-start gap-3.5"
-                          >
-                            <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700">
-                              <Award className="w-5 h-5" />
-                            </div>
-                            <div className="space-y-1">
-                              <h4 className="text-xs font-black text-slate-800">
-                                {ach.title || ach.name || "Thành tích xuất sắc"}
-                              </h4>
-                              <p className="text-[11px] text-slate-600">
-                                {getCategoryLabel(ach.category || ach.exam?.category?.name)} •{" "}
-                                {getLevelLabel(ach.level || ach.exam?.round?.name)}
-                              </p>
-                            </div>
-                          </div>
-                        )
-                      })}
+                    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse tabular-nums">
+                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="py-3 px-3 w-12 text-center text-teal-100 font-semibold">STT</th>
+                              <th className="py-3 px-3 text-teal-100 font-semibold">Mã HS</th>
+                              <th className="py-3 px-3 text-white font-semibold">Học sinh</th>
+                              <th className="py-3 px-3 text-teal-100 font-semibold">Lớp &amp; Cơ sở</th>
+                              <th className="py-3 px-3 text-teal-100 font-semibold">Kỳ thi / Cuộc thi</th>
+                              <th className="py-3 px-3 text-white font-semibold">Thành tích đạt được</th>
+                              <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">Mức giải</th>
+                              <th className="py-3 px-3 text-teal-100 font-semibold">GV bồi dưỡng</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                            {achievements.map((item: any, idx: number) => {
+                              const row = normalizeStudentAchievementRow(item, enrichedStudent)
+                              return (
+                                <tr key={row.linkId || idx} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                                  <td className="py-3 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
+                                  <td className="py-3 px-3 font-mono text-slate-600">{row.studentCode}</td>
+                                  <td className="py-3 px-3 font-semibold text-slate-900">{row.studentName}</td>
+                                  <td className="py-3 px-3">
+                                    <span className="font-semibold text-[#003B3A]">{row.className}</span>
+                                    <span className="block text-[11px] text-slate-400">{row.campusName}</span>
+                                  </td>
+                                  <td className="py-3 px-3 text-slate-700 max-w-[240px]">
+                                    <span className="line-clamp-2">{row.examName}</span>
+                                  </td>
+                                  <td className="py-3 px-3">
+                                    <span className="font-semibold text-slate-900">{row.achievementName}</span>
+                                    <span className="block text-[11px] text-slate-400">
+                                      {row.categoryLabel} · {row.typeLabel}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-3 text-center">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${row.badgeClass}`}>
+                                      {row.levelLabel}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-3 text-slate-600">{row.teacherName}</td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   ) : (
                     <p className="text-xs italic text-slate-400 py-8 text-center">Chưa ghi nhận thành tích.</p>
@@ -2124,16 +2073,16 @@ export default function ParentStudentProfilePage({
                   {experientialActivities.length > 0 ? (
                     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
                       <table className="w-full text-xs text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase">
-                            <th className="py-3 px-4 text-center w-10">STT</th>
-                            <th className="py-3 px-4">Tên hoạt động</th>
-                            <th className="py-3 px-4">Chủ đề / Lĩnh vực</th>
-                            <th className="py-3 px-4 text-center">Vai trò</th>
-                            <th className="py-3 px-4 text-center">Đánh giá</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="border-b text-[11px] font-semibold">
+                            <th className="py-3 px-4 text-center w-10 font-semibold">STT</th>
+                            <th className="py-3 px-4 font-semibold">Tên hoạt động</th>
+                            <th className="py-3 px-4 font-semibold">Chủ đề / Lĩnh vực</th>
+                            <th className="py-3 px-4 text-center font-semibold">Vai trò</th>
+                            <th className="py-3 px-4 text-center font-semibold">Đánh giá</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#E2E8F0]">
                           {experientialActivities.map((act: any, idx: number) => (
                             <tr key={act.id || idx} className="hover:bg-slate-50/80">
                               <td className="py-3 px-4 text-center text-slate-400 font-bold">{idx + 1}</td>

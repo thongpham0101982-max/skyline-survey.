@@ -263,23 +263,23 @@ function HallOfFameContent() {
         ) : standings.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs tabular-nums">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-slate-600 font-bold">
-                  <th className="py-3.5 px-4">Thứ hạng gốc</th>
-                  <th className="py-3.5 px-4">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3.5 px-4 font-semibold">Thứ hạng gốc</th>
+                  <th className="py-3.5 px-4 font-semibold">
                     {categoryTab === "PRODUCT" ? "Sản phẩm AI" : "Ý tưởng dạy học"}
                   </th>
-                  <th className="py-3.5 px-4">Tác giả & Cơ sở</th>
-                  <th className="py-3.5 px-4 text-right">Đánh giá (n, R)</th>
-                  <th className="py-3.5 px-4 text-right">Điểm C</th>
-                  <th className="py-3.5 px-4 text-right">Điểm E (Chuyên môn)</th>
+                  <th className="py-3.5 px-4 font-semibold">Tác giả & Cơ sở</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">Đánh giá (n, R)</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">Điểm C</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">Điểm E (Chuyên môn)</th>
                   {categoryTab === "PRODUCT" && (
-                    <th className="py-3.5 px-4 text-right">Điểm U (Áp dụng a)</th>
+                    <th className="py-3.5 px-4 text-right font-semibold">Điểm U (Áp dụng a)</th>
                   )}
-                  <th className="py-3.5 px-4 text-right">Tổng điểm</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">Tổng điểm</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {standings.map((row: any) => {
                   const c = row.candidate;
                   return (

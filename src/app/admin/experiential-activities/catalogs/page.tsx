@@ -1220,10 +1220,10 @@ function ActivityCatalogsContent() {
           <div className="bg-white border border-slate-200 rounded-3xl shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse">
-                <thead className="bg-slate-50/90 text-slate-700 font-bold border-b border-slate-200">
-                  <tr>
+                <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
                     {/* Cột 1: STT & Checkbox */}
-                    <th className="py-3 px-2 text-center w-14 whitespace-nowrap">
+                    <th className="py-3 px-2 text-center w-14 whitespace-nowrap font-semibold">
                       <div className="flex items-center justify-center gap-1.5">
                         <input
                           type="checkbox"
@@ -1237,13 +1237,13 @@ function ActivityCatalogsContent() {
                     </th>
 
                     {/* Cột 2: Hoạt động & Khối lớp / Bậc / Hệ */}
-                    <th className="py-3 px-3 min-w-[260px]">Hoạt động & Đối tượng</th>
+                    <th className="py-3 px-3 min-w-[260px] font-semibold">Hoạt động & Đối tượng</th>
 
                     {/* Cột 3: Chủ đề giáo dục */}
-                    <th className="py-3 px-3 min-w-[130px]">Chủ đề giáo dục</th>
+                    <th className="py-3 px-3 min-w-[130px] font-semibold">Chủ đề giáo dục</th>
 
                     {/* Cột 4: Môn học & Phụ trách */}
-                    <th className="py-3 px-3 min-w-[170px]">Môn học & Phụ trách</th>
+                    <th className="py-3 px-3 min-w-[170px] font-semibold">Môn học & Phụ trách</th>
 
                     {/* Cột 5: Thời gian & Địa điểm (Sortable) */}
                     <th 
@@ -1264,19 +1264,19 @@ function ActivityCatalogsContent() {
                     </th>
 
                     {/* Cột 6: Hình thức đánh giá */}
-                    <th className="py-3 px-3 min-w-[150px]">Hình thức đánh giá</th>
+                    <th className="py-3 px-3 min-w-[150px] font-semibold">Hình thức đánh giá</th>
 
                     {/* Cột 7: Cơ sở & Lớp tiếp nhận */}
-                    <th className="py-3 px-3 min-w-[150px]">Cơ sở & Lớp tiếp nhận</th>
+                    <th className="py-3 px-3 min-w-[150px] font-semibold">Cơ sở & Lớp tiếp nhận</th>
 
                     {/* Cột 8: Thao tác (Sticky right) */}
-                    <th className="py-3 px-3 text-center min-w-[130px] sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs">
+                    <th className="py-3 px-3 text-center min-w-[130px] sticky right-0 bg-[#003B3A] border-l border-white/15 shadow-xs font-semibold">
                       Thao tác
                     </th>
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                   {loading ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-slate-400">

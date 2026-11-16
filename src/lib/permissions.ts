@@ -1,6 +1,12 @@
 // @ts-nocheck
 import { prisma } from "@/lib/db"
 import { APP_CATEGORIES, ALL_APP_MODULES } from "@/config/modules"
+import {
+  isKtdbclEntranceRole,
+  isGdcsOrBghEntranceRole,
+  isGiaoVuEntranceRole,
+  isTuVanEntranceRole,
+} from "@/lib/entrance-progress/constants"
 
 /**
  * Normalizes role code variations (e.g. "BGH MN", "BGH_MN", "bgh mn", "ns", "NS")
@@ -67,6 +73,21 @@ export async function getRolePermissions(roleCode: string): Promise<any[]> {
         }
       }
     }
+    const dgnlPerm = perms.find((p: any) => p.module === "QL_DGNL" || p.module === "COMPETENCY_ASSESSMENT")
+    if (dgnlPerm) {
+      const dgnlSubCodes = [
+        "COMPETENCY_IMPORT",
+        "COMPETENCY_SUBJECTS",
+        "COMPETENCY_ALIASES",
+        "COMPETENCY_HISTORY",
+        "QL_DGNL",
+      ]
+      for (const sc of dgnlSubCodes) {
+        if (!perms.some((p: any) => p.module === sc)) {
+          perms.push({ ...dgnlPerm, module: sc })
+        }
+      }
+    }
     return perms
   } catch (err) {
     console.error("Error fetching permissions for role:", roleCode, err)
@@ -89,33 +110,124 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
     permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
   )
 
+  const isPreschoolBgh = [
+    "BGH_MN",
+    "BGH MN",
+    "BGH_MAM_NON",
+    "BGH MẦM NON",
+    "BGH MÂM NON",
+  ].some((r) => upper === r || upper.includes(r))
+
+  // Chuẩn hóa phân quyền danh mục Khảo sát đầu vào theo 4 nhóm vai trò vận hành
+  if (isKtdbclEntranceRole(upper)) {
+    ;[
+      "DIEU_HANH_KHAO_SAT",
+      "STUDENT_INFO",
+      "STUDENT_INFO_K12",
+      "STUDENT_INFO_MAM_NON",
+      "PHAN_CONG_KHAO_SAT",
+      "PCKS_K12",
+      "PCKS_MAM_NON",
+      "KET_QUA_KHAO_SAT",
+      "KQKS_K12",
+      "KQKS_MAM_NON",
+      "XET_DUYET_KET_QUA",
+      "XDKQ_K12",
+      "XDKQ_MAM_NON",
+      "INPUT_ASSESSMENT_REPORTS",
+      "CAU_HINH_KHAO_SAT",
+      "CHKS_K12",
+      "CHKS_MAM_NON",
+      "CAU_HINH_FILE_DIEM_KSDV",
+      "ADMIN_STUDENT_PROFILES",
+    ].forEach((m) => readableModules.add(m))
+  } else if (isGiaoVuEntranceRole(upper)) {
+    ;[
+      "DIEU_HANH_KHAO_SAT",
+      "STUDENT_INFO",
+      "STUDENT_INFO_K12",
+      "STUDENT_INFO_MAM_NON",
+      "PHAN_CONG_KHAO_SAT",
+      "PCKS_K12",
+      "PCKS_MAM_NON",
+      "KET_QUA_KHAO_SAT",
+      "KQKS_K12",
+      "KQKS_MAM_NON",
+      "XET_DUYET_KET_QUA",
+      "XDKQ_K12",
+      "XDKQ_MAM_NON",
+      "INPUT_ASSESSMENT_REPORTS",
+    ].forEach((m) => readableModules.add(m))
+  } else if (isTuVanEntranceRole(upper)) {
+    ;[
+      "DIEU_HANH_KHAO_SAT",
+      "STUDENT_INFO",
+      "STUDENT_INFO_K12",
+      "STUDENT_INFO_MAM_NON",
+      "KET_QUA_KHAO_SAT",
+      "KQKS_K12",
+      "KQKS_MAM_NON",
+      "INPUT_ASSESSMENT_REPORTS",
+    ].forEach((m) => readableModules.add(m))
+  } else if (isGdcsOrBghEntranceRole(upper)) {
+    if (isPreschoolBgh) {
+      ;[
+        "DIEU_HANH_KHAO_SAT",
+        "STUDENT_INFO",
+        "STUDENT_INFO_MAM_NON",
+        "PHAN_CONG_KHAO_SAT",
+        "PCKS_MAM_NON",
+        "KET_QUA_KHAO_SAT",
+        "KQKS_MAM_NON",
+        "XET_DUYET_KET_QUA",
+        "XDKQ_MAM_NON",
+        "INPUT_ASSESSMENT_REPORTS",
+      ].forEach((m) => readableModules.add(m))
+    } else {
+      ;[
+        "DIEU_HANH_KHAO_SAT",
+        "STUDENT_INFO",
+        "STUDENT_INFO_K12",
+        "STUDENT_INFO_MAM_NON",
+        "PHAN_CONG_KHAO_SAT",
+        "PCKS_K12",
+        "PCKS_MAM_NON",
+        "KET_QUA_KHAO_SAT",
+        "KQKS_K12",
+        "KQKS_MAM_NON",
+        "XET_DUYET_KET_QUA",
+        "XDKQ_K12",
+        "XDKQ_MAM_NON",
+        "INPUT_ASSESSMENT_REPORTS",
+      ].forEach((m) => readableModules.add(m))
+    }
+  }
+
   if (
     readableModules.has("STUDENT_INFO") ||
     readableModules.has("STUDENT_INFO_K12") ||
+    readableModules.has("STUDENT_INFO_MAM_NON") ||
     readableModules.has("CAU_HINH_KHAO_SAT") ||
     readableModules.has("PHAN_CONG_KHAO_SAT") ||
     readableModules.has("XET_DUYET_KET_QUA") ||
-    readableModules.has("INPUT_ASSESSMENTS") ||
-    [
-      "KT_DBCL",
-      "KTDBCL",
-      "BAN_DHCM",
-      "GDCS",
-      "GĐCS",
-      "GD_CS",
-      "GĐ_CS",
-      "GIAO_VU_CS",
-      "GIAO_VU",
-      "BGH",
-      "BGH_CS",
-      "TU_VAN",
-      "TVTS",
-    ].some((r) => upper === r || upper.includes(r))
+    readableModules.has("INPUT_ASSESSMENTS")
   ) {
     readableModules.add("DIEU_HANH_KHAO_SAT")
   }
 
-  if (readableModules.has("STUDENT_INFO") || readableModules.has("STUDENT_INFO_K12")) {
+  if (readableModules.has("STUDENT_INFO_K12")) {
+    readableModules.add("KET_QUA_KHAO_SAT")
+    readableModules.add("KQKS_K12")
+  }
+  if (readableModules.has("STUDENT_INFO_MAM_NON")) {
+    readableModules.add("KET_QUA_KHAO_SAT")
+    readableModules.add("KQKS_MAM_NON")
+  }
+  if (
+    readableModules.has("STUDENT_INFO") &&
+    !readableModules.has("STUDENT_INFO_K12") &&
+    !readableModules.has("STUDENT_INFO_MAM_NON")
+  ) {
     readableModules.add("KET_QUA_KHAO_SAT")
     readableModules.add("KQKS_K12")
     readableModules.add("KQKS_MAM_NON")
@@ -123,39 +235,15 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
 
   // Cho phép Ban KT&ĐBCL, Quản lý Cơ sở, BGH, Giáo vụ và Giáo viên truy cập chức năng In bảng tên Họp PHHS
   if (
-    [
-      "KT_DBCL",
-      "KTDBCL",
-      "BAN_DHCM",
-      "GDCS",
-      "GĐCS",
-      "GD_CS",
-      "GĐ_CS",
-      "GIAO_VU_CS",
-      "GIAO_VU",
-      "BGH",
-      "BGH_CS",
-      "TEACHER",
-      "GV",
-      "GIAO_VIEN",
-    ].some((r) => upper === r || upper.includes(r))
+    isKtdbclEntranceRole(upper) ||
+    isGdcsOrBghEntranceRole(upper) ||
+    isGiaoVuEntranceRole(upper) ||
+    ["TEACHER", "GV", "GIAO_VIEN"].some((r) => upper === r || upper.includes(r))
   ) {
     readableModules.add("NAMEPLATES_PHHS")
   }
 
-  if (
-    [
-      "KT_DBCL",
-      "KTDBCL",
-      "BAN_DHCM",
-      "GDCS",
-      "GĐCS",
-      "GD_CS",
-      "GĐ_CS",
-      "BGH",
-      "BGH_CS",
-    ].some((r) => upper === r || upper.includes(r))
-  ) {
+  if (isKtdbclEntranceRole(upper) || isGdcsOrBghEntranceRole(upper)) {
     readableModules.add("KTDBCL_HOP_PHU_HUYNH")
     readableModules.add("KTDBCL_HPH_OVERVIEW")
     readableModules.add("KTDBCL_HPH_MEETINGS")
@@ -163,6 +251,47 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
     readableModules.add("KTDBCL_HPH_MINUTES")
     readableModules.add("KPI_PHAM_CHAT_TU_HAO")
     readableModules.add("KTDBCL_KTS_NOTIFICATIONS")
+  }
+
+  // Phân quyền mặc định cho phân hệ WorkHub theo vai trò thực tế (ẩn mục quản lý đơn vị & cấu hình đối với cá nhân)
+  if (upper && upper !== "PARENT") {
+    readableModules.add("WORKHUB_OVERVIEW")
+    readableModules.add("WORKHUB_MY_TASKS")
+    readableModules.add("WORKHUB_PLANS")
+    readableModules.add("WORKHUB_REPORTS")
+    readableModules.add("WORKHUB_KPIS")
+
+    const isWorkHubAssignerOrLeader =
+      isKtdbclEntranceRole(upper) ||
+      isGdcsOrBghEntranceRole(upper) ||
+      isGiaoVuEntranceRole(upper) ||
+      ["TTCM", "TPCM", "TBP", "BAN_DHCM", "TB_DHCM", "BAN_GD", "BGD", "QLCM"].some((r) =>
+        upper.includes(r)
+      )
+    if (isWorkHubAssignerOrLeader) {
+      readableModules.add("WORKHUB_ASSIGNED_TASKS")
+    }
+
+    const isWorkHubOrgLeader =
+      isGdcsOrBghEntranceRole(upper) ||
+      ["TTCM", "TPCM", "TBP", "BAN_DHCM", "TB_DHCM", "BAN_GD", "BGD", "QLCM", "KT_DBCL", "KTDBCL"].some(
+        (r) => upper.includes(r)
+      )
+    if (isWorkHubOrgLeader) {
+      readableModules.add("WORKHUB_ORG_TRACKING")
+    }
+
+    if (["BAN_DHCM", "TB_DHCM", "BAN_GD", "BGD"].some((r) => upper.includes(r))) {
+      readableModules.add("WORKHUB_SETTINGS")
+    }
+  }
+
+  // Báo cáo Tuần Giáo viên & Nhân sự (WEEKLY_REPORTS) CHỈ áp dụng cho BP/Tổ chuyên môn Ban KT&ĐBCL, KHÔNG áp dụng cho các Tổ khác
+  const isStrictKtdbclRole = ["KT_DBCL", "KTDBCL", "KHAO_THI", "DBCL", "KT&ĐBCL", "KT-ĐBCL", "BAN_KT_DBCL"].includes(upper)
+  if (isStrictKtdbclRole) {
+    readableModules.add("WEEKLY_REPORTS")
+  } else {
+    readableModules.delete("WEEKLY_REPORTS")
   }
 
   // Automatically grant parent module if any submodule is readable
@@ -238,6 +367,10 @@ export async function hasModulePermission(
   for (const mod of rawModuleList) {
     if (mod.startsWith("TIMETABLE_")) {
       expandedModules.add("TIMETABLE")
+    }
+    if (mod.startsWith("COMPETENCY_") || mod === "QL_DGNL") {
+      expandedModules.add("QL_DGNL")
+      expandedModules.add("COMPETENCY_ASSESSMENT")
     }
   }
   const moduleList = Array.from(expandedModules)

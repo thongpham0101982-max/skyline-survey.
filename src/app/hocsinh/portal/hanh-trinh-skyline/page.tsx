@@ -1326,18 +1326,18 @@ export default function StudentSkylineJourneyPage() {
 
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse text-xs tabular-nums">
-                          <thead>
-                            <tr className="bg-[#003B3A] text-white text-[11px] font-bold">
-                              <th className="py-2.5 px-3 text-center w-14">Hạng</th>
-                              <th className="py-2.5 px-3">Học sinh & Nhân vật</th>
-                              <th className="py-2.5 px-3">Lớp</th>
-                              <th className="py-2.5 px-3 text-center">Khiên</th>
-                              <th className="py-2.5 px-3 text-center">Điểm bài học</th>
-                              <th className="py-2.5 px-3 text-center">Thời gian hoàn thành</th>
-                              <th className="py-2.5 px-3 text-right">Tổng điểm</th>
+                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                            <tr className="bg-[#003B3A] text-white text-[11px] font-semibold">
+                              <th className="py-2.5 px-3 text-center w-14 font-semibold">Hạng</th>
+                              <th className="py-2.5 px-3 font-semibold">Học sinh & Nhân vật</th>
+                              <th className="py-2.5 px-3 font-semibold">Lớp</th>
+                              <th className="py-2.5 px-3 text-center font-semibold">Khiên</th>
+                              <th className="py-2.5 px-3 text-center font-semibold">Điểm bài học</th>
+                              <th className="py-2.5 px-3 text-center font-semibold">Thời gian hoàn thành</th>
+                              <th className="py-2.5 px-3 text-right font-semibold">Tổng điểm</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-[#E2E8F0]">
                             {(showAllLeaderboardRows
                               ? activeLeaderboard
                               : activeLeaderboard.slice(0, 6)
@@ -1593,19 +1593,19 @@ export default function StudentSkylineJourneyPage() {
             <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs tabular-nums">
-                  <thead>
-                    <tr className="bg-[#003B3A] text-white text-[11px] font-bold">
-                      <th className="py-2.5 px-3 text-center w-14">Hạng</th>
-                      <th className="py-2.5 px-3">Học sinh & Nhân vật đồng hành</th>
-                      <th className="py-2.5 px-3">Lớp</th>
-                      <th className="py-2.5 px-3 text-center">Khiên Danh Dự</th>
-                      <th className="py-2.5 px-3 text-center">Điểm bài học</th>
-                      <th className="py-2.5 px-3 text-center">Thời gian hoàn thành</th>
-                      <th className="py-2.5 px-3 text-center">Lông vũ & Huy hiệu</th>
-                      <th className="py-2.5 px-3 text-right">Tổng điểm</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="bg-[#003B3A] text-white text-[11px] font-semibold">
+                      <th className="py-2.5 px-3 text-center w-14 font-semibold">Hạng</th>
+                      <th className="py-2.5 px-3 font-semibold">Học sinh & Nhân vật đồng hành</th>
+                      <th className="py-2.5 px-3 font-semibold">Lớp</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Khiên Danh Dự</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Điểm bài học</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Thời gian hoàn thành</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Lông vũ & Huy hiệu</th>
+                      <th className="py-2.5 px-3 text-right font-semibold">Tổng điểm</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {activeLeaderboard.map((item: any) => {
                       const charObj = getCharacterById(item.characterId);
                       const rankBadge =

@@ -314,18 +314,18 @@ function SpecialAdminGradebookContent() {
 
         <div className="overflow-x-auto max-h-[520px] overflow-y-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-xs border-b border-slate-200">
-              <tr className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                <th className="py-2.5 px-3 w-10 text-center">STT</th>
-                <th className="py-2.5 px-3.5 w-28">Mã HS</th>
-                <th className="py-2.5 px-3.5 w-48">Họ và tên</th>
-                <th className="py-2.5 px-3.5 w-36 text-center">Kết quả đánh giá</th>
-                <th className="py-2.5 px-3.5">Nhận xét của Giáo viên</th>
-                <th className="py-2.5 px-3.5 w-32">Sản phẩm học sinh</th>
-                <th className="py-2.5 px-3.5 text-center w-24">Trạng thái</th>
+            <thead className="bg-[#003B3A] sticky top-0 z-10 backdrop-blur-xs border-b text-white border-[#003B3A]">
+              <tr className="text-[11px] font-semibold">
+                <th className="py-2.5 px-3 w-10 text-center font-semibold">STT</th>
+                <th className="py-2.5 px-3.5 w-28 font-semibold">Mã HS</th>
+                <th className="py-2.5 px-3.5 w-48 font-semibold">Họ và tên</th>
+                <th className="py-2.5 px-3.5 w-36 text-center font-semibold">Kết quả đánh giá</th>
+                <th className="py-2.5 px-3.5 font-semibold">Nhận xét của Giáo viên</th>
+                <th className="py-2.5 px-3.5 w-32 font-semibold">Sản phẩm học sinh</th>
+                <th className="py-2.5 px-3.5 text-center w-24 font-semibold">Trạng thái</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {filteredStudents.length > 0 ? (
                 filteredStudents.map((st: any, idx: number) => {
                   const entry = entriesMap.get(st.id) as any;

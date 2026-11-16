@@ -39,16 +39,16 @@ export function DrilldownDrawer({
 
         <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold">
-              <tr>
-                <th className="py-2.5 px-3">Đối tượng / Mã</th>
-                <th className="py-2.5 px-3">Phạm vi</th>
-                <th className="py-2.5 px-3 text-center">{valueColumnHeader}</th>
-                <th className="py-2.5 px-3 text-center">Trạng thái</th>
-                <th className="py-2.5 px-3 text-center">Thao tác</th>
+            <thead className="bg-[#003B3A] border-b font-semibold text-white border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-2.5 px-3 font-semibold">Đối tượng / Mã</th>
+                <th className="py-2.5 px-3 font-semibold">Phạm vi</th>
+                <th className="py-2.5 px-3 text-center font-semibold">{valueColumnHeader}</th>
+                <th className="py-2.5 px-3 text-center font-semibold">Trạng thái</th>
+                <th className="py-2.5 px-3 text-center font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {rows.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50/60">
                   <td className="py-2.5 px-3">

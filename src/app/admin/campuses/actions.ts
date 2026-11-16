@@ -4,17 +4,75 @@ import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { z } from "zod"
 
+const ELEVATED_ROLES = [
+  "ADMIN",
+  "ADMINISTRATOR",
+  "SUPER_ADMIN",
+  "SUPERADMIN",
+  "KT_DBCL",
+  "KTDBCL",
+  "KHAO_THI",
+  "ĐBCL",
+  "DBCL"
+]
+
 async function checkAdminAuth() {
   const session = await auth()
   if (!session || !session.user) {
     return { error: "Unauthorized: Vui lòng đăng nhập" }
   }
-  const role = ((session.user as any)?.role || "").toUpperCase()
-  const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN"].includes(role)
+  const role = ((session.user as any)?.role || "").toUpperCase().trim()
+  const isAllowed = ELEVATED_ROLES.includes(role)
   if (!isAllowed) {
     return { error: "Forbidden: Bạn không có quyền quản lý cơ sở" }
   }
   return { session }
+}
+
+async function syncCampusManagerAccount(campusId: string, managerId?: string | null) {
+  if (!managerId) return
+  const user = await prisma.user.findUnique({
+    where: { id: managerId },
+    include: { teacher: true, campusAssignments: true }
+  })
+  if (!user) return
+
+  const upperRole = (user.role || "").toUpperCase().trim()
+  const isAlreadyGdcsOrElevated =
+    ELEVATED_ROLES.includes(upperRole) ||
+    ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU", "GIAO_VU_CS"].includes(upperRole)
+
+  if (!isAlreadyGdcsOrElevated) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { role: "GDCS" }
+    })
+  }
+
+  if (user.teacher && (!user.teacher.position || ["GV", "NV"].includes(user.teacher.position.toUpperCase().trim()))) {
+    await prisma.teacher.update({
+      where: { id: user.teacher.id },
+      data: { position: "GĐCS" }
+    })
+  }
+
+  const hasCampusAssignment = user.campusAssignments.some((a) => a.campusId === campusId)
+  if (!hasCampusAssignment) {
+    await prisma.userCampusAssignment.create({
+      data: { userId: user.id, campusId }
+    }).catch(() => {})
+  }
+}
+
+function revalidateCampusDependents() {
+  revalidatePath("/admin/campuses")
+  revalidatePath("/admin/users")
+  revalidatePath("/admin/teachers")
+  revalidatePath("/admin/xet-duyet-ket-qua")
+  revalidatePath("/admin/input-assessments")
+  revalidatePath("/admin/input-assessments/reports")
+  revalidatePath("/admin/cau-hinh-khao-sat")
+  revalidatePath("/admin/student-info")
 }
 
 const CampusInputSchema = z.object({
@@ -52,7 +110,7 @@ export async function createCampus(code: string, name: string, address?: string,
       return { success: false, error: `Tên cơ sở "${cleanName}" đã tồn tại.` }
     }
 
-    await prisma.campus.create({
+    const created = await prisma.campus.create({
       data: {
         campusCode: cleanCode,
         campusName: cleanName,
@@ -60,11 +118,12 @@ export async function createCampus(code: string, name: string, address?: string,
         status: "ACTIVE",
         managerId: parsed.data.managerId || null
       }
-    });
-    revalidatePath("/admin/campuses");
-    return { success: true };
+    })
+    await syncCampusManagerAccount(created.id, parsed.data.managerId)
+    revalidateCampusDependents()
+    return { success: true }
   } catch (e: any) {
-    return { success: false, error: e.message };
+    return { success: false, error: e.message }
   }
 }
 
@@ -108,11 +167,12 @@ export async function updateCampus(id: string, code: string, name: string, addre
         status: status || "ACTIVE",
         managerId: parsed.data.managerId || null
       }
-    });
-    revalidatePath("/admin/campuses");
-    return { success: true };
+    })
+    await syncCampusManagerAccount(id, parsed.data.managerId)
+    revalidateCampusDependents()
+    return { success: true }
   } catch (e: any) {
-    return { success: false, error: e.message };
+    return { success: false, error: e.message }
   }
 }
 
@@ -121,18 +181,18 @@ export async function deleteCampus(id: string) {
   if (authCheck.error) return { success: false, error: authCheck.error }
 
   try {
-    const classCount = await prisma.class.count({ where: { campusId: id } });
-    const teacherCount = await prisma.teacher.count({ where: { campusId: id } });
-    const studentCount = await prisma.student.count({ where: { campusId: id } });
-    
+    const classCount = await prisma.class.count({ where: { campusId: id } })
+    const teacherCount = await prisma.teacher.count({ where: { campusId: id } })
+    const studentCount = await prisma.student.count({ where: { campusId: id } })
+
     if (classCount > 0 || teacherCount > 0 || studentCount > 0) {
-      return { success: false, error: "Không thể xóa cơ sở đang có dữ liệu liên quan (lớp học, giáo viên hoặc học sinh)!" };
+      return { success: false, error: "Không thể xóa cơ sở đang có dữ liệu liên quan (lớp học, giáo viên hoặc học sinh)!" }
     }
 
-    await prisma.campus.delete({ where: { id } });
-    revalidatePath("/admin/campuses");
-    return { success: true };
+    await prisma.campus.delete({ where: { id } })
+    revalidateCampusDependents()
+    return { success: true }
   } catch (e: any) {
-    return { success: false, error: e.message };
+    return { success: false, error: e.message }
   }
 }

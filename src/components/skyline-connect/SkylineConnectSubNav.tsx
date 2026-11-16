@@ -17,6 +17,11 @@ import {
   AtSign,
   MessageSquare,
   CheckCheck,
+  Puzzle,
+  Bookmark,
+  Database,
+  Bot,
+  ChevronDown,
 } from "lucide-react";
 
 export interface SlcNotificationItem {
@@ -32,7 +37,15 @@ export interface SlcNotificationItem {
 
 interface SubNavProps {
   showAdminLink?: boolean;
+  canManageAndReview?: boolean;
+  activeMainSection?: "WALL" | "SKILLS_REPO" | "MY_CONTRIBUTIONS" | "SAVED" | "REVIEW_QUEUE";
+  onSelectMainSection?: (
+    sec: "WALL" | "SKILLS_REPO" | "MY_CONTRIBUTIONS" | "SAVED" | "REVIEW_QUEUE"
+  ) => void;
   onOpenComposer?: () => void;
+  onSelectContributionType?: (
+    type: "IDEA" | "AI_PRODUCT" | "SKILL" | "SSM_DATA_SKILL"
+  ) => void;
   searchValue?: string;
   onSearchChange?: (val: string) => void;
   initialNotifications?: SlcNotificationItem[];
@@ -41,7 +54,11 @@ interface SubNavProps {
 
 export function SkylineConnectSubNav({
   showAdminLink = false,
+  canManageAndReview = false,
+  activeMainSection,
+  onSelectMainSection,
   onOpenComposer,
+  onSelectContributionType,
   searchValue,
   onSearchChange,
   initialNotifications,
@@ -52,6 +69,7 @@ export function SkylineConnectSubNav({
   const router = useRouter();
 
   const [bellOpen, setBellOpen] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState<"ALL" | "MENTION" | "UNREAD">("ALL");
   const [notifications, setNotifications] = useState<SlcNotificationItem[]>(
     initialNotifications || []
@@ -59,6 +77,7 @@ export function SkylineConnectSubNav({
   const [unreadCount, setUnreadCount] = useState<number>(initialUnreadCount ?? 0);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const shareMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (initialNotifications) {
@@ -92,6 +111,9 @@ export function SkylineConnectSubNav({
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setBellOpen(false);
+      }
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShareMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -145,103 +167,131 @@ export function SkylineConnectSubNav({
     return true;
   });
 
-  const navItems = [
+  const mainSectionTabs = [
     {
+      id: "WALL" as const,
       href: "/teacher/skyline-connect",
-      label: "Bức tường ý tưởng",
+      label: "Tường chia sẻ",
       icon: Sparkles,
-      exact: true,
     },
     {
-      href: "/teacher/skyline-connect/explore",
-      label: "Khám phá",
-      icon: Compass,
-      exact: false,
+      id: "SKILLS_REPO" as const,
+      href: "/teacher/skyline-connect?section=SKILLS_REPO",
+      label: "Kho Skills môn học",
+      icon: Puzzle,
     },
     {
-      href: "/teacher/skyline-connect/groups-projects",
-      label: "Nhóm & Dự án",
-      icon: Users,
-      exact: false,
-    },
-    {
-      href: "/teacher/skyline-connect/hall-of-fame",
-      label: "Bảng vàng",
-      icon: Award,
-      exact: false,
-    },
-    {
-      href: "/teacher/skyline-connect/my-space",
-      label: "Không gian của tôi",
+      id: "MY_CONTRIBUTIONS" as const,
+      href: "/teacher/skyline-connect?section=MY_CONTRIBUTIONS",
+      label: "Đóng góp của tôi",
       icon: BookOpen,
-      exact: false,
     },
+    {
+      id: "SAVED" as const,
+      href: "/teacher/skyline-connect?section=SAVED",
+      label: "Đã lưu",
+      icon: Bookmark,
+    },
+    ...(canManageAndReview
+      ? [
+          {
+            id: "REVIEW_QUEUE" as const,
+            href: "/teacher/skyline-connect?section=REVIEW_QUEUE",
+            label: "Duyệt & Quản trị",
+            icon: Shield,
+          },
+        ]
+      : []),
   ];
 
   return (
     <div className="bg-white rounded-2xl border border-[#E2E8F0] px-3 sm:px-4 shadow-2xs sticky top-0 z-30">
       <div className="flex items-center justify-between gap-3 min-h-[56px] flex-wrap lg:flex-nowrap">
-        {/* Left: Brand Identity + Facebook-style Pill Search */}
+        {/* Left: Brand Identity + Search */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1 sm:flex-initial">
           <Link
             href="/teacher/skyline-connect"
+            onClick={() => onSelectMainSection && onSelectMainSection("WALL")}
             className="flex items-center gap-2 shrink-0 group"
           >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#123E4A] to-[#159EAA] text-white flex items-center justify-center shadow-xs">
-              <Lightbulb className="w-5 h-5 text-[#D6A74A] fill-[#D6A74A]/30" />
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#003B3A] to-[#00A19A] text-white flex items-center justify-center shadow-xs">
+              <Lightbulb className="w-5 h-5 text-[#5EEAD4]" />
             </div>
             <div className="hidden sm:block">
-              <div className="text-sm font-extrabold text-[#123E4A] leading-tight">
-                Sky-Line Connect
+              <div className="text-sm font-extrabold text-[#003B3A] leading-tight">
+                Cộng đồng sáng tạo
               </div>
               <div className="text-[11px] text-slate-500 leading-none">
-                Cộng đồng sáng tạo AI
+                Tiện ích & Skills môn học
               </div>
             </div>
           </Link>
 
           {typeof onSearchChange === "function" && (
-            <div className="relative flex-1 sm:w-56 md:w-64">
+            <div className="relative flex-1 sm:w-52 md:w-60">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="search"
                 value={searchValue || ""}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Tìm trên Sky-Line Connect..."
-                aria-label="Tìm kiếm trên Bức tường ý tưởng AI"
-                className="w-full rounded-full bg-[#F0F2F5] hover:bg-[#E4E6EB]/70 focus:bg-white border border-transparent focus:border-[#159EAA] pl-9 pr-3.5 py-2 text-xs text-slate-800 placeholder:text-slate-500 focus:outline-none transition-colors"
+                placeholder="Tìm trên Cộng đồng sáng tạo..."
+                aria-label="Tìm kiếm trên Cộng đồng sáng tạo"
+                className="w-full rounded-full bg-[#F8FAFC] hover:bg-slate-100 focus:bg-white border border-[#E2E8F0] focus:border-[#00A19A] pl-9 pr-3.5 py-2 text-xs text-slate-800 placeholder:text-slate-500 focus:outline-none transition-colors"
               />
             </div>
           )}
         </div>
 
-        {/* Center: Facebook-style Tab Bar with Active Bottom Indicator */}
+        {/* Center: 4 Main Tabs + Review Area */}
         <nav
-          aria-label="Điều hướng Sky-Line Connect"
+          aria-label="Điều hướng Cộng đồng sáng tạo & Skills môn học"
           className="flex items-center justify-center gap-1 overflow-x-auto no-scrollbar order-3 lg:order-2 w-full lg:w-auto border-t lg:border-t-0 border-slate-100 pt-1 lg:pt-0"
         >
-          {navItems.map((item) => {
+          {mainSectionTabs.map((item) => {
             const Icon = item.icon;
-            const isActive = item.exact
-              ? pathname === item.href
-              : pathname.startsWith(item.href);
+            const isActive = activeMainSection
+              ? activeMainSection === item.id
+              : item.id === "WALL" && pathname === "/teacher/skyline-connect";
+
+            if (onSelectMainSection) {
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onSelectMainSection(item.id)}
+                  className={`relative inline-flex items-center gap-1.5 px-3 py-3 text-xs font-bold transition-colors whitespace-nowrap rounded-xl hover:bg-[#F8FAFC] cursor-pointer ${
+                    isActive ? "text-[#00736E]" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon
+                    className={`w-4 h-4 ${
+                      isActive ? "text-[#00A19A]" : "text-slate-500"
+                    }`}
+                  />
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <span className="absolute bottom-0 left-2 right-2 h-[3px] rounded-t-full bg-[#003B3A]" />
+                  )}
+                </button>
+              );
+            }
 
             return (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
-                className={`relative inline-flex items-center gap-1.5 px-3.5 py-3 text-xs font-bold transition-colors whitespace-nowrap rounded-xl hover:bg-[#F0F2F5] ${
-                  isActive ? "text-[#159EAA]" : "text-slate-600 hover:text-slate-900"
+                className={`relative inline-flex items-center gap-1.5 px-3 py-3 text-xs font-bold transition-colors whitespace-nowrap rounded-xl hover:bg-[#F8FAFC] ${
+                  isActive ? "text-[#00736E]" : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 <Icon
                   className={`w-4 h-4 ${
-                    isActive ? "text-[#159EAA]" : "text-slate-500"
+                    isActive ? "text-[#00A19A]" : "text-slate-500"
                   }`}
                 />
                 <span>{item.label}</span>
                 {isActive && (
-                  <span className="absolute bottom-0 left-2 right-2 h-[3px] rounded-t-full bg-[#159EAA]" />
+                  <span className="absolute bottom-0 left-2 right-2 h-[3px] rounded-t-full bg-[#003B3A]" />
                 )}
               </Link>
             );
@@ -429,15 +479,103 @@ export function SkylineConnectSubNav({
             </Link>
           )}
 
-          {onOpenComposer && (
-            <button
-              type="button"
-              onClick={onOpenComposer}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-[#159EAA] hover:bg-[#11828C] text-white shadow-2xs transition-all cursor-pointer active:scale-95 shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Gắn ý tưởng lên tường</span>
-            </button>
+          {(onOpenComposer || onSelectContributionType) && (
+            <div className="relative" ref={shareMenuRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSelectContributionType) {
+                    setShareMenuOpen((o) => !o);
+                  } else if (onOpenComposer) {
+                    onOpenComposer();
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-[#003B3A] hover:bg-[#002827] text-white shadow-2xs transition-all cursor-pointer active:scale-95 shrink-0"
+              >
+                <Plus className="w-4 h-4 text-[#5EEAD4]" />
+                <span>Chia sẻ đóng góp</span>
+                {onSelectContributionType && <ChevronDown className="w-3.5 h-3.5 text-white/80" />}
+              </button>
+
+              {shareMenuOpen && onSelectContributionType && (
+                <div className="absolute right-0 top-11 z-50 w-72 rounded-2xl bg-white border border-[#E2E8F0] shadow-xl p-1.5 space-y-1">
+                  <div className="px-3 py-1.5 text-[11px] font-bold text-slate-500">
+                    Chọn loại đóng góp chuyên môn
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareMenuOpen(false);
+                      onSelectContributionType("IDEA");
+                    }}
+                    className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F8FAFC] flex items-start gap-2.5 cursor-pointer"
+                  >
+                    <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">1. Ý tưởng</div>
+                      <div className="text-[11px] text-slate-500">
+                        Chia sẻ ý tưởng đổi mới phương pháp hoặc đề xuất cải tiến
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareMenuOpen(false);
+                      onSelectContributionType("AI_PRODUCT");
+                    }}
+                    className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F8FAFC] flex items-start gap-2.5 cursor-pointer"
+                  >
+                    <Bot className="w-4 h-4 text-[#00A19A] shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">2. Ứng dụng</div>
+                      <div className="text-[11px] text-slate-500">
+                        Chia sẻ ứng dụng, công cụ số hoặc học liệu tương tác kèm link demo
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareMenuOpen(false);
+                      onSelectContributionType("SKILL");
+                    }}
+                    className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F8FAFC] flex items-start gap-2.5 cursor-pointer"
+                  >
+                    <Puzzle className="w-4 h-4 text-[#003B3A] shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">3. Skill môn học</div>
+                      <div className="text-[11px] text-slate-500">
+                        Tạo bằng biểu mẫu chuẩn, nhờ AI tạo nháp hoặc tải gói Skill
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className="border-t border-[#F1F5F9] my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShareMenuOpen(false);
+                      onSelectContributionType("SSM_DATA_SKILL");
+                    }}
+                    className="w-full text-left px-3 py-2.5 rounded-xl bg-[#F0FDFA] hover:bg-[#CCFBF1]/60 flex items-start gap-2.5 cursor-pointer"
+                  >
+                    <Database className="w-4 h-4 text-[#00736E] shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-bold text-[#003B3A]">
+                        Tạo Skill từ dữ liệu SSM
+                      </div>
+                      <div className="text-[11px] text-[#00736E]">
+                        Rà soát dữ liệu lớp thuộc phân công → Bản căn cứ → Tạo & chạy thử Skill
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

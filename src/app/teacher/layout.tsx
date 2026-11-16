@@ -11,6 +11,7 @@ import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { prisma } from "@/lib/db"
 import { APP_CATEGORIES } from "@/config/modules"
+import { isUserAuthorizedForKtdbclWeeklyReports } from "@/lib/qa-workspace/weeklyReportSchema"
 import { redirect } from "next/navigation"
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
@@ -49,6 +50,12 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         where: { roleCode: { in: roleVariants } } 
       }).catch(() => [])
       readableModules = permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
+      const isKtdbclAllowed = await isUserAuthorizedForKtdbclWeeklyReports(session?.user?.id, roleCode).catch(() => false)
+      if (isKtdbclAllowed) {
+        if (!readableModules.includes("WEEKLY_REPORTS")) readableModules.push("WEEKLY_REPORTS")
+      } else {
+        readableModules = readableModules.filter((m: string) => m !== "WEEKLY_REPORTS")
+      }
 
       const categories = APP_CATEGORIES
       categories.forEach((cat: any) => {
@@ -61,6 +68,11 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           }
         })
       })
+      if (readableModules.includes("QL_DGNL") || readableModules.includes("COMPETENCY_ASSESSMENT")) {
+        ;["COMPETENCY_IMPORT", "COMPETENCY_SUBJECTS", "COMPETENCY_ALIASES", "COMPETENCY_HISTORY"].forEach((code) => {
+          if (!readableModules.includes(code)) readableModules.push(code)
+        })
+      }
     }
   } catch (err) {
     console.error("Teacher layout permission DB error:", err)

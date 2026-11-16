@@ -653,8 +653,8 @@ export default function IntlExamsWorkspaceClient({ initialData }: Props) {
 
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 text-left">
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-left text-[11px] font-semibold">
                     <th className="py-2.5 px-2 font-bold">Năm học</th>
                     <th className="py-2.5 px-2 font-bold">Bài thi</th>
                     <th className="py-2.5 px-2 font-bold">Học sinh & Liên thông SSM</th>
@@ -664,7 +664,7 @@ export default function IntlExamsWorkspaceClient({ initialData }: Props) {
                     <th className="py-2.5 px-2 font-bold text-right">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {data.results.slice(0, 250).map((r) => {
                     const typeMeta = EXAM_TYPE_META[r.examType];
                     return (
@@ -808,8 +808,8 @@ export default function IntlExamsWorkspaceClient({ initialData }: Props) {
 
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 text-left">
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-left text-[11px] font-semibold">
                     <th className="py-2.5 px-2 font-bold">Năm học</th>
                     <th className="py-2.5 px-2 font-bold">Kỳ thi</th>
                     <th className="py-2.5 px-2 font-bold">Học sinh</th>
@@ -820,7 +820,7 @@ export default function IntlExamsWorkspaceClient({ initialData }: Props) {
                     <th className="py-2.5 px-2 font-bold text-right">Cập nhật</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {data.results.slice(0, 200).map((r) => (
                     <tr key={r.id} className="hover:bg-slate-50">
                       <td className="py-2.5 px-2 font-bold text-slate-700">

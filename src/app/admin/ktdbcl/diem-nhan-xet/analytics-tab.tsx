@@ -1039,26 +1039,26 @@ export function GradeAnalyticsTab({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-2 text-center w-8">STT</th>
-                  <th className="py-3 px-3">Khối</th>
-                  <th className="py-3 px-3">Lớp học</th>
-                  <th className="py-3 px-3">Giáo viên giảng dạy</th>
-                  <th className="py-3 px-3">Môn học</th>
-                  <th className="py-3 px-2 text-center">Sỹ số</th>
-                  <th className="py-3 px-2 text-center text-rose-700 bg-rose-50/50">0 ≤ Điểm &lt; 5</th>
-                  <th className="py-3 px-2 text-center text-amber-700 bg-amber-50/50">5 ≤ Điểm &lt; 6.5</th>
-                  <th className="py-3 px-2 text-center text-sky-700 bg-sky-50/50">6.5 ≤ Điểm &lt; 8</th>
-                  <th className="py-3 px-2 text-center text-emerald-700 bg-emerald-50/50">8 ≤ Điểm ≤ 10</th>
-                  <th className="py-3 px-2 text-center text-teal-800 bg-teal-50/70">5 ≤ Điểm ≤ 10</th>
-                  <th className="py-3 px-2 text-center">Chuẩn</th>
-                  <th className="py-3 px-2 text-center text-emerald-800 bg-emerald-100/40">Đạt Chuẩn</th>
-                  <th className="py-3 px-2 text-center text-rose-800 bg-rose-100/40">Dưới Chuẩn</th>
-                  <th className="py-3 px-3 text-center">Thao tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[10px] font-semibold">
+                  <th className="py-3 px-2 text-center w-8 font-semibold">STT</th>
+                  <th className="py-3 px-3 font-semibold">Khối</th>
+                  <th className="py-3 px-3 font-semibold">Lớp học</th>
+                  <th className="py-3 px-3 font-semibold">Giáo viên giảng dạy</th>
+                  <th className="py-3 px-3 font-semibold">Môn học</th>
+                  <th className="py-3 px-2 text-center font-semibold">Sỹ số</th>
+                  <th className="py-3 px-2 text-center bg-[#003B3A] text-rose-200 font-semibold">0 ≤ Điểm &lt; 5</th>
+                  <th className="py-3 px-2 text-center bg-[#003B3A] text-amber-200 font-semibold">5 ≤ Điểm &lt; 6.5</th>
+                  <th className="py-3 px-2 text-center text-sky-700 bg-[#003B3A] font-semibold">6.5 ≤ Điểm &lt; 8</th>
+                  <th className="py-3 px-2 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">8 ≤ Điểm ≤ 10</th>
+                  <th className="py-3 px-2 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">5 ≤ Điểm ≤ 10</th>
+                  <th className="py-3 px-2 text-center font-semibold">Chuẩn</th>
+                  <th className="py-3 px-2 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Đạt Chuẩn</th>
+                  <th className="py-3 px-2 text-center bg-rose-100/40 text-rose-200 font-semibold">Dưới Chuẩn</th>
+                  <th className="py-3 px-3 text-center font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {loading ? (
                   <tr>
                     <td colSpan={15} className="py-12 text-center text-slate-400">
@@ -1262,21 +1262,21 @@ export function GradeAnalyticsTab({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-amber-50/60 text-amber-950 font-bold border-b border-amber-200 uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-2 text-center w-8">STT</th>
-                  <th className="py-3 px-3">Mã HS</th>
-                  <th className="py-3 px-3">Họ và tên học sinh</th>
-                  <th className="py-3 px-3">Lớp & Khối</th>
-                  <th className="py-3 px-3">Môn học</th>
-                  <th className="py-3 px-3">Giáo viên phụ trách</th>
-                  <th className="py-3 px-2 text-center">Điểm khảo sát</th>
-                  <th className="py-3 px-2 text-center">Chuẩn môn</th>
-                  <th className="py-3 px-2 text-center">Độ lệch (Gap)</th>
-                  <th className="py-3 px-3 text-center">Đánh giá</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b border-amber-200 text-[10px] font-semibold">
+                  <th className="py-3 px-2 text-center w-8 font-semibold">STT</th>
+                  <th className="py-3 px-3 font-semibold">Mã HS</th>
+                  <th className="py-3 px-3 font-semibold">Họ và tên học sinh</th>
+                  <th className="py-3 px-3 font-semibold">Lớp & Khối</th>
+                  <th className="py-3 px-3 font-semibold">Môn học</th>
+                  <th className="py-3 px-3 font-semibold">Giáo viên phụ trách</th>
+                  <th className="py-3 px-2 text-center font-semibold">Điểm khảo sát</th>
+                  <th className="py-3 px-2 text-center font-semibold">Chuẩn môn</th>
+                  <th className="py-3 px-2 text-center font-semibold">Độ lệch (Gap)</th>
+                  <th className="py-3 px-3 text-center font-semibold">Đánh giá</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {displayedBelowBenchmarkStudents.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-12 text-center text-slate-400 font-medium">
@@ -1376,21 +1376,21 @@ export function GradeAnalyticsTab({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-rose-50/70 text-rose-950 font-bold border-b border-rose-200 uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-2 text-center w-8">STT</th>
-                  <th className="py-3 px-3">Mã HS</th>
-                  <th className="py-3 px-3">Họ và tên học sinh</th>
-                  <th className="py-3 px-3">Lớp & Khối</th>
-                  <th className="py-3 px-3">Môn học</th>
-                  <th className="py-3 px-3">Giáo viên phụ trách</th>
-                  <th className="py-3 px-2 text-center">Điểm khảo sát (&lt;5đ)</th>
-                  <th className="py-3 px-2 text-center">Chuẩn môn</th>
-                  <th className="py-3 px-2 text-center">Độ lệch (Gap)</th>
-                  <th className="py-3 px-3 text-center">Mức độ ưu tiên can thiệp</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="bg-[#003B3A] text-white border-b border-[#003B3A] text-[11px] font-semibold">
+                  <th className="py-3 px-2 text-center w-8 font-semibold">STT</th>
+                  <th className="py-3 px-3 font-semibold">Mã HS</th>
+                  <th className="py-3 px-3 font-semibold">Họ và tên học sinh</th>
+                  <th className="py-3 px-3 font-semibold">Lớp & Khối</th>
+                  <th className="py-3 px-3 font-semibold">Môn học</th>
+                  <th className="py-3 px-3 font-semibold">Giáo viên phụ trách</th>
+                  <th className="py-3 px-2 text-center font-semibold">Điểm khảo sát (&lt;5đ)</th>
+                  <th className="py-3 px-2 text-center font-semibold">Chuẩn môn</th>
+                  <th className="py-3 px-2 text-center font-semibold">Độ lệch (Gap)</th>
+                  <th className="py-3 px-3 text-center font-semibold">Mức độ ưu tiên can thiệp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {displayedBelowAverageStudents.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-12 text-center text-slate-400 font-medium">
@@ -1619,65 +1619,65 @@ export function GradeAnalyticsTab({
             {/* Matrix Table */}
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full text-xs border-collapse min-w-[1250px]">
-                <thead>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                   {/* Row 1: Main Subject Groups Header */}
-                  <tr className="border-b border-slate-200 bg-slate-100/90 text-slate-700 font-black text-center uppercase tracking-wider text-[11px]">
-                    <th colSpan={6} className="py-2.5 px-3 text-left border-r border-slate-200">
+                  <tr className="border-b text-center text-[11px] font-semibold">
+                    <th colSpan={6} className="py-2.5 px-3 text-left border-r border-white/15 font-semibold">
                       Thông tin Học sinh & Lớp học
                     </th>
-                    <th colSpan={4} className="py-2.5 px-3 bg-blue-100/80 text-blue-900 border-r border-blue-200">
+                    <th colSpan={4} className="py-2.5 px-3 bg-[#003B3A] border-r border-white/15 text-teal-100 font-semibold">
                       📐 Môn Toán học
                     </th>
-                    <th colSpan={4} className="py-2.5 px-3 bg-emerald-100/80 text-emerald-900 border-r border-emerald-200">
+                    <th colSpan={4} className="py-2.5 px-3 bg-[#003B3A] border-r border-white/15 text-[#5EEAD4] font-semibold">
                       📖 Môn Tiếng Việt / Ngữ Văn
                     </th>
-                    <th colSpan={4} className="py-2.5 px-3 bg-teal-100/80 text-teal-800 border-r border-teal-200">
+                    <th colSpan={4} className="py-2.5 px-3 bg-[#003B3A] border-r border-white/15 text-[#5EEAD4] font-semibold">
                       🌐 Môn Tiếng Anh (Tổng điểm KSĐV)
                     </th>
                     {/* NHÓM CỘT TÂM LÝ - MÀU ĐỎ NỔI BẬT */}
-                    <th colSpan={2} className="py-2.5 px-3 bg-red-100 text-red-900 border-r border-red-200">
+                    <th colSpan={2} className="py-2.5 px-3 bg-red-100 border-r border-red-200 text-rose-200 font-semibold">
                       🧠 Cam kết Tâm lý (Theo dõi)
                     </th>
-                    <th className="py-2.5 px-3 bg-slate-200/70 text-slate-800 text-left">
+                    <th className="py-2.5 px-3 bg-[#003B3A] text-left font-semibold">
                       Hồ sơ & Ghi chú Cam kết
                     </th>
                   </tr>
                   {/* Row 2: Sub-columns */}
-                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-bold text-[10px]">
-                    <th className="py-2 px-2 text-center w-10">STT</th>
-                    <th className="py-2 px-2.5 text-center w-16">Cơ sở</th>
-                    <th className="py-2 px-2.5 text-left w-24">Mã HS</th>
-                    <th className="py-2 px-3 text-left min-w-[150px]">Họ và tên</th>
-                    <th className="py-2 px-2.5 text-left w-24">Lớp</th>
-                    <th className="py-2 px-3 text-left w-36 border-r border-slate-200">GVCN</th>
+                  <tr className="border-b text-[10px] font-semibold">
+                    <th className="py-2 px-2 text-center w-10 font-semibold">STT</th>
+                    <th className="py-2 px-2.5 text-center w-16 font-semibold">Cơ sở</th>
+                    <th className="py-2 px-2.5 text-left w-24 font-semibold">Mã HS</th>
+                    <th className="py-2 px-3 text-left min-w-[150px] font-semibold">Họ và tên</th>
+                    <th className="py-2 px-2.5 text-left w-24 font-semibold">Lớp</th>
+                    <th className="py-2 px-3 text-left w-36 border-r border-white/15 font-semibold">GVCN</th>
 
                     {/* Toán */}
-                    <th className="py-2 px-1.5 text-center w-12 bg-blue-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
-                    <th className="py-2 px-2 text-center w-16 bg-blue-50/50" title="Điểm Khảo sát đầu vào">KSĐV</th>
-                    <th className="py-2 px-2 text-center w-16 bg-blue-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
-                    <th className="py-2 px-2 text-center w-16 bg-blue-50/50 border-r border-blue-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
+                    <th className="py-2 px-1.5 text-center w-12 bg-[#003B3A] font-semibold" title="Môn có Cam kết đầu vào">CK [x]</th>
+                    <th className="py-2 px-2 text-center w-16 bg-[#003B3A] font-semibold" title="Điểm Khảo sát đầu vào">KSĐV</th>
+                    <th className="py-2 px-2 text-center w-16 bg-[#003B3A] font-semibold" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
+                    <th className="py-2 px-2 text-center w-16 bg-[#003B3A] border-r border-white/15 font-semibold" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
                     {/* Tiếng Việt / Ngữ Văn */}
-                    <th className="py-2 px-1.5 text-center w-12 bg-emerald-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
-                    <th className="py-2 px-2 text-center w-16 bg-emerald-50/50" title="Điểm Khảo sát đầu vào">KSĐV</th>
-                    <th className="py-2 px-2 text-center w-16 bg-emerald-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
-                    <th className="py-2 px-2 text-center w-16 bg-emerald-50/50 border-r border-emerald-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
+                    <th className="py-2 px-1.5 text-center w-12 bg-[#003B3A] font-semibold" title="Môn có Cam kết đầu vào">CK [x]</th>
+                    <th className="py-2 px-2 text-center w-16 bg-[#003B3A] font-semibold" title="Điểm Khảo sát đầu vào">KSĐV</th>
+                    <th className="py-2 px-2 text-center w-16 bg-[#003B3A] font-semibold" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
+                    <th className="py-2 px-2 text-center w-16 bg-[#003B3A] border-r border-white/15 font-semibold" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
                     {/* Tiếng Anh */}
-                    <th className="py-2 px-1.5 text-center w-12 bg-teal-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
-                    <th className="py-2 px-2.5 text-center w-24 bg-teal-50/50" title="Tổng điểm KSĐV Tiếng Anh (Khối 1: Thang 30; Khối khác: Thang 100 & Quy đổi thang 10)">Tổng KSĐV</th>
-                    <th className="py-2 px-2 text-center w-16 bg-teal-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
-                    <th className="py-2 px-2 text-center w-16 bg-teal-50/50 border-r border-teal-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
+                    <th className="py-2 px-1.5 text-center w-12 bg-[#003B3A] font-semibold" title="Môn có Cam kết đầu vào">CK [x]</th>
+                    <th className="py-2 px-2.5 text-center w-24 bg-[#003B3A] font-semibold" title="Tổng điểm KSĐV Tiếng Anh (Khối 1: Thang 30; Khối khác: Thang 100 & Quy đổi thang 10)">Tổng KSĐV</th>
+                    <th className="py-2 px-2 text-center w-16 bg-[#003B3A] font-semibold" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
+                    <th className="py-2 px-2 text-center w-16 bg-[#003B3A] border-r border-white/15 font-semibold" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
                     {/* Cam kết Tâm lý - Cột Header màu đỏ */}
-                    <th className="py-2 px-1.5 text-center w-14 bg-red-50 text-red-800" title="Cam kết Tâm lý">CK [x]</th>
-                    <th className="py-2 px-2.5 text-center w-24 bg-red-50 text-red-800 border-r border-red-200" title="Điểm / Ghi chú Tâm lý">Điểm/Lưu ý</th>
+                    <th className="py-2 px-1.5 text-center w-14 bg-red-50 text-rose-200 font-semibold" title="Cam kết Tâm lý">CK [x]</th>
+                    <th className="py-2 px-2.5 text-center w-24 bg-red-50 border-r border-red-200 text-rose-200 font-semibold" title="Điểm / Ghi chú Tâm lý">Điểm/Lưu ý</th>
 
                     {/* Ghi chú */}
-                    <th className="py-2 px-3 text-left min-w-[220px]">Chi tiết Cam kết HĐTS</th>
+                    <th className="py-2 px-3 text-left min-w-[220px] font-semibold">Chi tiết Cam kết HĐTS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {displayedKsdvStudents.length === 0 ? (
                     <tr>
                       <td colSpan={21} className="py-12 text-center text-slate-400 font-semibold italic">
@@ -2041,17 +2041,17 @@ export function GradeAnalyticsTab({
                 </div>
               ) : (
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px]">
-                      <th className="py-2.5 px-3 text-center w-10">STT</th>
-                      <th className="py-2.5 px-3">Mã HS</th>
-                      <th className="py-2.5 px-3">Họ và tên</th>
-                      <th className="py-2.5 px-3 text-center">Điểm số</th>
-                      <th className="py-2.5 px-3 text-center">Đánh giá chuẩn</th>
-                      <th className="py-2.5 px-3">Nhận xét</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b text-[10px] font-semibold">
+                      <th className="py-2.5 px-3 text-center w-10 font-semibold">STT</th>
+                      <th className="py-2.5 px-3 font-semibold">Mã HS</th>
+                      <th className="py-2.5 px-3 font-semibold">Họ và tên</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Điểm số</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Đánh giá chuẩn</th>
+                      <th className="py-2.5 px-3 font-semibold">Nhận xét</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {rowDetailData.students.map((st: any, sIdx: number) => {
                       const sc = st.compositeScore !== null ? Number(st.compositeScore) : null
                       const bm = selectedTeacherRow?.benchmark || 6.0

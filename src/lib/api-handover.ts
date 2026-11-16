@@ -84,6 +84,38 @@ export function decryptApiKeyWithPasscode(
   }
 }
 
+export async function ensureHandoverTable() {
+  try {
+    const pAny = prisma as any
+    await pAny.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "api_handovers" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "token" TEXT NOT NULL UNIQUE,
+        "applicationId" TEXT NOT NULL,
+        "appName" TEXT,
+        "recipientEmail" TEXT,
+        "keyId" TEXT NOT NULL,
+        "keyPrefix" TEXT NOT NULL,
+        "encryptedKey" TEXT NOT NULL,
+        "salt" TEXT NOT NULL,
+        "iv" TEXT NOT NULL,
+        "authTag" TEXT NOT NULL,
+        "passcodeHash" TEXT NOT NULL,
+        "expiresAt" DATETIME NOT NULL,
+        "claimedAt" DATETIME,
+        "attempts" INTEGER NOT NULL DEFAULT 0,
+        "maxAttempts" INTEGER NOT NULL DEFAULT 5,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `)
+    await pAny.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "idx_api_handovers_token" ON "api_handovers"("token");
+    `)
+  } catch (err: any) {
+    console.error("Lỗi khởi tạo bảng api_handovers:", err)
+  }
+}
+
 /**
  * Khởi tạo gói bàn giao bảo mật và lưu vào CSDL
  */
@@ -98,6 +130,7 @@ export async function createHandoverPackage(params: {
   hoursValid?: number
 }) {
   await ensureApiIntegrationTables()
+  await ensureHandoverTable()
 
   const {
     applicationId,
@@ -153,6 +186,7 @@ export async function createHandoverPackage(params: {
  */
 export async function verifyAndClaimHandover(token: string, passcode: string) {
   await ensureApiIntegrationTables()
+  await ensureHandoverTable()
   const pAny = prisma as any
 
   const rows: any[] = await pAny.$queryRawUnsafe(

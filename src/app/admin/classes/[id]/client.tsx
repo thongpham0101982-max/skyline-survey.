@@ -802,29 +802,29 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
       
       <div className="overflow-x-auto">
         <table className="w-full text-left whitespace-nowrap border-collapse">
-          <thead className="uppercase text-[10px] tracking-wider text-slate-500 font-bold">
-            <tr>
-              <th className="px-4 py-3 border-r border-slate-200 w-10 text-center">
+          <thead className="bg-[#003B3A] text-[10px] text-white border-b border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="px-4 py-3 border-r border-white/15 w-10 text-center font-semibold">
                 <input type="checkbox" className="w-4 h-4 rounded" checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length} onChange={handleSelectAll} />
               </th>
-              <th className="px-6 py-4 border-r border-slate-200 w-16 text-center">STT</th>
-              <th className="px-6 py-4 border-r border-slate-200">Mã HS</th>
-              <th className="px-6 py-4 border-r border-slate-200">Mã VNEdu</th>
-              <th className="px-6 py-4 border-r border-slate-200 cursor-pointer select-none group" onClick={() => setIsAlphaSorted(!isAlphaSorted)}> 
+              <th className="px-6 py-4 border-r border-white/15 w-16 text-center font-semibold">STT</th>
+              <th className="px-6 py-4 border-r border-white/15 font-semibold">Mã HS</th>
+              <th className="px-6 py-4 border-r border-white/15 font-semibold">Mã VNEdu</th>
+              <th className="px-6 py-4 border-r border-white/15 cursor-pointer select-none group font-semibold" onClick={() => setIsAlphaSorted(!isAlphaSorted)}> 
                 <div className="flex items-center gap-1.5">
                   <span>Họ và Tên</span>
                   <ArrowUpDown className={`w-3.5 h-3.5 ${isAlphaSorted ? "text-emerald-600 font-bold" : "text-slate-400 group-hover:text-slate-600"}`} />
                 </div>
               </th>
-              <th className="px-6 py-4 border-r border-slate-200">Giới tính</th>
-              <th className="px-6 py-4 border-r border-slate-200">Ngày sinh</th>
-              <th className="px-6 py-4 border-r border-slate-200 text-center font-bold">Diện Học sinh</th>
-              <th className="px-6 py-4 border-r border-slate-200 text-center">Đối tượng</th>
-              <th className="px-6 py-4 border-r border-slate-200">Trạng thái</th>
-              <th className="p-2 text-center border border-slate-200">Thao tác</th>
+              <th className="px-6 py-4 border-r border-white/15 font-semibold">Giới tính</th>
+              <th className="px-6 py-4 border-r border-white/15 font-semibold">Ngày sinh</th>
+              <th className="px-6 py-4 border-r border-white/15 text-center font-bold">Diện Học sinh</th>
+              <th className="px-6 py-4 border-r border-white/15 text-center font-semibold">Đối tượng</th>
+              <th className="px-6 py-4 border-r border-white/15 font-semibold">Trạng thái</th>
+              <th className="p-2 text-center border border-white/15 font-semibold">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {filteredStudents.length === 0 ? (
               <tr>
                 <td colSpan={11} className="text-center py-10 text-slate-400 font-medium text-xs">

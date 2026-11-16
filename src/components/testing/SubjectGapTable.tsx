@@ -20,17 +20,17 @@ export function SubjectGapTable({ studentName, studentCode, className, gaps }: S
         </span>
       </div>
       <table className="w-full text-xs text-left">
-        <thead className="bg-slate-50/50 text-slate-600 font-semibold border-b border-slate-200">
-          <tr>
-            <th className="py-2.5 px-3">Môn học</th>
-            <th className="py-2.5 px-3 text-center">Mục tiêu HS</th>
-            <th className="py-2.5 px-3 text-center">Điểm thực tế</th>
-            <th className="py-2.5 px-3 text-center">Khoảng cách (GAP)</th>
-            <th className="py-2.5 px-3">Xu hướng điểm số</th>
-            <th className="py-2.5 px-3 text-center">Trạng thái</th>
+        <thead className="bg-[#003B3A] font-semibold border-b text-white border-[#003B3A]">
+          <tr className="text-[11px] font-semibold whitespace-nowrap">
+            <th className="py-2.5 px-3 font-semibold">Môn học</th>
+            <th className="py-2.5 px-3 text-center font-semibold">Mục tiêu HS</th>
+            <th className="py-2.5 px-3 text-center font-semibold">Điểm thực tế</th>
+            <th className="py-2.5 px-3 text-center font-semibold">Khoảng cách (GAP)</th>
+            <th className="py-2.5 px-3 font-semibold">Xu hướng điểm số</th>
+            <th className="py-2.5 px-3 text-center font-semibold">Trạng thái</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-[#E2E8F0]">
           {gaps.map((g) => {
             const gapVal = g.gap
             const isAhead = gapVal !== null && gapVal <= 0

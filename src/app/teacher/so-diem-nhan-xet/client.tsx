@@ -1148,18 +1148,18 @@ export function DiemNhanXetTeacherClient({
               <div className="text-center py-12 text-slate-400 text-xs font-semibold">Chưa có danh sách học sinh cho lớp học này</div>
             ) : (
               <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-800 text-white font-bold">
-                    <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
-                    <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
-                    <th className="py-3 px-3 w-52 border-r border-slate-700">Họ và tên</th>
-                    <th className="py-3 px-3 w-32 border-r border-slate-700">Môn học</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-white text-[11px] font-semibold">
+                    <th className="py-3 px-3 w-12 text-center border-r border-slate-700 font-semibold">STT</th>
+                    <th className="py-3 px-3 w-28 border-r border-slate-700 font-semibold">Mã HS</th>
+                    <th className="py-3 px-3 w-52 border-r border-slate-700 font-semibold">Họ và tên</th>
+                    <th className="py-3 px-3 w-32 border-r border-slate-700 font-semibold">Môn học</th>
                     
                     {activeColNames.map((colName: string, idx: number) => {
                       const cType = activeColTypes[idx] || "SCORE_10"
                       const colMax = getColumnMaxScore(cType, gradeSheetData.config?.columnMaxScores, idx)
                       return (
-                        <th key={idx} className="py-2.5 px-3 text-center border-r border-slate-700 bg-slate-700/60 min-w-[95px]">
+                        <th key={idx} className="py-2.5 px-3 text-center border-r border-slate-700 bg-[#003B3A] min-w-[95px] font-semibold">
                           <div>{colName}</div>
                           {colMax !== 10 && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400 text-slate-900 font-black inline-block mt-0.5 shadow-sm">
@@ -1171,19 +1171,19 @@ export function DiemNhanXetTeacherClient({
                     })}
 
                     {gradeSheetData.config?.hasCompositeColumn !== false && (
-                      <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[110px]">
+                      <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[110px] font-semibold">
                         {gradeSheetData.config?.compositeColumnName || "Điểm thành phần"}
                       </th>
                     )}
 
                     {gradeSheetData.config?.hasRemarkColumn !== false && (
-                      <th className="py-3 px-3 border-slate-700 bg-[#003B3A] min-w-[200px]">
+                      <th className="py-3 px-3 border-slate-700 bg-[#003B3A] min-w-[200px] font-semibold">
                         Nhận xét của GVBM
                       </th>
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {gradeSheetData.students.map((st, sIdx) => {
                     const entry = gradeSheetData.entries[st.id] || { componentScores: {}, compositeScore: "", remark: "" }
 
@@ -1493,16 +1493,16 @@ export function DiemNhanXetTeacherClient({
           ) : (
             <div className="overflow-x-auto bg-white border border-slate-200 rounded-2xl shadow-xs">
               <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-800 text-white font-bold">
-                    <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
-                    <th className="py-3 px-3 w-48 border-r border-slate-700">Học sinh</th>
-                    <th className="py-3 px-3 min-w-[280px] border-r border-slate-700">Ý kiến phản hồi của PHHS</th>
-                    <th className="py-3 px-3 min-w-[260px] border-r border-slate-700">Trao đổi từ GVCN</th>
-                    <th className="py-3 px-3 min-w-[280px]">Kết quả & Biện pháp của GVBM</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-white text-[11px] font-semibold">
+                    <th className="py-3 px-3 w-12 text-center border-r border-slate-700 font-semibold">STT</th>
+                    <th className="py-3 px-3 w-48 border-r border-slate-700 font-semibold">Học sinh</th>
+                    <th className="py-3 px-3 min-w-[280px] border-r border-slate-700 font-semibold">Ý kiến phản hồi của PHHS</th>
+                    <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 font-semibold">Trao đổi từ GVCN</th>
+                    <th className="py-3 px-3 min-w-[280px] font-semibold">Kết quả & Biện pháp của GVBM</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {displayedCoordStudents.map((st, idx) => {
                     const coord = homeroomCoordination[st.id] || {}
                     const hasResponse = Boolean(coord.gvbmResponse)

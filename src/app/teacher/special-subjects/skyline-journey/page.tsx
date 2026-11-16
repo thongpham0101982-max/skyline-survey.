@@ -422,16 +422,16 @@ export default function TeacherSkylineJourneyPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
-                  <th className="p-3 font-extrabold sticky left-0 bg-slate-100 z-10 min-w-[200px]">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="p-3 sticky left-0 bg-[#003B3A] z-10 min-w-[200px] font-semibold">
                     Học sinh ({filteredStudents.length})
                   </th>
-                  <th className="p-3 font-extrabold text-center">Tổng kết</th>
+                  <th className="p-3 text-center font-semibold">Tổng kết</th>
                   {stages.map((st: any) => (
                     <th
                       key={st.lessonCode}
-                      className="p-2 font-extrabold text-center min-w-[58px]"
+                      className="p-2 text-center min-w-[58px] font-semibold"
                       title={`${st.lessonCode}: ${st.lessonName}`}
                     >
                       <div>C.{st.periodIndex}</div>
@@ -442,7 +442,7 @@ export default function TeacherSkylineJourneyPage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {filteredStudents.map((stu: any) => (
                   <tr key={stu.studentId} className="hover:bg-slate-50/80">
                     <td className="p-3 sticky left-0 bg-white font-bold text-slate-900 border-r border-slate-100">
@@ -607,20 +607,20 @@ export default function TeacherSkylineJourneyPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs tabular-nums">
-              <thead>
-                <tr className="bg-[#003B3A] text-white text-[11px] font-bold">
-                  <th className="py-2.5 px-3 text-center w-16">Hạng</th>
-                  <th className="py-2.5 px-3">Học sinh & Nhân vật</th>
-                  <th className="py-2.5 px-3">Lớp</th>
-                  <th className="py-2.5 px-3 text-center">Khiên Danh Dự</th>
-                  <th className="py-2.5 px-3 text-center">GV Xác Nhận</th>
-                  <th className="py-2.5 px-3 text-center">Điểm bài học</th>
-                  <th className="py-2.5 px-3 text-center">Thời gian hoàn thành</th>
-                  <th className="py-2.5 px-3 text-center">Lông vũ</th>
-                  <th className="py-2.5 px-3 text-right">Tổng điểm xếp hạng</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="bg-[#003B3A] text-white text-[11px] font-semibold">
+                  <th className="py-2.5 px-3 text-center w-16 font-semibold">Hạng</th>
+                  <th className="py-2.5 px-3 font-semibold">Học sinh & Nhân vật</th>
+                  <th className="py-2.5 px-3 font-semibold">Lớp</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Khiên Danh Dự</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">GV Xác Nhận</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Điểm bài học</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Thời gian hoàn thành</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Lông vũ</th>
+                  <th className="py-2.5 px-3 text-right font-semibold">Tổng điểm xếp hạng</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {activeLeaderboard.map((item: any) => {
                   const charObj = getCharacterById(item.characterId);
                   return (

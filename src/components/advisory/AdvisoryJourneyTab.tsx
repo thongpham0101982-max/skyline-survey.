@@ -1478,19 +1478,19 @@ export default function AdvisoryJourneyTab({
         {/* Work Queue Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-600 uppercase">
-                <th className="py-3 px-4">1. Học sinh</th>
-                <th className="py-3 px-3">2. Bước lộ trình</th>
-                <th className="py-3 px-4">3. Công việc & Nguồn dữ liệu</th>
-                <th className="py-3 px-3">4. Mức ưu tiên</th>
-                <th className="py-3 px-3">5. Người thực hiện</th>
-                <th className="py-3 px-3">6. Hạn hoàn thành</th>
-                <th className="py-3 px-3">7. Trạng thái</th>
-                <th className="py-3 px-4 text-right">8. Thao tác</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-3 px-4 font-semibold">1. Học sinh</th>
+                <th className="py-3 px-3 font-semibold">2. Bước lộ trình</th>
+                <th className="py-3 px-4 font-semibold">3. Công việc & Nguồn dữ liệu</th>
+                <th className="py-3 px-3 font-semibold">4. Mức ưu tiên</th>
+                <th className="py-3 px-3 font-semibold">5. Người thực hiện</th>
+                <th className="py-3 px-3 font-semibold">6. Hạn hoàn thành</th>
+                <th className="py-3 px-3 font-semibold">7. Trạng thái</th>
+                <th className="py-3 px-4 text-right font-semibold">8. Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {filteredWorkQueue.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-10 text-center text-slate-400 font-medium">
@@ -1660,16 +1660,16 @@ export default function AdvisoryJourneyTab({
 
           <div className="overflow-x-auto max-h-72">
             <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase">
-                  <th className="py-2 px-2.5">Lớp / GVCN</th>
-                  <th className="py-2 px-2 text-center">Sĩ số</th>
-                  <th className="py-2 px-2 text-center">Kế hoạch</th>
-                  <th className="py-2 px-2 text-center">Đánh giá kỳ</th>
-                  <th className="py-2 px-2 text-center">Quá hạn</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[10px] font-semibold">
+                  <th className="py-2 px-2.5 font-semibold">Lớp / GVCN</th>
+                  <th className="py-2 px-2 text-center font-semibold">Sĩ số</th>
+                  <th className="py-2 px-2 text-center font-semibold">Kế hoạch</th>
+                  <th className="py-2 px-2 text-center font-semibold">Đánh giá kỳ</th>
+                  <th className="py-2 px-2 text-center font-semibold">Quá hạn</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {(summary.classBreakdown || []).map((cls: any) => (
                   <tr key={cls.classId} className="hover:bg-slate-50">
                     <td className="py-2 px-2.5">

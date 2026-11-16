@@ -842,9 +842,9 @@ export function GradeProgressTab({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-3 text-center w-8">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[10px] font-semibold">
+                <th className="py-3 px-3 text-center w-8 font-semibold">
                   <button
                     onClick={handleSelectAll}
                     className="flex items-center justify-center text-slate-500 hover:text-slate-800"
@@ -857,21 +857,21 @@ export function GradeProgressTab({
                     )}
                   </button>
                 </th>
-                <th className="py-3 px-2 text-center w-8">STT</th>
-                <th className="py-3 px-3">Cơ sở & Khối</th>
-                <th className="py-3 px-3">Lớp học</th>
-                <th className="py-3 px-3">Môn học</th>
-                <th className="py-3 px-3">Giáo viên phân công</th>
-                <th className="py-3 px-3 text-center">Kỳ khảo sát</th>
-                <th className="py-3 px-3 min-w-[150px]">Tiến độ nhập</th>
-                <th className="py-3 px-3 text-center">Tình trạng</th>
-                <th className="py-3 px-3 text-center">Khóa sổ</th>
-                <th className="py-3 px-3 text-center">Nhắc nhở</th>
-                <th className="py-3 px-3 text-center">Điểm TB</th>
-                <th className="py-3 px-3 text-center min-w-[170px]">Thao tác</th>
+                <th className="py-3 px-2 text-center w-8 font-semibold">STT</th>
+                <th className="py-3 px-3 font-semibold">Cơ sở & Khối</th>
+                <th className="py-3 px-3 font-semibold">Lớp học</th>
+                <th className="py-3 px-3 font-semibold">Môn học</th>
+                <th className="py-3 px-3 font-semibold">Giáo viên phân công</th>
+                <th className="py-3 px-3 text-center font-semibold">Kỳ khảo sát</th>
+                <th className="py-3 px-3 min-w-[150px] font-semibold">Tiến độ nhập</th>
+                <th className="py-3 px-3 text-center font-semibold">Tình trạng</th>
+                <th className="py-3 px-3 text-center font-semibold">Khóa sổ</th>
+                <th className="py-3 px-3 text-center font-semibold">Nhắc nhở</th>
+                <th className="py-3 px-3 text-center font-semibold">Điểm TB</th>
+                <th className="py-3 px-3 text-center min-w-[170px] font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {loading ? (
                 <tr>
                   <td colSpan={13} className="py-12 text-center text-slate-400">
@@ -1325,17 +1325,17 @@ export function GradeProgressTab({
                   </div>
 
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px]">
-                        <th className="py-2.5 px-3 text-center w-10">STT</th>
-                        <th className="py-2.5 px-3">Mã HS</th>
-                        <th className="py-2.5 px-3">Họ và tên học sinh</th>
-                        <th className="py-2.5 px-3 text-center">Trạng thái</th>
-                        <th className="py-2.5 px-3 text-center">Điểm tổng kết</th>
-                        <th className="py-2.5 px-3">Nhận xét</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="border-b text-[10px] font-semibold">
+                        <th className="py-2.5 px-3 text-center w-10 font-semibold">STT</th>
+                        <th className="py-2.5 px-3 font-semibold">Mã HS</th>
+                        <th className="py-2.5 px-3 font-semibold">Họ và tên học sinh</th>
+                        <th className="py-2.5 px-3 text-center font-semibold">Trạng thái</th>
+                        <th className="py-2.5 px-3 text-center font-semibold">Điểm tổng kết</th>
+                        <th className="py-2.5 px-3 font-semibold">Nhận xét</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {detailData.students.map((st: any, sIdx: number) => (
                         <tr key={st.id} className="hover:bg-slate-50/60">
                           <td className="py-2.5 px-3 text-center text-slate-400">{sIdx + 1}</td>

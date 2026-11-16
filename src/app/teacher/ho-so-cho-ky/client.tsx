@@ -511,9 +511,9 @@ export function TeacherHoSoChoKyClient() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#F8FAFC] border-b border-slate-200 text-slate-600 font-bold">
-                <th className="py-3 px-3.5 w-10 text-center">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-3 px-3.5 w-10 text-center font-semibold">
                   <input
                     type="checkbox"
                     checked={
@@ -524,15 +524,15 @@ export function TeacherHoSoChoKyClient() {
                     className="rounded border-slate-300 text-[#003B3A] focus:ring-[#00A19A]"
                   />
                 </th>
-                <th className="py-3 px-3">Học sinh & Lớp</th>
-                <th className="py-3 px-3">Loại tài liệu</th>
-                <th className="py-3 px-3">Kỳ & Phiên bản</th>
-                <th className="py-3 px-3">Vai trò</th>
-                <th className="py-3 px-3">Trạng thái</th>
-                <th className="py-3 px-3.5 text-right">Thao tác</th>
+                <th className="py-3 px-3 font-semibold">Học sinh & Lớp</th>
+                <th className="py-3 px-3 font-semibold">Loại tài liệu</th>
+                <th className="py-3 px-3 font-semibold">Kỳ & Phiên bản</th>
+                <th className="py-3 px-3 font-semibold">Vai trò</th>
+                <th className="py-3 px-3 font-semibold">Trạng thái</th>
+                <th className="py-3 px-3.5 text-right font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {documents.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">

@@ -61,6 +61,15 @@ export function AcademicYearSelector() {
       }
     };
     fetchYears();
+
+    const syncFromExternal = () => {
+      try {
+        const stored = localStorage.getItem("selectedAcademicYear");
+        if (stored) setSelectedYear(stored);
+      } catch (e) {}
+    };
+    window.addEventListener("academicYearChanged", syncFromExternal);
+    return () => window.removeEventListener("academicYearChanged", syncFromExternal);
   }, []);
 
   const handleSelect = (id: string) => {

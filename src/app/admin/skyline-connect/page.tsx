@@ -409,16 +409,16 @@ export default function AdminSkylineConnectPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs tabular-nums">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-slate-600 font-bold">
-                  <th className="py-3 px-3">Tiêu đề bài đăng</th>
-                  <th className="py-3 px-3">Loại</th>
-                  <th className="py-3 px-3">Tác giả & Cơ sở</th>
-                  <th className="py-3 px-3">Trạng thái</th>
-                  <th className="py-3 px-3 text-right">Chọn Dấu ấn sáng tạo tháng</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3 px-3 font-semibold">Tiêu đề bài đăng</th>
+                  <th className="py-3 px-3 font-semibold">Loại</th>
+                  <th className="py-3 px-3 font-semibold">Tác giả & Cơ sở</th>
+                  <th className="py-3 px-3 font-semibold">Trạng thái</th>
+                  <th className="py-3 px-3 text-right font-semibold">Chọn Dấu ấn sáng tạo tháng</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {posts.map((p: any) => (
                   <tr key={p.id} className="hover:bg-slate-50/70">
                     <td className="py-3 px-3 font-bold text-[#003B3A]">

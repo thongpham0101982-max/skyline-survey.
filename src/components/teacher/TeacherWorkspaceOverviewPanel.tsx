@@ -399,8 +399,8 @@ export function TeacherWorkspaceOverviewPanel() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left tabular-nums">
-                    <thead className="bg-slate-50/60 text-slate-500 border-b border-slate-100">
-                      <tr>
+                    <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
                         <th className="py-2 px-3 font-semibold">Lớp / Môn</th>
                         <th className="py-2 px-2.5 font-semibold text-center">Vào điểm</th>
                         <th className="py-2 px-2.5 font-semibold text-center">ĐTB</th>
@@ -409,7 +409,7 @@ export function TeacherWorkspaceOverviewPanel() {
                         <th className="py-2 px-3 font-semibold text-right">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                    <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
                       {progressAndKPI.teachingQuality.bySubjectClass.slice(0, 6).map((item) => (
                         <tr key={`${item.classId}-${item.subjectId}`} className="hover:bg-slate-50/70">
                           <td className="py-2 px-3">

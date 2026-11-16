@@ -288,19 +288,19 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
             <div className="overflow-hidden border border-slate-100 rounded-2xl shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left whitespace-nowrap border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-[10px] text-slate-400 uppercase font-black tracking-widest border-b border-slate-200/50">
-                      <th className="p-4 border border-slate-100 font-black">STT</th>
-                      <th className="p-4 border border-slate-100 font-black">Tên Lớp</th>
-                      <th className="p-4 border border-slate-100 font-black">Cơ Sở</th>
-                      <th className="p-4 border border-slate-100 font-black">Khối / Bậc học</th>
-                      <th className="p-4 border border-slate-100 font-black">Giáo Viên Chủ Nhiệm</th>
-                      <th className="p-4 text-center border border-slate-100 font-black">Đã Hoàn Tất</th>
-                      <th className="p-4 text-center border border-slate-100 font-black">Tổng Số HS gán</th>
-                      <th className="p-4 border border-slate-100 w-1/4 font-black">Tiến Độ (%)</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[10px] border-b font-semibold">
+                      <th className="p-4 border border-white/15 font-semibold">STT</th>
+                      <th className="p-4 border border-white/15 font-semibold">Tên Lớp</th>
+                      <th className="p-4 border border-white/15 font-semibold">Cơ Sở</th>
+                      <th className="p-4 border border-white/15 font-semibold">Khối / Bậc học</th>
+                      <th className="p-4 border border-white/15 font-semibold">Giáo Viên Chủ Nhiệm</th>
+                      <th className="p-4 text-center border border-white/15 font-semibold">Đã Hoàn Tất</th>
+                      <th className="p-4 text-center border border-white/15 font-semibold">Tổng Số HS gán</th>
+                      <th className="p-4 border border-white/15 w-1/4 font-semibold">Tiến Độ (%)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {filteredData.map((cData: any, idx: number) => {
                       const cls = cData.classInfo
                       const classRate = cData.total > 0 ? Math.round((cData.completed / cData.total) * 100) : 0

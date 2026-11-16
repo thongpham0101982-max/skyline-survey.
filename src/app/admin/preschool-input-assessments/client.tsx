@@ -2611,21 +2611,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
 
             <table class="assessment-table" className="border border-slate-200 border-collapse">
-              <thead>
-                <tr>
-                  <th colspan="2" className="px-4 py-3 border-b border-slate-100">NỘI DUNG ĐÁNH GIÁ</th>
-                  <th colspan="3" className="px-4 py-3 border-b border-slate-100">KẾT QUẢ</th>
-                  <th rowspan="2" className="px-4 py-3 border-b border-slate-100">GHI CHÚ</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th colspan="2" className="px-4 py-3 border-b border-white/15 font-semibold">Nội dung đánh giá</th>
+                  <th colspan="3" className="px-4 py-3 border-b border-white/15 font-semibold">Kết quả</th>
+                  <th rowspan="2" className="px-4 py-3 border-b border-white/15 font-semibold">Ghi chú</th>
                 </tr>
-                <tr>
-                  <th className="px-4 py-3 border-b border-slate-100">LĨNH VỰC</th>
-                  <th className="px-4 py-3 border-b border-slate-100">TIÊU CHÍ</th>
-                  <th className="px-4 py-3 border-b border-slate-100">Chưa<br/>thể hiện</th>
-                  <th className="px-4 py-3 border-b border-slate-100">Bắt đầu<br/>thể hiện</th>
-                  <th className="px-4 py-3 border-b border-slate-100">Thể hiện<br/>tốt</th>
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="px-4 py-3 border-b border-white/15 font-semibold">Lĩnh vực</th>
+                  <th className="px-4 py-3 border-b border-white/15 font-semibold">Tiêu chí</th>
+                  <th className="px-4 py-3 border-b border-white/15 font-semibold">Chưa<br/>thể hiện</th>
+                  <th className="px-4 py-3 border-b border-white/15 font-semibold">Bắt đầu<br/>thể hiện</th>
+                  <th className="px-4 py-3 border-b border-white/15 font-semibold">Thể hiện<br/>tốt</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                 ${tableRowsHtml}
               </tbody>
             </table>
@@ -3291,9 +3291,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       ) : (
                         <div className="overflow-x-auto bg-white border border-slate-300 rounded-none shadow-none">
                           <table className="w-full text-left border-collapse">
-                            <thead className="bg-[#00A19A]/5/70 border-b border-slate-300">
-                              <tr>
-                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>)}
+                            <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">{h}</th>)}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-teal-50">
@@ -3764,12 +3764,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {configs.length === 0 ? <Empty text="Chưa có danh mục nào" /> : (
                 <div className="overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50/60 border-b border-slate-200/80">
-                      <tr>
-                        <th className="p-2 w-12 border border-slate-200">
+                    <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="p-2 w-12 border border-white/15 font-semibold">
                           <input type="checkbox" className="w-4 h-4 rounded accent-[#00A19A]" checked={configs.length > 0 && cfgSelected.length === configs.length} onChange={e => setCfgSelected(e.target.checked ? configs.map(c => c.id) : [])} />
                         </th>
-                        {["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>)}
+                        {["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">{h}</th>)}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-teal-50">
@@ -3981,18 +3981,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
-                      <tr>
-                        <th className="py-2.5 px-3 w-10 text-center">#</th>
-                        <th className="py-2.5 px-3">Mã HS</th>
-                        <th className="py-2.5 px-3">Họ và tên Bé</th>
-                        <th className="py-2.5 px-3 text-center">Ngày sinh</th>
-                        <th className="py-2.5 px-3">Nhóm tuổi / Lớp</th>
-                        <th className="py-2.5 px-3">Hệ KS</th>
-                        <th className="py-2.5 px-3">Cơ sở ĐK</th>
+                    <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="py-2.5 px-3 w-10 text-center font-semibold">#</th>
+                        <th className="py-2.5 px-3 font-semibold">Mã HS</th>
+                        <th className="py-2.5 px-3 font-semibold">Họ và tên Bé</th>
+                        <th className="py-2.5 px-3 text-center font-semibold">Ngày sinh</th>
+                        <th className="py-2.5 px-3 font-semibold">Nhóm tuổi / Lớp</th>
+                        <th className="py-2.5 px-3 font-semibold">Hệ KS</th>
+                        <th className="py-2.5 px-3 font-semibold">Cơ sở ĐK</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {effectiveHandoverChildren.map((c, idx) => (
                         <tr key={c.id}>
                           <td className="py-2 px-3 text-center text-slate-500">{idx + 1}</td>
@@ -4224,9 +4224,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <>
                 <div className="overflow-x-auto custom-scrollbar flex-1">
                 <table className="w-full text-left text-xs whitespace-nowrap border-collapse">
-                  <thead className="bg-slate-50/90 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3.5 w-12 text-center border-b border-slate-200/80">
+                  <thead className="bg-[#003B3A] border-b text-[10px] text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3.5 w-12 text-center border-b border-white/15 font-semibold">
                         <input
                           type="checkbox"
                           className="w-4 h-4 rounded accent-[#00A19A]"
@@ -4234,18 +4234,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])}
                         />
                       </th>
-                      <th className="px-3 py-3.5 w-12 text-center">STT</th>
-                      <th className="px-4 py-3.5 w-28 text-left">Mã bé</th>
-                      <th className="px-4 py-3.5 text-left">Họ và tên</th>
-                      <th className="px-4 py-3.5 w-24 text-center">Ngày sinh</th>
-                      <th className="px-4 py-3.5 w-24 text-center">Giới tính</th>
-                      <th className="px-4 py-3.5 w-28 text-center">Nhóm tuổi</th>
-                      <th className="px-4 py-3.5 w-28 text-center">Cơ sở</th>
-                      <th className="px-4 py-3.5 w-20 text-center">Vắng</th>
-                      <th className="px-4 py-3.5 w-24 text-center">Thao tác</th>
+                      <th className="px-3 py-3.5 w-12 text-center font-semibold">STT</th>
+                      <th className="px-4 py-3.5 w-28 text-left font-semibold">Mã bé</th>
+                      <th className="px-4 py-3.5 text-left font-semibold">Họ và tên</th>
+                      <th className="px-4 py-3.5 w-24 text-center font-semibold">Ngày sinh</th>
+                      <th className="px-4 py-3.5 w-24 text-center font-semibold">Giới tính</th>
+                      <th className="px-4 py-3.5 w-28 text-center font-semibold">Nhóm tuổi</th>
+                      <th className="px-4 py-3.5 w-28 text-center font-semibold">Cơ sở</th>
+                      <th className="px-4 py-3.5 w-20 text-center font-semibold">Vắng</th>
+                      <th className="px-4 py-3.5 w-24 text-center font-semibold">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {paginatedFiltChildren.map((child, i) => (
                       <tr
                         key={child.id}
@@ -4472,10 +4472,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 ) : (
                   <div className="overflow-x-auto custom-scrollbar flex-1">
                     <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
-                      <thead className="bg-[#00A19A]/5 border-b border-slate-300">
-                        <tr>
+                      <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "GV Phân công", "Trạng thái", "Thao tác"].map(h => (
-                            <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
+                            <th key={h} className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -4618,14 +4618,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 ) : (
                   <div className="overflow-x-auto relative rounded-none border border-slate-300/80">
                     <table className="w-full min-w-max text-left text-sm whitespace-nowrap border-collapse table-auto">
-                      <thead className="bg-[#00A19A]/5 border-b border-slate-300 sticky top-0 z-30">
-                        <tr>
+                      <thead className="bg-[#003B3A] border-b sticky top-0 z-30 text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
                           {xetDuyetCols.filter(col => {
                             if (col.id === "bghApproval") return showBghSection;
                             if (col.id === "gdcsApproval") return showGdcsSection;
                             return true;
                           }).map(col => (
-                            <th key={col.id} className={`p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest ${col.width}`} className="px-4 py-3 border-b border-slate-100">
+                            <th key={col.id} className={`p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest ${col.width}`} className="px-4 py-3 border-b border-white/15 font-semibold">
                               {col.label}
                             </th>
                           ))}
@@ -5049,10 +5049,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 ) : (
                   <div className="overflow-x-auto custom-scrollbar flex-1">
                     <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
-                      <thead className="bg-[#00A19A]/5 border-b border-slate-300">
-                        <tr>
+                      <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Lớp học thử", "GV Học thử", "Kết quả học thử", "Thao tác"].map(h => (
-                            <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
+                            <th key={h} className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -5167,10 +5167,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 ) : (
                   <div className="overflow-x-auto custom-scrollbar flex-1">
                     <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
-                      <thead className="bg-[#00A19A]/5 border-b border-slate-300">
-                        <tr>
+                      <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Cơ sở", "Kết quả duyệt", "Thao tác"].map(h => (
-                            <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
+                            <th key={h} className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -5471,10 +5471,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           ) : (
                             <div className="overflow-x-auto bg-white border border-slate-300 rounded-none shadow-none">
                               <table className="w-full text-left border-collapse">
-                                <thead className="bg-[#00A19A]/5/50 border-b border-slate-300">
-                                  <tr>
+                                <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                                  <tr className="text-[11px] font-semibold whitespace-nowrap">
                                     {["STT", "Mã", "Tên Tiêu Chí", "Nhóm tuổi", "Thao tác"].map(h => (
-                                      <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
+                                      <th key={h} className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">{h}</th>
                                     ))}
                                   </tr>
                                 </thead>
@@ -6527,17 +6527,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                 <div className="border border-slate-300 rounded-none overflow-hidden max-h-[260px] overflow-y-auto">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="text-slate-500 font-bold uppercase text-[9px] tracking-wider text-xs font-semibold">
-                        <th className="p-2 w-10 text-center border border-slate-200">Gửi</th>
-                        <th className="px-4 py-3 border-b border-slate-100">Mã học sinh</th>
-                        <th className="px-4 py-3 border-b border-slate-100">Họ và tên</th>
-                        <th className="px-4 py-3 border-b border-slate-100">Nhóm tuổi</th>
-                        <th className="px-4 py-3 border-b border-slate-100">Hệ khảo sát</th>
-                        <th className="px-4 py-3 border-b border-slate-100">Kết quả</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[9px] text-xs font-semibold">
+                        <th className="p-2 w-10 text-center border border-white/15 font-semibold">Gửi</th>
+                        <th className="px-4 py-3 border-b border-white/15 font-semibold">Mã học sinh</th>
+                        <th className="px-4 py-3 border-b border-white/15 font-semibold">Họ và tên</th>
+                        <th className="px-4 py-3 border-b border-white/15 font-semibold">Nhóm tuổi</th>
+                        <th className="px-4 py-3 border-b border-white/15 font-semibold">Hệ khảo sát</th>
+                        <th className="px-4 py-3 border-b border-white/15 font-semibold">Kết quả</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                       {emailStudents.map((s, idx) => (
                         <tr 
                           key={s.id} 
@@ -7391,7 +7391,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <th className="p-2 p-2 font-bold text-center uppercase text-slate-950 w-32 border border-slate-200">Số lượng</th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                             {([]).map((item, idx) => (
                               <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
                                 <td className="px-3 py-2.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
@@ -7496,7 +7496,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   let parsedCols = { scores: [] };
                   try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [] }; } } catch {}
 
-                  const failedCriteria = scoreVals.map((v, idx) => v === "2" ? (parsedCols.scores[idx] || (isChildDev ? [
+                  const failedCriteria = scoreVals.map((v, idx) => ["2", "Không đạt", "KHONG_DAT"].includes(String(v ?? "").trim()) ? (parsedCols.scores[idx] || (isChildDev ? [
     "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
     "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
     "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
@@ -7514,7 +7514,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
     "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
 ][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
-                  const skippedCriteria = scoreVals.map((v, idx) => v === "1" ? (parsedCols.scores[idx] || (isChildDev ? [
+                  const skippedCriteria = scoreVals.map((v, idx) => ["1", "Không làm", "KHONG_LAM"].includes(String(v ?? "").trim()) ? (parsedCols.scores[idx] || (isChildDev ? [
     "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
     "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
     "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
@@ -8416,16 +8416,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   
                   <div className="overflow-x-auto custom-scrollbar flex-1">
                     <table className="w-full text-left whitespace-nowrap table-fixed border-collapse">
-                      <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
-                        <tr>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-[40%] border border-slate-200">Tiêu chí</th>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%] border border-slate-200">Chưa thể hiện</th>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%] border border-slate-200">Bắt đầu thể hiện</th>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%] border border-slate-200">Thể hiện tốt</th>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-[15%] border border-slate-200">Ghi chú</th>
+                      <thead className="bg-[#003B3A] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1] text-white border-b border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="p-2 text-[9px] w-[40%] border border-white/15 font-semibold">Tiêu chí</th>
+                          <th className="p-2 text-[9px] text-center w-[15%] border border-white/15 font-semibold">Chưa thể hiện</th>
+                          <th className="p-2 text-[9px] text-center w-[15%] border border-white/15 font-semibold">Bắt đầu thể hiện</th>
+                          <th className="p-2 text-[9px] text-center w-[15%] border border-white/15 font-semibold">Thể hiện tốt</th>
+                          <th className="p-2 text-[9px] w-[15%] border border-white/15 font-semibold">Ghi chú</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {area.criteria?.map(crit => {
                           const currentScore = probScores[crit.id] || { result: "", note: "" };
                           
@@ -8779,18 +8779,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             ) : (
               <div className="max-h-52 overflow-y-auto">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
-                    <tr>
-                      <th className="py-2 px-3 w-10 text-center">#</th>
-                      <th className="py-2 px-3">Mã HS</th>
-                      <th className="py-2 px-3">Họ và tên Bé</th>
-                      <th className="py-2 px-3 text-center">Ngày sinh</th>
-                      <th className="py-2 px-3">Nhóm tuổi / Lớp</th>
-                      <th className="py-2 px-3">Hệ KS</th>
-                      <th className="py-2 px-3">Cơ sở ĐK</th>
+                  <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2 px-3 w-10 text-center font-semibold">#</th>
+                      <th className="py-2 px-3 font-semibold">Mã HS</th>
+                      <th className="py-2 px-3 font-semibold">Họ và tên Bé</th>
+                      <th className="py-2 px-3 text-center font-semibold">Ngày sinh</th>
+                      <th className="py-2 px-3 font-semibold">Nhóm tuổi / Lớp</th>
+                      <th className="py-2 px-3 font-semibold">Hệ KS</th>
+                      <th className="py-2 px-3 font-semibold">Cơ sở ĐK</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {effectiveHandoverChildren.map((c, idx) => (
                       <tr key={c.id}>
                         <td className="py-1.5 px-3 text-center text-slate-500">{idx + 1}</td>

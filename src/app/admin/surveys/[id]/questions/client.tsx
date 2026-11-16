@@ -853,15 +853,15 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                       {(q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && (
                         <div className="overflow-x-auto -mx-2">
                           <table className="w-full text-xs">
-                            <thead>
-                              <tr className="border-b border-slate-200 text-slate-500">
+                            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                              <tr className="border-b text-[11px] font-semibold">
                                 <th className="p-2 text-left font-bold">Tiêu chí</th>
                                 {opts.columns?.map((col: string, ci: number) => (
                                   <th key={ci} className="p-2 text-center font-bold">{col}</th>
                                 ))}
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-[#E2E8F0]">
                               {opts.rows?.map((row: string, ri: number) => (
                                 <tr key={ri}>
                                   <td className="p-2 font-bold text-slate-700">{row}</td>

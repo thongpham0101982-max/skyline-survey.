@@ -10,12 +10,20 @@ export async function GET(req: Request) {
     }
 
     const userId = (session?.user as any)?.id;
+    const userEmail = session?.user?.email || "";
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
     const isSuperAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
 
     let teacher = null;
     if (userId) {
       teacher = await prisma.teacher.findUnique({ where: { userId } });
+    }
+    if (!teacher && userEmail) {
+      teacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [{ email: userEmail }, { teacherCode: userEmail.split("@")[0] }],
+        },
+      });
     }
 
     const { searchParams } = new URL(req.url);
@@ -85,23 +93,37 @@ export async function POST(req: Request) {
     }
 
     // 2. Action: Approve or Request Changes
+    const semInt = parseInt(String(semester), 10);
     const isApprove = action === "approve";
     const newStatus = isApprove ? "APPROVED" : "CHANGES_REQUESTED";
 
-    await prisma.ctqtGradeEntry.updateMany({
-      where: {
-        classId,
-        subjectCode,
-        academicYearId,
-        semester: parseInt(semester, 10),
-      },
-      data: {
-        reviewStatus: newStatus,
-        reviewedBy: reviewerName,
-        reviewedAt: new Date(),
-        reviewerNote: reviewerNote || null,
-      },
-    });
+    await prisma.$transaction([
+      prisma.ctqtGradeEntry.updateMany({
+        where: {
+          classId,
+          subjectCode,
+          academicYearId,
+          semester: semInt,
+        },
+        data: {
+          reviewStatus: newStatus,
+          reviewedBy: reviewerName,
+          reviewedAt: new Date(),
+          reviewerNote: reviewerNote || null,
+        },
+      }),
+      prisma.ctqtTeachingAssignment.updateMany({
+        where: {
+          classId,
+          subjectCode,
+          academicYearId,
+          semester: semInt,
+        },
+        data: {
+          status: isApprove ? "APPROVED" : "REVISION_REQUESTED",
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,

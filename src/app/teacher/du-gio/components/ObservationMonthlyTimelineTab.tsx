@@ -1256,37 +1256,37 @@ export function ObservationMonthlyTimelineTab({
         {/* Matrix Table */}
         <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-[#003B3A] text-white font-black uppercase text-[10.5px] tracking-wider">
-                <th className="p-3 text-center w-12 border-r border-teal-900/40">TT</th>
-                <th className="p-3 border-r border-teal-900/40 min-w-[200px]">Giáo Viên</th>
-                <th className="p-3 text-center border-r border-teal-900/40 w-24">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="bg-[#003B3A] text-white text-[10.5px] text-[11px] font-semibold">
+                <th className="p-3 text-center w-12 border-r border-teal-900/40 font-semibold">TT</th>
+                <th className="p-3 border-r border-teal-900/40 min-w-[200px] font-semibold">Giáo Viên</th>
+                <th className="p-3 text-center border-r border-teal-900/40 w-24 font-semibold">
                   <div>Tuần 1</div>
                   <div className="text-[9px] font-normal text-teal-200/80">01 - 07</div>
                 </th>
-                <th className="p-3 text-center border-r border-teal-900/40 w-24">
+                <th className="p-3 text-center border-r border-teal-900/40 w-24 font-semibold">
                   <div>Tuần 2</div>
                   <div className="text-[9px] font-normal text-teal-200/80">08 - 14</div>
                 </th>
-                <th className="p-3 text-center border-r border-teal-900/40 w-24">
+                <th className="p-3 text-center border-r border-teal-900/40 w-24 font-semibold">
                   <div>Tuần 3</div>
                   <div className="text-[9px] font-normal text-teal-200/80">15 - 21</div>
                 </th>
-                <th className="p-3 text-center border-r border-teal-900/40 w-28">
+                <th className="p-3 text-center border-r border-teal-900/40 w-28 font-semibold">
                   <div>Tuần 4+</div>
                   <div className="text-[9px] font-normal text-teal-200/80">22 - Cuối</div>
                 </th>
-                <th className="p-3 text-center border-r border-teal-900/40 w-28">
+                <th className="p-3 text-center border-r border-teal-900/40 w-28 font-semibold">
                   <div>Tổng Tiết</div>
                   <div className="text-[9px] font-normal text-teal-200/80">Dạy • Dự</div>
                 </th>
-                <th className="p-3 text-center border-r border-teal-900/40 min-w-[150px]">
+                <th className="p-3 text-center border-r border-teal-900/40 min-w-[150px] font-semibold">
                   Đánh Giá Nhịp Độ
                 </th>
-                <th className="p-3 text-center w-28">Thao Tác</th>
+                <th className="p-3 text-center w-28 font-semibold">Thao Tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+            <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
               {teacherPaceMatrix.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-8 text-center text-slate-400 font-bold">

@@ -353,9 +353,9 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
 
         <div className="overflow-x-auto custom-scrollbar flex-1">
           <table className="w-full text-left border-collapse">
-            <thead className="text-slate-600 text-sm font-semibold text-xs font-semibold">
-              <tr>
-                <th className="p-2 p-2 w-12 text-center border border-slate-200">
+            <thead className="bg-[#003B3A] text-sm font-semibold text-xs text-white border-b border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="p-2 w-12 text-center border border-white/15 font-semibold">
                   <input type="checkbox" className="w-4 h-4 rounded text-[#48BFE3]"
                     checked={displayedUsers.length > 0 && selectedIds.length === displayedUsers.length}
                     onChange={(e) => {
@@ -364,15 +364,15 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                     }}
                   />
                 </th>
-                <th className="p-2 p-2 border border-slate-200">Mã NV / Tên ĐN</th>
-                <th className="p-2 p-2 border border-slate-200">Họ và Tên</th>
-                <th className="p-2 p-2 border border-slate-200">Nhóm Quyền</th>
-                <th className="p-2 p-2 border border-slate-200 text-center w-36">Trạng thái</th>
-                <th className="px-6 py-3 border-l border-slate-200">Mật khẩu</th>
-                <th className="p-2 p-2 text-right border border-slate-200">Thao tác</th>
+                <th className="p-2 border border-white/15 font-semibold">Mã NV / Tên ĐN</th>
+                <th className="p-2 border border-white/15 font-semibold">Họ và Tên</th>
+                <th className="p-2 border border-white/15 font-semibold">Nhóm Quyền</th>
+                <th className="p-2 border border-white/15 text-center w-36 font-semibold">Trạng thái</th>
+                <th className="px-6 py-3 border-l border-white/15 font-semibold">Mật khẩu</th>
+                <th className="p-2 text-right border border-white/15 font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
 
               {paginatedUsers.map((u:any) => editingId === u.id ? (
                 <tr key={u.id} className="bg-[#48BFE3]/10/30">

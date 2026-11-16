@@ -1074,17 +1074,17 @@ export function StudentFeedbackWorkspace({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs tabular-nums">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                  <th className="py-3 px-4">Học sinh</th>
-                  <th className="py-3 px-4">Loại phản hồi</th>
-                  <th className="py-3 px-4">Nội dung phản hồi / Tự đánh giá</th>
-                  <th className="py-3 px-4">3 Trạng thái tách biệt</th>
-                  <th className="py-3 px-4">Chia sẻ PHHS</th>
-                  <th className="py-3 px-4 text-right">GVCN xử lý</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3 px-4 font-semibold">Học sinh</th>
+                  <th className="py-3 px-4 font-semibold">Loại phản hồi</th>
+                  <th className="py-3 px-4 font-semibold">Nội dung phản hồi / Tự đánh giá</th>
+                  <th className="py-3 px-4 font-semibold">3 Trạng thái tách biệt</th>
+                  <th className="py-3 px-4 font-semibold">Chia sẻ PHHS</th>
+                  <th className="py-3 px-4 text-right font-semibold">GVCN xử lý</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {filtered.map(item => (
                   <tr key={item.id} className="hover:bg-slate-50/70">
                     <td className="py-3.5 px-4 align-top">
@@ -1991,18 +1991,18 @@ export function CompanionSupportWorkspace({
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs tabular-nums">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                    <th className="py-3 px-4">Học sinh & Mục tiêu liên kết</th>
-                    <th className="py-3 px-4">Giáo viên đồng hành</th>
-                    <th className="py-3 px-4">Nội dung hỗ trợ & Kết quả mong đợi</th>
-                    <th className="py-3 px-4">Các mốc hạn</th>
-                    <th className="py-3 px-4">Nhật ký & Minh chứng kết quả</th>
-                    <th className="py-3 px-4">Trạng thái</th>
-                    <th className="py-3 px-4 text-right">Thao tác nghiệp vụ</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-3 px-4 font-semibold">Học sinh & Mục tiêu liên kết</th>
+                    <th className="py-3 px-4 font-semibold">Giáo viên đồng hành</th>
+                    <th className="py-3 px-4 font-semibold">Nội dung hỗ trợ & Kết quả mong đợi</th>
+                    <th className="py-3 px-4 font-semibold">Các mốc hạn</th>
+                    <th className="py-3 px-4 font-semibold">Nhật ký & Minh chứng kết quả</th>
+                    <th className="py-3 px-4 font-semibold">Trạng thái</th>
+                    <th className="py-3 px-4 text-right font-semibold">Thao tác nghiệp vụ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {filteredTasks.map(t => {
                     const sm = statusMeta(t);
                     const logs = Array.isArray(t.executionLog) ? t.executionLog : [];

@@ -196,14 +196,14 @@ export function StudentSurveyReportModal({
 
         <!-- 3-Column Table: Spacious & Legible -->
         <table>
-          <thead>
-            <tr>
+          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
               <th class="text-center" style="width: 46px;">STT</th>
               <th>Môn học</th>
               <th class="text-center" style="width: 95px;">Điểm KS</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
             ${rowsHtml}
           </tbody>
         </table>
@@ -844,11 +844,11 @@ export function StudentSurveyReportModal({
         {/* 3-Column Table: STT | Môn học | Điểm KS */}
         <div className="overflow-x-auto rounded-lg border border-teal-600/30 shadow-xs mb-3.5">
           <table className="w-full text-left border-collapse text-[11px]">
-            <thead>
-              <tr className="bg-gradient-to-r from-[#005B58] to-[#008c82] text-white font-black">
-                <th className="py-2 px-3 text-center w-12 border-r border-teal-700">STT</th>
-                <th className="py-2 px-3.5 border-r border-teal-700">Môn học</th>
-                <th className="py-2 px-3.5 text-center w-28">Điểm KS</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="text-white text-[11px] font-semibold">
+                <th className="py-2 px-3 text-center w-12 border-r border-teal-700 font-semibold">STT</th>
+                <th className="py-2 px-3.5 border-r border-teal-700 font-semibold">Môn học</th>
+                <th className="py-2 px-3.5 text-center w-28 font-semibold">Điểm KS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-100">

@@ -507,9 +507,9 @@
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border-radius: 24px;
+  border-radius: 16px;
   border: 1px solid #E2E8F0;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
   background-color: #FFFFFF;
 }
 
@@ -941,13 +941,14 @@
 }
 
 /* ==========================================
-   TEACHER TABLE
+   TEACHER TABLE (CHUẨN "KẾT QUẢ KHẢO SÁT THEO ĐỢT" — SKY-LINE ACADEMIC LEDGER)
    ========================================== */
 .teacher-table-wrapper {
   overflow-x: auto;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1px solid #E2E8F0;
-  background: white;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  background: #FFFFFF;
 }
 
 .teacher-table {
@@ -957,32 +958,46 @@
   font-variant-numeric: tabular-nums;
 }
 
+.teacher-table thead,
 .teacher-table thead tr {
-  background: #F8FAFC;
-  border-bottom: 1px solid #E2E8F0;
+  background-color: #003B3A !important;
+  color: #FFFFFF !important;
+  border-bottom: 1px solid #003B3A !important;
 }
 
 .teacher-table th {
-  padding: 0.75rem 1rem !important;
-  font-size: 0.75rem !important;
+  padding: 0.75rem 0.875rem !important;
+  font-size: 0.6875rem !important;
   font-weight: 600 !important;
-  letter-spacing: -0.005em;
-  color: #475569 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  color: #CCFBF1 !important;
   white-space: nowrap;
-  background: #F8FAFC !important;
-  border-bottom: 1px solid #E2E8F0 !important;
+  background-color: #003B3A !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
+}
+
+.teacher-table th:first-child,
+.teacher-table th:nth-child(2),
+.teacher-table th:last-child {
+  color: #FFFFFF !important;
 }
 
 .teacher-table td {
-  padding: 0.875rem 1rem !important;
+  padding: 0.75rem 0.875rem !important;
   font-size: 0.75rem !important;
   font-weight: 500;
   color: #334155;
-  border-bottom: 1px solid #F1F5F9 !important;
+  border-bottom: 1px solid #E2E8F0 !important;
   vertical-align: middle;
 }
 
-.teacher-table tbody tr:hover { background: #F8FAFC; }
+.teacher-table tbody tr {
+  background-color: #FFFFFF;
+  transition: background-color 0.15s ease;
+}
+
+.teacher-table tbody tr:hover { background-color: #F8FAFC; }
 .teacher-table tbody tr:last-child td { border-bottom: none !important; }
 
 /* ==========================================
@@ -1413,12 +1428,9 @@ input:focus-visible {
 }
 
 /* Fluid responsive rules for table containers & mobile screens */
-@media (max-width: 768px) {
-  table, th, td, [data-tabular] {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
+@media screen and (max-width: 768px) {
+  table:not(.print-table):not([data-printable="true"]) {
+    font-variant-numeric: tabular-nums;
   }
   
   .card, .panel {
@@ -1502,3 +1514,119 @@ main > div > :is(.space-y-4, .space-y-5, .space-y-6, .space-y-8) > :first-child:
     line-height: 1.25;
   }
 }
+
+
+/* =========================================================================
+   UNIFIED SKY-LINE ACADEMIC LEDGER TABLE SYSTEM (TOÀN HỆ THỐNG SSM)
+   Đồng bộ giao diện bảng "Kết quả khảo sát theo đợt" cho tất cả table trong dự án
+   ========================================================================= */
+@media screen {
+  /* 1. Khung bao bảng (Table Card Frame) chuẩn rounded-2xl border-[#E2E8F0] */
+  :where(
+    .table-container,
+    .teacher-table-wrapper,
+    div:is(.overflow-x-auto, .overflow-auto):has(> table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table)):not(:is(.overflow-hidden, [class*="rounded-xl"], [class*="rounded-2xl"], [class*="rounded-3xl"]) > *)
+  ) {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  }
+
+  /* 2. Bảng dữ liệu chuẩn Tabular Nums & Border Collapse */
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 3. Header Bảng (THEAD) — Sky-Line Deep Pine (#003B3A) chuẩn Kết quả khảo sát theo đợt */
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead,
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr {
+    background-color: #003B3A !important;
+    background-image: none !important;
+    color: #FFFFFF !important;
+    border-bottom: 1px solid #003B3A !important;
+  }
+
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr > th {
+    background-color: #003B3A !important;
+    background-image: none !important;
+    color: #CCFBF1 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    vertical-align: middle;
+  }
+
+  /* Multi-row grouped headers: dòng thứ 2+ trong thead phân tách tinh tế */
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr + tr > th {
+    background-color: #004846 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+  }
+
+  /* Cột chính (Họ tên, Tiêu đề, Thao tác) hiển thị trắng sắc nét #FFFFFF */
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr:first-child > th.text-white,
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr:first-child > th:nth-child(2),
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr:first-child > th:nth-child(3),
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr:first-child > th:last-child {
+    color: #FFFFFF !important;
+  }
+
+  /* Cột trạng thái / kết quả đã xét duyệt nổi bật (#5EEAD4) */
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr > th:is(
+    .text-\[\#5EEAD4\],
+    [class*="text-emerald"],
+    [class*="text-teal-3"],
+    [class*="text-teal-4"],
+    [class*="text-[#00A19A]"]
+  ) {
+    color: #5EEAD4 !important;
+  }
+
+  /* Các phần tử con trực tiếp bên trong TH (span, div, button, icon...) đồng bộ màu sáng trên nền #003B3A */
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > thead > tr > th :is(
+    span, div, p, strong, b, small, label, button, a, svg
+  ):not(input):not(select):not(textarea):not(.absolute):not(.fixed):not(.absolute *):not(.fixed *):not([class*="bg-white"]):not([class*="bg-white"] *):not([class*="bg-emerald-50"]):not([class*="bg-amber-50"]):not([class*="bg-rose-50"]) {
+    color: inherit !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+  }
+
+  /* Checkbox trên THEAD và TBODY */
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) input[type="checkbox"] {
+    accent-color: #00A19A;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  /* 4. Body Bảng (TBODY) — Sổ cái Học thuật (Alabaster & Slate Ledger) */
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > tbody {
+    background-color: #FFFFFF;
+    font-size: 0.75rem;
+  }
+
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > tbody > tr {
+    border-bottom: 1px solid #E2E8F0;
+    transition: background-color 0.15s ease;
+  }
+
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > tbody > tr:last-child {
+    border-bottom: none;
+  }
+
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > tbody > tr:hover:not([class*="bg-[#F0FDFA]"]):not([class*="bg-emerald-50"]):not([class*="bg-amber-50"]):not([class*="bg-rose-50"]) {
+    background-color: #F8FAFC;
+  }
+
+  table:not(.print-table):not([data-printable="true"]):not(.no-ledger-table) > tbody > tr > td {
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+    border-color: #E2E8F0;
+  }
+}
+

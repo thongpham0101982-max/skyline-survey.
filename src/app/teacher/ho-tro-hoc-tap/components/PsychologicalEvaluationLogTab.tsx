@@ -340,19 +340,19 @@ export function PsychologicalEvaluationLogTab({
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1000px]">
-            <thead>
-              <tr className="bg-gradient-to-r from-teal-600 via-indigo-950 to-slate-900 text-white text-[11px] font-black uppercase tracking-wider">
-                <th className="py-3.5 px-4 text-center w-12">STT</th>
-                <th className="py-3.5 px-4 min-w-[200px]">Học sinh</th>
-                <th className="py-3.5 px-4 min-w-[140px]">Lớp & Cơ sở</th>
-                <th className="py-3.5 px-4 min-w-[190px]">GV / Chuyên viên tham vấn</th>
-                <th className="py-3.5 px-4 text-center min-w-[130px]">Bắt đầu theo dõi</th>
-                <th className="py-3.5 px-4 min-w-[220px]">Vấn đề / Lý do hỗ trợ</th>
-                <th className="py-3.5 px-4 text-center min-w-[170px]">Trạng thái</th>
-                <th className="py-3.5 px-4 text-center min-w-[160px]">Xem chi tiết kết quả</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="text-white text-[11px] font-semibold">
+                <th className="py-3.5 px-4 text-center w-12 font-semibold">STT</th>
+                <th className="py-3.5 px-4 min-w-[200px] font-semibold">Học sinh</th>
+                <th className="py-3.5 px-4 min-w-[140px] font-semibold">Lớp & Cơ sở</th>
+                <th className="py-3.5 px-4 min-w-[190px] font-semibold">GV / Chuyên viên tham vấn</th>
+                <th className="py-3.5 px-4 text-center min-w-[130px] font-semibold">Bắt đầu theo dõi</th>
+                <th className="py-3.5 px-4 min-w-[220px] font-semibold">Vấn đề / Lý do hỗ trợ</th>
+                <th className="py-3.5 px-4 text-center min-w-[170px] font-semibold">Trạng thái</th>
+                <th className="py-3.5 px-4 text-center min-w-[160px] font-semibold">Xem chi tiết kết quả</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
+            <tbody className="divide-y divide-[#E2E8F0] text-xs font-medium text-slate-700">
               {filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-14 text-center text-slate-400 space-y-2">

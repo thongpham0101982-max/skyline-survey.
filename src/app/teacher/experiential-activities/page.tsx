@@ -1060,21 +1060,21 @@ export default function TeacherExperientialActivitiesPage() {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
-                  <th className="py-3.5 px-3 w-10 text-center">#</th>
-                  <th className="py-3.5 px-3 min-w-[240px]">Tên Hoạt Động & Chủ Đề</th>
-                  <th className="py-3.5 px-3">Lớp & HK</th>
-                  <th className="py-3.5 px-3 min-w-[130px]">Môn Phối Hợp</th>
-                  <th className="py-3.5 px-3 min-w-[120px]">Địa Điểm</th>
-                  <th className="py-3.5 px-3 min-w-[120px]">GVBM (TCM)</th>
-                  <th className="py-3.5 px-3 text-center">Hình Thức ĐG</th>
-                  <th className="py-3.5 px-3 min-w-[140px]">Tiến Độ Đánh Giá</th>
-                  <th className="py-3.5 px-3 text-center">Trạng Thái</th>
-                  <th className="py-3.5 px-3 text-right">Thao Tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3.5 px-3 w-10 text-center font-semibold">#</th>
+                  <th className="py-3.5 px-3 min-w-[240px] font-semibold">Tên Hoạt Động & Chủ Đề</th>
+                  <th className="py-3.5 px-3 font-semibold">Lớp & HK</th>
+                  <th className="py-3.5 px-3 min-w-[130px] font-semibold">Môn Phối Hợp</th>
+                  <th className="py-3.5 px-3 min-w-[120px] font-semibold">Địa Điểm</th>
+                  <th className="py-3.5 px-3 min-w-[120px] font-semibold">GVBM (TCM)</th>
+                  <th className="py-3.5 px-3 text-center font-semibold">Hình Thức ĐG</th>
+                  <th className="py-3.5 px-3 min-w-[140px] font-semibold">Tiến Độ Đánh Giá</th>
+                  <th className="py-3.5 px-3 text-center font-semibold">Trạng Thái</th>
+                  <th className="py-3.5 px-3 text-right font-semibold">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {activities.map((act, idx) => {
                   const themeBadge = getThemeBadge(act.themeName);
                   const evalBadge = getEvalModeBadge(act.evalMode);

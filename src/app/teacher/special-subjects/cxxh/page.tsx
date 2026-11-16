@@ -647,21 +647,21 @@ export default function TeacherCxxhEvaluationPage() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto max-h-[650px] relative">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 z-20 bg-slate-50 shadow-xs border-b border-slate-200 text-[11px] font-bold text-slate-700">
-                <tr>
-                  <th className="py-3 px-3 w-12 text-center sticky left-0 z-30 bg-slate-50 border-r border-slate-200">
+              <thead className="bg-[#003B3A] sticky top-0 z-20 shadow-xs border-b text-[11px] text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-3 w-12 text-center sticky left-0 z-30 bg-[#003B3A] border-r border-white/15 font-semibold">
                     STT
                   </th>
-                  <th className="py-3 px-3 w-28 sticky left-12 z-30 bg-slate-50 border-r border-slate-200">
+                  <th className="py-3 px-3 w-28 sticky left-12 z-30 bg-[#003B3A] border-r border-white/15 font-semibold">
                     Mã HS
                   </th>
-                  <th className="py-3 px-4 w-48 sticky left-40 z-30 bg-slate-50 border-r border-slate-200 shadow-sm">
+                  <th className="py-3 px-4 w-48 sticky left-40 z-30 bg-[#003B3A] border-r border-white/15 shadow-sm font-semibold">
                     Họ và tên học sinh
                   </th>
 
                   {/* Criteria Columns */}
                   {currentLesson.criteria.map((crit, cIdx) => (
-                    <th key={crit.id ? `${crit.id}-${cIdx}` : `crit-head-${cIdx}`} className="py-3 px-3 min-w-[200px] border-r border-slate-200 bg-teal-50/40">
+                    <th key={crit.id ? `${crit.id}-${cIdx}` : `crit-head-${cIdx}`} className="py-3 px-3 min-w-[200px] border-r border-white/15 bg-[#003B3A] font-semibold">
                       <div className="flex items-center justify-between">
                         <span className="font-extrabold text-[#003B3A]">Tiêu chuẩn {cIdx + 1}</span>
                         {crit.programLevel && (
@@ -680,24 +680,24 @@ export default function TeacherCxxhEvaluationPage() {
                   ))}
 
                   {/* Overall Result Column */}
-                  <th className="py-3 px-3 w-32 text-center border-r border-slate-200 bg-slate-100">
+                  <th className="py-3 px-3 w-32 text-center border-r border-white/15 bg-[#003B3A] font-semibold">
                     <div>Kết quả bài</div>
                     <div className="text-[9px] text-slate-500 font-normal">Tự động (P.Án 1)</div>
                   </th>
 
                   {/* Feedback Column */}
-                  <th className="py-3 px-4 min-w-[220px]">
+                  <th className="py-3 px-4 min-w-[220px] font-semibold">
                     Nhận xét cá nhân của GV
                   </th>
 
                   {/* Action / Audit Column */}
-                  <th className="py-3 px-2 w-12 text-center">
+                  <th className="py-3 px-2 w-12 text-center font-semibold">
                     Lịch sử
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map((st, sIdx) => {
                     const isAbsent = st.attendanceStatus === "ABSENT";

@@ -77,9 +77,18 @@ export function RolesClient({ initialRoles }: any) {
 
   const buildPerms = (roleCode: string) => {
     const r = roles.find((r: any) => r.code === roleCode);
+    const legacyDgnlPerm = r?.permissions?.find((p: any) => p.module === "QL_DGNL" || p.module === "COMPETENCY_ASSESSMENT");
+    const dgnlModuleCodes = ["COMPETENCY_IMPORT", "COMPETENCY_SUBJECTS", "COMPETENCY_ALIASES", "COMPETENCY_HISTORY"];
     const permsMap = ALL_APP_MODULES.map(m => {
       const existing = r?.permissions?.find((p: any) => p.module === m.code);
-      return existing ? { ...existing } : emptyPerm(m.code);
+      if (existing) return { ...existing };
+      if (legacyDgnlPerm && dgnlModuleCodes.includes(m.code)) {
+        return {
+          ...legacyDgnlPerm,
+          module: m.code,
+        };
+      }
+      return emptyPerm(m.code);
     });
 
     APP_CATEGORIES.forEach(cat => {
@@ -259,6 +268,10 @@ export function RolesClient({ initialRoles }: any) {
         KTDBCL_SUPPORT: { r: true, c: true, u: true },
         KTDBCL_HUONG_NGHIEP: { r: true, c: true, u: true },
         QL_DGNL: { r: true, c: true, u: true },
+        COMPETENCY_IMPORT: { r: true, c: true, u: true },
+        COMPETENCY_SUBJECTS: { r: true, c: true, u: true },
+        COMPETENCY_ALIASES: { r: true, c: true, u: true },
+        COMPETENCY_HISTORY: { r: true, c: true, u: true },
         KTDBCL_IMPORT_KQHT: { r: true, c: true, u: true },
         EXPERIENTIAL_ACTIVITIES: { r: true, c: true, u: true },
         EXP_ACT_MANAGE: { r: true, c: true, u: true },
@@ -291,6 +304,10 @@ export function RolesClient({ initialRoles }: any) {
         KTDBCL_GRADE_REMARKS: { r: true, c: true, u: true },
         KTDBCL_SUPPORT: { r: true, c: true, u: true },
         QL_DGNL: { r: true },
+        COMPETENCY_IMPORT: { r: true },
+        COMPETENCY_SUBJECTS: { r: true },
+        COMPETENCY_ALIASES: { r: true },
+        COMPETENCY_HISTORY: { r: true },
         EXPERIENTIAL_ACTIVITIES: { r: true, c: true, u: true },
         EXP_ACT_MANAGE: { r: true, c: true, u: true },
         EXP_ACT_REPORTS: { r: true },
@@ -320,6 +337,10 @@ export function RolesClient({ initialRoles }: any) {
         KTDBCL_GRADE_REMARKS: { r: true, c: true, u: true },
         KTDBCL_SUPPORT: { r: true, c: true, u: true },
         QL_DGNL: { r: true },
+        COMPETENCY_IMPORT: { r: true },
+        COMPETENCY_SUBJECTS: { r: true },
+        COMPETENCY_ALIASES: { r: true },
+        COMPETENCY_HISTORY: { r: true },
         EXPERIENTIAL_ACTIVITIES: { r: true, c: true, u: true },
         EXP_ACT_MANAGE: { r: true, c: true, u: true },
         EXP_ACT_REPORTS: { r: true },
@@ -385,6 +406,10 @@ export function RolesClient({ initialRoles }: any) {
         KTDBCL_SUPPORT: { r: true, c: true, u: true, d: true },
         KTDBCL_HUONG_NGHIEP: { r: true, c: true, u: true, d: true },
         QL_DGNL: { r: true, c: true, u: true, d: true },
+        COMPETENCY_IMPORT: { r: true, c: true, u: true, d: true },
+        COMPETENCY_SUBJECTS: { r: true, c: true, u: true, d: true },
+        COMPETENCY_ALIASES: { r: true, c: true, u: true, d: true },
+        COMPETENCY_HISTORY: { r: true, c: true, u: true, d: true },
         KTDBCL_IMPORT_KQHT: { r: true, c: true, u: true, d: true },
         DU_GIO_K12: { r: true, c: true, u: true },
         TONG_HOP_DU_GIO: { r: true, c: true, u: true },
@@ -460,6 +485,9 @@ export function RolesClient({ initialRoles }: any) {
         return { ...p, canRead: true, canCreate: false, canUpdate: false, canDelete: false };
       }
       if (rules.allClear) {
+        return { ...p, canRead: false, canCreate: false, canUpdate: false, canDelete: false };
+      }
+      if (p.module === "WEEKLY_REPORTS" && presetType !== "KTDBCL") {
         return { ...p, canRead: false, canCreate: false, canUpdate: false, canDelete: false };
       }
       const modRules = rules[p.module];
@@ -768,29 +796,29 @@ export function RolesClient({ initialRoles }: any) {
           {/* Table Container */}
           <div className="overflow-x-auto custom-scrollbar flex-1 relative max-h-[64vh]">
             <table className="w-full text-left whitespace-nowrap border-collapse">
-              <thead>
-                <tr className="sticky top-0 z-30 bg-slate-50 border-b border-slate-200 text-xs shadow-2xs">
-                  <th className="px-4 py-3 font-bold text-slate-800 uppercase tracking-wider w-[42%]">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="sticky top-0 z-30 border-b text-xs shadow-2xs font-semibold">
+                  <th className="px-4 py-3 font-bold w-[42%] text-teal-100">
                     Chức năng / Module
                   </th>
-                  <th className="px-3 py-3 font-bold text-slate-600 text-[11px] uppercase tracking-wider text-center w-[12%]">
+                  <th className="px-3 py-3 font-bold text-[11px] text-center w-[12%]">
                     Xem (R)
                   </th>
-                  <th className="px-3 py-3 font-bold text-slate-600 text-[11px] uppercase tracking-wider text-center w-[12%]">
+                  <th className="px-3 py-3 font-bold text-[11px] text-center w-[12%]">
                     Thêm (C)
                   </th>
-                  <th className="px-3 py-3 font-bold text-slate-600 text-[11px] uppercase tracking-wider text-center w-[12%]">
+                  <th className="px-3 py-3 font-bold text-[11px] text-center w-[12%]">
                     Sửa (U)
                   </th>
-                  <th className="px-3 py-3 font-bold text-slate-600 text-[11px] uppercase tracking-wider text-center w-[12%]">
+                  <th className="px-3 py-3 font-bold text-[11px] text-center w-[12%]">
                     Xóa (D)
                   </th>
-                  <th className="px-3 py-3 font-bold text-slate-600 text-[11px] uppercase tracking-wider text-center w-[10%]">
+                  <th className="px-3 py-3 font-bold text-[11px] text-center w-[10%]">
                     Thao tác nhanh
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs">
                 {APP_CATEGORIES.map((cat) => {
                   const colors = colorStyles[cat.color] || colorStyles.slate;
                   return (

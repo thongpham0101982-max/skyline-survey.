@@ -13,7 +13,9 @@ interface Period { id: string; code: string; name: string; status: string; batch
 interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string }
 interface AcademicYear { id: string; name: string }
 
-const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
+const DEFAULT_WATERMARK_SVG = "/images/skyline-doc-watermark.png";
+const DEFAULT_LOGO_URL = "/logo.png";
+const DEFAULT_FOOTER_URL = "/images/skyline-doc-footer.png";
 
 const getCampusFullName = (codeOrName: string) => {
   const clean = (codeOrName || "").toUpperCase();
@@ -75,11 +77,68 @@ Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là
 
 Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
-const defaultThuChucMung = `Chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} học kì {{hocKy}} hệ {{surveyFormType}} năm học {{academicYear}}. Em đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường TH, THCS, THPT Sky-Line – một cột mốc quan trọng trong hành trình học tập của em.
+const defaultThuChucMung = `Về kết quả phỏng vấn định hướng và khảo sát đầu vào
 
-Thầy cô tại Sky-Line vui mừng chào đón em đến với ngôi trường hạnh phúc, nơi không chỉ cung cấp kiến thức mà còn giúp em phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, em sẽ có những trải nghiệm thật tuyệt vời và đáng nhớ trong những năm học sắp tới.
+Chúc mừng em đã hoàn thành quá trình phỏng vấn định hướng và khảo sát đầu vào với kết quả tốt đẹp, đánh dấu bước khởi đầu ý nghĩa trên hành trình học tập và phát triển tại Sky-Line.
 
-Nhà trường hy vọng rằng, với sự tự tin và khát khao học hỏi của mình, em sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Hãy luôn giữ vững niềm vui thích học hỏi và khát khao khám phá thế giới xung quanh em nhé!`;
+Thông qua quá trình phỏng vấn định hướng và trao đổi với phụ huynh, Nhà trường ghi nhận những sở thích, thế mạnh, khả năng học tập của em cùng những chia sẻ và kỳ vọng từ gia đình. Đây là cơ sở để Nhà trường đồng hành, hỗ trợ em phát huy năng lực và phát triển bản thân trong môi trường học tập tại Sky-Line.
+
+Sky-Line tin rằng mỗi học sinh đều có những tiềm năng và giá trị riêng. Với sự nỗ lực của bản thân cùng sự đồng hành của gia đình và thầy cô, em sẽ có nhiều cơ hội khám phá, trưởng thành và tự tin chinh phục những mục tiêu phía trước.
+
+Nhà trường vui mừng chào đón em đến với lớp {{grade}} - hệ {{surveyFormType}}, năm học {{academicYear}}, tại {{admissionCampus}} - nơi mỗi học sinh được tôn trọng sự khác biệt, khuyến khích phát huy thế mạnh và phát triển toàn diện.
+
+Chúc em luôn tự tin, giữ vững niềm vui học tập và có những trải nghiệm thật ý nghĩa tại Sky-Line!
+
+Để hoàn tất thủ tục nhập học chính thức, kính mời Quý Phụ huynh phối hợp với bộ phận Tuyển sinh thực hiện các bước tiếp theo theo hướng dẫn của Nhà trường.
+
+Trân trọng,`;
+
+const isLegacyThuChucMung = (text?: string) =>
+  typeof text === "string" && text.trim().startsWith("Chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp");
+
+const renderFormattedParagraphContent = (text: string) => {
+  const pvRegex = /(Chúc mừng em đã hoàn thành quá trình\s+)(phỏng vấn định hướng và khảo sát đầu vào)(.*)/i;
+  const pvMatch = text.match(pvRegex);
+  if (pvMatch) {
+    return (
+      <>
+        {pvMatch[1]}
+        <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{pvMatch[2]}</strong>
+        {pvMatch[3]}
+      </>
+    );
+  }
+  const welcomeRegex = /^(Nhà trường vui mừng chào đón em đến với\s+)(lớp\s+[^,]+,)(\s*năm học\s+)([^,]+,)(\s*tại\s+)([^-–]+?)(\s*[-–]\s*nơi mỗi học sinh.*)$/i;
+  const welcomeMatch = text.match(welcomeRegex);
+  if (welcomeMatch) {
+    return (
+      <>
+        {welcomeMatch[1]}
+        <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{welcomeMatch[2]}</strong>
+        {welcomeMatch[3]}
+        <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{welcomeMatch[4]}</strong>
+        {welcomeMatch[5]}
+        <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{welcomeMatch[6]}</strong>
+        {welcomeMatch[7]}
+      </>
+    );
+  }
+  return text;
+};
+
+const formatParagraphInlineHtmlStr = (text: string): string => {
+  const pvRegex = /(Chúc mừng em đã hoàn thành quá trình\s+)(phỏng vấn định hướng và khảo sát đầu vào)(.*)/i;
+  const pvMatch = text.match(pvRegex);
+  if (pvMatch) {
+    return `${pvMatch[1]}<strong>${pvMatch[2]}</strong>${pvMatch[3]}`;
+  }
+  const welcomeRegex = /^(Nhà trường vui mừng chào đón em đến với\s+)(lớp\s+[^,]+,)(\s*năm học\s+)([^,]+,)(\s*tại\s+)([^-–]+?)(\s*[-–]\s*nơi mỗi học sinh.*)$/i;
+  const welcomeMatch = text.match(welcomeRegex);
+  if (welcomeMatch) {
+    return `${welcomeMatch[1]}<strong>${welcomeMatch[2]}</strong>${welcomeMatch[3]}<strong>${welcomeMatch[4]}</strong>${welcomeMatch[5]}<strong>${welcomeMatch[6]}</strong>${welcomeMatch[7]}`;
+  }
+  return text;
+};
 
 const defaultCamKet = `Về việc tăng cường kiến thức trong quá trình học tập
 
@@ -226,7 +285,7 @@ const renderTemplate = (content: string, student: any, academicYearName?: string
     .replace(/\{\{admissionCampus\}\}/g, actualCampusName)
     .replace(/\{\{schoolName\}\}/g, schoolNameFull)
     .replace(/\{\{truong\}\}/g, truongName)
-    .replace(/\{\{academicYear\}\}/g, student?.academicYear || academicYearName || selectedYearName)
+    .replace(/\{\{academicYear\}\}/g, student?.academicYear || academicYearName || "2026-2027")
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
     .replace(/\{\{committedSubjects\}\}/g, comSubs || "Tiếng Anh")
@@ -305,17 +364,22 @@ export function ReportsClient({
   };
 
   // Report config states
-  const [rcCampusId, setRcCampusId] = useState("");
+  const [rcCampusId, setRcCampusId] = useState(() => campuses?.[0]?.id || "");
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung");
   const [rcTargetGroup, setRcTargetGroup] = useState("all");
-  const [rcTitle, setRcTitle] = useState("");
-  const [rcContent, setRcContent] = useState("");
-  const [rcDirectorName, setRcDirectorName] = useState("");
-  const [rcLogo, setRcLogo] = useState("");
+  const [rcTitle, setRcTitle] = useState("THƯ CHÚC MỪNG");
+  const [rcContent, setRcContent] = useState(defaultThuChucMung);
+  const [rcDirectorName, setRcDirectorName] = useState(() => campuses?.[0]?.manager?.fullName || getCampusDefaultManager(campuses?.[0]?.campusName || ""));
+  const [rcLogo, setRcLogo] = useState(DEFAULT_LOGO_URL);
   const [rcSignature, setRcSignature] = useState("");
-  const [rcBackground, setRcBackground] = useState("");
-  const [rcFooter, setRcFooter] = useState("");
+  const [rcBackground, setRcBackground] = useState(DEFAULT_WATERMARK_SVG);
+  const [rcFooter, setRcFooter] = useState(DEFAULT_FOOTER_URL);
   const [previewPage, setPreviewPage] = useState<1 | 2>(1);
+  useEffect(() => {
+    if (!rcCampusId && campuses && campuses.length > 0) {
+      setRcCampusId(campuses[0].id);
+    }
+  }, [campuses, rcCampusId]);
   useEffect(() => {
     if (rcReportType !== "thu_chuc_mung" || selectedLevel !== "high") {
       setPreviewPage(1);
@@ -685,6 +749,137 @@ export function ReportsClient({
       }));
   }, [selectedLevel, preschoolPeriods, generalPeriods, yearId]);
 
+  // Helper: Xác định Chữ ký số của Giám đốc Cơ sở (GĐCS) từ hồ sơ TeacherSignatureProfile & cấu hình Cơ sở
+  const resolveGdcsSignatureInfoForCampus = (targetCampus: any, preferredApproverName?: string) => {
+    if (!targetCampus) {
+      return {
+        directorName: preferredApproverName || "Trần Thị Thanh",
+        digitalSignatureUrl: "",
+        configuredSignatureUrl: "",
+        effectiveSignatureUrl: "",
+        hasDigitalProfile: false,
+        provider: "",
+        serialNumber: ""
+      };
+    }
+
+    const officialEmailByCode: Record<string, string> = {
+      CS1: "longtt@skylineschool.edu.vn",
+      CS2: "khanhpt@skylineschool.edu.vn",
+      CS3: "thanhtt@skylineschool.edu.vn",
+      CS4: "trungct@skylineschool.edu.vn",
+      CS5: "trungdq1@skylineschool.edu.vn"
+    };
+    const csCode = String(targetCampus.campusCode || "").toUpperCase();
+    const officialEmail = officialEmailByCode[csCode] || "";
+
+    let matchedTeacher: any = null;
+    let matchedProfile: any = null;
+
+    // 1. Ưu tiên khớp theo Họ tên GĐCS đã ký duyệt trên hồ sơ (preferredApproverName)
+    const normApprover = String(preferredApproverName || "").trim().toLowerCase();
+    if (normApprover && normApprover !== "giám đốc cơ sở" && Array.isArray(teachers)) {
+      const byApprover = teachers.find((t: any) =>
+        String(t.teacherName || "").trim().toLowerCase() === normApprover ||
+        String(t.user?.fullName || "").trim().toLowerCase() === normApprover
+      );
+      if (byApprover) {
+        matchedTeacher = byApprover;
+        matchedProfile = byApprover.signatureProfile || null;
+      }
+    }
+
+    // 2. Lấy từ Campus.manager.teacher.signatureProfile
+    if (!matchedProfile && targetCampus.manager?.teacher) {
+      matchedTeacher = matchedTeacher || targetCampus.manager.teacher;
+      if (targetCampus.manager.teacher.signatureProfile) {
+        matchedProfile = targetCampus.manager.teacher.signatureProfile;
+      }
+    }
+
+    // 3. Tìm trong danh sách teachers khớp với Campus.manager
+    if (!matchedProfile && targetCampus.manager?.fullName && Array.isArray(teachers)) {
+      const normMgr = String(targetCampus.manager.fullName).trim().toLowerCase();
+      const byMgr = teachers.find((t: any) =>
+        String(t.teacherName || "").trim().toLowerCase() === normMgr ||
+        String(t.user?.fullName || "").trim().toLowerCase() === normMgr
+      );
+      if (byMgr) {
+        matchedTeacher = matchedTeacher || byMgr;
+        matchedProfile = byMgr.signatureProfile || null;
+      }
+    }
+
+    // 4. Tìm trong danh sách gdcsUsers hoặc email GĐCS chuẩn của cơ sở
+    if (!matchedProfile && Array.isArray(gdcsUsers)) {
+      const byGdcsUser = gdcsUsers.find((u: any) =>
+        u.teacher?.campusId === targetCampus.id ||
+        (officialEmail && (String(u.email || "").toLowerCase() === officialEmail || String(u.teacher?.email || "").toLowerCase() === officialEmail)) ||
+        (targetCampus.manager?.fullName && String(u.fullName || "").trim() === String(targetCampus.manager.fullName).trim())
+      );
+      if (byGdcsUser?.teacher?.signatureProfile) {
+        matchedTeacher = matchedTeacher || byGdcsUser.teacher;
+        matchedProfile = byGdcsUser.teacher.signatureProfile;
+      }
+    }
+
+    // 5. Tìm trong danh sách teachers thuộc cơ sở có vai trò GĐCS hoặc khớp email chuẩn
+    if (!matchedProfile && Array.isArray(teachers)) {
+      const byCampusGdcs = teachers.find((t: any) => {
+        const sameCampus = t.campusId === targetCampus.id || t.campus?.id === targetCampus.id;
+        const role = String(t.user?.role || "").toUpperCase();
+        const isGdcsRole = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(role);
+        const matchEmail = officialEmail && (String(t.email || "").toLowerCase() === officialEmail || String(t.user?.email || "").toLowerCase() === officialEmail);
+        return matchEmail || (sameCampus && isGdcsRole);
+      });
+      if (byCampusGdcs) {
+        matchedTeacher = matchedTeacher || byCampusGdcs;
+        matchedProfile = byCampusGdcs.signatureProfile || null;
+      }
+    }
+
+    const savedDir = typeof window !== "undefined" ? (localStorage.getItem('report_config_director_' + targetCampus.id) || "") : "";
+    const resolvedDirectorName =
+      (preferredApproverName && preferredApproverName !== "Giám đốc Cơ sở" ? preferredApproverName : "") ||
+      savedDir ||
+      targetCampus.manager?.fullName ||
+      matchedTeacher?.user?.fullName ||
+      matchedTeacher?.teacherName ||
+      getCampusDefaultManager(targetCampus.campusName || targetCampus.campusCode || "");
+
+    const digitalSignatureUrl = matchedProfile?.visualAppearanceUrl || "";
+    const savedCampusSig = typeof window !== "undefined" ? (localStorage.getItem('report_config_signature_' + targetCampus.id) || "") : "";
+    const effectiveSignatureUrl = digitalSignatureUrl || savedCampusSig || "";
+    const hasDigitalProfile = Boolean(
+      matchedProfile &&
+      (matchedProfile.connectionStatus === "CONNECTED" || matchedProfile.visualAppearanceUrl || matchedProfile.serialNumber)
+    );
+
+    return {
+      directorName: resolvedDirectorName,
+      digitalSignatureUrl,
+      configuredSignatureUrl: savedCampusSig,
+      effectiveSignatureUrl,
+      hasDigitalProfile,
+      provider: matchedProfile?.provider || "SKYLINE_CA",
+      serialNumber: matchedProfile?.serialNumber || ""
+    };
+  };
+
+  // Helper: Kiểm tra hồ sơ học sinh đã được GĐCS xét duyệt hay chưa
+  const isStudentApprovedByGdcs = (student: any): boolean => {
+    if (!student) return false;
+    if (selectedLevel === "preschool") {
+      const gdcsSt = String(student.gdcsApprovalStatus || "").trim().toUpperCase();
+      if (gdcsSt === "DA_DUYET" || gdcsSt === "APPROVED" || Boolean(student.gdcsApprovalUser)) return true;
+      const admRes = String(student.admissionResult || student.devAssessmentResult || student.probationaryResult || "").trim();
+      return Boolean(admRes && admRes !== "Chưa duyệt" && !admRes.toLowerCase().includes("chưa") && !admRes.toLowerCase().includes("không đạt"));
+    }
+    const admRes = String(student.admissionResult || "").trim();
+    if (!admRes || admRes === "Chưa duyệt" || admRes.toLowerCase().includes("chưa")) return false;
+    return !admRes.toLowerCase().includes("không đạt");
+  };
+
   // Unified loading of configuration
   useEffect(() => {
     if (typeof window === "undefined" || !rcCampusId) return;
@@ -714,18 +909,23 @@ export function ReportsClient({
     const mFooter = localStorage.getItem('report_config_master_footer') || "";
     const mSig = localStorage.getItem('report_config_master_signature') || "";
 
-    setRcLogo(mLogo || globalData.logo || campusData.logo || "");
-    setRcBackground(mBg || globalData.background || campusData.background || "");
-    setRcFooter(mFooter || globalData.footer || campusData.footer || "");
-    setRcContent(globalData.content || campusData.content || defaultText);
+    setRcLogo(mLogo || globalData.logo || campusData.logo || DEFAULT_LOGO_URL);
+    setRcBackground(mBg || globalData.background || campusData.background || DEFAULT_WATERMARK_SVG);
+    setRcFooter(mFooter || globalData.footer || campusData.footer || DEFAULT_FOOTER_URL);
+    const rawSavedContent = globalData.content || campusData.content || "";
+    const resolvedContent = (selectedLevel !== "preschool" && rcReportType === "thu_chuc_mung" && isLegacyThuChucMung(rawSavedContent))
+      ? defaultText
+      : (rawSavedContent || defaultText);
+    setRcContent(resolvedContent);
     setRcTitle(globalData.title || campusData.title || (rcReportType === "thu_moi" ? "THƯ MỜI" : rcReportType === "cam_ket_hoc_tap" ? "BẢN CAM KẾT HỌC TẬP" : rcReportType === "bao_cao_dinh_huong" ? "BÁO CÁO NHẬN DIỆN VÀ ĐỊNH HƯỚNG ĐẦU VÀO HỌC SINH" : "THƯ CHÚC MỪNG"));
     
-    const savedSignature = localStorage.getItem('report_config_signature_' + rcCampusId) || campusData.signature || mSig || "";
-    const savedDirector = localStorage.getItem('report_config_director_' + rcCampusId) || campusData.directorName || campusObj?.manager?.fullName || getCampusDefaultManager(campusObj?.campusName || "");
+    const gdcsSigInfo = resolveGdcsSignatureInfoForCampus(campusObj);
+    const savedSignature = gdcsSigInfo.digitalSignatureUrl || localStorage.getItem('report_config_signature_' + rcCampusId) || campusData.signature || mSig || "";
+    const savedDirector = localStorage.getItem('report_config_director_' + rcCampusId) || campusData.directorName || gdcsSigInfo.directorName;
     
     setRcSignature(savedSignature);
     setRcDirectorName(savedDirector);
-  }, [rcCampusId, rcReportType, rcTargetGroup, selectedLevel, campuses]);
+  }, [rcCampusId, rcReportType, rcTargetGroup, selectedLevel, campuses, teachers, gdcsUsers]);
 
   // Force Congratulations report type for preschool level to exclude invitation and commitment templates
   useEffect(() => {
@@ -838,6 +1038,8 @@ export function ReportsClient({
   const [searchQuery, setSearchQuery] = useState("");
   const [students, setStudents] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [pendingDeepLink, setPendingDeepLink] = useState<{ studentId: string; docType: string } | null>(null);
+
   // Default to 'all' when level changes
   useEffect(() => {
     setCPeriodId("all");
@@ -846,6 +1048,47 @@ export function ReportsClient({
     setCurrentPage(1);
     setStudents([]);
   }, [selectedLevel]);
+
+  // Deep-link handler from Email links (?tab=letters&studentId=...&docType=thu_chuc_mung|cam_ket_hoc_tap&level=high|preschool)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const qTab = params.get("tab");
+    const qStudentId = params.get("studentId");
+    const qDocType = params.get("docType") || "thu_chuc_mung";
+    const qLevel = params.get("level");
+    const qPeriodId = params.get("periodId");
+    const qBatchId = params.get("batchId");
+
+    if (qLevel === "preschool" || qLevel === "high") {
+      setSelectedLevel(qLevel);
+    }
+    if (qTab && ["report_config", "admission_documents", "letters", "results"].includes(qTab)) {
+      setTab(qTab);
+    }
+    if (qPeriodId) setCPeriodId(qPeriodId);
+    if (qBatchId) setCBatchId(qBatchId);
+    if (qStudentId) {
+      setTab("letters");
+      setPendingDeepLink({ studentId: qStudentId, docType: qDocType });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!pendingDeepLink || loadingStudents || students.length === 0) return;
+    const matched = students.find(
+      (s: any) => String(s.id) === pendingDeepLink.studentId || String(s.studentCode) === pendingDeepLink.studentId
+    );
+    if (matched) {
+      const isCom = pendingDeepLink.docType === "cam_ket_hoc_tap";
+      const isInv = pendingDeepLink.docType === "thu_moi";
+      setIsInvitation(isInv);
+      setIsCommitment(isCom);
+      setSelectedReportStudent(matched);
+      setIsPrintModalOpen(true);
+      setPendingDeepLink(null);
+    }
+  }, [pendingDeepLink, loadingStudents, students]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -977,8 +1220,8 @@ export function ReportsClient({
       const mFooter = localStorage.getItem('report_config_master_footer') || "";
       const mSig = localStorage.getItem('report_config_master_signature') || "";
 
-      const mergedLogo = mLogo || globalData.logo || campusData.logo || "";
-      const mergedBackground = mBg || globalData.background || campusData.background || "";
+      const mergedLogo = mLogo || globalData.logo || campusData.logo || DEFAULT_LOGO_URL;
+      const mergedBackground = mBg || globalData.background || campusData.background || DEFAULT_WATERMARK_SVG;
       let defaultText = "";
       if (selectedLevel === "preschool") {
          if (isCommitment) defaultText = defaultPreschoolCommitment;
@@ -989,10 +1232,25 @@ export function ReportsClient({
          else if (isInvitation) defaultText = defaultThuMoi;
          else defaultText = defaultThuChucMung;
       }
-      const mergedContent = globalData.content || campusData.content || defaultText;
-      const mergedFooter = mFooter || globalData.footer || campusData.footer || "";
-      const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
-      const campusDir = localStorage.getItem('report_config_director_' + targetCampus.id) || campusData.directorName || targetCampus.manager?.fullName || getCampusDefaultManager(targetCampus.campusName || "");
+      const rawMergedContent = globalData.content || campusData.content || "";
+      const mergedContent = (selectedLevel !== "preschool" && !isCommitment && !isInvitation && isLegacyThuChucMung(rawMergedContent))
+        ? defaultText
+        : (rawMergedContent || defaultText);
+      const mergedFooter = mFooter || globalData.footer || campusData.footer || DEFAULT_FOOTER_URL;
+      const isApproved = isInvitation ? true : isStudentApprovedByGdcs(selectedReportStudent);
+      const gdcsSigInfo = resolveGdcsSignatureInfoForCampus(
+        targetCampus,
+        selectedReportStudent.signatureName || selectedReportStudent.gdcsApprovalUser
+      );
+      const rawSig = gdcsSigInfo.digitalSignatureUrl || localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
+      const campusSig = isApproved ? rawSig : "";
+      const campusDir =
+        (isApproved && selectedReportStudent.signatureName && selectedReportStudent.signatureName !== "Giám đốc Cơ sở"
+          ? selectedReportStudent.signatureName
+          : "") ||
+        localStorage.getItem('report_config_director_' + targetCampus.id) ||
+        campusData.directorName ||
+        gdcsSigInfo.directorName;
 
       return {
         title: mergedTitle,
@@ -1001,11 +1259,15 @@ export function ReportsClient({
         content: mergedContent,
         footer: mergedFooter,
         signature: campusSig,
-        directorName: campusDir
+        directorName: campusDir,
+        isApproved,
+        hasDigitalProfile: gdcsSigInfo.hasDigitalProfile,
+        provider: gdcsSigInfo.provider,
+        serialNumber: gdcsSigInfo.serialNumber
       };
     }
     return null;
-  }, [selectedReportStudent, isInvitation, isCommitment, selectedLevel, campuses]);
+  }, [selectedReportStudent, isInvitation, isCommitment, selectedLevel, campuses, teachers, gdcsUsers]);
 
   // Selected campus and its specific department emails (Giáo vụ, GĐCS, Tư vấn)
   const selectedCampusObj = useMemo(() => {
@@ -1297,12 +1559,27 @@ export function ReportsClient({
       const mFooter = localStorage.getItem('report_config_master_footer') || "";
       const mSig = localStorage.getItem('report_config_master_signature') || "";
 
-      const mergedLogo = mLogo || globalData.logo || campusData.logo || "";
-      const mergedBackground = mBg || globalData.background || campusData.background || "";
-      const mergedContent = globalData.content || campusData.content || defaultText;
-      const mergedFooter = mFooter || globalData.footer || campusData.footer || "";
-      const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
-      const campusDir = localStorage.getItem('report_config_director_' + targetCampus.id) || campusData.directorName || targetCampus.manager?.fullName || getCampusDefaultManager(targetCampus.campusName || "");
+      const mergedLogo = mLogo || globalData.logo || campusData.logo || DEFAULT_LOGO_URL;
+      const mergedBackground = mBg || globalData.background || campusData.background || DEFAULT_WATERMARK_SVG;
+      const rawMergedContent = globalData.content || campusData.content || "";
+      const mergedContent = (selectedLevel !== "preschool" && !isCommitment && !isInvitation && isLegacyThuChucMung(rawMergedContent))
+        ? defaultText
+        : (rawMergedContent || defaultText);
+      const mergedFooter = mFooter || globalData.footer || campusData.footer || DEFAULT_FOOTER_URL;
+      const isApproved = customBaseKey === "thu_moi" ? true : isStudentApprovedByGdcs(student);
+      const gdcsSigInfo = resolveGdcsSignatureInfoForCampus(
+        targetCampus,
+        student.signatureName || student.gdcsApprovalUser
+      );
+      const rawSig = gdcsSigInfo.digitalSignatureUrl || localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || mSig || "";
+      const campusSig = isApproved ? rawSig : "";
+      const campusDir =
+        (isApproved && student.signatureName && student.signatureName !== "Giám đốc Cơ sở"
+          ? student.signatureName
+          : "") ||
+        localStorage.getItem('report_config_director_' + targetCampus.id) ||
+        campusData.directorName ||
+        gdcsSigInfo.directorName;
 
       return {
         title: mergedTitle,
@@ -1311,7 +1588,11 @@ export function ReportsClient({
         content: mergedContent,
         footer: mergedFooter,
         signature: campusSig,
-        directorName: campusDir
+        directorName: campusDir,
+        isApproved,
+        hasDigitalProfile: gdcsSigInfo.hasDigitalProfile,
+        provider: gdcsSigInfo.provider,
+        serialNumber: gdcsSigInfo.serialNumber
       };
     }
     return null;
@@ -1399,7 +1680,7 @@ export function ReportsClient({
       
     const { actualCampusName, schoolNameFull, truongName } = getCampusAndSchoolName(student?.admissionCampus);
 
-    const academicYearNameForEmail = activePeriod?.academicYear?.name || "2025-2026";
+    const academicYearNameForEmail = activePeriod?.academicYear?.name || selectedYearName || "2026-2027";
     const renderedContent = (config.content || "")
       .replace(/{{fullName}}/g, student?.fullName || "")
       .replace(/{{academicYear}}/g, student?.academicYear || academicYearNameForEmail)
@@ -1413,40 +1694,61 @@ export function ReportsClient({
       .replace(/{{committedSubjects}}/g, comSubs)
       .replace(/{{signatureName}}/g, student?.signatureName || "");
 
-    const paragraphs = renderedContent.split("\n").filter(Boolean);
+    const rawParagraphs = renderedContent.split("\n").map((p: string) => p.trim()).filter(Boolean);
     const isCommitmentReport = isCommitmentDoc || isCommitment || (config?.title?.toUpperCase().includes("CAM KẾT")) || (rcReportType === "cam_ket_hoc_tap");
+    const hasSubtitleLine = !isCommitmentReport && rawParagraphs.length > 0 && /^về\s+(kết\s+quả|việc)\s+/i.test(rawParagraphs[0]);
+    const subtitleLineHtml = hasSubtitleLine
+      ? '<p style="text-align: center; font-style: italic; font-size: 11pt; color: #334155; margin: 3px 0 0 0; text-indent: 0;">' + rawParagraphs[0] + '</p>'
+      : '';
+    const paragraphs = hasSubtitleLine ? rawParagraphs.slice(1) : rawParagraphs;
     const bodyHtml = paragraphs.map((p: string) => {
       const pClean = p.trim();
       const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
       const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
+      const isWishLine = /^chúc\s+(em|con)\s+luôn\s+tự\s+tin/i.test(pClean);
+      const isClosingLine = /^trân\s+trọng[,./]*$/i.test(pClean);
       
       if (isDateLine) return "";
       if (isCentred) {
-        return '<p style="text-align: center; font-weight: bold; text-indent: 0; margin: 0 0 10px 0;">' + pClean + '</p>';
+        return '<p style="text-align: center; font-weight: 700; text-indent: 0; margin: 0 0 7px 0;">' + pClean + '</p>';
       }
-      return '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + pClean + '</p>';
+      if (isClosingLine) {
+        return '<p style="font-weight: 700; font-style: italic; text-indent: 0; margin: 6px 0 2px 0;">' + pClean + '</p>';
+      }
+      if (isWishLine) {
+        return '<p style="font-weight: 700; text-indent: 0; margin: 0 0 7px 0;">' + pClean + '</p>';
+      }
+      return '<p style="text-indent: ' + (isCommitmentReport ? '10mm' : '0') + '; margin: 0 0 7px 0;">' + formatParagraphInlineHtmlStr(pClean) + '</p>';
     }).filter(Boolean).join("");
     
-    const greetingHtml = 'Thân gửi con <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
+    const pronounLabel = selectedLevel === "preschool" ? "Thân gửi con " : "Thân gửi em ";
+    const greetingHtml = '<strong style="font-weight: 700; font-style: normal; color: #0f172a;">' + pronounLabel + student.fullName + ',</strong>';
     const directorName = config.directorName || "Trần Thị Thanh";
     const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
       if (!src) return "";
-      const cors = src.startsWith("data:") ? "" : ' crossorigin="anonymous"';
+      const resolvedSrc = (src.startsWith("/") && typeof window !== "undefined") ? `${window.location.origin}${src}` : src;
+      const cors = resolvedSrc.startsWith("data:") ? "" : ' crossorigin="anonymous"';
       const styleAttr = style ? ' style="' + style + '"' : "";
       const altAttr = alt ? ' alt="' + alt + '"' : "";
-      return '<img class="' + className + '"' + cors + ' src="' + src + '"' + styleAttr + altAttr + ' />';
+      return '<img class="' + className + '"' + cors + ' src="' + resolvedSrc + '"' + styleAttr + altAttr + ' />';
     };
 
-    const logoHtml = config.logo ? getImgTag(config.logo, "logo-img", "", "Logo") : "";
-    const signatureHtml = config.signature ? getImgTag(config.signature, "signature-img", "", "Signature") : "";
-    const footerHtml = config.footer ? getImgTag(config.footer, "footer-img", "", "Footer") : "";
+    const effectiveLogo = config.logo || DEFAULT_LOGO_URL;
+    const effectiveFooter = config.footer || DEFAULT_FOOTER_URL;
+    const logoHtml = getImgTag(effectiveLogo, "logo-img", "max-height: 42px; object-fit: contain;", "Logo");
+    const signatureHtml = config.isApproved
+      ? (config.signature
+          ? getImgTag(config.signature, "signature-img", "max-height: 48px; max-width: 170px; object-fit: contain;", "Signature")
+          : '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(0,161,154,0.45);background:rgba(240,253,250,0.85);border-radius:6px;padding:3px 10px;line-height:1.25;"><span style="font-size:7.5pt;font-weight:700;color:#00736E;text-transform:uppercase;letter-spacing:0.3px;">✓ Đã ký số GĐCS</span><span style="font-size:8.5pt;font-weight:700;font-style:italic;color:#003B3A;">' + directorName + '</span></div>')
+      : "";
+    const footerHtml = getImgTag(effectiveFooter, "footer-img", "width: 100%; height: auto; max-height: 28mm; object-fit: contain; display: block;", "Footer");
     
     const effCampus = student.admissionCampus;
     const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
     const campusCodeStr = (campusObj ? campusObj.campusCode || campusObj.campusName : effCampus || "").toUpperCase();
-    let schoolName = selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE";
+    let schoolName = selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TH, THCS, THPT SKY-LINE";
     if (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL") || campusCodeStr.includes("HILLTOP")) {
-      schoolName = selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE HILL";
+      schoolName = selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
     }
 
     const d = new Date();
@@ -1466,14 +1768,7 @@ export function ReportsClient({
     const subTitleText = `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffix}`;
     const signName = directorName;
 
-    const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
-      '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
-        '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-          '<span style="font-weight: bold; color: #48BFE3; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
-          '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
-          '<span style="font-weight: 600; color: #48BFE3; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
-        '</div>' +
-      '</div>';
+    const customFooterHtml = getImgTag(effectiveFooter, "footer-img", "width: 100%; height: auto; max-height: 28mm; object-fit: contain; display: block;", "Footer");
 
     let page2Html = "";
     if (selectedLevel !== "preschool") {
@@ -1488,33 +1783,33 @@ export function ReportsClient({
         }).join("");
 
         page2Html = '<div class="print-page">' +
-            getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
-            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+            getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130mm; height: auto; opacity: 1; z-index: 0; pointer-events: none;", "Watermark") +
+            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #00A19A; padding-bottom: 6px; margin-bottom: 12px; position: relative; z-index: 10;">' +
               '<div style="display: flex; align-items: center; justify-content: space-between;">' +
                 logoHtml +
               '</div>' +
               '<div style="text-align: left; margin-top: 4px;">' +
-                '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + schoolName + '</h4>' +
+                '<h4 style="font-family: \'Open Sans\', Arial, sans-serif; font-size: 10.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; color: #0f172a; margin: 0;">' + schoolName + '</h4>' +
               '</div>' +
             '</div>' +
             '<div class="letter-title">' +
               '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
             '</div>' +
-            '<div style="margin-top: 30px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
+            '<div style="margin-top: 20px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
               '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;" className="border border-slate-200 border-collapse">' +
-                '<thead>' +
+                '<thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">' +
                   '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
                     '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
                     '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
-                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="p-2 border border-slate-200">Số lượng</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="p-2 border border-white/15 font-semibold">Số lượng</th>' +
                   '</tr>' +
                 '</thead>' +
-                '<tbody>' +
+                '<tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">' +
                   rowsHtml +
                 '</tbody>' +
               '</table>' +
             '</div>' +
-            '<p style="margin-top: 35px; font-size: 14px; font-weight: bold; color: #000000; line-height: 1.6; text-align: left; position: relative; z-index: 10;">' +
+            '<p style="margin-top: 24px; font-size: 13px; font-weight: bold; color: #000000; line-height: 1.5; text-align: left; position: relative; z-index: 10;">' +
               'Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.' +
             '</p>' +
             '<div class="footer-container">' +
@@ -1542,10 +1837,10 @@ export function ReportsClient({
             'print-color-adjust: exact !important;' +
           '}' +
           '.print-page {' +
-            'font-family: "Open Sans", sans-serif;' +
+            'font-family: "Open Sans", Arial, sans-serif;' +
             'width: 210mm;' +
             (isCommitmentReport ? 'height: auto; min-height: 296.8mm; overflow: visible;' : 'height: 296.8mm; overflow: hidden;') +
-            'padding: 12.7mm 15mm 48mm 15mm;' +
+            'padding: 15mm 20mm 32mm 22mm;' +
             'box-sizing: border-box;' +
             'position: relative;' +
             'background-color: #ffffff;' +
@@ -1557,51 +1852,52 @@ export function ReportsClient({
           '.print-watermark {' +
             'display: block;' +
             'position: absolute;' +
-            'top: 22%;' +
-            'left: 10%;' +
-            'transform: none;' +
-            'width: 80%;' +
+            'top: 50%;' +
+            'left: 50%;' +
+            'transform: translate(-50%, -50%);' +
+            'width: 130mm;' +
             'height: auto;' +
-            'opacity: 0.08;' +
+            'opacity: 1;' +
             'z-index: 0;' +
             'pointer-events: none;' +
           '}' +
           '.logo-img {' +
-            'max-height: 48px;' +
+            'max-height: 42px;' +
             'object-fit: contain;' +
           '}' +
           '.letter-title {' +
             'text-align: center;' +
-            'margin: 20px 0;' +
+            'margin: 6px 0 12px 0;' +
             'position: relative;' +
             'z-index: 10;' +
           '}' +
           '.letter-title h2 {' +
-            'font-size: 22px;' +
-            'font-weight: 900;' +
-            'letter-spacing: 0.5px;' +
-            'color: #1e1b4b;' +
+            'font-size: 17pt;' +
+            'font-weight: 800;' +
+            'letter-spacing: 1px;' +
+            'color: #0f172a;' +
             'text-transform: uppercase;' +
             'margin: 0;' +
           '}' +
           '.greeting {' +
-            'font-size: 16px;' +
-            'font-style: italic;' +
-            'color: #1e293b;' +
-            'margin-bottom: 12px;' +
+            'font-size: 11.5pt;' +
+            'font-style: normal;' +
+            'font-weight: 700;' +
+            'color: #0f172a;' +
+            'margin-bottom: 8px;' +
             'position: relative;' +
             'z-index: 10;' +
           '}' +
           '.content-body {' +
-            'font-size: 14pt;' +
-            'line-height: 1.5;' +
+            'font-size: 11pt;' +
+            'line-height: 1.42;' +
             'text-align: justify;' +
             'color: #1e293b;' +
             'position: relative;' +
             'z-index: 10;' +
           '}' +
           '.signature-section {' +
-            'margin-top: 30px;' +
+            'margin-top: 8px;' +
             'display: flex;' +
             'justify-content: flex-end;' +
             'position: relative;' +
@@ -1609,67 +1905,69 @@ export function ReportsClient({
           '}' +
           '.signature-block {' +
             'text-align: center;' +
-            'width: 200px;' +
+            'width: 240px;' +
           '}' +
           '.signature-title {' +
-            'font-size: 14px;' +
-            'font-weight: bold;' +
-            'color: #1e293b;' +
-            'margin-bottom: 4px;' +
+            'font-size: 10.5pt;' +
+            'font-weight: 700;' +
+            'color: #0f172a;' +
+            'margin-bottom: 1px;' +
           '}' +
           '.signature-desc {' +
-            'font-size: 12px;' +
-            'color: #475569;' +
+            'font-size: 9.5pt;' +
+            'color: #334155;' +
             'font-style: italic;' +
-            'margin-bottom: 10px;' +
+            'margin-bottom: 4px;' +
           '}' +
           '.signature-img-container {' +
-            'height: 64px;' +
+            'height: 48px;' +
             'display: flex;' +
             'justify-content: center;' +
             'align-items: center;' +
-            'margin-bottom: 8px;' +
+            'margin-bottom: 4px;' +
           '}' +
           '.signature-img {' +
-            'max-height: 64px;' +
+            'max-height: 48px;' +
+            'max-width: 170px;' +
             'object-fit: contain;' +
           '}' +
           '.signature-name {' +
-            'font-size: 15px;' +
-            'font-weight: bold;' +
-            'color: #1e293b;' +
+            'font-size: 11pt;' +
+            'font-weight: 700;' +
+            'color: #0f172a;' +
           '}' +
           '.footer-container {' +
             'position: absolute;' +
-            'bottom: 8mm;' +
-            'left: 0;' +
-            'right: 0;' +
-            'width: 100%;' +
-            'padding-left: 15mm;' +
-            'padding-right: 15mm;' +
+            'bottom: 6mm;' +
+            'left: 14mm;' +
+            'right: 14mm;' +
+            'width: auto;' +
             'box-sizing: border-box;' +
             'z-index: 10;' +
           '}' +
           '.footer-img {' +
             'width: 100%;' +
-            'max-height: 100px;' +
+            'height: auto;' +
+            'max-height: 28mm;' +
             'object-fit: contain;' +
+            'display: block;' +
           '}' +
         '</style>' +
       '</head>' +
       '<body>' +
         '<div class="print-page">' +
-          getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
-          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+          getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130mm; height: auto; opacity: 1; z-index: 0; pointer-events: none;", "Watermark") +
+          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #00A19A; padding-bottom: 6px; margin-bottom: 12px; position: relative; z-index: 10;">' +
             '<div style="display: flex; align-items: center; justify-content: space-between;">' +
               logoHtml +
             '</div>' +
             '<div style="text-align: left; margin-top: 4px;">' +
-              '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + schoolName + '</h4>' +
+              '<h4 style="font-family: \'Open Sans\', Arial, sans-serif; font-size: 10.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; color: #0f172a; margin: 0;">' + schoolName + '</h4>' +
             '</div>' +
           '</div>' +
           '<div class="letter-title">' +
             '<h2>' + config.title + '</h2>' +
+            subtitleLineHtml +
           '</div>' +
           (!isCommitmentReport ? 
           '<div class="greeting">' +
@@ -1678,15 +1976,15 @@ export function ReportsClient({
           '<div class="content-body">' +
             bodyHtml +
           '</div>' +
-          '<div class="signature-section" style="margin-top: 30px; display: flex; justify-content: flex-end; position: relative; z-index: 10;">' +
+          '<div class="signature-section" style="margin-top: 8px; display: flex; justify-content: flex-end; position: relative; z-index: 10;">' +
             '<div class="signature-block" style="text-align: center; width: 240px;">' +
-              (!isCommitmentReport ? '<div style="font-size: 13px; font-style: italic; color: #4b5563; margin-bottom: 4px;">' + formattedLetterDate + '</div>' : '') +
-              '<div class="signature-title" style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">' + titleText + '</div>' +
-              '<div style="font-size: 10px; font-weight: bold; color: #312e81; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">' + subTitleText + '</div>' +
-              '<div class="signature-img-container" style="height: 64px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px;">' +
-                (config.signature ? signatureHtml : '') +
+              (!isCommitmentReport ? '<div style="font-size: 10.5pt; font-style: italic; color: #334155; margin-bottom: 2px;">' + formattedLetterDate + '</div>' : '') +
+              '<div class="signature-title" style="font-size: 10.5pt; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1px;">' + titleText + '</div>' +
+              '<div style="font-size: 9.5pt; font-weight: 700; color: #334155; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.2px;">' + subTitleText + '</div>' +
+              '<div class="signature-img-container" style="height: 48px; display: flex; justify-content: center; align-items: center; margin-bottom: 4px;">' +
+                signatureHtml +
               '</div>' +
-              '<div class="signature-name" style="font-size: 14px; font-weight: bold; color: #1e293b;">' + signName + '</div>' +
+              '<div class="signature-name" style="font-size: 11pt; font-weight: 700; color: #0f172a;">' + signName + '</div>' +
             '</div>' +
           '</div>' +
           '<div class="footer-container">' +
@@ -1707,13 +2005,51 @@ export function ReportsClient({
   const [selectedEmailStudentIds, setSelectedEmailStudentIds] = useState<any[]>([]);
   const [emailSending, setEmailSending] = useState(false);
   const [emailSendingStatus, setEmailSendingStatus] = useState("");
-  const [attachLetters, setAttachLetters] = useState(true);
+  const [attachLetters, setAttachLetters] = useState(false);
+
+  const resolvePeriodAndBatchForStudents = (studentList: any[]) => {
+    const selectedBatchObj = cBatchId !== "all" ? activeBatches.find(b => b.id === cBatchId) : null;
+    const uniquePeriodNames = Array.from(
+      new Set(
+        studentList
+          .map((s: any) => s?.period?.name || activePeriods.find(p => p.id === s?.periodId)?.name || "")
+          .filter(Boolean)
+      )
+    );
+    const uniqueBatchNames = Array.from(
+      new Set(
+        studentList
+          .map((s: any) => s?.batch?.name || activeBatches.find(b => b.id === s?.batchId)?.name || "")
+          .filter(Boolean)
+      )
+    );
+
+    const periodLabel = activePeriod?.name || (uniquePeriodNames.length > 0 ? uniquePeriodNames.join(" • ") : "Kỳ khảo sát");
+    const batchLabel =
+      selectedBatchObj?.name ||
+      (uniqueBatchNames.length > 0 ? uniqueBatchNames.join(" • ") : "Đợt khảo sát");
+
+    const fmtDate = (d: any) => {
+      if (!d) return "";
+      const dt = new Date(d);
+      if (!isNaN(dt.getTime())) {
+        return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
+      }
+      return String(d);
+    };
+
+    const batchForDate = selectedBatchObj || studentList.find((s: any) => s?.batch?.startDate || s?.batch?.endDate)?.batch;
+    const sDate = fmtDate(batchForDate?.startDate);
+    const eDate = fmtDate(batchForDate?.endDate);
+    const batchDateRange = sDate && eDate && sDate !== eDate ? `${sDate} - ${eDate}` : (sDate || eDate);
+
+    return { periodLabel, batchLabel, batchDateRange };
+  };
 
   const handleOpenEmailModal = () => {
-    const activePeriodName = activePeriod?.name || "Kỳ khảo sát";
-    const activeBatchName = cBatchId !== "all" ? (activeBatches.find(b => b.id === cBatchId)?.name || "Đợt") : "Tất cả các đợt";
+    const { periodLabel, batchLabel } = resolvePeriodAndBatchForStudents(filteredStudents);
     
-    setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào KSNL - Kỳ: ${activePeriodName} - Đợt: ${activeBatchName}`);
+    setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào KSNL - Kỳ: ${periodLabel} - Đợt: ${batchLabel}`);
     
     // Automatically pre-populate To: Giáo vụ + GĐCS + BGH MN (nếu mầm non) + Tư vấn theo Cơ sở
     const defaultTo = [
@@ -1728,86 +2064,27 @@ export function ReportsClient({
     const defaultCc = "ktdbcl@skylineschool.edu.vn";
     setCcEmail(defaultCc);
 
-    setAttachLetters(true);
+    setAttachLetters(false);
     setSelectedEmailStudentIds(filteredStudents.map(s => s.id));
     setIsEmailModalOpen(true);
   };
 
   const handleSendEmailsSubmit = async () => {
-    const targetStudents = filteredStudents.filter(s => selectedEmailStudentIds.includes(s.id));
+    const targetStudents = filteredStudents
+      .filter(s => selectedEmailStudentIds.includes(s.id))
+      .map(s => ({
+        ...s,
+        periodName: s?.period?.name || activePeriods.find(p => p.id === s?.periodId)?.name || activePeriod?.name || "",
+        batchName: s?.batch?.name || activeBatches.find(b => b.id === s?.batchId)?.name || "",
+        committedSubjectsList: extractCommittedSubjects(s),
+      }));
     if (targetStudents.length === 0) return alert("Vui lòng chọn ít nhất 1 học sinh để gửi báo cáo!");
     if (!recipientEmail) return alert("Vui lòng nhập Email người nhận");
     setEmailSending(true);
-    setEmailSendingStatus("Đang khởi tạo gửi mail...");
+    setEmailSendingStatus("Đang truyền tải & gửi Email...");
 
     try {
-      const activePeriodName = activePeriod?.name || "Kỳ khảo sát";
-      const activeBatchName = cBatchId !== "all" ? (activeBatches.find(b => b.id === cBatchId)?.name || "Đợt") : "Tất cả các đợt";
-
-      const pdfAttachmentsList: any[] = [];
-      if (attachLetters) {
-        const html2pdf = await getHtml2Pdf();
-        
-        const eligibleStudents = targetStudents.filter(s => {
-          const r = s.admissionResult || s.devAssessmentResult || "";
-          const isPassed = (r.includes("Đạt") && !r.includes("Không")) || r.includes("DAT") || r.includes("MIỄN") || s.probationaryResult === "DAT";
-          return isPassed;
-        });
-        
-        let currentPdfCount = 0;
-        const totalPdfs = eligibleStudents.length;
-
-        for (const s of targetStudents) {
-          const r = s.admissionResult || s.devAssessmentResult || "";
-          const isPassed = (r.includes("Đạt") && !r.includes("Không")) || r.includes("DAT") || r.includes("MIỄN") || s.probationaryResult === "DAT";
-          if (isPassed) {
-            currentPdfCount++;
-            const currentDate = new Date();
-            const yearStr = currentDate.getFullYear().toString();
-            const monthStr = "T" + String(currentDate.getMonth() + 1).padStart(2, '0');
-            const dayStr = String(currentDate.getDate()).padStart(2, '0');
-            const opt = {
-              margin: 0,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 1.8, useCORS: true, logging: false, letterRendering: true },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-              pagebreak: { mode: ['avoid-all', 'css'] }
-            };
-
-            // Thư chúc mừng
-            const configTCM = getStudentCampusConfigForEmail(s, 'thu_chuc_mung');
-            if (configTCM) {
-              setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Thư chúc mừng - ${s.fullName}`);
-              const docHtmlTCM = buildLetterHtmlForEmail(s, configTCM, false);
-              const filenameTCM = `${yearStr}-${monthStr}.${dayStr}-TCM-${s.fullName}.pdf`;
-              try {
-                const pdfBase64TCM = await generatePdfBase64(html2pdf, docHtmlTCM, { ...opt, filename: filenameTCM });
-                pdfAttachmentsList.push({ filename: filenameTCM, base64: pdfBase64TCM.split(',')[1] });
-              } catch (pdfErr) {
-                console.error("Client PDF generation failed, falling back to server:", pdfErr);
-                pdfAttachmentsList.push({ filename: filenameTCM, html: docHtmlTCM });
-              }
-            }
-
-            // Bản cam kết
-            const configCK = getStudentCampusConfigForEmail(s, 'cam_ket_hoc_tap');
-            if (configCK) {
-              setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Cam kết - ${s.fullName}`);
-              const docHtmlCK = buildLetterHtmlForEmail(s, configCK, true);
-              const filenameCK = `${yearStr}-${monthStr}.${dayStr}-CamKet-${s.fullName}.pdf`;
-              try {
-                const pdfBase64CK = await generatePdfBase64(html2pdf, docHtmlCK, { ...opt, filename: filenameCK });
-                pdfAttachmentsList.push({ filename: filenameCK, base64: pdfBase64CK.split(',')[1] });
-              } catch (pdfErr) {
-                console.error("Client PDF generation failed, falling back to server:", pdfErr);
-                pdfAttachmentsList.push({ filename: filenameCK, html: docHtmlCK });
-              }
-            }
-          }
-        }
-      }
-
-      setEmailSendingStatus("Đang truyền tải & gửi Email...");
+      const { periodLabel, batchLabel, batchDateRange } = resolvePeriodAndBatchForStudents(targetStudents);
 
       const apiRoute = selectedLevel === "preschool"
         ? "/api/admin/preschool-send-quick-email"
@@ -1820,17 +2097,22 @@ export function ReportsClient({
           to: recipientEmail,
           cc: ccEmail,
           subject: emailSubject,
-          periodName: activePeriodName,
-          batchName: activeBatchName,
+          periodName: periodLabel,
+          batchName: batchLabel,
+          batchDateRange,
+          campusName: selectedCampusObj?.campusName || campusLabel,
           students: targetStudents,
-          attachLetters: attachLetters,
-          pdfAttachments: pdfAttachmentsList
+          baseUrl: typeof window !== "undefined" ? window.location.origin : "",
+          attachLetters: false,
+          pdfAttachments: []
         })
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        alert("Đã gửi email báo cáo thành công!");
+        const syncedCnt = data?.handoverSync?.syncedCount ?? targetStudents.length;
+        notify(`Đã gửi email trả kết quả và cập nhật nhật ký Bàn giao Tư vấn (Bước 7) cho ${syncedCnt} học sinh!`);
+        alert(`Đã gửi email trả kết quả thành công và cập nhật nhật ký Bàn giao Tư vấn (Bước 7) cho ${syncedCnt} học sinh!`);
         setIsEmailModalOpen(false);
       } else {
         alert("Gửi email thất bại: " + (data.error || "Lỗi không xác định"));
@@ -1942,7 +2224,7 @@ export function ReportsClient({
                 min-height: 296mm !important;
                 max-height: 296mm !important;
                 margin: 0 auto !important;
-                padding: 18mm 20mm 22mm 20mm !important;
+                padding: 15mm 20mm 32mm 22mm !important;
                 box-sizing: border-box !important;
                 position: relative !important;
                 background-color: white !important;
@@ -1959,13 +2241,20 @@ export function ReportsClient({
               }
               .footer-container {
                 position: absolute !important;
-                bottom: 12mm !important;
-                left: 20mm !important;
-                right: 20mm !important;
+                bottom: 6mm !important;
+                left: 14mm !important;
+                right: 14mm !important;
                 width: auto !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 z-index: 10 !important;
+              }
+              .footer-container img {
+                width: 100% !important;
+                height: auto !important;
+                max-height: 28mm !important;
+                object-fit: contain !important;
+                display: block !important;
               }
               @page {
                 size: A4 portrait;
@@ -2037,7 +2326,7 @@ export function ReportsClient({
         ...selectedReportStudent,
         signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
       },
-      activePeriod?.academicYear?.name
+      activePeriod?.academicYear?.name || selectedYearName
     );
     // Split the paragraph if "Kính mong Phụ huynh..." is in the middle of a paragraph
     const paragraphs: string[] = [];
@@ -2059,8 +2348,55 @@ export function ReportsClient({
     }) : -1;
     const isSplit = isCommitmentReport && splitIndex !== -1;
 
-    const page1Paragraphs = isSplit ? paragraphs.slice(0, splitIndex) : paragraphs;
+    const hasPrintSubtitle = !isCommitmentReport && paragraphs.length > 0 && /^về\s+(kết\s+quả|việc)\s+/i.test(paragraphs[0]);
+    const printSubtitleText = hasPrintSubtitle ? paragraphs[0] : "";
+    const effectivePrintParagraphs = hasPrintSubtitle ? paragraphs.slice(1) : paragraphs;
+
+    const page1Paragraphs = isSplit ? paragraphs.slice(0, splitIndex) : effectivePrintParagraphs;
     const page2Paragraphs = isSplit ? paragraphs.slice(splitIndex) : [];
+
+    const printSchoolHeaderName = selectedLevel === "preschool"
+      ? "TRƯỜNG MẦM NON SKY-LINE"
+      : campusTitleSuffix === "HILL"
+      ? "TRƯỜNG TH, THCS, THPT SKY-LINE HILL"
+      : "TRƯỜNG TH, THCS, THPT SKY-LINE";
+
+    const renderDirectorSignatureVisual = () => {
+      if (!studentCampusConfig?.isApproved) {
+        return null;
+      }
+      if (studentCampusConfig?.signature) {
+        return (
+          <img
+            src={studentCampusConfig.signature}
+            alt="Signature"
+            style={{ maxHeight: "48px", maxWidth: "170px", objectFit: "contain" }}
+          />
+        );
+      }
+      return (
+        <div
+          style={{
+            display: "inline-flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            border: "1px solid rgba(0, 161, 154, 0.45)",
+            backgroundColor: "rgba(240, 253, 250, 0.85)",
+            borderRadius: "6px",
+            padding: "3px 10px",
+            lineHeight: 1.25,
+          }}
+        >
+          <span style={{ fontSize: "7.5pt", fontWeight: 700, color: "#00736E", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+            ✓ Đã ký số GĐCS
+          </span>
+          <span style={{ fontSize: "8.5pt", fontWeight: 700, fontStyle: "italic", color: "#003B3A" }}>
+            {studentCampusConfig?.directorName || "Trần Thị Thanh"}
+          </span>
+        </div>
+      );
+    };
 
     const buildParagraphElement = (paras: string[]) => {
       return paras.map((para, idx) => {
@@ -2068,19 +2404,35 @@ export function ReportsClient({
         const isList = /^\s*[\d•\-*]+/.test(pClean);
         const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
         const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
+        const isWishLine = /^chúc\s+(em|con)\s+luôn\s+tự\s+tin/i.test(pClean);
+        const isClosingLine = /^trân\s+trọng[,./]*$/i.test(pClean);
         
         if (isDateLine) return null;
         if (isCentred) {
           return (
-            <p key={idx} style={{ textAlign: "center", fontWeight: "bold", margin: "0 0 8px 0", fontSize: "13pt", textIndent: 0 }}>
+            <p key={idx} style={{ textAlign: "center", fontWeight: "700", margin: "0 0 7px 0", fontSize: "11pt", textIndent: 0 }}>
+              {pClean}
+            </p>
+          );
+        }
+        if (isClosingLine) {
+          return (
+            <p key={idx} style={{ fontWeight: "700", fontStyle: "italic", margin: "6px 0 2px 0", fontSize: "11pt", textIndent: 0, color: "#0f172a" }}>
+              {pClean}
+            </p>
+          );
+        }
+        if (isWishLine) {
+          return (
+            <p key={idx} style={{ fontWeight: "700", margin: "0 0 7px 0", textAlign: "justify", lineHeight: "1.42", fontSize: "11pt", textIndent: 0, color: "#0f172a" }}>
               {pClean}
             </p>
           );
         }
         
         return (
-          <p key={idx} style={isList ? { paddingLeft: "24px", fontWeight: "bold", color: "#374151", margin: "4px 0", fontSize: "13pt" } : { textIndent: "10mm", margin: "0 0 4px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.3", fontSize: "13pt" }}>
-            {pClean}
+          <p key={idx} style={isList ? { paddingLeft: "20px", fontWeight: "700", color: "#334155", margin: "3px 0", fontSize: "11pt" } : { textIndent: isCommitmentReport ? "10mm" : 0, margin: "0 0 7px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.42", fontSize: "11pt", color: "#1e293b" }}>
+            {renderFormattedParagraphContent(pClean)}
           </p>
         );
       }).filter(Boolean);
@@ -2090,107 +2442,71 @@ export function ReportsClient({
       return (
         <>
           {/* PAGE 1: CONGRATULATIONS & COMMITMENTS LIST */}
-          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-            {studentCampusConfig?.background && (
-              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
-            )}
+          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[15mm_20mm_32mm_22mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>
+            <img crossOrigin={(studentCampusConfig?.background || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "130mm", height: "auto", opacity: 1, zIndex: 0, pointerEvents: "none" }} />
             <div className="relative z-10 flex flex-col justify-start h-full">
               <div>
-                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #48BFE3", paddingBottom: "8px", marginBottom: "16px" }}>
+                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A19A", paddingBottom: "6px", marginBottom: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    {studentCampusConfig?.logo ? (
-                      <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
-                    ) : (
-                      <svg style={{ height: "48px", fill: "#48BFE3" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
-                    )}
+                    <img src={studentCampusConfig?.logo || DEFAULT_LOGO_URL} alt="Logo" style={{ maxHeight: "42px", objectFit: "contain" }} />
                   </div>
                   <div style={{ textAlign: "left", marginTop: "4px" }}>
-                    <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
-                      {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                    <h4 style={{ fontFamily: '"Open Sans", Arial, sans-serif', fontSize: "10.5pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.3px", color: "#0f172a", margin: 0 }}>
+                      {printSchoolHeaderName}
                     </h4>
                   </div>
                 </div>
-                <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
+                <h2 style={{ textAlign: "center", fontSize: "17pt", fontWeight: "800", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: "6px 0 12px 0" }}>
                   {studentCampusConfig?.title}
                 </h2>
-                <div style={{ flexGrow: 1, fontFamily: '"Open Sans", sans-serif' }}>
+                <div style={{ flexGrow: 1, fontFamily: '"Open Sans", Arial, sans-serif' }}>
                   {buildParagraphElement(page1Paragraphs)}
                 </div>
               </div>
             </div>
-            <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-              {studentCampusConfig?.footer ? (
-                <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-              ) : (
-                <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                    <span style={{ fontWeight: "bold", color: "#48BFE3", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                    <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                    <span style={{ fontWeight: "600", color: "#48BFE3", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                  </div>
-                </div>
-              )}
+            <div className="footer-container" style={{ position: "absolute", bottom: "6mm", left: "14mm", right: "14mm", width: "auto", zIndex: 10 }}>
+              <img src={studentCampusConfig?.footer || DEFAULT_FOOTER_URL} alt="Footer" style={{ width: "100%", height: "auto", maxHeight: "28mm", objectFit: "contain", display: "block" }} />
             </div>
           </div>
 
           {/* PAGE 2: EXPECTATIONS & SIGNATURES */}
-          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-            {studentCampusConfig?.background && (
-              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
-            )}
+          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[15mm_20mm_32mm_22mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>
+            <img crossOrigin={(studentCampusConfig?.background || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "130mm", height: "auto", opacity: 1, zIndex: 0, pointerEvents: "none" }} />
             <div className="relative z-10">
-              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #48BFE3", paddingBottom: "8px", marginBottom: "16px" }}>
+              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A19A", paddingBottom: "6px", marginBottom: "12px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  {studentCampusConfig?.logo ? (
-                    <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
-                  ) : (
-                    <svg style={{ height: "48px", fill: "#48BFE3" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
-                  )}
+                  <img src={studentCampusConfig?.logo || DEFAULT_LOGO_URL} alt="Logo" style={{ maxHeight: "42px", objectFit: "contain" }} />
                 </div>
                 <div style={{ textAlign: "left", marginTop: "4px" }}>
-                  <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
-                    {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                  <h4 style={{ fontFamily: '"Open Sans", Arial, sans-serif', fontSize: "10.5pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.3px", color: "#0f172a", margin: 0 }}>
+                    {printSchoolHeaderName}
                   </h4>
                 </div>
               </div>
 
-              <div style={{ fontFamily: '"Open Sans", sans-serif' }}>
+              <div style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>
                 {buildParagraphElement(page2Paragraphs)}
               </div>
-              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "40px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "24px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                  <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
+                  <p style={{ fontSize: "10.5pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#334155" }}>ĐẠI DIỆN GIA ĐÌNH</p>
                   <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "1px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
-                  <div style={{ height: "45px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "2px 0" }}>
-                    <span style={{ fontSize: "10pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
+                  <div style={{ height: "48px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "2px 0" }}>
+                    <span style={{ fontSize: "9.5pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                  <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
-                  <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                  <div style={{ height: "45px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
-                    {studentCampusConfig?.signature ? (
-                      <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "45px", objectFit: "contain" }} />
-                    ) : (
-                      <svg style={{ height: "45px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
-                    )}
+                  <p style={{ fontSize: "10.5pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                  <p style={{ fontSize: "9.5pt", fontWeight: "700", textTransform: "uppercase", color: "#334155", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                  <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
+                    {renderDirectorSignatureVisual()}
                   </div>
-                  <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                  <p style={{ fontSize: "11pt", fontWeight: "700", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
                 </div>
               </div>
             </div>
-            <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-              {studentCampusConfig?.footer ? (
-                <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-              ) : (
-                <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                    <span style={{ fontWeight: "bold", color: "#48BFE3", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                    <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                    <span style={{ fontWeight: "600", color: "#48BFE3", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                  </div>
-                </div>
-              )}
+            <div className="footer-container" style={{ position: "absolute", bottom: "6mm", left: "14mm", right: "14mm", width: "auto", zIndex: 10 }}>
+              <img src={studentCampusConfig?.footer || DEFAULT_FOOTER_URL} alt="Footer" style={{ width: "100%", height: "auto", maxHeight: "28mm", objectFit: "contain", display: "block" }} />
             </div>
           </div>
         </>
@@ -2200,140 +2516,119 @@ export function ReportsClient({
     return (
       <>
         {/* PAGE 1: THE LETTER */}
-        <div className={`bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start select-none font-sans text-slate-800 leading-normal ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto min-h-[297mm] overflow-visible' : 'h-[297mm] min-h-[297mm] overflow-hidden'}`} style={{ fontFamily: '"Open Sans", sans-serif' }}>
-          {studentCampusConfig?.background && (
-            <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
-          )}
+        <div className={`bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] p-[15mm_20mm_32mm_22mm] box-border relative flex flex-col justify-start select-none font-sans text-slate-800 leading-normal ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto min-h-[297mm] overflow-visible' : 'h-[297mm] min-h-[297mm] overflow-hidden'}`} style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>
+          <img crossOrigin={(studentCampusConfig?.background || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "130mm", height: "auto", opacity: 1, zIndex: 0, pointerEvents: "none" }} />
 
           <div className={`relative z-10 flex flex-col justify-start ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto' : 'h-full'}`}>
             <div>
-              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #48BFE3", paddingBottom: "8px", marginBottom: "16px" }}>
+              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A19A", paddingBottom: "6px", marginBottom: "12px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  {studentCampusConfig?.logo ? (
-                    <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
-                  ) : (
-                    <svg style={{ height: "48px", fill: "#48BFE3" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
-                  )}
+                  <img src={studentCampusConfig?.logo || DEFAULT_LOGO_URL} alt="Logo" style={{ maxHeight: "42px", objectFit: "contain" }} />
                 </div>
                 <div style={{ textAlign: "left", marginTop: "4px" }}>
-                  <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
-                    {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                  <h4 style={{ fontFamily: '"Open Sans", Arial, sans-serif', fontSize: "10.5pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.3px", color: "#0f172a", margin: 0 }}>
+                    {printSchoolHeaderName}
                   </h4>
                 </div>
               </div>
 
-              <h2 style={{ textAlign: "center", fontSize: "22pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "2px", margin: "12px 0 16px 0" }}>
-                {studentCampusConfig?.title}
-              </h2>
+              <div style={{ textAlign: "center", margin: "6px 0 12px 0" }}>
+                <h2 style={{ textAlign: "center", fontSize: "17pt", fontWeight: "800", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: 0 }}>
+                  {studentCampusConfig?.title}
+                </h2>
+                {printSubtitleText && (
+                  <p style={{ textAlign: "center", fontSize: "11pt", fontStyle: "italic", color: "#334155", margin: "3px 0 0 0", textIndent: 0 }}>
+                    {printSubtitleText}
+                  </p>
+                )}
+              </div>
 
               {!(isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT")) && (
-                <p style={{ fontSize: "13pt", fontStyle: "italic", marginBottom: "8px", color: "#1e293b", textIndent: 0 }}>
+                <p style={{ fontSize: "11.5pt", fontWeight: "700", marginBottom: "8px", color: "#0f172a", textIndent: 0 }}>
                   {isInvitation ? (
-                    <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                    <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "700", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                  ) : selectedLevel === "preschool" ? (
+                    <>Thân gửi con <strong style={{ fontWeight: "700", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
                   ) : (
-                    <>Thân gửi con <strong style={{ fontWeight: "bold", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
+                    <>Thân gửi em <strong style={{ fontWeight: "700", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
                   )}
                 </p>
               )}
 
-              <div style={{ flexGrow: 1, fontFamily: '"Open Sans", sans-serif' }}>
-                {buildParagraphElement(paragraphs)}
+              <div style={{ flexGrow: 1, fontFamily: '"Open Sans", Arial, sans-serif' }}>
+                {buildParagraphElement(effectivePrintParagraphs)}
               </div>
             </div>
 
-            <div style={{ flex: "1 1 auto", minHeight: "5px", maxHeight: "30px" }} />
+            <div style={{ flex: "0 1 auto", minHeight: "4px", maxHeight: "14px" }} />
             {isCommitment ? (
-              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "8px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "6px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                  <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#475569" }}>ĐẠI DIỆN GIA ĐÌNH</p>
+                  <p style={{ fontSize: "10.5pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#334155" }}>ĐẠI DIỆN GIA ĐÌNH</p>
                   <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "1px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
-                  <div style={{ height: "45px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "2px 0" }}>
-                    <span style={{ fontSize: "10pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
+                  <div style={{ height: "48px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "2px 0" }}>
+                    <span style={{ fontSize: "9.5pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
                   </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                  <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
-                  <p style={{ fontSize: "9pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                  <div style={{ height: "45px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
-                    {studentCampusConfig?.signature ? (
-                      <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "45px", objectFit: "contain" }} />
-                    ) : (
-                      <svg style={{ height: "45px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
-                    )}
+                  <p style={{ fontSize: "10.5pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                  <p style={{ fontSize: "9.5pt", fontWeight: "700", textTransform: "uppercase", color: "#334155", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                  <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
+                    {renderDirectorSignatureVisual()}
                   </div>
-                  <p style={{ fontSize: "12pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                  <p style={{ fontSize: "11pt", fontWeight: "700", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
                 </div>
               </div>
             ) : (
-              <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "8px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
-                <p style={{ fontSize: "11pt", fontStyle: "italic", color: "#555555", marginBottom: "1px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
-                <p style={{ fontSize: "11pt", fontWeight: "bold", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
-                <p style={{ fontSize: "10pt", fontWeight: "bold", textTransform: "uppercase", color: "#475569", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                <div style={{ height: "45px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
-                  {studentCampusConfig?.signature ? (
-                    <img src={studentCampusConfig?.signature} alt="Signature" style={{ maxHeight: "45px", objectFit: "contain" }} />
-                  ) : (
-                    <svg style={{ height: "45px" }} viewBox="0 0 100 40" width="120"><path d="M10,25 Q30,5 50,20 T90,15 M30,12 Q45,28 60,8" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round"/></svg>
-                  )}
+              <div style={{ alignSelf: "flex-end", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", minWidth: "70mm", marginTop: "4px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                <p style={{ fontSize: "10.5pt", fontStyle: "italic", color: "#334155", marginBottom: "2px", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
+                <p style={{ fontSize: "10.5pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                <p style={{ fontSize: "9.5pt", fontWeight: "700", textTransform: "uppercase", color: "#334155", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
+                  {renderDirectorSignatureVisual()}
                 </div>
-                <p style={{ fontSize: "13pt", fontWeight: "bold", margin: 0, textAlign: "center", textIndent: 0, color: "#1e293b" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                <p style={{ fontSize: "11pt", fontWeight: "700", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
               </div>
             )}
           </div>
 
-          <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-            {studentCampusConfig?.footer ? (
-              <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-            ) : (
-              <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                  <span style={{ fontWeight: "bold", color: "#48BFE3", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                  <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                  <span style={{ fontWeight: "600", color: "#48BFE3", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                </div>
-              </div>
-            )}
+          <div className="footer-container" style={{ position: "absolute", bottom: "6mm", left: "14mm", right: "14mm", width: "auto", zIndex: 10 }}>
+            <img src={studentCampusConfig?.footer || DEFAULT_FOOTER_URL} alt="Footer" style={{ width: "100%", height: "auto", maxHeight: "28mm", objectFit: "contain", display: "block" }} />
           </div>
         </div>
 
         {/* PAGE 2: ADMISSION CHECKLIST */}
         {modalDocList && modalDocList.length > 0 && !isInvitation && !isCommitment && selectedLevel !== "preschool" && (
-          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[18mm_20mm_22mm_20mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-            {studentCampusConfig?.background && (
-              <img crossOrigin={(studentCampusConfig?.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
-            )}
+          <div className="bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] p-[15mm_20mm_32mm_22mm] box-border relative flex flex-col justify-start overflow-hidden select-none font-sans text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>
+            <img crossOrigin={(studentCampusConfig?.background || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "130mm", height: "auto", opacity: 1, zIndex: 0, pointerEvents: "none" }} />
 
             <div className="relative z-10 flex flex-col h-full justify-start">
               <div>
-                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #48BFE3", paddingBottom: "8px", marginBottom: "16px" }}>
+                <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A19A", paddingBottom: "6px", marginBottom: "12px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    {studentCampusConfig?.logo ? (
-                      <img src={studentCampusConfig?.logo} alt="Logo" style={{ maxHeight: "48px", objectFit: "contain" }} />
-                    ) : (
-                      <svg style={{ height: "48px", fill: "#48BFE3" }} viewBox="0 0 260 50"><text x="0" y="38" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="34" letterSpacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>
-                    )}
+                    <img src={studentCampusConfig?.logo || DEFAULT_LOGO_URL} alt="Logo" style={{ maxHeight: "42px", objectFit: "contain" }} />
                   </div>
                   <div style={{ textAlign: "left", marginTop: "4px" }}>
-                    <h4 style={{ fontFamily: '"Open Sans", sans-serif', fontSize: "11pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", color: "#1e293b", margin: 0 }}>
-                      {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TIỂU HỌC, THCS VÀ THPT SKY-LINE"}
+                    <h4 style={{ fontFamily: '"Open Sans", Arial, sans-serif', fontSize: "10.5pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.3px", color: "#0f172a", margin: 0 }}>
+                      {printSchoolHeaderName}
                     </h4>
                   </div>
                 </div>
 
-                <h2 style={{ textAlign: "center", fontSize: "20pt", fontWeight: "bold", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: "12px 0" }}>
+                <h2 style={{ textAlign: "center", fontSize: "17pt", fontWeight: "800", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: "10px 0 12px 0" }}>
                   DANH MỤC HỒ SƠ NHẬP HỌC
                 </h2>
 
                 <div style={{ marginTop: "10px", overflow: "hidden", border: "1.5px solid #0f172a", borderRadius: "8px" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }} className="border border-slate-200 border-collapse">
-                    <thead>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                       <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1.5px solid #0f172a" }}>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textAlign: "center", width: "60px", textTransform: "uppercase" }} className="p-2 border border-slate-200">STT</th>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textTransform: "uppercase" }} className="p-2 border border-slate-200">Tên hồ sơ / Giấy tờ</th>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", textAlign: "center", width: "120px", textTransform: "uppercase" }} className="p-2 border border-slate-200">Số lượng</th>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textAlign: "center", width: "60px", textTransform: "uppercase" }} className="p-2 border border-white/15 font-semibold">STT</th>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textTransform: "uppercase" }} className="p-2 border border-white/15 font-semibold">Tên hồ sơ / Giấy tờ</th>
+                        <th style={{ padding: "10px 15px", fontWeight: "bold", textAlign: "center", width: "120px", textTransform: "uppercase" }} className="p-2 border border-white/15 font-semibold">Số lượng</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                       {modalDocList.map((item, idx) => (
                         <tr key={item.id || idx} style={{ borderBottom: "1px solid #0f172a" }}>
                           <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", textAlign: "center" }} className="p-2 border border-slate-200">{idx + 1}</td>
@@ -2351,18 +2646,8 @@ export function ReportsClient({
               </div>
             </div>
 
-            <div className="footer-container" style={{ position: "absolute", bottom: "12mm", left: "20mm", right: "20mm", width: "auto", zIndex: 10 }}>
-              {studentCampusConfig?.footer ? (
-                <img src={studentCampusConfig?.footer} alt="Footer" style={{ width: "100%", maxHeight: "100px", objectFit: "contain" }} />
-              ) : (
-                <div style={{ width: "100%", fontFamily: '"Open Sans", sans-serif', boxSizing: "border-box", textAlign: "left" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", width: "100%" }}>
-                    <span style={{ fontWeight: "bold", color: "#48BFE3", whiteSpace: "nowrap", textTransform: "uppercase", fontSize: "9.5pt", letterSpacing: "0.5px" }}>HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                    <div style={{ flexGrow: 1, borderTop: "1px solid rgba(0, 166, 169, 0.7)", height: 0, marginTop: "2px" }}></div>
-                    <span style={{ fontWeight: "600", color: "#48BFE3", whiteSpace: "nowrap", textTransform: "lowercase", fontSize: "9pt" }}>www.skylineschool.edu.vn</span>
-                  </div>
-                </div>
-              )}
+            <div className="footer-container" style={{ position: "absolute", bottom: "6mm", left: "14mm", right: "14mm", width: "auto", zIndex: 10 }}>
+              <img src={studentCampusConfig?.footer || DEFAULT_FOOTER_URL} alt="Footer" style={{ width: "100%", height: "auto", maxHeight: "28mm", objectFit: "contain", display: "block" }} />
             </div>
           </div>
         )}
@@ -2547,35 +2832,38 @@ export function ReportsClient({
                   <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Logo Trường</label>
                   <div className="flex items-center gap-2">
                     {rcLogo ? (
-                      <div className="relative w-12 h-12 rounded-xl border border-slate-200 bg-white flex items-center justify-center p-1 group">
-                        <img src={rcLogo} className="max-w-full max-h-full object-contain rounded-lg" />
-                        <button onClick={() => setRcLogo("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
+                      <div className="relative h-12 px-2 rounded-xl border border-slate-200 bg-white flex items-center justify-center p-1 group">
+                        <img src={rcLogo} alt="Logo Sky-Line" className="max-w-[96px] max-h-full object-contain rounded-lg" />
+                        {rcLogo !== DEFAULT_LOGO_URL && (
+                          <button onClick={() => setRcLogo(DEFAULT_LOGO_URL)} title="Khôi phục Logo Sky-Line mặc định" className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
+                        )}
                       </div>
-                    ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all">
-                        <Upload className="w-4 h-4"/>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-                      </label>
-                    )}
+                    ) : null}
+                    <label title="Tải lên Logo khác" className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all shrink-0">
+                      <Upload className="w-4 h-4"/>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                    </label>
                   </div>
                 </div>
 
                 {/* Signature */}
                 <div>
-                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Chữ ký GĐCS</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Chữ ký số GĐCS</label>
                   <div className="flex items-center gap-2">
                     {rcSignature ? (
-                      <div className="relative w-12 h-12 rounded-xl border border-slate-200 bg-white flex items-center justify-center p-1 group">
-                        <img src={rcSignature} className="max-w-full max-h-full object-contain rounded-lg" />
-                        <button onClick={() => setRcSignature("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
+                      <div className="relative h-12 px-2 rounded-xl border border-teal-200 bg-teal-50/40 flex items-center justify-center p-1 group">
+                        <img src={rcSignature} alt="Chữ ký số GĐCS" className="max-w-[96px] max-h-full object-contain rounded-lg" />
+                        <button onClick={() => setRcSignature("")} title="Xóa ảnh chữ ký" className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
                       </div>
-                    ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all">
-                        <Upload className="w-4 h-4"/>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
-                      </label>
-                    )}
+                    ) : null}
+                    <label title="Tải lên ảnh chữ ký số GĐCS" className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all shrink-0">
+                      <Upload className="w-4 h-4"/>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+                    </label>
                   </div>
+                  <p className="text-[10px] text-teal-700 font-semibold mt-1 leading-snug">
+                    Tự động đồng bộ từ Chữ ký số GĐCS & tự động chèn khi GĐCS Xét duyệt.
+                  </p>
                 </div>
 
                 {/* Background */}
@@ -2583,16 +2871,17 @@ export function ReportsClient({
                   <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Watermark nền</label>
                   <div className="flex items-center gap-2">
                     {rcBackground ? (
-                      <div className="relative w-12 h-12 rounded-xl border border-slate-200 bg-white flex items-center justify-center p-1 group">
-                        <img src={rcBackground} className="max-w-full max-h-full object-contain rounded-lg" />
-                        <button onClick={() => setRcBackground("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
+                      <div className="relative h-12 px-2 rounded-xl border border-slate-200 bg-white flex items-center justify-center p-1 group">
+                        <img src={rcBackground} alt="Watermark Sky-Line" className="max-w-[72px] max-h-full object-contain rounded-lg" />
+                        {rcBackground !== DEFAULT_WATERMARK_SVG && (
+                          <button onClick={() => setRcBackground(DEFAULT_WATERMARK_SVG)} title="Khôi phục Watermark Sky-Line mặc định" className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
+                        )}
                       </div>
-                    ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all">
-                        <Upload className="w-4 h-4"/>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleBackgroundUpload} />
-                      </label>
-                    )}
+                    ) : null}
+                    <label title="Tải lên Watermark khác" className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all shrink-0">
+                      <Upload className="w-4 h-4"/>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleBackgroundUpload} />
+                    </label>
                   </div>
                 </div>
 
@@ -2601,16 +2890,17 @@ export function ReportsClient({
                   <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Footer Văn bản</label>
                   <div className="flex items-center gap-2">
                     {rcFooter ? (
-                      <div className="relative w-12 h-12 rounded-xl border border-slate-200 bg-white flex items-center justify-center p-1 group">
-                        <img src={rcFooter} className="max-w-full max-h-full object-contain rounded-lg" />
-                        <button onClick={() => setRcFooter("")} className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
+                      <div className="relative h-12 px-2 rounded-xl border border-slate-200 bg-white flex items-center justify-center p-1 group">
+                        <img src={rcFooter} alt="Footer Sky-Line" className="max-w-[120px] max-h-full object-contain rounded-lg" />
+                        {rcFooter !== DEFAULT_FOOTER_URL && (
+                          <button onClick={() => setRcFooter(DEFAULT_FOOTER_URL)} title="Khôi phục Footer Sky-Line mặc định" className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"><X className="w-2.5 h-2.5"/></button>
+                        )}
                       </div>
-                    ) : (
-                      <label className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all">
-                        <Upload className="w-4 h-4"/>
-                        <input type="file" accept="image/*" className="hidden" onChange={handleFooterUpload} />
-                      </label>
-                    )}
+                    ) : null}
+                    <label title="Tải lên Footer khác" className="w-12 h-12 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer hover:border-teal-200 hover:text-teal-600 transition-all shrink-0">
+                      <Upload className="w-4 h-4"/>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFooterUpload} />
+                    </label>
                   </div>
                 </div>
               </div>
@@ -2623,6 +2913,8 @@ export function ReportsClient({
 
           {/* Right panel live preview */}
           {(() => {
+            const rcSelectedCampusObj = campuses.find((c: any) => c.id === rcCampusId);
+            const rcSelectedCampus = rcSelectedCampusObj?.campusCode || rcSelectedCampusObj?.campusName || rcCampusId || "";
             const tempFullText = renderTemplate(
               rcContent || "",
               { 
@@ -2679,7 +2971,7 @@ export function ReportsClient({
                     </div>
                   )}
                 </div>
-                <div className={`bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full relative ${rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp ? 'aspect-auto overflow-visible h-auto' : 'aspect-[210/297] overflow-hidden'}`}>
+                <div className={`bg-white rounded-2xl border border-slate-200 px-8 py-6 shadow-lg flex flex-col justify-between w-full relative ${rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp ? 'aspect-auto overflow-visible h-auto' : 'aspect-[210/297] overflow-hidden'}`}>
                   {/* Background Watermark for Preview */}
                   <div 
                     className="absolute pointer-events-none"
@@ -2688,54 +2980,50 @@ export function ReportsClient({
                       backgroundRepeat: 'no-repeat',
                       backgroundPosition: 'center',
                       backgroundSize: 'contain',
-                      opacity: rcBackground ? 0.45 : 0.05,
+                      opacity: 1,
                       top: '50%',
                       left: '50%',
-                      width: '80%',
-                      height: '80%',
+                      width: '72%',
+                      height: '72%',
                       transform: 'translate(-50%, -50%)'
                     }}
                   />
 
                   {/* Top info */}
-                  <div className={`relative z-10 space-y-4 flex flex-col justify-start ${(rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp) || previewPage === 2 ? 'h-auto' : 'h-full'}`}>
+                  <div className={`relative z-10 flex flex-col justify-between ${(rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp) || previewPage === 2 ? 'h-auto space-y-3' : 'flex-1 min-h-0'}`}>
                     {(previewPage === 2 && selectedLevel === "high" && rcReportType === "thu_chuc_mung") || (previewPage === 2 && rcReportType === "cam_ket_hoc_tap" && isSplitTemp) ? (
                       rcReportType === "thu_chuc_mung" ? (
                         /* PAGE 2: CHECKLIST PREVIEW */
                         <div>
-                          <div className="border-b border-slate-200 pb-2 mb-3">
-                            {rcLogo ? (
-                              <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
-                            ) : (
-                              <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
-                            )}
-                            <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                              TRƯỜNG TH, THCS, THPT SKY-LINE
+                          <div className="border-b-[1.5px] border-[#00A19A] pb-1.5 mb-2.5">
+                            <img src={rcLogo || DEFAULT_LOGO_URL} alt="Logo" className="h-7 object-contain mb-1" />
+                            <h4 className="font-extrabold text-[8.5px] uppercase tracking-wider text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                              {(rcSelectedCampus || "").toUpperCase().includes("CS4") || (rcSelectedCampus || "").toUpperCase().includes("HILL") ? "TRƯỜNG TH, THCS, THPT SKY-LINE HILL" : "TRƯỜNG TH, THCS, THPT SKY-LINE"}
                             </h4>
                           </div>
 
-                          <div className="text-center mb-3">
-                            <h2 className="text-xs font-black tracking-widest text-teal-800 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                          <div className="text-center mb-2.5">
+                            <h2 className="text-[11px] font-black tracking-wider text-slate-900 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                               DANH MỤC HỒ SƠ NHẬP HỌC
                             </h2>
                           </div>
 
                           {/* Table of documents */}
-                          <div className="mt-4 overflow-hidden border border-slate-950">
-                            <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                          <div className="mt-3 overflow-hidden border border-slate-950">
+                            <table className="w-full border-collapse text-left text-[8.5px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                               <thead>
                                 <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
-                                  <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
-                                  <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
-                                  <th className="p-2 p-2 text-center uppercase w-16 border border-slate-200">Số lượng</th>
+                                  <th className="px-2 py-1 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
+                                  <th className="px-3 py-1 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
+                                  <th className="p-1.5 text-center uppercase w-16 border border-slate-200">Số lượng</th>
                                 </tr>
                               </thead>
-                              <tbody>
+                              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                                 {previewDocList.map((item, idx) => (
                                   <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
-                                    <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
-                                    <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
-                                    <td className="p-2 p-2 text-center text-slate-950 font-bold border border-slate-200">{item.qty || "—"}</td>
+                                    <td className="px-2 py-1 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
+                                    <td className="px-3 py-1 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
+                                    <td className="p-1.5 text-center text-slate-950 font-bold border border-slate-200">{item.qty || "—"}</td>
                                   </tr>
                                 ))}
                                 {previewDocList.length === 0 && (
@@ -2747,7 +3035,7 @@ export function ReportsClient({
                             </table>
                           </div>
 
-                          <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                          <p className="mt-3 text-[8.5px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                             * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
                           </p>
                         </div>
@@ -2755,47 +3043,43 @@ export function ReportsClient({
                         /* PAGE 2: COMMITMENT EXPECTATIONS & SIGNATURES PREVIEW */
                         <>
                           <div>
-                            <div className="border-b border-slate-200 pb-2 mb-3">
-                              {rcLogo ? (
-                                <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
-                              ) : (
-                                <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
-                              )}
-                              <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                                {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TH, THCS, THPT SKY-LINE"}
+                            <div className="border-b-[1.5px] border-[#00A19A] pb-1.5 mb-2.5">
+                              <img src={rcLogo || DEFAULT_LOGO_URL} alt="Logo" className="h-7 object-contain mb-1" />
+                              <h4 className="font-extrabold text-[8.5px] uppercase tracking-wider text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                                {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : ((rcSelectedCampus || "").toUpperCase().includes("CS4") || (rcSelectedCampus || "").toUpperCase().includes("HILL") ? "TRƯỜNG TH, THCS, THPT SKY-LINE HILL" : "TRƯỜNG TH, THCS, THPT SKY-LINE")}
                               </h4>
                             </div>
 
-                            <div className="space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-sans pr-1">
+                            <div className="space-y-2 py-1.5 text-[9px] leading-[1.4] text-slate-700 text-justify font-sans">
                               {page2ParagraphsTemp.map((para, idx) => {
                                 const pClean = para.trim();
                                 const isList = /^\s*[\d•\-*]+/.test(pClean);
                                 
                                 return (
-                                  <p key={idx} className={isList ? "pl-4 font-semibold" : "indent-4"} style={isList ? {} : { textIndent: "1cm" }}>
+                                  <p key={idx} className={isList ? "pl-4 font-semibold" : "indent-4"} style={isList ? {} : { textIndent: "0.7cm" }}>
                                     {pClean}
                                   </p>
                                 );
                               }).filter(Boolean)}
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 text-center mt-10">
-                            <div className="space-y-1">
-                              <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
-                              <div className="h-10 flex items-end justify-center">
+                          <div className="grid grid-cols-2 gap-4 text-center mt-6">
+                            <div className="space-y-0.5">
+                              <p className="text-[7.5px] font-bold text-slate-600 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                              <div className="h-8 flex items-end justify-center">
                                 <span className="text-[7px] text-slate-300 italic">Ký tên</span>
                               </div>
                             </div>
-                            <div className="space-y-1 min-w-[70px]">
-                              <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                              <div className="h-10 flex items-center justify-center">
+                            <div className="space-y-0.5 min-w-[70px]">
+                              <p className="text-[7.5px] font-bold text-slate-800 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                              <div className="h-8 flex items-center justify-center">
                                 {rcSignature ? (
                                   <img src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
                                 ) : (
                                   <div className="text-[7px] text-slate-300 italic">Chưa upload</div>
                                 )}
                               </div>
-                              <p className="text-[9px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                              <p className="text-[8.5px] font-bold text-slate-900">{rcDirectorName || "-- Họ tên --"}</p>
                             </div>
                           </div>
                         </>
@@ -2804,54 +3088,73 @@ export function ReportsClient({
                       /* PAGE 1: LETTER PREVIEW */
                       <>
                         <div>
-                          <div className="border-b border-slate-200 pb-2 mb-3">
-                            {rcLogo ? (
-                              <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
-                            ) : (
-                              <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
-                            )}
-                            <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800">
-                              {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : "TRƯỜNG TH, THCS, THPT SKY-LINE"}
+                          <div className="border-b-[1.5px] border-[#00A19A] pb-1.5 mb-2">
+                            <img src={rcLogo || DEFAULT_LOGO_URL} alt="Logo" className="h-7 object-contain mb-0.5" />
+                            <h4 className="font-extrabold text-[8.5px] uppercase tracking-wider text-slate-900">
+                              {selectedLevel === "preschool" ? "TRƯỜNG MẦM NON SKY-LINE" : ((rcSelectedCampus || "").toUpperCase().includes("CS4") || (rcSelectedCampus || "").toUpperCase().includes("HILL") ? "TRƯỜNG TH, THCS, THPT SKY-LINE HILL" : "TRƯỜNG TH, THCS, THPT SKY-LINE")}
                             </h4>
                           </div>
 
-                          <div className="text-center mb-3">
-                            <h2 className="text-xs font-black tracking-widest text-teal-800 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                          <div className="text-center mb-2">
+                            <h2 className="text-[12px] font-extrabold tracking-wider text-slate-900 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                               {rcTitle}
                             </h2>
+                            {rcReportType !== "cam_ket_hoc_tap" && page1ParagraphsTemp.length > 0 && /^về\s+(kết\s+quả|việc)\s+/i.test(page1ParagraphsTemp[0]) && (
+                              <p className="text-[8.5px] italic text-slate-600 mt-0.5">
+                                {page1ParagraphsTemp[0]}
+                              </p>
+                            )}
                           </div>
 
                           {/* Greeting */}
                           {rcReportType !== 'cam_ket_hoc_tap' && (
-                            <p className="text-[10px] italic mb-2 text-slate-700 font-bold">
+                            <p className="text-[9px] mb-1.5 text-slate-900 font-bold">
                               {rcReportType === 'thu_moi' ? (
-                                <>Kính gửi Quý Phụ huynh và bé <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
-                              ) : (
+                                <>Kính gửi Quý Phụ huynh và em <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
+                              ) : selectedLevel === "preschool" ? (
                                 <>Thân gửi con <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
+                              ) : (
+                                <>Thân gửi em <strong className="font-bold not-italic">Nguyễn Minh An</strong>,</>
                               )}
                             </p>
                           )}
 
                           {/* Template text */}
-                          <div className={`space-y-3 py-2 text-[10px] leading-relaxed text-slate-600 text-justify font-sans pr-1 ${rcReportType === 'cam_ket_hoc_tap' && !isSplitTemp ? '' : 'max-h-[300px] overflow-y-auto'}`}>
-                            {page1ParagraphsTemp.map((para, idx) => {
+                          <div className="space-y-1.5 py-0.5 text-[8.8px] leading-[1.38] text-slate-800 text-justify font-sans">
+                            {(rcReportType !== "cam_ket_hoc_tap" && page1ParagraphsTemp.length > 0 && /^về\s+(kết\s+quả|việc)\s+/i.test(page1ParagraphsTemp[0]) ? page1ParagraphsTemp.slice(1) : page1ParagraphsTemp).map((para, idx) => {
                               const pClean = para.trim();
                               const isList = /^\s*[\d•\-*]+/.test(pClean);
                               const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
                               const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
+                              const isWishLine = /^chúc\s+(em|con)\s+luôn\s+tự\s+tin/i.test(pClean);
+                              const isClosingLine = /^trân\s+trọng[,./]*$/i.test(pClean);
                               
                               if (isDateLine) return null;
                               if (isCentred) {
                                 return (
-                                  <p key={idx} className="text-center font-bold mb-1" style={{ textIndent: 0, fontSize: "10px" }}>
+                                  <p key={idx} className="text-center font-bold mb-0.5" style={{ textIndent: 0 }}>
+                                    {pClean}
+                                  </p>
+                                );
+                              }
+                              if (isClosingLine) {
+                                return (
+                                  <p key={idx} className="font-bold italic text-slate-900 pt-0.5" style={{ textIndent: 0 }}>
+                                    {pClean}
+                                  </p>
+                                );
+                              }
+                              if (isWishLine) {
+                                return (
+                                  <p key={idx} className="font-bold text-slate-900" style={{ textIndent: 0 }}>
                                     {pClean}
                                   </p>
                                 );
                               }
                               
                               return (
-                                <p key={idx} className={isList ? "pl-4 font-semibold" : "indent-4"} style={isList ? {} : { textIndent: "1cm" }}>
-                                  {pClean}
+                                <p key={idx} className={isList ? "pl-3 font-semibold" : ""} style={isList ? {} : { textIndent: rcReportType === 'cam_ket_hoc_tap' ? "0.7cm" : 0 }}>
+                                  {renderFormattedParagraphContent(pClean)}
                                 </p>
                               );
                             }).filter(Boolean)}
@@ -2861,38 +3164,44 @@ export function ReportsClient({
                         {/* Signatures */}
                         {rcReportType === "cam_ket_hoc_tap" ? (
                           !isSplitTemp && (
-                            <div className="grid grid-cols-2 gap-4 text-center mt-auto">
-                              <div className="space-y-1">
-                                <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
-                                <div className="h-10 flex items-end justify-center">
+                            <div className="grid grid-cols-2 gap-4 text-center mt-auto pt-1">
+                              <div className="space-y-0.5">
+                                <p className="text-[7.5px] font-bold text-slate-600 uppercase tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                                <div className="h-7 flex items-end justify-center">
                                   <span className="text-[7px] text-slate-300 italic">Ký tên</span>
                                 </div>
                               </div>
-                              <div className="space-y-1 min-w-[70px]">
-                                <p className="text-[7px] font-bold text-slate-500 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                                <div className="h-10 flex items-center justify-center">
+                              <div className="space-y-0.5 min-w-[70px]">
+                                <p className="text-[7.5px] font-bold text-slate-800 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                                <div className="h-7 flex items-center justify-center">
                                   {rcSignature ? (
                                     <img src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
                                   ) : (
                                     <div className="text-[7px] text-slate-300 italic">Chưa upload</div>
                                   )}
                                 </div>
-                                <p className="text-[9px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                                <p className="text-[8.5px] font-bold text-slate-900">{rcDirectorName || "-- Họ tên --"}</p>
                               </div>
                             </div>
                           )
                         ) : (
-                          <div className="flex justify-end mt-auto">
-                            <div className="text-center space-y-1 min-w-[140px]">
-                              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                              <div className="h-10 flex items-center justify-center">
+                          <div className="flex justify-end mt-auto pt-1">
+                            <div className="text-center space-y-0.5 min-w-[150px]">
+                              <p className="text-[7.5px] italic text-slate-600">{formattedLetterDate}</p>
+                              <p className="text-[8px] font-bold text-slate-900 uppercase tracking-wide">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                              <p className="text-[7px] font-bold text-slate-600 uppercase tracking-wide">
+                                GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {(rcSelectedCampus || "").toUpperCase().includes("CS1") || (rcSelectedCampus || "").toUpperCase().includes("RIVERSIDE") ? "RIVERSIDE" : (rcSelectedCampus || "").toUpperCase().includes("CS2") || (rcSelectedCampus || "").toUpperCase().includes("CENTRAL") ? "CENTRAL" : (rcSelectedCampus || "").toUpperCase().includes("CS4") || (rcSelectedCampus || "").toUpperCase().includes("HILL") ? "HILL" : (rcSelectedCampus || "").toUpperCase().includes("CS5") || (rcSelectedCampus || "").toUpperCase().includes("BEACH") ? "BEACH" : "GLOBAL"}
+                              </p>
+                              <div className="h-8 flex items-center justify-center my-0.5">
                                 {rcSignature ? (
                                   <img src={rcSignature} alt="Chữ ký" className="max-h-full object-contain" />
                                 ) : (
-                                  <div className="text-[8px] text-slate-300 italic">Chưa upload chữ ký</div>
+                                  <div className="inline-flex flex-col items-center justify-center border border-teal-500/40 bg-teal-50/80 rounded px-2 py-0.5 leading-tight">
+                                    <span className="text-[6.5px] font-bold text-[#00736E] uppercase">✓ Đã ký số GĐCS (khi duyệt)</span>
+                                  </div>
                                 )}
                               </div>
-                              <p className="text-[11px] font-black text-slate-700">{rcDirectorName || "-- Họ tên --"}</p>
+                              <p className="text-[9px] font-bold text-slate-900">{rcDirectorName || "-- Họ tên --"}</p>
                             </div>
                           </div>
                         )}
@@ -2901,15 +3210,9 @@ export function ReportsClient({
                   </div>
 
                   {/* Footer Banner */}
-                  {rcFooter ? (
-                    <div className="pt-2 border-t border-slate-200 mt-2">
-                      <img src={rcFooter} alt="Footer" className="w-full h-auto" />
-                    </div>
-                  ) : (
-                    <div className="border-t border-teal-500/30 pt-2 text-[5px] text-slate-400 text-center">
-                      <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
-                    </div>
-                  )}
+                  <div className="pt-1.5 border-t border-slate-200 mt-1.5 relative z-10">
+                    <img src={rcFooter || DEFAULT_FOOTER_URL} alt="Footer" className="w-full h-auto max-h-14 object-contain block" />
+                  </div>
                 </div>
               </div>
             );
@@ -3128,21 +3431,21 @@ export function ReportsClient({
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
-                  <thead className="text-xs font-semibold">
-                    <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
-                      <th className="p-2.5 text-center w-12 border border-slate-200">STT</th>
-                      <th className="p-2.5 border border-slate-200">Mã HS</th>
-                      <th className="p-2.5 border border-slate-200">Học sinh</th>
-                      <th className="p-2.5 text-center border border-slate-200">Giới tính</th>
-                      <th className="p-2.5 text-center border border-slate-200">Khối</th>
-                      <th className="p-2.5 border border-slate-200">Hệ</th>
-                      <th className="p-2.5 border border-slate-200">Kết quả Phê duyệt</th>
-                      <th className="p-2.5 border border-slate-200">Môn Cam kết</th>
-                      <th className="p-2.5 text-center w-[90px] border border-slate-200">Thư mời</th>
-                      <th className="p-2.5 text-center w-[90px] border border-slate-200">Cam kết</th>
+                  <thead className="bg-[#003B3A] text-xs font-semibold text-white border-b border-[#003B3A]">
+                    <tr className="text-[10px] border-b font-semibold">
+                      <th className="p-2.5 text-center w-12 border border-white/15 font-semibold">STT</th>
+                      <th className="p-2.5 border border-white/15 font-semibold">Mã HS</th>
+                      <th className="p-2.5 border border-white/15 font-semibold">Học sinh</th>
+                      <th className="p-2.5 text-center border border-white/15 font-semibold">Giới tính</th>
+                      <th className="p-2.5 text-center border border-white/15 font-semibold">Khối</th>
+                      <th className="p-2.5 border border-white/15 font-semibold">Hệ</th>
+                      <th className="p-2.5 border border-white/15 font-semibold">Kết quả Phê duyệt</th>
+                      <th className="p-2.5 border border-white/15 font-semibold">Môn Cam kết</th>
+                      <th className="p-2.5 text-center w-[90px] border border-white/15 font-semibold">Thư mời</th>
+                      <th className="p-2.5 text-center w-[90px] border border-white/15 font-semibold">Cam kết</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                  <tbody className="divide-y divide-[#E2E8F0] bg-white">
                     {paginatedStudents.map((s, idx) => {
                       const sttIndex = (currentPage - 1) * pageSize + idx + 1;
                       const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
@@ -3287,10 +3590,10 @@ export function ReportsClient({
       {tab === "results" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* Filters Bar for Results Tab */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 text-xs font-semibold">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-white border border-slate-200 rounded-2xl shadow-sm text-xs font-semibold">
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Kỳ Khảo sát</span>
+                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Kỳ khảo sát</span>
                 <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId("all"); }} className="bg-white border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[200px]">
                   <option value="all">Tất cả các kỳ</option>
                   {activePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -3299,77 +3602,226 @@ export function ReportsClient({
               </div>
 
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Đợt Khảo sát</span>
-                <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="bg-white border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[150px]">
+                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Đợt khảo sát</span>
+                <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="bg-white border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[240px]">
                   <option value="all">Tất cả các đợt</option>
                   {activeBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
             </div>
+
+            <div className="flex items-center gap-2 self-end md:self-center">
+              <button
+                onClick={handleOpenEmailModal}
+                className="bg-[#003B3A] hover:bg-[#005250] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Gửi Email trả kết quả theo đợt
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Statistics summary */}
-          <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
-            <h3 className="text-base font-extrabold text-slate-800 border-b pb-3 mb-2 flex items-center gap-2"><BarChart3 className="w-5 h-5 text-teal-700"/> Thống kê tổng quan</h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 text-center space-y-1 text-xs font-semibold">
-                <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest block">Tổng học sinh</span>
-                <span className="text-2xl font-black text-slate-800 block">{filteredStudents.length}</span>
+            {/* Statistics summary */}
+            <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-5">
+              <h3 className="text-base font-extrabold text-slate-800 border-b pb-3 mb-2 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-teal-700" /> Thống kê theo đợt
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center space-y-1 text-xs font-semibold tabular-nums">
+                  <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest block">Tổng học sinh</span>
+                  <span className="text-2xl font-black text-slate-800 block">{filteredStudents.length}</span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 text-center space-y-1 text-xs font-semibold tabular-nums">
+                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block">Số em đạt</span>
+                  <span className="text-2xl font-black text-emerald-700 block">
+                    {filteredStudents.filter(s => {
+                      const r = s.admissionResult || s.devAssessmentResult || "";
+                      return (r.includes("Đạt") && !r.includes("Không")) || r.includes("DAT") || r.includes("MIỄN");
+                    }).length}
+                  </span>
+                </div>
               </div>
 
-              <div className="p-4 text-center space-y-1 text-xs font-semibold">
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest block">Số em đạt</span>
-                <span className="text-2xl font-black text-slate-800 block">
-                  {filteredStudents.filter(s => {
-                    const r = s.admissionResult || s.devAssessmentResult || "";
-                    return (r.includes("Đạt") && !r.includes("Không")) || r.includes("DAT") || r.includes("MIỄN");
-                  }).length}
-                </span>
+              <div className="space-y-2.5 pt-1">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Chi tiết theo trạng thái phê duyệt</span>
+                <div className="space-y-1.5">
+                  {Array.from(new Set(filteredStudents.map(s => s.admissionResult || s.devAssessmentResult || "Chưa duyệt"))).map(st => {
+                    const count = filteredStudents.filter(s => (s.admissionResult || s.devAssessmentResult || "Chưa duyệt") === st).length;
+                    return (
+                      <div key={st} className="flex justify-between items-center text-xs font-semibold text-slate-600 px-2.5 py-1.5 rounded-xl bg-slate-50/70">
+                        <span>{st}</span>
+                        <span className="bg-white border border-slate-200 px-2 py-0.5 rounded-lg text-slate-800 font-bold tabular-nums">{count}</span>
+                      </div>
+                    );
+                  })}
+                  {filteredStudents.length === 0 && (
+                    <p className="text-xs text-slate-400 italic ml-1">Chưa có dữ liệu học sinh trong đợt này</p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3 pt-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Chi tiết theo Trạng thái duyệt</span>
-              <div className="space-y-2">
-                {Array.from(new Set(students.map(s => s.admissionResult || s.devAssessmentResult || "Chưa duyệt"))).map(st => {
-                  const count = students.filter(s => (s.admissionResult || s.devAssessmentResult || "Chưa duyệt") === st).length;
-                  return (
-                    <div key={st} className="flex justify-between items-center text-xs font-semibold text-slate-600 text-xs font-semibold">
-                      <span>{st}</span>
-                      <span className="bg-white border px-2 py-0.5 rounded-lg text-slate-800 font-bold">{count}</span>
-                    </div>
-                  );
-                })}
+            {/* Email triggers */}
+            <div className="lg:col-span-2 bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-4">
+              <div className="flex items-center justify-between border-b pb-3 mb-2 flex-wrap gap-2">
+                <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-teal-700" /> Trả kết quả / Gửi mail nhanh
+                </h3>
+                <button
+                  onClick={handleOpenEmailModal}
+                  className="bg-[#003B3A] hover:bg-[#005250] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 cursor-pointer transition-all"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Gửi Email báo cáo nhanh
+                </button>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/70 space-y-2.5 text-xs leading-relaxed text-slate-600 font-semibold">
+                <p className="font-bold text-slate-800 text-sm">Thông tin bảng Trả kết quả theo đợt:</p>
+                <p>1. Gửi email tổng hợp nhanh danh sách kết quả xét tuyển theo từng đợt khảo sát cho Ban giám hiệu, Giáo vụ, Bộ phận Tuyển sinh và Tư vấn của cơ sở.</p>
+                <p>2. Ghi rõ thông tin kết quả từng học sinh theo đợt gồm: <strong className="text-[#003B3A]">STT, Mã HS, Học sinh, Giới tính, Khối, Hệ, Kết quả Phê duyệt, Môn Cam kết, Thư mời, Cam kết</strong> (không cần đính kèm file PDF).</p>
+                <p>3. Đồng bộ hóa 100% thời gian thực với kết quả phê duyệt của Giám đốc Cơ sở.</p>
               </div>
             </div>
           </div>
 
-          {/* Email triggers */}
-          <div className="lg:col-span-2 bg-white border border-slate-200 shadow-sm rounded-3xl p-6 space-y-6">
-            <div className="flex items-center justify-between border-b pb-3 mb-2">
-              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2"><Mail className="w-5 h-5 text-teal-700"/> Trả kết quả / Gửi mail nhanh</h3>
-              <button
-                onClick={handleOpenEmailModal}
-                className="hover:bg-[#003B3A] text-white text-xs font-black shadow-md shadow-indigo-100 flex items-center gap-2 cursor-pointer text-xs font-semibold"
-              >
-                <Send className="w-3.5 h-3.5"/>
-                Gửi Email báo cáo nhanh
-              </button>
+          {/* Bảng thông tin kết quả từng Học sinh theo đợt */}
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-[#003B3A]">
+                  Danh sách kết quả học sinh theo đợt ({filteredStudents.length} học sinh)
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Kỳ: <strong className="text-slate-700">{activePeriod?.name || "Tất cả các kỳ"}</strong> • Đợt: <strong className="text-slate-700">{cBatchId !== "all" ? (activeBatches.find(b => b.id === cBatchId)?.name || "Đợt khảo sát") : "Tất cả các đợt"}</strong>
+                </p>
+              </div>
             </div>
 
-            <div className="p-5 space-y-3 text-xs leading-relaxed text-slate-600 text-xs font-semibold">
-              <p className="font-bold text-slate-700 text-sm">💡 Chức năng Trả kết quả & Email nhanh:</p>
-              <p>1. Gửi email tổng hợp nhanh danh sách kết quả xét tuyển cho Ban giám hiệu, các bộ phận tuyển sinh và tư vấn của cơ sở.</p>
-              <p>2. Hệ thống tự động tạo, tối ưu hóa kích thước và đính kèm các tệp **PDF Thư chúc mừng / Bản cam kết** trực tiếp cho từng bé đạt yêu cầu khi gửi mail.</p>
-              <p>3. Đảm bảo bảo mật tối đa, đồng bộ hóa 100% thời gian thực kết quả duyệt.</p>
-            </div>
+            {loadingStudents ? (
+              <div className="flex flex-col items-center justify-center py-16 space-y-3 bg-white">
+                <Loader2 className="w-7 h-7 text-teal-700 animate-spin" />
+                <p className="text-xs font-bold text-slate-400">Đang tải danh sách học sinh...</p>
+              </div>
+            ) : filteredStudents.length === 0 ? (
+              <div className="text-center py-16 text-slate-400 bg-white">
+                <Users className="w-10 h-10 mx-auto mb-2 opacity-30 text-teal-700" />
+                <p className="text-sm font-bold text-slate-500">Không tìm thấy học sinh nào trong đợt này</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse tabular-nums">
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="bg-[#003B3A] text-white text-xs border-b font-semibold">
+                      <th className="p-3 text-center w-12 border-r border-teal-800 whitespace-nowrap font-semibold">STT</th>
+                      <th className="p-3 text-center w-28 border-r border-teal-800 whitespace-nowrap font-semibold">Mã HS</th>
+                      <th className="p-3 min-w-[190px] border-r border-teal-800 whitespace-nowrap font-semibold">Học sinh</th>
+                      <th className="p-3 text-center w-20 border-r border-teal-800 whitespace-nowrap font-semibold">Giới tính</th>
+                      <th className="p-3 text-center w-16 border-r border-teal-800 whitespace-nowrap font-semibold">Khối</th>
+                      <th className="p-3 text-center w-20 border-r border-teal-800 whitespace-nowrap font-semibold">Hệ</th>
+                      <th className="p-3 min-w-[160px] border-r border-teal-800 whitespace-nowrap font-semibold">Đợt khảo sát</th>
+                      <th className="p-3 text-center w-36 border-r border-teal-800 whitespace-nowrap font-semibold">Kết quả Phê duyệt</th>
+                      <th className="p-3 border-r border-teal-800 whitespace-nowrap font-semibold">Môn Cam kết</th>
+                      <th className="p-3 text-center w-[135px] border-r border-teal-800 whitespace-nowrap font-semibold">Thư mời</th>
+                      <th className="p-3 text-center w-[125px] whitespace-nowrap font-semibold">Cam kết</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                    {filteredStudents.map((s, idx) => {
+                      const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
+                      const result = s.admissionResult || s.devAssessmentResult || "Chưa duyệt";
+                      const isPassed = (result.includes("Đạt") && !result.includes("Không")) || result.includes("Đại") || result.includes("MIỄN") || result.includes("DAT") || s.probationaryResult === "DAT";
+                      const committedSubs = extractCommittedSubjects(s);
+                      const hasCommitment = isPassed && selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết") || committedSubs.length > 0);
+                      const studentBatchName = s?.batch?.name || activeBatches.find(b => b.id === s?.batchId)?.name || "—";
+                      const dobStr = s.dateOfBirth
+                        ? (() => {
+                            const dt = new Date(s.dateOfBirth);
+                            if (!isNaN(dt.getTime())) {
+                              return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
+                            }
+                            return String(s.dateOfBirth);
+                          })()
+                        : "";
+                      const campusStr = s.admissionCampus || s.registeredCampus || "";
+                      const subInfo = [dobStr ? `NS: ${dobStr}` : "", campusStr ? `CS: ${campusStr}` : ""].filter(Boolean).join(" • ");
+
+                      return (
+                        <tr key={s.id} className="even:bg-slate-50/50 hover:bg-teal-50/30 transition-all duration-150 text-xs font-semibold">
+                          <td className="p-3 text-center text-slate-500 border border-slate-200 whitespace-nowrap">{idx + 1}</td>
+                          <td className="p-3 text-center border border-slate-200 whitespace-nowrap">
+                            <span className="font-mono text-xs font-bold text-[#00736E]">{s.studentCode || "—"}</span>
+                          </td>
+                          <td className="p-3 border border-slate-200 min-w-[190px]">
+                            <div className="font-bold text-[#003B3A] text-sm whitespace-nowrap">{s.fullName}</div>
+                            {subInfo && <div className="text-[11px] font-medium text-slate-500 mt-0.5 whitespace-nowrap">{subInfo}</div>}
+                          </td>
+                          <td className="p-3 text-center border border-slate-200 text-slate-700 whitespace-nowrap">{gender}</td>
+                          <td className="p-3 text-center border border-slate-200 whitespace-nowrap">
+                            <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold text-xs">
+                              {s.grade ? (selectedLevel === "preschool" ? s.grade : `K${s.grade}`) : "—"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center border border-slate-200 text-slate-700 whitespace-nowrap">{s.surveyFormType || "—"}</td>
+                          <td className="p-3 border border-slate-200 text-teal-800 font-bold text-xs min-w-[160px]">{studentBatchName}</td>
+                          <td className="p-3 text-center border border-slate-200 whitespace-nowrap">
+                            {(() => {
+                              const isGreen = result.includes("Đạt") && !result.includes("cam kết") && !result.includes("Không");
+                              const isAmber = result.includes("cam kết");
+                              const isRed = result.includes("Không đạt");
+                              if (isGreen) return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200">{result}</span>;
+                              if (isAmber) return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200">{result}</span>;
+                              if (isRed) return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200">{result}</span>;
+                              return <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">{result}</span>;
+                            })()}
+                          </td>
+                          <td className="p-3 border border-slate-200">
+                            {committedSubs.length > 0 ? (
+                              <span className="text-xs font-bold text-amber-700">{committedSubs.join(", ")}</span>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-center border border-slate-200 whitespace-nowrap">
+                            {isPassed ? (
+                              <button
+                                onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                className="px-2.5 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200 rounded-lg transition-all shadow-2xs mx-auto inline-flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer whitespace-nowrap"
+                                title="Mở liên kết xem / in Thư chúc mừng"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Thư chúc mừng</span>
+                              </button>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-center border border-slate-200 whitespace-nowrap">
+                            {hasCommitment ? (
+                              <button
+                                onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                className="px-2.5 py-1 text-amber-700 bg-amber-50 hover:bg-amber-500 hover:text-white border border-amber-200 rounded-lg transition-all shadow-2xs mx-auto inline-flex items-center justify-center gap-1 text-[11px] font-bold cursor-pointer whitespace-nowrap"
+                                title="Mở liên kết xem / in Bản cam kết học tập"
+                              >
+                                <PenLine className="w-3.5 h-3.5" />
+                                <span>Bản cam kết</span>
+                              </button>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-
-
         </div>
-      </div>
       )}
 
             {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
@@ -3619,15 +4071,15 @@ export function ReportsClient({
               ) : (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
                   <table className="w-full border-collapse text-left text-xs text-slate-700">
-                    <thead>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                       <tr className="text-xs font-semibold">
-                        <th className="p-2 p-2 font-black text-slate-900 text-center w-12 border border-slate-200">TT</th>
-                        <th className="p-2 p-2 font-black text-slate-900 border border-slate-200">Hồ sơ</th>
-                        <th className="p-2 p-2 font-black text-slate-900 text-center w-20 border border-slate-200">SL</th>
-                        <th className="p-2 p-2 font-black text-slate-900 text-center w-24 border border-slate-200">Thao tác</th>
+                        <th className="p-2 text-center w-12 border border-white/15 font-semibold">TT</th>
+                        <th className="p-2 border border-white/15 text-teal-100 font-semibold">Hồ sơ</th>
+                        <th className="p-2 text-center w-20 border border-white/15 font-semibold">SL</th>
+                        <th className="p-2 text-center w-24 border border-white/15 font-semibold">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
+                    <tbody className="divide-y divide-[#E2E8F0] bg-white">
                       {filteredDocList.map((item, idx) => (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors text-xs font-semibold">
                           <td className="p-2 p-2 text-center font-bold text-slate-400 border border-slate-200">{idx + 1}</td>
@@ -3690,7 +4142,7 @@ export function ReportsClient({
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     backgroundSize: 'contain',
-                    opacity: rcBackground ? 0.45 : 0.05,
+                    opacity: 1,
                     top: '50%',
                     left: '50%',
                     width: '80%',
@@ -3703,11 +4155,7 @@ export function ReportsClient({
                 <div className="relative z-10 space-y-4 flex flex-col h-full justify-between">
                   <div>
                     <div className="border-b border-slate-200 pb-2 mb-3">
-                      {rcLogo ? (
-                        <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
-                      ) : (
-                        <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
-                      )}
+                      <img src={rcLogo || DEFAULT_LOGO_URL} alt="Logo" className="h-8 object-contain mb-1" />
                       <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         TRƯỜNG TH, THCS, THPT SKY-LINE
                       </h4>
@@ -3729,7 +4177,7 @@ export function ReportsClient({
                             <th className="p-2 p-2 text-center uppercase w-16 border border-slate-200">Số lượng</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                           {filteredDocList.map((item, idx) => (
                             <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
                               <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
@@ -3752,15 +4200,9 @@ export function ReportsClient({
                   </div>
 
                   {/* Signature/Footer Anchor */}
-                  {rcFooter ? (
-                    <div className="pt-2 border-t border-slate-200 mt-2">
-                      <img src={rcFooter} alt="Footer" className="w-full h-auto" />
-                    </div>
-                  ) : (
-                    <div className="border-t border-[#48BFE3]/50 pt-2 text-[5px] text-slate-400 text-center">
-                      <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
-                    </div>
-                  )}
+                  <div className="pt-2 border-t border-slate-200 mt-2">
+                    <img src={rcFooter || DEFAULT_FOOTER_URL} alt="Footer" className="w-full h-auto object-contain" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -3953,7 +4395,30 @@ export function ReportsClient({
 
 
       {/* EMAIL QUICK MODAL */}
-      <Modal open={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} title="Gửi email Báo cáo Nhanh" size="xl" footer={<><button onClick={() => setIsEmailModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={handleSendEmailsSubmit} disabled={emailSending} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold">{emailSending ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" />}{emailSending ? emailSendingStatus : "Gửi ngay"}</button></>}>
+      <Modal
+        open={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        title="Gửi email Trả kết quả theo đợt"
+        size="xl"
+        footer={
+          <div className="flex items-center justify-end gap-3 w-full">
+            <button
+              onClick={() => setIsEmailModalOpen(false)}
+              className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={handleSendEmailsSubmit}
+              disabled={emailSending}
+              className="px-6 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#005250] text-white text-xs font-bold shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {emailSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {emailSending ? emailSendingStatus : "Gửi ngay"}
+            </button>
+          </div>
+        }
+      >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-h-[70vh] overflow-y-auto pr-1">
           {/* Left inputs column */}
           <div className="lg:col-span-7 space-y-4 text-left">
@@ -4037,22 +4502,19 @@ export function ReportsClient({
               <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Nhập tiêu đề email..." className={inp} />
             </div>
 
-            {/* Attachment checkbox */}
-            <div className="flex items-start gap-3 p-4 transition-all hover:bg-teal-50/60 text-xs font-semibold">
-              <input type="checkbox" id="attach_checkbox" checked={attachLetters} onChange={e => setAttachLetters(e.target.checked)} className="w-5 h-5 text-teal-600 border-slate-300 rounded mt-0.5 cursor-pointer focus:ring-indigo-500" />
-              <div>
-                <label htmlFor="attach_checkbox" className="text-xs font-black text-teal-800 cursor-pointer select-none">Tự động đính kèm tệp mẫu Thư PDF cho từng học sinh</label>
-                <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-                  Hệ thống tự động biên dịch và tạo tệp PDF Thư chúc mừng và Bản cam kết đính kèm trực tiếp vào mail gửi cho các đối tượng đạt khảo thí.
-                </p>
-              </div>
+            {/* Summary table note (No PDF attachment needed) */}
+            <div className="p-3.5 rounded-2xl bg-teal-50/60 border border-teal-200/80 text-xs font-semibold text-slate-700 space-y-1">
+              <p className="font-bold text-[#003B3A]">Nội dung bảng Trả kết quả trong Email (không đính kèm PDF):</p>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                Ghi rõ thông tin kết quả từng học sinh theo đợt gồm các cột: <strong>STT, Mã HS, Học sinh, Giới tính, Khối, Hệ, Kết quả Phê duyệt, Môn Cam kết, Thư mời, Cam kết</strong>.
+              </p>
             </div>
           </div>
 
           {/* Right students selection list column */}
           <div className="lg:col-span-5 flex flex-col justify-start space-y-3 h-full text-left">
             <div className="flex justify-between items-center px-1">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Học sinh gửi báo cáo</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Học sinh gửi báo cáo ({selectedEmailStudentIds.length}/{filteredStudents.length})</label>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -4073,13 +4535,14 @@ export function ReportsClient({
             </div>
 
             {/* Students list container */}
-            <div className="p-4 space-y-2 overflow-y-auto max-h-[350px] shadow-inner w-full text-xs font-semibold">
+            <div className="p-3 space-y-2 overflow-y-auto max-h-[350px] bg-slate-50/70 rounded-2xl border border-slate-200/80 w-full text-xs font-semibold">
               {filteredStudents.map(s => {
                 const isSelected = selectedEmailStudentIds.includes(s.id);
+                const resultText = s.probationaryResult === "DAT" ? "Đạt" : (s.admissionResult || s.devAssessmentResult || "Chưa duyệt");
                 return (
                   <label
                     key={s.id}
-                    className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer select-none ${isSelected ? 'bg-white border-teal-200 shadow-sm' : 'bg-slate-100/50 border-slate-200 opacity-60'}`}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer select-none ${isSelected ? 'bg-white border-teal-200 shadow-2xs' : 'bg-slate-100/50 border-slate-200 opacity-60'}`}
                   >
                     <div className="flex items-center gap-3">
                       <input
@@ -4092,16 +4555,16 @@ export function ReportsClient({
                             setSelectedEmailStudentIds([...selectedEmailStudentIds, s.id]);
                           }
                         }}
-                        className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-indigo-500"
+                        className="w-4 h-4 text-teal-600 border-slate-300 rounded focus:ring-teal-500"
                       />
                       <div className="text-left">
-                        <p className="text-xs font-bold text-slate-800 leading-none mb-1">${s.fullName}</p>
-                        <p className="text-[10px] text-slate-400 font-semibold leading-none">Mã HS: ${s.studentCode || "—"} • Khối: ${s.grade}</p>
+                        <p className="text-xs font-bold text-slate-800 leading-none mb-1">{s.fullName}</p>
+                        <p className="text-[10px] text-slate-500 font-semibold leading-none tabular-nums">Mã HS: {s.studentCode || "—"} • Khối: {s.grade ? `K${s.grade}` : "—"} • Hệ: {s.surveyFormType || "—"}</p>
                       </div>
                     </div>
                     <div>
-                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black border uppercase tracking-wider ${(s.admissionResult?.includes("Đạt") && !s.admissionResult?.includes("Không")) || s.probationaryResult === "DAT" || (s.admissionResult || "").toUpperCase().includes("MIỄN") ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-100 text-slate-400 border-slate-200"}`}>
-                        ${s.probationaryResult === "DAT" ? "Đạt" : s.admissionResult || "—"}
+                      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${(resultText.includes("Đạt") && !resultText.includes("Không")) || (resultText || "").toUpperCase().includes("MIỄN") ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                        {resultText}
                       </span>
                     </div>
                   </label>

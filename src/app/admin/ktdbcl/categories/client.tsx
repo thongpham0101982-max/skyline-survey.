@@ -1,30 +1,27 @@
 "use client"
-import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Check, X, Tag, Hash, FileText, Cpu, BookOpen, Lightbulb, Trophy, Search, Layers, Sparkles } from "lucide-react"
-import { createExamCategoryAction, updateExamCategoryAction, deleteExamCategoryAction } from "./actions"
+
+import { useState, useEffect, useMemo } from "react"
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  Check,
+  X,
+  Tag,
+  Search,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react"
+import {
+  createExamCategoryAction,
+  updateExamCategoryAction,
+  deleteExamCategoryAction,
+} from "./actions"
 
 interface ExamCategoryClientProps {
   initialCategories: any[]
   academicYears: any[]
-}
-
-const getCategoryIconAndColor = (code: string, name: string) => {
-  const cleanCode = (code || "").toUpperCase()
-  const cleanName = (name || "").toLowerCase()
-  
-  if (cleanCode.includes("CN_ST") || cleanCode.includes("CONG_NGHE") || cleanName.includes("công nghệ") || cleanName.includes("sáng tạo")) {
-    return { Icon: Cpu, bg: "bg-gradient-to-br from-amber-500 to-yellow-500 text-white shadow-md shadow-amber-500/20", badge: "bg-amber-50 text-amber-700 border-amber-200" }
-  }
-  if (cleanCode.includes("HOC_THUAT") || cleanCode.includes("ACADEMIC") || cleanName.includes("học thuật") || cleanName.includes("học tập")) {
-    return { Icon: BookOpen, bg: "bg-gradient-to-br from-blue-600 to-emerald-600 text-white shadow-md shadow-blue-500/20", badge: "bg-blue-50 text-blue-700 border-blue-200" }
-  }
-  if (cleanCode.includes("KY_NANG") || cleanCode.includes("SKILL") || cleanName.includes("kỹ năng")) {
-    return { Icon: Lightbulb, bg: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20", badge: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-  }
-  if (cleanCode.includes("NT_TT") || cleanCode.includes("THE_THAO") || cleanName.includes("nghệ thuật") || cleanName.includes("thể thao") || cleanName.includes("âm nhạc") || cleanName.includes("mỹ thuật")) {
-    return { Icon: Trophy, bg: "bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-md shadow-rose-500/20", badge: "bg-rose-50 text-rose-700 border-rose-200" }
-  }
-  return { Icon: Tag, bg: "bg-gradient-to-br from-[#48BFE3] to-[#008A81] text-white shadow-md shadow-teal-500/20", badge: "bg-teal-50 text-[#48BFE3] border-teal-200" }
 }
 
 export function CategoriesClient({ initialCategories, academicYears }: ExamCategoryClientProps) {
@@ -36,10 +33,9 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
       if (stored) return stored
     }
     const active = academicYears.find((y: any) => y.status === "ACTIVE")
-    return active ? active.id : (academicYears[0]?.id || "")
+    return active ? active.id : academicYears[0]?.id || ""
   })
 
-  // Listen to year change event
   useEffect(() => {
     const handleYearChange = () => {
       const stored = localStorage.getItem("selectedAcademicYear")
@@ -51,256 +47,390 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
     return () => window.removeEventListener("academicYearChanged", handleYearChange)
   }, [yearId])
 
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", code: "", description: "" })
   const [creating, setCreating] = useState(false)
   const [newForm, setNewForm] = useState({ name: "", code: "", description: "" })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ name: "", code: "", description: "" })
   const [saving, setSaving] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
+  const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const openCreate = () => {
-    setNewForm({ name: "", code: "", description: "" })
-    setCreating(true)
-    setErrorMsg("")
+  const showToast = (type: "success" | "error", text: string) => {
+    setToast({ type, text })
+    setTimeout(() => {
+      setToast((prev) => (prev?.text === text ? null : prev))
+    }, 3200)
   }
 
   const handleCreate = async () => {
     if (!newForm.name.trim() || !newForm.code.trim()) {
-      setErrorMsg("Vui lòng nhập Tên danh mục và Mã danh mục!")
+      showToast("error", "Vui lòng nhập Tên danh mục và Mã danh mục.")
       return
     }
     setSaving(true)
-    setErrorMsg("")
     try {
-      await createExamCategoryAction({ ...newForm, academicYearId: null })
-      setCategories([...categories, { ...newForm, id: `temp_${Date.now()}`, academicYearId: null, exams: [] }])
+      const created = await createExamCategoryAction({ ...newForm, academicYearId: null })
+      setCategories((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "vi"))
+      )
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
-      window.location.reload()
+      showToast("success", `Đã thêm danh mục "${created.name}".`)
     } catch (e: any) {
-      setErrorMsg(e?.message || "Mã danh mục đã tồn tại hoặc có lỗi xảy ra. Vui lòng thử lại!")
+      showToast("error", e?.message || "Mã danh mục đã tồn tại hoặc xảy ra lỗi.")
     } finally {
       setSaving(false)
     }
   }
 
-  const handleEdit = (cat: any) => {
+  const startEdit = (cat: any) => {
     setEditingId(cat.id)
-    setEditForm({ name: cat.name, code: cat.code, description: cat.description || "" })
-    setErrorMsg("")
+    setEditForm({
+      name: cat.name,
+      code: cat.code,
+      description: cat.description || "",
+    })
   }
 
   const handleSaveEdit = async (id: string) => {
     if (!editForm.name.trim() || !editForm.code.trim()) {
-      setErrorMsg("Vui lòng nhập đầy đủ tên và mã danh mục!")
+      showToast("error", "Tên danh mục và Mã không được để trống.")
       return
     }
     setSaving(true)
     try {
-      await updateExamCategoryAction({ id, ...editForm, academicYearId: null })
-      setCategories(categories.map((c) => c.id === id ? { ...c, ...editForm } : c))
+      const updated = await updateExamCategoryAction({ id, ...editForm, academicYearId: null })
+      setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)))
       setEditingId(null)
+      showToast("success", "Đã lưu cập nhật danh mục.")
     } catch (e: any) {
-      setErrorMsg(e?.message || "Mã danh mục đã tồn tại hoặc xảy ra lỗi.")
+      showToast("error", e?.message || "Không thể cập nhật danh mục.")
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Xóa danh mục "${name}"?\n\nLưu ý: Tất cả kỳ thi thuộc danh mục này sẽ bị xóa.`)) return
+    if (
+      !confirm(
+        `Xóa danh mục "${name}"?\nLưu ý: Các kỳ thi thuộc danh mục này cũng sẽ bị ảnh hưởng.`
+      )
+    )
+      return
     try {
       await deleteExamCategoryAction(id)
-      setCategories(categories.filter((c) => c.id !== id))
-    } catch (e) {
-      alert("Có lỗi xảy ra khi xóa danh mục.")
+      setCategories((prev) => prev.filter((c) => c.id !== id))
+      showToast("success", `Đã xóa danh mục "${name}".`)
+    } catch (e: any) {
+      showToast("error", e?.message || "Có lỗi xảy ra khi xóa danh mục.")
     }
   }
 
-  const displayCategories = categories
-    .filter((c: any) => c.academicYearId === null || c.academicYearId === yearId)
-    .filter((c: any) => {
-      if (!searchQuery.trim()) return true
-      const q = searchQuery.toLowerCase().trim()
-      return (c.name || "").toLowerCase().includes(q) || (c.code || "").toLowerCase().includes(q) || (c.description || "").toLowerCase().includes(q)
-    })
+  const displayCategories = useMemo(() => {
+    return categories
+      .filter((c: any) => c.academicYearId === null || c.academicYearId === yearId)
+      .filter((c: any) => {
+        if (!searchQuery.trim()) return true
+        const q = searchQuery.toLowerCase().trim()
+        return (
+          (c.name || "").toLowerCase().includes(q) ||
+          (c.code || "").toLowerCase().includes(q) ||
+          (c.description || "").toLowerCase().includes(q)
+        )
+      })
+  }, [categories, yearId, searchQuery])
 
-  const totalExams = displayCategories.reduce((acc, cat) => {
-    const count = cat.exams ? cat.exams.filter((e: any) => e.academicYearId === yearId).length : 0
-    return acc + count
-  }, 0)
+  const totalExamsInYear = useMemo(() => {
+    return displayCategories.reduce((acc, cat) => {
+      const count = cat.exams
+        ? cat.exams.filter((e: any) => !yearId || e.academicYearId === yearId).length
+        : 0
+      return acc + count
+    }, 0)
+  }, [displayCategories, yearId])
+
+  const activeYearName = academicYears.find((y) => y.id === yearId)?.name || "Hiện tại"
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* 4 Summary Vibrant KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 no-print">
-        {/* Card 1: Tổng danh mục */}
-        <div className="bg-gradient-to-br from-teal-600/90 via-slate-50 to-emerald-600/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-[#003B3A] text-white rounded-xl shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform">
-              <Tag className="w-5 h-5" />
+    <div className="space-y-3">
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg border text-xs font-semibold ${
+            toast.type === "success"
+              ? "bg-[#003B3A] text-white border-[#008B85]"
+              : "bg-rose-600 text-white border-rose-700"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle2 className="w-4 h-4 text-[#5EEAD4] shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-white shrink-0" />
+          )}
+          <span>{toast.text}</span>
+        </div>
+      )}
+
+      {/* 1. Compact Unified Ledger Bar + Inline Quick Create */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-3.5 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs tabular-nums">
+            <span className="font-semibold text-[#003B3A]">Từ điển danh mục kỳ thi</span>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-500">
+              Danh mục: <strong className="text-slate-900">{displayCategories.length}</strong>
+            </span>
+            <span className="text-slate-500">
+              Kỳ thi năm {activeYearName}:{" "}
+              <strong className="text-[#008B85]">{totalExamsInYear}</strong>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-56">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm theo tên hoặc mã..."
+                className="w-full pl-8.5 pr-7 py-1.5 rounded-xl text-xs border border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none text-slate-800"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCreating((v) => !v)
+                setEditingId(null)
+              }}
+              className="inline-flex items-center gap-1.5 bg-[#003B3A] hover:bg-[#002928] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#5EEAD4]" />
+              <span>Thêm danh mục</span>
+            </button>
           </div>
-          <div className="text-[10px] font-extrabold text-teal-800 uppercase tracking-wider block mb-1">Tổng số danh mục</div>
-          <div className="text-3xl font-black text-teal-800 leading-none">{displayCategories.length}</div>
-          <div className="text-[10px] text-teal-800/80 font-bold mt-1.5">danh mục kỳ thi</div>
         </div>
 
-        {/* Card 2: Tổng số Kỳ thi */}
-        <div className="bg-gradient-to-br from-teal-50/90 via-cyan-50/40 to-teal-100/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-[#48BFE3] text-white rounded-xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
-              <Layers className="w-5 h-5" />
+        {/* Inline Quick-Add Form */}
+        {creating && (
+          <div className="pt-3 border-t border-[#F1F5F9] grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
+            <div className="md:col-span-4 space-y-1">
+              <label className="block text-xs font-medium text-slate-600">
+                Tên danh mục <span className="text-[#E11D48]">*</span>
+              </label>
+              <input
+                type="text"
+                value={newForm.name}
+                onChange={(e) => setNewForm({ ...newForm, name: e.target.value })}
+                placeholder="Ví dụ: Học thuật, Công nghệ - Sáng tạo..."
+                className="w-full border border-[#E2E8F0] rounded-xl px-3 py-1.5 text-xs bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none"
+              />
             </div>
-          </div>
-          <div className="text-[10px] font-extrabold text-teal-800 uppercase tracking-wider block mb-1">Tổng kỳ thi được gán</div>
-          <div className="text-3xl font-black text-teal-950 leading-none">{totalExams}</div>
-          <div className="text-[10px] text-teal-600/80 font-bold mt-1.5">kỳ thi hiện tại</div>
-        </div>
-
-        {/* Card 3: Nhóm Học thuật & Công nghệ */}
-        <div className="bg-gradient-to-br from-amber-50/90 via-yellow-50/40 to-amber-100/60 p-5 rounded-2xl border border-amber-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-amber-500 text-white rounded-xl shadow-md shadow-amber-500/20 group-hover:scale-110 transition-transform">
-              <Cpu className="w-5 h-5" />
+            <div className="md:col-span-2 space-y-1">
+              <label className="block text-xs font-medium text-slate-600">
+                Mã danh mục <span className="text-[#E11D48]">*</span>
+              </label>
+              <input
+                type="text"
+                value={newForm.code}
+                onChange={(e) =>
+                  setNewForm({
+                    ...newForm,
+                    code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                  })
+                }
+                placeholder="HOC_THUAT"
+                className="w-full border border-[#E2E8F0] rounded-xl px-3 py-1.5 text-xs font-mono bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none"
+              />
             </div>
-          </div>
-          <div className="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider block mb-1">Công nghệ & Sáng tạo</div>
-          <div className="text-3xl font-black text-amber-950 leading-none">
-            {displayCategories.filter(c => (c.code || "").includes("CN") || (c.name || "").toLowerCase().includes("công nghệ")).length}
-          </div>
-          <div className="text-[10px] text-amber-600/80 font-bold mt-1.5">danh mục nhóm CNTT</div>
-        </div>
-
-        {/* Card 4: Trạng thái hệ thống */}
-        <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-emerald-100/60 p-5 rounded-2xl border border-emerald-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-md shadow-emerald-500/20 group-hover:scale-110 transition-transform">
-              <Sparkles className="w-5 h-5" />
+            <div className="md:col-span-4 space-y-1">
+              <label className="block text-xs font-medium text-slate-600">Mô tả chi tiết</label>
+              <input
+                type="text"
+                value={newForm.description}
+                onChange={(e) => setNewForm({ ...newForm, description: e.target.value })}
+                placeholder="Các sân chơi, cuộc thi thuộc nhóm này..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreate()
+                }}
+                className="w-full border border-[#E2E8F0] rounded-xl px-3 py-1.5 text-xs bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none"
+              />
             </div>
-          </div>
-          <div className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block mb-1">Năm học áp dụng</div>
-          <div className="text-xl font-black text-emerald-950 leading-tight truncate">
-            {academicYears.find(y => y.id === yearId)?.name || "Tất cả"}
-          </div>
-          <div className="text-[10px] text-emerald-600/80 font-bold mt-1.5">Trạng thái Hoạt động</div>
-        </div>
-      </div>
-
-      {/* Header Bar with Search & Action Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div className="space-y-1">
-          <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
-            <Tag className="w-5 h-5 text-[#48BFE3]" />
-            Danh Sách Danh Mục Kỳ Thi ({displayCategories.length})
-          </h3>
-          <p className="text-slate-500 text-xs font-medium">
-            Phân loại các kỳ thi theo từng nhóm chủ đề để quản lý và theo dõi kết quả chuẩn xác.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Quick Search Input */}
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên hoặc mã..."
-              className="w-full pl-9 pr-8 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none transition-all text-slate-700"
-            />
-            {searchQuery && (
+            <div className="md:col-span-2 flex items-center justify-end gap-1.5">
               <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                type="button"
+                onClick={handleCreate}
+                disabled={saving}
+                className="inline-flex items-center gap-1 bg-[#008B85] hover:bg-[#00736E] text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                <span>Lưu</span>
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => setCreating(false)}
+                className="px-2.5 py-1.5 bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+            </div>
           </div>
-
-          <button
-            onClick={openCreate}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#48BFE3] to-[#009085] hover:opacity-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#48BFE3]/20 transition-all text-xs cursor-pointer shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            Tạo Danh Mục Mới
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Redesigned Table of Category Rows */}
-      {displayCategories.length === 0 ? (
-        <div className="bg-white border border-slate-200/80 rounded-2xl flex flex-col items-center justify-center py-20 text-slate-400 shadow-xs">
-          <Tag className="w-16 h-16 mb-4 opacity-20 text-[#48BFE3]" />
-          <p className="font-bold text-slate-700 text-base mb-1">Không tìm thấy danh mục nào</p>
-          <p className="text-xs text-slate-400 font-medium">Nhấn "Tạo Danh Mục Mới" để thêm danh mục mới vào hệ thống.</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      {/* 2. Sky-Line Academic Ledger Table */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        {displayCategories.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400 px-4 text-center">
+            <Tag className="w-9 h-9 mb-2 text-slate-300" />
+            <p className="font-semibold text-slate-700 text-sm">Không tìm thấy danh mục nào</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Nhấn &ldquo;Thêm danh mục&rdquo; để khởi tạo phân loại kỳ thi mới.
+            </p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                  <th className="py-4 px-6">Tên Danh mục</th>
-                  <th className="py-4 px-5">Mã (Code)</th>
-                  <th className="py-4 px-5">Mô tả chi tiết</th>
-                  <th className="py-4 px-5 text-center">Số lượng Kỳ thi</th>
-                  <th className="py-4 px-6 text-right">Thao tác</th>
+              <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-3 text-white">Tên danh mục</th>
+                  <th className="py-3 px-3 text-teal-100">Mã danh mục</th>
+                  <th className="py-3 px-3 text-teal-100">Mô tả chi tiết</th>
+                  <th className="py-3 px-3 text-center text-[#5EEAD4]">Số kỳ thi</th>
+                  <th className="py-3 px-3 text-right text-white">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-semibold text-xs">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                 {displayCategories.map((cat: any) => {
-                  const examCount = cat.exams ? cat.exams.filter((e: any) => e.academicYearId === yearId).length : 0;
-                  const { Icon, bg, badge } = getCategoryIconAndColor(cat.code, cat.name);
+                  const isEditing = editingId === cat.id
+                  const examCount = cat.exams
+                    ? cat.exams.filter((e: any) => !yearId || e.academicYearId === yearId).length
+                    : 0
+
                   return (
-                    <tr key={cat.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-4.5 px-6">
-                        <div className="flex items-center gap-3.5">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${bg}`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <span className="font-black text-slate-800 text-sm block">{cat.name}</span>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Danh mục kỳ thi</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4.5 px-5">
-                        <span className="bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1 rounded-md font-mono text-[11px] font-bold">
-                          {cat.code}
-                        </span>
-                      </td>
-                      <td className="py-4.5 px-5 text-slate-600 max-w-sm" title={cat.description || ''}>
-                        {cat.description ? (
-                          <span className="line-clamp-2 leading-relaxed">{cat.description}</span>
+                    <tr
+                      key={cat.id}
+                      className={`transition-colors align-middle ${
+                        isEditing ? "bg-[#F0FDFA]/60" : "hover:bg-[#F8FAFC]"
+                      }`}
+                    >
+                      <td className="py-3 px-3 align-middle">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            className="w-full border border-[#00A19A] rounded-lg px-2.5 py-1 text-xs font-semibold bg-white outline-none"
+                          />
                         ) : (
-                          <span className="text-slate-300 italic font-normal">Chưa có mô tả</span>
+                          <span className="font-semibold text-slate-900">{cat.name}</span>
                         )}
                       </td>
-                      <td className="py-4.5 px-5 text-center">
-                        <span className="bg-teal-50 text-[#48BFE3] border border-teal-200/80 px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs">
+
+                      <td className="py-3 px-3 align-middle whitespace-nowrap">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editForm.code}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                              })
+                            }
+                            className="w-32 border border-[#00A19A] rounded-lg px-2.5 py-1 text-xs font-mono bg-white outline-none"
+                          />
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-[#F8FAFC] border border-[#E2E8F0] font-mono text-[11px] text-slate-700">
+                            {cat.code}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3 align-middle max-w-md text-slate-600">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editForm.description}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, description: e.target.value })
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveEdit(cat.id)
+                            }}
+                            className="w-full border border-[#00A19A] rounded-lg px-2.5 py-1 text-xs bg-white outline-none"
+                          />
+                        ) : cat.description ? (
+                          <span className="line-clamp-2 leading-relaxed" title={cat.description}>
+                            {cat.description}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                            examCount > 0
+                              ? "bg-[#F0FDFA] text-[#00736E] border-[#CCFBF1]"
+                              : "bg-[#F8FAFC] text-slate-400 border-[#E2E8F0]"
+                          }`}
+                        >
                           {examCount} kỳ thi
                         </span>
                       </td>
-                      <td className="py-4.5 px-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(cat)}
-                            className="p-2 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-xl transition-all cursor-pointer border border-slate-200/60 shadow-2xs"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit2 className="w-4 h-4 text-slate-600" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(cat.id, cat.name)}
-                            className="p-2 hover:bg-rose-50 text-rose-500 hover:text-rose-700 rounded-xl transition-all cursor-pointer border border-rose-100 shadow-2xs"
-                            title="Xóa"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
+                        {isEditing ? (
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEdit(cat.id)}
+                              disabled={saving}
+                              className="p-1.5 rounded-lg bg-[#003B3A] text-white hover:bg-[#00736E] transition-colors cursor-pointer"
+                              title="Lưu thay đổi"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="p-1.5 rounded-lg bg-white border border-[#E2E8F0] text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Hủy"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => startEdit(cat)}
+                              className="p-1.5 text-slate-500 hover:text-[#003B3A] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              title="Chỉnh sửa"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(cat.id, cat.name)}
+                              className="p-1.5 text-slate-400 hover:text-[#E11D48] hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )
@@ -308,175 +438,8 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {/* CREATE MODAL OVERLAY */}
-      {creating && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-white/10 rounded-lg">
-                  <Tag className="w-5 h-5 text-teal-200" />
-                </div>
-                <h3 className="font-black text-base">Tạo Danh Mục Mới</h3>
-              </div>
-              <button
-                onClick={() => setCreating(false)}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 text-xs font-semibold">
-              {errorMsg && (
-                <div className="text-red-700 bg-red-50 p-3.5 rounded-xl border border-red-100 font-bold flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider font-extrabold">
-                  Tên Danh Mục <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newForm.name}
-                  onChange={e => setNewForm({ ...newForm, name: e.target.value })}
-                  placeholder="Ví dụ: Công nghệ - Sáng tạo, Học thuật..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider font-extrabold">
-                  Mã (Code) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newForm.code}
-                  onChange={e => setNewForm({ ...newForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                  placeholder="Ví dụ: CN_ST, HOC_THUAT..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider font-extrabold">Mô tả danh mục</label>
-                <textarea
-                  value={newForm.description}
-                  onChange={e => setNewForm({ ...newForm, description: e.target.value })}
-                  placeholder="Nhập mô tả chi tiết danh mục..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] outline-none font-semibold text-slate-700 bg-slate-50/50"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setCreating(false)}
-                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-xs transition-all shadow-2xs cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#48BFE3]/20 transition-all disabled:opacity-60 cursor-pointer"
-              >
-                {saving ? "Đang lưu..." : "Lưu Danh Mục"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT MODAL OVERLAY */}
-      {editingId && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-white/10 rounded-lg">
-                  <Tag className="w-5 h-5 text-teal-200" />
-                </div>
-                <h3 className="font-black text-base">Chỉnh Sửa Danh Mục</h3>
-              </div>
-              <button
-                onClick={() => setEditingId(null)}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 text-xs font-semibold">
-              {errorMsg && (
-                <div className="text-red-700 bg-red-50 p-3.5 rounded-xl border border-red-100 font-bold flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider font-extrabold">Tên Danh Mục</label>
-                <input
-                  type="text"
-                  value={editForm.name}
-                  onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider font-extrabold">Mã (Code)</label>
-                <input
-                  type="text"
-                  value={editForm.code}
-                  onChange={e => setEditForm({ ...editForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider font-extrabold">Mô tả</label>
-                <textarea
-                  value={editForm.description}
-                  onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] outline-none font-semibold text-slate-700 bg-slate-50/50"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setEditingId(null)}
-                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-xs transition-all shadow-2xs cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={() => handleSaveEdit(editingId)}
-                disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#48BFE3]/20 transition-all disabled:opacity-60 cursor-pointer"
-              >
-                {saving ? "Đang lưu..." : "Lưu Thay Đổi"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

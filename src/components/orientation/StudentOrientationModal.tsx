@@ -47,7 +47,8 @@ import {
   Lightbulb,
   Bot,
   Copy,
-  FolderSync
+  FolderSync,
+  BookOpen
 } from "lucide-react"
 import QuickConsultationModal from "@/components/advisory/QuickConsultationModal"
 import {
@@ -2004,23 +2005,23 @@ export function StudentOrientationModal({
 
           <div className="overflow-x-auto border border-teal-200/80 rounded-xl bg-white shadow-2xs">
             <table className="w-full text-left border-collapse text-[11.5px]">
-              <thead>
-                <tr className="bg-teal-50/80 text-[10px] font-black uppercase text-[#083d39] border-b border-teal-100 whitespace-nowrap">
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">1. Mã HS</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">2. Họ và tên</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">3. Ngày sinh / Giới tính</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">4. Khối đăng ký</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">5. Hệ đào tạo</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">6. Cơ sở</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70">7. Trường cũ</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">8. Học tập (HB)</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">9. Rèn luyện (HB)</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">10. Toán (HB)</th>
-                  <th className="py-1.5 px-2.5 border-r border-slate-200/70 text-center">{vnSubjectModalHeaderLabel}</th>
-                  <th className="py-1.5 px-2.5 text-center">12. Tiếng Anh (HB)</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-[10px] text-[#083d39] border-b whitespace-nowrap font-semibold">
+                  <th className="py-1.5 px-2.5 border-r border-white/15 font-semibold">1. Mã HS</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 font-semibold">2. Họ và tên</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 font-semibold">3. Ngày sinh / Giới tính</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 font-semibold">4. Khối đăng ký</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 font-semibold">5. Hệ đào tạo</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 font-semibold">6. Cơ sở</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 font-semibold">7. Trường cũ</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 text-center font-semibold">8. Học tập (HB)</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 text-center font-semibold">9. Rèn luyện (HB)</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 text-center font-semibold">10. Toán (HB)</th>
+                  <th className="py-1.5 px-2.5 border-r border-white/15 text-center font-semibold">{vnSubjectModalHeaderLabel}</th>
+                  <th className="py-1.5 px-2.5 text-center font-semibold">12. Tiếng Anh (HB)</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                 <tr className="text-slate-800 whitespace-nowrap">
                   <td className="py-1.5 px-2.5 border-r border-slate-100 font-mono font-bold text-slate-900">
                     {studentDetail?.studentCode || student?.studentCode || "—"}

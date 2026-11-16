@@ -75,17 +75,17 @@ export function CategoriesClient() {
             <div className="text-center py-12 text-slate-400">Chua co mon khao sat nao. Hay them moi.</div>
           ) : (
             <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="text-slate-600 text-xs uppercase text-xs font-semibold">
-                  <th className="p-2 p-2 text-left w-12 border border-slate-200">STT</th>
-                  <th className="p-2 p-2 text-left border border-slate-200">Ma mon</th>
-                  <th className="p-2 p-2 text-left border border-slate-200">Ten mon</th>
-                  <th className="p-2 p-2 text-left border border-slate-200">Loai</th>
-                  <th className="p-2 p-2 text-left border border-slate-200">Trang thai</th>
-                  <th className="p-2 p-2 text-center w-24 border border-slate-200">Thao tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-xs font-semibold">
+                  <th className="p-2 text-left w-12 border border-white/15 font-semibold">STT</th>
+                  <th className="p-2 text-left border border-white/15 font-semibold">Ma mon</th>
+                  <th className="p-2 text-left border border-white/15 font-semibold">Ten mon</th>
+                  <th className="p-2 text-left border border-white/15 font-semibold">Loai</th>
+                  <th className="p-2 text-left border border-white/15 font-semibold">Trang thai</th>
+                  <th className="p-2 text-center w-24 border border-white/15 font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                 {items.map((item, i) => (
                   <tr key={item.id} className="hover:bg-teal-50/30 transition-colors text-xs font-semibold">
                     <td className="p-2 p-2 text-slate-500 border border-slate-200">{i + 1}</td>

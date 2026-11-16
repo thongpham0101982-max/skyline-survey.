@@ -1000,26 +1000,26 @@ export default function ExperientialActivitiesList() {
         <div className="bg-white border border-slate-200 rounded-3xl shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
-              <thead className="bg-slate-50/90 text-slate-700 font-bold border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-2 text-center w-12 text-slate-500 font-bold">STT</th>
-                  <th className="py-3 px-3 w-28 whitespace-nowrap">Khối áp dụng</th>
-                  <th className="py-3 px-4 min-w-[220px]">Kế hoạch Hoạt động</th>
-                  <th className="py-3 px-3 min-w-[95px] whitespace-nowrap">Bậc học</th>
-                  <th className="py-3 px-3 min-w-[100px] whitespace-nowrap">Hệ học</th>
-                  <th className="py-3 px-3 min-w-[140px]">Chủ đề giáo dục</th>
-                  <th className="py-3 px-3 min-w-[220px]">Nội dung giáo dục</th>
-                  <th className="py-3 px-3 min-w-[130px]">Môn phối hợp</th>
-                  <th className="py-3 px-3 min-w-[110px] whitespace-nowrap">Thời gian & HK</th>
-                  <th className="py-3 px-3 min-w-[160px]">Tiến độ Lớp & Hồ sơ HS</th>
-                  <th className="py-3 px-3 min-w-[110px] text-center">Đánh giá</th>
-                  <th className="py-3 px-3 min-w-[120px] text-center">Trạng thái</th>
-                  <th className="py-3 px-3 text-center min-w-[130px] sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs">
+              <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-2 text-center w-12 font-bold">STT</th>
+                  <th className="py-3 px-3 w-28 whitespace-nowrap font-semibold">Khối áp dụng</th>
+                  <th className="py-3 px-4 min-w-[220px] font-semibold">Kế hoạch Hoạt động</th>
+                  <th className="py-3 px-3 min-w-[95px] whitespace-nowrap font-semibold">Bậc học</th>
+                  <th className="py-3 px-3 min-w-[100px] whitespace-nowrap font-semibold">Hệ học</th>
+                  <th className="py-3 px-3 min-w-[140px] font-semibold">Chủ đề giáo dục</th>
+                  <th className="py-3 px-3 min-w-[220px] font-semibold">Nội dung giáo dục</th>
+                  <th className="py-3 px-3 min-w-[130px] font-semibold">Môn phối hợp</th>
+                  <th className="py-3 px-3 min-w-[110px] whitespace-nowrap font-semibold">Thời gian & HK</th>
+                  <th className="py-3 px-3 min-w-[160px] font-semibold">Tiến độ Lớp & Hồ sơ HS</th>
+                  <th className="py-3 px-3 min-w-[110px] text-center font-semibold">Đánh giá</th>
+                  <th className="py-3 px-3 min-w-[120px] text-center font-semibold">Trạng thái</th>
+                  <th className="py-3 px-3 text-center min-w-[130px] sticky right-0 bg-[#003B3A] border-l border-white/15 shadow-xs font-semibold">
                     Thao tác
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                 {activities.map((act, index) => {
                   const badge = getStatusBadge(act.status, act);
                   const totalClasses = act.totalClassesCount || 0;

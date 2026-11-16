@@ -127,7 +127,7 @@ export const EXCEPTION_TYPE_META: Record<
   },
   EXEMPT: {
     label: "Miễn khảo sát",
-    badgeClass: "bg-violet-50 text-violet-700 border-violet-200",
+    badgeClass: "bg-teal-50 text-[#00736E] border-teal-200",
   },
   RETEST: {
     label: "Khảo sát lại",
@@ -139,11 +139,11 @@ export const EXCEPTION_TYPE_META: Record<
   },
   ABSENT: {
     label: "Vắng khảo sát",
-    badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
+    badgeClass: "bg-amber-50 text-amber-800 border-amber-300",
   },
   SPECIAL_EXCEPTION: {
     label: "Trường hợp ngoại lệ",
-    badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    badgeClass: "bg-sky-50 text-sky-800 border-sky-200",
   },
 };
 
@@ -169,31 +169,143 @@ export const DEADLINE_ALERT_META: Record<
   },
 };
 
+// ============================================================================
+// CHUẨN HÓA NHÓM QUYỀN NGHIỆP VỤ KHẢO SÁT ĐẦU VÀO (4 BỘ PHẬN + GIÁO VIÊN)
+// ============================================================================
+
+export function normalizeEntranceRole(role?: string | null): string {
+  return String(role || "").toUpperCase().trim();
+}
+
+export function isSuperAdminRole(role?: string | null): boolean {
+  const norm = normalizeEntranceRole(role);
+  return ["ADMIN", "ADMINISTRATOR", "SUPERADMIN", "SUPER_ADMIN"].includes(norm);
+}
+
+export function isKtdbclEntranceRole(role?: string | null): boolean {
+  const norm = normalizeEntranceRole(role);
+  if (!norm) return false;
+  return ["KHAO_THI", "KT_DBCL", "KTDBCL", "TB_DHCM", "BAN_DHCM"].some(
+    (r) => norm === r || norm.includes(r)
+  );
+}
+
+/**
+ * Giám đốc Cơ sở / Ban Giám hiệu (Tách bạch hoàn toàn với Giáo vụ Cơ sở)
+ */
+export function isGdcsOrBghEntranceRole(role?: string | null): boolean {
+  const norm = normalizeEntranceRole(role);
+  if (!norm) return false;
+  if (norm.includes("GIAO_VU")) return false;
+  return [
+    "GDCS",
+    "GĐCS",
+    "GD_CS",
+    "GĐ_CS",
+    "BGH",
+    "BGH_CS",
+    "BGH_MN",
+    "BGH MN",
+    "BGH_MAM_NON",
+    "BGH MẦM NON",
+    "BGH MÂM NON",
+  ].some((r) => norm === r || norm.includes(r));
+}
+
+export function isGiaoVuEntranceRole(role?: string | null): boolean {
+  const norm = normalizeEntranceRole(role);
+  if (!norm) return false;
+  return ["GIAO_VU", "GIAO_VU_CS", "GVU"].some(
+    (r) => norm === r || norm.includes(r)
+  );
+}
+
+export function isTuVanEntranceRole(role?: string | null): boolean {
+  const norm = normalizeEntranceRole(role);
+  if (!norm) return false;
+  return ["TVAN", "TU_VAN", "TVTS", "TUYEN_SINH"].some(
+    (r) => norm === r || norm.includes(r)
+  );
+}
+
+export function isTeacherEntranceRole(role?: string | null): boolean {
+  const norm = normalizeEntranceRole(role);
+  if (!norm) return false;
+  return ["TEACHER", "GV", "GV_MN", "GVNN", "GIAO_VIEN"].includes(norm);
+}
+
+/**
+ * Các vai trò vận hành tại Cơ sở cần tự động khoanh vùng dữ liệu theo Cơ sở phụ trách
+ */
+export function isCampusScopedEntranceRole(role?: string | null): boolean {
+  if (isSuperAdminRole(role) || isKtdbclEntranceRole(role)) return false;
+  return (
+    isGdcsOrBghEntranceRole(role) ||
+    isGiaoVuEntranceRole(role) ||
+    isTuVanEntranceRole(role)
+  );
+}
+
+/**
+ * Thẩm quyền phê duyệt & ký kết luận chính thức ở Bước 6
+ */
+export function canApproveEntranceConclusion(
+  role?: string | null,
+  isSuperAdmin?: boolean
+): boolean {
+  if (isSuperAdmin || isSuperAdminRole(role) || isKtdbclEntranceRole(role)) {
+    return true;
+  }
+  return isGdcsOrBghEntranceRole(role);
+}
+
 export const ENTRANCE_WORKFLOW_STAGES: EntranceStageDefinition[] = [
   {
     stageNumber: 1,
     code: "STAGE_1_BATCH",
     shortName: "1. Tạo đợt KS",
     name: "Tạo đợt khảo sát",
-    description: "Khởi tạo kỳ khảo sát, đợt khảo sát, thời hạn và phân công giáo vụ phụ trách đợt.",
-    responsibleRoles: ["ADMIN", "KT_DBCL", "KTDBCL", "GIAO_VU", "GIAO_VU_CS"],
-    responsibleLabel: "Ban KT&ĐBCL / Giáo vụ",
+    description: "Khởi tạo kỳ khảo sát, đợt/ca khảo sát, thời hạn và phân công giáo vụ phụ trách đợt.",
+    responsibleRoles: [
+      "ADMIN",
+      "KHAO_THI",
+      "KT_DBCL",
+      "KTDBCL",
+      "TB_DHCM",
+      "BAN_DHCM",
+      "GIAO_VU",
+      "GIAO_VU_CS",
+    ],
+    responsibleLabel: "Ban KT&ĐBCL • Giáo vụ",
     confirmButtonLabel: "Xác nhận khởi tạo đợt",
-    defaultHrefK12: "/admin/cau-hinh-khao-sat?tab=k12",
-    defaultHrefPreschool: "/admin/cau-hinh-khao-sat?tab=preschool",
+    defaultHrefK12: "/admin/student-info?tab=general&subTab=periods",
+    defaultHrefPreschool: "/admin/student-info?tab=preschool&subTab=periods",
     milestoneGroup: "WORK",
   },
   {
     stageNumber: 2,
     code: "STAGE_2_ROSTER",
-    shortName: "2. Nhập DS HS",
-    name: "Nhập danh sách học sinh",
-    description: "Tiếp nhận, import hoặc thêm mới danh sách học sinh tham gia đợt khảo sát đầu vào.",
-    responsibleRoles: ["ADMIN", "KT_DBCL", "KTDBCL", "GIAO_VU", "GIAO_VU_CS", "TU_VAN", "TVTS", "TUYEN_SINH"],
-    responsibleLabel: "Giáo vụ / Tư vấn / KT&ĐBCL",
+    shortName: "2. Nhập & Bàn giao DS",
+    name: "Nhập danh sách & bàn giao Giáo vụ",
+    description: "Tiếp nhận, import danh sách học sinh dự khảo sát và bàn giao danh sách tới Giáo vụ cơ sở.",
+    responsibleRoles: [
+      "ADMIN",
+      "KHAO_THI",
+      "KT_DBCL",
+      "KTDBCL",
+      "TB_DHCM",
+      "BAN_DHCM",
+      "GIAO_VU",
+      "GIAO_VU_CS",
+      "TVAN",
+      "TU_VAN",
+      "TVTS",
+      "TUYEN_SINH",
+    ],
+    responsibleLabel: "Tư vấn • Giáo vụ • KT&ĐBCL",
     confirmButtonLabel: "Xác nhận danh sách HS",
-    defaultHrefK12: "/admin/student-info?tab=general",
-    defaultHrefPreschool: "/admin/student-info?tab=preschool",
+    defaultHrefK12: "/admin/student-info?tab=general&subTab=students",
+    defaultHrefPreschool: "/admin/student-info?tab=preschool&subTab=students",
     milestoneGroup: "WORK",
   },
   {
@@ -202,8 +314,17 @@ export const ENTRANCE_WORKFLOW_STAGES: EntranceStageDefinition[] = [
     shortName: "3. Phân công GV",
     name: "Giáo vụ phân công & xác nhận phân công",
     description: "Phân công giáo viên chấm/khảo sát theo môn, khối, hệ và xác nhận công bố nhiệm vụ cho GV.",
-    responsibleRoles: ["ADMIN", "KT_DBCL", "KTDBCL", "GIAO_VU", "GIAO_VU_CS"],
-    responsibleLabel: "Giáo vụ Cơ sở / KT&ĐBCL",
+    responsibleRoles: [
+      "ADMIN",
+      "KHAO_THI",
+      "KT_DBCL",
+      "KTDBCL",
+      "TB_DHCM",
+      "BAN_DHCM",
+      "GIAO_VU",
+      "GIAO_VU_CS",
+    ],
+    responsibleLabel: "Giáo vụ Cơ sở • KT&ĐBCL",
     confirmButtonLabel: "Xác nhận hoàn thành phân công",
     defaultHrefK12: "/admin/phan-cong-khao-sat?tab=k12",
     defaultHrefPreschool: "/admin/phan-cong-khao-sat?tab=preschool",
@@ -215,11 +336,25 @@ export const ENTRANCE_WORKFLOW_STAGES: EntranceStageDefinition[] = [
     shortName: "4. GV đánh giá",
     name: "Giáo viên nhập kết quả & xác nhận đánh giá",
     description: "Giáo viên nhập điểm, nhận xét chuyên môn và xác nhận hoàn thành nhiệm vụ đánh giá.",
-    responsibleRoles: ["TEACHER", "GV", "GV_MN", "ADMIN", "KT_DBCL", "KTDBCL", "GIAO_VU", "GIAO_VU_CS"],
-    responsibleLabel: "Giáo viên khảo sát",
+    responsibleRoles: [
+      "TEACHER",
+      "GV",
+      "GV_MN",
+      "GVNN",
+      "GIAO_VIEN",
+      "ADMIN",
+      "KHAO_THI",
+      "KT_DBCL",
+      "KTDBCL",
+      "TB_DHCM",
+      "BAN_DHCM",
+      "GIAO_VU",
+      "GIAO_VU_CS",
+    ],
+    responsibleLabel: "Giáo viên khảo sát • Giáo vụ",
     confirmButtonLabel: "Xác nhận hoàn thành đánh giá",
-    defaultHrefK12: "/teacher/input-assessments?type=general",
-    defaultHrefPreschool: "/teacher/input-assessments?type=preschool",
+    defaultHrefK12: "/admin/ket-qua-khao-sat?tab=general&subTab=batch",
+    defaultHrefPreschool: "/admin/ket-qua-khao-sat?tab=preschool&subTab=batch",
     milestoneGroup: "WORK",
   },
   {
@@ -228,11 +363,31 @@ export const ENTRANCE_WORKFLOW_STAGES: EntranceStageDefinition[] = [
     shortName: "5. Bản định hướng",
     name: "Hoàn thành bản định hướng kết quả",
     description: "Phỏng vấn học sinh, trao đổi PHHS, tham vấn tâm lý (nếu có) và hoàn thiện bản định hướng.",
-    responsibleRoles: ["TEACHER", "GV", "GV_MN", "GIAO_VU", "GIAO_VU_CS", "GDCS", "GĐCS", "BGH", "ADMIN", "KT_DBCL", "KTDBCL"],
-    responsibleLabel: "GV Định hướng / Hội đồng tiếp nhận",
+    responsibleRoles: [
+      "TEACHER",
+      "GV",
+      "GV_MN",
+      "GIAO_VIEN",
+      "GIAO_VU",
+      "GIAO_VU_CS",
+      "GDCS",
+      "GĐCS",
+      "GD_CS",
+      "GĐ_CS",
+      "BGH",
+      "BGH_CS",
+      "BGH_MN",
+      "ADMIN",
+      "KHAO_THI",
+      "KT_DBCL",
+      "KTDBCL",
+      "TB_DHCM",
+      "BAN_DHCM",
+    ],
+    responsibleLabel: "GV Định hướng • Hội đồng",
     confirmButtonLabel: "Xác nhận hoàn thành định hướng",
-    defaultHrefK12: "/admin/ket-qua-khao-sat?tab=general",
-    defaultHrefPreschool: "/admin/ket-qua-khao-sat?tab=preschool",
+    defaultHrefK12: "/admin/ket-qua-khao-sat?tab=general&subTab=batch&focus=orientation",
+    defaultHrefPreschool: "/admin/ket-qua-khao-sat?tab=preschool&subTab=batch&focus=orientation",
     milestoneGroup: "WORK",
   },
   {
@@ -241,8 +396,23 @@ export const ENTRANCE_WORKFLOW_STAGES: EntranceStageDefinition[] = [
     shortName: "6. Thẩm định & Duyệt",
     name: "Thẩm định, xét duyệt và kết luận",
     description: "Thẩm định kết quả khảo sát + bản định hướng, phê duyệt kết luận tuyển sinh (Đạt / Cam kết / Không đạt / KS lại).",
-    responsibleRoles: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN", "ADMIN", "KT_DBCL", "KTDBCL"],
-    responsibleLabel: "Giám đốc Cơ sở / BGH",
+    responsibleRoles: [
+      "GDCS",
+      "GĐCS",
+      "GD_CS",
+      "GĐ_CS",
+      "BGH",
+      "BGH_CS",
+      "BGH_MN",
+      "BGH_MAM_NON",
+      "ADMIN",
+      "KHAO_THI",
+      "KT_DBCL",
+      "KTDBCL",
+      "TB_DHCM",
+      "BAN_DHCM",
+    ],
+    responsibleLabel: "Giám đốc Cơ sở • BGH",
     confirmButtonLabel: "Phê duyệt kết luận",
     defaultHrefK12: "/admin/xet-duyet-ket-qua?tab=k12",
     defaultHrefPreschool: "/admin/xet-duyet-ket-qua?tab=preschool",
@@ -251,14 +421,31 @@ export const ENTRANCE_WORKFLOW_STAGES: EntranceStageDefinition[] = [
   {
     stageNumber: 7,
     code: "STAGE_7_HANDOVER",
-    shortName: "7. Bàn giao Tư vấn",
-    name: "Bàn giao kết quả, văn bản cho Tư vấn",
-    description: "Chuẩn bị văn bản (Thư chúc mừng / Bản cam kết / Thông báo KQ) và xác nhận bàn giao cho Tư vấn tuyển sinh.",
-    responsibleRoles: ["ADMIN", "KT_DBCL", "KTDBCL", "GIAO_VU", "GIAO_VU_CS", "GDCS", "GĐCS", "TU_VAN", "TVTS", "TUYEN_SINH", "TVAN"],
-    responsibleLabel: "Ban KT&ĐBCL / Giáo vụ / Tư vấn",
+    shortName: "7. Văn bản & Bàn giao",
+    name: "Xuất văn bản & bàn giao Tư vấn",
+    description: "Chuẩn bị văn bản (Thư chúc mừng / Bản cam kết / Thông báo KQ), bàn giao Tư vấn gửi PHHS & theo dõi nhập học.",
+    responsibleRoles: [
+      "ADMIN",
+      "KHAO_THI",
+      "KT_DBCL",
+      "KTDBCL",
+      "TB_DHCM",
+      "BAN_DHCM",
+      "GIAO_VU",
+      "GIAO_VU_CS",
+      "GDCS",
+      "GĐCS",
+      "GD_CS",
+      "GĐ_CS",
+      "TVAN",
+      "TU_VAN",
+      "TVTS",
+      "TUYEN_SINH",
+    ],
+    responsibleLabel: "Giáo vụ • KT&ĐBCL • Tư vấn",
     confirmButtonLabel: "Xác nhận bàn giao Tư vấn",
-    defaultHrefK12: "/admin/xet-duyet-ket-qua?tab=k12",
-    defaultHrefPreschool: "/admin/xet-duyet-ket-qua?tab=preschool",
+    defaultHrefK12: "/admin/input-assessments/reports?tab=k12",
+    defaultHrefPreschool: "/admin/input-assessments/reports?tab=preschool",
     milestoneGroup: "NOTIFICATION",
   },
 ];
@@ -271,6 +458,132 @@ export function getStageDefinition(stageNumber: number): EntranceStageDefinition
 }
 
 /**
+ * Định tuyến Liên kết Xử lý Trực tiếp thông minh theo Vai trò & giữ nguyên Bộ lọc ngữ cảnh
+ */
+export function resolveEntranceStageHref(params: {
+  stageNumber: number;
+  isPreschool?: boolean;
+  userRole?: string | null;
+  isSuperAdmin?: boolean;
+  periodId?: string | null;
+  batchId?: string | null;
+  campusCode?: string | null;
+  grade?: string | null;
+  studentCode?: string | null;
+  studentId?: string | null;
+}): string {
+  const {
+    stageNumber,
+    isPreschool = false,
+    userRole,
+    isSuperAdmin = false,
+    periodId,
+    batchId,
+    campusCode,
+    grade,
+    studentCode,
+    studentId,
+  } = params;
+
+  const isPureTeacher =
+    !isSuperAdmin &&
+    isTeacherEntranceRole(userRole) &&
+    !isKtdbclEntranceRole(userRole) &&
+    !isGiaoVuEntranceRole(userRole) &&
+    !isGdcsOrBghEntranceRole(userRole);
+  const isTuVan = !isSuperAdmin && isTuVanEntranceRole(userRole);
+
+  let baseUrl = "";
+  switch (stageNumber) {
+    case 1:
+      baseUrl = isPreschool
+        ? "/admin/student-info?tab=preschool&subTab=periods"
+        : "/admin/student-info?tab=general&subTab=periods";
+      break;
+    case 2:
+      baseUrl = isPreschool
+        ? "/admin/student-info?tab=preschool&subTab=students"
+        : "/admin/student-info?tab=general&subTab=students";
+      break;
+    case 3:
+      if (isTuVan) {
+        baseUrl = isPreschool
+          ? "/admin/student-info?tab=preschool&subTab=handover"
+          : "/admin/student-info?tab=general&subTab=handover";
+      } else {
+        baseUrl = isPreschool
+          ? "/admin/phan-cong-khao-sat?tab=preschool"
+          : "/admin/phan-cong-khao-sat?tab=k12";
+      }
+      break;
+    case 4:
+      if (isPureTeacher) {
+        baseUrl = isPreschool
+          ? "/teacher/input-assessments?type=preschool"
+          : "/teacher/input-assessments?type=general";
+      } else {
+        baseUrl = isPreschool
+          ? "/admin/ket-qua-khao-sat?tab=preschool&subTab=batch"
+          : "/admin/ket-qua-khao-sat?tab=general&subTab=batch";
+      }
+      break;
+    case 5:
+      if (isPureTeacher) {
+        baseUrl = isPreschool
+          ? "/teacher/input-assessments?type=preschool"
+          : "/teacher/input-assessments?type=general";
+      } else {
+        baseUrl = isPreschool
+          ? "/admin/ket-qua-khao-sat?tab=preschool&subTab=batch&focus=orientation"
+          : "/admin/ket-qua-khao-sat?tab=general&subTab=batch&focus=orientation";
+      }
+      break;
+    case 6:
+      if (isTuVan) {
+        baseUrl = isPreschool
+          ? "/admin/ket-qua-khao-sat?tab=preschool&subTab=result"
+          : "/admin/ket-qua-khao-sat?tab=general&subTab=result";
+      } else {
+        baseUrl = isPreschool
+          ? "/admin/xet-duyet-ket-qua?tab=preschool"
+          : "/admin/xet-duyet-ket-qua?tab=k12";
+      }
+      break;
+    case 7:
+    default:
+      if (isTuVan) {
+        baseUrl = isPreschool
+          ? "/admin/ket-qua-khao-sat?tab=preschool&subTab=result"
+          : "/admin/ket-qua-khao-sat?tab=general&subTab=result";
+      } else {
+        baseUrl = isPreschool
+          ? "/admin/input-assessments/reports?tab=preschool"
+          : "/admin/input-assessments/reports?tab=k12";
+      }
+      break;
+  }
+
+  const [pathname, existingQuery = ""] = baseUrl.split("?");
+  const qs = new URLSearchParams(existingQuery);
+  const appendIfValid = (key: string, val?: string | null) => {
+    const clean = String(val || "").trim();
+    if (clean && clean !== "ALL") {
+      qs.set(key, clean);
+    }
+  };
+
+  appendIfValid("periodId", periodId);
+  appendIfValid("batchId", batchId);
+  appendIfValid("campusCode", campusCode);
+  appendIfValid("grade", grade);
+  appendIfValid("studentCode", studentCode);
+  appendIfValid("studentId", studentId);
+
+  const queryStr = qs.toString();
+  return queryStr ? `${pathname}?${queryStr}` : pathname;
+}
+
+/**
  * Kiểm tra phân quyền vai trò thực hiện xác nhận từng công đoạn tại Backend & Frontend
  */
 export function canUserConfirmStage(
@@ -278,11 +591,15 @@ export function canUserConfirmStage(
   stageNumber?: number,
   isSuperAdmin?: boolean
 ): boolean {
-  if (isSuperAdmin) return true;
-  const norm = (userRole || "").toUpperCase().trim();
-  if (!norm) return false;
-  if (["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL"].includes(norm)) {
+  if (isSuperAdmin || isSuperAdminRole(userRole) || isKtdbclEntranceRole(userRole)) {
     return true;
+  }
+  const norm = normalizeEntranceRole(userRole);
+  if (!norm) return false;
+
+  // Quy tắc cứng: Bước 6 (Thẩm định & Phê duyệt kết luận) tuyệt đối không cấp cho Giáo vụ hoặc Tư vấn
+  if (stageNumber === 6) {
+    return isGdcsOrBghEntranceRole(norm);
   }
 
   const stageDef = getStageDefinition(stageNumber || 1);

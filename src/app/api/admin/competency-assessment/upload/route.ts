@@ -42,8 +42,19 @@ export async function POST(req: NextRequest) {
     let headerRowIdx = 0;
     for (let i = 0; i < Math.min(10, rawRows.length); i++) {
       const rowStr = rawRows[i].map((c) => String(c).toLowerCase()).join(" ");
-      if (rowStr.includes("mã học sinh") || rowStr.includes("ma hoc sinh") || rowStr.includes("môn học") || rowStr.includes("mon hoc")) {
-        headerRowIdx = i; break;
+      if (
+        rowStr.includes("mã học sinh") ||
+        rowStr.includes("ma hoc sinh") ||
+        rowStr.includes("studentcode") ||
+        rowStr.includes("student_code") ||
+        rowStr.includes("subjectcode") ||
+        rowStr.includes("subjectname") ||
+        rowStr.includes("mã môn") ||
+        rowStr.includes("môn học") ||
+        rowStr.includes("mon hoc")
+      ) {
+        headerRowIdx = i;
+        break;
       }
     }
 
@@ -52,16 +63,68 @@ export async function POST(req: NextRequest) {
 
     const mapping: Record<string, string> = {};
     headers.forEach((h) => {
-      const lower = h.toLowerCase();
-      if (lower.includes("năm học") || lower.includes("nam hoc")) mapping["academicYear"] = h;
-      else if (lower.includes("mã học sinh") || lower.includes("ma hoc sinh") || lower === "ma_hs" || lower === "student_code") mapping["studentCode"] = h;
-      else if (lower.includes("họ và tên") || lower.includes("ho va ten") || lower.includes("họ tên") || lower === "ho_ten") mapping["studentName"] = h;
-      else if (lower.includes("lớp") || lower.includes("lop") || lower === "class") mapping["className"] = h;
-      else if (lower.includes("môn học") || lower.includes("mon hoc") || lower === "mon") mapping["subjectName"] = h;
-      else if (lower.includes("năng lực") || lower.includes("nang luc") || lower === "competency") mapping["competencyName"] = h;
-      else if (lower.includes("tổng giá trị") || lower.includes("tong gia tri") || lower.includes("điểm đạt") || lower === "achieved") mapping["achievedScore"] = h;
-      else if (lower.includes("tối đa") || lower.includes("toi da") || lower.includes("điểm tối đa") || lower === "max") mapping["maxScore"] = h;
-      else if (lower.includes("%_thucte_radar") || lower.includes("thực tế radar") || lower.includes("radar") || lower.includes("%")) mapping["radarPercent"] = h;
+      const lower = h.toLowerCase().trim();
+      if (lower.includes("năm học") || lower.includes("nam hoc") || lower === "academicyear" || lower === "academic_year") {
+        mapping["academicYear"] = h;
+      } else if (
+        lower.includes("mã học sinh") ||
+        lower.includes("ma hoc sinh") ||
+        lower === "mã hs" ||
+        lower === "ma hs" ||
+        lower === "ma_hs" ||
+        lower === "studentcode" ||
+        lower === "student_code"
+      ) {
+        mapping["studentCode"] = h;
+      } else if (
+        lower.includes("họ và tên") ||
+        lower.includes("ho va ten") ||
+        lower.includes("họ tên") ||
+        lower === "ho_ten" ||
+        lower === "studentname" ||
+        lower === "student_name" ||
+        lower === "fullname"
+      ) {
+        mapping["studentName"] = h;
+      } else if (lower.includes("lớp") || lower.includes("lop") || lower === "class" || lower === "classname" || lower === "class_name") {
+        mapping["className"] = h;
+      } else if (
+        lower === "subjectcode" ||
+        lower === "subject_code" ||
+        lower === "mã môn" ||
+        lower === "ma mon" ||
+        lower === "ma_mon" ||
+        lower.includes("mã môn học") ||
+        lower.includes("mã đgnl") ||
+        lower === "ma_dgnl"
+      ) {
+        mapping["subjectCode"] = h;
+      } else if (
+        lower === "subjectname" ||
+        lower === "subject_name" ||
+        lower.includes("tên môn") ||
+        lower.includes("ten mon") ||
+        lower.includes("môn học") ||
+        lower.includes("mon hoc") ||
+        lower === "mon" ||
+        lower === "môn"
+      ) {
+        mapping["subjectName"] = h;
+      } else if (
+        lower.includes("năng lực") ||
+        lower.includes("nang luc") ||
+        lower === "competency" ||
+        lower === "competencyname" ||
+        lower === "competency_name"
+      ) {
+        mapping["competencyName"] = h;
+      } else if (lower.includes("tổng giá trị") || lower.includes("tong gia tri") || lower.includes("điểm đạt") || lower === "achieved" || lower === "achievedscore") {
+        mapping["achievedScore"] = h;
+      } else if (lower.includes("tối đa") || lower.includes("toi da") || lower.includes("điểm tối đa") || lower === "max" || lower === "maxscore") {
+        mapping["maxScore"] = h;
+      } else if (lower.includes("%_thucte_radar") || lower.includes("thực tế radar") || lower.includes("radar") || lower.includes("%")) {
+        mapping["radarPercent"] = h;
+      }
     });
 
     const batchCode = "IMP_NL_" + Date.now().toString(36).toUpperCase();

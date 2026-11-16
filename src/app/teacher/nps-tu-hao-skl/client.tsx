@@ -584,19 +584,19 @@ export default function TeacherReflectionPrideClient() {
 
                 <div className="mt-5 overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600">
-                        <th className="p-3">Mã HS</th>
-                        <th className="p-3">Họ và tên</th>
-                        <th className="p-3 text-center">Trạng thái</th>
-                        <th className="p-3 text-center">Điểm IP2.1 (/16)</th>
-                        <th className="p-3 text-center">5 Phẩm chất (/20)</th>
-                        <th className="p-3 text-center">Xếp loại IP2.1</th>
-                        <th className="p-3 text-center">Đồng hành GVCN</th>
-                        <th className="p-3 text-right">Thao tác</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="border-b text-[11px] font-semibold">
+                        <th className="p-3 font-semibold">Mã HS</th>
+                        <th className="p-3 font-semibold">Họ và tên</th>
+                        <th className="p-3 text-center font-semibold">Trạng thái</th>
+                        <th className="p-3 text-center font-semibold">Điểm IP2.1 (/16)</th>
+                        <th className="p-3 text-center font-semibold">5 Phẩm chất (/20)</th>
+                        <th className="p-3 text-center font-semibold">Xếp loại IP2.1</th>
+                        <th className="p-3 text-center font-semibold">Đồng hành GVCN</th>
+                        <th className="p-3 text-right font-semibold">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {filteredStudents.map((s: any) => (
                         <tr key={s.studentId} className="hover:bg-teal-50/40">
                           <td className="p-3 font-mono font-bold text-slate-600">{s.studentCode}</td>
@@ -849,17 +849,17 @@ export default function TeacherReflectionPrideClient() {
 
                 <div className="mt-5 overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600">
-                        <th className="p-3">Học sinh</th>
-                        <th className="p-3 text-center">Tự đánh giá IP2.1 (/16)</th>
-                        <th className="p-3 text-center">Tự đánh giá (%)</th>
-                        <th className="p-3 text-center">ĐTB ĐGNL Định kỳ (/10)</th>
-                        <th className="p-3 text-center">Xếp loại ĐGNL</th>
-                        <th className="p-3 text-center">Đối chiếu nhận thức</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="border-b text-[11px] font-semibold">
+                        <th className="p-3 font-semibold">Học sinh</th>
+                        <th className="p-3 text-center font-semibold">Tự đánh giá IP2.1 (/16)</th>
+                        <th className="p-3 text-center font-semibold">Tự đánh giá (%)</th>
+                        <th className="p-3 text-center font-semibold">ĐTB ĐGNL Định kỳ (/10)</th>
+                        <th className="p-3 text-center font-semibold">Xếp loại ĐGNL</th>
+                        <th className="p-3 text-center font-semibold">Đối chiếu nhận thức</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {data.students.map((s: any) => {
                         const selfPct = s.scores?.ip21Percentage ?? null;
                         const dgnlPct =

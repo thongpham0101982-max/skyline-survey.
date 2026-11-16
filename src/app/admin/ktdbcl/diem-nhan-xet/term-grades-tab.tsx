@@ -416,7 +416,7 @@ export function TermGradesTab({
         { code: "ANA", name: "Nghệ thuật (Âm nhạc)", hasScore: false, hasLevel: true },
         { code: "MTU", name: "Nghệ thuật (Mĩ thuật)", hasScore: false, hasLevel: true },
         { code: "HDTNHN", name: "Hoạt động trải nghiệm", hasScore: false, hasLevel: true },
-        { code: "TIN_HOC", name: "Tin học và Công nghệ (Tin học)", hasScore: gradeNum >= 3, hasLevel: true },
+        { code: "ICT", name: "Tin học và Công nghệ (Tin học)", hasScore: gradeNum >= 3, hasLevel: true },
         { code: "GCD", name: "Đạo đức", hasScore: false, hasLevel: true }
       ]
 
@@ -437,6 +437,7 @@ export function TermGradesTab({
             (def.code === "GTC" && sName.includes("thể chất")) ||
             (def.code === "ANA" && sName.includes("âm nhạc")) ||
             (def.code === "MTU" && (sName.includes("mĩ thuật") || sName.includes("mỹ thuật"))) ||
+            (def.code === "ICT" && (sName.includes("tin học") || sCode === "TIN_HOC")) ||
             (def.code === "GCD" && (sName.includes("đạo đức") || sName.includes("công dân"))) ||
             (def.code === "HDTNHN" && sName.includes("trải nghiệm"))
           )
@@ -457,10 +458,10 @@ export function TermGradesTab({
     // 2. THCS & THPT (Thông tư 22)
     const isTHCS = selectedLevel === "THCS"
     const thcsScoredOrder = ["TOA", "NVA", "TA", "TAV", "KHT", "KHTN", "LSU", "LICH_SU", "DLI", "TIN_HOC", "ICT", "GCD", "STE", "STEM"]
-    const thcsAssessOrder = ["GTC", "MI_THUAT", "MTU", "AM_NHAC", "ANA", "NDGDCDP", "HDTNHN"]
+    const thcsAssessOrder = ["GTC", "MTU", "AM_NHAC", "ANA", "NDGDCDP", "HDTNHN"]
 
     const thptScoredOrder = ["TOA", "VLI", "HHO", "SHO", "TIN_HOC", "ICT", "NVA", "LICH_SU", "LSU", "DLI", "TA", "TAV", "TNH", "GDKTPL", "GKP", "GDQPAN"]
-    const thptAssessOrder = ["GTC", "MI_THUAT", "MTU", "AM_NHAC", "ANA", "NDGDCDP", "HDTNHN"]
+    const thptAssessOrder = ["GTC", "MTU", "AM_NHAC", "ANA", "NDGDCDP", "HDTNHN"]
 
     const targetScoredCodes = isTHCS ? thcsScoredOrder : thptScoredOrder
     const targetAssessCodes = isTHCS ? thcsAssessOrder : thptAssessOrder
@@ -1525,19 +1526,19 @@ export function TermGradesTab({
             <div className="overflow-x-auto max-h-[720px]">
               <table className="w-full text-xs border-collapse">
                 {/* Header 3 tầng */}
-                <thead className="sticky top-0 z-20 bg-slate-100 text-slate-700 shadow-sm">
+                <thead className="bg-[#003B3A] sticky top-0 z-20 shadow-sm text-white border-b border-[#003B3A]">
                   {/* TẦNG 1: NHÓM LỚN */}
-                  <tr className="border-b border-slate-300 divide-x divide-slate-200 text-center">
-                    <th rowSpan={3} className="p-2 font-bold sticky left-0 z-30 bg-slate-100 w-10 border-r border-slate-300">
+                  <tr className="border-b divide-x text-center text-[11px] font-semibold">
+                    <th rowSpan={3} className="p-2 font-bold sticky left-0 z-30 bg-[#003B3A] w-10 border-r border-white/15">
                       STT
                     </th>
-                    <th colSpan={2} className="p-2 font-bold sticky left-10 z-30 bg-slate-100 min-w-[175px] text-center border-r border-slate-300">
+                    <th colSpan={2} className="p-2 font-bold sticky left-10 z-30 bg-[#003B3A] min-w-[175px] text-center border-r border-white/15">
                       HỌ VÀ TÊN HỌC SINH
                     </th>
-                    <th rowSpan={3} className="p-2 font-bold sticky left-[215px] z-30 bg-slate-100 w-24 border-r border-slate-300">
+                    <th rowSpan={3} className="p-2 font-bold sticky left-[215px] z-30 bg-[#003B3A] w-24 border-r border-white/15">
                       Ngày, tháng, năm sinh
                     </th>
-                    <th rowSpan={3} className="p-2 font-bold sticky left-[311px] z-30 bg-slate-100 w-10 border-r border-slate-300">
+                    <th rowSpan={3} className="p-2 font-bold sticky left-[311px] z-30 bg-[#003B3A] w-10 border-r border-white/15">
                       Nữ
                     </th>
 
@@ -1550,54 +1551,54 @@ export function TermGradesTab({
                     </th>
 
                     {/* 2. Năng lực cốt lõi */}
-                    <th colSpan={10} className="p-2 font-bold bg-blue-50 text-blue-950 border-b border-blue-200">
+                    <th colSpan={10} className="p-2 font-bold bg-[#003B3A] border-b border-white/15 text-teal-100">
                       Năng lực cốt lõi
                     </th>
 
                     {/* 3. Phẩm chất chủ yếu */}
-                    <th colSpan={5} className="p-2 font-bold bg-emerald-50 text-emerald-950 border-b border-emerald-200">
+                    <th colSpan={5} className="p-2 font-bold bg-[#003B3A] border-b border-white/15 text-[#5EEAD4]">
                       Phẩm chất chủ yếu
                     </th>
 
                     {/* 4. Đánh giá KQGD (CHỈ HIỂN THỊ Ở HK2 / CẢ NĂM - HK1 KHÔNG CÓ) */}
                     {selectedSemester !== "HK1" && (
-                      <th colSpan={4} className="p-2 font-bold bg-teal-50 text-teal-800 border-b border-teal-200">
+                      <th colSpan={4} className="p-2 font-bold bg-[#003B3A] border-b border-white/15 text-[#5EEAD4]">
                         Đánh giá KQGD
                       </th>
                     )}
 
                     {/* 5. Khen thưởng (CHỈ HIỂN THỊ Ở HK2 / CẢ NĂM - HK1 KHÔNG CÓ) */}
                     {selectedSemester !== "HK1" && (
-                      <th colSpan={3} className="p-2 font-bold bg-rose-50 text-rose-950 border-b border-rose-200">
+                      <th colSpan={3} className="p-2 font-bold bg-[#003B3A] border-b border-rose-200 text-rose-200">
                         Khen thưởng
                       </th>
                     )}
 
                     {/* 6. Lên lớp (CHỈ HIỂN THỊ Ở HK2 / CẢ NĂM - HK1 KHÔNG CÓ) */}
                     {selectedSemester !== "HK1" && (
-                      <th rowSpan={3} className="p-2 font-bold bg-slate-100 text-slate-800 w-16">
+                      <th rowSpan={3} className="p-2 font-bold bg-[#003B3A] w-16 text-teal-100">
                         Lên lớp
                       </th>
                     )}
 
                     {/* 7. Ghi chú */}
-                    <th rowSpan={3} className="p-2 font-bold bg-slate-100 text-slate-800 min-w-[120px]">
+                    <th rowSpan={3} className="p-2 font-bold bg-[#003B3A] min-w-[120px] text-teal-100">
                       Ghi Chú
                     </th>
 
                     {/* 8. Nút Nhập NL-PC */}
-                    <th rowSpan={3} className="p-2 font-bold bg-slate-100 text-slate-800 w-16 text-center" title="Nhập chi tiết Năng lực & Phẩm chất">
+                    <th rowSpan={3} className="p-2 font-bold bg-[#003B3A] w-16 text-center" title="Nhập chi tiết Năng lực & Phẩm chất">
                       Nhập NL-PC
                     </th>
                   </tr>
 
                   {/* TẦNG 2: PHÂN NHÓM MÔN & NĂNG LỰC */}
-                  <tr className="border-b border-slate-300 divide-x divide-slate-200 bg-slate-50 text-[11px] text-center">
+                  <tr className="border-b divide-x text-[11px] text-center font-semibold">
                     {/* Cột con: Họ đệm & Tên */}
-                    <th rowSpan={2} className="p-1.5 font-bold sticky left-10 z-30 bg-slate-100 min-w-[110px] text-left border-r border-slate-300">
+                    <th rowSpan={2} className="p-1.5 font-bold sticky left-10 z-30 bg-[#003B3A] min-w-[110px] text-left border-r border-white/15">
                       Họ và đệm
                     </th>
-                    <th rowSpan={2} className="p-1.5 font-bold sticky left-[150px] z-30 bg-slate-100 min-w-[65px] text-left border-r border-slate-300">
+                    <th rowSpan={2} className="p-1.5 font-bold sticky left-[150px] z-30 bg-[#003B3A] min-w-[65px] text-left border-r border-white/15">
                       Tên
                     </th>
 
@@ -1606,7 +1607,7 @@ export function TermGradesTab({
                       <th
                         key={sub.id}
                         colSpan={sub.hasScore ? 2 : 1}
-                        className="p-1.5 font-bold text-slate-800 bg-amber-50/50"
+                        className="p-1.5 font-bold bg-[#003B3A] text-teal-100"
                       >
                         <span className="block truncate max-w-[100px] mx-auto" title={sub.subjectName}>
                           {sub.subjectName}
@@ -1615,18 +1616,18 @@ export function TermGradesTab({
                     ))}
 
                     {/* Năng lực chung */}
-                    <th colSpan={3} className="p-1.5 font-bold text-blue-900 bg-blue-50/60">
+                    <th colSpan={3} className="p-1.5 font-bold bg-[#003B3A] text-teal-100">
                       Năng lực chung
                     </th>
 
                     {/* Năng lực đặc thù */}
-                    <th colSpan={7} className="p-1.5 font-bold text-blue-900 bg-blue-50/40">
+                    <th colSpan={7} className="p-1.5 font-bold bg-[#003B3A] text-teal-100">
                       Năng lực đặc thù
                     </th>
 
                     {/* Phẩm chất chủ yếu: 5 phẩm chất */}
                     {KEY_QUALITIES.map(q => (
-                      <th key={q.key} rowSpan={2} className="p-1.5 font-bold text-emerald-900 bg-emerald-50/40 w-12 text-center">
+                      <th key={q.key} rowSpan={2} className="p-1.5 font-bold bg-[#003B3A] w-12 text-center text-[#5EEAD4]">
                         <span className="block truncate max-w-[50px] mx-auto text-[10px]" title={q.label}>
                           {q.short}
                         </span>
@@ -1636,29 +1637,29 @@ export function TermGradesTab({
                     {/* Đánh giá KQGD (Chỉ có ở HK2 / Cả năm) */}
                     {selectedSemester !== "HK1" && (
                       <>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-teal-800 w-16">Hoàn thành xuất sắc</th>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-teal-800 w-16">Hoàn thành tốt</th>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-teal-800 w-16">Hoàn thành</th>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-teal-800 w-16">Chưa hoàn thành</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold w-16 text-[#5EEAD4]">Hoàn thành xuất sắc</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold w-16 text-[#5EEAD4]">Hoàn thành tốt</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold w-16 text-[#5EEAD4]">Hoàn thành</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold w-16 text-[#5EEAD4]">Chưa hoàn thành</th>
                       </>
                     )}
 
                     {/* Khen thưởng (Chỉ có ở HK2 / Cả năm) */}
                     {selectedSemester !== "HK1" && (
                       <>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-rose-900 w-14">Cuối năm</th>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-rose-900 w-14">Đột xuất</th>
-                        <th rowSpan={2} className="p-1 text-[10px] font-bold text-rose-900 min-w-[110px]">Nội dung khen thưởng khác</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold w-14 text-rose-200">Cuối năm</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold w-14 text-rose-200">Đột xuất</th>
+                        <th rowSpan={2} className="p-1 text-[10px] font-bold min-w-[110px] text-rose-200">Nội dung khen thưởng khác</th>
                       </>
                     )}
                   </tr>
 
                   {/* TẦNG 3: CỘT CHI TIẾT CON (Mức đạt được / Điểm KTĐK; Chi tiết từng năng lực) */}
-                  <tr className="border-b border-slate-300 divide-x divide-slate-200 bg-white text-[10px] text-slate-600 text-center">
+                  <tr className="border-b divide-x text-[10px] text-center font-semibold">
                     {scoredSubjects.map(sub => (
                       <React.Fragment key={sub.id}>
                         <th className="p-1 font-semibold w-14 text-center">Mức đạt được</th>
-                        {sub.hasScore && <th className="p-1 font-semibold w-12 text-center text-blue-700">Điểm KTĐK</th>}
+                        {sub.hasScore && <th className="p-1 font-semibold w-12 text-center">Điểm KTĐK</th>}
                       </React.Fragment>
                     ))}
 
@@ -1679,7 +1680,7 @@ export function TermGradesTab({
                 </thead>
 
                 {/* Data Rows Tiểu học */}
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {displayedStudents.map((st, idx) => {
                     const isEven = idx % 2 === 0
                     const rowBg = isEven ? "bg-white" : "bg-slate-50/50"
@@ -1970,41 +1971,41 @@ export function TermGradesTab({
           /* ========================================================================= */
           <div className="overflow-x-auto max-h-[720px]">
             <table className="w-full text-xs border-collapse">
-              <thead className="sticky top-0 z-20 bg-slate-100 text-slate-700 shadow-sm">
-                <tr className="border-b border-slate-300 divide-x divide-slate-200">
-                  <th rowSpan={2} className="p-2.5 text-center font-bold sticky left-0 z-30 bg-slate-100 w-12 border-r border-slate-300">
+              <thead className="bg-[#003B3A] sticky top-0 z-20 shadow-sm text-white border-b border-[#003B3A]">
+                <tr className="border-b divide-x text-[11px] font-semibold">
+                  <th rowSpan={2} className="p-2.5 text-center font-bold sticky left-0 z-30 bg-[#003B3A] w-12 border-r border-white/15">
                     STT
                   </th>
-                  <th rowSpan={2} className="p-2.5 text-left font-bold sticky left-12 z-30 bg-slate-100 w-28 border-r border-slate-300">
+                  <th rowSpan={2} className="p-2.5 text-left font-bold sticky left-12 z-30 bg-[#003B3A] w-28 border-r border-white/15">
                     Mã học sinh
                   </th>
-                  <th rowSpan={2} className="p-2.5 text-left font-bold sticky left-40 z-30 bg-slate-100 min-w-[180px] border-r border-slate-300">
+                  <th rowSpan={2} className="p-2.5 text-left font-bold sticky left-40 z-30 bg-[#003B3A] min-w-[180px] border-r border-white/15">
                     Họ và tên
                   </th>
-                  <th rowSpan={2} className="p-2.5 text-center font-bold sticky left-[340px] z-30 bg-slate-100 w-24 border-r border-slate-300">
+                  <th rowSpan={2} className="p-2.5 text-center font-bold sticky left-[340px] z-30 bg-[#003B3A] w-24 border-r border-white/15">
                     Ngày sinh
                   </th>
 
                   {scoredSubjects.length > 0 && (
-                    <th colSpan={scoredSubjects.length} className="p-2 text-center font-bold bg-blue-50 text-blue-900 border-b border-blue-200">
+                    <th colSpan={scoredSubjects.length} className="p-2 text-center font-bold bg-[#003B3A] border-b border-white/15">
                       Môn tính điểm (HS 1) — Khối {selectedGrade} ({scoredSubjects.length} môn)
                     </th>
                   )}
 
                   {assessmentSubjects.length > 0 && (
-                    <th colSpan={assessmentSubjects.length} className="p-2 text-center font-bold bg-emerald-50 text-emerald-900 border-b border-emerald-200">
+                    <th colSpan={assessmentSubjects.length} className="p-2 text-center font-bold bg-[#003B3A] border-b border-white/15 text-[#5EEAD4]">
                       Môn nhận xét (N.xét) — Khối {selectedGrade} ({assessmentSubjects.length} môn)
                     </th>
                   )}
 
-                  <th colSpan={selectedSemester === "CN" ? 7 : 6} className="p-2 text-center font-bold bg-teal-50 text-teal-800 border-b border-teal-200">
+                  <th colSpan={selectedSemester === "CN" ? 7 : 6} className="p-2 text-center font-bold bg-[#003B3A] border-b border-white/15 text-[#5EEAD4]">
                     Đánh giá tổng kết {selectedSemester === "CN" ? "(Cả năm)" : `(${selectedSemester})`}
                   </th>
                 </tr>
 
-                <tr className="border-b border-slate-300 divide-x divide-slate-200 bg-slate-50 text-[11px]">
+                <tr className="border-b divide-x text-[11px] font-semibold">
                   {scoredSubjects.map(sub => (
-                    <th key={sub.id} className="p-2 text-center font-semibold text-slate-700 min-w-[70px]">
+                    <th key={sub.id} className="p-2 text-center font-semibold min-w-[70px]">
                       <span className="block truncate max-w-[80px]" title={sub.subjectName}>
                         {sub.subjectName}
                       </span>
@@ -2012,26 +2013,26 @@ export function TermGradesTab({
                   ))}
 
                   {assessmentSubjects.map(sub => (
-                    <th key={sub.id} className="p-2 text-center font-semibold text-slate-700 min-w-[80px]">
+                    <th key={sub.id} className="p-2 text-center font-semibold min-w-[80px]">
                       <span className="block truncate max-w-[90px]" title={sub.subjectName}>
                         {sub.subjectName}
                       </span>
                     </th>
                   ))}
 
-                  <th className="p-2 text-center font-semibold text-teal-800 min-w-[105px]">Kết quả học tập</th>
-                  <th className="p-2 text-center font-semibold text-teal-800 min-w-[105px]">Kết quả rèn luyện</th>
-                  <th className="p-2 text-center font-semibold text-slate-700 w-12" title="Số buổi nghỉ có phép">P</th>
-                  <th className="p-2 text-center font-semibold text-slate-700 w-12" title="Số buổi nghỉ không phép">K</th>
-                  <th className="p-2 text-center font-semibold text-slate-700 w-14" title="Tổng số buổi nghỉ">Tổng</th>
-                  <th className="p-2 text-center font-semibold text-teal-800 min-w-[125px]">Danh hiệu thi đua</th>
+                  <th className="p-2 text-center font-semibold min-w-[105px] text-[#5EEAD4]">Kết quả học tập</th>
+                  <th className="p-2 text-center font-semibold min-w-[105px] text-[#5EEAD4]">Kết quả rèn luyện</th>
+                  <th className="p-2 text-center font-semibold w-12" title="Số buổi nghỉ có phép">P</th>
+                  <th className="p-2 text-center font-semibold w-12" title="Số buổi nghỉ không phép">K</th>
+                  <th className="p-2 text-center font-semibold w-14" title="Tổng số buổi nghỉ">Tổng</th>
+                  <th className="p-2 text-center font-semibold min-w-[125px] text-[#5EEAD4]">Danh hiệu thi đua</th>
                   {selectedSemester === "CN" && (
-                    <th className="p-2 text-center font-semibold text-slate-700 min-w-[130px]">Ghi chú / Lên lớp</th>
+                    <th className="p-2 text-center font-semibold min-w-[130px]">Ghi chú / Lên lớp</th>
                   )}
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {displayedStudents.map((st, idx) => {
                   const isEven = idx % 2 === 0
                   const rowBg = isEven ? "bg-white" : "bg-slate-50/50"
@@ -2427,16 +2428,16 @@ export function TermGradesTab({
                 {/* Table môn học */}
                 <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs max-h-[380px] overflow-y-auto">
                   <table className="w-full text-xs">
-                    <thead className="bg-slate-100 text-slate-700 font-bold sticky top-0 z-10 border-b border-slate-200">
-                      <tr>
-                        <th className="p-2.5 text-center w-14">Chọn</th>
-                        <th className="p-2.5 text-left">Tên môn học</th>
-                        <th className="p-2.5 text-center w-24">Mã môn</th>
-                        <th className="p-2.5 text-center w-48">Hình thức đánh giá</th>
-                        <th className="p-2.5 text-center w-20">Thao tác</th>
+                    <thead className="bg-[#003B3A] sticky top-0 z-10 border-b text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="p-2.5 text-center w-14 font-semibold">Chọn</th>
+                        <th className="p-2.5 text-left font-semibold">Tên môn học</th>
+                        <th className="p-2.5 text-center w-24 font-semibold">Mã môn</th>
+                        <th className="p-2.5 text-center w-48 font-semibold">Hình thức đánh giá</th>
+                        <th className="p-2.5 text-center w-20 font-semibold">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {filteredSubjectsForConfig.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="p-6 text-center text-slate-400">

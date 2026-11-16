@@ -1049,8 +1049,8 @@ export default function TeacherParentMeetingClient() {
 
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr className="border-b border-slate-200 text-slate-500 bg-slate-50">
+                                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                        <tr className="border-b text-[11px] font-semibold">
                                             <th className="py-3 px-3 font-bold">Học sinh</th>
                                             <th className="py-3 px-3 font-bold">Phụ huynh / Giám hộ</th>
                                             <th className="py-3 px-3 font-bold">Xác nhận RSVP</th>
@@ -1061,7 +1061,7 @@ export default function TeacherParentMeetingClient() {
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-[#E2E8F0]">
                                         {filteredInvitations.map((inv: any) => {
                                             const att = attendanceByStudent.get(inv.studentId);
                                             const rsvpCfg =

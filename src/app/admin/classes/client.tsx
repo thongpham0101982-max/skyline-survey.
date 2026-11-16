@@ -666,24 +666,24 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse">
-          <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
-            <tr>
-              <th className="p-2 p-2 w-12 text-center border border-slate-200"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={filteredClasses.length > 0 && selectedIds.length === filteredClasses.length} onChange={handleSelectAll} /></th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs w-12 border border-slate-200">STT</th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Cơ sở</th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Bậc học</th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Khối học</th>
+          <thead className="bg-[#003B3A] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1] text-white border-b border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="p-2 w-12 text-center border border-white/15 font-semibold"><input type="checkbox" className="w-4 h-4 rounded text-blue-600" checked={filteredClasses.length > 0 && selectedIds.length === filteredClasses.length} onChange={handleSelectAll} /></th>
+              <th className="p-2 font-semibold text-xs w-12 border border-white/15">STT</th>
+              <th className="p-2 font-semibold text-xs border border-white/15">Cơ sở</th>
+              <th className="p-2 font-semibold text-xs border border-white/15">Bậc học</th>
+              <th className="p-2 font-semibold text-xs border border-white/15">Khối học</th>
               {activeTab === "mam-non" && (
-                <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Nhóm tuổi</th>
+                <th className="p-2 font-semibold text-xs border border-white/15">Nhóm tuổi</th>
               )}
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Tên lớp</th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Hệ học</th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">Sỹ số</th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs border border-slate-200">GVCN</th>
-              <th className="p-2 p-2 font-semibold text-slate-500 uppercase text-xs text-right border border-slate-200">Thao tác</th>
+              <th className="p-2 font-semibold text-xs border border-white/15">Tên lớp</th>
+              <th className="p-2 font-semibold text-xs border border-white/15">Hệ học</th>
+              <th className="p-2 font-semibold text-xs border border-white/15">Sỹ số</th>
+              <th className="p-2 font-semibold text-xs border border-white/15">GVCN</th>
+              <th className="p-2 font-semibold text-xs text-right border border-white/15">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {filteredClasses.length === 0 && (
               <tr><td colSpan={activeTab === "mam-non" ? 11 : 10} className="p-2 text-center text-slate-400 border border-slate-200">Chưa có lớp học nào trong năm học này.</td></tr>
             )}
@@ -1057,21 +1057,21 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 </div>
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                      <tr>
-                        <th className="px-3 py-2.5 text-center w-10"><input type="checkbox"
+                    <thead className="bg-[#003B3A] text-xs text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="px-3 py-2.5 text-center w-10 font-semibold"><input type="checkbox"
                           checked={transferSelectedIds.length === transferPreview.filter(p => !p.alreadyExists).length && transferPreview.filter(p => !p.alreadyExists).length > 0}
                           onChange={e => setTransferSelectedIds(e.target.checked ? transferPreview.filter(p => !p.alreadyExists).map(p => p.id) : [])}
                           className="w-4 h-4 accent-[#48BFE3]" /></th>
-                        <th className="px-3 py-2.5 text-left">Tên lớp</th>
-                        <th className="px-3 py-2.5 text-left">Cơ sở</th>
-                        <th className="px-3 py-2.5 text-left">Khối</th>
-                        <th className="px-3 py-2.5 text-left">Bậc học</th>
-                        <th className="px-3 py-2.5 text-center">Sỹ số</th>
-                        <th className="px-3 py-2.5 text-center">Trạng thái</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Tên lớp</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Cơ sở</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Khối</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Bậc học</th>
+                        <th className="px-3 py-2.5 text-center font-semibold">Sỹ số</th>
+                        <th className="px-3 py-2.5 text-center font-semibold">Trạng thái</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {transferPreview.map((p: any) => (
                         <tr key={p.id} className={`transition-colors ${transferSelectedIds.includes(p.id) ? "bg-teal-50/40" : "hover:bg-slate-50"} ${p.alreadyExists ? "opacity-60" : ""}`}>
                           <td className="px-3 py-2.5 text-center">
@@ -1379,16 +1379,16 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 </div>
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                      <tr>
-                        <th className="px-3 py-2.5 text-left">Giáo viên</th>
-                        <th className="px-3 py-2.5 text-left">Môn học</th>
-                        <th className="px-3 py-2.5 text-left">Lớp</th>
-                        <th className="px-3 py-2.5 text-center">Học kỳ</th>
-                        <th className="px-3 py-2.5 text-center">Trạng thái</th>
+                    <thead className="bg-[#003B3A] text-xs text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="px-3 py-2.5 text-left font-semibold">Giáo viên</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Môn học</th>
+                        <th className="px-3 py-2.5 text-left font-semibold">Lớp</th>
+                        <th className="px-3 py-2.5 text-center font-semibold">Học kỳ</th>
+                        <th className="px-3 py-2.5 text-center font-semibold">Trạng thái</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {copyAssignPreview.map((a: any, idx: number) => (
                         <tr key={idx} className={`transition-colors hover:bg-slate-50 ${a.isDuplicate ? "opacity-55" : ""}`}>
                           <td className="px-3 py-2.5 font-semibold text-slate-800">{a.teacherName}</td>

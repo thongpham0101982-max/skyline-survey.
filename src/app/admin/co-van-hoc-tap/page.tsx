@@ -1615,20 +1615,20 @@ function AdminAdvisoryDashboardContent() {
                 return (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 text-slate-700 text-[11px] font-black uppercase border-b border-slate-200">
-                          <th className="p-3 text-center w-12">STT</th>
-                          <th className="p-3">Cơ sở</th>
-                          <th className="p-3">Lớp & Khối</th>
-                          <th className="p-3">Giáo viên / Cố vấn</th>
-                          <th className="p-3 text-center">Số lượng HS</th>
-                          <th className="p-3 text-center">Tiến độ nộp phiếu</th>
-                          <th className="p-3 text-center">Phân loại HS</th>
-                          <th className="p-3 text-center">GVCN & PHHS</th>
-                          <th className="p-3 text-center">Thao tác</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-[11px] border-b font-semibold">
+                          <th className="p-3 text-center w-12 font-semibold">STT</th>
+                          <th className="p-3 font-semibold">Cơ sở</th>
+                          <th className="p-3 font-semibold">Lớp & Khối</th>
+                          <th className="p-3 font-semibold">Giáo viên / Cố vấn</th>
+                          <th className="p-3 text-center font-semibold">Số lượng HS</th>
+                          <th className="p-3 text-center font-semibold">Tiến độ nộp phiếu</th>
+                          <th className="p-3 text-center font-semibold">Phân loại HS</th>
+                          <th className="p-3 text-center font-semibold">GVCN & PHHS</th>
+                          <th className="p-3 text-center font-semibold">Thao tác</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-xs font-bold">
+                      <tbody className="divide-y divide-[#E2E8F0] text-xs font-bold">
                         {classList.length === 0 ? (
                           <tr>
                             <td colSpan={9} className="p-8 text-center text-slate-400">
@@ -1787,19 +1787,19 @@ function AdminAdvisoryDashboardContent() {
 
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-100 text-slate-700 text-[11px] font-black uppercase border-b border-slate-200">
-                            <th className="p-3 text-center w-12">STT</th>
-                            <th className="p-3">Mã HS & Họ Tên</th>
-                            <th className="p-3">Lớp & Cơ sở</th>
-                            <th className="p-3">Khối</th>
-                            <th className="p-3 text-center">Trạng thái Phiếu</th>
-                            <th className="p-3 text-center">Mức Cảnh báo</th>
-                            <th className="p-3 text-center">GVCN / PHHS</th>
-                            <th className="p-3 text-center">Thao tác</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="text-[11px] border-b font-semibold">
+                            <th className="p-3 text-center w-12 font-semibold">STT</th>
+                            <th className="p-3 font-semibold">Mã HS & Họ Tên</th>
+                            <th className="p-3 font-semibold">Lớp & Cơ sở</th>
+                            <th className="p-3 font-semibold">Khối</th>
+                            <th className="p-3 text-center font-semibold">Trạng thái Phiếu</th>
+                            <th className="p-3 text-center font-semibold">Mức Cảnh báo</th>
+                            <th className="p-3 text-center font-semibold">GVCN / PHHS</th>
+                            <th className="p-3 text-center font-semibold">Thao tác</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-xs font-bold">
+                        <tbody className="divide-y divide-[#E2E8F0] text-xs font-bold">
                           {paginatedStudents.length === 0 ? (
                             <tr>
                               <td colSpan={8} className="p-8 text-center text-slate-400">
@@ -2419,19 +2419,19 @@ function AdminAdvisoryDashboardContent() {
 
                   <div className="overflow-x-auto rounded-2xl border border-slate-200">
                     <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-100 text-slate-700 text-[11px] font-black uppercase border-b border-slate-200">
-                          <th className="p-3 text-center w-12">STT</th>
-                          <th className="p-3">Khối học</th>
-                          <th className="p-3 text-center">Số lớp</th>
-                          <th className="p-3 text-center">Tổng sỹ số</th>
-                          <th className="p-3 text-center min-w-[180px]">Đã tư vấn & Tỷ lệ (%)</th>
-                          <th className="p-3 text-center">Chưa tư vấn</th>
-                          <th className="p-3 text-center">Tổng số buổi</th>
-                          <th className="p-3 text-center">Đánh giá tiến độ</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-[11px] border-b font-semibold">
+                          <th className="p-3 text-center w-12 font-semibold">STT</th>
+                          <th className="p-3 font-semibold">Khối học</th>
+                          <th className="p-3 text-center font-semibold">Số lớp</th>
+                          <th className="p-3 text-center font-semibold">Tổng sỹ số</th>
+                          <th className="p-3 text-center min-w-[180px] font-semibold">Đã tư vấn & Tỷ lệ (%)</th>
+                          <th className="p-3 text-center font-semibold">Chưa tư vấn</th>
+                          <th className="p-3 text-center font-semibold">Tổng số buổi</th>
+                          <th className="p-3 text-center font-semibold">Đánh giá tiến độ</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-bold">
+                      <tbody className="divide-y divide-[#E2E8F0] font-bold">
                         {gradeSummary.map((grade: any, idx: number) => (
                           <tr key={grade.gradeLevel || idx} className="hover:bg-slate-50/80 transition-colors">
                             <td className="p-3 text-center font-extrabold text-slate-400">{idx + 1}</td>
@@ -2569,20 +2569,20 @@ function AdminAdvisoryDashboardContent() {
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-100 text-slate-700 text-[11px] font-black uppercase border-b border-slate-200">
-                        <th className="p-3 text-center w-12">STT</th>
-                        <th className="p-3">Cơ sở</th>
-                        <th className="p-3">Lớp</th>
-                        <th className="p-3">GVCN</th>
-                        <th className="p-3 text-center">Sỹ số</th>
-                        <th className="p-3 text-center min-w-[180px]">Số HS đã tư vấn</th>
-                        <th className="p-3 text-center min-w-[140px]">Học sinh chưa tư vấn</th>
-                        <th className="p-3 text-center">Tổng số buổi</th>
-                        <th className="p-3 text-center">Xem chi tiết</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] border-b font-semibold">
+                        <th className="p-3 text-center w-12 font-semibold">STT</th>
+                        <th className="p-3 font-semibold">Cơ sở</th>
+                        <th className="p-3 font-semibold">Lớp</th>
+                        <th className="p-3 font-semibold">GVCN</th>
+                        <th className="p-3 text-center font-semibold">Sỹ số</th>
+                        <th className="p-3 text-center min-w-[180px] font-semibold">Số HS đã tư vấn</th>
+                        <th className="p-3 text-center min-w-[140px] font-semibold">Học sinh chưa tư vấn</th>
+                        <th className="p-3 text-center font-semibold">Tổng số buổi</th>
+                        <th className="p-3 text-center font-semibold">Xem chi tiết</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs font-bold">
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs font-bold">
                       {(!displayedClasses || displayedClasses.length === 0) ? (
                         <tr>
                           <td colSpan={9} className="p-8 text-center text-slate-400">
@@ -2686,18 +2686,18 @@ function AdminAdvisoryDashboardContent() {
               /* STUDENT VIEW TABLE */
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700 text-[11px] font-black uppercase border-b border-slate-200">
-                      <th className="p-3 text-center w-12">STT</th>
-                      <th className="p-3">Học sinh</th>
-                      <th className="p-3">Lớp & Cơ sở</th>
-                      <th className="p-3 text-center">Trạng thái tư vấn</th>
-                      <th className="p-3 text-center">Số lượt gặp</th>
-                      <th className="p-3">Lần tư vấn gần nhất</th>
-                      <th className="p-3 text-center">Chi tiết</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] border-b font-semibold">
+                      <th className="p-3 text-center w-12 font-semibold">STT</th>
+                      <th className="p-3 font-semibold">Học sinh</th>
+                      <th className="p-3 font-semibold">Lớp & Cơ sở</th>
+                      <th className="p-3 text-center font-semibold">Trạng thái tư vấn</th>
+                      <th className="p-3 text-center font-semibold">Số lượt gặp</th>
+                      <th className="p-3 font-semibold">Lần tư vấn gần nhất</th>
+                      <th className="p-3 text-center font-semibold">Chi tiết</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs font-bold">
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs font-bold">
                     {(!consultationSummaryData?.students || consultationSummaryData.students.length === 0) ? (
                       <tr>
                         <td colSpan={7} className="p-8 text-center text-slate-400">
@@ -3060,20 +3060,20 @@ function AdminAdvisoryDashboardContent() {
                   return (
                     <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
                       <table className="w-full text-xs text-left border-collapse bg-white">
-                        <thead>
-                          <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                            <th className="p-3 border-r border-slate-200 w-12 text-center">STT</th>
-                            <th className="p-3 border-r border-slate-200 w-28 whitespace-nowrap">Ngày gặp</th>
-                            <th className="p-3 border-r border-slate-200 w-44">Học sinh</th>
-                            <th className="p-3 border-r border-slate-200 w-36">Người tư vấn</th>
-                            <th className="p-3 border-r border-slate-200">Nội dung trao đổi</th>
-                            <th className="p-3 border-r border-slate-200">Khó khăn ghi nhận</th>
-                            <th className="p-3 border-r border-slate-200">Kế hoạch tiếp theo</th>
-                            <th className="p-3 border-r border-slate-200 w-28 whitespace-nowrap">Thời hạn</th>
-                            <th className="p-3">Đánh giá của HS</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="border-b text-[11px] font-semibold">
+                            <th className="p-3 border-r border-white/15 w-12 text-center font-semibold">STT</th>
+                            <th className="p-3 border-r border-white/15 w-28 whitespace-nowrap font-semibold">Ngày gặp</th>
+                            <th className="p-3 border-r border-white/15 w-44 font-semibold">Học sinh</th>
+                            <th className="p-3 border-r border-white/15 w-36 font-semibold">Người tư vấn</th>
+                            <th className="p-3 border-r border-white/15 font-semibold">Nội dung trao đổi</th>
+                            <th className="p-3 border-r border-white/15 font-semibold">Khó khăn ghi nhận</th>
+                            <th className="p-3 border-r border-white/15 font-semibold">Kế hoạch tiếp theo</th>
+                            <th className="p-3 border-r border-white/15 w-28 whitespace-nowrap font-semibold">Thời hạn</th>
+                            <th className="p-3 font-semibold">Đánh giá của HS</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#E2E8F0]">
                           {allClassLogs.map((log: any, idx: number) => (
                             <tr key={log.id || idx} className="hover:bg-slate-50/70 transition-colors">
                               <td className="p-3 border-r border-slate-200 text-center font-bold text-slate-500">{idx + 1}</td>
@@ -3436,18 +3436,18 @@ function AdminAdvisoryDashboardContent() {
                 return (
                   <div className="rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
                     <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-50/90 text-slate-700 text-[11px] font-bold border-b border-slate-200">
-                          <th className="py-3 px-3 text-center w-12 text-slate-500 font-bold">STT</th>
-                          <th className="py-3 px-4 min-w-[200px]">Mã HS & Họ Tên</th>
-                          <th className="py-3 px-3 text-center w-24">Giới tính</th>
-                          <th className="py-3 px-3 text-center min-w-[140px]">Trạng thái Phiếu</th>
-                          <th className="py-3 px-3 text-center min-w-[130px]">Mức Cảnh Báo</th>
-                          <th className="py-3 px-4 text-center min-w-[170px]">GVCN & PHHS</th>
-                          <th className="py-3 px-4 text-center min-w-[130px]">Thao Tác</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-[11px] border-b font-semibold">
+                          <th className="py-3 px-3 text-center w-12 font-bold">STT</th>
+                          <th className="py-3 px-4 min-w-[200px] font-semibold">Mã HS & Họ Tên</th>
+                          <th className="py-3 px-3 text-center w-24 font-semibold">Giới tính</th>
+                          <th className="py-3 px-3 text-center min-w-[140px] font-semibold">Trạng thái Phiếu</th>
+                          <th className="py-3 px-3 text-center min-w-[130px] font-semibold">Mức Cảnh Báo</th>
+                          <th className="py-3 px-4 text-center min-w-[170px] font-semibold">GVCN & PHHS</th>
+                          <th className="py-3 px-4 text-center min-w-[130px] font-semibold">Thao Tác</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                      <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                         {filtered.map((st: any, idx: number) => (
                           <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
                             <td className="py-3 px-3 text-center text-slate-400 font-semibold align-middle">

@@ -424,19 +424,19 @@ export default function HsFormClient({
                     return (
                       <div className="overflow-x-auto -mx-2 sm:-mx-4 px-2 sm:px-4 rounded-xl border border-slate-200">
                         <table className="w-full border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50">
-                              <th className="p-3 text-left text-[11px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
+                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold">
+                              <th className="p-3 text-left text-[11px] border-b border-white/15 font-semibold">
                                 Tiêu chí / Môn học
                               </th>
                               {gridOpts.columns.map((col, ci) => (
-                                <th key={ci} className="p-3 text-center text-[11px] font-black text-slate-600 uppercase tracking-wider min-w-[80px] border-b border-l border-slate-200">
+                                <th key={ci} className="p-3 text-center text-[11px] min-w-[80px] border-b border-l border-white/15 font-semibold">
                                   {col}
                                 </th>
                               ))}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 bg-white">
+                          <tbody className="divide-y divide-[#E2E8F0] bg-white">
                             {gridOpts.rows.map((row, ri) => (
                               <tr key={ri} className="hover:bg-sky-50/40 transition-colors">
                                 <td className="p-3 text-xs sm:text-sm font-bold text-slate-800 leading-snug pr-3">

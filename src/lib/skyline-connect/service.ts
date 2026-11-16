@@ -7,14 +7,18 @@ import {
   SLC_DEFAULT_SUBJECTS,
   SLC_IDEA_STAR_DESCRIPTIONS,
   SLC_PRODUCT_STAR_DESCRIPTIONS,
+  SLC_SKILL_WORK_CATEGORIES,
   SlcRuleParameters,
 } from "./constants"
 import {
   canEditOrDeleteComment,
+  canManageCommunityAndSkills,
   canPinOrMarkFeedbackOnPost,
+  canRestoreOrDeletePostOrSkill,
   canUserAccessFeatureFlag,
   canUserRateTarget,
   canViewPost,
+  filterAllowedMentionUsersForPost,
   hasSlcRoleInScope,
   isEligibleForAudienceHallOfFame,
   isSuperOrCommunityAdmin,
@@ -27,15 +31,23 @@ import {
   computeExpertScoreE,
   doPeriodRangesOverlap,
   evaluateCandidateForPeriod,
+  evaluatePostBumpEligibility,
   filterRankedCandidatesKeepingOriginalRank,
   getVietnamMonthBoundsUtc,
   isWithinHalfOpenPeriod,
   rankHallOfFameCandidates,
+  recalculatePostLastBumpedAt,
   selectValidPeriodRatingRevisions,
   selectValidPeriodVerifiedApplications,
+  SlcPostBumpEvent,
 } from "./scoring"
-import { ensureSlcSchema } from "./schema-init"
-import { sanitizeRichText, validateSafeExternalUrl } from "./security"
+import { ensureSlcSchema, getSlcDb } from "./schema-init"
+import {
+  detectAndRedactStudentPii,
+  sanitizeRichText,
+  validateAttachmentMetadata,
+  validateSafeExternalUrl,
+} from "./security"
 
 export function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
   if (!raw) return fallback
@@ -60,35 +72,77 @@ export async function resolveSlcUserContext(sessionUser?: {
   await ensureSlcSchema()
 
   const userId = sessionUser.id
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
-  const [teacher, groupMemberships, ownedGroups, roleAssignments] = await Promise.all([
-    prisma.teacher
-      .findUnique({
-        where: { userId },
+  const [directTeacher, groupMemberships, ownedGroups, roleAssignments, ktdbclAssignment] =
+    await Promise.all([
+      prisma.teacher
+        .findUnique({
+          where: { userId },
+          include: {
+            campus: true,
+            mainSubjectRel: true,
+            departmentRel: true,
+            departmentAssignments: {
+              include: { department: true },
+            },
+          },
+        })
+        .catch(() => null),
+      pAny.slcGroupMember
+        ?.findMany({
+          where: { userId, status: "APPROVED" },
+        })
+        .catch(() => []) ?? [],
+      pAny.slcGroup
+        ?.findMany({
+          where: { ownerId: userId, status: "ACTIVE" },
+          select: { id: true },
+        })
+        .catch(() => []) ?? [],
+      pAny.slcUserRoleAssignment
+        ?.findMany({
+          where: { userId, isActive: true },
+        })
+        .catch(() => []) ?? [],
+      pAny.ktdbclOfficerAssignment
+        ?.findFirst({
+          where: { userId, isActive: true },
+        })
+        .catch(() => null),
+    ])
+
+  let teacher = directTeacher
+  if (!teacher) {
+    const emailCandidate = sessionUser.email ? String(sessionUser.email).trim() : ""
+    const codeFromEmail = emailCandidate.includes("@")
+      ? emailCandidate.split("@")[0]
+      : emailCandidate
+    const orFilters: any[] = [{ id: userId }, { userId }, { teacherCode: userId }]
+    if (emailCandidate) {
+      orFilters.push({ email: emailCandidate })
+      orFilters.push({ teacherCode: emailCandidate })
+    }
+    if (codeFromEmail) {
+      orFilters.push({ teacherCode: codeFromEmail })
+    }
+    if (sessionUser.name) {
+      orFilters.push({ teacherName: String(sessionUser.name).trim() })
+    }
+    teacher = await prisma.teacher
+      .findFirst({
+        where: { OR: orFilters },
         include: {
           campus: true,
           mainSubjectRel: true,
+          departmentRel: true,
+          departmentAssignments: {
+            include: { department: true },
+          },
         },
       })
-      .catch(() => null),
-    pAny.slcGroupMember
-      ?.findMany({
-        where: { userId, status: "APPROVED" },
-      })
-      .catch(() => []) ?? [],
-    pAny.slcGroup
-      ?.findMany({
-        where: { ownerId: userId, status: "ACTIVE" },
-        select: { id: true },
-      })
-      .catch(() => []) ?? [],
-    pAny.slcUserRoleAssignment
-      ?.findMany({
-        where: { userId, isActive: true },
-      })
-      .catch(() => []) ?? [],
-  ])
+      .catch(() => null)
+  }
 
   const approvedGroupIds = Array.from(
     new Set<string>([
@@ -103,6 +157,32 @@ export async function resolveSlcUserContext(sessionUser?: {
 
   const campusId = teacher?.campusId || sessionUser.campusIds?.[0] || null
   const campusName = teacher?.campus?.campusName || null
+  const deptAssign = (teacher as any)?.departmentAssignments?.[0]
+  const departmentId = teacher?.departmentId || deptAssign?.departmentId || null
+  const departmentName =
+    (teacher as any)?.departmentRel?.name ||
+    (teacher as any)?.departmentRel?.departmentName ||
+    deptAssign?.department?.name ||
+    deptAssign?.department?.departmentName ||
+    null
+
+  const posUpper = String(teacher?.position || deptAssign?.role || "").toUpperCase()
+  const isDepartmentHead =
+    posUpper.includes("TTCM") ||
+    posUpper.includes("TỔ TRƯỞNG") ||
+    posUpper.includes("TO TRUONG") ||
+    posUpper.includes("QLCM") ||
+    posUpper.includes("HEAD") ||
+    posUpper.includes("BGH") ||
+    posUpper.includes("HIỆU TRƯỞNG") ||
+    posUpper.includes("PHÓ HIỆU TRƯỞNG")
+
+  const roleUpper = String(sessionUser.role || "").toUpperCase()
+  const isKtdbclOfficer =
+    Boolean(ktdbclAssignment) ||
+    roleUpper.includes("KTDBCL") ||
+    posUpper.includes("KT&ĐBCL") ||
+    posUpper.includes("KTDBCL")
 
   return {
     userId,
@@ -118,6 +198,11 @@ export async function resolveSlcUserContext(sessionUser?: {
         ...(campusId ? [campusId] : []),
       ])
     ),
+    departmentId,
+    departmentName,
+    teacherPosition: teacher?.position || null,
+    isDepartmentHead,
+    isKtdbclOfficer,
     mainSubjectCode: teacher?.mainSubjectRel?.subjectCode || null,
     mainSubjectName: teacher?.mainSubjectRel?.subjectName || null,
     approvedGroupIds,
@@ -144,7 +229,7 @@ export async function recordSlcAuditLog(
   details: Record<string, any> = {}
 ) {
   try {
-    const pAny = prisma as any
+    const pAny = getSlcDb()
     await pAny.slcAuditLog?.create({
       data: {
         actorId: ctx.userId,
@@ -174,6 +259,7 @@ export async function dispatchSlcNotification(params: {
     | "COMMENT_REPLY"
     | "FEEDBACK_STATUS"
     | "CONTRIBUTOR_CREDIT"
+    | "HELP_REQUEST_RESPONSE"
     | "PROJECT_INVITE"
     | "PROJECT_APPROVED"
     | "FOLLOW_UPDATE"
@@ -192,7 +278,7 @@ export async function dispatchSlcNotification(params: {
     return { sent: false, reason: "SELF_NOTIFICATION_SKIPPED" }
   }
 
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   // 2. Kiểm tra tùy chọn thông báo của người nhận và trạng thái tắt thông báo bài
   const [profile, postFollow] = await Promise.all([
@@ -250,8 +336,28 @@ export async function dispatchSlcNotification(params: {
         })
         .catch(() => null)
       const isOwner = group?.ownerId === params.recipientId
-      if (!isOwner && member?.status !== "APPROVED") {
+      if (!isOwner && member?.status !== "APPROVED" && post.authorId !== params.recipientId) {
         return { sent: false, reason: "RECIPIENT_NO_GROUP_ACCESS" }
+      }
+    }
+    if (post && post.visibility === "CAMPUS" && post.campusId && post.authorId !== params.recipientId) {
+      const recipientTeacher = await prisma.teacher
+        .findUnique({
+          where: { userId: params.recipientId },
+          select: { campusId: true },
+        })
+        .catch(() => null)
+      const recipientUser = await prisma.user
+        .findUnique({
+          where: { id: params.recipientId },
+          select: { role: true },
+        })
+        .catch(() => null)
+      const isAdminRecipient = ["ADMIN", "SUPER_ADMIN", "SUPERADMIN"].includes(
+        String(recipientUser?.role || "").toUpperCase()
+      )
+      if (!isAdminRecipient && recipientTeacher?.campusId && recipientTeacher.campusId !== post.campusId) {
+        return { sent: false, reason: "RECIPIENT_NO_CAMPUS_ACCESS" }
       }
     }
   }
@@ -366,7 +472,7 @@ export async function resolveMentionedUserIds(
  */
 export async function getSlcUserNotifications(ctx: SlcUserContext, limit = 25) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const [ssmNotifications, slcLogs] = await Promise.all([
     prisma.notification
@@ -495,7 +601,7 @@ export async function markSlcNotificationRead(
  * - KHÔNG tính placeholder ("Bình luận đã được xóa", isDeleted = true) hoặc nội dung bị ẩn (status !== "ACTIVE").
  */
 export async function recalculateActiveCommentCount(postId: string): Promise<number> {
-  const pAny = prisma as any
+  const pAny = getSlcDb()
   const count =
     (await pAny.slcComment?.count({
       where: {
@@ -520,7 +626,7 @@ export async function recalculateActiveCommentCount(postId: string): Promise<num
  */
 export async function getSlcFeatureConfig() {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
   const row = await pAny.slcFeatureConfig
     ?.findUnique({ where: { key: "DEFAULT" } })
     .catch(() => null)
@@ -535,6 +641,7 @@ export async function getSlcFeatureConfig() {
       maxImageSizeMb: 10,
       maxDocSizeMb: 25,
       maxFilesPerPost: 5,
+      bumpCooldownMinutes: 30,
       workingDays: [1, 2, 3, 4, 5],
       holidays: [] as string[],
     }
@@ -549,6 +656,7 @@ export async function getSlcFeatureConfig() {
     maxImageSizeMb: Number(row.maxImageSizeMb || 10),
     maxDocSizeMb: Number(row.maxDocSizeMb || 25),
     maxFilesPerPost: Number(row.maxFilesPerPost || 5),
+    bumpCooldownMinutes: Number(row.bumpCooldownMinutes || 30),
     workingDays: safeJsonParse<number[]>(row.workingDaysJson, [1, 2, 3, 4, 5]),
     holidays: safeJsonParse<string[]>(row.holidaysJson, []),
   }
@@ -559,12 +667,15 @@ export async function getSlcFeatureConfig() {
  */
 export async function getSlcCatalogs(ctx: SlcUserContext) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const [
     campuses,
     academicYears,
     dbSubjects,
+    specialSubjects,
+    departments,
+    workCategoriesRaw,
     customTags,
     groups,
     awardPeriods,
@@ -589,10 +700,30 @@ export async function getSlcCatalogs(ctx: SlcUserContext) {
     prisma.subject
       .findMany({
         where: { status: "ACTIVE" },
-        select: { id: true, subjectCode: true, subjectName: true, level: true },
+        select: { id: true, subjectCode: true, subjectName: true, level: true, category: true },
         orderBy: { subjectName: "asc" },
       })
       .catch(() => []),
+    pAny.specialSubject
+      ?.findMany({
+        where: { isActive: true },
+        select: { id: true, code: true, name: true, description: true },
+        orderBy: { name: "asc" },
+      })
+      .catch(() => []) ?? [],
+    pAny.department
+      ?.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true, departmentCode: true, departmentName: true, campusId: true },
+        orderBy: { departmentName: "asc" },
+      })
+      .catch(() => []) ?? [],
+    pAny.slcSkillWorkCategory
+      ?.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      })
+      .catch(() => []) ?? [],
     pAny.slcTag
       ?.findMany({
         where: { isActive: true },
@@ -645,6 +776,7 @@ export async function getSlcCatalogs(ctx: SlcUserContext) {
       userId: string
       teacherName: string
       teacherCode?: string
+      campusId?: string
       campusName?: string
       subjectName?: string
       email?: string
@@ -657,6 +789,7 @@ export async function getSlcCatalogs(ctx: SlcUserContext) {
       userId: t.userId,
       teacherName: t.teacherName,
       teacherCode: t.teacherCode,
+      campusId: (t as any).campusId || undefined,
       campusName: (t as any).campus?.campusName || undefined,
       subjectName: (t as any).mainSubjectRel?.subjectName || undefined,
       email: t.email || undefined,
@@ -676,15 +809,66 @@ export async function getSlcCatalogs(ctx: SlcUserContext) {
 
   const teachers = Array.from(teacherMap.values())
 
-  const subjects =
-    dbSubjects.length > 0
-      ? dbSubjects.map((s) => ({ code: s.subjectCode, name: s.subjectName }))
-      : [...SLC_DEFAULT_SUBJECTS]
+  // Merge DB subjects + Sky-Line Special Subjects + Default subjects (deduplicated by code)
+  const subjectMap = new Map<string, { code: string; name: string; category?: string }>()
+  for (const s of dbSubjects) {
+    subjectMap.set(s.subjectCode, {
+      code: s.subjectCode,
+      name: s.subjectName,
+      category: (s as any).category || "MOET",
+    })
+  }
+  for (const sp of specialSubjects) {
+    if (!subjectMap.has(sp.code)) {
+      subjectMap.set(sp.code, {
+        code: sp.code,
+        name: `${sp.name} (Môn đặc thù Sky-Line)`,
+        category: "SKL",
+      })
+    }
+  }
+  for (const defSub of SLC_DEFAULT_SUBJECTS) {
+    if (!subjectMap.has(defSub.code)) {
+      subjectMap.set(defSub.code, {
+        code: defSub.code,
+        name: defSub.name,
+        category: defSub.category,
+      })
+    }
+  }
+  const subjects = Array.from(subjectMap.values())
+
+  const workCategoryMap = new Map<
+    string,
+    { code: string; name: string; description?: string; sortOrder: number }
+  >()
+  for (const wc of SLC_SKILL_WORK_CATEGORIES) {
+    workCategoryMap.set(wc.code, {
+      code: wc.code,
+      name: wc.name,
+      description: wc.description,
+      sortOrder: wc.sortOrder,
+    })
+  }
+  for (const dbWc of workCategoriesRaw) {
+    workCategoryMap.set(dbWc.code, {
+      code: dbWc.code,
+      name: dbWc.name,
+      description: dbWc.description || undefined,
+      sortOrder: Number(dbWc.sortOrder || 99),
+    })
+  }
+  const workCategories = Array.from(workCategoryMap.values()).sort(
+    (a, b) => a.sortOrder - b.sortOrder
+  )
 
   return {
     campuses,
     academicYears,
     subjects,
+    specialSubjects,
+    departments,
+    workCategories,
     teachers,
     grades: [...SLC_DEFAULT_GRADES],
     purposes: [...SLC_DEFAULT_PURPOSES],
@@ -699,12 +883,18 @@ export async function getSlcCatalogs(ctx: SlcUserContext) {
     })),
     awardPeriods,
     ruleSets,
+    aiConfigured: Boolean(process.env.GEMINI_API_KEY),
     userPermissions: {
       isAdmin: isSuperOrCommunityAdmin(ctx),
       isCoordinator: hasSlcRoleInScope(ctx, "COORDINATOR"),
       isEvidenceVerifier: hasSlcRoleInScope(ctx, "EVIDENCE_VERIFIER"),
       isExpertReviewer: hasSlcRoleInScope(ctx, "EXPERT_REVIEWER"),
       isAwardFinalizer: hasSlcRoleInScope(ctx, "AWARD_FINALIZER"),
+      isDepartmentHead: Boolean(ctx.isDepartmentHead),
+      isKtdbclOfficer: Boolean(ctx.isKtdbclOfficer),
+      canManageSkillsAndReviews: canManageCommunityAndSkills(ctx),
+      departmentId: ctx.departmentId || null,
+      departmentName: ctx.departmentName || null,
     },
   }
 }
@@ -721,12 +911,15 @@ export async function createOrUpdateSlcPost(
   ctx: SlcUserContext,
   input: {
     id?: string
-    postType: "GENERAL" | "IDEA" | "AI_PRODUCT" | "PROJECT" | "EXPERIENCE"
+    postType: "GENERAL" | "IDEA" | "AI_PRODUCT" | "SKILL" | "PROJECT" | "EXPERIENCE"
     title?: string
     summary?: string
     content: string
     coverImageUrl?: string | null
-    visibility?: "SYSTEM" | "CAMPUS" | "GROUP"
+    videoUrl?: string | null
+    demoUrl?: string | null
+    topicName?: string | null
+    visibility?: "SYSTEM" | "CAMPUS" | "DEPARTMENT" | "GROUP"
     groupId?: string | null
     status?: "DRAFT" | "PUBLISHED" | "ARCHIVED"
     subjectCodes?: string[]
@@ -734,6 +927,9 @@ export async function createOrUpdateSlcPost(
     purposeTags?: string[]
     tags?: string[]
     mentionedUserIds?: string[]
+    collaboratorIds?: string[]
+    collaboratorNames?: string[]
+    linkedSkillId?: string | null
     hasStudentDataPiiChecked?: boolean
     // Idea specific fields
     problemStatement?: string
@@ -771,17 +967,26 @@ export async function createOrUpdateSlcPost(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
-  const cleanTitle = sanitizeRichText(input.title || input.productName || "")
-  const cleanContent = sanitizeRichText(input.content || input.proposedSolution || "")
-  const cleanSummary = sanitizeRichText(input.summary || input.utilitySummary || "")
+  const rawTitle = sanitizeRichText(input.title || input.productName || "")
+  const rawContent = sanitizeRichText(input.content || input.proposedSolution || "")
+  const rawSummary = sanitizeRichText(input.summary || input.utilitySummary || "")
+
+  // VII. Tách Skill và Bài trên tường với dữ liệu học sinh: tự động ẩn danh nếu có mã/tên học sinh
+  const cleanTitle = detectAndRedactStudentPii(rawTitle).redactedText
+  const cleanContent = detectAndRedactStudentPii(rawContent).redactedText
+  const cleanSummary = detectAndRedactStudentPii(rawSummary).redactedText
+  const cleanTopicName = sanitizeRichText(input.topicName)
 
   if (input.postType === "IDEA" && !cleanTitle) {
     throw new Error("Vui lòng nhập tiêu đề cho ý tưởng dạy học.")
   }
   if (input.postType === "AI_PRODUCT" && (!cleanTitle || !cleanSummary)) {
-    throw new Error("Sản phẩm AI cần có tên sản phẩm và mô tả công dụng chính.")
+    throw new Error("Ứng dụng / Sản phẩm AI cần có tên và mô tả công dụng chính.")
+  }
+  if (input.postType === "SKILL" && !cleanTitle) {
+    throw new Error("Skill môn học cần có tiêu đề.")
   }
   if (input.postType === "PROJECT" && (!cleanTitle || !sanitizeRichText(input.projectGoal || cleanContent))) {
     throw new Error("Dự án cần có tiêu đề và mục tiêu hợp tác.")
@@ -790,10 +995,17 @@ export async function createOrUpdateSlcPost(
     throw new Error("Bài đăng cần có nội dung có ý nghĩa hoặc tệp đính kèm hợp lệ.")
   }
 
-  if (input.productUrl && input.productUrl.trim()) {
-    const urlCheck = validateSafeExternalUrl(input.productUrl, { requireHttps: true })
+  const demoOrProductUrl = (input.productUrl || input.demoUrl || "").trim()
+  if (demoOrProductUrl) {
+    const urlCheck = validateSafeExternalUrl(demoOrProductUrl, { requireHttps: true })
     if (!urlCheck.valid) {
-      throw new Error(urlCheck.error || "Liên kết sản phẩm không hợp lệ.")
+      throw new Error(urlCheck.error || "Liên kết ứng dụng/demo không hợp lệ.")
+    }
+  }
+  if (input.videoUrl && input.videoUrl.trim()) {
+    const videoCheck = validateSafeExternalUrl(input.videoUrl.trim(), { requireHttps: false })
+    if (!videoCheck.valid) {
+      throw new Error(videoCheck.error || "Liên kết video không hợp lệ.")
     }
   }
 
@@ -816,6 +1028,8 @@ export async function createOrUpdateSlcPost(
   const gradeLevelsJson = JSON.stringify(input.gradeLevels || [])
   const purposeTagsJson = JSON.stringify(input.purposeTags || [])
   const tagsJson = JSON.stringify(input.tags || [])
+  const collaboratorIdsJson = JSON.stringify(input.collaboratorIds || [])
+  const collaboratorNamesJson = JSON.stringify(input.collaboratorNames || [])
   const mentionedUserIds = await resolveMentionedUserIds(
     cleanContent,
     input.mentionedUserIds,
@@ -967,7 +1181,12 @@ export async function createOrUpdateSlcPost(
         summary: cleanSummary || existingPost.summary,
         content: cleanContent,
         coverImageUrl: input.coverImageUrl !== undefined ? input.coverImageUrl : existingPost.coverImageUrl,
+        videoUrl: input.videoUrl !== undefined ? (input.videoUrl?.trim() || null) : existingPost.videoUrl,
+        demoUrl: demoOrProductUrl || existingPost.demoUrl || null,
+        topicName: cleanTopicName || existingPost.topicName || null,
         visibility,
+        departmentId: visibility === "DEPARTMENT" ? ctx.departmentId : existingPost.departmentId,
+        departmentName: visibility === "DEPARTMENT" ? ctx.departmentName : existingPost.departmentName,
         groupId: visibility === "GROUP" ? input.groupId : null,
         status,
         subjectCodesJson,
@@ -975,9 +1194,12 @@ export async function createOrUpdateSlcPost(
         purposeTagsJson,
         tagsJson,
         mentionedUserIdsJson,
+        collaboratorIdsJson: input.collaboratorIds ? collaboratorIdsJson : existingPost.collaboratorIdsJson,
+        collaboratorNamesJson: input.collaboratorNames ? collaboratorNamesJson : existingPost.collaboratorNamesJson,
         linkedIdeaId,
         linkedProductId,
         linkedProjectId,
+        linkedSkillId: input.linkedSkillId !== undefined ? input.linkedSkillId : existingPost.linkedSkillId,
       },
     })
 
@@ -1011,12 +1233,17 @@ export async function createOrUpdateSlcPost(
       authorRole: ctx.mainSubjectName ? `GV ${ctx.mainSubjectName}` : "Giáo viên",
       campusId: ctx.campusId,
       campusName: ctx.campusName || "Hệ thống Sky-Line",
+      departmentId: ctx.departmentId || null,
+      departmentName: ctx.departmentName || null,
       mainSubject: ctx.mainSubjectName,
       postType: input.postType,
       title: cleanTitle || null,
       summary: cleanSummary || cleanContent.slice(0, 180),
       content: cleanContent,
       coverImageUrl: input.coverImageUrl || null,
+      videoUrl: input.videoUrl?.trim() || null,
+      demoUrl: demoOrProductUrl || null,
+      topicName: cleanTopicName || null,
       visibility,
       groupId: visibility === "GROUP" ? input.groupId : null,
       status,
@@ -1025,9 +1252,12 @@ export async function createOrUpdateSlcPost(
       purposeTagsJson,
       tagsJson,
       mentionedUserIdsJson,
+      collaboratorIdsJson,
+      collaboratorNamesJson,
       hasStudentDataPiiChecked: input.hasStudentDataPiiChecked !== false,
       linkedIdeaId: input.linkedIdeaId || null,
       linkedProjectId: input.linkedProjectId || null,
+      linkedSkillId: input.linkedSkillId || null,
       publishedAt: new Date(),
     },
   })
@@ -1252,7 +1482,7 @@ export async function shareSlcPost(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const sourcePost = await pAny.slcPost.findUnique({ where: { id: input.sourcePostId } })
   if (!sourcePost) {
@@ -1332,7 +1562,7 @@ export async function toggleSlcReaction(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const postId =
     input.targetType === "POST"
@@ -1359,16 +1589,22 @@ export async function toggleSlcReaction(
   })
 
   let currentReaction: string | null = null
+  let isUnliked = false
+  let isReactionTypeChange = false
+  let createdReactionId = existing?.id || ""
+
   if (existing) {
     if (existing.reactionType === input.reactionType) {
       await pAny.slcReaction.delete({ where: { id: existing.id } })
       currentReaction = null
+      isUnliked = true
     } else {
       const updated = await pAny.slcReaction.update({
         where: { id: existing.id },
         data: { reactionType: input.reactionType },
       })
       currentReaction = updated.reactionType
+      isReactionTypeChange = true
     }
   } else {
     const created = await pAny.slcReaction.create({
@@ -1383,6 +1619,7 @@ export async function toggleSlcReaction(
       },
     })
     currentReaction = created.reactionType
+    createdReactionId = created.id
   }
 
   const totalReactions = await pAny.slcReaction.count({
@@ -1390,9 +1627,43 @@ export async function toggleSlcReaction(
   })
 
   if (input.targetType === "POST") {
+    const existingBumpEvents = safeJsonParse<SlcPostBumpEvent[]>(post.bumpEventsJson, [])
+    let nextLastBumpedAt = post.lastBumpedAt ? new Date(post.lastBumpedAt) : new Date(post.publishedAt)
+    let nextBumpEvents = existingBumpEvents
+
+    if (isUnliked) {
+      const recalc = recalculatePostLastBumpedAt({
+        publishedAt: post.publishedAt,
+        existingBumpEvents,
+        removedSourceType: "REACTION",
+        removedReactionActorId: ctx.userId,
+      })
+      nextBumpEvents = recalc.updatedBumpEvents
+      nextLastBumpedAt = recalc.lastBumpedAt
+    } else if (!isReactionTypeChange) {
+      const cfg = await getSlcFeatureConfig()
+      const bumpRes = evaluatePostBumpEligibility({
+        postAuthorId: post.authorId,
+        actorId: ctx.userId,
+        sourceType: "REACTION",
+        sourceId: createdReactionId || `react_${ctx.userId}`,
+        cooldownMinutes: cfg.bumpCooldownMinutes,
+        isReactionTypeChange: false,
+        existingBumpEvents,
+      })
+      nextBumpEvents = bumpRes.updatedBumpEvents
+      if (bumpRes.shouldBump && bumpRes.newLastBumpedAt) {
+        nextLastBumpedAt = bumpRes.newLastBumpedAt
+      }
+    }
+
     await pAny.slcPost.update({
       where: { id: input.targetId },
-      data: { reactionCount: totalReactions },
+      data: {
+        reactionCount: totalReactions,
+        lastBumpedAt: nextLastBumpedAt,
+        bumpEventsJson: JSON.stringify(nextBumpEvents),
+      },
     })
   } else {
     await pAny.slcComment.update({
@@ -1405,18 +1676,18 @@ export async function toggleSlcReaction(
 }
 
 /**
- * Lưu hoặc bỏ lưu bài đăng / ý tưởng / sản phẩm / dự án.
+ * Lưu hoặc bỏ lưu bài đăng / ý tưởng / sản phẩm / dự án / skill môn học.
  */
 export async function toggleSlcSaveItem(
   ctx: SlcUserContext,
   input: {
-    targetType: "POST" | "IDEA" | "PRODUCT" | "PROJECT"
+    targetType: "POST" | "IDEA" | "PRODUCT" | "PROJECT" | "SKILL"
     targetId: string
     postId?: string
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const existing = await pAny.slcSavedItem.findUnique({
     where: {
@@ -1457,6 +1728,18 @@ export async function toggleSlcSaveItem(
       .catch(() => null)
   }
 
+  if (input.targetType === "SKILL") {
+    const skillSaveCount = await pAny.slcSavedItem.count({
+      where: { targetType: "SKILL", targetId: input.targetId },
+    })
+    await pAny.slcSkill
+      ?.update({
+        where: { id: input.targetId },
+        data: { saveCount: skillSaveCount },
+      })
+      .catch(() => null)
+  }
+
   return { isSaved }
 }
 
@@ -1472,7 +1755,7 @@ export async function toggleSlcFollow(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const existing = await pAny.slcFollow.findUnique({
     where: {
@@ -1521,6 +1804,10 @@ export async function createSlcComment(
   input: {
     postId: string
     content: string
+    contributionType?: "NONE" | "METHOD" | "MATERIAL" | "EXPERIMENT" | "SKILL" | "CONNECTION"
+    links?: Array<{ url: string; title?: string }>
+    helpRequestId?: string | null
+    followPost?: boolean
     parentCommentId?: string | null
     mentionedUserIds?: string[]
     clientRequestId?: string
@@ -1535,16 +1822,53 @@ export async function createSlcComment(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const post = await pAny.slcPost.findUnique({ where: { id: input.postId } })
   if (!post || !canViewPost(ctx, post) || post.status !== "PUBLISHED") {
-    throw new Error("Thầy/Cô không có quyền bình luận trên bài đăng này.")
+    throw new Error("Thầy/Cô không có quyền bình luận hoặc góp mảnh sáng tạo trên bài đăng này.")
   }
 
   const cleanContent = sanitizeRichText(input.content)
-  if (!cleanContent && (!input.attachments || input.attachments.length === 0)) {
-    throw new Error("Nội dung bình luận không được để trống.")
+
+  // Validate external links if provided
+  const validLinks: Array<{ url: string; title?: string }> = []
+  if (Array.isArray(input.links)) {
+    for (const lnk of input.links) {
+      if (!lnk?.url || !lnk.url.trim()) continue
+      const urlCheck = validateSafeExternalUrl(lnk.url.trim(), { requireHttps: true })
+      if (!urlCheck.valid) {
+        throw new Error(`FIELD_ERROR_LINK: ${urlCheck.error || "Liên kết đính kèm không hợp lệ."}`)
+      }
+      validLinks.push({
+        url: urlCheck.url || lnk.url.trim(),
+        title: sanitizeRichText(lnk.title || "") || undefined,
+      })
+    }
+  }
+
+  // Validate attachments if provided
+  if (Array.isArray(input.attachments) && input.attachments.length > 0) {
+    const cfg = await getSlcFeatureConfig()
+    for (const att of input.attachments) {
+      const attCheck = validateAttachmentMetadata({
+        fileName: att.fileName,
+        mimeType: att.mimeType,
+        fileSizeBytes: Number(att.fileSize || 0),
+        maxImageMb: cfg.maxImageSizeMb,
+        maxDocMb: cfg.maxDocSizeMb,
+      })
+      if (!attCheck.valid) {
+        throw new Error(`FIELD_ERROR_ATTACHMENT: ${attCheck.error || "Tệp đính kèm không hợp lệ."}`)
+      }
+    }
+  }
+
+  const hasValidAttachments = Boolean(input.attachments && input.attachments.length > 0)
+  const hasValidLinks = validLinks.length > 0
+
+  if (!cleanContent && !hasValidAttachments && !hasValidLinks) {
+    throw new Error("Vui lòng nhập ý kiến đóng góp hoặc đính kèm tệp/liên kết hợp lệ.")
   }
 
   // Idempotency check against duplicate retries
@@ -1587,11 +1911,47 @@ export async function createSlcComment(
     effectiveParentId = targetParent.depth === 0 ? targetParent.id : targetParent.parentId
   }
 
-  const mentionedUserIds = await resolveMentionedUserIds(
+  const rawMentionedUserIds = await resolveMentionedUserIds(
     cleanContent,
     input.mentionedUserIds,
     ctx.userId
   )
+
+  // Filter mentioned users to only those who have permission to view the post
+  let mentionedUserIds = rawMentionedUserIds
+  if (rawMentionedUserIds.length > 0 && (post.visibility === "GROUP" || post.visibility === "CAMPUS")) {
+    const allowedSet = new Set<string>()
+    for (const uid of rawMentionedUserIds) {
+      if (uid === post.authorId) {
+        allowedSet.add(uid)
+        continue
+      }
+      if (post.visibility === "GROUP" && post.groupId) {
+        const [group, member] = await Promise.all([
+          pAny.slcGroup?.findUnique({ where: { id: post.groupId } }).catch(() => null),
+          pAny.slcGroupMember
+            ?.findUnique({ where: { groupId_userId: { groupId: post.groupId, userId: uid } } })
+            .catch(() => null),
+        ])
+        if (group?.ownerId === uid || member?.status === "APPROVED") {
+          allowedSet.add(uid)
+        }
+      } else if (post.visibility === "CAMPUS" && post.campusId) {
+        const t = await prisma.teacher
+          .findUnique({ where: { userId: uid }, select: { campusId: true } })
+          .catch(() => null)
+        if (!t?.campusId || t.campusId === post.campusId) {
+          allowedSet.add(uid)
+        }
+      }
+    }
+    mentionedUserIds = rawMentionedUserIds.filter((uid) => allowedSet.has(uid))
+  }
+
+  const validContributionTypes = ["NONE", "METHOD", "MATERIAL", "EXPERIMENT", "SKILL", "CONNECTION"]
+  const contributionType = validContributionTypes.includes(String(input.contributionType || "NONE"))
+    ? String(input.contributionType || "NONE")
+    : "NONE"
 
   const createdComment = await pAny.slcComment.create({
     data: {
@@ -1605,7 +1965,10 @@ export async function createSlcComment(
       replyToUserId,
       replyToUserName,
       depth,
-      content: cleanContent,
+      content: cleanContent || (contributionType !== "NONE" ? "Đã gửi mảnh đóng góp kèm học liệu/liên kết." : ""),
+      contributionType,
+      linksJson: JSON.stringify(validLinks),
+      helpRequestId: input.helpRequestId || null,
       mentionedUserIdsJson: JSON.stringify(mentionedUserIds),
       clientRequestId: input.clientRequestId || null,
     },
@@ -1613,7 +1976,7 @@ export async function createSlcComment(
 
   if (input.attachments && input.attachments.length > 0) {
     const attIds: string[] = []
-    for (const att of input.attachments.slice(0, 3)) {
+    for (const att of input.attachments.slice(0, 5)) {
       const createdAtt = await pAny.slcAttachment.create({
         data: {
           postId: input.postId,
@@ -1635,26 +1998,87 @@ export async function createSlcComment(
     })
   }
 
+  // Optional follow post toggle ("Theo dõi phản hồi")
+  if (input.followPost) {
+    await pAny.slcFollow
+      ?.upsert({
+        where: {
+          followerId_targetType_targetId: {
+            followerId: ctx.userId,
+            targetType: "POST",
+            targetId: post.id,
+          },
+        },
+        update: { muteNotifications: false },
+        create: {
+          followerId: ctx.userId,
+          targetType: "POST",
+          targetId: post.id,
+          muteNotifications: false,
+        },
+      })
+      .catch(() => null)
+  }
+
   const commentCount = await recalculateActiveCommentCount(input.postId)
 
-  // Notify post author
+  // Evaluate post bump ("Đang sôi nổi")
+  const cfg = await getSlcFeatureConfig()
+  const existingBumpEvents = safeJsonParse<SlcPostBumpEvent[]>(post.bumpEventsJson, [])
+  const bumpRes = evaluatePostBumpEligibility({
+    postAuthorId: post.authorId,
+    actorId: ctx.userId,
+    sourceType: "COMMENT",
+    sourceId: createdComment.id,
+    cooldownMinutes: cfg.bumpCooldownMinutes,
+    existingBumpEvents,
+  })
+  if (bumpRes.shouldBump && bumpRes.newLastBumpedAt) {
+    await pAny.slcPost
+      .update({
+        where: { id: post.id },
+        data: {
+          lastBumpedAt: bumpRes.newLastBumpedAt,
+          bumpEventsJson: JSON.stringify(bumpRes.updatedBumpEvents),
+        },
+      })
+      .catch(() => null)
+  }
+
+  const contributionLabels: Record<string, string> = {
+    METHOD: "Một cách làm",
+    MATERIAL: "Học liệu",
+    EXPERIMENT: "Thử nghiệm",
+    SKILL: "Kỹ năng",
+    CONNECTION: "Kết nối",
+  }
+  const pieceLabel = contributionLabels[contributionType]
+  const notifiedRecipients = new Set<string>([ctx.userId])
+
+  // 1. Notify post author
   if (post.authorId !== ctx.userId) {
+    notifiedRecipients.add(post.authorId)
     await dispatchSlcNotification({
       idempotencyKey: `comment_post:${createdComment.id}:${post.authorId}`,
       recipientId: post.authorId,
       actorId: ctx.userId,
-      eventType: "COMMENT_REPLY",
+      eventType: input.helpRequestId ? "HELP_REQUEST_RESPONSE" : "COMMENT_REPLY",
       targetType: "COMMENT",
       targetId: createdComment.id,
       postId: post.id,
-      title: "Góp ý mới trên bài đăng của Thầy/Cô",
-      message: `${ctx.fullName} đã bình luận vào "${post.title || "bài chia sẻ"}".`,
+      title: pieceLabel
+        ? `Mảnh đóng góp mới (${pieceLabel}) trên bài của Thầy/Cô`
+        : "Góp ý mới trên bài đăng của Thầy/Cô",
+      message: pieceLabel
+        ? `${ctx.fullName} đã góp một mảnh "${pieceLabel}" cho "${post.title || "bài chia sẻ"}".`
+        : `${ctx.fullName} đã bình luận vào "${post.title || "bài chia sẻ"}".`,
       deepLink: `/teacher/skyline-connect/posts/${post.id}?commentId=${createdComment.id}`,
     })
   }
 
-  // Notify replied user
-  if (replyToUserId && replyToUserId !== ctx.userId && replyToUserId !== post.authorId) {
+  // 2. Notify replied user
+  if (replyToUserId && !notifiedRecipients.has(replyToUserId)) {
+    notifiedRecipients.add(replyToUserId)
     await dispatchSlcNotification({
       idempotencyKey: `comment_reply:${createdComment.id}:${replyToUserId}`,
       recipientId: replyToUserId,
@@ -1669,8 +2093,10 @@ export async function createSlcComment(
     })
   }
 
-  // Notify @mentioned users
+  // 3. Notify @mentioned users
   for (const uid of mentionedUserIds) {
+    if (notifiedRecipients.has(uid)) continue
+    notifiedRecipients.add(uid)
     await dispatchSlcNotification({
       idempotencyKey: `comment_mention:${createdComment.id}:${uid}`,
       recipientId: uid,
@@ -1679,8 +2105,37 @@ export async function createSlcComment(
       targetType: "COMMENT",
       targetId: createdComment.id,
       postId: post.id,
-      title: "Nhắc tên trong thảo luận chuyên môn",
-      message: `${ctx.fullName} đã nhắc đến Thầy/Cô trong một bình luận đóng góp.`,
+      title: "Nhắc tên trong cùng sáng tạo",
+      message: `${ctx.fullName} đã nhắc đến Thầy/Cô trong một ${pieceLabel ? `mảnh đóng góp (${pieceLabel})` : "bình luận đóng góp"}.`,
+      deepLink: `/teacher/skyline-connect/posts/${post.id}?commentId=${createdComment.id}`,
+    })
+  }
+
+  // 4. Notify followers of the post ("Có đóng góp mới cho bài đang theo dõi")
+  const postFollowers =
+    (await pAny.slcFollow
+      ?.findMany({
+        where: {
+          targetType: "POST",
+          targetId: post.id,
+          muteNotifications: false,
+        },
+      })
+      .catch(() => [])) ?? []
+
+  for (const f of postFollowers) {
+    if (!f.followerId || notifiedRecipients.has(f.followerId)) continue
+    notifiedRecipients.add(f.followerId)
+    await dispatchSlcNotification({
+      idempotencyKey: `comment_follow:${createdComment.id}:${f.followerId}`,
+      recipientId: f.followerId,
+      actorId: ctx.userId,
+      eventType: "FOLLOW_UPDATE",
+      targetType: "COMMENT",
+      targetId: createdComment.id,
+      postId: post.id,
+      title: "Đóng góp mới trên bài đang theo dõi",
+      message: `${ctx.fullName} vừa gửi ${pieceLabel ? `mảnh đóng góp "${pieceLabel}"` : "góp ý mới"} vào bài "${post.title || "Chia sẻ"}".`,
       deepLink: `/teacher/skyline-connect/posts/${post.id}?commentId=${createdComment.id}`,
     })
   }
@@ -1701,10 +2156,11 @@ export async function updateOrDeleteSlcComment(
     commentId: string
     action: "EDIT" | "DELETE"
     content?: string
+    contributionType?: "NONE" | "METHOD" | "MATERIAL" | "EXPERIMENT" | "SKILL" | "CONNECTION"
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const comment = await pAny.slcComment.findUnique({ where: { id: input.commentId } })
   if (!comment) {
@@ -1721,15 +2177,17 @@ export async function updateOrDeleteSlcComment(
     if (!cleanContent) {
       throw new Error("Nội dung bình luận sau chỉnh sửa không được để trống.")
     }
+    // Sửa comment KHÔNG tạo lần đẩy bài mới ("Đang sôi nổi")
     const updated = await pAny.slcComment.update({
       where: { id: comment.id },
       data: {
         content: cleanContent,
+        ...(input.contributionType ? { contributionType: input.contributionType } : {}),
         isEdited: true,
         editedAt: new Date(),
       },
     })
-    return { comment: updated }
+    return { comment: updated, bumped: false }
   }
 
   // DELETE action: mark attachments as deleted so they cannot be accessed
@@ -1748,36 +2206,43 @@ export async function updateOrDeleteSlcComment(
     },
   })
 
-  if (activeReplyCount > 0) {
-    // Keep placeholder to preserve reply thread
-    const updated = await pAny.slcComment.update({
-      where: { id: comment.id },
-      data: {
-        content: "Bình luận đã được xóa",
-        isDeleted: true,
-        deletedAt: new Date(),
-        status: "DELETED",
-        attachmentIdsJson: "[]",
-        isPinned: false,
-      },
+  const updated = await pAny.slcComment.update({
+    where: { id: comment.id },
+    data: {
+      content: "Bình luận đã được xóa",
+      isDeleted: true,
+      deletedAt: new Date(),
+      status: "DELETED",
+      attachmentIdsJson: "[]",
+      linksJson: "[]",
+      isPinned: false,
+    },
+  })
+
+  const commentCount = await recalculateActiveCommentCount(comment.postId)
+
+  // Recalculate post lastBumpedAt from remaining valid interactions
+  const post = await pAny.slcPost?.findUnique({ where: { id: comment.postId } }).catch(() => null)
+  if (post) {
+    const existingBumpEvents = safeJsonParse<SlcPostBumpEvent[]>(post.bumpEventsJson, [])
+    const recalc = recalculatePostLastBumpedAt({
+      publishedAt: post.publishedAt,
+      existingBumpEvents,
+      removedSourceType: "COMMENT",
+      removedSourceId: comment.id,
     })
-    const commentCount = await recalculateActiveCommentCount(comment.postId)
-    return { comment: updated, placeholderPreserved: true, commentCount }
-  } else {
-    const updated = await pAny.slcComment.update({
-      where: { id: comment.id },
-      data: {
-        content: "Bình luận đã được xóa",
-        isDeleted: true,
-        deletedAt: new Date(),
-        status: "DELETED",
-        attachmentIdsJson: "[]",
-        isPinned: false,
-      },
-    })
-    const commentCount = await recalculateActiveCommentCount(comment.postId)
-    return { comment: updated, placeholderPreserved: false, commentCount }
+    await pAny.slcPost
+      ?.update({
+        where: { id: post.id },
+        data: {
+          lastBumpedAt: recalc.lastBumpedAt,
+          bumpEventsJson: JSON.stringify(recalc.updatedBumpEvents),
+        },
+      })
+      .catch(() => null)
   }
+
+  return { comment: updated, placeholderPreserved: activeReplyCount > 0, commentCount }
 }
 
 /**
@@ -1785,7 +2250,7 @@ export async function updateOrDeleteSlcComment(
  */
 export async function togglePinSlcComment(ctx: SlcUserContext, commentId: string) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const comment = await pAny.slcComment.findUnique({ where: { id: commentId } })
   if (!comment || comment.isDeleted || comment.status !== "ACTIVE") {
@@ -1824,9 +2289,14 @@ export async function togglePinSlcComment(ctx: SlcUserContext, commentId: string
 }
 
 /**
- * Tác giả bài đăng đánh dấu trạng thái góp ý cải tiến trên bình luận:
- * RECEIVED (Đã tiếp nhận) | IN_PROGRESS (Đang thực hiện) | APPLIED (Đã áp dụng) | NOT_IMPLEMENTED (Chưa triển khai kèm lý do).
- * QUY TẮC BẮT BUỘC: Trạng thái góp ý "Đã áp dụng" (APPLIED) KHÔNG tự tính là minh chứng sử dụng sản phẩm (U) của GV!
+ * Tác giả bài đăng hoặc thành viên được cấp quyền đánh dấu trạng thái tiếp nhận và phát triển đóng góp:
+ * - RECEIVED ("Đã tiếp nhận")
+ * - IN_PROGRESS ("Đưa vào phát triển") — cho phép liên kết với dự án hoặc hạng mục phát triển hiện có,
+ *   KHÔNG tự giao việc bắt buộc cho người góp ý.
+ * - APPLIED ("Đã áp dụng vào bản cập nhật") — bắt buộc liên kết bản cập nhật hoặc ghi rõ thay đổi đã thực hiện.
+ * - NOT_IMPLEMENTED ("Chưa triển khai") — bắt buộc kèm lý do ngắn.
+ * - Lưu lịch sử thay đổi trạng thái (statusHistoryJson).
+ * - QUY TẮC BẮT BUỘC: Không tự tăng lượt áp dụng (U), điểm hữu dụng (C) hoặc minh chứng chỉ vì tác giả tiếp nhận/áp dụng góp ý!
  */
 export async function markCommentFeedbackStatus(
   ctx: SlcUserContext,
@@ -1834,31 +2304,112 @@ export async function markCommentFeedbackStatus(
     commentId: string
     feedbackStatus: "NONE" | "RECEIVED" | "IN_PROGRESS" | "APPLIED" | "NOT_IMPLEMENTED"
     feedbackReason?: string
+    linkedProjectId?: string | null
+    developmentItemNote?: string | null
+    appliedChangeNote?: string | null
+    linkedProductVersionId?: string | null
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const comment = await pAny.slcComment.findUnique({ where: { id: input.commentId } })
   if (!comment || comment.isDeleted) {
-    throw new Error("Không tìm thấy bình luận.")
+    throw new Error("Không tìm thấy bình luận hoặc mảnh đóng góp.")
   }
 
   const post = await pAny.slcPost.findUnique({ where: { id: comment.postId } })
-  if (!post || !canPinOrMarkFeedbackOnPost(ctx, post)) {
-    throw new Error("Chỉ tác giả bài đăng mới có quyền cập nhật trạng thái tiếp nhận góp ý.")
+  if (!post) {
+    throw new Error("Không tìm thấy bài đăng gốc.")
   }
 
-  if (input.feedbackStatus === "NOT_IMPLEMENTED" && !sanitizeRichText(input.feedbackReason)) {
-    throw new Error("Vui lòng nhập lý do khi đánh dấu góp ý là 'Chưa triển khai'.")
+  // Check if user is post author, authorized coordinator/admin, or approved project member of linked project
+  let canManage = canPinOrMarkFeedbackOnPost(ctx, post)
+  if (!canManage && post.linkedProjectId) {
+    const member = await pAny.slcProjectMember
+      ?.findUnique({
+        where: { projectId_userId: { projectId: post.linkedProjectId, userId: ctx.userId } },
+      })
+      .catch(() => null)
+    if (member?.status === "APPROVED") {
+      canManage = true
+    }
   }
+
+  if (!canManage) {
+    throw new Error("Chỉ tác giả bài đăng hoặc thành viên dự án được cấp quyền mới có thể cập nhật trạng thái tiếp nhận đóng góp.")
+  }
+
+  const cleanReason = sanitizeRichText(input.feedbackReason)
+  const cleanDevNote = sanitizeRichText(input.developmentItemNote)
+  const cleanAppliedNote = sanitizeRichText(input.appliedChangeNote)
+
+  if (input.feedbackStatus === "NOT_IMPLEMENTED" && !cleanReason) {
+    throw new Error("Vui lòng nhập lý do ngắn khi đánh dấu đóng góp là 'Chưa triển khai'.")
+  }
+
+  const effectiveVersionId =
+    input.linkedProductVersionId !== undefined
+      ? input.linkedProductVersionId
+      : comment.linkedProductVersionId
+  const effectiveAppliedNote = cleanAppliedNote || cleanReason || comment.appliedChangeNote
+
+  if (input.feedbackStatus === "APPLIED" && !effectiveVersionId && !effectiveAppliedNote) {
+    throw new Error(
+      "Khi đánh dấu 'Đã áp dụng vào bản cập nhật', vui lòng liên kết phiên bản cập nhật hoặc ghi rõ thay đổi đã thực hiện."
+    )
+  }
+
+  const now = new Date()
+  const existingHistory = safeJsonParse<
+    Array<{
+      status: string
+      reason?: string | null
+      linkedProjectId?: string | null
+      developmentItemNote?: string | null
+      appliedChangeNote?: string | null
+      linkedProductVersionId?: string | null
+      updatedById: string
+      updatedByName: string
+      updatedAt: string
+    }>
+  >(comment.statusHistoryJson, [])
+
+  const nextHistory = [
+    ...existingHistory,
+    {
+      status: input.feedbackStatus,
+      reason: cleanReason || null,
+      linkedProjectId: input.linkedProjectId ?? comment.linkedProjectId ?? post.linkedProjectId ?? null,
+      developmentItemNote: cleanDevNote || comment.developmentItemNote || null,
+      appliedChangeNote: effectiveAppliedNote || null,
+      linkedProductVersionId: effectiveVersionId || null,
+      updatedById: ctx.userId,
+      updatedByName: ctx.fullName,
+      updatedAt: now.toISOString(),
+    },
+  ]
 
   const updated = await pAny.slcComment.update({
     where: { id: comment.id },
     data: {
       feedbackStatus: input.feedbackStatus,
-      feedbackReason: sanitizeRichText(input.feedbackReason) || null,
-      feedbackUpdatedAt: new Date(),
+      feedbackReason: cleanReason || null,
+      linkedProjectId:
+        input.linkedProjectId !== undefined
+          ? input.linkedProjectId
+          : comment.linkedProjectId || post.linkedProjectId || null,
+      developmentItemNote: cleanDevNote || comment.developmentItemNote || null,
+      appliedChangeNote: effectiveAppliedNote || null,
+      linkedProductVersionId: effectiveVersionId || null,
+      contributorAcknowledged:
+        input.feedbackStatus === "RECEIVED" ||
+        input.feedbackStatus === "IN_PROGRESS" ||
+        input.feedbackStatus === "APPLIED"
+          ? true
+          : comment.contributorAcknowledged,
+      statusHistoryJson: JSON.stringify(nextHistory),
+      feedbackUpdatedAt: now,
       feedbackUpdatedById: ctx.userId,
     },
   })
@@ -1866,20 +2417,20 @@ export async function markCommentFeedbackStatus(
   if (comment.authorId !== ctx.userId && input.feedbackStatus !== "NONE") {
     const statusLabels: Record<string, string> = {
       RECEIVED: "Đã tiếp nhận",
-      IN_PROGRESS: "Đang thực hiện",
-      APPLIED: "Đã áp dụng",
+      IN_PROGRESS: "Đưa vào phát triển",
+      APPLIED: "Đã áp dụng vào bản cập nhật",
       NOT_IMPLEMENTED: "Chưa triển khai",
     }
     await dispatchSlcNotification({
-      idempotencyKey: `feedback_status:${comment.id}:${input.feedbackStatus}`,
+      idempotencyKey: `feedback_status:${comment.id}:${input.feedbackStatus}:${now.getTime()}`,
       recipientId: comment.authorId,
       actorId: ctx.userId,
       eventType: "FEEDBACK_STATUS",
       targetType: "COMMENT",
       targetId: comment.id,
       postId: post.id,
-      title: `Góp ý của Thầy/Cô: ${statusLabels[input.feedbackStatus] || input.feedbackStatus}`,
-      message: `${ctx.fullName} đã đánh dấu góp ý của Thầy/Cô là "${statusLabels[input.feedbackStatus]}" trên bài "${post.title || "Chia sẻ"}".`,
+      title: `Mảnh đóng góp của Thầy/Cô: ${statusLabels[input.feedbackStatus] || input.feedbackStatus}`,
+      message: `${ctx.fullName} đã đánh dấu mảnh đóng góp của Thầy/Cô là "${statusLabels[input.feedbackStatus]}" trên bài "${post.title || "Chia sẻ"}".`,
       deepLink: `/teacher/skyline-connect/posts/${post.id}?commentId=${comment.id}`,
     })
   }
@@ -1889,7 +2440,7 @@ export async function markCommentFeedbackStatus(
 
 /**
  * Cập nhật phiên bản mới của Sản phẩm AI liên kết với bình luận góp ý nguồn (sourceCommentId):
- * - Ghi nhận người góp ý (contributorUserId, contributorName) trên bản cập nhật.
+ * - Ghi nhận người góp ý (contributorUserId, contributorName) trên bản cập nhật ("Có đóng góp từ...").
  * - Thông báo cho người góp ý và cho phép người góp ý bỏ nhắc tên trên bản ghi công khai (contributorOptOutPublic).
  * - Đóng góp qua comment KHÔNG tự biến người đó thành đồng tác giả (collaboratorIdsJson giữ nguyên),
  *   do đó họ vẫn giữ quyền chấm sao độc lập.
@@ -1907,7 +2458,7 @@ export async function releaseProductVersionWithCredit(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const product = await pAny.slcProduct.findUnique({ where: { id: input.productId } })
   if (!product) {
@@ -1942,13 +2493,14 @@ export async function releaseProductVersionWithCredit(
     }
   }
 
+  const cleanReleaseNotes = sanitizeRichText(input.releaseNotes)
   const nextMajor = input.majorVersion ?? product.majorVersion
   const createdVersion = await pAny.slcProductVersion.create({
     data: {
       productId: product.id,
       version: sanitizeRichText(input.version) || "1.1",
       majorVersion: nextMajor,
-      releaseNotes: sanitizeRichText(input.releaseNotes),
+      releaseNotes: cleanReleaseNotes,
       productUrl: input.productUrl?.trim() || product.productUrl,
       sourceCommentId: sourceComment?.id || null,
       contributorUserId,
@@ -1969,13 +2521,32 @@ export async function releaseProductVersionWithCredit(
   })
 
   if (sourceComment) {
+    const now = new Date()
+    const existingHistory = safeJsonParse<any[]>(sourceComment.statusHistoryJson, [])
+    const nextHistory = [
+      ...existingHistory,
+      {
+        status: "APPLIED",
+        reason: null,
+        linkedProjectId: sourceComment.linkedProjectId || product.linkedProjectId || null,
+        developmentItemNote: sourceComment.developmentItemNote || null,
+        appliedChangeNote: cleanReleaseNotes,
+        linkedProductVersionId: createdVersion.id,
+        updatedById: ctx.userId,
+        updatedByName: ctx.fullName,
+        updatedAt: now.toISOString(),
+      },
+    ]
+
     await pAny.slcComment.update({
       where: { id: sourceComment.id },
       data: {
         feedbackStatus: "APPLIED",
         linkedProductVersionId: createdVersion.id,
+        appliedChangeNote: cleanReleaseNotes,
         contributorAcknowledged: true,
-        feedbackUpdatedAt: new Date(),
+        statusHistoryJson: JSON.stringify(nextHistory),
+        feedbackUpdatedAt: now,
         feedbackUpdatedById: ctx.userId,
       },
     })
@@ -1990,9 +2561,9 @@ export async function releaseProductVersionWithCredit(
         targetId: createdVersion.id,
         postId: product.postId,
         title: "Ghi nhận đóng góp cải tiến sản phẩm AI",
-        message: `${ctx.fullName} đã cập nhật sản phẩm "${product.name}" (v${createdVersion.version}) từ góp ý của Thầy/Cô và ghi nhận tên đóng góp.`,
+        message: `${ctx.fullName} đã cập nhật sản phẩm "${product.name}" (v${createdVersion.version}) từ mảnh đóng góp của Thầy/Cô và ghi nhận tên đóng góp.`,
         deepLink: product.postId
-          ? `/teacher/skyline-connect/posts/${product.postId}`
+          ? `/teacher/skyline-connect/posts/${product.postId}?commentId=${sourceComment.id}`
           : `/teacher/skyline-connect/products/${product.id}`,
       })
     }
@@ -2002,39 +2573,198 @@ export async function releaseProductVersionWithCredit(
 }
 
 /**
- * Cho phép người góp ý bật/tắt việc hiển thị tên mình công khai trên bản ghi cập nhật sản phẩm.
+ * Cho phép người góp ý bật/tắt việc hiển thị tên mình công khai trên bản ghi cập nhật sản phẩm hoặc mảnh đóng góp.
  */
 export async function toggleContributorPublicCreditOptOut(
   ctx: SlcUserContext,
-  versionId: string,
+  versionOrCommentId: string,
   optOut: boolean
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
-  const version = await pAny.slcProductVersion.findUnique({ where: { id: versionId } })
-  if (!version) {
-    throw new Error("Không tìm thấy bản ghi phiên bản sản phẩm.")
-  }
-  if (version.contributorUserId !== ctx.userId && !isSuperOrCommunityAdmin(ctx)) {
-    throw new Error("Chỉ giáo viên được ghi nhận đóng góp mới có thể thay đổi tùy chọn hiển thị tên của mình.")
+  const version = await pAny.slcProductVersion
+    ?.findUnique({ where: { id: versionOrCommentId } })
+    .catch(() => null)
+
+  if (version) {
+    if (version.contributorUserId !== ctx.userId && !isSuperOrCommunityAdmin(ctx)) {
+      throw new Error(
+        "Chỉ giáo viên được ghi nhận đóng góp mới có thể thay đổi tùy chọn hiển thị tên của mình."
+      )
+    }
+
+    const updated = await pAny.slcProductVersion.update({
+      where: { id: version.id },
+      data: { contributorOptOutPublic: optOut },
+    })
+
+    if (version.sourceCommentId) {
+      await pAny.slcComment
+        .update({
+          where: { id: version.sourceCommentId },
+          data: { contributorOptOutPublic: optOut },
+        })
+        .catch(() => null)
+    }
+
+    return updated
   }
 
-  const updated = await pAny.slcProductVersion.update({
-    where: { id: version.id },
+  // Or toggle directly on the comment itself
+  const comment = await pAny.slcComment
+    ?.findUnique({ where: { id: versionOrCommentId } })
+    .catch(() => null)
+  if (!comment) {
+    throw new Error("Không tìm thấy bản ghi phiên bản hoặc mảnh đóng góp.")
+  }
+  if (comment.authorId !== ctx.userId && !isSuperOrCommunityAdmin(ctx)) {
+    throw new Error("Chỉ người gửi mảnh đóng góp mới có thể thay đổi tùy chọn hiển thị tên của mình.")
+  }
+
+  const updatedComment = await pAny.slcComment.update({
+    where: { id: comment.id },
     data: { contributorOptOutPublic: optOut },
   })
 
-  if (version.sourceCommentId) {
-    await pAny.slcComment
-      .update({
-        where: { id: version.sourceCommentId },
-        data: { contributorOptOutPublic: optOut },
-      })
-      .catch(() => null)
+  await pAny.slcProductVersion
+    ?.updateMany({
+      where: { sourceCommentId: comment.id },
+      data: { contributorOptOutPublic: optOut },
+    })
+    .catch(() => null)
+
+  return updatedComment
+}
+
+/**
+ * Quản lý lời mời ngắn "Đang cần một đồng nghiệp..." (SlcHelpRequest):
+ * - Tác giả bài đăng tạo lời mời ngắn: Cần hỗ trợ việc gì, Loại hỗ trợ (METHOD | MATERIAL | EXPERIMENT | SKILL | CONNECTION),
+ *   Môn hoặc khối (nếu phù hợp), Thời gian dự kiến (không bắt buộc), Trạng thái (OPEN | CONNECTED | CLOSED).
+ * - Nút "Tôi có thể giúp" mở luồng đóng góp phù hợp, KHÔNG tự biến thành nhiệm vụ bắt buộc.
+ * - Tác giả phản hồi và xác nhận kết nối (CONNECTED) -> gửi thông báo cho đồng nghiệp.
+ */
+export async function handleSlcHelpRequestAction(
+  ctx: SlcUserContext,
+  input: {
+    action: "CREATE" | "UPDATE_STATUS"
+    postId?: string
+    helpRequestId?: string
+    title?: string
+    description?: string
+    supportType?: "METHOD" | "MATERIAL" | "EXPERIMENT" | "SKILL" | "CONNECTION"
+    subjectCode?: string | null
+    gradeLevel?: string | null
+    expectedTimeframe?: string | null
+    status?: "OPEN" | "CONNECTED" | "CLOSED"
+    connectedUserId?: string | null
+    connectedUserName?: string | null
+    connectedCommentId?: string | null
+  }
+) {
+  await ensureSlcSchema()
+  const pAny = getSlcDb()
+
+  if (input.action === "CREATE") {
+    if (!input.postId) {
+      throw new Error("Thiếu mã bài đăng để tạo lời mời đồng nghiệp.")
+    }
+    const post = await pAny.slcPost.findUnique({ where: { id: input.postId } })
+    if (!post) {
+      throw new Error("Không tìm thấy bài đăng.")
+    }
+    if (!canPinOrMarkFeedbackOnPost(ctx, post)) {
+      throw new Error("Chỉ tác giả bài đăng hoặc điều phối viên mới có thể tạo lời mời tìm đồng nghiệp hỗ trợ trên bài này.")
+    }
+    const cleanTitle = sanitizeRichText(input.title)
+    if (!cleanTitle) {
+      throw new Error("Vui lòng nhập nội dung 'Cần hỗ trợ việc gì?'.")
+    }
+
+    const validTypes = ["METHOD", "MATERIAL", "EXPERIMENT", "SKILL", "CONNECTION"]
+    const supportType = validTypes.includes(String(input.supportType || "EXPERIMENT"))
+      ? String(input.supportType || "EXPERIMENT")
+      : "EXPERIMENT"
+
+    const created = await pAny.slcHelpRequest.create({
+      data: {
+        postId: post.id,
+        authorId: ctx.userId,
+        authorName: ctx.fullName,
+        authorAvatar: post.authorAvatar || null,
+        campusId: post.campusId || ctx.campusId,
+        campusName: post.campusName || ctx.campusName || "Hệ thống Sky-Line",
+        title: cleanTitle,
+        description: sanitizeRichText(input.description) || null,
+        supportType,
+        subjectCode: input.subjectCode || null,
+        gradeLevel: input.gradeLevel || null,
+        expectedTimeframe: sanitizeRichText(input.expectedTimeframe) || null,
+        status: "OPEN",
+      },
+    })
+    return created
   }
 
-  return updated
+  if (input.action === "UPDATE_STATUS") {
+    if (!input.helpRequestId) {
+      throw new Error("Thiếu mã lời mời cần cập nhật.")
+    }
+    const existing = await pAny.slcHelpRequest.findUnique({
+      where: { id: input.helpRequestId },
+    })
+    if (!existing) {
+      throw new Error("Không tìm thấy lời mời hỗ trợ.")
+    }
+    const post = await pAny.slcPost.findUnique({ where: { id: existing.postId } })
+    if (!post || !canPinOrMarkFeedbackOnPost(ctx, post)) {
+      throw new Error("Chỉ tác giả bài đăng mới có thể cập nhật trạng thái kết nối lời mời.")
+    }
+
+    const nextStatus = input.status || "CONNECTED"
+    let connectedUserId = input.connectedUserId ?? existing.connectedUserId
+    let connectedUserName = input.connectedUserName ?? existing.connectedUserName
+
+    if (input.connectedCommentId && !connectedUserId) {
+      const comm = await pAny.slcComment
+        .findUnique({ where: { id: input.connectedCommentId } })
+        .catch(() => null)
+      if (comm) {
+        connectedUserId = comm.authorId
+        connectedUserName = comm.authorName
+      }
+    }
+
+    const updated = await pAny.slcHelpRequest.update({
+      where: { id: existing.id },
+      data: {
+        status: nextStatus,
+        connectedUserId: connectedUserId || null,
+        connectedUserName: connectedUserName || null,
+        connectedCommentId: input.connectedCommentId ?? existing.connectedCommentId ?? null,
+        connectedAt: nextStatus === "CONNECTED" ? new Date() : existing.connectedAt,
+      },
+    })
+
+    if (nextStatus === "CONNECTED" && connectedUserId && connectedUserId !== ctx.userId) {
+      await dispatchSlcNotification({
+        idempotencyKey: `help_req_connected:${existing.id}:${connectedUserId}`,
+        recipientId: connectedUserId,
+        actorId: ctx.userId,
+        eventType: "HELP_REQUEST_RESPONSE",
+        targetType: "HELP_REQUEST",
+        targetId: existing.id,
+        postId: post.id,
+        title: "Tác giả đã xác nhận kết nối cùng sáng tạo",
+        message: `${ctx.fullName} đã xác nhận kết nối với Thầy/Cô cho lời mời "${existing.title}" trên bài "${post.title || "Chia sẻ"}".`,
+        deepLink: `/teacher/skyline-connect/posts/${post.id}`,
+      })
+    }
+
+    return updated
+  }
+
+  throw new Error("Thao tác lời mời đồng nghiệp không hợp lệ.")
 }
 
 /**
@@ -2044,7 +2774,7 @@ export async function toggleContributorPublicCreditOptOut(
  */
 export async function recordProductTrialLinkOpen(ctx: SlcUserContext, productId: string) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const product = await pAny.slcProduct.findUnique({ where: { id: productId } })
   if (!product) {
@@ -2085,7 +2815,7 @@ export async function submitOrUpdateSlcRating(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const stars = Math.round(Number(input.stars))
   if (!Number.isFinite(stars) || stars < 1 || stars > 5) {
@@ -2277,7 +3007,7 @@ export async function submitProductApplication(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const product = await pAny.slcProduct.findUnique({ where: { id: input.productId } })
   if (!product) {
@@ -2342,7 +3072,7 @@ export async function verifyProductApplication(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const application = await pAny.slcProductApplication.findUnique({
     where: { id: input.applicationId },
@@ -2410,7 +3140,7 @@ export async function verifyProductApplication(
 }
 
 export async function recalculateProductApplicationCounts(productId: string) {
-  const pAny = prisma as any
+  const pAny = getSlcDb()
   const allApps = await pAny.slcProductApplication.findMany({
     where: { productId },
   })
@@ -2466,7 +3196,7 @@ export async function handleProjectCollaboration(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const project = await pAny.slcProject.findUnique({ where: { id: input.projectId } })
   if (!project) {
@@ -2661,7 +3391,7 @@ export async function syncProjectCollaboratorsAndInvalidateRatings(
   projectId: string,
   newCollaboratorUserId: string
 ) {
-  const pAny = prisma as any
+  const pAny = getSlcDb()
   const project = await pAny.slcProject.findUnique({ where: { id: projectId } })
   if (!project) return
 
@@ -2722,7 +3452,7 @@ export async function invalidateCollaboratorRatingOnTarget(
   collaboratorUserId: string,
   allExcludedIds: string[]
 ) {
-  const pAny = prisma as any
+  const pAny = getSlcDb()
   const existingRating = await pAny.slcRating
     ?.findUnique({
       where: {
@@ -2790,7 +3520,7 @@ export async function submitSlcExpertEvaluation(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
   const periodId = input.periodId || "GLOBAL"
 
   const scores = [
@@ -2907,7 +3637,7 @@ export async function registerAwardNomination(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const period = await pAny.slcAwardPeriod.findUnique({ where: { id: input.periodId } })
   if (!period) {
@@ -2976,7 +3706,7 @@ export async function computeOrLoadPeriodHallOfFame(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const period = await pAny.slcAwardPeriod.findUnique({ where: { id: periodId } })
   if (!period) {
@@ -3344,7 +4074,7 @@ export async function computeOrLoadPeriodHallOfFame(
  */
 export async function finalizeSlcAwardPeriod(ctx: SlcUserContext, periodId: string) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const canFinalize =
     hasSlcRoleInScope(ctx, "AWARD_FINALIZER", { periodId }) || isSuperOrCommunityAdmin(ctx)
@@ -3516,7 +4246,7 @@ export async function createAmendmentSnapshot(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   if (!isSuperOrCommunityAdmin(ctx) && !hasSlcRoleInScope(ctx, "AWARD_FINALIZER")) {
     throw new Error("Chỉ Admin hoặc người chốt giải mới có quyền tạo bản hiệu chỉnh kết quả đã chốt.")
@@ -3607,7 +4337,7 @@ export async function createOrProcessContentReport(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   if (input.action === "CREATE_REPORT") {
     if (!input.targetType || !input.targetId || !sanitizeRichText(input.description)) {
@@ -3710,6 +4440,24 @@ export async function createOrProcessContentReport(
         .catch(() => null)
       if (comm?.postId) {
         await recalculateActiveCommentCount(comm.postId)
+        const post = await pAny.slcPost?.findUnique({ where: { id: comm.postId } }).catch(() => null)
+        if (post) {
+          const recalc = recalculatePostLastBumpedAt({
+            publishedAt: post.publishedAt,
+            existingBumpEvents: safeJsonParse<SlcPostBumpEvent[]>(post.bumpEventsJson, []),
+            removedSourceType: "COMMENT",
+            removedSourceId: comm.id,
+          })
+          await pAny.slcPost
+            ?.update({
+              where: { id: post.id },
+              data: {
+                lastBumpedAt: recalc.lastBumpedAt,
+                bumpEventsJson: JSON.stringify(recalc.updatedBumpEvents),
+              },
+            })
+            .catch(() => null)
+        }
       }
     }
 
@@ -3775,6 +4523,26 @@ export async function createOrProcessContentReport(
           data: { status: shouldHide ? "HIDDEN_MODERATION" : "ACTIVE" },
         })
         await recalculateActiveCommentCount(targetComm.postId)
+        if (shouldHide) {
+          const post = await pAny.slcPost?.findUnique({ where: { id: targetComm.postId } }).catch(() => null)
+          if (post) {
+            const recalc = recalculatePostLastBumpedAt({
+              publishedAt: post.publishedAt,
+              existingBumpEvents: safeJsonParse<SlcPostBumpEvent[]>(post.bumpEventsJson, []),
+              removedSourceType: "COMMENT",
+              removedSourceId: targetComm.id,
+            })
+            await pAny.slcPost
+              ?.update({
+                where: { id: post.id },
+                data: {
+                  lastBumpedAt: recalc.lastBumpedAt,
+                  bumpEventsJson: JSON.stringify(recalc.updatedBumpEvents),
+                },
+              })
+              .catch(() => null)
+          }
+        }
       }
     }
 
@@ -3809,7 +4577,7 @@ export async function updateSlcCommunityProfile(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const data: Record<string, any> = {
     fullName: ctx.fullName,
@@ -3859,7 +4627,7 @@ export async function handleSlcGroupAction(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   if (input.action === "CREATE_GROUP") {
     const cleanName = sanitizeRichText(input.name)
@@ -3994,7 +4762,7 @@ export async function addSlcProjectProgress(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
   const project = await pAny.slcProject.findUnique({ where: { id: input.projectId } })
   if (!project) throw new Error("Không tìm thấy dự án.")
 
@@ -4058,7 +4826,7 @@ export async function handleSlcAdminAction(
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const isAdmin = isSuperOrCommunityAdmin(ctx)
   const isCoordinator = hasSlcRoleInScope(ctx, "COORDINATOR")
@@ -4389,4 +5157,168 @@ export async function handleSlcAdminAction(
 
   throw new Error("Tác vụ quản trị không hợp lệ.")
 }
+
+/**
+ * Xóa mềm (soft-delete) hoặc khôi phục bài đăng trên Tường chia sẻ theo quyền (tác giả hoặc quản trị/điều phối).
+ */
+export async function softDeleteOrRestoreSlcPost(
+  ctx: SlcUserContext,
+  input: {
+    postId: string
+    action: "DELETE" | "RESTORE"
+  }
+) {
+  await ensureSlcSchema()
+  const pAny = getSlcDb()
+
+  const post = await pAny.slcPost.findUnique({ where: { id: input.postId } })
+  if (!post) {
+    throw new Error("Không tìm thấy bài đăng.")
+  }
+
+  if (
+    !canRestoreOrDeletePostOrSkill(ctx, {
+      authorId: post.authorId,
+      campusId: post.campusId,
+      departmentId: post.departmentId,
+    })
+  ) {
+    throw new Error("PERMISSION_DENIED: Thầy/Cô không có quyền xóa hoặc khôi phục bài đăng này.")
+  }
+
+  if (input.action === "DELETE") {
+    const updated = await pAny.slcPost.update({
+      where: { id: post.id },
+      data: {
+        previousStatus: post.status !== "DELETED" ? post.status : post.previousStatus || "PUBLISHED",
+        status: "DELETED",
+        deletedAt: new Date(),
+        deletedById: ctx.userId,
+      },
+    })
+    await recordSlcAuditLog(ctx, "SOFT_DELETE_POST", "POST", post.id, {
+      previousStatus: post.status,
+    })
+    return updated
+  }
+
+  const restoredStatus = post.previousStatus || "PUBLISHED"
+  const updated = await pAny.slcPost.update({
+    where: { id: post.id },
+    data: {
+      status: restoredStatus,
+      deletedAt: null,
+      deletedById: null,
+    },
+  })
+  await recordSlcAuditLog(ctx, "RESTORE_POST", "POST", post.id, {
+    restoredStatus,
+  })
+  return updated
+}
+
+/**
+ * Xác nhận "Đã áp dụng" kèm phản hồi tùy chọn cho Bài đăng, Ứng dụng hoặc Skill môn học.
+ * Giữ liên kết chung giữa Bài giới thiệu trên tường và Skill/Ứng dụng để tránh nhân đôi nội dung và phản hồi.
+ */
+export async function confirmSlcItemApplied(
+  ctx: SlcUserContext,
+  input: {
+    targetType: "POST" | "SKILL" | "PRODUCT" | "IDEA"
+    targetId: string
+    postId?: string | null
+    skillId?: string | null
+    classOrGrade?: string
+    subjectCode?: string
+    feedbackText?: string
+    evidenceUrl?: string
+  }
+) {
+  await ensureSlcSchema()
+  const pAny = getSlcDb()
+
+  let resolvedPostId = input.postId || (input.targetType === "POST" ? input.targetId : null)
+  let resolvedSkillId = input.skillId || (input.targetType === "SKILL" ? input.targetId : null)
+
+  if (input.targetType === "SKILL" && !resolvedPostId) {
+    const sk = await pAny.slcSkill?.findUnique({ where: { id: input.targetId } }).catch(() => null)
+    if (sk?.postId) resolvedPostId = sk.postId
+  } else if (input.targetType === "POST" && !resolvedSkillId) {
+    const po = await pAny.slcPost?.findUnique({ where: { id: input.targetId } }).catch(() => null)
+    if (po?.linkedSkillId) resolvedSkillId = po.linkedSkillId
+  }
+
+  const cleanFeedback = detectAndRedactStudentPii(sanitizeRichText(input.feedbackText)).redactedText
+  const cleanClassOrGrade = detectAndRedactStudentPii(sanitizeRichText(input.classOrGrade)).redactedText
+
+  const confirmation = await pAny.slcAppliedConfirmation.upsert({
+    where: {
+      targetType_targetId_userId: {
+        targetType: input.targetType,
+        targetId: input.targetId,
+        userId: ctx.userId,
+      },
+    },
+    update: {
+      postId: resolvedPostId,
+      skillId: resolvedSkillId,
+      classOrGrade: cleanClassOrGrade || null,
+      subjectCode: input.subjectCode || null,
+      feedbackText: cleanFeedback || null,
+      evidenceUrl: input.evidenceUrl?.trim() || null,
+    },
+    create: {
+      targetType: input.targetType,
+      targetId: input.targetId,
+      postId: resolvedPostId,
+      skillId: resolvedSkillId,
+      userId: ctx.userId,
+      userName: ctx.fullName,
+      campusId: ctx.campusId,
+      campusName: ctx.campusName || "Hệ thống Sky-Line",
+      classOrGrade: cleanClassOrGrade || null,
+      subjectCode: input.subjectCode || null,
+      feedbackText: cleanFeedback || null,
+      evidenceUrl: input.evidenceUrl?.trim() || null,
+    },
+  })
+
+  // Recalculate unified appliedCount on linked Post and Skill
+  if (resolvedPostId) {
+    const postCount = await pAny.slcAppliedConfirmation.count({
+      where: {
+        OR: [{ postId: resolvedPostId }, { targetType: "POST", targetId: resolvedPostId }],
+      },
+    })
+    await pAny.slcPost
+      ?.update({
+        where: { id: resolvedPostId },
+        data: { appliedCount: postCount },
+      })
+      .catch(() => null)
+  }
+
+  if (resolvedSkillId) {
+    const skillCount = await pAny.slcAppliedConfirmation.count({
+      where: {
+        OR: [{ skillId: resolvedSkillId }, { targetType: "SKILL", targetId: resolvedSkillId }],
+      },
+    })
+    await pAny.slcSkill
+      ?.update({
+        where: { id: resolvedSkillId },
+        data: { appliedCount: skillCount },
+      })
+      .catch(() => null)
+  }
+
+  await recordSlcAuditLog(ctx, "CONFIRM_APPLIED", input.targetType, input.targetId, {
+    postId: resolvedPostId,
+    skillId: resolvedSkillId,
+    hasFeedback: Boolean(cleanFeedback),
+  })
+
+  return confirmation
+}
+
 

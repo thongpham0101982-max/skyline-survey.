@@ -5,26 +5,35 @@ import { StudentMobileView } from "@/components/pwa/StudentMobileView";
 // Build portfolio version: 30.0-1788358433056
 // Build version: 30.0-1788358433056
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { StudentCompetencyPortfolio } from "@/components/competency/StudentCompetencyPortfolio"
 import StudentSnapshotPopover from "@/components/advisory/StudentSnapshotPopover"
 import AiAdvisorModal from "@/components/advisory/AiAdvisorModal"
 import { 
   Users, Loader2, User, UserCheck, Award, Trophy, Medal, Sparkles, Compass, 
   FileText, BookOpen, FileSpreadsheet, MessageSquare, ClipboardCheck, ArrowLeftRight,
-  Bell, Heart, MessageCircle, Send, Globe, Printer, Download,
+  Bell, Heart, MessageCircle, Send, Printer, Download,
   Search, Calendar, MapPin, CheckCircle, AlertTriangle, GraduationCap,
   Layers, School, Building2, RotateCcw, RefreshCw, Trash2,
   ChevronLeft, ChevronRight, Maximize2, Minimize2,
   Camera, Upload, ChevronDown, X, LayoutList, Check, Plus, CheckCircle2, Clock, XCircle,
-  Phone, Mail, Activity, BookMarked, FolderArchive, FolderDown, Sliders
+  Phone, Mail, Activity, BookMarked, FolderArchive, FolderDown, Sliders, Pencil, ExternalLink
 } from "lucide-react"
 import StudentProfileCoverA4 from "@/components/student/StudentProfileCoverA4"
 import StudentProfileSectionConfigModal from "@/components/student/StudentProfileSectionConfigModal"
 import StudentProfileInlineSectionToggles from "@/components/student/StudentProfileInlineSectionToggles"
 import { StudentSpecialSubjectsSection } from "@/components/student/StudentSpecialSubjectsSection"
+import { StudentCtqtGradesSection } from "@/components/student/StudentCtqtGradesSection"
+import { isBilingualOrCtqtSubject } from "@/lib/ctqt/studentProfilePortfolio"
 import { resolveStudentSectionVisibility } from "@/lib/studentProfileSectionConfig"
 import { CompleteAndSignButton } from "@/components/digital-signature/CompleteAndSignButton"
+import {
+  normalizeStudentAchievementRow,
+  resolveAchievementCategoryLabel,
+  resolveAchievementLevelLabel,
+  resolveAchievementYearLabel,
+} from "@/lib/achievementFormatters"
 
 function normalizeClassKey(name: string): string {
   if (!name) return "";
@@ -36,55 +45,14 @@ function normalizeClassKey(name: string): string {
     .replace(/^lớp\s+/i, "");
 }
 
-const getCategoryLabel = (cat: string) => {
-  if (!cat) return "Lĩnh vực khác";
-  const str = String(cat).toUpperCase();
-  if (str === "GIAI_THUONG") return "Giải thưởng";
-  if (str === "HUY_CHUONG") return "Huy chương";
-  if (str === "CHUNG_NHAN") return "Chứng nhận";
-  if (str === "TOP_RANK") return "Top rank / Thứ hạng";
-  if (str === "OLYMPIC") return "Olympic";
-  if (str === "KHKT") return "Khoa học kỹ thuật";
-  if (str === "THE_THAO") return "Thể dục thể thao";
-  if (str === "VAN_NGHE") return "Văn nghệ - Nghệ thuật";
-  if (str === "HOC_THUAT") return "Học thuật";
-  if (str === "STEM") return "STEM / Robotics";
-  return cat;
-};
+const getCategoryLabel = (cat: string) => resolveAchievementCategoryLabel(cat);
 
-const getLevelLabel = (lvl: string) => {
-  if (!lvl) return "Xếp giải";
-  const str = String(lvl).toUpperCase();
-  if (str === "VANG" || str === "NHAT" || str === "1") return "Giải Nhất / Huy chương Vàng";
-  if (str === "BAC" || str === "NHI" || str === "2") return "Giải Nhì / Huy chương Bạc";
-  if (str === "DONG" || str === "BA" || str === "3") return "Giải Đồng / Hạng Ba";
-  if (str === "KHUYEN_KHICH" || str === "KK" || str === "4") return "Giải Khuyến khích";
-  if (str === "TOP_10") return "Top 10";
-  if (str === "TOP_5") return "Top 5";
-  if (str === "TOP_20") return "Top 20";
-  if (str === "CAP_QUOC_TE" || str === "5") return "Cấp Quốc tế";
-  if (str === "CAP_QUOC_GIA") return "Cấp Quốc gia";
-  if (str === "CAP_THANH_PHO" || str === "CAP_TINH") return "Cấp Thành phố / Tỉnh";
-  if (str === "CAP_QUAN" || str === "CAP_HUYEN") return "Cấp Quận / Huyện";
-  if (str === "CAP_TRUONG") return "Cấp Trường";
-  return lvl.startsWith("Cấp") || lvl.startsWith("Giải") ? lvl : `${lvl}`;
-};
+const getLevelLabel = (lvl: string, cat?: string) => resolveAchievementLevelLabel(lvl, cat);
 
-const getYearLabel = (ach: any) => {
-  if (ach?.academicYear?.name) return ach.academicYear.name;
-  if (ach?.yearName) return ach.yearName;
-  if (ach?.academicYearId) {
-    if (ach.academicYearId === "AY-2026") return "Năm học 2025-2026";
-    if (ach.academicYearId.startsWith("AY-")) {
-      const yearNum = ach.academicYearId.replace("AY-", "");
-      return `Năm học ${Number(yearNum) - 1}-${yearNum}`;
-    }
-    return ach.academicYearId;
-  }
-  return "2025-2026";
-};
+const getYearLabel = (ach: any) => resolveAchievementYearLabel(ach);
 
-export default function TeacherStudentProfilePage() {
+function TeacherStudentProfileContent() {
+  const searchParams = useSearchParams();
   const [yearId, setYearId] = useState(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("selectedAcademicYear");
@@ -106,22 +74,18 @@ export default function TeacherStudentProfilePage() {
     return () => window.removeEventListener("academicYearChanged", handleYearChange);
   }, [yearId]);
 
-  // Tab State - Default to 'cv' matching Admin standard
+  // Tab State - Synced reactively with Sidebar URL (?tab=cv | ?tab=achievements | ...)
+  const urlTabParam = searchParams?.get("tab");
   const [activeTab, setActiveTab] = useState("cv");
 
-  // Read tab parameter from URL
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const sp = new URLSearchParams(window.location.search);
-      const tabParam = sp.get("tab");
-      if (
-        tabParam &&
-        ["cv", "academic", "achievements", "competencies", "projects", "orientation", "comments", "support"].includes(tabParam)
-      ) {
-        setActiveTab(tabParam);
-      }
+    if (
+      urlTabParam &&
+      ["cv", "academic", "achievements", "competencies", "projects", "orientation", "comments", "support"].includes(urlTabParam)
+    ) {
+      setActiveTab(urlTabParam);
     }
-  }, []);
+  }, [urlTabParam]);
 
   // Students list and loading states
   const [students, setStudents] = useState<any[]>([]);
@@ -145,11 +109,16 @@ export default function TeacherStudentProfilePage() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [configMap, setConfigMap] = useState<Record<string, Record<string, boolean>>>({});
 
+  const [detailRefreshTick, setDetailRefreshTick] = useState(0);
+  const refreshSelectedStudentDetail = () => setDetailRefreshTick(t => t + 1);
+
   // Báo cáo thành tích Lớp Chủ nhiệm (đồng bộ chuẩn QL Thành tích Admin)
   const [achViewMode, setAchViewMode] = useState<"CLASS_REPORT" | "STUDENT_DETAIL">("CLASS_REPORT");
   const [classAchReport, setClassAchReport] = useState<any[]>([]);
   const [classAchStats, setClassAchStats] = useState({
     total: 0,
+    pendingCount: 0,
+    rejectedCount: 0,
     gold: 0,
     silver: 0,
     bronze: 0,
@@ -157,11 +126,32 @@ export default function TeacherStudentProfilePage() {
     studentCount: 0
   });
 
-  // Achievement Addition Request Modal State
+  // Non-blocking Toast for Achievement Flow
+  const [achToast, setAchToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const notifyAch = (msg: string, type: "success" | "error" = "success") => {
+    setAchToast({ msg, type });
+  };
+  useEffect(() => {
+    if (!achToast) return;
+    const t = setTimeout(() => setAchToast(null), 4200);
+    return () => clearTimeout(t);
+  }, [achToast]);
+
+  // Achievement Addition / Update Request Modal State
   const [isAddAchModalOpen, setIsAddAchModalOpen] = useState(false);
   const [isSubmittingAch, setIsSubmittingAch] = useState(false);
+  const [editingAchRequestId, setEditingAchRequestId] = useState<string | null>(null);
+  const [editingAchStatus, setEditingAchStatus] = useState<string | null>(null);
+  const [editingAchReviewNote, setEditingAchReviewNote] = useState<string | null>(null);
+  const [isMultiStudentAch, setIsMultiStudentAch] = useState(false);
+  const [selectedAchStudentIds, setSelectedAchStudentIds] = useState<string[]>([]);
+  const [achStudentSearch, setAchStudentSearch] = useState("");
+
   const [examCategories, setExamCategories] = useState<any[]>([]);
   const [allExams, setAllExams] = useState<any[]>([]);
+  const [achievementCategories, setAchievementCategories] = useState<any[]>([]);
+  const [achievementLevels, setAchievementLevels] = useState<any[]>([]);
+  const [directoryTeachers, setDirectoryTeachers] = useState<any[]>([]);
   const [selectedExamCatId, setSelectedExamCatId] = useState<string>("ALL");
   const [isCustomExam, setIsCustomExam] = useState<boolean>(false);
   const [addAchForm, setAddAchForm] = useState({
@@ -176,33 +166,152 @@ export default function TeacherStudentProfilePage() {
     note: ""
   });
 
-  const fetchExamDirectory = async () => {
+  const fetchExamDirectory = async (targetYearId?: string) => {
     try {
-      const res = await fetch("/api/teacher-student-records?action=getExamCategoriesAndExams");
+      const yParam = targetYearId ?? yearId;
+      const res = await fetch(
+        `/api/teacher-student-records?action=getExamCategoriesAndExams&academicYearId=${encodeURIComponent(
+          yParam || ""
+        )}&_t=${Date.now()}`
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.examCategories) setExamCategories(data.examCategories);
         if (data.exams) setAllExams(data.exams);
+        if (data.achievementCategories) setAchievementCategories(data.achievementCategories);
+        if (data.achievementLevels) setAchievementLevels(data.achievementLevels);
+        if (data.teachers) setDirectoryTeachers(data.teachers);
       }
     } catch (e) {
       console.error("Error fetching exam directory:", e);
     }
   };
 
+  // Quick 1-click Award Presets built dynamically from Admin's Achievement Dictionary
+  const achQuickPresets = useMemo(() => {
+    if (achievementCategories.length > 0) {
+      const list: Array<{
+        key: string;
+        shortLabel: string;
+        fullLabel: string;
+        category: string;
+        level: string;
+      }> = [];
+      const seen = new Set<string>();
+      for (const cat of achievementCategories) {
+        const lvls = achievementLevels.filter((l: any) => l.categoryId === cat.id);
+        if (lvls.length > 0) {
+          for (const lvl of lvls) {
+            const k = `${cat.code}::${lvl.code}`;
+            if (seen.has(k)) continue;
+            seen.add(k);
+            list.push({
+              key: k,
+              shortLabel: lvl.name.replace(/^Huy chương\s+/i, "HC ").trim(),
+              fullLabel: lvl.name,
+              category: cat.code,
+              level: lvl.code
+            });
+          }
+        } else {
+          const k = `${cat.code}::`;
+          if (seen.has(k)) continue;
+          seen.add(k);
+          list.push({
+            key: k,
+            shortLabel: cat.name,
+            fullLabel: cat.name,
+            category: cat.code,
+            level: ""
+          });
+        }
+      }
+      return list.slice(0, 10);
+    }
+    return [
+      { key: "GIAI_THUONG::NHAT", shortLabel: "Giải Nhất", fullLabel: "Giải Nhất", category: "GIAI_THUONG", level: "NHAT" },
+      { key: "GIAI_THUONG::NHI", shortLabel: "Giải Nhì", fullLabel: "Giải Nhì", category: "GIAI_THUONG", level: "NHI" },
+      { key: "GIAI_THUONG::BA", shortLabel: "Giải Ba", fullLabel: "Giải Ba", category: "GIAI_THUONG", level: "BA" },
+      { key: "GIAI_THUONG::KHUYEN_KHICH", shortLabel: "Khuyến khích", fullLabel: "Khuyến khích", category: "GIAI_THUONG", level: "KHUYEN_KHICH" },
+      { key: "HUY_CHUONG::VANG", shortLabel: "HC Vàng", fullLabel: "Huy chương Vàng", category: "HUY_CHUONG", level: "VANG" },
+      { key: "HUY_CHUONG::BAC", shortLabel: "HC Bạc", fullLabel: "Huy chương Bạc", category: "HUY_CHUONG", level: "BAC" },
+      { key: "HUY_CHUONG::DONG", shortLabel: "HC Đồng", fullLabel: "Huy chương Đồng", category: "HUY_CHUONG", level: "DONG" },
+      { key: "CHUNG_NHAN::", shortLabel: "Chứng nhận", fullLabel: "Chứng nhận hoàn thành", category: "CHUNG_NHAN", level: "" }
+    ];
+  }, [achievementCategories, achievementLevels]);
+
+  const modalLevelsForCategory = useMemo(() => {
+    if (!achievementLevels.length) return [];
+    const catObj = achievementCategories.find((c: any) => c.code === addAchForm.category);
+    if (!catObj) return achievementLevels;
+    const scoped = achievementLevels.filter((l: any) => l.categoryId === catObj.id);
+    return scoped;
+  }, [achievementCategories, achievementLevels, addAchForm.category]);
+
   const handleOpenAddAchModal = (presetStudentId?: string) => {
-    fetchExamDirectory();
+    fetchExamDirectory(yearId);
+    setEditingAchRequestId(null);
+    setEditingAchStatus(null);
+    setEditingAchReviewNote(null);
+    setIsMultiStudentAch(false);
+    setAchStudentSearch("");
     setSelectedExamCatId("ALL");
     setIsCustomExam(false);
+    const defaultStudentId = presetStudentId || selectedStudent?.id || students[0]?.id || "";
+    setSelectedAchStudentIds(defaultStudentId ? [defaultStudentId] : []);
+    const defaultCat = achievementCategories[0]?.code || "GIAI_THUONG";
+    const defaultCatObj = achievementCategories.find((c: any) => c.code === defaultCat);
+    const defaultLvl =
+      (defaultCatObj
+        ? achievementLevels.find((l: any) => l.categoryId === defaultCatObj.id)?.code
+        : undefined) ?? "KHUYEN_KHICH";
     setAddAchForm({
-      studentId: presetStudentId || selectedStudent?.id || (students[0]?.id) || "",
+      studentId: defaultStudentId,
       examName: "",
       achievementName: "",
       type: "CA_NHAN",
-      category: "GIAI_THUONG",
-      level: "KHUYEN_KHICH",
+      category: defaultCat,
+      level: defaultLvl,
       coachTeacher: "",
       evidenceUrl: "",
       note: ""
+    });
+    setIsAddAchModalOpen(true);
+  };
+
+  const handleOpenEditAchModal = (rawRow: any) => {
+    fetchExamDirectory(yearId);
+    const reqId = rawRow.requestId || String(rawRow.id || "").replace(/^req_/, "");
+    const ach = rawRow.achievement || {};
+    const exName = String(ach?.exam?.name || rawRow.examName || "").trim();
+    const isKnownExam = allExams.some(
+      (e: any) => String(e.name || "").trim().toLowerCase() === exName.toLowerCase()
+    );
+
+    setEditingAchRequestId(reqId);
+    setEditingAchStatus(rawRow.status || "PENDING");
+    setEditingAchReviewNote(rawRow.reviewNote || null);
+    setIsMultiStudentAch(false);
+    setAchStudentSearch("");
+    setSelectedExamCatId("ALL");
+    setIsCustomExam(Boolean(exName && !isKnownExam));
+    const sid = rawRow.studentId || selectedStudent?.id || "";
+    setSelectedAchStudentIds(sid ? [sid] : []);
+    setAddAchForm({
+      studentId: sid,
+      examName: exName === "Ngoài hệ thống" ? "" : exName,
+      achievementName: String(ach?.name || rawRow.achievementName || "").trim(),
+      type: ach?.type || rawRow.type || "CA_NHAN",
+      category: ach?.category || rawRow.category || "GIAI_THUONG",
+      level: ach?.level ?? rawRow.level ?? "",
+      coachTeacher:
+        rawRow.coachTeacher !== undefined
+          ? rawRow.coachTeacher || ""
+          : rawRow.teacherName && rawRow.teacherName !== "—"
+          ? rawRow.teacherName
+          : "",
+      evidenceUrl: rawRow.evidenceUrl || "",
+      note: rawRow.note || ""
     });
     setIsAddAchModalOpen(true);
   };
@@ -214,36 +323,76 @@ export default function TeacherStudentProfilePage() {
 
   const handleCreateAchievementRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addAchForm.studentId || !addAchForm.examName.trim() || !addAchForm.achievementName.trim()) {
-      alert("Vui lòng chọn học sinh và nhập đầy đủ Tên cuộc thi, Tên giải thưởng!");
+    const targetStudents = editingAchRequestId
+      ? [addAchForm.studentId].filter(Boolean)
+      : isMultiStudentAch
+      ? selectedAchStudentIds
+      : [addAchForm.studentId].filter(Boolean);
+
+    if (
+      targetStudents.length === 0 ||
+      !addAchForm.examName.trim() ||
+      !addAchForm.achievementName.trim()
+    ) {
+      notifyAch(
+        "Vui lòng chọn học sinh và nhập đầy đủ Tên kỳ thi / cuộc thi, Tên giải thưởng.",
+        "error"
+      );
       return;
     }
 
     try {
       setIsSubmittingAch(true);
-      const res = await fetch("/api/teacher-student-records?action=requestAchievementAddition", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...addAchForm,
-          academicYearId: yearId,
-          classId: selectedStudent?.classId || students[0]?.classId
-        })
-      });
+      if (editingAchRequestId) {
+        const res = await fetch("/api/teacher-student-records?action=updateAchievementRequest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            requestId: editingAchRequestId,
+            ...addAchForm,
+            studentId: targetStudents[0]
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Cập nhật yêu cầu thất bại");
+        }
+        notifyAch(
+          data.resubmitted
+            ? "Đã cập nhật và gửi lại yêu cầu bổ sung thành tích để Admin xét duyệt."
+            : "Đã lưu thay đổi yêu cầu bổ sung thành tích."
+        );
+      } else {
+        const res = await fetch("/api/teacher-student-records?action=requestAchievementAddition", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...addAchForm,
+            studentId: targetStudents[0],
+            studentIds: targetStudents,
+            academicYearId: yearId,
+            classId: selectedStudent?.classId || students[0]?.classId
+          })
+        });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Gửi yêu cầu thất bại");
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Gửi yêu cầu thất bại");
+        }
+
+        const count = data.count || targetStudents.length;
+        notifyAch(
+          count > 1
+            ? `Đã gửi ${count} đề xuất bổ sung thành tích sang Admin KT&ĐBCL xét duyệt.`
+            : "Đã gửi đề xuất thành tích sang Admin KT&ĐBCL xét duyệt. Khi duyệt sẽ tự động cập nhật lên Thành tích HS & Hồ sơ học sinh."
+        );
       }
 
-      alert("Gửi yêu cầu bổ sung thành tích thành công! Trạng thái: Chờ duyệt. Admin KT&ĐBCL sẽ xét duyệt và xác nhận kết quả để đưa vào Hồ sơ học sinh.");
       setIsAddAchModalOpen(false);
-      loadClassAchievements();
-      if (selectedStudent?.id) {
-        fetchStudentDetail(selectedStudent.id);
-      }
+      await loadClassAchievements();
+      refreshSelectedStudentDetail();
     } catch (err: any) {
-      alert("Lỗi: " + (err.message || err));
+      notifyAch("Lỗi: " + (err.message || err), "error");
     } finally {
       setIsSubmittingAch(false);
     }
@@ -259,20 +408,20 @@ export default function TeacherStudentProfilePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Hủy yêu cầu thất bại");
-      alert("Đã hủy yêu cầu thành công!");
-      loadClassAchievements();
-      if (selectedStudent?.id) {
-        fetchStudentDetail(selectedStudent.id);
-      }
+      notifyAch("Đã hủy yêu cầu bổ sung thành tích.");
+      await loadClassAchievements();
+      refreshSelectedStudentDetail();
     } catch (err: any) {
-      alert("Lỗi: " + (err.message || err));
+      notifyAch("Lỗi: " + (err.message || err), "error");
     }
   };
 
   const [loadingClassAch, setLoadingClassAch] = useState(false);
+  const [achStatusFilter, setAchStatusFilter] = useState<"ALL" | "APPROVED" | "PENDING" | "REJECTED">("ALL");
   const [achCategoryFilter, setAchCategoryFilter] = useState("");
   const [achLevelFilter, setAchLevelFilter] = useState("");
   const [achExamCatFilter, setAchExamCatFilter] = useState("");
+  const [achExamFilter, setAchExamFilter] = useState("");
   const [achSearchQuery, setAchSearchQuery] = useState("");
 
   const loadClassAchievements = async () => {
@@ -284,9 +433,23 @@ export default function TeacherStudentProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setClassAchReport(data.reportRows || []);
-        setClassAchStats(data.stats || { total: 0, gold: 0, silver: 0, bronze: 0, consolation: 0, studentCount: 0 });
-        if (data.examCategories && data.examCategories.length > 0) setExamCategories(data.examCategories);
-        if (data.exams && data.exams.length > 0) setAllExams(data.exams);
+        setClassAchStats(
+          data.stats || {
+            total: 0,
+            pendingCount: 0,
+            rejectedCount: 0,
+            gold: 0,
+            silver: 0,
+            bronze: 0,
+            consolation: 0,
+            studentCount: 0
+          }
+        );
+        if (data.examCategories) setExamCategories(data.examCategories);
+        if (data.exams) setAllExams(data.exams);
+        if (data.achievementCategories) setAchievementCategories(data.achievementCategories);
+        if (data.achievementLevels) setAchievementLevels(data.achievementLevels);
+        if (data.teachers) setDirectoryTeachers(data.teachers);
       }
     } catch (e) {
       console.error("Error loading class achievements:", e);
@@ -298,33 +461,51 @@ export default function TeacherStudentProfilePage() {
   useEffect(() => {
     if (activeTab === "achievements") {
       loadClassAchievements();
+      refreshSelectedStudentDetail();
+    } else if (activeTab === "cv") {
+      refreshSelectedStudentDetail();
     }
   }, [activeTab, yearId, selectedStudent?.classId, students.length]);
 
+  // Auto-refresh when GVCN returns to browser tab after Admin approves
+  useEffect(() => {
+    const onFocus = () => {
+      if (activeTab === "achievements") {
+        loadClassAchievements();
+      }
+      if (activeTab === "achievements" || activeTab === "cv") {
+        refreshSelectedStudentDetail();
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [activeTab, yearId, selectedStudent?.classId]);
+
   const handleExportClassAchievementsExcel = () => {
     if (!classAchReport || classAchReport.length === 0) {
-      alert("Lớp chưa có dữ liệu thành tích để xuất!");
+      notifyAch("Lớp chưa có dữ liệu thành tích để xuất.", "error");
       return;
     }
 
-    const exportRows = classAchReport.map((row: any, idx: number) => ({
+    const exportRows = filteredClassAchievements.map((row: any, idx: number) => ({
       "STT": idx + 1,
-      "Mã Học Sinh": row.studentCode || "",
-      "Họ & Tên": row.studentName || "",
+      "Mã học sinh": row.studentCode || "",
+      "Họ và tên": row.studentName || "",
       "Lớp": row.className || "",
       "Cơ sở": row.campusName || "",
       "Kỳ thi / Cuộc thi": row.examName || "Ngoài hệ thống",
       "Thành tích đạt được": row.achievementName || "",
-      "Loại thành tích": getCategoryLabel(row.category),
-      "Mức giải": getLevelLabel(row.level),
+      "Loại thành tích": row.categoryLabel || getCategoryLabel(row.category),
+      "Mức giải": row.levelLabel || getLevelLabel(row.level, row.category),
       "Hình thức": row.type === "CA_NHAN" ? "Cá nhân" : "Đồng đội",
-      "GV Bồi dưỡng": row.teacherName || "Chưa xác định",
-      "Năm học": row.academicYearName || selectedStudent?.yearName || "N/A"
+      "GV bồi dưỡng": row.teacherName || "—",
+      "Trạng thái": row.statusLabel || (row.status === "APPROVED" ? "Đã duyệt" : row.status),
+      "Năm học": row.academicYearName || selectedStudent?.yearName || "—"
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportRows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Báo Cáo Thành Tích");
+    XLSX.utils.book_append_sheet(wb, ws, "Báo cáo thành tích");
 
     const maxLens = Object.keys(exportRows[0]).map(key => 
       Math.max(key.length + 4, ...exportRows.map(row => String((row as any)[key] || '').length + 2))
@@ -335,9 +516,31 @@ export default function TeacherStudentProfilePage() {
     XLSX.writeFile(wb, `Bao_Cao_Thanh_Tich_${cName}_${selectedStudent?.yearName || 'All'}.xlsx`);
   };
 
+  const availableExamNamesForFilter = useMemo(() => {
+    const names = new Set<string>();
+    allExams.forEach((e: any) => {
+      if (achExamCatFilter && (e.category?.name || "") !== achExamCatFilter) return;
+      if (e.name) names.add(e.name);
+    });
+    classAchReport.forEach((row: any) => {
+      const exName = row.examName || "Ngoài hệ thống";
+      if (achExamCatFilter) {
+        const matched = allExams.find((e: any) => e.name.toLowerCase() === exName.toLowerCase());
+        if ((matched?.category?.name || "") !== achExamCatFilter) return;
+      }
+      names.add(exName);
+    });
+    return Array.from(names);
+  }, [allExams, classAchReport, achExamCatFilter]);
+
   const filteredClassAchievements = useMemo(() => {
     return classAchReport.filter((row: any) => {
+      if (achStatusFilter !== "ALL") {
+        const rowStatus = row.status || (row.isRequest ? "PENDING" : "APPROVED");
+        if (rowStatus !== achStatusFilter) return false;
+      }
       if (achCategoryFilter && row.category !== achCategoryFilter) return false;
+      if (achExamFilter && (row.examName || "Ngoài hệ thống") !== achExamFilter) return false;
       if (achExamCatFilter) {
         const rowExamName = (row.examName || "").toLowerCase();
         const matchedExam = allExams.find(e => e.name.toLowerCase() === rowExamName);
@@ -347,10 +550,10 @@ export default function TeacherStudentProfilePage() {
       if (achLevelFilter) {
         const lvl = (row.level || "").toUpperCase();
         const achName = (row.achievementName || "").toLowerCase();
-        if (achLevelFilter === "GOLD" && !["VANG", "NHAT", "1"].includes(lvl) && !achName.includes("vàng") && !achName.includes("nhất")) return false;
-        if (achLevelFilter === "SILVER" && !["BAC", "NHI", "2"].includes(lvl) && !achName.includes("bạc") && !achName.includes("nhì")) return false;
-        if (achLevelFilter === "BRONZE" && !["DONG", "BA", "3"].includes(lvl) && !achName.includes("đồng") && !achName.includes("ba")) return false;
-        if (achLevelFilter === "OTHER" && (["VANG", "NHAT", "1", "BAC", "NHI", "2", "DONG", "BA", "3"].includes(lvl) || achName.includes("vàng") || achName.includes("nhất") || achName.includes("bạc") || achName.includes("nhì") || achName.includes("đồng") || achName.includes("ba"))) return false;
+        if (achLevelFilter === "GOLD" && !["VANG", "HCV", "NHAT", "1"].includes(lvl) && !achName.includes("vàng") && !achName.includes("nhất")) return false;
+        if (achLevelFilter === "SILVER" && !["BAC", "HCB", "NHI", "2"].includes(lvl) && !achName.includes("bạc") && !achName.includes("nhì")) return false;
+        if (achLevelFilter === "BRONZE" && !["DONG", "HCD", "BA", "3"].includes(lvl) && !achName.includes("đồng") && !achName.includes("ba")) return false;
+        if (achLevelFilter === "OTHER" && (["VANG", "HCV", "NHAT", "1", "BAC", "HCB", "NHI", "2", "DONG", "HCD", "BA", "3"].includes(lvl) || achName.includes("vàng") || achName.includes("nhất") || achName.includes("bạc") || achName.includes("nhì") || achName.includes("đồng") || achName.includes("ba"))) return false;
       }
       if (achSearchQuery.trim()) {
         const q = achSearchQuery.toLowerCase().trim();
@@ -362,7 +565,7 @@ export default function TeacherStudentProfilePage() {
       }
       return true;
     });
-  }, [classAchReport, achCategoryFilter, achExamCatFilter, achLevelFilter, achSearchQuery, allExams]);
+  }, [classAchReport, achStatusFilter, achCategoryFilter, achExamFilter, achExamCatFilter, achLevelFilter, achSearchQuery, allExams]);
 
   const loadConfigs = async () => {
     try {
@@ -647,7 +850,7 @@ export default function TeacherStudentProfilePage() {
     }
 
     loadDetail();
-  }, [selectedStudentId, students, yearId]);
+  }, [selectedStudentId, students, yearId, detailRefreshTick]);
 
   // Filter students list based on search query
   const filteredStudentsList = useMemo(() => {
@@ -1652,29 +1855,15 @@ export default function TeacherStudentProfilePage() {
                                 const termScores: any[] = selectedStudent?.termScores || [];
                                 const termSummaries: any[] = selectedStudent?.termSummaries || [];
 
-                                const isBilingualSub = (name: string, code: string) => {
-                                  const s = `${name} ${code}`.toLowerCase();
-                                  return (
-                                    s.includes("esl") ||
-                                    s.includes("english") ||
-                                    s.includes("tiếng anh tăng cường") ||
-                                    s.includes("tav") ||
-                                    s.includes("bilingual") ||
-                                    s.includes("song ngữ") ||
-                                    s.includes("maths") ||
-                                    s.includes("science") ||
-                                    s.includes("robotics")
-                                  );
-                                };
-
                                 // 1. Map Điểm kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2)
-                                const periodicMap = new Map<string, { name: string; code: string; ksdn: any; gk1: any; ck1: any; gk2: any; ck2: any }>();
+                                const periodicMap = new Map<string, { name: string; code: string; category: string; ksdn: any; gk1: any; ck1: any; gk2: any; ck2: any }>();
                                 gradeEntries.forEach((entry: any) => {
                                   const sName = entry.subject?.subjectName || "Môn học";
                                   const sCode = entry.subject?.subjectCode || "";
+                                  const sCategory = entry.subject?.category || "";
                                   const key = (entry.subjectId || sName).trim();
                                   if (!periodicMap.has(key)) {
-                                    periodicMap.set(key, { name: sName, code: sCode, ksdn: null, gk1: null, ck1: null, gk2: null, ck2: null });
+                                    periodicMap.set(key, { name: sName, code: sCode, category: sCategory, ksdn: null, gk1: null, ck1: null, gk2: null, ck2: null });
                                   }
                                   const item = periodicMap.get(key)!;
                                   const period = String(entry.evaluationPeriod || "").toUpperCase().trim();
@@ -1687,13 +1876,14 @@ export default function TeacherStudentProfilePage() {
                                 });
 
                                 // 2. Map Điểm tổng kết học tập (CK1, CK2, CN)
-                                const termMap = new Map<string, { name: string; code: string; hk1: any; hk2: any; cn: any }>();
+                                const termMap = new Map<string, { name: string; code: string; category: string; hk1: any; hk2: any; cn: any }>();
                                 termScores.forEach((ts: any) => {
                                   const sName = ts.subject?.subjectName || "Môn học";
                                   const sCode = ts.subject?.subjectCode || "";
+                                  const sCategory = ts.subject?.category || "";
                                   const key = (ts.subjectId || sName).trim();
                                   if (!termMap.has(key)) {
-                                    termMap.set(key, { name: sName, code: sCode, hk1: null, hk2: null, cn: null });
+                                    termMap.set(key, { name: sName, code: sCode, category: sCategory, hk1: null, hk2: null, cn: null });
                                   }
                                   const item = termMap.get(key)!;
                                   const sem = String(ts.semester || "").toUpperCase().trim();
@@ -1703,12 +1893,9 @@ export default function TeacherStudentProfilePage() {
                                   else if (sem === "CN" || sem.includes("CẢ NĂM")) item.cn = val;
                                 });
 
-                                // Phân chia danh sách
-                                const moetPeriodicRows = Array.from(periodicMap.values()).filter(r => !isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
-                                const bilingualPeriodicRows = Array.from(periodicMap.values()).filter(r => isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
-
-                                const moetTermRows = Array.from(termMap.values()).filter(r => !isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
-                                const bilingualTermRows = Array.from(termMap.values()).filter(r => isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
+                                // Phân chia danh sách môn MOET (loại trừ môn Song ngữ / CTQT được hiển thị riêng tại Mục IV)
+                                const moetPeriodicRows = Array.from(periodicMap.values()).filter(r => !isBilingualOrCtqtSubject(r.name, r.code, r.category)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
+                                const moetTermRows = Array.from(termMap.values()).filter(r => !isBilingualOrCtqtSubject(r.name, r.code, r.category)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
 
                                 // Xếp loại tổng kết
                                 const sumHK1 = termSummaries.find((s: any) => String(s.semester).toUpperCase().includes("1") || String(s.semester).toUpperCase() === "HK1");
@@ -1850,18 +2037,18 @@ export default function TeacherStudentProfilePage() {
 
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
                     <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-slate-100 text-[9px] font-black text-slate-700 uppercase tracking-wider border-b border-slate-200">
-                        <tr>
-                          <th className="py-2 px-2.5 border-r border-slate-200 w-[180px]">Nhóm mục tiêu (Trọng số)</th>
-                          <th className="py-2 px-2.5 border-r border-slate-200 min-w-[220px]">Mục tiêu cụ thể</th>
-                          <th className="py-2 px-2 text-center border-r border-slate-200 w-[115px]">Kết quả theo dõi</th>
-                          <th className="py-2 px-1.5 text-center border-r border-slate-200 w-[90px]">Mức hoàn thành MT (1-5)</th>
-                          <th className="py-2 px-1.5 text-center border-r border-slate-200 w-[90px]">Mức độ chủ động (1-5)</th>
-                          <th className="py-2 px-2 text-center w-[110px]">Thái độ tham gia (1-5)</th>
+                      <thead className="bg-[#003B3A] text-[9px] border-b text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="py-2 px-2.5 border-r border-white/15 w-[180px] font-semibold">Nhóm mục tiêu (Trọng số)</th>
+                          <th className="py-2 px-2.5 border-r border-white/15 min-w-[220px] font-semibold">Mục tiêu cụ thể</th>
+                          <th className="py-2 px-2 text-center border-r border-white/15 w-[115px] font-semibold">Kết quả theo dõi</th>
+                          <th className="py-2 px-1.5 text-center border-r border-white/15 w-[90px] font-semibold">Mức hoàn thành MT (1-5)</th>
+                          <th className="py-2 px-1.5 text-center border-r border-white/15 w-[90px] font-semibold">Mức độ chủ động (1-5)</th>
+                          <th className="py-2 px-2 text-center w-[110px] font-semibold">Thái độ tham gia (1-5)</th>
                           
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700 text-xs">
+                      <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700 text-xs">
                         {advisoryRows.map((r, rIdx) => (
                           <tr key={rIdx} className="hover:bg-slate-50/50">
                             {r.isFirstInCat && (
@@ -1967,18 +2154,18 @@ export default function TeacherStudentProfilePage() {
                                         ) : (
                                           <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
                                             <table className="w-full text-left text-xs border-collapse">
-                                              <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
-                                                <tr>
-                                                  <th className="py-2 px-3 text-center w-8">STT</th>
-                                                  <th className="py-2 px-3">Môn học</th>
-                                                  <th className="py-2 px-2 text-center bg-teal-50/50 text-[#00A19A]">KSĐN</th>
-                                                  <th className="py-2 px-2 text-center">Giữa kỳ 1</th>
-                                                  <th className="py-2 px-2 text-center">Cuối kỳ 1</th>
-                                                  <th className="py-2 px-2 text-center">Giữa kỳ 2</th>
-                                                  <th className="py-2 px-2 text-center">Cuối kỳ 2</th>
+                                              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                                                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                  <th className="py-2 px-3 text-center w-8 font-semibold">STT</th>
+                                                  <th className="py-2 px-3 font-semibold">Môn học</th>
+                                                  <th className="py-2 px-2 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">KSĐN</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Giữa kỳ 1</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Cuối kỳ 1</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Giữa kỳ 2</th>
+                                                  <th className="py-2 px-2 text-center font-semibold">Cuối kỳ 2</th>
                                                 </tr>
                                               </thead>
-                                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                                 {moetPeriodicRows.map((r, idx) => (
                                                   <tr key={idx} className="hover:bg-slate-50/80">
                                                     <td className="py-2 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
@@ -2011,16 +2198,16 @@ export default function TeacherStudentProfilePage() {
                                         ) : (
                                           <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
                                             <table className="w-full text-left text-xs border-collapse">
-                                              <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
-                                                <tr>
-                                                  <th className="py-2 px-3 text-center w-8">STT</th>
-                                                  <th className="py-2 px-3">Môn học</th>
-                                                  <th className="py-2 px-3 text-center">Học kỳ 1 (CK1)</th>
-                                                  <th className="py-2 px-3 text-center">Học kỳ 2 (CK2)</th>
-                                                  <th className="py-2 px-3 text-center bg-teal-50/60 text-[#00A19A]">Cả năm (CN)</th>
+                                              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                                                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                  <th className="py-2 px-3 text-center w-8 font-semibold">STT</th>
+                                                  <th className="py-2 px-3 font-semibold">Môn học</th>
+                                                  <th className="py-2 px-3 text-center font-semibold">Học kỳ 1 (CK1)</th>
+                                                  <th className="py-2 px-3 text-center font-semibold">Học kỳ 2 (CK2)</th>
+                                                  <th className="py-2 px-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Cả năm (CN)</th>
                                                 </tr>
                                               </thead>
-                                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                                 {moetTermRows.map((r, idx) => (
                                                   <tr key={idx} className="hover:bg-slate-50/80">
                                                     <td className="py-2 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
@@ -2078,111 +2265,117 @@ export default function TeacherStudentProfilePage() {
 
                                      {/* SECTION IV: KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ */}
                                      {sectionVisibility.bilingualGrades && (
-<div className="space-y-3">
-                                      <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                                          <Globe className="w-4 h-4 text-blue-600" />
-                                          <span>IV. KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ</span>
-                                        </div>
-                                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-                                          Hệ Song ngữ Sky-Line
-                                        </span>
-                                      </h3>
-
-                                      {bilingualTermRows.length === 0 && bilingualPeriodicRows.length === 0 ? (
-                                        <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
-                                          Học sinh học chương trình Chất lượng cao / Đang cập nhật môn song ngữ.
-                                        </div>
-                                      ) : (
-                                        <div className="border border-blue-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
-                                          <table className="w-full text-left text-xs border-collapse">
-                                            <thead className="bg-blue-50/70 text-[10px] font-black text-blue-900 uppercase tracking-wider border-b border-blue-200">
-                                              <tr>
-                                                <th className="py-2.5 px-3 text-center w-8">STT</th>
-                                                <th className="py-2.5 px-3">Môn Song ngữ</th>
-                                                <th className="py-2.5 px-2 text-center">KSĐN / GK</th>
-                                                <th className="py-2.5 px-3 text-center">Học kỳ 1</th>
-                                                <th className="py-2.5 px-3 text-center">Học kỳ 2</th>
-                                                <th className="py-2.5 px-3 text-center bg-blue-100/60 text-blue-900">Cả năm (CN)</th>
-                                                <th className="py-2.5 px-3 text-center">Đánh giá Năng lực</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-blue-50 font-semibold text-slate-700">
-                                              {(bilingualTermRows.length > 0 ? (bilingualTermRows as any[]) : (bilingualPeriodicRows as any[])).map((r: any, idx: number) => {
-                                                const pItem = bilingualPeriodicRows.find(p => p.name === r.name);
-                                                const ksdnVal = pItem ? (pItem.ksdn || pItem.gk1) : "—";
-                                                return (
-                                                  <tr key={idx} className="hover:bg-blue-50/30">
-                                                    <td className="py-2.5 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
-                                                    <td className="py-2.5 px-3 font-bold text-slate-900">{r.name}</td>
-                                                    <td className="py-2.5 px-2 text-center font-black text-blue-700">{ksdnVal || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.hk1 || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.hk2 || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center font-black text-blue-900 bg-blue-50/40">{r.cn || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center">
-                                                      <span className="text-[10px] font-black bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded">
-                                                        Hoàn thành Tốt
-                                                      </span>
-                                                    </td>
-                                                  </tr>
-                                                );
-                                              })}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      )}
-                                    </div>
+                                       <StudentCtqtGradesSection student={selectedStudent} />
                                      )}
 
-                                     {/* SECTION V: THÀNH TÍCH & KHEN THƯỞNG CỦA HỌC SINH */}
-                                     {sectionVisibility.achievements && (
-<div className="space-y-3">
-                                      <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                                        <Award className="w-4 h-4 text-amber-500" />
-                                        VI. THÀNH TÍCH &amp; BẢNG VÀNG KHEN THƯỞNG
-                                      </h3>
-                                      {(!selectedStudent?.achievements || selectedStudent.achievements.length === 0) ? (
-                                        <div className="bg-slate-50 border border-slate-150 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
-                                          Học sinh chưa có ghi nhận giải thưởng hoặc khen thưởng trong năm học.
-                                        </div>
-                                      ) : (
-                                        <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
-                                          <table className="w-full text-left text-xs">
-                                            <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
-                                              <tr>
-                                                <th className="py-2.5 px-3 text-center w-10">STT</th>
-                                                <th className="py-2.5 px-3">Tên Giải thưởng</th>
-                                                <th className="py-2.5 px-3">Lĩnh vực</th>
-                                                <th className="py-2.5 px-3 text-center">Hạng / Cấp giải</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100 font-semibold">
-                                              {selectedStudent.achievements.slice(0, 4).map((item: any, idx: number) => {
-                                                const ach = item.achievement || item;
-                                                const achName = ach.name || "Giải thưởng";
-                                                const catName = getCategoryLabel(ach.category || ach.examCategoryName);
-                                                const levelName = getLevelLabel(ach.level);
-                                                return (
-                                                  <tr key={idx} className="hover:bg-amber-50/20">
-                                                    <td className="py-2.5 px-3 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
-                                                    <td className="py-2.5 px-3 font-bold text-slate-800">{achName}</td>
-                                                    <td className="py-2.5 px-3 text-[10px] font-black text-[#00A19A] uppercase">{catName}</td>
-                                                    <td className="py-2.5 px-3 text-center">
-                                                      <span className="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md">
-                                                        {levelName}
-                                                      </span>
-                                                    </td>
-                                                  </tr>
-                                                );
-                                              })}
-                                            </tbody>
-                                          </table>
-                                        </div>
-                                      )}
-                                    </div>
-                                     )}
+                                     {/* SECTION VI: THÀNH TÍCH & KHEN THƯỞNG CỦA HỌC SINH */}
+                                     {sectionVisibility.achievements && (() => {
+                                       const allStudentAch = selectedStudent?.achievements || [];
+                                       const officialAchievements = allStudentAch.filter(
+                                         (it: any) => !it?.isRequest && it?.status !== "PENDING" && it?.status !== "REJECTED"
+                                       );
+                                       const pendingCount = allStudentAch.filter(
+                                         (it: any) => it?.status === "PENDING"
+                                       ).length;
+                                       return (
+                                         <div className="space-y-3">
+                                           <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                                             <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
+                                               <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                                               <Award className="w-4 h-4 text-amber-500" />
+                                               VI. THÀNH TÍCH &amp; BẢNG VÀNG KHEN THƯỞNG
+                                             </h3>
+                                             <div className="flex items-center gap-2 no-print">
+                                               {pendingCount > 0 && (
+                                                 <button
+                                                   type="button"
+                                                   onClick={() => {
+                                                     setActiveTab("achievements");
+                                                     setAchViewMode("STUDENT_DETAIL");
+                                                   }}
+                                                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-[#D97706] border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer tabular-nums"
+                                                 >
+                                                   <Clock className="w-3 h-3" />
+                                                   <span>{pendingCount} đề xuất chờ duyệt</span>
+                                                 </button>
+                                               )}
+                                               <button
+                                                 type="button"
+                                                 onClick={() => handleOpenAddAchModal(selectedStudent?.id)}
+                                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#003B3A] hover:bg-[#002827] text-white shadow-2xs transition-colors cursor-pointer"
+                                               >
+                                                 <Plus className="w-3 h-3" />
+                                                 <span>Bổ sung thành tích</span>
+                                               </button>
+                                             </div>
+                                           </div>
+                                           {officialAchievements.length === 0 ? (
+                                             <div className="bg-slate-50 border border-slate-150 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
+                                               Học sinh chưa có ghi nhận giải thưởng chính thức trong năm học.
+                                             </div>
+                                           ) : (
+                                             <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                                               <table className="w-full text-left border-collapse tabular-nums">
+                                                 <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                                   <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                     <th className="py-2.5 px-2.5 w-10 text-center text-teal-100 font-semibold">STT</th>
+                                                     <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Mã HS</th>
+                                                     <th className="py-2.5 px-2.5 text-white font-semibold">Học sinh</th>
+                                                     <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Lớp &amp; Cơ sở</th>
+                                                     <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Kỳ thi / Cuộc thi</th>
+                                                     <th className="py-2.5 px-2.5 text-white font-semibold">Thành tích đạt được</th>
+                                                     <th className="py-2.5 px-2.5 text-center text-[#5EEAD4] font-semibold">Mức giải</th>
+                                                     <th className="py-2.5 px-2.5 text-teal-100 font-semibold">GV bồi dưỡng</th>
+                                                   </tr>
+                                                 </thead>
+                                                 <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                                                   {officialAchievements.map((item: any, idx: number) => {
+                                                     const row = normalizeStudentAchievementRow(item, selectedStudent);
+                                                     return (
+                                                       <tr
+                                                         key={row.linkId || `${row.achievementId}-${idx}`}
+                                                         className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                                                       >
+                                                         <td className="py-2.5 px-2.5 text-center text-slate-400 font-mono">
+                                                           {idx + 1}
+                                                         </td>
+                                                         <td className="py-2.5 px-2.5 font-mono text-slate-600">
+                                                           {row.studentCode}
+                                                         </td>
+                                                         <td className="py-2.5 px-2.5 font-semibold text-slate-900">
+                                                           {row.studentName}
+                                                         </td>
+                                                         <td className="py-2.5 px-2.5">
+                                                           <span className="font-semibold text-[#003B3A]">{row.className}</span>
+                                                           <span className="block text-[11px] text-slate-400">{row.campusName}</span>
+                                                         </td>
+                                                         <td className="py-2.5 px-2.5 text-slate-700">
+                                                           <span className="line-clamp-2">{row.examName}</span>
+                                                         </td>
+                                                         <td className="py-2.5 px-2.5">
+                                                           <span className="font-semibold text-slate-900">{row.achievementName}</span>
+                                                           <span className="block text-[11px] text-slate-400">
+                                                             {row.categoryLabel} · {row.typeLabel}
+                                                           </span>
+                                                         </td>
+                                                         <td className="py-2.5 px-2.5 text-center">
+                                                           <span
+                                                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${row.badgeClass}`}
+                                                           >
+                                                             {row.levelLabel}
+                                                           </span>
+                                                         </td>
+                                                         <td className="py-2.5 px-2.5 text-slate-600">{row.teacherName}</td>
+                                                       </tr>
+                                                     );
+                                                   })}
+                                                 </tbody>
+                                               </table>
+                                             </div>
+                                           )}
+                                         </div>
+                                       );
+                                     })()}
 
                                      {/* SECTION VI: HOẠT ĐỘNG TRẢI NGHIỆM */}
                                      {sectionVisibility.experientialActivities && (
@@ -2199,17 +2392,17 @@ export default function TeacherStudentProfilePage() {
                                       ) : (
                                         <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs">
                                           <table className="w-full text-xs text-left border-collapse">
-                                            <thead>
-                                              <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
-                                                <th className="py-2.5 px-3 text-center w-10">STT</th>
-                                                <th className="py-2.5 px-3 min-w-[180px]">Tên hoạt động</th>
-                                                <th className="py-2.5 px-3 min-w-[130px]">Chủ đề GD</th>
-                                                <th className="py-2.5 px-3 min-w-[200px]">Nội dung giáo dục</th>
-                                                <th className="py-2.5 px-3 text-center min-w-[110px]">Vai trò</th>
-                                                <th className="py-2.5 px-3 text-center min-w-[110px]">Kết quả</th>
+                                            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                              <tr className="border-b text-[11px] font-semibold">
+                                                <th className="py-2.5 px-3 text-center w-10 font-semibold">STT</th>
+                                                <th className="py-2.5 px-3 min-w-[180px] font-semibold">Tên hoạt động</th>
+                                                <th className="py-2.5 px-3 min-w-[130px] font-semibold">Chủ đề GD</th>
+                                                <th className="py-2.5 px-3 min-w-[200px] font-semibold">Nội dung giáo dục</th>
+                                                <th className="py-2.5 px-3 text-center min-w-[110px] font-semibold">Vai trò</th>
+                                                <th className="py-2.5 px-3 text-center min-w-[110px] font-semibold">Kết quả</th>
                                               </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                            <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                                               {selectedStudent.experientialActivities.map((act: any, idx: number) => (
                                                 <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-colors">
                                                   <td className="py-3 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
@@ -2473,7 +2666,7 @@ export default function TeacherStudentProfilePage() {
                           { code: "TNXH", name: "TN-XH / Khoa học" },
                           { code: "TIN", name: "Tin học và Công nghệ" },
                           { code: "AM_NHAC", name: "Âm nhạc" },
-                          { code: "MI_THUAT", name: "Mĩ thuật" },
+                          { code: "MTU", name: "Mĩ thuật" },
                           { code: "GTC", name: "Giáo dục thể chất" },
                           { code: "HDTN", name: "Hoạt động trải nghiệm" }
                         ]
@@ -2857,36 +3050,36 @@ return (
 
                                 <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs bg-white">
                                   <table className="w-full text-xs text-left border-collapse">
-                                    <thead>
+                                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                                       {isPrimary ? (
                                         <>
-                                          <tr className="bg-slate-50 text-slate-700 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                            <th rowSpan={2} className="py-3 px-3 text-center w-12 border-r border-slate-200">STT</th>
-                                            <th rowSpan={2} className="py-3 px-4 border-r border-slate-200">Tên Môn học</th>
-                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-teal-700 bg-teal-50/50">Học kỳ 1</th>
-                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-teal-800 bg-teal-50/50">Học kỳ 2</th>
-                                            <th colSpan={2} className="py-2 px-3 text-center text-emerald-800 bg-emerald-50/50">Cả năm</th>
+                                          <tr className="text-[10px] border-b font-semibold">
+                                            <th rowSpan={2} className="py-3 px-3 text-center w-12 border-r border-white/15 font-semibold">STT</th>
+                                            <th rowSpan={2} className="py-3 px-4 border-r border-white/15 font-semibold">Tên Môn học</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Học kỳ 1</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Học kỳ 2</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Cả năm</th>
                                           </tr>
-                                          <tr className="bg-slate-50/80 text-slate-600 font-bold text-[9px] uppercase tracking-wider border-b border-slate-200">
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-20">Điểm KT</th>
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-20">Điểm KT</th>
-                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
-                                            <th className="py-1.5 px-2 text-center w-20">Điểm KT</th>
+                                          <tr className="text-[9px] border-b text-[11px] font-semibold">
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-24 font-semibold">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-20 font-semibold">Điểm KT</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-24 font-semibold">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-20 font-semibold">Điểm KT</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-white/15 w-24 font-semibold">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center w-20 font-semibold">Điểm KT</th>
                                           </tr>
                                         </>
                                       ) : (
-                                        <tr className="bg-slate-50 text-slate-700 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                          <th className="py-3 px-4 text-center w-12">STT</th>
-                                          <th className="py-3 px-4">Tên Môn học</th>
-                                          <th className="py-3 px-4 text-center w-28">Học kỳ 1</th>
-                                          <th className="py-3 px-4 text-center w-28">Học kỳ 2</th>
-                                          <th className="py-3 px-4 text-center w-28">Cả năm</th>
+                                        <tr className="text-[10px] border-b font-semibold">
+                                          <th className="py-3 px-4 text-center w-12 font-semibold">STT</th>
+                                          <th className="py-3 px-4 font-semibold">Tên Môn học</th>
+                                          <th className="py-3 px-4 text-center w-28 font-semibold">Học kỳ 1</th>
+                                          <th className="py-3 px-4 text-center w-28 font-semibold">Học kỳ 2</th>
+                                          <th className="py-3 px-4 text-center w-28 font-semibold">Cả năm</th>
                                         </tr>
                                       )}
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                    <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                       {subjectRows.map((row: any, idx: number) => (
                                         <tr key={row.id} className="hover:bg-slate-50/80 transition-all">
                                           <td className="py-3 px-3 text-center font-bold text-slate-400 border-r border-slate-100">{idx + 1}</td>
@@ -2987,15 +3180,15 @@ return (
                                     </div>
                                     <div className="overflow-x-auto">
                                       <table className="w-full text-xs text-left border-collapse border border-slate-200">
-                                        <thead>
-                                          <tr className="bg-slate-50 text-slate-600 font-bold">
-                                            <th className="p-2 border border-slate-200">Lĩnh vực phát triển</th>
-                                            <th className="p-2 border border-slate-200">Tiêu chí đánh giá</th>
-                                            <th className="p-2 border border-slate-200">Kết quả</th>
-                                            <th className="p-2 border border-slate-200">Ghi chú</th>
+                                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                          <tr className="text-[11px] font-semibold">
+                                            <th className="p-2 border border-white/15 font-semibold">Lĩnh vực phát triển</th>
+                                            <th className="p-2 border border-white/15 font-semibold">Tiêu chí đánh giá</th>
+                                            <th className="p-2 border border-white/15 font-semibold">Kết quả</th>
+                                            <th className="p-2 border border-white/15 font-semibold">Ghi chú</th>
                                           </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                                           {(selectedStudent.entranceSurvey.scores || []).length > 0 ? (
                                             selectedStudent.entranceSurvey.scores.map((sc: any, idx: number) => (
                                               <tr key={idx} className="font-semibold text-slate-705">
@@ -3298,17 +3491,17 @@ return (
                       <div className="space-y-5 animate-in fade-in duration-300">
                         {/* Header & Mode Switcher: Báo cáo Lớp vs Chi tiết Học sinh */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">
-                                Thành tích &amp; Khen thưởng Học sinh Lớp Chủ nhiệm
+                          <div className="border-l-4 border-[#003B3A] pl-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-black text-[#003B3A]">
+                                Thành tích &amp; khen thưởng học sinh lớp chủ nhiệm
                               </h4>
-                              <span className="text-[11px] font-bold text-[#00A19A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-0.5 rounded-full">
+                              <span className="text-[11px] font-semibold text-[#00736E] bg-[#F0FDFA] border border-[#CCFBF1] px-2.5 py-0.5 rounded-full tabular-nums">
                                 Lớp {selectedStudent?.className || students[0]?.className || "Chủ nhiệm"}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-400 font-semibold mt-0.5">
-                              Dữ liệu thành tích và khen thưởng học sinh theo lớp GVCN &amp; năm học (đồng bộ với QL Thành tích)
+                            <p className="text-xs text-slate-500 font-medium mt-0.5">
+                              GVCN nhập đề xuất bổ sung kết quả thi &rarr; Admin KT&amp;ĐBCL xét duyệt &rarr; Tự động đổ kết quả vào Kỳ thi, Thành tích lớp &amp; Hồ sơ học sinh
                             </p>
                           </div>
 
@@ -3318,21 +3511,21 @@ return (
                               <button
                                 type="button"
                                 onClick={() => setAchViewMode("CLASS_REPORT")}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                                   achViewMode === "CLASS_REPORT"
-                                    ? "bg-[#003B3A] text-white shadow-xs font-black"
+                                    ? "bg-[#003B3A] text-white shadow-xs"
                                     : "text-slate-600 hover:text-slate-900"
                                 }`}
                               >
                                 <Trophy className="w-3.5 h-3.5" />
-                                <span>Báo cáo thành tích Lớp</span>
+                                <span>Báo cáo thành tích lớp</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setAchViewMode("STUDENT_DETAIL")}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                                   achViewMode === "STUDENT_DETAIL"
-                                    ? "bg-[#00A19A] text-white shadow-xs font-black"
+                                    ? "bg-[#00A19A] text-white shadow-xs"
                                     : "text-slate-600 hover:text-slate-900"
                                 }`}
                               >
@@ -3343,20 +3536,19 @@ return (
 
                             {achViewMode === "CLASS_REPORT" && (
                               <div className="flex items-center gap-1.5">
-                                
                                 <button
                                   type="button"
                                   onClick={() => handleOpenAddAchModal()}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-[#003B3A] hover:bg-[#002827] text-white shadow-xs transition-all cursor-pointer"
-                                  title="Gửi yêu cầu bổ sung thành tích cho học sinh lớp chủ nhiệm"
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#003B3A] hover:bg-[#002827] text-white shadow-xs transition-all cursor-pointer"
+                                  title="Nhập kết quả thi / giải thưởng bổ sung cho học sinh lớp chủ nhiệm"
                                 >
                                   <Plus className="w-3.5 h-3.5" />
-                                  <span>Yêu cầu Bổ sung thành tích HS</span>
+                                  <span>Nhập kết quả bổ sung</span>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={handleExportClassAchievementsExcel}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer"
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#059669] hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer"
                                   title="Xuất bảng báo cáo thành tích lớp ra file Excel"
                                 >
                                   <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -3365,7 +3557,7 @@ return (
                                 <button
                                   type="button"
                                   onClick={() => window.print()}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-2xs transition-all cursor-pointer"
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-2xs transition-all cursor-pointer"
                                   title="In bảng thành tích lớp"
                                 >
                                   <Printer className="w-3.5 h-3.5" />
@@ -3380,301 +3572,391 @@ return (
                         {achViewMode === "CLASS_REPORT" && (
                           <div className="space-y-4">
                             {/* Academic Ledger KPI Strip */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5 tabular-nums">
                               {/* Total */}
-                              <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs">
-                                <span className="block text-[11px] font-bold text-slate-500">Tổng thành tích lớp</span>
-                                <span className="text-xl font-black text-slate-900 font-mono tabular-nums leading-tight block mt-1">
+                              <div className="bg-white border border-[#E2E8F0] rounded-xl p-3 shadow-2xs">
+                                <span className="block text-[11px] font-semibold text-slate-500">Tổng thành tích duyệt</span>
+                                <span className="text-xl font-black text-[#003B3A] font-mono tabular-nums leading-tight block mt-1">
                                   {classAchStats.total}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-semibold">giải thưởng / huy chương</span>
+                                <span className="text-[11px] text-slate-400 font-medium">giải thưởng chính thức</span>
                               </div>
 
                               {/* Gold / Nhat */}
-                              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 shadow-2xs">
+                              <div className="bg-white border border-[#E2E8F0] rounded-xl p-3 shadow-2xs">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-amber-900">Nhất / Vàng</span>
-                                  <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                                  <span className="text-[11px] font-semibold text-slate-600">Nhất / Vàng</span>
+                                  <Trophy className="w-3.5 h-3.5 text-[#D97706]" />
                                 </div>
-                                <span className="text-xl font-black text-amber-900 font-mono tabular-nums leading-tight block mt-1">
+                                <span className="text-xl font-black text-[#D97706] font-mono tabular-nums leading-tight block mt-1">
                                   {classAchStats.gold}
                                 </span>
-                                <span className="text-[10px] text-amber-700/80 font-semibold">giải cao nhất</span>
+                                <span className="text-[11px] text-slate-400 font-medium">giải cao nhất</span>
                               </div>
 
                               {/* Silver / Nhi */}
-                              <div className="bg-slate-50 border border-slate-300/80 rounded-xl p-3 shadow-2xs">
+                              <div className="bg-white border border-[#E2E8F0] rounded-xl p-3 shadow-2xs">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-slate-700">Nhì / Bạc</span>
+                                  <span className="text-[11px] font-semibold text-slate-600">Nhì / Bạc</span>
                                   <Medal className="w-3.5 h-3.5 text-slate-500" />
                                 </div>
                                 <span className="text-xl font-black text-slate-800 font-mono tabular-nums leading-tight block mt-1">
                                   {classAchStats.silver}
                                 </span>
-                                <span className="text-[10px] text-slate-500 font-semibold">giải nhì</span>
+                                <span className="text-[11px] text-slate-400 font-medium">giải nhì</span>
                               </div>
 
                               {/* Bronze / Ba */}
-                              <div className="bg-amber-50/40 border border-amber-200/60 rounded-xl p-3 shadow-2xs">
+                              <div className="bg-white border border-[#E2E8F0] rounded-xl p-3 shadow-2xs">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-amber-900">Ba / Đồng</span>
+                                  <span className="text-[11px] font-semibold text-slate-600">Ba / Đồng</span>
                                   <Award className="w-3.5 h-3.5 text-amber-700" />
                                 </div>
-                                <span className="text-xl font-black text-amber-900 font-mono tabular-nums leading-tight block mt-1">
+                                <span className="text-xl font-black text-amber-800 font-mono tabular-nums leading-tight block mt-1">
                                   {classAchStats.bronze}
                                 </span>
-                                <span className="text-[10px] text-amber-800/80 font-semibold">giải ba</span>
+                                <span className="text-[11px] text-slate-400 font-medium">giải ba</span>
                               </div>
 
                               {/* Consolation / Top rank */}
-                              <div className="bg-teal-50/60 border border-teal-200/80 rounded-xl p-3 shadow-2xs">
+                              <div className="bg-white border border-[#E2E8F0] rounded-xl p-3 shadow-2xs">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-teal-900">Khuyến khích / Top</span>
-                                  <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                                  <span className="text-[11px] font-semibold text-slate-600">Khuyến khích / Khác</span>
+                                  <Sparkles className="w-3.5 h-3.5 text-[#00A19A]" />
                                 </div>
-                                <span className="text-xl font-black text-teal-900 font-mono tabular-nums leading-tight block mt-1">
+                                <span className="text-xl font-black text-[#00736E] font-mono tabular-nums leading-tight block mt-1">
                                   {classAchStats.consolation}
                                 </span>
-                                <span className="text-[10px] text-teal-700 font-semibold">thành tích khác</span>
+                                <span className="text-[11px] text-slate-400 font-medium">thành tích khác</span>
                               </div>
 
-                              
                               {/* Pending Review Ratio */}
-                              <div className="bg-amber-50/90 border border-amber-300 rounded-xl p-3 shadow-2xs">
+                              <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3 shadow-2xs">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-amber-900">Chờ xét duyệt</span>
-                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                  <span className="text-[11px] font-semibold text-[#D97706]">Chờ xét duyệt</span>
+                                  <Clock className="w-3.5 h-3.5 text-[#D97706]" />
                                 </div>
-                                <span className="text-xl font-black text-amber-900 font-mono tabular-nums leading-tight block mt-1">
+                                <span className="text-xl font-black text-[#D97706] font-mono tabular-nums leading-tight block mt-1">
                                   {classAchStats.pendingCount || 0}
                                 </span>
-                                <span className="text-[10px] text-amber-800/80 font-semibold">yêu cầu bổ sung</span>
+                                <span className="text-[11px] text-amber-800/80 font-medium">
+                                  {classAchStats.rejectedCount ? `${classAchStats.rejectedCount} từ chối` : "đề xuất bổ sung"}
+                                </span>
                               </div>
 
                               {/* Student Ratio */}
-                              <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-3 shadow-2xs">
+                              <div className="bg-[#F0FDFA] border border-[#CCFBF1] rounded-xl p-3 shadow-2xs">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-emerald-900">HS đạt giải</span>
-                                  <Users className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span className="text-[11px] font-semibold text-[#00736E]">HS đạt giải</span>
+                                  <Users className="w-3.5 h-3.5 text-[#059669]" />
                                 </div>
-                                <span className="text-xl font-black text-emerald-900 font-mono tabular-nums leading-tight block mt-1">
+                                <span className="text-xl font-black text-[#003B3A] font-mono tabular-nums leading-tight block mt-1">
                                   {classAchStats.studentCount}
                                   <span className="text-xs font-medium text-slate-500"> / {students.length}</span>
                                 </span>
-                                <span className="text-[10px] text-emerald-700 font-semibold">học sinh trong lớp</span>
+                                <span className="text-[11px] text-[#00736E] font-medium">học sinh trong lớp</span>
                               </div>
                             </div>
 
-                            {/* Filter Bar */}
-                            <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-3 flex flex-wrap items-center gap-2.5">
-                              {/* Search Input */}
-                              <div className="relative flex-1 min-w-[200px]">
-                                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                  type="text"
-                                  value={achSearchQuery}
-                                  onChange={e => setAchSearchQuery(e.target.value)}
-                                  placeholder="Tìm theo tên học sinh, mã HS, hoặc cuộc thi..."
-                                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00A19A]"
-                                />
+                            {/* Filter Bar + Status Segmented Control */}
+                            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 space-y-2.5">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="inline-flex items-center gap-1 bg-white p-1 rounded-xl border border-[#E2E8F0] tabular-nums">
+                                  {[
+                                    { id: "ALL", label: "Tất cả", count: classAchReport.length },
+                                    { id: "APPROVED", label: "Đã duyệt", count: classAchStats.total },
+                                    { id: "PENDING", label: "Chờ duyệt", count: classAchStats.pendingCount || 0 },
+                                    { id: "REJECTED", label: "Từ chối", count: classAchStats.rejectedCount || 0 }
+                                  ].map(tab => (
+                                    <button
+                                      key={tab.id}
+                                      type="button"
+                                      onClick={() => setAchStatusFilter(tab.id as any)}
+                                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                                        achStatusFilter === tab.id
+                                          ? "bg-[#003B3A] text-white"
+                                          : "text-slate-600 hover:bg-slate-100"
+                                      }`}
+                                    >
+                                      <span>{tab.label}</span>
+                                      <span
+                                        className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-mono ${
+                                          achStatusFilter === tab.id
+                                            ? "bg-white/20 text-white"
+                                            : "bg-slate-100 text-slate-600"
+                                        }`}
+                                      >
+                                        {tab.count}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+
+                                {(achSearchQuery || achStatusFilter !== "ALL" || achCategoryFilter || achLevelFilter || achExamCatFilter || achExamFilter) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAchSearchQuery("");
+                                      setAchStatusFilter("ALL");
+                                      setAchCategoryFilter("");
+                                      setAchLevelFilter("");
+                                      setAchExamCatFilter("");
+                                      setAchExamFilter("");
+                                    }}
+                                    className="text-xs font-semibold text-slate-500 hover:text-slate-800 px-2.5 py-1 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+                                  >
+                                    Đặt lại bộ lọc
+                                  </button>
+                                )}
                               </div>
 
-                              {/* Category Filter */}
-                              <select
-                                value={achCategoryFilter}
-                                onChange={e => setAchCategoryFilter(e.target.value)}
-                                className="border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A]"
-                              >
-                                <option value="">-- Tất cả loại thành tích --</option>
-                                <option value="GIAI_THUONG">Giải thưởng</option>
-                                <option value="HUY_CHUONG">Huy chương</option>
-                                <option value="CHUNG_NHAN">Chứng nhận</option>
-                                <option value="TOP_RANK">Xếp hạng / Top rank</option>
-                              </select>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {/* Search Input */}
+                                <div className="relative flex-1 min-w-[200px]">
+                                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                  <input
+                                    type="text"
+                                    value={achSearchQuery}
+                                    onChange={e => setAchSearchQuery(e.target.value)}
+                                    placeholder="Tìm theo tên học sinh, mã HS, giải thưởng hoặc cuộc thi..."
+                                    className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#00A19A]"
+                                  />
+                                </div>
 
-                              {/* Level Filter */}
-                              <select
-                                value={achLevelFilter}
-                                onChange={e => setAchLevelFilter(e.target.value)}
-                                className="border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A]"
-                              >
-                                <option value="">-- Tất cả mức giải --</option>
-                                <option value="GOLD">Nhất / Huy chương Vàng</option>
-                                <option value="SILVER">Nhì / Huy chương Bạc</option>
-                                <option value="BRONZE">Ba / Huy chương Đồng</option>
-                                <option value="OTHER">Khuyến khích / Top rank</option>
-                              </select>
-
-                              {/* Exam Category Filter */}
-                              {examCategories.length > 0 && (
+                                {/* Category Filter */}
                                 <select
-                                  value={achExamCatFilter}
-                                  onChange={e => setAchExamCatFilter(e.target.value)}
+                                  value={achCategoryFilter}
+                                  onChange={e => setAchCategoryFilter(e.target.value)}
                                   className="border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A]"
                                 >
-                                  <option value="">-- Tất cả danh mục kỳ thi --</option>
-                                  {examCategories.map(cat => (
-                                    <option key={cat.id} value={cat.name}>
-                                      {cat.name}
-                                    </option>
-                                  ))}
+                                  <option value="">Tất cả loại thành tích</option>
+                                  {achievementCategories.length > 0 ? (
+                                    achievementCategories.map((c: any) => (
+                                      <option key={c.code} value={c.code}>
+                                        {c.name}
+                                      </option>
+                                    ))
+                                  ) : (
+                                    <>
+                                      <option value="GIAI_THUONG">Giải thưởng</option>
+                                      <option value="HUY_CHUONG">Huy chương</option>
+                                      <option value="CHUNG_NHAN">Chứng nhận</option>
+                                      <option value="TOP_RANK">Xếp hạng / Top rank</option>
+                                    </>
+                                  )}
                                 </select>
-                              )}
 
-                              {(achSearchQuery || achCategoryFilter || achLevelFilter || achExamCatFilter) && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setAchSearchQuery("");
-                                    setAchCategoryFilter("");
-                                    setAchLevelFilter("");
-                                    setAchExamCatFilter("");
-                                  }}
-                                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-2 py-1 rounded-md hover:bg-slate-200/60 transition-colors cursor-pointer"
+                                {/* Level Filter */}
+                                <select
+                                  value={achLevelFilter}
+                                  onChange={e => setAchLevelFilter(e.target.value)}
+                                  className="border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A]"
                                 >
-                                  Đặt lại
-                                </button>
-                              )}
+                                  <option value="">Tất cả mức giải</option>
+                                  <option value="GOLD">Nhất / Huy chương Vàng</option>
+                                  <option value="SILVER">Nhì / Huy chương Bạc</option>
+                                  <option value="BRONZE">Ba / Huy chương Đồng</option>
+                                  <option value="OTHER">Khuyến khích / Khác</option>
+                                </select>
+
+                                {/* Exam Category Filter */}
+                                {examCategories.length > 0 && (
+                                  <select
+                                    value={achExamCatFilter}
+                                    onChange={e => {
+                                      setAchExamCatFilter(e.target.value);
+                                      setAchExamFilter("");
+                                    }}
+                                    className="border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A]"
+                                  >
+                                    <option value="">Tất cả danh mục kỳ thi</option>
+                                    {examCategories.map(cat => (
+                                      <option key={cat.id} value={cat.name}>
+                                        {cat.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+
+                                {/* Exam Filter */}
+                                {availableExamNamesForFilter.length > 0 && (
+                                  <select
+                                    value={achExamFilter}
+                                    onChange={e => setAchExamFilter(e.target.value)}
+                                    title={achExamFilter || "Lọc theo kỳ thi"}
+                                    className="max-w-[240px] border border-slate-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A19A] truncate tabular-nums"
+                                  >
+                                    <option value="">Tất cả kỳ thi ({availableExamNamesForFilter.length})</option>
+                                    {availableExamNamesForFilter.map(examName => (
+                                      <option key={examName} value={examName}>
+                                        {examName}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                              </div>
                             </div>
 
                             {/* Class Achievements Table */}
                             {loadingClassAch ? (
                               <div className="py-12 text-center text-slate-400">
                                 <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
-                                <span className="text-xs font-bold">Đang tải báo cáo thành tích lớp chủ nhiệm...</span>
+                                <span className="text-xs font-semibold">Đang tải báo cáo thành tích lớp chủ nhiệm...</span>
                               </div>
                             ) : filteredClassAchievements.length === 0 ? (
-                              <div className="bg-slate-50/50 border border-slate-200/80 rounded-2xl py-12 text-center text-slate-400 space-y-2 shadow-2xs">
+                              <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl py-12 text-center text-slate-400 space-y-2 shadow-2xs">
                                 <Trophy className="w-10 h-10 mx-auto opacity-25 text-slate-400 mb-1" />
-                                <h5 className="font-extrabold text-slate-700 text-sm">Chưa có thành tích trong năm học này</h5>
-                                <p className="text-xs text-slate-400 font-medium">
-                                  Học sinh lớp {selectedStudent?.className || "chủ nhiệm"} chưa có giải thưởng nào được ghi nhận trong năm học đang chọn.
+                                <h5 className="font-bold text-slate-700 text-sm">Chưa có bản ghi thành tích phù hợp</h5>
+                                <p className="text-xs text-slate-500 font-medium">
+                                  Nhấn &ldquo;Nhập kết quả bổ sung&rdquo; để gửi đề xuất thành tích của học sinh lớp {selectedStudent?.className || "chủ nhiệm"} sang Admin xét duyệt.
                                 </p>
                               </div>
                             ) : (
-                              <div className="border border-slate-200/90 rounded-2xl overflow-hidden bg-white shadow-2xs">
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-left border-collapse">
-                                    <thead>
-                                      <tr className="bg-slate-50/90 border-b border-slate-200/80 text-[11px] font-bold text-slate-600">
-                                        <th className="py-3 px-3 text-center w-12">STT</th>
-                                        <th className="py-3 px-3">Mã HS</th>
-                                        <th className="py-3 px-3">Họ &amp; Tên Học sinh</th>
-                                        <th className="py-3 px-3">Tên Giải thưởng / Thành tích</th>
-                                        <th className="py-3 px-3">Kỳ thi / Cuộc thi</th>
-                                        <th className="py-3 px-3">Loại</th>
-                                        <th className="py-3 px-3 text-center">Mức giải</th>
-                                        <th className="py-3 px-3">GV Bồi dưỡng</th>
-                                        <th className="py-3 px-3 text-center">Năm học</th>
-                                        <th className="py-3 px-3 text-center">Trạng thái</th>
-                                        <th className="py-3 px-3 text-center w-28">Thao tác</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                                      {filteredClassAchievements.map((row: any, idx: number) => {
-                                        const achName = row.achievementName || "Giải thưởng / Khen thưởng";
-                                        const catName = getCategoryLabel(row.category);
-                                        const levelName = getLevelLabel(row.level);
-                                        const examName = row.examName || "Ngoài hệ thống";
-                                        const nameLower = achName.toLowerCase();
-                                        const lvlUpper = (row.level || "").toUpperCase();
-
-                                        const isGold = lvlUpper === "VANG" || lvlUpper === "NHAT" || lvlUpper === "1" || nameLower.includes("vàng") || nameLower.includes("nhất");
-                                        const isSilver = lvlUpper === "BAC" || lvlUpper === "NHI" || lvlUpper === "2" || nameLower.includes("bạc") || nameLower.includes("nhì");
-                                        const isBronze = lvlUpper === "DONG" || lvlUpper === "BA" || lvlUpper === "3" || nameLower.includes("đồng") || nameLower.includes("ba");
-
-                                        return (
-                                          <tr key={row.id || idx} className="hover:bg-teal-50/20 transition-colors">
-                                            <td className="py-3 px-3 text-center font-mono text-[11px] text-slate-400 tabular-nums">
-                                              {idx + 1}
-                                            </td>
-                                            <td className="py-3 px-3 font-mono font-bold text-slate-600 tabular-nums">
-                                              {row.studentCode}
-                                            </td>
-                                            <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">
-                                              {row.studentName}
-                                            </td>
-                                            <td className="py-3 px-3 font-black text-slate-800">
-                                              <div className="flex items-center gap-2">
-                                                <span className={`p-1 rounded-md shrink-0 ${
-                                                  isGold ? 'bg-amber-100 text-amber-700' :
-                                                  isSilver ? 'bg-slate-100 text-slate-600' :
-                                                  isBronze ? 'bg-amber-50 text-amber-800' :
-                                                  'bg-[#00A19A]/10 text-[#00A19A]'
-                                                }`}>
-                                                  {isGold ? <Trophy className="w-3.5 h-3.5" /> : isSilver || isBronze ? <Medal className="w-3.5 h-3.5" /> : <Award className="w-3.5 h-3.5" />}
-                                                </span>
-                                                <span>{achName}</span>
-                                              </div>
-                                            </td>
-                                            <td className="py-3 px-3 text-slate-600">
-                                              <span className="flex items-center gap-1 font-semibold text-slate-800">
-                                                <Sparkles className="w-3 h-3 text-[#00A19A] shrink-0" />
-                                                {examName}
+                              <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                                <table className="w-full text-left border-collapse tabular-nums">
+                                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                      <th className="py-3 px-3 w-12 text-center text-teal-100 font-semibold">STT</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Mã HS</th>
+                                      <th className="py-3 px-3 text-white font-semibold">Học sinh</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Lớp &amp; Cơ sở</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Kỳ thi / Cuộc thi</th>
+                                      <th className="py-3 px-3 text-white font-semibold">Thành tích đạt được</th>
+                                      <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">Mức giải</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">GV bồi dưỡng</th>
+                                      <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">Trạng thái</th>
+                                      <th className="py-3 px-3 text-right text-white font-semibold no-print">Thao tác</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                                    {filteredClassAchievements.map((rawRow: any, idx: number) => {
+                                      const row = normalizeStudentAchievementRow(rawRow);
+                                      const reqId = rawRow.requestId || String(rawRow.id || "").replace(/^req_/, "");
+                                      const isRejected = rawRow.status === "REJECTED";
+                                      const isPending = !isRejected && (rawRow.status === "PENDING" || rawRow.isRequest);
+                                      return (
+                                        <tr
+                                          key={rawRow.id || idx}
+                                          className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                                        >
+                                          <td className="py-3 px-3 text-center font-mono text-slate-400">
+                                            {idx + 1}
+                                          </td>
+                                          <td className="py-3 px-3 font-mono text-slate-600">
+                                            {row.studentCode}
+                                          </td>
+                                          <td className="py-3 px-3 font-semibold text-slate-900 whitespace-nowrap">
+                                            {row.studentName}
+                                          </td>
+                                          <td className="py-3 px-3">
+                                            <span className="font-semibold text-[#003B3A]">{row.className}</span>
+                                            <span className="block text-[11px] text-slate-400">{row.campusName}</span>
+                                          </td>
+                                          <td className="py-3 px-3 text-slate-700 max-w-[240px]">
+                                            <span className="line-clamp-2 font-medium">{row.examName}</span>
+                                            {rawRow.evidenceUrl && (
+                                              <a
+                                                href={rawRow.evidenceUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 text-[11px] text-[#008B85] hover:underline mt-0.5 no-print"
+                                              >
+                                                <ExternalLink className="w-3 h-3" />
+                                                <span>Minh chứng</span>
+                                              </a>
+                                            )}
+                                          </td>
+                                          <td className="py-3 px-3">
+                                            <span className="font-semibold text-slate-900">{row.achievementName}</span>
+                                            <span className="block text-[11px] text-slate-400">
+                                              {row.categoryLabel} · {row.typeLabel}
+                                            </span>
+                                            {isRejected && rawRow.reviewNote && (
+                                              <span className="block text-[11px] text-[#E11D48] font-medium mt-0.5">
+                                                Phản hồi Admin: {rawRow.reviewNote}
                                               </span>
-                                            </td>
-                                            <td className="py-3 px-3 whitespace-nowrap">
-                                              <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                                                {catName}
+                                            )}
+                                          </td>
+                                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${row.badgeClass}`}>
+                                              {row.levelLabel}
+                                            </span>
+                                          </td>
+                                          <td className="py-3 px-3 text-slate-600">
+                                            {row.teacherName}
+                                          </td>
+                                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                                            {isRejected ? (
+                                              <span
+                                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-[#E11D48] border border-rose-200"
+                                                title={rawRow.reviewNote || "Bị từ chối"}
+                                              >
+                                                <XCircle className="w-3 h-3" />
+                                                <span>Từ chối</span>
                                               </span>
-                                            </td>
-                                            <td className="py-3 px-3 text-center whitespace-nowrap">
-                                              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-md border ${
-                                                isGold ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                                                isSilver ? 'bg-slate-100 text-slate-700 border-slate-300' :
-                                                isBronze ? 'bg-amber-50/50 text-amber-800 border-amber-200/70' :
-                                                'bg-teal-50 text-teal-800 border-teal-200'
-                                              }`}>
-                                                {levelName}
+                                            ) : isPending ? (
+                                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-[#D97706] border border-amber-200">
+                                                <Clock className="w-3 h-3" />
+                                                <span>Chờ duyệt</span>
                                               </span>
-                                            </td>
-                                            <td className="py-3 px-3 text-slate-600 text-[11px] whitespace-nowrap">
-                                              {row.teacherName}
-                                            </td>
-                                            <td className="py-3 px-3 text-center whitespace-nowrap font-mono text-[11px] text-slate-500 tabular-nums">
-                                              {row.academicYearName}
-                                            </td>
-                                            <td className="py-3 px-3 text-center whitespace-nowrap">
-                                              {row.status === "PENDING" || row.isRequest ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-amber-50 text-amber-700 border border-amber-200">
-                                                  <Clock className="w-3 h-3 text-amber-600" />
-                                                  <span>Chờ duyệt</span>
-                                                </span>
-                                              ) : row.status === "REJECTED" ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-rose-50 text-rose-700 border border-rose-200" title={row.reviewNote || "Từ chối"}>
-                                                  <XCircle className="w-3 h-3 text-rose-600" />
-                                                  <span>Từ chối</span>
-                                                </span>
-                                              ) : (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                            ) : (
+                                              <div className="inline-flex flex-col items-center gap-0.5">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-[#059669] border border-emerald-200">
+                                                  <CheckCircle2 className="w-3 h-3" />
                                                   <span>Đã duyệt</span>
                                                 </span>
-                                              )}
-                                            </td>
-                                            <td className="py-3 px-3 text-center whitespace-nowrap">
-                                              <div className="flex items-center justify-center gap-1.5">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    if (row.studentId) {
-                                                      setSelectedStudentId(row.studentId);
-                                                      setAchViewMode("STUDENT_DETAIL");
-                                                    }
-                                                  }}
-                                                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#00A19A]/10 text-[#00A19A] hover:bg-[#00A19A] hover:text-white transition-all cursor-pointer"
-                                                  title="Xem hồ sơ chi tiết của học sinh này"
-                                                >
-                                                  Xem hồ sơ
-                                                </button>
+                                                {rawRow.fromGvcnRequest && (
+                                                  <span className="text-[10px] text-[#00736E] font-medium">
+                                                    Từ đề xuất GVCN
+                                                  </span>
+                                                )}
                                               </div>
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
-                                </div>
+                                            )}
+                                          </td>
+                                          <td className="py-3 px-3 text-right whitespace-nowrap no-print">
+                                            <div className="inline-flex items-center justify-end gap-1.5">
+                                              {(isPending || isRejected) && reqId && (
+                                                <>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleOpenEditAchModal(rawRow)}
+                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-700 border border-slate-200 hover:border-[#00A19A] hover:text-[#00736E] transition-colors cursor-pointer"
+                                                    title={isRejected ? "Chỉnh sửa và gửi lại đề xuất" : "Chỉnh sửa đề xuất đang chờ duyệt"}
+                                                  >
+                                                    <Pencil className="w-3 h-3" />
+                                                    <span>{isRejected ? "Sửa & gửi lại" : "Sửa"}</span>
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteAchievementRequest(reqId)}
+                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-rose-50 text-[#E11D48] border border-rose-200 hover:bg-[#E11D48] hover:text-white transition-colors cursor-pointer"
+                                                    title="Hủy yêu cầu bổ sung này"
+                                                  >
+                                                    <X className="w-3 h-3" />
+                                                    <span>{isRejected ? "Xóa" : "Hủy"}</span>
+                                                  </button>
+                                                </>
+                                              )}
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  if (rawRow.studentId) {
+                                                    setSelectedStudentId(rawRow.studentId);
+                                                    setAchViewMode("STUDENT_DETAIL");
+                                                  }
+                                                }}
+                                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] hover:bg-[#003B3A] hover:text-white hover:border-[#003B3A] transition-colors cursor-pointer"
+                                                title="Xem hồ sơ thành tích của học sinh này"
+                                              >
+                                                Hồ sơ HS
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
                               </div>
                             )}
                           </div>
@@ -3683,144 +3965,165 @@ return (
                         {/* VIEW 2: CHI TIẾT THEO TỪNG HỌC SINH ĐANG CHỌN */}
                         {achViewMode === "STUDENT_DETAIL" && (
                           <div className="space-y-4">
-                            <div className="flex items-center justify-between bg-slate-50/80 p-3 rounded-xl border border-slate-200">
+                            <div className="flex items-center justify-between bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0] flex-wrap gap-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-500">Đang xem thành tích của học sinh:</span>
-                                <span className="text-xs font-black text-[#003B3A]">{selectedStudent?.studentName}</span>
-                                <span className="text-[11px] font-mono text-slate-400">({selectedStudent?.studentCode})</span>
+                                <span className="text-xs font-semibold text-slate-500">Đang xem thành tích của học sinh:</span>
+                                <span className="text-xs font-bold text-[#003B3A]">{selectedStudent?.studentName}</span>
+                                <span className="text-[11px] font-mono text-slate-400 tabular-nums">({selectedStudent?.studentCode})</span>
                               </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveTab("cv")}
+                                  className="text-xs font-semibold text-slate-600 hover:text-[#003B3A] px-2.5 py-1 rounded-lg bg-white border border-slate-200 cursor-pointer"
+                                >
+                                  Mở CV Hồ sơ học sinh
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setAchViewMode("CLASS_REPORT")}
+                                  className="text-xs font-semibold text-[#008B85] hover:underline cursor-pointer flex items-center gap-1"
+                                >
+                                  &larr; Quay lại báo cáo lớp
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-3">
+                              <h5 className="text-xs font-bold text-[#003B3A]">
+                                Hồ sơ thành tích của {selectedStudent?.studentName}
+                              </h5>
                               <button
                                 type="button"
-                                onClick={() => setAchViewMode("CLASS_REPORT")}
-                                className="text-xs font-bold text-[#00A19A] hover:underline cursor-pointer flex items-center gap-1"
+                                onClick={() => handleOpenAddAchModal(selectedStudent?.id)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#003B3A] hover:bg-[#002827] text-white shadow-xs transition-all cursor-pointer"
                               >
-                                &larr; Quay lại Báo cáo Thành tích Lớp
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Nhập kết quả bổ sung</span>
                               </button>
                             </div>
 
-                            
-                              <div className="flex items-center justify-between gap-3 mb-3">
-                                <h5 className="text-xs font-black text-slate-800 uppercase tracking-wide">
-                                  Hồ sơ Thành tích của {selectedStudent?.studentName}
-                                </h5>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenAddAchModal(selectedStudent?.id)}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-[#003B3A] hover:bg-[#002827] text-white shadow-xs transition-all cursor-pointer"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                  <span>Yêu cầu Bổ sung thành tích</span>
-                                </button>
-                              </div>
-
                             {(!selectedStudent.achievements || selectedStudent.achievements.length === 0) ? (
-                              <div className="bg-slate-50/50 border border-slate-200/80 rounded-2xl py-14 text-center text-slate-400 space-y-2 shadow-2xs">
+                              <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl py-14 text-center text-slate-400 space-y-2 shadow-2xs">
                                 <Award className="w-12 h-12 mx-auto opacity-20 text-slate-400 mb-1" />
-                                <h5 className="font-extrabold text-slate-600 text-sm">Chưa ghi nhận thành tích nào</h5>
-                                <p className="text-xs text-slate-400 font-medium">Học sinh {selectedStudent?.studentName} chưa có giải thưởng hoặc kết quả khen thưởng trong hệ thống.</p>
+                                <h5 className="font-bold text-slate-600 text-sm">Chưa ghi nhận thành tích nào</h5>
+                                <p className="text-xs text-slate-400 font-medium">Học sinh {selectedStudent?.studentName} chưa có giải thưởng hoặc đề xuất khen thưởng trong năm học.</p>
                               </div>
                             ) : (
-                              <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-left border-collapse">
-                                    <thead>
-                                      <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                                        <th className="py-3.5 px-4 text-center w-12">STT</th>
-                                        <th className="py-3.5 px-4">Năm học</th>
-                                        <th className="py-3.5 px-4">Tên Giải thưởng / Thành tích</th>
-                                        <th className="py-3.5 px-4">Kỳ thi / Cuộc thi</th>
-                                        <th className="py-3.5 px-4">Lĩnh vực</th>
-                                        <th className="py-3.5 px-4 text-center">Cấp độ / Hạng giải</th>
-                                        <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                                      {selectedStudent.achievements.map((item: any, idx: number) => {
-                                        const ach = item.achievement || item;
-                                        const achName = ach.name || "Giải thưởng / Khen thưởng";
-                                        const catName = getCategoryLabel(ach.category || ach.examCategoryName);
-                                        const levelName = getLevelLabel(ach.level);
-                                        const yearName = getYearLabel(ach);
-                                        const examName = ach.exam?.name || ach.examName || "Ngoài hệ thống";
-                                        
-                                        const nameLower = achName.toLowerCase();
-                                        const lvlUpper = (ach.level || "").toUpperCase();
-                                        const isGold = lvlUpper === "VANG" || lvlUpper === "NHAT" || lvlUpper === "1" || nameLower.includes("vàng") || nameLower.includes("nhất");
-                                        const isSilver = lvlUpper === "BAC" || lvlUpper === "NHI" || lvlUpper === "2" || nameLower.includes("bạc") || nameLower.includes("nhì");
-                                        const isBronze = lvlUpper === "DONG" || lvlUpper === "BA" || lvlUpper === "3" || nameLower.includes("đồng") || nameLower.includes("ba");
-
-                                        return (
-                                          <tr key={item.id || ach.id || idx} className="hover:bg-teal-50/20 transition-colors">
-                                            <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px] font-bold tabular-nums">
-                                              {idx + 1}
-                                            </td>
-                                            <td className="py-3.5 px-4 font-mono font-bold text-slate-600 whitespace-nowrap tabular-nums">
-                                              <span className="bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/60 text-[11px]">
-                                                {yearName}
+                              <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                                <table className="w-full text-left border-collapse tabular-nums">
+                                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                      <th className="py-3 px-3 w-12 text-center text-teal-100 font-semibold">STT</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Mã HS</th>
+                                      <th className="py-3 px-3 text-white font-semibold">Học sinh</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Lớp &amp; Cơ sở</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">Kỳ thi / Cuộc thi</th>
+                                      <th className="py-3 px-3 text-white font-semibold">Thành tích đạt được</th>
+                                      <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">Mức giải</th>
+                                      <th className="py-3 px-3 text-teal-100 font-semibold">GV bồi dưỡng</th>
+                                      <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">Trạng thái</th>
+                                      <th className="py-3 px-3 text-right text-white font-semibold no-print">Thao tác</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                                    {selectedStudent.achievements.map((item: any, idx: number) => {
+                                      const row = normalizeStudentAchievementRow(item, selectedStudent);
+                                      const reqId = item.requestId || String(item.id || "").replace(/^req_/, "");
+                                      const isRejected = item.status === "REJECTED";
+                                      const isPending = !isRejected && (item.status === "PENDING" || item.isRequest);
+                                      return (
+                                        <tr
+                                          key={row.linkId || `${row.achievementId}-${idx}`}
+                                          className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                                        >
+                                          <td className="py-3 px-3 text-center text-slate-400 font-mono">
+                                            {idx + 1}
+                                          </td>
+                                          <td className="py-3 px-3 font-mono text-slate-600">
+                                            {row.studentCode}
+                                          </td>
+                                          <td className="py-3 px-3 font-semibold text-slate-900">
+                                            {row.studentName}
+                                          </td>
+                                          <td className="py-3 px-3">
+                                            <span className="font-semibold text-[#003B3A]">{row.className}</span>
+                                            <span className="block text-[11px] text-slate-400">{row.campusName}</span>
+                                          </td>
+                                          <td className="py-3 px-3 text-slate-700 max-w-[240px]">
+                                            <span className="line-clamp-2 font-medium">{row.examName}</span>
+                                          </td>
+                                          <td className="py-3 px-3">
+                                            <span className="font-semibold text-slate-900">{row.achievementName}</span>
+                                            <span className="block text-[11px] text-slate-400">
+                                              {row.categoryLabel} · {row.typeLabel}
+                                            </span>
+                                            {isRejected && item.reviewNote && (
+                                              <span className="block text-[11px] text-[#E11D48] font-medium mt-0.5">
+                                                Phản hồi Admin: {item.reviewNote}
                                               </span>
-                                            </td>
-                                            <td className="py-3.5 px-4 font-black text-slate-800">
-                                              <div className="flex items-center gap-2">
-                                                <span className={`p-1 rounded-md flex-shrink-0 ${
-                                                  isGold ? 'bg-amber-100 text-amber-600' :
-                                                  isSilver ? 'bg-slate-100 text-slate-600' :
-                                                  isBronze ? 'bg-amber-50 text-amber-700' :
-                                                  'bg-[#00A19A]/10 text-[#00A19A]'
-                                                }`}>
-                                                  {isGold ? <Trophy className="w-3.5 h-3.5" /> : isSilver || isBronze ? <Medal className="w-3.5 h-3.5" /> : <Award className="w-3.5 h-3.5" />}
-                                                </span>
-                                                <span>{achName}</span>
+                                            )}
+                                          </td>
+                                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${row.badgeClass}`}>
+                                              {row.levelLabel}
+                                            </span>
+                                          </td>
+                                          <td className="py-3 px-3 text-slate-600">
+                                            {row.teacherName}
+                                          </td>
+                                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                                            {isRejected ? (
+                                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-[#E11D48] border border-rose-200" title={item.reviewNote || "Từ chối"}>
+                                                <XCircle className="w-3 h-3" />
+                                                <span>Từ chối</span>
+                                              </span>
+                                            ) : isPending ? (
+                                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-[#D97706] border border-amber-200">
+                                                <Clock className="w-3 h-3" />
+                                                <span>Chờ duyệt</span>
+                                              </span>
+                                            ) : (
+                                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-[#059669] border border-emerald-200">
+                                                <CheckCircle2 className="w-3 h-3" />
+                                                <span>Đã duyệt</span>
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td className="py-3 px-3 text-right whitespace-nowrap no-print">
+                                            {(isPending || isRejected) && reqId ? (
+                                              <div className="inline-flex items-center justify-end gap-1.5">
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    handleOpenEditAchModal({
+                                                      ...item,
+                                                      studentId: item.studentId || selectedStudent?.id
+                                                    })
+                                                  }
+                                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-white text-slate-700 border border-slate-200 hover:border-[#00A19A] hover:text-[#00736E] transition-colors cursor-pointer"
+                                                >
+                                                  <Pencil className="w-3 h-3" />
+                                                  <span>{isRejected ? "Sửa & gửi lại" : "Sửa"}</span>
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleDeleteAchievementRequest(reqId)}
+                                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-rose-50 text-[#E11D48] border border-rose-200 hover:bg-[#E11D48] hover:text-white transition-colors cursor-pointer"
+                                                >
+                                                  <X className="w-3 h-3" />
+                                                  <span>{isRejected ? "Xóa" : "Hủy"}</span>
+                                                </button>
                                               </div>
-                                            </td>
-                                            <td className="py-3.5 px-4 text-slate-600 font-medium">
-                                              {examName !== "Ngoài hệ thống" ? (
-                                                <span className="flex items-center gap-1 text-[#009085] font-semibold">
-                                                  <Sparkles className="w-3 h-3 text-[#48BFE3] flex-shrink-0" />
-                                                  {examName}
-                                                </span>
-                                              ) : (
-                                                <span className="text-slate-400 italic">Ngoài hệ thống</span>
-                                              )}
-                                            </td>
-                                            <td className="py-3.5 px-4 whitespace-nowrap">
-                                              <span className="text-[10px] font-black uppercase tracking-wider text-[#009085] bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200/80">
-                                                {catName}
-                                              </span>
-                                            </td>
-                                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                              <span className={`text-[10px] font-black px-2.5 py-1 rounded-md border ${
-                                                isGold ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                                                isSilver ? 'bg-slate-100 text-slate-700 border-slate-300' :
-                                                isBronze ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                                                'bg-teal-50 text-teal-800 border-teal-200'
-                                              }`}>
-                                                {levelName}
-                                              </span>
-                                            </td>
-                                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                              {item.status === "PENDING" || item.isRequest ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-amber-50 text-amber-700 border border-amber-200">
-                                                  <Clock className="w-3 h-3 text-amber-600" />
-                                                  <span>Chờ duyệt</span>
-                                                </span>
-                                              ) : item.status === "REJECTED" ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-rose-50 text-rose-700 border border-rose-200" title={item.reviewNote || "Từ chối"}>
-                                                  <XCircle className="w-3 h-3 text-rose-600" />
-                                                  <span>Từ chối</span>
-                                                </span>
-                                              ) : (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                                  <span>Đã duyệt</span>
-                                                </span>
-                                              )}
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
-                                </div>
+                                            ) : (
+                                              <span className="text-[11px] text-slate-400">Hồ sơ chính thức</span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
                               </div>
                             )}
                           </div>
@@ -3866,16 +4169,16 @@ return (
                         ) : (
                           <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
                             <table className="w-full text-xs text-left border-collapse">
-                              <thead>
-                                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                                  <th className="py-3.5 px-4 text-center w-14">STT</th>
-                                  <th className="py-3.5 px-4">Tên hoạt động</th>
-                                  <th className="py-3.5 px-4">Nhóm lĩnh vực</th>
-                                  <th className="py-3.5 px-4 text-center">Vai trò</th>
-                                  <th className="py-3.5 px-4 text-center">Mức đánh giá</th>
+                              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                <tr className="border-b text-[11px] font-semibold">
+                                  <th className="py-3.5 px-4 text-center w-14 font-semibold">STT</th>
+                                  <th className="py-3.5 px-4 font-semibold">Tên hoạt động</th>
+                                  <th className="py-3.5 px-4 font-semibold">Nhóm lĩnh vực</th>
+                                  <th className="py-3.5 px-4 text-center font-semibold">Vai trò</th>
+                                  <th className="py-3.5 px-4 text-center font-semibold">Mức đánh giá</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                                 {(selectedStudent.experientialActivities || []).map((act: any, idx: number) => (
                                   <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-all">
                                     <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
@@ -4084,68 +4387,207 @@ return (
         />
       )}
 
-      {/* Modal Yêu cầu Bổ sung Thành tích Học sinh */}
+      {/* Toast thông báo luồng Thành tích */}
+      {achToast && (
+        <div
+          className={`fixed bottom-5 right-5 z-60 max-w-md px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-200 no-print ${
+            achToast.type === "error"
+              ? "bg-rose-50 border-rose-200 text-[#E11D48]"
+              : "bg-[#003B3A] border-[#003B3A] text-white"
+          }`}
+        >
+          {achToast.type === "error" ? (
+            <XCircle className="w-4 h-4 shrink-0 text-[#E11D48]" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-[#5EEAD4]" />
+          )}
+          <span className="leading-snug">{achToast.msg}</span>
+          <button
+            type="button"
+            onClick={() => setAchToast(null)}
+            className="ml-auto p-1 opacity-70 hover:opacity-100 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Modal Yêu cầu / Chỉnh sửa Bổ sung Thành tích Học sinh */}
       {isAddAchModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-[#00A19A]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200 no-print">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-[#E2E8F0] overflow-hidden max-h-[92vh] flex flex-col">
+            {/* Sky-Line Deep Pine Header */}
+            <div className="bg-[#003B3A] text-white px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-[#5EEAD4]">
                   <Trophy className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-[#003B3A]">
-                    Yêu cầu Bổ sung Thành tích Học sinh
+                  <h3 className="text-sm font-bold text-white">
+                    {editingAchRequestId
+                      ? editingAchStatus === "REJECTED"
+                        ? "Chỉnh sửa & gửi lại đề xuất thành tích"
+                        : "Chỉnh sửa đề xuất bổ sung thành tích"
+                      : "Nhập kết quả bổ sung thành tích học sinh"}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Đề xuất kết quả thi / giải thưởng để Admin xét duyệt và bổ sung vào Hồ sơ học sinh
+                  <p className="text-[11px] text-teal-100/90 font-medium mt-0.5">
+                    Khi Admin KT&amp;ĐBCL xét duyệt, kết quả tự động đổ vào Kỳ thi, Thành tích lớp GVCN &amp; Hồ sơ học sinh
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsAddAchModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                className="p-1.5 text-teal-100 hover:text-white rounded-lg hover:bg-white/10 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateAchievementRequest} className="space-y-4 text-xs font-semibold">
-              {/* Chọn học sinh */}
-              <div className="space-y-1">
-                <label className="text-slate-700 font-bold block">
-                  Học sinh được đề xuất <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={addAchForm.studentId}
-                  onChange={e => setAddAchForm(prev => ({ ...prev, studentId: e.target.value }))}
-                  required
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
-                >
-                  <option value="">-- Chọn học sinh trong lớp --</option>
-                  {students.map(st => (
-                    <option key={st.id} value={st.id}>
-                      {st.studentName} ({st.studentCode}) - Lớp {st.className || selectedStudent?.className}
-                    </option>
-                  ))}
-                </select>
+            <form onSubmit={handleCreateAchievementRequest} className="p-5 space-y-4 text-xs font-medium overflow-y-auto">
+              {/* Cảnh báo lý do từ chối nếu đang gửi lại */}
+              {editingAchRequestId && editingAchReviewNote && (
+                <div className="bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2.5 text-xs text-[#E11D48] flex items-start gap-2">
+                  <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Phản hồi từ Admin KT&amp;ĐBCL: </span>
+                    <span>{editingAchReviewNote}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Chọn 1 hoặc nhiều học sinh */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-slate-700 font-semibold block">
+                    Học sinh được đề xuất <span className="text-[#E11D48]">*</span>
+                  </label>
+                  {!editingAchRequestId && students.length > 1 && (
+                    <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => setIsMultiStudentAch(false)}
+                        className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer transition-colors ${
+                          !isMultiStudentAch ? "bg-[#003B3A] text-white" : "text-slate-600"
+                        }`}
+                      >
+                        Chọn 1 học sinh
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMultiStudentAch(true);
+                          if (addAchForm.studentId && selectedAchStudentIds.length === 0) {
+                            setSelectedAchStudentIds([addAchForm.studentId]);
+                          }
+                        }}
+                        className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer transition-colors ${
+                          isMultiStudentAch ? "bg-[#003B3A] text-white" : "text-slate-600"
+                        }`}
+                      >
+                        Chọn nhiều HS cùng giải ({selectedAchStudentIds.length})
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {!isMultiStudentAch ? (
+                  <select
+                    value={addAchForm.studentId}
+                    onChange={e => setAddAchForm(prev => ({ ...prev, studentId: e.target.value }))}
+                    required
+                    disabled={Boolean(editingAchRequestId)}
+                    className="w-full px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white disabled:opacity-75 tabular-nums"
+                  >
+                    <option value="">-- Chọn học sinh trong lớp --</option>
+                    {students.map(st => (
+                      <option key={st.id} value={st.id}>
+                        {st.studentName} ({st.studentCode}) — Lớp {st.className || selectedStudent?.className}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="border border-slate-200 rounded-xl bg-[#F8FAFC] p-2.5 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <input
+                        type="text"
+                        value={achStudentSearch}
+                        onChange={e => setAchStudentSearch(e.target.value)}
+                        placeholder="Lọc nhanh tên hoặc mã học sinh..."
+                        className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-[#00A19A]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedAchStudentIds.length === students.length) {
+                            setSelectedAchStudentIds([]);
+                          } else {
+                            setSelectedAchStudentIds(students.map(s => s.id));
+                          }
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white border border-slate-200 text-[#00736E] hover:bg-teal-50 cursor-pointer"
+                      >
+                        {selectedAchStudentIds.length === students.length ? "Bỏ chọn hết" : "Chọn cả lớp"}
+                      </button>
+                    </div>
+                    <div className="max-h-36 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-1 pr-1 tabular-nums">
+                      {students
+                        .filter(st => {
+                          const q = achStudentSearch.trim().toLowerCase();
+                          if (!q) return true;
+                          return (
+                            String(st.studentName || "").toLowerCase().includes(q) ||
+                            String(st.studentCode || "").toLowerCase().includes(q)
+                          );
+                        })
+                        .map(st => {
+                          const checked = selectedAchStudentIds.includes(st.id);
+                          return (
+                            <label
+                              key={st.id}
+                              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                                checked
+                                  ? "bg-[#F0FDFA] border-[#00A19A] text-[#003B3A] font-semibold"
+                                  : "bg-white border-slate-200/80 text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  setSelectedAchStudentIds(prev =>
+                                    prev.includes(st.id)
+                                      ? prev.filter(id => id !== st.id)
+                                      : [...prev, st.id]
+                                  );
+                                }}
+                                className="accent-[#003B3A] rounded"
+                              />
+                              <span className="truncate">{st.studentName}</span>
+                              <span className="ml-auto text-[10.5px] font-mono text-slate-400">{st.studentCode}</span>
+                            </label>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Danh mục Kỳ thi & Kỳ thi / Cuộc thi */}
-              <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/90 space-y-3">
+              {/* Danh mục Kỳ thi & Kỳ thi / Cuộc thi theo Năm học */}
+              <div className="bg-[#F8FAFC] p-3.5 rounded-xl border border-[#E2E8F0] space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Danh mục Kỳ thi */}
                   <div className="space-y-1">
-                    <label className="text-slate-700 font-bold block text-[11.5px]">
-                      Danh mục Kỳ thi
+                    <label className="text-slate-700 font-semibold block">
+                      Danh mục kỳ thi (theo năm học)
                     </label>
                     <select
                       value={selectedExamCatId}
                       onChange={e => setSelectedExamCatId(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A]"
+                      disabled={isCustomExam}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] disabled:opacity-60 tabular-nums"
                     >
-                      <option value="ALL">-- Tất cả Danh mục ({allExams.length} kỳ thi) --</option>
+                      <option value="ALL">Tất cả danh mục ({allExams.length} kỳ thi)</option>
                       {examCategories.map(cat => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name} ({allExams.filter(e => e.categoryId === cat.id).length})
@@ -4157,8 +4599,8 @@ return (
                   {/* Kỳ thi / Cuộc thi */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="text-slate-700 font-bold block text-[11.5px]">
-                        Kỳ thi / Cuộc thi <span className="text-rose-500">*</span>
+                      <label className="text-slate-700 font-semibold block">
+                        Kỳ thi / Cuộc thi <span className="text-[#E11D48]">*</span>
                       </label>
                       <button
                         type="button"
@@ -4169,9 +4611,9 @@ return (
                             setAddAchForm(prev => ({ ...prev, examName: "" }));
                           }
                         }}
-                        className="text-[10.5px] font-bold text-[#00A19A] hover:underline cursor-pointer"
+                        className="text-[11px] font-semibold text-[#008B85] hover:underline cursor-pointer"
                       >
-                        {isCustomExam ? "← Chọn từ danh mục" : "✨ Nhập kỳ thi khác"}
+                        {isCustomExam ? "← Chọn kỳ thi hệ thống" : "+ Nhập cuộc thi ngoài danh mục"}
                       </button>
                     </div>
 
@@ -4192,18 +4634,18 @@ return (
                           }
                         }}
                         required
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A]"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] tabular-nums"
                       >
-                        <option value="">-- Chọn Kỳ thi ({filteredAvailableExams.length}) --</option>
+                        <option value="">-- Chọn kỳ thi ({filteredAvailableExams.length}) --</option>
                         {selectedExamCatId === "ALL" ? (
                           examCategories.map(cat => {
                             const catExams = allExams.filter(e => e.categoryId === cat.id);
                             if (catExams.length === 0) return null;
                             return (
-                              <optgroup key={cat.id} label={`📁 ${cat.name}`}>
+                              <optgroup key={cat.id} label={cat.name}>
                                 {catExams.map(ex => (
                                   <option key={ex.id} value={ex.name}>
-                                    {ex.name}
+                                    {ex.code ? `[${ex.code}] ${ex.name}` : ex.name}
                                   </option>
                                 ))}
                               </optgroup>
@@ -4212,11 +4654,11 @@ return (
                         ) : (
                           filteredAvailableExams.map(ex => (
                             <option key={ex.id} value={ex.name}>
-                              {ex.name}
+                              {ex.code ? `[${ex.code}] ${ex.name}` : ex.name}
                             </option>
                           ))
                         )}
-                        <option value="__CUSTOM__">✨ Nhập kỳ thi ngoài danh mục hệ thống...</option>
+                        <option value="__CUSTOM__">+ Nhập cuộc thi ngoài danh mục hệ thống...</option>
                       </select>
                     ) : (
                       <input
@@ -4225,28 +4667,31 @@ return (
                         autoFocus
                         value={addAchForm.examName}
                         onChange={e => setAddAchForm(prev => ({ ...prev, examName: e.target.value }))}
-                        placeholder="Nhập tên kỳ thi ngoài hệ thống..."
-                        className="w-full px-3 py-2 bg-white border border-teal-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] ring-2 ring-teal-50"
+                        placeholder="Nhập tên cuộc thi / giải thưởng ngoài hệ thống..."
+                        className="w-full px-3 py-2 bg-white border border-[#00A19A] rounded-xl text-xs font-semibold text-slate-800 focus:outline-none"
                       />
                     )}
                   </div>
                 </div>
 
-                {/* Badge thông tin kỳ thi đang chọn */}
+                {/* Badge xác nhận đồng bộ kỳ thi */}
                 {addAchForm.examName && addAchForm.examName !== "__CUSTOM__" && !isCustomExam && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-teal-50/70 rounded-lg border border-teal-100 text-[11px] text-[#003B3A]">
-                    <Sparkles className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
-                    <span className="font-semibold text-slate-600">Kỳ thi hệ thống Sky-Line:</span>
-                    <span className="font-bold text-[#003B3A] truncate">{addAchForm.examName}</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#F0FDFA] rounded-lg border border-[#CCFBF1] text-[11px] text-[#003B3A]">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#059669] shrink-0" />
+                    <span className="text-slate-600">Kỳ thi hệ thống:</span>
+                    <span className="font-semibold text-[#003B3A] truncate">{addAchForm.examName}</span>
+                    <span className="ml-auto text-[10.5px] text-[#00736E] hidden sm:inline">
+                      Tự động đổ vào Bảng kết quả kỳ thi khi duyệt
+                    </span>
                   </div>
                 )}
                 {isCustomExam && (
-                  <div className="flex items-center justify-between px-3 py-1.5 bg-amber-50/80 rounded-lg border border-amber-200/60 text-[10.5px] text-amber-800">
-                    <span>💡 Kỳ thi ngoài danh mục sẽ được chuyển Admin KT&ĐBCL xác thực khi phê duyệt.</span>
+                  <div className="flex items-center justify-between px-3 py-1.5 bg-amber-50/80 rounded-lg border border-amber-200/70 text-[11px] text-amber-900">
+                    <span>Cuộc thi ngoài danh mục sẽ được Admin KT&amp;ĐBCL đối chiếu hoặc gắn vào kỳ thi tương ứng khi xét duyệt.</span>
                     <button
                       type="button"
                       onClick={() => setIsCustomExam(false)}
-                      className="text-[#00A19A] font-bold hover:underline shrink-0 ml-2"
+                      className="text-[#00736E] font-semibold hover:underline shrink-0 ml-2 cursor-pointer"
                     >
                       Chọn từ danh mục
                     </button>
@@ -4254,117 +4699,203 @@ return (
                 )}
               </div>
 
-              {/* Tên thành tích & Mức giải */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-slate-700 font-bold block">
-                    Tên Giải thưởng / Thành tích <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={addAchForm.achievementName}
-                    onChange={e => setAddAchForm(prev => ({ ...prev, achievementName: e.target.value }))}
-                    placeholder="Vd: Giải Nhất, Top 10, Huy chương Vàng..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-slate-700 font-bold block">
-                    Mức giải / Hạng giải <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={addAchForm.level}
-                    onChange={e => setAddAchForm(prev => ({ ...prev, level: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
-                  >
-                    <option value="NHAT">Giải Nhất</option>
-                    <option value="NHI">Giải Nhì</option>
-                    <option value="BA">Giải Ba</option>
-                    <option value="VANG">Huy chương Vàng</option>
-                    <option value="BAC">Huy chương Bạc</option>
-                    <option value="DONG">Huy chương Đồng</option>
-                    <option value="KHUYEN_KHICH">Khuyến khích</option>
-                    <option value="TOP_RANK">Xếp hạng / Top rank</option>
-                    <option value="KHAC">Khác</option>
-                  </select>
+              {/* Chọn nhanh mức giải 1 chạm (đồng bộ danh mục Admin) */}
+              <div className="space-y-1.5">
+                <label className="text-slate-700 font-semibold block">
+                  Chọn nhanh mức giải (1 chạm)
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {achQuickPresets.map(preset => {
+                    const isActive =
+                      addAchForm.category === preset.category &&
+                      (addAchForm.level || "") === (preset.level || "");
+                    return (
+                      <button
+                        key={preset.key}
+                        type="button"
+                        onClick={() =>
+                          setAddAchForm(prev => ({
+                            ...prev,
+                            category: preset.category,
+                            level: preset.level,
+                            achievementName: preset.fullLabel
+                          }))
+                        }
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
+                            : "bg-white text-slate-700 border-slate-200 hover:border-[#00A19A] hover:text-[#00736E]"
+                        }`}
+                      >
+                        {preset.shortLabel}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Loại hình & Danh mục */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Loại hình thành tích, Mức giải & Hình thức tham gia */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold block">
+                  <label className="text-slate-700 font-semibold block">
+                    Loại thành tích
+                  </label>
+                  <select
+                    value={addAchForm.category}
+                    onChange={e => {
+                      const nextCat = e.target.value;
+                      const catObj = achievementCategories.find((c: any) => c.code === nextCat);
+                      const scopedLvls = catObj
+                        ? achievementLevels.filter((l: any) => l.categoryId === catObj.id)
+                        : [];
+                      const firstLvl = scopedLvls[0];
+                      setAddAchForm(prev => ({
+                        ...prev,
+                        category: nextCat,
+                        level: firstLvl ? firstLvl.code : scopedLvls.length === 0 && catObj ? "" : prev.level,
+                        achievementName: firstLvl ? firstLvl.name : catObj?.name || prev.achievementName
+                      }));
+                    }}
+                    className="w-full px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                  >
+                    {achievementCategories.length > 0 ? (
+                      achievementCategories.map((cat: any) => (
+                        <option key={cat.code} value={cat.code}>
+                          {cat.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="GIAI_THUONG">Giải thưởng</option>
+                        <option value="HUY_CHUONG">Huy chương</option>
+                        <option value="CHUNG_NHAN">Chứng nhận</option>
+                        <option value="KHAC">Lĩnh vực khác</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-semibold block">
+                    Mức giải / Hạng giải
+                  </label>
+                  <select
+                    value={addAchForm.level}
+                    onChange={e => {
+                      const nextLvl = e.target.value;
+                      const foundLvl = modalLevelsForCategory.find((l: any) => l.code === nextLvl);
+                      setAddAchForm(prev => ({
+                        ...prev,
+                        level: nextLvl,
+                        achievementName: foundLvl?.name || prev.achievementName
+                      }));
+                    }}
+                    className="w-full px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                  >
+                    {modalLevelsForCategory.length > 0 ? (
+                      modalLevelsForCategory.map((lvl: any) => (
+                        <option key={lvl.code} value={lvl.code}>
+                          {lvl.name}
+                        </option>
+                      ))
+                    ) : achievementCategories.length > 0 ? (
+                      <option value="">Không phân bậc (Chứng nhận / Danh hiệu)</option>
+                    ) : (
+                      <>
+                        <option value="NHAT">Giải Nhất</option>
+                        <option value="NHI">Giải Nhì</option>
+                        <option value="BA">Giải Ba</option>
+                        <option value="VANG">Huy chương Vàng</option>
+                        <option value="BAC">Huy chương Bạc</option>
+                        <option value="DONG">Huy chương Đồng</option>
+                        <option value="KHUYEN_KHICH">Khuyến khích</option>
+                        <option value="TOP_RANK">Xếp hạng / Top rank</option>
+                        <option value="KHAC">Khác</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-700 font-semibold block">
                     Hình thức tham gia
                   </label>
                   <select
                     value={addAchForm.type}
                     onChange={e => setAddAchForm(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                    className="w-full px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
                   >
                     <option value="CA_NHAN">Cá nhân</option>
                     <option value="DONG_DOI">Đồng đội / Tập thể</option>
                   </select>
                 </div>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="text-slate-700 font-bold block">
-                    Loại hình thành tích
-                  </label>
-                  <select
-                    value={addAchForm.category}
-                    onChange={e => setAddAchForm(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
-                  >
-                    <option value="GIAI_THUONG">Giải thưởng</option>
-                    <option value="HUY_CHUONG">Huy chương</option>
-                    <option value="CHUNG_NHAN">Chứng nhận</option>
-                    <option value="KHAC">Lĩnh vực khác</option>
-                  </select>
-                </div>
+              {/* Tên danh hiệu / giải thưởng cụ thể */}
+              <div className="space-y-1">
+                <label className="text-slate-700 font-semibold block">
+                  Tên danh hiệu / giải thưởng ghi trên hồ sơ <span className="text-[#E11D48]">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={addAchForm.achievementName}
+                  onChange={e => setAddAchForm(prev => ({ ...prev, achievementName: e.target.value }))}
+                  placeholder="Vd: Giải Nhất bảng A, Huy chương Vàng, Top 10 Quốc gia..."
+                  className="w-full px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                />
               </div>
 
               {/* GV bồi dưỡng & Minh chứng */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold block">
-                    Giáo viên Bồi dưỡng / Hướng dẫn
+                  <label className="text-slate-700 font-semibold block">
+                    Giáo viên bồi dưỡng / hướng dẫn (nếu có)
                   </label>
                   <input
                     type="text"
+                    list="gvcn-coach-teachers-list"
                     value={addAchForm.coachTeacher}
                     onChange={e => setAddAchForm(prev => ({ ...prev, coachTeacher: e.target.value }))}
-                    placeholder="Vd: Thầy Nguyễn Văn A..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                    placeholder="Gõ chọn hoặc nhập tên GV bồi dưỡng..."
+                    className="w-full px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
                   />
+                  {directoryTeachers.length > 0 && (
+                    <datalist id="gvcn-coach-teachers-list">
+                      {directoryTeachers.map((t: any) => (
+                        <option key={t.id} value={t.name}>
+                          {t.code ? `${t.name} (${t.code})` : t.name}
+                        </option>
+                      ))}
+                    </datalist>
+                  )}
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-700 font-bold block">
-                    Đường dẫn Minh chứng (nếu có)
+                  <label className="text-slate-700 font-semibold block">
+                    Đường dẫn minh chứng (Giấy khen / Quyết định)
                   </label>
                   <input
                     type="url"
                     value={addAchForm.evidenceUrl}
                     onChange={e => setAddAchForm(prev => ({ ...prev, evidenceUrl: e.target.value }))}
                     placeholder="https://drive.google.com/..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
+                    className="w-full px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white"
                   />
                 </div>
               </div>
 
               {/* Ghi chú */}
               <div className="space-y-1">
-                <label className="text-slate-700 font-bold block">
-                  Ghi chú đề xuất (nếu có)
+                <label className="text-slate-700 font-semibold block">
+                  Ghi chú gửi Admin KT&amp;ĐBCL (nếu có)
                 </label>
                 <textarea
                   rows={2}
                   value={addAchForm.note}
                   onChange={e => setAddAchForm(prev => ({ ...prev, note: e.target.value }))}
-                  placeholder="Thông tin chi tiết về vòng thi, cơ cấu giải, hoặc lý do đề xuất..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white resize-none"
+                  placeholder="Thông tin bổ sung về vòng thi, bảng thi, số quyết định..."
+                  className="w-full px-3 py-2 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#00A19A] focus:bg-white resize-none"
                 />
               </div>
 
@@ -4372,24 +4903,32 @@ return (
                 <button
                   type="button"
                   onClick={() => setIsAddAchModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingAch}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#003B3A] hover:bg-[#002827] rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2 text-xs font-semibold text-white bg-[#003B3A] hover:bg-[#002827] rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {isSubmittingAch ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Đang gửi yêu cầu...</span>
+                      <span>Đang lưu đề xuất...</span>
                     </>
                   ) : (
                     <>
                       <Send className="w-3.5 h-3.5" />
-                      <span>Gửi yêu cầu Bổ sung</span>
+                      <span>
+                        {editingAchRequestId
+                          ? editingAchStatus === "REJECTED"
+                            ? "Cập nhật & gửi xét duyệt lại"
+                            : "Lưu cập nhật đề xuất"
+                          : isMultiStudentAch && selectedAchStudentIds.length > 1
+                          ? `Gửi đề xuất (${selectedAchStudentIds.length} học sinh)`
+                          : "Gửi đề xuất xét duyệt"}
+                      </span>
                     </>
                   )}
                 </button>
@@ -4405,5 +4944,20 @@ return (
         onSaved={loadConfigs}
       />
     </>
+  );
+}
+
+export default function TeacherStudentProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-10 flex items-center justify-center text-slate-500 text-xs font-semibold gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-[#00A19A]" />
+          <span>Đang tải không gian Hồ sơ &amp; Thành tích học sinh...</span>
+        </div>
+      }
+    >
+      <TeacherStudentProfileContent />
+    </Suspense>
   );
 }

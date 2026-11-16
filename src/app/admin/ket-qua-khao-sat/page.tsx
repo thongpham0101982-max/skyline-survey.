@@ -9,8 +9,13 @@ export default async function KetQuaKhaoSatPage(props: {
   searchParams?: Promise<{ tab?: string; subTab?: string }> | { tab?: string; subTab?: string };
 }) {
   const resolvedParams = props.searchParams ? await props.searchParams : {};
-  const initialTab = resolvedParams?.tab === "preschool" ? "preschool" : "general";
-  const initialSubTab = resolvedParams?.subTab || "info";
+  const initialTab =
+    resolvedParams?.tab === "preschool"
+      ? "preschool"
+      : resolvedParams?.tab === "transfer"
+      ? "transfer"
+      : "general";
+  const initialSubTab = resolvedParams?.subTab || "batch";
 
   // Redirect periods/students to /admin/student-info
   if (initialSubTab === "periods" || initialSubTab === "students") {
@@ -23,7 +28,13 @@ export default async function KetQuaKhaoSatPage(props: {
     <div className="space-y-6">
       <KetQuaKhaoSatClient 
         initialTab={initialTab}
-        initialSubTab={initialSubTab === "result" ? "result" : "info"}
+        initialSubTab={
+          initialSubTab === "result"
+            ? "result"
+            : initialSubTab === "info"
+            ? "info"
+            : "batch"
+        }
         {...data}
       />
     </div>

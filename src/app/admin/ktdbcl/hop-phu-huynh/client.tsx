@@ -596,8 +596,8 @@ export default function KtdbclParentMeetingAnalyticsClient() {
                                 </h3>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse text-xs">
-                                        <thead>
-                                            <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
+                                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                            <tr className="border-b text-[11px] font-semibold">
                                                 <th className="py-2.5 px-3 font-bold">Cuộc họp</th>
                                                 <th className="py-2.5 px-3 font-bold">Cơ sở / Lớp</th>
                                                 <th className="py-2.5 px-3 font-bold">GVCN</th>
@@ -614,7 +614,7 @@ export default function KtdbclParentMeetingAnalyticsClient() {
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-100">
+                                        <tbody className="divide-y divide-[#E2E8F0]">
                                             {(analytics?.classComparison || []).map(
                                                 (row: any, i: number) => (
                                                     <tr

@@ -6,7 +6,10 @@ import { SurveyConfigClient } from "./client"
 export const metadata = { title: "Cấu hình Khảo sát | Admin" }
 export const dynamic = "force-dynamic";
 
-export default async function SurveyConfigPage({ searchParams }: { searchParams: { tab?: string } }) {
+export default async function SurveyConfigPage(props: {
+  searchParams?: Promise<{ tab?: string }> | { tab?: string };
+}) {
+  const resolvedSearchParams = props.searchParams ? await props.searchParams : {};
   let session: any = null;
   try {
     session = await auth();
@@ -105,7 +108,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
         }).catch(() => []) : Promise.resolve([]),
         // 8. gdcsUsers
         pAny.user ? pAny.user.findMany({
-          where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } },
+          where: { OR: [{ role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } }, { teacher: { position: { in: ["GĐCS", "GDCS", "GĐ_CS", "GD_CS"] } } }, { teacher: { positions: { contains: "GĐCS" } } }, { teacher: { positions: { contains: "GDCS" } } }] },
           select: { id: true, fullName: true, email: true }
         }).catch(() => []) : Promise.resolve([]),
         // 9. subjects
@@ -229,7 +232,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
 
   return (
     <SurveyConfigClient
-      initialTab={searchParams?.tab || ""}
+      initialTab={resolvedSearchParams?.tab || ""}
       academicYears={safeJson(academicYears)}
       campuses={safeJson(campuses)}
       giaoVuCSUsers={safeJson(giaoVuCSUsers)}

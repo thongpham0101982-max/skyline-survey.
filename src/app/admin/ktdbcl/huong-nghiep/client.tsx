@@ -372,21 +372,21 @@ export function CareerGuidanceClient({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                  <th className="py-3.5 px-4 text-center w-12">STT</th>
-                  <th className="py-3.5 px-4 w-28">Mã HS</th>
-                  <th className="py-3.5 px-4 min-w-[150px]">Họ tên Học sinh</th>
-                  <th className="py-3.5 px-4 min-w-[120px]">KQKS</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Kết quả định hướng ban đầu</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">NX GVCN</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">NX GVBM(HNG)</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">KQ Tư vấn</th>
-                  <th className="py-3.5 px-4 min-w-[140px]">Người & Ngày tư vấn</th>
-                  <th className="py-3.5 px-4 text-center w-32">Trạng thái & Thao tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3.5 px-4 text-center w-12 font-semibold">STT</th>
+                  <th className="py-3.5 px-4 w-28 font-semibold">Mã HS</th>
+                  <th className="py-3.5 px-4 min-w-[150px] font-semibold">Họ tên Học sinh</th>
+                  <th className="py-3.5 px-4 min-w-[120px] font-semibold">KQKS</th>
+                  <th className="py-3.5 px-4 min-w-[160px] font-semibold">Kết quả định hướng ban đầu</th>
+                  <th className="py-3.5 px-4 min-w-[160px] font-semibold">NX GVCN</th>
+                  <th className="py-3.5 px-4 min-w-[160px] font-semibold">NX GVBM(HNG)</th>
+                  <th className="py-3.5 px-4 min-w-[160px] font-semibold">KQ Tư vấn</th>
+                  <th className="py-3.5 px-4 min-w-[140px] font-semibold">Người & Ngày tư vấn</th>
+                  <th className="py-3.5 px-4 text-center w-32 font-semibold">Trạng thái & Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {records.map((r, idx) => (
                   <tr key={r.id} className="hover:bg-sky-50/40 transition">
                     <td className="py-3 px-4 text-center font-bold text-slate-500">{idx + 1}</td>

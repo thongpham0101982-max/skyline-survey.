@@ -474,19 +474,19 @@ export default function SpecialSubjectsCatalogsPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                <th className="py-2.5 px-3.5">Mã & Môn học</th>
-                <th className="py-2.5 px-3.5">Cấp học & Đối tượng</th>
-                <th className="py-2.5 px-3.5">Khung chương trình</th>
-                <th className="py-2.5 px-3.5 text-center">Quy mô bài học</th>
-                <th className="py-2.5 px-3.5 text-center">Phân công GVCN</th>
-                <th className="py-2.5 px-3.5">Hình thức đánh giá</th>
-                <th className="py-2.5 px-3.5 text-center">Trạng thái</th>
-                <th className="py-2.5 px-3.5 text-right">Thao tác</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-2.5 px-3.5 font-semibold">Mã & Môn học</th>
+                <th className="py-2.5 px-3.5 font-semibold">Cấp học & Đối tượng</th>
+                <th className="py-2.5 px-3.5 font-semibold">Khung chương trình</th>
+                <th className="py-2.5 px-3.5 text-center font-semibold">Quy mô bài học</th>
+                <th className="py-2.5 px-3.5 text-center font-semibold">Phân công GVCN</th>
+                <th className="py-2.5 px-3.5 font-semibold">Hình thức đánh giá</th>
+                <th className="py-2.5 px-3.5 text-center font-semibold">Trạng thái</th>
+                <th className="py-2.5 px-3.5 text-right font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {subjects.map((sub) => {
                 const meta = getSubjectMeta(sub.code);
                 const Icon = meta.icon;

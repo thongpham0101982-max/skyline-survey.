@@ -345,16 +345,16 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
         {filteredSchools.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                <tr>
-                  <th className="px-6 py-4 font-black w-12 text-center">STT</th>
-                  <th className="px-6 py-4 font-black">Mã trường</th>
-                  <th className="px-6 py-4 font-black">Tên đơn vị trường</th>
-                  <th className="px-6 py-4 font-black">Phân loại / Loại hình</th>
-                  <th className="px-6 py-4 text-right font-black">Thao tác</th>
+              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="px-6 py-4 w-12 text-center font-semibold">STT</th>
+                  <th className="px-6 py-4 font-semibold">Mã trường</th>
+                  <th className="px-6 py-4 font-semibold">Tên đơn vị trường</th>
+                  <th className="px-6 py-4 font-semibold">Phân loại / Loại hình</th>
+                  <th className="px-6 py-4 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {filteredSchools.map((s, idx) => (
                   <tr key={s.id} className="hover:bg-slate-50/40 text-xs font-semibold transition-colors">
                     <td className="px-6 py-4 text-center font-bold text-slate-400">{idx + 1}</td>

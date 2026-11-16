@@ -1,8 +1,16 @@
 // @ts-nocheck
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { buildStudentSpecialSubjectsPortfolio } from "@/lib/specialSubjectsPortfolio"
+import { buildStudentCtqtPortfolio } from "@/lib/ctqt/studentProfilePortfolio"
+import {
+  buildAchievementLabelMaps,
+  extractAchievementDisplayNames,
+  resolveAchievementCategoryLabel,
+  resolveAchievementLevelLabel,
+} from "@/lib/achievementFormatters"
 
 export const dynamic = "force-dynamic"
 
@@ -228,7 +236,15 @@ export async function GET(req: Request) {
           where: {
             OR: [
               { homeroomTeacherId: teacher.id },
-              { homeroomTeacherId: { contains: teacher.id } }
+              { homeroomTeacherId: { contains: teacher.id } },
+              {
+                teachers: {
+                  some: {
+                    teacherId: teacher.id,
+                    roleInClass: { in: ["GVCN", "HOMEROOM"] }
+                  }
+                }
+              }
             ],
             ...(academicYearId && academicYearId !== "all" ? { academicYearId } : {})
           },
@@ -240,21 +256,56 @@ export async function GET(req: Request) {
       if (targetClassIds.length === 0) {
         return NextResponse.json({
           reportRows: [],
-          stats: { total: 0, gold: 0, silver: 0, bronze: 0, consolation: 0, studentCount: 0 }
+          examCategories: [],
+          exams: [],
+          achievementCategories: [],
+          achievementLevels: [],
+          teachers: [],
+          stats: {
+            total: 0,
+            pendingCount: 0,
+            rejectedCount: 0,
+            gold: 0,
+            silver: 0,
+            bronze: 0,
+            consolation: 0,
+            studentCount: 0
+          }
         });
       }
 
-      // Query achievements của các học sinh thuộc targetClassIds
+      // Lấy danh sách học sinh thuộc lớp chủ nhiệm hiện tại để map chính xác theo studentCode (kể cả khi thành tích gắn vào bản ghi cùng mã HS)
+      const homeroomStudents = await prisma.student.findMany({
+        where: { classId: { in: targetClassIds } },
+        include: { class: true, campus: true }
+      });
+      const classStudentByCode = new Map<string, any>();
+      const homeroomStudentCodes: string[] = [];
+      for (const hs of homeroomStudents) {
+        if (hs.studentCode) {
+          classStudentByCode.set(hs.studentCode, hs);
+          homeroomStudentCodes.push(hs.studentCode);
+        }
+      }
+
+      // Query achievements của các học sinh thuộc targetClassIds (hoặc cùng studentCode trong năm học đang chọn)
       const studentAchievements = await prisma.studentAchievement.findMany({
         where: {
           student: {
-            classId: { in: targetClassIds }
+            OR: [
+              { classId: { in: targetClassIds } },
+              ...(homeroomStudentCodes.length > 0
+                ? [{ studentCode: { in: homeroomStudentCodes } }]
+                : [])
+            ]
           },
-          ...(academicYearId && academicYearId !== "all" ? {
-            achievement: {
-              academicYearId: academicYearId
-            }
-          } : {})
+          ...(academicYearId && academicYearId !== "all"
+            ? {
+                achievement: {
+                  academicYearId: academicYearId
+                }
+              }
+            : {})
         },
         include: {
           student: {
@@ -267,6 +318,17 @@ export async function GET(req: Request) {
             include: {
               academicYear: true,
               teacher: true,
+              achievementRequests: {
+                select: {
+                  id: true,
+                  examName: true,
+                  evidenceUrl: true,
+                  reviewedBy: true,
+                  reviewedAt: true,
+                  reviewNote: true
+                },
+                take: 1
+              },
               exam: {
                 include: {
                   round: true,
@@ -286,7 +348,13 @@ export async function GET(req: Request) {
       try {
         pendingRequests = await prisma.studentAchievementRequest.findMany({
           where: {
-            classId: { in: targetClassIds },
+            OR: [
+              { classId: { in: targetClassIds } },
+              { student: { classId: { in: targetClassIds } } },
+              ...(homeroomStudentCodes.length > 0
+                ? [{ student: { studentCode: { in: homeroomStudentCodes } } }]
+                : [])
+            ],
             ...(academicYearId && academicYearId !== "all" ? { academicYearId } : {}),
             status: { in: ["PENDING", "REJECTED"] }
           },
@@ -307,35 +375,75 @@ export async function GET(req: Request) {
         console.error("Error fetching achievement requests:", err);
       }
 
+      const [achCats, achLvls, teachersList] = await Promise.all([
+        prisma.achievementCategory
+          .findMany({ select: { id: true, code: true, name: true }, orderBy: { createdAt: "asc" } })
+          .catch(() => []),
+        prisma.achievementLevel
+          .findMany({
+            select: { id: true, code: true, name: true, categoryId: true },
+            orderBy: { createdAt: "asc" }
+          })
+          .catch(() => []),
+        prisma.teacher
+          .findMany({ select: { id: true, teacherName: true }, orderBy: { teacherName: "asc" } })
+          .catch(() => [])
+      ]);
+      const achMaps = buildAchievementLabelMaps(achCats, achLvls);
+
       const officialRows = studentAchievements.map(sa => {
         const ach = sa.achievement;
-        const student = sa.student;
+        const rawStudent = sa.student;
+        const currentClassStudent =
+          (rawStudent?.studentCode && classStudentByCode.get(rawStudent.studentCode)) ||
+          rawStudent;
+        const displayNames = extractAchievementDisplayNames(ach);
+        const linkedReq = ach?.achievementRequests?.[0] || null;
+
         return {
           id: sa.id,
           achievementId: ach?.id,
-          achievementName: ach?.name || "Giải thưởng / Khen thưởng",
+          achievementName: displayNames.achievementName,
           type: ach?.type || "CA_NHAN",
           category: ach?.category || "GIAI_THUONG",
+          categoryLabel: resolveAchievementCategoryLabel(ach?.category, achMaps.categoryMap),
           level: ach?.level || "KHAC",
-          academicYearName: ach?.academicYear?.name || "N/A",
+          levelLabel: resolveAchievementLevelLabel(
+            ach?.level,
+            ach?.category,
+            achMaps.levelMap,
+            achMaps.categoryMap
+          ),
+          academicYearName: ach?.academicYear?.name || "—",
           academicYearId: ach?.academicYearId,
-          teacherName: ach?.teacherName || ach?.teacher?.teacherName || "Chưa xác định",
-          examName: ach?.exam?.name || "Ngoài hệ thống",
-          studentId: student?.id,
-          studentCode: student?.studentCode || "",
-          studentName: student?.studentName || "",
-          className: student?.class?.className || "N/A",
-          classId: student?.classId,
-          campusName: student?.campus?.campusName || "N/A",
-          grade: student?.class?.grade || "N/A",
+          teacherName: ach?.teacherName || ach?.teacher?.teacherName || "—",
+          examId: ach?.examId || null,
+          examName: displayNames.examName,
+          studentId: currentClassStudent?.id || rawStudent?.id,
+          studentCode: currentClassStudent?.studentCode || rawStudent?.studentCode || "",
+          studentName: currentClassStudent?.studentName || rawStudent?.studentName || "",
+          className:
+            currentClassStudent?.class?.className || rawStudent?.class?.className || "N/A",
+          classId: currentClassStudent?.classId || rawStudent?.classId,
+          campusName:
+            currentClassStudent?.campus?.campusName || rawStudent?.campus?.campusName || "N/A",
+          grade: currentClassStudent?.class?.grade || rawStudent?.class?.grade || "N/A",
           status: "APPROVED",
           statusLabel: "Đã duyệt",
-          isRequest: false
+          isRequest: false,
+          fromGvcnRequest: Boolean(linkedReq),
+          reviewedBy: linkedReq?.reviewedBy || null,
+          reviewedAt: linkedReq?.reviewedAt || null,
+          reviewNote: linkedReq?.reviewNote || null,
+          evidenceUrl: linkedReq?.evidenceUrl || null
         };
       });
 
       const requestRows = pendingRequests.map(req => {
-        const student = req.student;
+        const rawStudent = req.student;
+        const currentClassStudent =
+          (rawStudent?.studentCode && classStudentByCode.get(rawStudent.studentCode)) ||
+          rawStudent;
         return {
           id: `req_${req.id}`,
           requestId: req.id,
@@ -343,23 +451,34 @@ export async function GET(req: Request) {
           achievementName: req.achievementName,
           type: req.type || "CA_NHAN",
           category: req.category || "GIAI_THUONG",
+          categoryLabel: resolveAchievementCategoryLabel(req.category, achMaps.categoryMap),
           level: req.level || "KHAC",
-          academicYearName: req.academicYear?.name || "N/A",
+          levelLabel: resolveAchievementLevelLabel(
+            req.level,
+            req.category,
+            achMaps.levelMap,
+            achMaps.categoryMap
+          ),
+          academicYearName: req.academicYear?.name || "—",
           academicYearId: req.academicYearId,
-          teacherName: req.coachTeacher || req.teacherName || "Chưa xác định",
+          teacherName: req.coachTeacher || "—",
+          coachTeacher: req.coachTeacher || "",
           examName: req.examName || "Ngoài hệ thống",
-          studentId: student?.id,
-          studentCode: student?.studentCode || "",
-          studentName: student?.studentName || "",
-          className: student?.class?.className || "N/A",
-          classId: req.classId || student?.classId,
-          campusName: student?.campus?.campusName || "N/A",
-          grade: student?.class?.grade || "N/A",
+          studentId: currentClassStudent?.id || rawStudent?.id,
+          studentCode: currentClassStudent?.studentCode || rawStudent?.studentCode || "",
+          studentName: currentClassStudent?.studentName || rawStudent?.studentName || "",
+          className:
+            currentClassStudent?.class?.className || rawStudent?.class?.className || "N/A",
+          classId: req.classId || currentClassStudent?.classId || rawStudent?.classId,
+          campusName:
+            currentClassStudent?.campus?.campusName || rawStudent?.campus?.campusName || "N/A",
+          grade: currentClassStudent?.class?.grade || rawStudent?.class?.grade || "N/A",
           status: req.status, // "PENDING" | "REJECTED"
           statusLabel: req.status === "PENDING" ? "Chờ duyệt" : "Từ chối",
           evidenceUrl: req.evidenceUrl,
           note: req.note,
           reviewNote: req.reviewNote,
+          reviewedBy: req.reviewedBy,
           createdAt: req.createdAt,
           isRequest: true
         };
@@ -367,21 +486,42 @@ export async function GET(req: Request) {
 
       const reportRows = [...requestRows, ...officialRows];
 
-      // Thống kê
-      const uniqueStudentIds = new Set(reportRows.map(r => r.studentId).filter(Boolean));
+      // Thống kê chuẩn học thuật (tính trên các giải thưởng chính thức đã được duyệt)
+      const uniqueStudentIds = new Set(officialRows.map(r => r.studentId).filter(Boolean));
       let gold = 0;
       let silver = 0;
       let bronze = 0;
       let consolation = 0;
 
-      reportRows.forEach(r => {
+      officialRows.forEach(r => {
         const lvl = (r.level || "").toUpperCase();
         const name = (r.achievementName || "").toLowerCase();
-        if (lvl === "VANG" || lvl === "NHAT" || lvl === "1" || name.includes("vàng") || name.includes("nhất")) {
+        if (
+          lvl === "VANG" ||
+          lvl === "HCV" ||
+          lvl === "NHAT" ||
+          lvl === "1" ||
+          name.includes("vàng") ||
+          name.includes("nhất")
+        ) {
           gold++;
-        } else if (lvl === "BAC" || lvl === "NHI" || lvl === "2" || name.includes("bạc") || name.includes("nhì")) {
+        } else if (
+          lvl === "BAC" ||
+          lvl === "HCB" ||
+          lvl === "NHI" ||
+          lvl === "2" ||
+          name.includes("bạc") ||
+          name.includes("nhì")
+        ) {
           silver++;
-        } else if (lvl === "DONG" || lvl === "BA" || lvl === "3" || name.includes("đồng") || name.includes("ba")) {
+        } else if (
+          lvl === "DONG" ||
+          lvl === "HCD" ||
+          lvl === "BA" ||
+          lvl === "3" ||
+          name.includes("đồng") ||
+          name.includes("ba")
+        ) {
           bronze++;
         } else {
           consolation++;
@@ -389,8 +529,9 @@ export async function GET(req: Request) {
       });
 
       const pendingCount = pendingRequests.filter(r => r.status === "PENDING").length;
+      const rejectedCount = pendingRequests.filter(r => r.status === "REJECTED").length;
 
-      // Lấy danh mục kỳ thi và danh sách kỳ thi trong hệ thống để GVCN chọn nhanh
+      // Lấy danh mục kỳ thi và danh sách kỳ thi thuộc Năm học đang chọn để GVCN chọn chính xác
       let examCategories: any[] = [];
       let exams: any[] = [];
       try {
@@ -405,6 +546,10 @@ export async function GET(req: Request) {
         });
 
         exams = await prisma.exam.findMany({
+          where:
+            academicYearId && academicYearId !== "all"
+              ? { academicYearId }
+              : undefined,
           select: {
             id: true,
             name: true,
@@ -429,9 +574,13 @@ export async function GET(req: Request) {
         reportRows,
         examCategories,
         exams,
+        achievementCategories: achCats,
+        achievementLevels: achLvls,
+        teachers: teachersList,
         stats: {
-          total: reportRows.length,
+          total: officialRows.length,
           pendingCount,
+          rejectedCount,
           gold,
           silver,
           bronze,
@@ -443,37 +592,78 @@ export async function GET(req: Request) {
 
     if (action === "getExamCategoriesAndExams") {
       try {
-        const examCategories = await prisma.examCategory.findMany({
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            description: true
-          },
-          orderBy: { name: "asc" }
-        });
-
-        const exams = await prisma.exam.findMany({
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            categoryId: true,
-            academicYearId: true,
-            category: {
+        const academicYearId = searchParams.get("academicYearId");
+        const [examCategories, exams, achievementCategories, achievementLevels, teachers] =
+          await Promise.all([
+            prisma.examCategory.findMany({
               select: {
                 id: true,
                 name: true,
-                code: true
-              }
-            }
-          },
-          orderBy: { name: "asc" }
-        });
+                code: true,
+                description: true
+              },
+              orderBy: { name: "asc" }
+            }),
+            prisma.exam.findMany({
+              where:
+                academicYearId && academicYearId !== "all"
+                  ? { academicYearId }
+                  : undefined,
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                categoryId: true,
+                academicYearId: true,
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    code: true
+                  }
+                }
+              },
+              orderBy: { name: "asc" }
+            }),
+            prisma.achievementCategory
+              .findMany({
+                select: { id: true, code: true, name: true },
+                orderBy: { createdAt: "asc" }
+              })
+              .catch(() => []),
+            prisma.achievementLevel
+              .findMany({
+                select: { id: true, code: true, name: true, categoryId: true },
+                orderBy: { createdAt: "asc" }
+              })
+              .catch(() => []),
+            prisma.teacher
+              .findMany({
+                select: { id: true, teacherName: true },
+                orderBy: { teacherName: "asc" }
+              })
+              .catch(() => [])
+          ]);
 
-        return NextResponse.json({ examCategories, exams });
+        return NextResponse.json({
+          examCategories,
+          exams,
+          achievementCategories,
+          achievementLevels,
+          teachers
+        });
       } catch (e: any) {
-        return NextResponse.json({ error: e.message, examCategories: [], exams: [] }, { status: 500 });
+        return NextResponse.json(
+          {
+            error: e.message,
+            examCategories: [],
+            exams: [],
+            achievementCategories: [],
+            achievementLevels: [],
+            teachers: []
+          },
+          { status: 500 }
+        );
       }
     }
 
@@ -635,10 +825,10 @@ export async function GET(req: Request) {
       const students = await prisma.student.findMany({
         where: {
           classId,
-          status: { not: "TRANSFERRED_OUT" },
-          NOT: {
-            studentCode: { startsWith: "2" }
-          }
+          status: { not: "TRANSFERRED_OUT" }
+        },
+        include: {
+          class: true
         },
         orderBy: { studentName: "asc" }
       })
@@ -647,8 +837,12 @@ export async function GET(req: Request) {
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           OR: [
-            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
-            { directorNote: { contains: "Môn cam kết" } }
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
+            { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
+            { directorNote: { contains: "Cam kết" } }
           ]
         },
         select: {
@@ -675,9 +869,15 @@ export async function GET(req: Request) {
           .replace(/\s+/g, "")
       }
 
+      const isNonAcadSub = (sub: string) => {
+        const l = (sub || "").toLowerCase()
+        return l.includes("tâm lý") || l.includes("tam ly") || l.includes("tâm lí") || l.includes("psychology") ||
+               l.includes("hướng nghiệp") || l.includes("huong nghiep")
+      }
+
       // Filter students whose input assessment commitment matches the subjects Param
       const candidates = students
-        .map((s) => {
+        .map((s: any) => {
           const assessment = inputAssessments.find((a) => {
             if (a.studentCode === s.studentCode || a.enrollmentCode === s.studentCode) {
               return true
@@ -686,24 +886,26 @@ export async function GET(req: Request) {
           })
           if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult, s.class?.className || s.className || "")
+          const allCommitted = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult, s.class?.className || s.className || "")
+          const committedSubjects = allCommitted.filter((sub: string) => !isNonAcadSub(sub))
           if (committedSubjects.length === 0) return null
 
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
-          const matchedSubjects = []
+          const matchedSubjects: string[] = []
 
           for (const subName of subjectNames) {
             const cleanSub = subName.toLowerCase()
+            if (isNonAcadSub(cleanSub)) continue
             const hasMatch = committedSubjects.some((cs: string) => {
               const cleanCS = cs.toLowerCase()
-              if (cleanSub.includes("toán")) {
-                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
+              if (cleanSub.includes("toán") || cleanSub.includes("math")) {
+                return cleanCS.includes("môn toán") || cleanCS.includes("toán") || cleanCS.includes("math")
               }
-              if (cleanSub.includes("tiếng việt") || cleanSub.includes("ngữ văn") || cleanSub.includes("văn")) {
+              if (cleanSub.includes("tiếng việt") || cleanSub.includes("ngữ văn") || cleanSub.includes("văn") || cleanSub.includes("literature")) {
                 return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
               }
-              if (cleanSub.includes("tiếng anh") || cleanSub.includes("anh")) {
-                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
+              if (cleanSub.includes("tiếng anh") || cleanSub.includes("anh") || cleanSub.includes("english") || cleanSub.includes("esl") || cleanSub.includes("ept")) {
+                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh") || cleanCS.includes("english") || cleanCS.includes("esl")
               }
               return cleanCS.includes(cleanSub) || cleanSub.includes(cleanCS)
             })
@@ -757,7 +959,8 @@ export async function GET(req: Request) {
           academicYearId,
           OR: [
             { homeroomTeacherId: teacherId },
-            { homeroomTeacherId: { contains: teacherId } }
+            { homeroomTeacherId: { contains: teacherId } },
+            { teachers: { some: { teacherId } } }
           ]
         }
       })
@@ -776,10 +979,7 @@ export async function GET(req: Request) {
       const students = await prisma.student.findMany({
         where: {
           classId: { in: classIds },
-          status: { not: "TRANSFERRED_OUT" },
-          NOT: {
-            studentCode: { startsWith: "2" }
-          }
+          status: { not: "TRANSFERRED_OUT" }
         },
         include: {
           class: true
@@ -793,8 +993,12 @@ export async function GET(req: Request) {
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           OR: [
-            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
-            { directorNote: { contains: "Môn cam kết" } }
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
+            { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
+            { directorNote: { contains: "Cam kết" } }
           ]
         },
         select: {
@@ -821,7 +1025,13 @@ export async function GET(req: Request) {
           .replace(/\s+/g, "")
       }
 
-      // Filter and construct candidates
+      const isNonAcadSub = (sub: string) => {
+        const l = (sub || "").toLowerCase()
+        return l.includes("tâm lý") || l.includes("tam ly") || l.includes("tâm lí") || l.includes("psychology") ||
+               l.includes("hướng nghiệp") || l.includes("huong nghiep")
+      }
+
+      // Filter and construct candidates (only Academic Entrance Assessment subjects, excluding Tâm lý / Hướng nghiệp)
       const candidates = students
         .map((s) => {
           const assessment = inputAssessments.find((a) => {
@@ -832,27 +1042,29 @@ export async function GET(req: Request) {
           })
           if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult)
+          const allCommitted = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult, s.class?.className || "")
+          const committedSubjects = allCommitted.filter((sub: string) => !isNonAcadSub(sub))
           if (committedSubjects.length === 0) return null
 
           // Determine if the teacher teaches any of the committed subjects in this student's class
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
           const teacherSubjectsInClass = assignments
             .filter(a => a.classId === s.classId)
-            .map(a => a.subject?.name || a.subject?.subjectName || "")
+            .map((a: any) => a.subject?.name || a.subject?.subjectName || "")
+            .filter((ts: string) => !isNonAcadSub(ts))
 
           const matchedSubjects = committedSubjects.filter((cs: string) => {
             const cleanCS = cs.toLowerCase()
             return teacherSubjectsInClass.some(ts => {
               const cleanTS = ts.toLowerCase()
-              if (cleanTS.includes("toán")) {
-                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
+              if (cleanTS.includes("toán") || cleanTS.includes("math")) {
+                return cleanCS.includes("môn toán") || cleanCS.includes("toán") || cleanCS.includes("math")
               }
-              if (cleanTS.includes("tiếng việt") || cleanTS.includes("ngữ văn") || cleanTS.includes("văn")) {
+              if (cleanTS.includes("tiếng việt") || cleanTS.includes("ngữ văn") || cleanTS.includes("văn") || cleanTS.includes("literature")) {
                 return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
               }
-              if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) {
-                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
+              if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh") || cleanTS.includes("english") || cleanTS.includes("esl") || cleanTS.includes("ept")) {
+                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh") || cleanCS.includes("english") || cleanCS.includes("esl")
               }
               return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
             })
@@ -1359,7 +1571,15 @@ export async function GET(req: Request) {
         student = await prisma.student.findUnique({
           where: { id: studentId },
           include: {
-            class: true,
+            class: {
+              include: {
+                ctqtTeachingAssignments: {
+                  include: {
+                    primaryTeacher: { select: { id: true, teacherName: true } }
+                  }
+                }
+              }
+            },
             campus: true,
             academicYear: true,
             parents: {
@@ -1411,6 +1631,12 @@ export async function GET(req: Request) {
                 }
               },
               orderBy: { createdAt: "desc" }
+            },
+            ctqtGradeEntries: {
+              orderBy: { updatedAt: "desc" }
+            },
+            ctqtCompetencyEntries: {
+              orderBy: { updatedAt: "desc" }
             }
           }
         })
@@ -1452,6 +1678,12 @@ export async function GET(req: Request) {
                   }
                 },
                 orderBy: { createdAt: "desc" }
+              },
+              ctqtGradeEntries: {
+                orderBy: { updatedAt: "desc" }
+              },
+              ctqtCompetencyEntries: {
+                orderBy: { updatedAt: "desc" }
               }
             }
           });
@@ -1465,6 +1697,8 @@ export async function GET(req: Request) {
           const allSubGe: any[] = [...(student.subjectGradeEntries || [])];
           const allCompSum: any[] = [...(student.competencySummaries || [])];
           const allSge: any[] = [...(student.specialGradeEntries || [])];
+          const allCtqtGe: any[] = [...(student.ctqtGradeEntries || [])];
+          const allCtqtCe: any[] = [...(student.ctqtCompetencyEntries || [])];
 
           for (const cr of crossRecords) {
             (cr.goals || []).forEach((g: any) => {
@@ -1507,6 +1741,16 @@ export async function GET(req: Request) {
             ((cr as any).specialGradeEntries || []).forEach((sge: any) => {
               if (!allSge.some((ex: any) => ex.id === sge.id || (ex.lessonId && ex.lessonId === sge.lessonId))) allSge.push(sge);
             });
+            ((cr as any).ctqtGradeEntries || []).forEach((cge: any) => {
+              const targetYr = student.academicYearId || academicYearId;
+              if (targetYr && cge.academicYearId && cge.academicYearId !== targetYr && cge.classId !== student.classId) return;
+              if (!allCtqtGe.some((ex: any) => ex.id === cge.id)) allCtqtGe.push(cge);
+            });
+            ((cr as any).ctqtCompetencyEntries || []).forEach((cce: any) => {
+              const targetYr = student.academicYearId || academicYearId;
+              if (targetYr && cce.academicYearId && cce.academicYearId !== targetYr && cce.classId !== student.classId) return;
+              if (!allCtqtCe.some((ex: any) => ex.id === cce.id)) allCtqtCe.push(cce);
+            });
           }
 
           if (allGoals.length > 0 && (!student.goals || student.goals.length === 0)) student.goals = allGoals;
@@ -1517,6 +1761,8 @@ export async function GET(req: Request) {
           if (allSubGe.length > 0) student.subjectGradeEntries = allSubGe;
           if (allCompSum.length > 0) student.competencySummaries = allCompSum;
           if (allSge.length > 0) student.specialGradeEntries = allSge;
+          if (allCtqtGe.length > 0) student.ctqtGradeEntries = allCtqtGe;
+          if (allCtqtCe.length > 0) student.ctqtCompetencyEntries = allCtqtCe;
 
           const vneduRec = await prisma.studentCodeMapping.findFirst({
             where: { databaseCode: student.studentCode },
@@ -1623,30 +1869,72 @@ export async function GET(req: Request) {
         // Fetch achievements across all records for this studentCode (including official and pending requests)
         let achievements: any[] = []
         try {
-          const official = await prisma.studentAchievement.findMany({
-            where: { studentId: { in: allStudentIdsForCode } },
-            include: {
-              achievement: {
-                include: {
-                  academicYear: true,
-                  teacher: true,
-                  exam: {
-                    include: {
-                      round: true,
-                      category: true
+          const [official, achCatsSingle, achLvlsSingle] = await Promise.all([
+            prisma.studentAchievement.findMany({
+              where: { studentId: { in: allStudentIdsForCode } },
+              include: {
+                achievement: {
+                  include: {
+                    academicYear: true,
+                    teacher: true,
+                    achievementRequests: {
+                      select: {
+                        id: true,
+                        examName: true,
+                        evidenceUrl: true,
+                        reviewedBy: true,
+                        reviewedAt: true,
+                        reviewNote: true
+                      },
+                      take: 1
+                    },
+                    exam: {
+                      include: {
+                        round: true,
+                        category: true
+                      }
                     }
                   }
                 }
-              }
+              },
+              orderBy: { createdAt: "desc" }
+            }),
+            prisma.achievementCategory.findMany({ select: { id: true, code: true, name: true } }).catch(() => []),
+            prisma.achievementLevel.findMany({ select: { id: true, code: true, name: true, categoryId: true } }).catch(() => []),
+          ])
+          const achMapsSingle = buildAchievementLabelMaps(achCatsSingle, achLvlsSingle)
+
+          const officialList = official.map((sa: any) => {
+            const ach = sa.achievement || {}
+            const displayNames = extractAchievementDisplayNames(ach, sa)
+            const categoryLabel = resolveAchievementCategoryLabel(ach.category, achMapsSingle.categoryMap)
+            const levelLabel = resolveAchievementLevelLabel(ach.level, ach.category, achMapsSingle.levelMap, achMapsSingle.categoryMap)
+            const linkedReq = ach.achievementRequests?.[0] || null
+            return {
+              ...sa,
+              examName: displayNames.examName,
+              categoryLabel,
+              levelLabel,
+              status: "APPROVED",
+              statusLabel: "Đã duyệt",
+              isRequest: false,
+              fromGvcnRequest: Boolean(linkedReq),
+              reviewedBy: linkedReq?.reviewedBy || null,
+              reviewNote: linkedReq?.reviewNote || null,
+              evidenceUrl: linkedReq?.evidenceUrl || null,
+              achievement: {
+                ...ach,
+                name: displayNames.achievementName,
+                exam:
+                  ach.exam ||
+                  (displayNames.examName !== "Ngoài hệ thống"
+                    ? { name: displayNames.examName }
+                    : null),
+                categoryLabel,
+                levelLabel,
+              },
             }
           })
-
-          const officialList = official.map((sa: any) => ({
-            ...sa,
-            status: "APPROVED",
-            statusLabel: "Đã duyệt",
-            isRequest: false
-          }))
 
           let pendingRequests: any[] = []
           try {
@@ -1664,32 +1952,40 @@ export async function GET(req: Request) {
             console.error("Error fetching student pending requests:", rErr)
           }
 
-          const requestList = pendingRequests.map((req: any) => ({
-            id: `req_${req.id}`,
-            requestId: req.id,
-            studentId: req.studentId,
-            achievementId: req.achievementId,
-            status: req.status,
-            statusLabel: req.status === "PENDING" ? "Chờ duyệt" : "Từ chối",
-            isRequest: true,
-            evidenceUrl: req.evidenceUrl,
-            note: req.note,
-            reviewNote: req.reviewNote,
-            createdAt: req.createdAt,
-            achievement: {
-              id: req.achievementId || `req_ach_${req.id}`,
-              name: req.achievementName,
-              type: req.type || "CA_NHAN",
-              category: req.category || "GIAI_THUONG",
-              level: req.level || "KHAC",
-              academicYearId: req.academicYearId,
-              academicYear: req.academicYear,
-              teacherName: req.coachTeacher || req.teacherName,
-              exam: {
-                name: req.examName
+          const requestList = pendingRequests.map((req: any) => {
+            const categoryLabel = resolveAchievementCategoryLabel(req.category, achMapsSingle.categoryMap)
+            const levelLabel = resolveAchievementLevelLabel(req.level, req.category, achMapsSingle.levelMap, achMapsSingle.categoryMap)
+            return {
+              id: `req_${req.id}`,
+              requestId: req.id,
+              studentId: req.studentId,
+              achievementId: req.achievementId,
+              categoryLabel,
+              levelLabel,
+              status: req.status,
+              statusLabel: req.status === "PENDING" ? "Chờ duyệt" : "Từ chối",
+              isRequest: true,
+              evidenceUrl: req.evidenceUrl,
+              note: req.note,
+              reviewNote: req.reviewNote,
+              createdAt: req.createdAt,
+              achievement: {
+                id: req.achievementId || `req_ach_${req.id}`,
+                name: req.achievementName,
+                type: req.type || "CA_NHAN",
+                category: req.category || "GIAI_THUONG",
+                categoryLabel,
+                level: req.level || "KHAC",
+                levelLabel,
+                academicYearId: req.academicYearId,
+                academicYear: req.academicYear,
+                teacherName: req.coachTeacher || req.teacherName,
+                exam: {
+                  name: req.examName
+                }
               }
             }
-          }))
+          })
 
           achievements = [...requestList, ...officialList]
         } catch (err) {
@@ -2119,6 +2415,9 @@ export async function GET(req: Request) {
           student,
           homeroomTeacherName: resolvedHomeroomTeacherName,
           specialGradeEntries: student?.specialGradeEntries || [],
+          ctqtGradeEntries: student?.ctqtGradeEntries || [],
+          ctqtCompetencyEntries: student?.ctqtCompetencyEntries || [],
+          ctqtPortfolio: buildStudentCtqtPortfolio({ student }),
           specialSubjectsPortfolio: await (async () => {
             const lessonsBySubjectAndGrade = new Map<string, any[]>()
             const teacherByClassAndSubject = new Map<string, string[] | string>()
@@ -2234,7 +2533,15 @@ export async function GET(req: Request) {
       const students = await prisma.student.findMany({
         where,
         include: {
-          class: true,
+          class: {
+            include: {
+              ctqtTeachingAssignments: {
+                include: {
+                  primaryTeacher: { select: { id: true, teacherName: true } }
+                }
+              }
+            }
+          },
           campus: true,
           academicYear: true,
           learningCommitments: true,
@@ -2245,6 +2552,12 @@ export async function GET(req: Request) {
           include: {
             achievement: {
               include: {
+                academicYear: true,
+                teacher: true,
+                achievementRequests: {
+                  select: { id: true, examName: true, reviewedBy: true },
+                  take: 1
+                },
                 exam: {
                   include: {
                     round: true,
@@ -2280,6 +2593,12 @@ export async function GET(req: Request) {
               }
             },
             orderBy: { createdAt: "desc" }
+          },
+          ctqtGradeEntries: {
+            orderBy: { updatedAt: "desc" }
+          },
+          ctqtCompetencyEntries: {
+            orderBy: { updatedAt: "desc" }
           },
           goals: {
             include: { actions: true },
@@ -2319,14 +2638,19 @@ export async function GET(req: Request) {
         ]
       })
 
-      // Fetch K12 and Preschool entrance surveys to match
-      const k12Surveys = await prisma.inputAssessmentStudent.findMany({
-        include: {
-          scores: {
-            include: { subject: true }
+      // Fetch K12 and Preschool entrance surveys + achievement catalogs
+      const [k12Surveys, achCatsBatch, achLvlsBatch] = await Promise.all([
+        prisma.inputAssessmentStudent.findMany({
+          include: {
+            scores: {
+              include: { subject: true }
+            }
           }
-        }
-      })
+        }),
+        prisma.achievementCategory.findMany({ select: { id: true, code: true, name: true } }).catch(() => []),
+        prisma.achievementLevel.findMany({ select: { id: true, code: true, name: true, categoryId: true } }).catch(() => []),
+      ])
+      const achBatchMaps = buildAchievementLabelMaps(achCatsBatch, achLvlsBatch)
 
       const pAny = prisma as any
       const preschoolSurveys = pAny.preschoolInputAssessmentStudent 
@@ -2420,6 +2744,26 @@ export async function GET(req: Request) {
             where: { studentCode: { in: studentCodes } },
             select: {
               studentCode: true,
+              achievements: {
+                include: {
+                  achievement: {
+                    include: {
+                      academicYear: true,
+                      teacher: true,
+                      achievementRequests: {
+                        select: { id: true, examName: true, reviewedBy: true },
+                        take: 1
+                      },
+                      exam: {
+                        include: {
+                          round: true,
+                          category: true
+                        }
+                      }
+                    }
+                  }
+                }
+              },
               goals: { include: { actions: true }, orderBy: { createdAt: "desc" } },
               goalTrackings: { orderBy: { createdAt: "desc" } },
               termEvaluations: { orderBy: { createdAt: "desc" } },
@@ -2444,6 +2788,12 @@ export async function GET(req: Request) {
                   }
                 },
                 orderBy: { createdAt: "desc" }
+              },
+              ctqtGradeEntries: {
+                orderBy: { updatedAt: "desc" }
+              },
+              ctqtCompetencyEntries: {
+                orderBy: { updatedAt: "desc" }
               }
             }
           });
@@ -2451,7 +2801,21 @@ export async function GET(req: Request) {
             if (!crossScoreMap.has(cr.studentCode)) {
               crossScoreMap.set(cr.studentCode, { goals: [], goalTrackings: [], termEvaluations: [], termScores: [], termSummaries: [], subjectGradeEntries: [], competencySummaries: [] });
             }
-            const b = crossScoreMap.get(cr.studentCode)!;
+            const b = crossScoreMap.get(cr.studentCode)! as any;
+            if (!b.ctqtGradeEntries) b.ctqtGradeEntries = [];
+            ((cr as any).ctqtGradeEntries || []).forEach((cge: any) => {
+              if (!b.ctqtGradeEntries.some((ex: any) => ex.id === cge.id)) b.ctqtGradeEntries.push(cge);
+            });
+            if (!b.ctqtCompetencyEntries) b.ctqtCompetencyEntries = [];
+            ((cr as any).ctqtCompetencyEntries || []).forEach((cce: any) => {
+              if (!b.ctqtCompetencyEntries.some((ex: any) => ex.id === cce.id)) b.ctqtCompetencyEntries.push(cce);
+            });
+            if (!b.achievements) b.achievements = [];
+            ((cr as any).achievements || []).forEach((sa: any) => {
+              if (!b.achievements.some((ex: any) => ex.id === sa.id)) {
+                b.achievements.push(sa);
+              }
+            });
             (cr.goals || []).forEach((g: any) => {
               if (!b.goals.some((ex: any) => ex.id === g.id || (ex.category === g.category && ex.targetText === g.targetText))) b.goals.push(g);
             });
@@ -2668,6 +3032,32 @@ export async function GET(req: Request) {
             lessonsBySubjectAndGrade,
             homeroomTeacherName,
           }),
+          ctqtGradeEntries: (s.ctqtGradeEntries && s.ctqtGradeEntries.length > 0)
+            ? s.ctqtGradeEntries
+            : (((crossScoreMap.get(studentCode) as any)?.ctqtGradeEntries || []).filter(
+                (g: any) => !s.academicYearId || g.academicYearId === s.academicYearId || g.classId === s.classId
+              )),
+          ctqtCompetencyEntries: (s.ctqtCompetencyEntries && s.ctqtCompetencyEntries.length > 0)
+            ? s.ctqtCompetencyEntries
+            : (((crossScoreMap.get(studentCode) as any)?.ctqtCompetencyEntries || []).filter(
+                (c: any) => !s.academicYearId || c.academicYearId === s.academicYearId || c.classId === s.classId
+              )),
+          ctqtPortfolio: buildStudentCtqtPortfolio({
+            student: {
+              ...s,
+              className,
+              ctqtGradeEntries: (s.ctqtGradeEntries && s.ctqtGradeEntries.length > 0)
+                ? s.ctqtGradeEntries
+                : (((crossScoreMap.get(studentCode) as any)?.ctqtGradeEntries || []).filter(
+                    (g: any) => !s.academicYearId || g.academicYearId === s.academicYearId || g.classId === s.classId
+                  )),
+              ctqtCompetencyEntries: (s.ctqtCompetencyEntries && s.ctqtCompetencyEntries.length > 0)
+                ? s.ctqtCompetencyEntries
+                : (((crossScoreMap.get(studentCode) as any)?.ctqtCompetencyEntries || []).filter(
+                    (c: any) => !s.academicYearId || c.academicYearId === s.academicYearId || c.classId === s.classId
+                  )),
+            },
+          }),
           student: s,
           commitment: s.learningCommitments?.[0] || null,
           commitmentContent,
@@ -2680,7 +3070,37 @@ export async function GET(req: Request) {
             const targetYearId = s.academicYearId || s.class?.academicYearId || academicYearId;
             return (s.careerOrientations || []).find((co: any) => co.academicYearId === targetYearId) || s.careerOrientations?.[0] || null;
           })(),
-          achievements: s.achievements || [],
+          achievements: (() => {
+            const crossAchs = (crossScoreMap.get(studentCode) as any)?.achievements || []
+            const mergedMap = new Map<string, any>()
+            for (const sa of [...(s.achievements || []), ...crossAchs]) {
+              const key = sa?.id || `${sa?.achievementId}_${sa?.studentId}`
+              if (key && !mergedMap.has(key)) mergedMap.set(key, sa)
+            }
+            return Array.from(mergedMap.values()).map((sa: any) => {
+              const ach = sa.achievement || {}
+              const displayNames = extractAchievementDisplayNames(ach, sa)
+              const categoryLabel = resolveAchievementCategoryLabel(ach.category, achBatchMaps.categoryMap)
+              const levelLabel = resolveAchievementLevelLabel(ach.level, ach.category, achBatchMaps.levelMap, achBatchMaps.categoryMap)
+              return {
+                ...sa,
+                examName: displayNames.examName,
+                categoryLabel,
+                levelLabel,
+                achievement: {
+                  ...ach,
+                  name: displayNames.achievementName,
+                  exam:
+                    ach.exam ||
+                    (displayNames.examName !== "Ngoài hệ thống"
+                      ? { name: displayNames.examName }
+                      : null),
+                  categoryLabel,
+                  levelLabel,
+                },
+              }
+            })
+          })(),
           projects: s.projectExperiences || [],
           experientialActivities: (() => {
             const studentP = allParticipants.filter((p) => {
@@ -3084,6 +3504,7 @@ export async function POST(req: Request) {
     if (action === "requestAchievementAddition") {
       const {
         studentId,
+        studentIds,
         academicYearId,
         classId,
         examName,
@@ -3096,48 +3517,112 @@ export async function POST(req: Request) {
         note
       } = body;
 
-      if (!studentId || !examName || !achievementName) {
-        return NextResponse.json({ error: "Vui lòng nhập đầy đủ thông tin: Học sinh, Tên cuộc thi và Thành tích đạt được." }, { status: 400 });
+      const targetStudentIds = Array.from(
+        new Set(
+          [
+            ...(Array.isArray(studentIds) ? studentIds : []),
+            ...(studentId ? [studentId] : [])
+          ]
+            .map(id => String(id || "").trim())
+            .filter(Boolean)
+        )
+      );
+
+      if (targetStudentIds.length === 0 || !examName || !achievementName) {
+        return NextResponse.json(
+          {
+            error:
+              "Vui lòng chọn ít nhất một học sinh và nhập đầy đủ Tên cuộc thi, Thành tích đạt được."
+          },
+          { status: 400 }
+        );
       }
 
-      // Xác định thông tin học sinh
-      const studentRec = await prisma.student.findUnique({
-        where: { id: studentId },
-        select: { classId: true, academicYearId: true }
+      const studentRecs = await prisma.student.findMany({
+        where: { id: { in: targetStudentIds } },
+        select: { id: true, classId: true, academicYearId: true }
       });
+      const recMap = new Map(studentRecs.map(r => [r.id, r]));
 
-      const effectiveClassId = classId || studentRec?.classId || null;
-      const effectiveYearId = academicYearId || studentRec?.academicYearId;
+      const cleanExamName = String(examName).trim();
+      const cleanAchName = String(achievementName).trim();
+      const cleanType =
+        type || (targetStudentIds.length > 1 ? "DONG_DOI" : "CA_NHAN");
+      const cleanCategory = category || "GIAI_THUONG";
+      const cleanLevel = level !== undefined ? String(level) : "KHUYEN_KHICH";
+      const cleanCoach = coachTeacher ? String(coachTeacher).trim() : null;
+      const cleanEvidence = evidenceUrl ? String(evidenceUrl).trim() : null;
+      const cleanNote = note ? String(note).trim() : null;
 
-      if (!effectiveYearId) {
-        return NextResponse.json({ error: "Không tìm thấy năm học của học sinh." }, { status: 400 });
-      }
+      const createdRequests: any[] = [];
 
-      const newRequest = await prisma.studentAchievementRequest.create({
-        data: {
-          studentId,
-          academicYearId: effectiveYearId,
-          classId: effectiveClassId,
-          teacherId: teacher.id,
-          teacherName: teacher.teacherName,
-          examName: String(examName).trim(),
-          achievementName: String(achievementName).trim(),
-          type: type || "CA_NHAN",
-          category: category || "GIAI_THUONG",
-          level: level || "KHUYEN_KHICH",
-          coachTeacher: coachTeacher ? String(coachTeacher).trim() : null,
-          evidenceUrl: evidenceUrl ? String(evidenceUrl).trim() : null,
-          note: note ? String(note).trim() : null,
-          status: "PENDING"
+      for (const sid of targetStudentIds) {
+        const sRec = recMap.get(sid);
+        const effectiveClassId = classId || sRec?.classId || null;
+        const effectiveYearId = academicYearId || sRec?.academicYearId;
+        if (!effectiveYearId) continue;
+
+        // Tránh tạo trùng yêu cầu đang chờ duyệt nếu GVCN bấm hai lần
+        const dupPending = await prisma.studentAchievementRequest.findFirst({
+          where: {
+            studentId: sid,
+            academicYearId: effectiveYearId,
+            examName: cleanExamName,
+            achievementName: cleanAchName,
+            category: cleanCategory,
+            level: cleanLevel,
+            status: "PENDING"
+          }
+        });
+        if (dupPending) {
+          createdRequests.push(dupPending);
+          continue;
         }
-      });
 
-      return NextResponse.json({ success: true, request: newRequest });
+        const created = await prisma.studentAchievementRequest.create({
+          data: {
+            studentId: sid,
+            academicYearId: effectiveYearId,
+            classId: effectiveClassId,
+            teacherId: teacher.id,
+            teacherName: teacher.teacherName,
+            examName: cleanExamName,
+            achievementName: cleanAchName,
+            type: cleanType,
+            category: cleanCategory,
+            level: cleanLevel,
+            coachTeacher: cleanCoach,
+            evidenceUrl: cleanEvidence,
+            note: cleanNote,
+            status: "PENDING"
+          }
+        });
+        createdRequests.push(created);
+      }
+
+      if (createdRequests.length === 0) {
+        return NextResponse.json(
+          { error: "Không tìm thấy năm học áp dụng của học sinh được chọn." },
+          { status: 400 }
+        );
+      }
+
+      revalidatePath("/admin/ktdbcl/results");
+      revalidatePath("/admin/ktdbcl/exams");
+      revalidatePath("/teacher/ho-so-hoc-sinh");
+
+      return NextResponse.json({
+        success: true,
+        count: createdRequests.length,
+        request: createdRequests[0],
+        requests: createdRequests
+      });
     }
 
     if (action === "updateAchievementRequest") {
       const {
         requestId,
+        studentId,
         examName,
         achievementName,
         type,
@@ -3152,25 +3637,62 @@ export async function POST(req: Request) {
 
       const existing = await prisma.studentAchievementRequest.findUnique({ where: { id: requestId } });
       if (!existing) return NextResponse.json({ error: "Yêu cầu không tồn tại" }, { status: 404 });
-      if (existing.status !== "PENDING") {
-        return NextResponse.json({ error: "Chỉ có thể cập nhật yêu cầu đang ở trạng thái Chờ duyệt" }, { status: 400 });
+      if (existing.status !== "PENDING" && existing.status !== "REJECTED") {
+        return NextResponse.json(
+          { error: "Chỉ có thể chỉnh sửa yêu cầu đang Chờ duyệt hoặc cần bổ sung lại (Từ chối)." },
+          { status: 400 }
+        );
       }
+
+      const wasRejected = existing.status === "REJECTED";
 
       const updated = await prisma.studentAchievementRequest.update({
         where: { id: requestId },
         data: {
+          ...(studentId ? { studentId } : {}),
           ...(examName ? { examName: String(examName).trim() } : {}),
           ...(achievementName ? { achievementName: String(achievementName).trim() } : {}),
           ...(type ? { type } : {}),
           ...(category ? { category } : {}),
-          ...(level ? { level } : {}),
-          coachTeacher: coachTeacher !== undefined ? (coachTeacher ? String(coachTeacher).trim() : null) : existing.coachTeacher,
-          evidenceUrl: evidenceUrl !== undefined ? (evidenceUrl ? String(evidenceUrl).trim() : null) : existing.evidenceUrl,
-          note: note !== undefined ? (note ? String(note).trim() : null) : existing.note
+          ...(level !== undefined ? { level: String(level) } : {}),
+          coachTeacher:
+            coachTeacher !== undefined
+              ? coachTeacher
+                ? String(coachTeacher).trim()
+                : null
+              : existing.coachTeacher,
+          evidenceUrl:
+            evidenceUrl !== undefined
+              ? evidenceUrl
+                ? String(evidenceUrl).trim()
+                : null
+              : existing.evidenceUrl,
+          note:
+            note !== undefined
+              ? note
+                ? String(note).trim()
+                : null
+              : existing.note,
+          ...(wasRejected
+            ? {
+                status: "PENDING",
+                reviewedBy: null,
+                reviewedAt: null,
+                reviewNote: null
+              }
+            : {})
         }
       });
 
-      return NextResponse.json({ success: true, request: updated });
+      revalidatePath("/admin/ktdbcl/results");
+      revalidatePath("/admin/ktdbcl/exams");
+      revalidatePath("/teacher/ho-so-hoc-sinh");
+
+      return NextResponse.json({
+        success: true,
+        resubmitted: wasRejected,
+        request: updated
+      });
     }
 
     if (action === "deleteAchievementRequest") {
@@ -3179,11 +3701,17 @@ export async function POST(req: Request) {
 
       const existing = await prisma.studentAchievementRequest.findUnique({ where: { id: requestId } });
       if (!existing) return NextResponse.json({ error: "Yêu cầu không tồn tại" }, { status: 404 });
-      if (existing.status !== "PENDING") {
-        return NextResponse.json({ error: "Chỉ có thể hủy yêu cầu đang ở trạng thái Chờ duyệt" }, { status: 400 });
+      if (existing.status !== "PENDING" && existing.status !== "REJECTED") {
+        return NextResponse.json(
+          { error: "Không thể xóa thành tích đã được phê duyệt chính thức." },
+          { status: 400 }
+        );
       }
 
       await prisma.studentAchievementRequest.delete({ where: { id: requestId } });
+      revalidatePath("/admin/ktdbcl/results");
+      revalidatePath("/admin/ktdbcl/exams");
+      revalidatePath("/teacher/ho-so-hoc-sinh");
       return NextResponse.json({ success: true });
     }
 

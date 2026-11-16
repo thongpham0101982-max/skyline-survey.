@@ -1250,17 +1250,17 @@ export default function NameplateGeneratorClient() {
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase">
-                    <tr>
-                      <th className="py-2.5 pl-3 pr-1.5 text-center w-9">STT</th>
-                      <th className="py-2.5 px-2">Họ tên học sinh</th>
-                      <th className="py-2.5 px-2">Mã HS</th>
-                      <th className="py-2.5 px-1.5 text-center">Lớp</th>
-                      <th className="py-2.5 px-2 text-center">Trạng thái QR</th>
-                      <th className="py-2.5 pl-1.5 pr-3 text-center">Chọn in</th>
+                  <thead className="bg-[#003B3A] sticky top-0 z-10 border-b text-[10px] text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 pl-3 pr-1.5 text-center w-9 font-semibold">STT</th>
+                      <th className="py-2.5 px-2 font-semibold">Họ tên học sinh</th>
+                      <th className="py-2.5 px-2 font-semibold">Mã HS</th>
+                      <th className="py-2.5 px-1.5 text-center font-semibold">Lớp</th>
+                      <th className="py-2.5 px-2 text-center font-semibold">Trạng thái QR</th>
+                      <th className="py-2.5 pl-1.5 pr-3 text-center font-semibold">Chọn in</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs">
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs">
                     {filteredStudents.map((s, idx) => {
                       const isChecked = selectedIds.has(s.id);
                       const isFocused = previewStudent?.id === s.id;

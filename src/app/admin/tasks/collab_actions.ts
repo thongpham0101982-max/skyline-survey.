@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { sendQaTaskCommentAlertEmail } from "@/lib/qa-workspace/emailService"
 
 export async function getTaskDetails(taskId: string) {
   try {
@@ -109,8 +110,21 @@ export async function addTaskComment(
             userId: uid,
             title: `${typeLabel} ${task.title}`,
             message: `${userName}: ${content.substring(0, 120)}`,
-            isRead: false
+            isRead: false,
+            link: `/admin/tasks?taskId=${taskId}`,
           }
+        }).catch(() => {})
+      }
+
+      if (commentType === "BLOCKER" || commentType === "COOPERATION" || commentType === "CONCLUSION") {
+        await sendQaTaskCommentAlertEmail({
+          taskId,
+          taskTitle: task.title,
+          actorUserId: String(session.user.id),
+          actorName: userName,
+          commentType,
+          content,
+          recipientUserIds: Array.from(notifyIds),
         }).catch(() => {})
       }
     }
@@ -122,14 +136,14 @@ export async function addTaskComment(
   }
 }
 
-export async function updateCommentActionStatus(commentId: string, status: "PENDING" | "RESOLVED") {
+export async function updateCommentActionStatus(commentId: string, status: "PENDING" | "RESOLVED" | "OPEN") {
   try {
     const session = await auth()
     if (!session?.user?.id) return { success: false, error: "Chưa đăng nhập" }
     
     const comment = await prisma.taskComment.update({
       where: { id: commentId },
-      data: { actionStatus: status }
+      data: { actionStatus: status === "OPEN" ? "PENDING" : status }
     })
 
     revalidatePath("/admin/tasks")
@@ -154,10 +168,31 @@ export async function deleteTaskComment(commentId: string) {
   }
 }
 
-export async function addTaskAttachment(taskId: string, fileName: string, fileData: string, fileSize: number, contentType: string) {
+export async function addTaskAttachment(
+  taskId: string,
+  fileOrName:
+    | string
+    | {
+        fileName: string
+        fileData: string
+        fileSize: number
+        contentType: string
+      },
+  fileDataArg?: string,
+  fileSizeArg?: number,
+  contentTypeArg?: string
+) {
   try {
     const session = await auth()
     if (!session?.user?.id) return { success: false, error: "Chưa đăng nhập" }
+    const isObj = typeof fileOrName === "object" && fileOrName !== null
+    const fileName = isObj ? fileOrName.fileName : String(fileOrName)
+    const fileData = isObj ? fileOrName.fileData : String(fileDataArg || "")
+    const fileSize = isObj ? Number(fileOrName.fileSize || 0) : Number(fileSizeArg || 0)
+    const contentType = isObj
+      ? fileOrName.contentType || "application/octet-stream"
+      : contentTypeArg || "application/octet-stream"
+
     const attachment = await prisma.taskAttachment.create({
       data: {
         taskId,

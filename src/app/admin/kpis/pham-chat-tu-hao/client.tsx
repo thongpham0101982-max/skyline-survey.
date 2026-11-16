@@ -1378,16 +1378,16 @@ export default function AdminReflectionPrideClient() {
 
                     <div className="overflow-x-auto p-4 sm:p-6">
                       <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                            <th className="pb-3 pr-3">Mã TC</th>
-                            <th className="pb-3 pr-4">Tiêu chí & Hành vi cốt lõi</th>
-                            <th className="pb-3 px-3 text-center">ĐTB (/4.0)</th>
-                            <th className="pb-3 px-3 text-center">Đạt Mức 3–4</th>
-                            <th className="pb-3 pl-3">Phân bố 4 mức độ (Mức 1 → Mức 4)</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="border-b text-[11px] font-semibold">
+                            <th className="pb-3 pr-3 font-semibold">Mã TC</th>
+                            <th className="pb-3 pr-4 font-semibold">Tiêu chí & Hành vi cốt lõi</th>
+                            <th className="pb-3 px-3 text-center font-semibold">ĐTB (/4.0)</th>
+                            <th className="pb-3 px-3 text-center font-semibold">Đạt Mức 3–4</th>
+                            <th className="pb-3 pl-3 font-semibold">Phân bố 4 mức độ (Mức 1 → Mức 4)</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#E2E8F0]">
                           {q.criteria.map((c) => {
                             const total = c.ratedCount || 1;
                             const p1 = Math.round(((c.distribution[1] || 0) / total) * 100);
@@ -1648,22 +1648,22 @@ export default function AdminReflectionPrideClient() {
 
                 <div className="mt-5 overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600">
-                        <th className="p-3">Cơ sở</th>
-                        <th className="p-3">Khối / Lớp</th>
-                        <th className="p-3">GVCN</th>
-                        <th className="p-3 text-center">Tiến độ nộp</th>
-                        <th className="p-3 text-center">ĐTB IP2.1 (/16)</th>
-                        <th className="p-3 text-center">Tỷ lệ đạt IP2.1</th>
-                        <th className="p-3 text-center">5 Phẩm chất (/20)</th>
-                        <th className="p-3 text-center">Tự hào SKL (/4)</th>
-                        <th className="p-3 text-center">Pride NPS Lớp</th>
-                        <th className="p-3 text-center">Đồng hành GVCN</th>
-                        <th className="p-3 text-right">Thao tác</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="border-b text-[11px] font-semibold">
+                        <th className="p-3 font-semibold">Cơ sở</th>
+                        <th className="p-3 font-semibold">Khối / Lớp</th>
+                        <th className="p-3 font-semibold">GVCN</th>
+                        <th className="p-3 text-center font-semibold">Tiến độ nộp</th>
+                        <th className="p-3 text-center font-semibold">ĐTB IP2.1 (/16)</th>
+                        <th className="p-3 text-center font-semibold">Tỷ lệ đạt IP2.1</th>
+                        <th className="p-3 text-center font-semibold">5 Phẩm chất (/20)</th>
+                        <th className="p-3 text-center font-semibold">Tự hào SKL (/4)</th>
+                        <th className="p-3 text-center font-semibold">Pride NPS Lớp</th>
+                        <th className="p-3 text-center font-semibold">Đồng hành GVCN</th>
+                        <th className="p-3 text-right font-semibold">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {filteredClassRows.map((row) => (
                         <tr key={row.classId} className="hover:bg-teal-50/40">
                           <td className="p-3 font-medium text-slate-700">{row.campusName}</td>
@@ -1831,20 +1831,20 @@ export default function AdminReflectionPrideClient() {
                   </h3>
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600">
-                          <th className="p-3">Cơ sở</th>
-                          <th className="p-3 text-center">Số lớp (K4–12)</th>
-                          <th className="p-3 text-center">Tiến độ hoàn thành</th>
-                          <th className="p-3 text-center">ĐTB IP2.1 (/16.0)</th>
-                          <th className="p-3 text-center">Tỷ lệ đạt IP2.1 (≥72%)</th>
-                          <th className="p-3 text-center">Chỉ số 5 PC (/20.0)</th>
-                          <th className="p-3 text-center">Tự hào SKL (/4.0)</th>
-                          <th className="p-3 text-center">Pride NPS Cơ sở</th>
-                          <th className="p-3 text-right">Đi sâu</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="border-b text-[11px] font-semibold">
+                          <th className="p-3 font-semibold">Cơ sở</th>
+                          <th className="p-3 text-center font-semibold">Số lớp (K4–12)</th>
+                          <th className="p-3 text-center font-semibold">Tiến độ hoàn thành</th>
+                          <th className="p-3 text-center font-semibold">ĐTB IP2.1 (/16.0)</th>
+                          <th className="p-3 text-center font-semibold">Tỷ lệ đạt IP2.1 (≥72%)</th>
+                          <th className="p-3 text-center font-semibold">Chỉ số 5 PC (/20.0)</th>
+                          <th className="p-3 text-center font-semibold">Tự hào SKL (/4.0)</th>
+                          <th className="p-3 text-center font-semibold">Pride NPS Cơ sở</th>
+                          <th className="p-3 text-right font-semibold">Đi sâu</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {data.comparisons.byCampus.map((cp: any) => (
                           <tr key={cp.campusId} className="hover:bg-teal-50/40">
                             <td className="p-3 font-extrabold text-teal-800">{cp.campusName}</td>
@@ -1896,20 +1896,20 @@ export default function AdminReflectionPrideClient() {
                   </h3>
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600">
-                          <th className="p-3">Khối</th>
-                          <th className="p-3">Cấp học</th>
-                          <th className="p-3 text-center">Số lớp</th>
-                          <th className="p-3 text-center">Tiến độ</th>
-                          <th className="p-3 text-center">ĐTB IP2.1 (/16)</th>
-                          <th className="p-3 text-center">Tỷ lệ đạt IP2.1</th>
-                          <th className="p-3 text-center">Tự hào SKL (/4)</th>
-                          <th className="p-3 text-center">Pride NPS Khối</th>
-                          <th className="p-3 text-right">Đi sâu</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="border-b text-[11px] font-semibold">
+                          <th className="p-3 font-semibold">Khối</th>
+                          <th className="p-3 font-semibold">Cấp học</th>
+                          <th className="p-3 text-center font-semibold">Số lớp</th>
+                          <th className="p-3 text-center font-semibold">Tiến độ</th>
+                          <th className="p-3 text-center font-semibold">ĐTB IP2.1 (/16)</th>
+                          <th className="p-3 text-center font-semibold">Tỷ lệ đạt IP2.1</th>
+                          <th className="p-3 text-center font-semibold">Tự hào SKL (/4)</th>
+                          <th className="p-3 text-center font-semibold">Pride NPS Khối</th>
+                          <th className="p-3 text-right font-semibold">Đi sâu</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {data.comparisons.byGrade.map((g: any) => (
                           <tr key={g.gradeLevel} className="hover:bg-teal-50/40">
                             <td className="p-3 font-extrabold text-teal-800">{g.gradeLabel}</td>

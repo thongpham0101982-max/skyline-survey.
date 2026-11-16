@@ -63,8 +63,20 @@ export async function POST(req: Request) {
 
     const evaluatorName = session?.user?.name || "GV Đánh giá";
 
-    await prisma.$transaction(
-      competencies.map((c: any) =>
+    const englishNameUpdates = competencies
+      .filter((c: any) => c.studentId && c.englishName !== undefined)
+      .map((c: any) =>
+        prisma.student.update({
+          where: { id: c.studentId },
+          data: {
+            englishName: c.englishName && String(c.englishName).trim() !== "" ? String(c.englishName).trim() : null,
+          },
+        })
+      );
+
+    await prisma.$transaction([
+      ...englishNameUpdates,
+      ...competencies.map((c: any) =>
         prisma.ctqtCompetencyEntry.upsert({
           where: {
             academicYearId_semester_classId_studentId: {
@@ -97,8 +109,8 @@ export async function POST(req: Request) {
             evaluatedBy: evaluatorName,
           },
         })
-      )
-    );
+      ),
+    ]);
 
     return NextResponse.json({ success: true, message: "Lưu đánh giá Năng lực cốt lõi thành công" });
   } catch (error: any) {

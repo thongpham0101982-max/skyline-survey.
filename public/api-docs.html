@@ -221,29 +221,51 @@
     .ledger-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12.5px;
+      font-size: 12px;
       margin: 12px 0 20px;
+      background: #FFFFFF;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #E2E8F0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ledger-table thead,
+    .ledger-table thead tr {
+      background: #003B3A;
+      color: #FFFFFF;
+      border-bottom: 1px solid #003B3A;
     }
 
     .ledger-table th {
-      background: #F8FAFC;
-      color: var(--text-muted);
+      background: #003B3A;
+      color: #CCFBF1;
+      font-size: 11px;
       font-weight: 600;
       text-align: left;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border-subtle);
-      border-top: 1px solid var(--border-subtle);
+      padding: 12px 14px;
+      border-bottom: 1px solid #003B3A;
+      white-space: nowrap;
+    }
+
+    .ledger-table th:first-child,
+    .ledger-table th:last-child {
+      color: #FFFFFF;
     }
 
     .ledger-table td {
       padding: 12px 14px;
-      border-bottom: 1px solid var(--border-light);
+      border-bottom: 1px solid #E2E8F0;
       color: var(--text-main);
-      vertical-align: top;
+      vertical-align: middle;
     }
 
-    .ledger-table tr:hover td {
-      background: #FAFCFD;
+    .ledger-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .ledger-table tbody tr:hover td {
+      background: #F8FAFC;
     }
 
     .badge {
@@ -502,6 +524,55 @@ Content-Type: application/json
           </tr>
         </thead>
         <tbody>
+          <!-- Unified Snapshot Gateway (High-Speed Flat Tables) -->
+          <tr style="background-color: var(--brand-teal-light);">
+            <td colspan="4" style="font-weight: 700; color: var(--deep-pine); font-size: 12px; padding: 8px 12px;">
+              ⚡ CỔNG CHIA SẺ DỮ LIỆU BẢNG TỔNG HỢP ĐỘC LẬP (UNIFIED SNAPSHOT GATEWAY - ĐỘ TRỄ &lt; 15MS)
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/unified/teachers</code></td>
+            <td><span class="badge badge-perm">teachers:directory:read</span></td>
+            <td>Danh bạ giáo viên tổng hợp từ <code>api_snapshot_teachers</code> gom 37 bảng. Phân trang, lọc tổ CM, cơ sở. Che SĐT cá nhân theo NĐ 13/2023.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/unified/teachers/:id</code></td>
+            <td><span class="badge badge-perm">teachers:directory:read</span></td>
+            <td>Chi tiết giáo viên kèm phân công giảng dạy (lớp, môn, số tiết/tuần) và điểm KPI/QA. Tra cứu theo teacherId hoặc teacherCode.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-post">POST</span></td>
+            <td><code>/api/v1/unified/teachers/sync</code></td>
+            <td><span class="badge badge-perm">teachers:write</span></td>
+            <td>Kích hoạt làm tươi snapshot giáo viên từ các bảng vận hành. Phục vụ tự động hóa n8n hoặc quản trị viên.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/unified/students</code></td>
+            <td><span class="badge badge-perm">students:profile:read</span></td>
+            <td>Danh sách học sinh tổng hợp từ <code>api_snapshot_students</code> gom 55 bảng. Che SĐT/Email PHHS trừ khi có quyền <code>students:contact:read</code>.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/unified/students/:id</code></td>
+            <td><span class="badge badge-perm">students:profile:read</span></td>
+            <td>Chi tiết học sinh tổng hợp (kết quả học tập, thành tích ngoại khóa, khảo sát). Tra cứu theo studentId hoặc studentCode.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-get">GET</span></td>
+            <td><code>/api/v1/unified/students/:id/academic</code></td>
+            <td><span class="badge badge-perm">grades:read</span></td>
+            <td>Bảng điểm chi tiết môn học (SubjectGradeEntry), điểm định kỳ, điểm tổng kết và hồ sơ hướng nghiệp Holland.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-post">POST</span></td>
+            <td><code>/api/v1/unified/students/sync</code></td>
+            <td><span class="badge badge-perm">students:write</span></td>
+            <td>Kích hoạt làm tươi snapshot học sinh từ các bảng vận hành. Phục vụ tự động hóa n8n hoặc quản trị viên.</td>
+          </tr>
+
           <!-- Students -->
           <tr>
             <td><span class="badge badge-get">GET</span></td>

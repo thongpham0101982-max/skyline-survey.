@@ -504,16 +504,16 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                   {/* Files table list */}
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white max-h-[350px] overflow-y-auto pr-1">
                     <table className="w-full border-collapse text-left">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-400">
-                          <th className="p-3 w-16 text-center">Ảnh</th>
-                          <th className="p-3">Mã HS nhận diện</th>
-                          <th className="p-3">Học sinh đối chiếu</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="border-b text-[9px] text-[11px] font-semibold">
+                          <th className="p-3 w-16 text-center font-semibold">Ảnh</th>
+                          <th className="p-3 font-semibold">Mã HS nhận diện</th>
+                          <th className="p-3 font-semibold">Học sinh đối chiếu</th>
                           <th className="p-3 w-32 text-center font-bold">Trạng thái</th>
-                          <th className="p-3 w-12 text-center">Xóa</th>
+                          <th className="p-3 w-12 text-center font-semibold">Xóa</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-xs">
+                      <tbody className="divide-y divide-[#E2E8F0] text-xs">
                         {fileList.map((item) => (
                           <tr key={item.id} className="hover:bg-slate-50/50">
                             <td className="p-2 text-center">

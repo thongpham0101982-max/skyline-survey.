@@ -106,6 +106,7 @@ export interface TimetableFilterParams {
   scopeGroup?: ScopeGroup
   campusId?: string
   levelCode?: LevelFilterCode
+  studyProgram?: string // "ALL" | "Hệ S" | "Hệ I"
   grade?: string
   classId?: string
   versionId?: string

@@ -256,15 +256,15 @@ export function ClassDetailClient({
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left border-collapse">
-              <thead className="text-slate-500 text-xs font-bold bg-slate-50/70 border-b border-slate-200">
-                <tr>
-                  <th className="p-4 font-bold border-r border-slate-100">Mã Học sinh</th>
-                  <th className="p-4 font-bold border-r border-slate-100">Họ và Tên</th>
-                  <th className="p-4 font-bold border-r border-slate-100">Số tài khoản Phụ huynh</th>
+              <thead className="bg-[#003B3A] text-xs border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="p-4 font-bold border-r border-white/15">Mã Học sinh</th>
+                  <th className="p-4 font-bold border-r border-white/15">Họ và Tên</th>
+                  <th className="p-4 font-bold border-r border-white/15">Số tài khoản Phụ huynh</th>
                   <th className="p-4 font-bold">Trạng thái Khảo sát</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                 {processedStudents.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center p-12 text-slate-400 text-xs font-semibold">
@@ -497,17 +497,17 @@ export function ClassDetailClient({
             {/* Student Data Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left border-collapse">
-                <thead className="text-slate-500 text-xs font-bold bg-slate-50/70 border-b border-slate-200">
-                  <tr>
-                    <th className="p-4 border-r border-slate-100">Mã Học sinh</th>
-                    <th className="p-4 border-r border-slate-100">Họ và Tên</th>
-                    <th className="p-4 border-r border-slate-100">Ngày sinh</th>
-                    <th className="p-4 border-r border-slate-100">Giới tính</th>
-                    <th className="p-4 border-r border-slate-100 text-center font-bold">Diện Học sinh</th>
-                    <th className="p-4">Biến động / Trạng thái</th>
+                <thead className="bg-[#003B3A] text-xs border-b text-white border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="p-4 border-r border-white/15 font-semibold">Mã Học sinh</th>
+                    <th className="p-4 border-r border-white/15 font-semibold">Họ và Tên</th>
+                    <th className="p-4 border-r border-white/15 font-semibold">Ngày sinh</th>
+                    <th className="p-4 border-r border-white/15 font-semibold">Giới tính</th>
+                    <th className="p-4 border-r border-white/15 text-center font-bold">Diện Học sinh</th>
+                    <th className="p-4 font-semibold">Biến động / Trạng thái</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                   {processedStudents.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center p-12 text-slate-400 text-xs font-semibold">

@@ -193,19 +193,19 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
       {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-slate-150">
         <table className="w-full border-collapse text-left text-xs">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
-              <th className="px-6 py-4 font-black">Thời gian</th>
-              <th className="px-6 py-4 font-black">Tài khoản</th>
-              <th className="px-6 py-4 font-black">Họ và tên</th>
-              <th className="px-6 py-4 font-black">Nhóm quyền</th>
-              <th className="px-6 py-4 font-black">Thao tác</th>
-              <th className="px-6 py-4 font-black">Thông tin chi tiết</th>
-              <th className="px-6 py-4 font-black">Địa chỉ IP</th>
-              <th className="px-6 py-4 text-center font-black">Dữ liệu gốc</th>
+          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+            <tr className="border-b text-[11px] font-semibold">
+              <th className="px-6 py-4 font-semibold">Thời gian</th>
+              <th className="px-6 py-4 font-semibold">Tài khoản</th>
+              <th className="px-6 py-4 font-semibold">Họ và tên</th>
+              <th className="px-6 py-4 font-semibold">Nhóm quyền</th>
+              <th className="px-6 py-4 font-semibold">Thao tác</th>
+              <th className="px-6 py-4 font-semibold">Thông tin chi tiết</th>
+              <th className="px-6 py-4 font-semibold">Địa chỉ IP</th>
+              <th className="px-6 py-4 text-center font-semibold">Dữ liệu gốc</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {initialLogs.map((log: any) => {
               const isFailed = log.action.includes("FAILED");
               const isSuccess = log.action.includes("SUCCESS");

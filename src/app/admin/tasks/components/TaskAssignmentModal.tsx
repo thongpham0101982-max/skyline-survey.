@@ -27,7 +27,7 @@ import { createQaWorkspaceTask, updateQaWorkspaceTask } from "../qa_workspace_ac
 interface TaskAssignmentModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (result?: { emailsSentCount?: number; createdCount?: number; isDraft?: boolean }) => void
   editingTask?: any | null
   presetDraft?: {
     title?: string
@@ -99,6 +99,7 @@ export function TaskAssignmentModal({
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">("MEDIUM")
   const [requiresApproval, setRequiresApproval] = useState(true)
   const [saveAsDraft, setSaveAsDraft] = useState(false)
+  const [sendEmailNotification, setSendEmailNotification] = useState(true)
 
   const [deliverables, setDeliverables] = useState("")
   const [completionCriteria, setCompletionCriteria] = useState("")
@@ -158,10 +159,12 @@ export function TaskAssignmentModal({
       )
       setPriority((editingTask.priority as any) || "MEDIUM")
       setRequiresApproval(meta.requiresApproval !== false)
+      setSaveAsDraft(meta.workflowStatus === "DRAFT")
+      setSendEmailNotification(false)
       setDeliverables(meta.deliverables || "")
       setCompletionCriteria(meta.completionCriteria || "")
       setRequiredEvidences(meta.requiredEvidences || "")
-      setChecklistSteps(meta.checklistJson || [])
+      setChecklistSteps(meta.checklist || meta.checklistJson || [])
       setAcademicYearId(editingTask.academicYearId || years[0]?.id || "")
       setScopeCampusId(meta.scopeCampusId || "")
       setScopeGradeLevel(meta.scopeGradeLevel || "")
@@ -212,6 +215,7 @@ export function TaskAssignmentModal({
       setPriority("MEDIUM")
       setRequiresApproval(true)
       setSaveAsDraft(false)
+      setSendEmailNotification(true)
       setDeliverables("")
       setCompletionCriteria("")
       setRequiredEvidences("")
@@ -295,8 +299,11 @@ export function TaskAssignmentModal({
 
     setSubmitting(true)
     try {
+      let emailsSent = 0
+      let createdCount = 1
+
       if (editingTask?.id) {
-        const res = await updateQaWorkspaceTask(editingTask.id, {
+        const res: any = await updateQaWorkspaceTask(editingTask.id, {
           title,
           description,
           category,
@@ -312,8 +319,10 @@ export function TaskAssignmentModal({
           deliverables,
           completionCriteria,
           requiredEvidences,
+          checklist: checklistSteps,
           checklistSteps,
           requiresApproval,
+          sendEmailNotification,
           scopeCampusId: scopeCampusId || null,
           scopeGradeLevel: scopeGradeLevel || null,
           scopeClassId: scopeClassId || null,
@@ -325,8 +334,9 @@ export function TaskAssignmentModal({
           setErrorMsg(res.error || "Không thể cập nhật nhiệm vụ.")
           return
         }
+        emailsSent = res.emailsSentCount || 0
       } else {
-        const res = await createQaWorkspaceTask({
+        const res: any = await createQaWorkspaceTask({
           title,
           description,
           category,
@@ -345,9 +355,12 @@ export function TaskAssignmentModal({
           deliverables,
           completionCriteria,
           requiredEvidences,
+          checklist: checklistSteps,
           checklistSteps,
           requiresApproval,
+          workflowStatus: saveAsDraft ? "DRAFT" : "ASSIGNED",
           isDraft: saveAsDraft,
+          sendEmailNotification: !saveAsDraft && sendEmailNotification,
           recurrenceRule:
             assignmentMode === "RECURRING"
               ? {
@@ -356,6 +369,8 @@ export function TaskAssignmentModal({
                   dayOfWeek: recurrenceFreq === "WEEKLY" ? recurrenceDayOfWeek : undefined,
                   dayOfMonth:
                     recurrenceFreq === "MONTHLY" ? recurrenceDayOfMonth : undefined,
+                  isActive: true,
+                  autoPublish: true,
                   approvedForAutoRelease: true,
                 }
               : null,
@@ -373,9 +388,15 @@ export function TaskAssignmentModal({
           setErrorMsg(res.error || "Lỗi phát hành phiếu giao việc.")
           return
         }
+        emailsSent = res.emailsSentCount || 0
+        createdCount = res.createdCount || 1
       }
 
-      onSuccess()
+      onSuccess({
+        emailsSentCount: emailsSent,
+        createdCount,
+        isDraft: saveAsDraft,
+      })
       onClose()
     } finally {
       setSubmitting(false)
@@ -384,15 +405,15 @@ export function TaskAssignmentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-teal-600 via-violet-700 to-emerald-600 text-white flex items-center justify-between">
+      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-[#E2E8F0] overflow-hidden my-6 flex flex-col max-h-[92vh]">
+        {/* Header — Sky-Line Deep Pine (#003B3A) */}
+        <div className="px-6 py-4 bg-[#003B3A] border-b border-[#00A19A]/40 text-white flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-teal-700">
-              PHIẾU GIAO VIỆC CHUẨN HÓA — QA WORKSPACE KT&ĐBCL
+            <span className="text-[11px] font-semibold text-[#5EEAD4]">
+              Phiếu giao việc chuẩn hóa — QA Workspace | KT&ĐBCL
             </span>
-            <h2 className="text-lg font-extrabold text-white">
-              {editingTask ? "Cập nhật Phiếu Giao việc" : "Phát hành Phiếu Giao việc Mới"}
+            <h2 className="text-lg font-extrabold text-white mt-0.5">
+              {editingTask ? "Cập nhật phiếu giao việc" : "Phát hành phiếu giao việc mới"}
             </h2>
           </div>
           <button
@@ -415,32 +436,32 @@ export function TaskAssignmentModal({
           {/* 4 Phương thức giao việc (Mục IV) */}
           {!editingTask && (
             <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">
-                1. Phương thức giao việc (Mỗi nhiệm vụ luôn có 1 người chịu trách nhiệm chính)
+              <label className="block text-xs font-bold text-[#003B3A] mb-2">
+                1. Phương thức giao việc (Mỗi nhiệm vụ luôn có một người chịu trách nhiệm chính)
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                 {[
                   {
                     mode: "GROUP" as AssignmentMode,
-                    title: "Giao cho Nhóm",
-                    desc: "Người điều phối chịu trách nhiệm & chia việc",
+                    title: "Giao cho nhóm",
+                    desc: "Điều phối viên chịu trách nhiệm & báo mail cả nhóm",
                     icon: Users,
                   },
                   {
                     mode: "INDIVIDUAL" as AssignmentMode,
-                    title: "Giao Cá nhân",
+                    title: "Giao cá nhân",
                     desc: "1 người phụ trách chính + người phối hợp",
                     icon: UserCheck,
                   },
                   {
                     mode: "MULTI_INDIVIDUAL" as AssignmentMode,
-                    title: "Nhiều Cá nhân",
+                    title: "Nhiều cá nhân",
                     desc: "Tạo nhiệm vụ độc lập cho từng người cùng đợt",
                     icon: UsersRound,
                   },
                   {
                     mode: "RECURRING" as AssignmentMode,
-                    title: "Việc Định kỳ",
+                    title: "Việc định kỳ",
                     desc: "Theo tuần/tháng, chống sinh trùng tự động",
                     icon: Repeat,
                   },
@@ -454,14 +475,14 @@ export function TaskAssignmentModal({
                       onClick={() => setAssignmentMode(item.mode)}
                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         active
-                          ? "border-teal-200 bg-teal-50/70 ring-2 ring-violet-500/20"
+                          ? "border-[#00A19A] bg-[#F0FDFA] ring-2 ring-[#00A19A]/20"
                           : "border-slate-200 hover:border-slate-300 bg-white"
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <Icon
                           className={`w-4 h-4 ${
-                            active ? "text-teal-800" : "text-slate-500"
+                            active ? "text-[#00736E]" : "text-slate-500"
                           }`}
                         />
                         <span className="text-xs font-extrabold text-slate-900">
@@ -1036,33 +1057,51 @@ export function TaskAssignmentModal({
             </div>
           </div>
 
-          {/* Quy tắc duyệt & Lưu nháp */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200">
-            <div className="flex flex-wrap items-center gap-4">
-              <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={requiresApproval}
-                  onChange={e => setRequiresApproval(e.target.checked)}
-                  className="rounded text-teal-800"
-                />
-                <span>Yêu cầu người duyệt nghiệm thu trước khi Hoàn thành</span>
-              </label>
-
-              {!editingTask && (
+          {/* Quy tắc duyệt, Báo email & Lưu nháp */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-200">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-4">
                 <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={saveAsDraft}
-                    onChange={e => setSaveAsDraft(e.target.checked)}
-                    className="rounded text-teal-800"
+                    checked={requiresApproval}
+                    onChange={e => setRequiresApproval(e.target.checked)}
+                    className="rounded text-[#003B3A]"
                   />
-                  <span>Lưu ở trạng thái Nháp (Chưa phát hành thông báo)</span>
+                  <span>Yêu cầu người duyệt nghiệm thu trước khi hoàn thành</span>
+                </label>
+
+                {!editingTask && (
+                  <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveAsDraft}
+                      onChange={e => setSaveAsDraft(e.target.checked)}
+                      className="rounded text-[#003B3A]"
+                    />
+                    <span>Lưu nháp (Chưa phát hành thông báo)</span>
+                  </label>
+                )}
+              </div>
+
+              {!saveAsDraft && (
+                <label className="inline-flex items-center gap-2 text-xs font-bold text-[#00736E] bg-[#F0FDFA] border border-[#CCFBF1] px-3 py-1.5 rounded-lg w-fit cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendEmailNotification}
+                    onChange={e => setSendEmailNotification(e.target.checked)}
+                    className="rounded text-[#00A19A]"
+                  />
+                  <span>
+                    {editingTask
+                      ? "Gửi lại email thông báo & yêu cầu xác nhận đến các thành viên liên quan"
+                      : "Tự động báo email yêu cầu xác nhận & thực hiện đến các thành viên liên quan"}
+                  </span>
                 </label>
               )}
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-end gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
@@ -1073,7 +1112,7 @@ export function TaskAssignmentModal({
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-500 disabled:opacity-50 text-white text-xs font-extrabold shadow-sm cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#004D47] disabled:opacity-50 text-white text-xs font-extrabold shadow-xs cursor-pointer"
               >
                 {submitting
                   ? "Đang xử lý..."
@@ -1081,7 +1120,7 @@ export function TaskAssignmentModal({
                   ? "Lưu cập nhật phiếu"
                   : saveAsDraft
                   ? "Lưu bản nháp"
-                  : "Xác nhận Giao việc"}
+                  : "Xác nhận giao việc & Báo mail"}
               </button>
             </div>
           </div>

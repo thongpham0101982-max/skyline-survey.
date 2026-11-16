@@ -23,6 +23,10 @@ import {
   Mail,
   Send,
   CheckCircle2,
+  Database,
+  GraduationCap,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react"
 import { ALL_API_PERMISSIONS, ApiPermission } from "@/types/api-integration"
 import { ApiGuideModal } from "./ApiGuideModal"
@@ -146,6 +150,49 @@ export default function ApiIntegrationsPage() {
   // API Guide Modal state
   const [isGuideOpen, setIsGuideOpen] = useState(false)
 
+  // Snapshot Gateway State
+  const [snapshotStats, setSnapshotStats] = useState<{
+    teachers: { count: number; lastSyncedAt: string | null }
+    students: { count: number; lastSyncedAt: string | null }
+  } | null>(null)
+  const [syncingType, setSyncingType] = useState<"teachers" | "students" | null>(null)
+
+  const fetchSnapshotStats = async () => {
+    try {
+      const res = await fetch("/api/admin/api-integrations/snapshots")
+      const data = await res.json()
+      if (data.success && data.data) {
+        setSnapshotStats(data.data)
+      }
+    } catch {}
+  }
+
+  const handleTriggerSync = async (type: "teachers" | "students") => {
+    try {
+      setSyncingType(type)
+      const res = await fetch(`/api/v1/unified/${type}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        alert(data.message || `Đồng bộ bảng ${type === "teachers" ? "Giáo viên" : "Học sinh"} hoàn tất!`)
+        await fetchSnapshotStats()
+      } else {
+        const errorMsg =
+          typeof data.error === "object"
+            ? data.error?.message || data.error?.code || JSON.stringify(data.error)
+            : data.error || data.message || "Không thể đồng bộ dữ liệu"
+        alert(errorMsg)
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối khi đồng bộ dữ liệu: " + (err?.message || "Lỗi không xác định"))
+    } finally {
+      setSyncingType(null)
+    }
+  }
+
   // Fetch initial data
   const fetchData = async () => {
     setLoading(true)
@@ -155,6 +202,7 @@ export default function ApiIntegrationsPage() {
         fetch("/api/admin/api-integrations"),
         fetch("/api/campuses"),
       ])
+      fetchSnapshotStats()
 
       const dataApps = await resApps.json()
       if (dataApps.success) {
@@ -341,6 +389,29 @@ export default function ApiIntegrationsPage() {
     }
   }
 
+  // Reactivate App (Kích hoạt lại ứng dụng đã thu hồi hoặc tạm dừng)
+  const handleReactivateApp = async (id: string, name: string) => {
+    if (!confirm(`Bạn có muốn kích hoạt lại ứng dụng "${name}" để tiếp tục tạo khóa API và chia sẻ dữ liệu không?`)) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/api-integrations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "ACTIVE" }),
+      })
+      const result = await res.json()
+      if (result.success) {
+        fetchData()
+      } else {
+        alert(result.error || "Không thể kích hoạt lại ứng dụng")
+      }
+    } catch {
+      alert("Lỗi kết nối máy chủ khi kích hoạt lại")
+    }
+  }
+
   // Open Create Key Modal
   const handleOpenCreateKeyModal = (app: ApiAppItem) => {
     setKeyModalAppId(app.id)
@@ -358,7 +429,7 @@ export default function ApiIntegrationsPage() {
       } catch (_) {}
     }
     if (!targetEmail && app.contactPerson && app.contactPerson.includes("@")) {
-      const match = application?.contactPerson?.match?.(/[\w.-]+@[\w.-]+\.\w+/) || app.contactPerson.match(/[\w.-]+@[\w.-]+\.\w+/)
+      const match = app.contactPerson.match(/[\w.-]+@[\w.-]+\.\w+/)
       if (match) targetEmail = match[0]
     }
     setKeyTargetEmail(targetEmail)
@@ -489,6 +560,204 @@ export default function ApiIntegrationsPage() {
         </div>
       </div>
 
+      {/* Unified Snapshot Gateway Ledger (2 Bảng Tổng hợp Độc lập GV & HS) */}
+      <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
+        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-md bg-[#003B3A] text-white flex items-center justify-center shadow-xs">
+              <Database className="w-4 h-4 text-teal-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Cổng Dữ liệu Bảng Tổng hợp Độc lập (Unified Snapshot Gateway)
+                </h2>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 text-[#003B3A] border border-teal-200">
+                  Độ trễ &lt; 15ms
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Dữ liệu được gom và chuẩn hóa từ 116 bảng nghiệp vụ SSM thành 2 bảng phẳng phục vụ chia sẻ API an toàn, chống lộ lọt PII theo Nghị định 13/2023.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              onClick={() => fetchSnapshotStats()}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50 cursor-pointer font-medium"
+              title="Làm mới số liệu thống kê"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Làm mới trạng thái
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/30">
+          {/* Card 1: Bảng Giáo viên */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded bg-teal-50 text-[#003B3A] border border-teal-200 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-[#00A19A]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900">Bảng Tổng hợp Giáo viên</h3>
+                    <span className="text-[10px] font-mono text-slate-400">api_snapshot_teachers</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-[#003B3A] tabular-nums">
+                    {snapshotStats?.teachers?.count?.toLocaleString("vi-VN") || 0}
+                  </span>
+                  <span className="text-[11px] text-slate-500 ml-1">hồ sơ</span>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-1.5 text-[11px]">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span>Thời điểm đồng bộ gần nhất:</span>
+                  <span className="font-mono text-slate-700 tabular-nums">
+                    {snapshotStats?.teachers?.lastSyncedAt
+                      ? new Date(snapshotStats.teachers.lastSyncedAt).toLocaleString("vi-VN")
+                      : "Chưa đồng bộ"}
+                  </span>
+                </div>
+                <div className="text-slate-500">
+                  <span>Cổng API kết nối:</span>
+                  <div className="mt-1 flex flex-wrap gap-1 font-mono text-[10px]">
+                    <a
+                      href="/api/v1/unified/teachers"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100 transition-colors font-semibold"
+                      title="Nhấn để mở xem trực tiếp dữ liệu JSON trên trình duyệt"
+                    >
+                      GET /api/v1/unified/teachers
+                      <ExternalLink className="w-2.5 h-2.5 text-teal-600" />
+                    </a>
+                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                      GET /api/v1/unified/teachers/:id
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400 italic">
+                Che SĐT cá nhân theo NĐ 13/2023
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/api/v1/unified/teachers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-teal-50 text-[#003B3A] border border-teal-300 hover:bg-teal-100 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                  title="Mở tab mới xem toàn bộ dữ liệu 308 hồ sơ giáo viên dạng JSON"
+                >
+                  <ExternalLink className="w-3 h-3 text-[#00A19A]" />
+                  Mở API
+                </a>
+                <button
+                  type="button"
+                  disabled={syncingType === "teachers"}
+                  onClick={() => handleTriggerSync("teachers")}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#003B3A] text-white hover:bg-[#002B2A] text-xs font-semibold shadow-2xs disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3 h-3 ${syncingType === "teachers" ? "animate-spin" : ""}`} />
+                  {syncingType === "teachers" ? "Đang đồng bộ..." : "Đồng bộ ngay"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Bảng Học sinh */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded bg-teal-50 text-[#003B3A] border border-teal-200 flex items-center justify-center">
+                    <GraduationCap className="w-4 h-4 text-[#00A19A]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900">Bảng Tổng hợp Học sinh</h3>
+                    <span className="text-[10px] font-mono text-slate-400">api_snapshot_students</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-[#003B3A] tabular-nums">
+                    {snapshotStats?.students?.count?.toLocaleString("vi-VN") || 0}
+                  </span>
+                  <span className="text-[11px] text-slate-500 ml-1">hồ sơ</span>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-1.5 text-[11px]">
+                <div className="flex items-center justify-between text-slate-500">
+                  <span>Thời điểm đồng bộ gần nhất:</span>
+                  <span className="font-mono text-slate-700 tabular-nums">
+                    {snapshotStats?.students?.lastSyncedAt
+                      ? new Date(snapshotStats.students.lastSyncedAt).toLocaleString("vi-VN")
+                      : "Chưa đồng bộ"}
+                  </span>
+                </div>
+                <div className="text-slate-500">
+                  <span>Cổng API kết nối:</span>
+                  <div className="mt-1 flex flex-wrap gap-1 font-mono text-[10px]">
+                    <a
+                      href="/api/v1/unified/students"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100 transition-colors font-semibold"
+                      title="Nhấn để mở xem trực tiếp dữ liệu JSON trên trình duyệt"
+                    >
+                      GET /api/v1/unified/students
+                      <ExternalLink className="w-2.5 h-2.5 text-teal-600" />
+                    </a>
+                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                      GET /api/v1/unified/students/:id
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                      GET /api/v1/unified/students/:id/academic
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400 italic">
+                Che SĐT & Email PHHS trừ khi cấp quyền
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/api/v1/unified/students"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-teal-50 text-[#003B3A] border border-teal-300 hover:bg-teal-100 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                  title="Mở tab mới xem toàn bộ dữ liệu 1.863 hồ sơ học sinh dạng JSON"
+                >
+                  <ExternalLink className="w-3 h-3 text-[#00A19A]" />
+                  Mở API
+                </a>
+                <button
+                  type="button"
+                  disabled={syncingType === "students"}
+                  onClick={() => handleTriggerSync("students")}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#003B3A] text-white hover:bg-[#002B2A] text-xs font-semibold shadow-2xs disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className={`w-3 h-3 ${syncingType === "students" ? "animate-spin" : ""}`} />
+                  {syncingType === "students" ? "Đang đồng bộ..." : "Đồng bộ ngay"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Main Ledger Table */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
@@ -606,7 +875,15 @@ export default function ApiIntegrationsPage() {
                       >
                         Sửa thông tin
                       </button>
-                      {app.status !== "REVOKED" && (
+                      {app.status === "REVOKED" || app.status === "INACTIVE" ? (
+                        <button
+                          onClick={() => handleReactivateApp(app.id, app.name)}
+                          className="px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-300 rounded hover:bg-emerald-100 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          Kích hoạt lại ứng dụng
+                        </button>
+                      ) : (
                         <button
                           onClick={() => handleRevokeApp(app.id, app.name)}
                           className="px-2.5 py-1 text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded hover:bg-rose-100 cursor-pointer"
@@ -697,18 +974,18 @@ export default function ApiIntegrationsPage() {
                     {app.apiKeys && app.apiKeys.length > 0 ? (
                       <div className="overflow-x-auto">
                         <table className="w-full text-[11px] text-left">
-                          <thead>
-                            <tr className="border-b border-slate-200 text-slate-500 font-semibold">
-                              <th className="py-1 px-2">Tên khóa</th>
-                              <th className="py-1 px-2">Mã nhận diện (Key ID)</th>
-                              <th className="py-1 px-2">Tiền tố hiển thị</th>
-                              <th className="py-1 px-2">Trạng thái</th>
-                              <th className="py-1 px-2">Ngày tạo</th>
-                              <th className="py-1 px-2">Lần dùng gần nhất</th>
-                              <th className="py-1 px-2 text-right">Thao tác</th>
+                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                            <tr className="border-b font-semibold text-[11px]">
+                              <th className="py-1 px-2 font-semibold">Tên khóa</th>
+                              <th className="py-1 px-2 font-semibold">Mã nhận diện (Key ID)</th>
+                              <th className="py-1 px-2 font-semibold">Tiền tố hiển thị</th>
+                              <th className="py-1 px-2 font-semibold">Trạng thái</th>
+                              <th className="py-1 px-2 font-semibold">Ngày tạo</th>
+                              <th className="py-1 px-2 font-semibold">Lần dùng gần nhất</th>
+                              <th className="py-1 px-2 text-right font-semibold">Thao tác</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                          <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
                             {app.apiKeys.map((k) => (
                               <tr key={k.id} className="hover:bg-slate-100/50">
                                 <td className="py-1.5 px-2 font-medium">{k.name || "Khóa API"}</td>

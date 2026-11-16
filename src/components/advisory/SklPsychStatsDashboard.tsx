@@ -763,21 +763,21 @@ export default function SklPsychStatsDashboard({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-3">Lớp / Cơ sở</th>
-                    <th className="py-3 px-3">GVCN Phụ trách</th>
-                    <th className="py-3 px-3 text-center">Sĩ số</th>
-                    <th className="py-3 px-3 text-center">HS Đã tham gia</th>
-                    <th className="py-3 px-3 text-center">⚡ DISC</th>
-                    <th className="py-3 px-3 text-center">🧠 EPI</th>
-                    <th className="py-3 px-3 text-center">🧭 HOLLAND</th>
-                    <th className="py-3 px-3 text-center">💖 EQ</th>
-                    <th className="py-3 px-3 text-center">🧩 MBTI</th>
-                    <th className="py-3 px-3 text-right">Thao tác</th>
+                <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 font-semibold">Lớp / Cơ sở</th>
+                    <th className="py-3 px-3 font-semibold">GVCN Phụ trách</th>
+                    <th className="py-3 px-3 text-center font-semibold">Sĩ số</th>
+                    <th className="py-3 px-3 text-center font-semibold">HS Đã tham gia</th>
+                    <th className="py-3 px-3 text-center font-semibold">⚡ DISC</th>
+                    <th className="py-3 px-3 text-center font-semibold">🧠 EPI</th>
+                    <th className="py-3 px-3 text-center font-semibold">🧭 HOLLAND</th>
+                    <th className="py-3 px-3 text-center font-semibold">💖 EQ</th>
+                    <th className="py-3 px-3 text-center font-semibold">🧩 MBTI</th>
+                    <th className="py-3 px-3 text-right font-semibold">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
+                <tbody className="divide-y divide-[#E2E8F0] font-medium">
                   {classDistribution.map((cls: any) => (
                     <tr key={cls.classId} className="hover:bg-slate-50/80 transition">
                       <td className="py-3 px-3">
@@ -860,21 +860,21 @@ export default function SklPsychStatsDashboard({
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[880px] text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-3">STT</th>
-                  <th className="py-3 px-3">Học sinh</th>
-                  <th className="py-3 px-3">Lớp / Cơ sở</th>
-                  <th className="py-3 px-3 text-center">Tiến độ</th>
-                  <th className="py-3 px-3 text-center">⚡ DISC</th>
-                  <th className="py-3 px-3 text-center">🧠 EPI</th>
-                  <th className="py-3 px-3 text-center">🧭 HOLLAND</th>
-                  <th className="py-3 px-3 text-center">💖 LYUSIN EQ</th>
-                  <th className="py-3 px-3 text-center">🧩 MBTI</th>
-                  <th className="py-3 px-3 text-right">Hồ sơ 360°</th>
+              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-3 font-semibold">STT</th>
+                  <th className="py-3 px-3 font-semibold">Học sinh</th>
+                  <th className="py-3 px-3 font-semibold">Lớp / Cơ sở</th>
+                  <th className="py-3 px-3 text-center font-semibold">Tiến độ</th>
+                  <th className="py-3 px-3 text-center font-semibold">⚡ DISC</th>
+                  <th className="py-3 px-3 text-center font-semibold">🧠 EPI</th>
+                  <th className="py-3 px-3 text-center font-semibold">🧭 HOLLAND</th>
+                  <th className="py-3 px-3 text-center font-semibold">💖 LYUSIN EQ</th>
+                  <th className="py-3 px-3 text-center font-semibold">🧩 MBTI</th>
+                  <th className="py-3 px-3 text-right font-semibold">Hồ sơ 360°</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-[#E2E8F0] font-medium">
                 {studentMatrix.map((st: any, idx: number) => (
                   <tr key={st.id} className="hover:bg-slate-50/80 transition">
                     <td className="py-3 px-3 font-mono text-slate-400">{idx + 1}</td>
@@ -987,19 +987,19 @@ export default function SklPsychStatsDashboard({
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[780px] text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-3">Mã tra cứu</th>
-                  <th className="py-3 px-3">Học sinh</th>
-                  <th className="py-3 px-3">Cơ sở / Lớp</th>
-                  <th className="py-3 px-3">Bài test</th>
-                  <th className="py-3 px-3">Kết quả chủ đạo</th>
-                  <th className="py-3 px-3">Độ tin cậy</th>
-                  <th className="py-3 px-3">Ngày làm</th>
-                  <th className="py-3 px-3 text-right">Thao tác</th>
+              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-3 font-semibold">Mã tra cứu</th>
+                  <th className="py-3 px-3 font-semibold">Học sinh</th>
+                  <th className="py-3 px-3 font-semibold">Cơ sở / Lớp</th>
+                  <th className="py-3 px-3 font-semibold">Bài test</th>
+                  <th className="py-3 px-3 font-semibold">Kết quả chủ đạo</th>
+                  <th className="py-3 px-3 font-semibold">Độ tin cậy</th>
+                  <th className="py-3 px-3 font-semibold">Ngày làm</th>
+                  <th className="py-3 px-3 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-[#E2E8F0] font-medium">
                 {assessments.map((item: any) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition">
                     <td className="py-3 px-3 font-mono font-bold text-teal-700">

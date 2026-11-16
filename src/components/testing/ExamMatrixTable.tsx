@@ -72,18 +72,18 @@ export function ExamMatrixTable({
       {/* Table */}
       <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-2xs">
         <table className="w-full text-xs text-left">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold uppercase tracking-wider">
-            <tr>
-              <th className="py-2.5 px-3">STT</th>
-              <th className="py-2.5 px-3">Chủ đề / Mạch kiến thức</th>
-              <th className="py-2.5 px-3">Mức độ tư duy</th>
-              <th className="py-2.5 px-3 text-center">Số câu</th>
-              <th className="py-2.5 px-3 text-right">Điểm/câu</th>
-              <th className="py-2.5 px-3 text-right">Tổng điểm</th>
-              <th className="py-2.5 px-3 text-center">Sẵn có / Yêu cầu</th>
+          <thead className="bg-[#003B3A] border-b font-semibold text-white border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="py-2.5 px-3 font-semibold">STT</th>
+              <th className="py-2.5 px-3 font-semibold">Chủ đề / Mạch kiến thức</th>
+              <th className="py-2.5 px-3 font-semibold">Mức độ tư duy</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Số câu</th>
+              <th className="py-2.5 px-3 text-right font-semibold">Điểm/câu</th>
+              <th className="py-2.5 px-3 text-right font-semibold">Tổng điểm</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Sẵn có / Yêu cầu</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {items.map((it, idx) => {
               const isPoolShort = it.availableInBank < it.questionCount
               return (

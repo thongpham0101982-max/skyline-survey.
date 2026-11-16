@@ -4,6 +4,13 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { XetDuyetKetQuaClient } from "./client"
 import { hasModulePermission, getDefaultRouteForRole } from "@/lib/permissions"
+import {
+  isSuperAdminRole,
+  isKtdbclEntranceRole,
+  isGdcsOrBghEntranceRole,
+  isGiaoVuEntranceRole,
+  isCampusScopedEntranceRole,
+} from "@/lib/entrance-progress/constants"
 
 export const metadata = { title: "Xét duyệt Kết quả | Admin" }
 export const dynamic = "force-dynamic";
@@ -22,12 +29,22 @@ export default async function XetDuyetKetQuaPage() {
 
   const rawRole = (session?.user as any)?.role || "";
   const userRole = rawRole.toUpperCase().trim();
-  const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN" || userRole === "KT_DBCL" || userRole === "KTDBCL";
-  const isBghPreschoolRole = ["BGH_MN", "BGH MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole);
-  const isGdcsRole = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+  const isAdmin = isSuperAdminRole(userRole) || isKtdbclEntranceRole(userRole);
+  const isBghPreschoolRole = ["BGH_MN", "BGH MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON"].includes(userRole);
+  const isGdcsRole = isGdcsOrBghEntranceRole(userRole) && !isBghPreschoolRole;
+  const isGiaoVuRole = isGiaoVuEntranceRole(userRole);
 
-  const hasK12 = isAdmin || await hasModulePermission(rawRole, ["INPUT_ASSESSMENTS_REPORTS", "XET_DUYET_KET_QUA"]);
-  const hasPreschool = isAdmin || isBghPreschoolRole || isGdcsRole || await hasModulePermission(rawRole, ["XET_DUYET_MAM_NON", "XET_DUYET_KET_QUA", "PRESCHOOL_INPUT_ASSESSMENTS"]);
+  const hasK12 =
+    isAdmin ||
+    isGdcsRole ||
+    isGiaoVuRole ||
+    await hasModulePermission(rawRole, ["INPUT_ASSESSMENTS_REPORTS", "XDKQ_K12", "XET_DUYET_KET_QUA"]);
+  const hasPreschool =
+    isAdmin ||
+    isBghPreschoolRole ||
+    isGdcsRole ||
+    isGiaoVuRole ||
+    await hasModulePermission(rawRole, ["XDKQ_MAM_NON", "XET_DUYET_MAM_NON", "XET_DUYET_KET_QUA", "PRESCHOOL_INPUT_ASSESSMENTS"]);
 
   if (!hasK12 && !hasPreschool) {
     const defaultRoute = await getDefaultRouteForRole(rawRole);
@@ -70,6 +87,14 @@ export default async function XetDuyetKetQuaPage() {
   try {
     const pAny = prisma as any;
     if (pAny) {
+      let sigByTeacherId = new Map<string, any>();
+      if (pAny.teacherSignatureProfile) {
+        const sigProfiles = await pAny.teacherSignatureProfile.findMany().catch(() => []);
+        if (Array.isArray(sigProfiles) && sigProfiles.length > 0) {
+          sigByTeacherId = new Map<string, any>(sigProfiles.map((sp: any) => [sp.teacherId, sp]));
+        }
+      }
+
       if (pAny.academicYear) {
         academicYears = await pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []);
       }
@@ -80,8 +105,9 @@ export default async function XetDuyetKetQuaPage() {
         }).catch(() => []);
       }
       if (pAny.campus) {
+        const shouldScopeCampus = isCampusScopedEntranceRole(userRole) && liveCampusIds.length > 0;
         campuses = await pAny.campus.findMany({ 
-          where: isGdcsRole ? { id: { in: liveCampusIds } } : { status: "ACTIVE" }, 
+          where: shouldScopeCampus ? { id: { in: liveCampusIds }, status: "ACTIVE" } : { status: "ACTIVE" }, 
           include: { 
             manager: {
               include: {
@@ -91,6 +117,24 @@ export default async function XetDuyetKetQuaPage() {
           },
           orderBy: { campusName: "asc" } 
         }).catch(() => []);
+
+        if (sigByTeacherId.size > 0 && Array.isArray(campuses)) {
+          campuses = campuses.map((c: any) => {
+            if (c?.manager?.teacher?.id) {
+              return {
+                ...c,
+                manager: {
+                  ...c.manager,
+                  teacher: {
+                    ...c.manager.teacher,
+                    signatureProfile: sigByTeacherId.get(c.manager.teacher.id) || null
+                  }
+                }
+              };
+            }
+            return c;
+          });
+        }
       }
       if (pAny.user) {
         examBoardUsers = await pAny.user.findMany({ 
@@ -103,10 +147,33 @@ export default async function XetDuyetKetQuaPage() {
           select: { id: true, fullName: true } 
         }).catch(() => []);
 
-        gdcsUsers = await pAny.user.findMany({ 
-          where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } }, 
-          select: { id: true, fullName: true, email: true } 
-        }).catch(() => []);
+        const rawGdcsUsers = await pAny.user.findMany({ 
+          where: { OR: [{ role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } }, { teacher: { position: { in: ["GĐCS", "GDCS", "GĐ_CS", "GD_CS"] } } }, { teacher: { positions: { contains: "GĐCS" } } }, { teacher: { positions: { contains: "GDCS" } } }] }, 
+          select: { id: true, fullName: true, email: true, teacher: { select: { id: true, teacherCode: true, teacherName: true, email: true, campusId: true } } } 
+        }).catch(async () => {
+          return await pAny.user.findMany({
+            where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } },
+            select: { id: true, fullName: true, email: true }
+          }).catch(() => []);
+        });
+
+        const gdcsAssignMap = new Map<string, string[]>();
+        if (rawGdcsUsers.length > 0 && pAny.userCampusAssignment) {
+          const allAssigns = await pAny.userCampusAssignment.findMany({
+            where: { userId: { in: rawGdcsUsers.map((u: any) => u.id) } },
+            select: { userId: true, campusId: true }
+          }).catch(() => []);
+          for (const a of allAssigns) {
+            const arr = gdcsAssignMap.get(a.userId) || [];
+            arr.push(a.campusId);
+            gdcsAssignMap.set(a.userId, arr);
+          }
+        }
+        gdcsUsers = rawGdcsUsers.map((u: any) => ({
+          ...u,
+          teacher: u.teacher ? { ...u.teacher, signatureProfile: sigByTeacherId.get(u.teacher.id) || null } : null,
+          campusIds: gdcsAssignMap.get(u.id) || (u.teacher?.campusId ? [u.teacher.campusId] : [])
+        }));
       }
       if (pAny.assessmentSubject) {
         try {
@@ -138,7 +205,7 @@ export default async function XetDuyetKetQuaPage() {
         }).catch(() => []);
       }
       if (pAny.teacher) {
-        teachers = await pAny.teacher.findMany({
+        const rawTeachers = await pAny.teacher.findMany({
           where: { status: "ACTIVE" },
           include: {
             departmentRel: true,
@@ -147,6 +214,12 @@ export default async function XetDuyetKetQuaPage() {
           },
           orderBy: { teacherName: "asc" }
         }).catch(() => []);
+        teachers = Array.isArray(rawTeachers)
+          ? rawTeachers.map((t: any) => ({
+              ...t,
+              signatureProfile: sigByTeacherId.get(t.id) || null,
+            }))
+          : [];
       }
       if (pAny.educationSystem) {
         eduSystems = await pAny.educationSystem.findMany({

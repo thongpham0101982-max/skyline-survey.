@@ -29,17 +29,17 @@ export function ClassAssignmentTable({
   return (
     <div className={`overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs ${className}`}>
       <table className="w-full text-left text-xs border-collapse">
-        <thead>
-          <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-            <th className="py-2.5 px-3 w-10 text-center">Chọn</th>
-            <th className="py-2.5 px-3">Lớp học</th>
-            <th className="py-2.5 px-3">Cơ sở</th>
-            <th className="py-2.5 px-3">GVCN phụ trách đánh giá</th>
-            <th className="py-2.5 px-3 text-right">Sĩ số HS</th>
-            <th className="py-2.5 px-3 text-center">Tiến độ đánh giá</th>
+        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+          <tr className="border-b text-[11px] font-semibold">
+            <th className="py-2.5 px-3 w-10 text-center font-semibold">Chọn</th>
+            <th className="py-2.5 px-3 font-semibold">Lớp học</th>
+            <th className="py-2.5 px-3 font-semibold">Cơ sở</th>
+            <th className="py-2.5 px-3 font-semibold">GVCN phụ trách đánh giá</th>
+            <th className="py-2.5 px-3 text-right font-semibold">Sĩ số HS</th>
+            <th className="py-2.5 px-3 text-center font-semibold">Tiến độ đánh giá</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+        <tbody className="divide-y divide-[#E2E8F0] text-slate-700 font-medium">
           {classes.map((c) => {
             let statusVariant: "status-neutral" | "status-info" | "status-warning" | "status-success" | "status-error" = "status-neutral"
             let statusLabel = "Chưa thực hiện"

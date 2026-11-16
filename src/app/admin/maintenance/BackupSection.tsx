@@ -475,17 +475,17 @@ export function BackupSection({ initialBackups, storageInfo }: BackupSectionProp
         ) : (
           <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-sm">
             <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Thời gian &amp; Mã</th>
-                  <th className="px-4 py-3">Bản ghi &amp; Số bảng</th>
-                  <th className="px-4 py-3">Dung lượng</th>
-                  <th className="px-4 py-3">Xác minh Toàn vẹn</th>
-                  <th className="px-4 py-3">Chế độ</th>
-                  <th className="px-4 py-3 text-right">Thao tác &amp; Tải về</th>
+              <thead className="bg-[#003B3A] text-[11px] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="px-4 py-3 font-semibold">Thời gian &amp; Mã</th>
+                  <th className="px-4 py-3 font-semibold">Bản ghi &amp; Số bảng</th>
+                  <th className="px-4 py-3 font-semibold">Dung lượng</th>
+                  <th className="px-4 py-3 font-semibold">Xác minh Toàn vẹn</th>
+                  <th className="px-4 py-3 font-semibold">Chế độ</th>
+                  <th className="px-4 py-3 text-right font-semibold">Thao tác &amp; Tải về</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {backups.map((b) => (
                   <tr key={b.id} className="hover:bg-slate-50/70 transition-colors">
                     {/* Thời gian */}

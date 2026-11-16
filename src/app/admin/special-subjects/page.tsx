@@ -545,20 +545,20 @@ export default function SpecialSubjectsDashboardPage() {
 
           <div className="overflow-x-auto max-h-[380px] overflow-y-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-xs border-b border-slate-200">
-                <tr className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  <th className="py-2.5 px-3.5">Lớp học</th>
-                  <th className="py-2.5 px-3.5">Cơ sở</th>
-                  <th className="py-2.5 px-3.5">Khối</th>
-                  <th className="py-2.5 px-3.5">Giáo viên phụ trách</th>
-                  <th className="py-2.5 px-3.5 text-center">Sĩ số</th>
-                  <th className="py-2.5 px-3.5 text-center">Tiến độ PPCT</th>
-                  <th className="py-2.5 px-3.5 text-center">Độ phủ đánh giá</th>
-                  <th className="py-2.5 px-3.5 text-center">Kết quả (Tốt / Đạt / CCG)</th>
-                  <th className="py-2.5 px-3.5 text-right">Sổ điểm</th>
+              <thead className="bg-[#003B3A] sticky top-0 z-10 backdrop-blur-xs border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold">
+                  <th className="py-2.5 px-3.5 font-semibold">Lớp học</th>
+                  <th className="py-2.5 px-3.5 font-semibold">Cơ sở</th>
+                  <th className="py-2.5 px-3.5 font-semibold">Khối</th>
+                  <th className="py-2.5 px-3.5 font-semibold">Giáo viên phụ trách</th>
+                  <th className="py-2.5 px-3.5 text-center font-semibold">Sĩ số</th>
+                  <th className="py-2.5 px-3.5 text-center font-semibold">Tiến độ PPCT</th>
+                  <th className="py-2.5 px-3.5 text-center font-semibold">Độ phủ đánh giá</th>
+                  <th className="py-2.5 px-3.5 text-center font-semibold">Kết quả (Tốt / Đạt / CCG)</th>
+                  <th className="py-2.5 px-3.5 text-right font-semibold">Sổ điểm</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {data.classStats.map((c: any, idx: number) => (
                   <tr key={c.assignmentId || c.classId || `class-stat-${idx}`} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-2.5 px-3.5 font-bold text-slate-900">{c.className}</td>

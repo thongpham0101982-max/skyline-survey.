@@ -60,6 +60,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
     studentCode: "",
     studentName: "",
     className: "",
+    subjectCode: "",
     subjectName: "",
     competencyName: "",
     achievedScore: "",
@@ -177,8 +178,8 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
       return;
     }
 
-    if (!mapping.studentCode || !mapping.subjectName) {
-      alert("Vui lòng chỉ định cột Mã học sinh và Tên môn học");
+    if (!mapping.studentCode || (!mapping.subjectCode && !mapping.subjectName)) {
+      alert("Vui lòng chỉ định cột Mã học sinh và Mã môn ĐGNL (DG_*) hoặc Tên môn học");
       return;
     }
 
@@ -362,13 +363,13 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href="/admin/competency-assessment/history"
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all"
+            href="/admin/competency-assessment/subjects"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#003B3A] hover:bg-[#00736E] rounded-2xl transition-all"
           >
-            <RotateCcw className="w-4 h-4 text-slate-500" />
-            Lịch sử & Rollback
+            <Layers className="w-4 h-4" />
+            Danh mục Mã môn ĐGNL
           </Link>
           <Link
             href="/admin/competency-assessment/aliases"
@@ -376,6 +377,13 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
           >
             <Settings className="w-4 h-4" />
             Từ điển Alias
+          </Link>
+          <Link
+            href="/admin/competency-assessment/history"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all"
+          >
+            <RotateCcw className="w-4 h-4 text-slate-500" />
+            Lịch sử & Rollback
           </Link>
         </div>
       </div>
@@ -567,7 +575,8 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                   { key: "studentCode", label: "Mã học sinh (*Bắt buộc)", required: true, desc: "Khóa nhận diện chính" },
                   { key: "studentName", label: "Họ và tên", required: false, desc: "Hiển thị tham chiếu" },
                   { key: "className", label: "Lớp học", required: false, desc: "Mã lớp" },
-                  { key: "subjectName", label: "Môn học (*Bắt buộc)", required: true, desc: "Tên môn để phân giải ID" },
+                  { key: "subjectCode", label: "Mã môn ĐGNL (SubjectCode / DG_*)", required: false, desc: "Ưu tiên quy đổi theo mã DG_* về mã môn SSM" },
+                  { key: "subjectName", label: "Tên môn ĐGNL (SubjectName)", required: !mapping.subjectCode, desc: "Tên môn để phân giải nếu không có cột DG_*" },
                   { key: "competencyName", label: "Năng lực (*Bắt buộc)", required: true, desc: "Tên năng lực trên trục Radar" },
                   { key: "achievedScore", label: "Tổng giá trị (Điểm đạt)", required: false, desc: "Điểm thực tế (từ 2026-2027)" },
                   { key: "maxScore", label: "Tối đa (Điểm tối đa)", required: false, desc: "Thang điểm tối đa" },
@@ -729,18 +738,18 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
 
             <div className="overflow-x-auto max-h-[400px]">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider sticky top-0 border-b border-slate-200/80">
-                  <tr>
-                    <th className="py-2.5 px-3 w-12 text-center">Dòng</th>
-                    <th className="py-2.5 px-3">Mã HS</th>
-                    <th className="py-2.5 px-3">Họ và tên</th>
-                    <th className="py-2.5 px-3">Môn học</th>
-                    <th className="py-2.5 px-3">Năng lực</th>
-                    <th className="py-2.5 px-3 text-center">Trạng thái</th>
-                    <th className="py-2.5 px-3">Chi tiết vấn đề</th>
+                <thead className="bg-[#003B3A] text-[10px] sticky top-0 border-b text-white border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-2.5 px-3 w-12 text-center font-semibold">Dòng</th>
+                    <th className="py-2.5 px-3 font-semibold">Mã HS</th>
+                    <th className="py-2.5 px-3 font-semibold">Họ và tên</th>
+                    <th className="py-2.5 px-3 font-semibold">Môn học</th>
+                    <th className="py-2.5 px-3 font-semibold">Năng lực</th>
+                    <th className="py-2.5 px-3 text-center font-semibold">Trạng thái</th>
+                    <th className="py-2.5 px-3 font-semibold">Chi tiết vấn đề</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                   {filteredIssues.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-slate-400 italic">

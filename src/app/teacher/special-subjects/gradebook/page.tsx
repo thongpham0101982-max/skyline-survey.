@@ -327,17 +327,17 @@ export default function TeacherSpecialGradebookPage() {
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                <th className="py-3 px-3 w-12 text-center">STT</th>
-                <th className="py-3 px-3 w-28">Mã HS</th>
-                <th className="py-3 px-3 w-44">Họ và tên</th>
-                <th className="py-3 px-3 w-72 text-center">Mức đạt năng lực</th>
-                <th className="py-3 px-3">Nhận xét của Giáo viên</th>
-                <th className="py-3 px-3 w-56">Link Sản phẩm / Minh chứng</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-3 px-3 w-12 text-center font-semibold">STT</th>
+                <th className="py-3 px-3 w-28 font-semibold">Mã HS</th>
+                <th className="py-3 px-3 w-44 font-semibold">Họ và tên</th>
+                <th className="py-3 px-3 w-72 text-center font-semibold">Mức đạt năng lực</th>
+                <th className="py-3 px-3 font-semibold">Nhận xét của Giáo viên</th>
+                <th className="py-3 px-3 w-56 font-semibold">Link Sản phẩm / Minh chứng</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {students.map((st: any, idx: number) => {
                 const entry = formEntries[st.id] || { evalResult: "", teacherFeedback: "", studentProductUrl: "" };
                 const res = entry.evalResult;

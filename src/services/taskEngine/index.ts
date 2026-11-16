@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { SSMTask, TaskPriority, TaskStatus, SourceModule, TaskSummaryCounts } from "./types"
 import { resolveTeacherAssignmentProfile } from "./assignmentMapper"
+import { getQaMetadataMapForTasks } from "@/lib/qa-workspace/schemaInit"
 
 export interface TaskFilterOptions {
   academicYearId?: string
@@ -2207,29 +2208,58 @@ export async function aggregateTeacherTasks(
   }
 
   // ============================================================================
-  // PHÂN HỆ BỔ SUNG: CÔNG VIỆC ĐƯỢC GIAO TRỰC TIẾP (WorkTask - CONG_TAC)
+  // PHÂN HỆ BỔ SUNG: CÔNG VIỆC ĐƯỢC GIAO TRỰC TIẾP (WorkTask - CONG_TAC / QA WORKSPACE)
   // ============================================================================
   try {
-    const workTasks = await prisma.workTask.findMany({
-      where: {
-        assignedToUserId: userId,
-      },
-      orderBy: { endDate: "asc" },
-      take: 30,
-    }).catch(() => [])
+    const workTasks = await prisma.workTask
+      .findMany({
+        where: {
+          OR: [
+            { assignedToUserId: userId },
+            { collaborators: { contains: userId } },
+          ],
+        },
+        orderBy: { endDate: "asc" },
+        take: 40,
+      })
+      .catch(() => [])
+
+    const qaMetaMap =
+      workTasks.length > 0 ? await getQaMetadataMapForTasks(workTasks) : new Map()
 
     for (const wt of workTasks) {
       const wtAny = wt as any
-      const wtStatus = wtAny.status || (wt.progress >= 100 || wt.completedAt ? "COMPLETED" : wt.progress > 0 ? "IN_PROGRESS" : "NEW")
-      if (wtStatus === "CANCELLED") continue
-      const isCompleted = wtStatus === "COMPLETED"
+      const qaMeta = qaMetaMap.get(wt.id)
+      const wfStatus = qaMeta?.workflowStatus
+
+      if (wfStatus === "DRAFT" || wfStatus === "CANCELLED" || wt.progress === "CANCELLED") {
+        continue
+      }
+
+      const rawProg = wtAny.status || wt.progress
+      const isCompleted =
+        wfStatus === "COMPLETED" ||
+        rawProg === "COMPLETED" ||
+        (typeof rawProg === "number" && rawProg >= 100) ||
+        Boolean(wt.completedAt)
+
       if (isCompleted && !options?.includeCompleted && options?.status !== "COMPLETED") {
         continue
       }
 
+      const isWaitingReview = wfStatus === "PENDING_REVIEW"
+      const isInProgress =
+        wfStatus === "IN_PROGRESS" ||
+        wfStatus === "NEEDS_REVISION" ||
+        rawProg === "IN_PROGRESS" ||
+        wt.acceptanceStatus === "ACCEPTED" ||
+        (typeof rawProg === "number" && rawProg > 0)
+
       const rawDueDate = wtAny.dueDate || wt.endDate
       const dueDate = rawDueDate ? new Date(rawDueDate) : null
-      const isPast = Boolean(dueDate && dueDate < todayStart && !isCompleted)
+      const isPast = Boolean(
+        dueDate && dueDate < todayStart && !isCompleted && !isWaitingReview
+      )
       const isToday = Boolean(dueDate && dueDate >= todayStart && dueDate <= todayEnd)
 
       let priority: TaskPriority = "NORMAL"
@@ -2238,11 +2268,21 @@ export async function aggregateTeacherTasks(
 
       const status: TaskStatus = isCompleted
         ? "COMPLETED"
+        : isWaitingReview
+        ? "WAITING"
         : isPast
         ? "OVERDUE"
-        : wtStatus === "IN_PROGRESS"
+        : isInProgress
         ? "IN_PROGRESS"
         : "NEW"
+
+      const waitingConfirm =
+        (wt.acceptanceStatus || "WAITING_CONFIRMATION") === "WAITING_CONFIRMATION" &&
+        !isCompleted &&
+        !isWaitingReview
+
+      const checklistSteps = qaMeta?.checklist || []
+      const doneSteps = checklistSteps.filter((s: any) => s.completed).length
 
       addTask({
         taskId: `work-${wt.id}`,
@@ -2250,19 +2290,36 @@ export async function aggregateTeacherTasks(
         sourceModule: "CONG_TAC",
         sourceId: wt.id,
         title: wt.title,
-        description: wt.description || undefined,
+        description:
+          qaMeta?.deliverables && !wt.description
+            ? `Sản phẩm yêu cầu: ${qaMeta.deliverables}`
+            : wt.description || undefined,
         priority,
         status,
-        deadline: dueDate ? (isToday ? "Hôm nay" : dueDate.toLocaleDateString("vi-VN")) : "Không thời hạn",
+        deadline: dueDate
+          ? isToday
+            ? "Hôm nay"
+            : dueDate.toLocaleDateString("vi-VN")
+          : "Không thời hạn",
         deadlineDate: dueDate?.toISOString(),
         assignedUserId: userId,
-        deepLink: `/teacher/tasks?highlight=${wt.id}`,
+        deepLink: `/admin/tasks?taskId=${wt.id}${waitingConfirm ? "&action=confirm" : ""}`,
         createdAt: wt.createdAt.toISOString(),
         completedAt: wt.completedAt?.toISOString() || null,
         metadata: {
-          moduleLabel: "Công tác",
-          badgeColor: "slate",
-        },
+          moduleLabel: wt.department || "QA Workspace | KT&ĐBCL",
+          badgeColor: "teal",
+          acceptanceStatus: wt.acceptanceStatus || "WAITING_CONFIRMATION",
+          requiresApproval: qaMeta?.requiresApproval !== false,
+          workflowStatus: wfStatus || "ASSIGNED",
+          ...(checklistSteps.length > 0
+            ? {
+                progressCurrent: doneSteps,
+                progressTotal: checklistSteps.length,
+                progressPercent: Math.round((doneSteps / checklistSteps.length) * 100),
+              }
+            : {}),
+        } as any,
       })
     }
 

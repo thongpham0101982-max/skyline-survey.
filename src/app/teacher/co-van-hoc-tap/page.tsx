@@ -211,7 +211,7 @@ export default function TeacherAdvisoryPage() {
 
   // 3.1. Consultation Tracking Modes & State for Homeroom Teacher
   const [consultationTabMode, setConsultationTabMode] = useState<"BY_STUDENT" | "ALL_LOGS">("BY_STUDENT")
-  const [teacherStudentFilterStatus, setTeacherStudentFilterStatus] = useState<"ALL" | "CONSULTED" | "NOT_CONSULTED">("ALL")
+  const [teacherStudentFilterStatus, setTeacherStudentFilterStatus] = useState<"ALL" | "CONSULTED" | "NOT_CONSULTED" | "FEEDBACK_DONE" | "FEEDBACK_PENDING">("ALL")
   const [teacherStudentSearchQuery, setTeacherStudentSearchQuery] = useState("")
   const [expandedStudentIdForConsultation, setExpandedStudentIdForConsultation] = useState<string | null>(null)
 
@@ -227,10 +227,17 @@ export default function TeacherAdvisoryPage() {
       const logs = map[st.id] || []
       const isConsulted = logs.length > 0
       const latestLog = logs[0] || null
+      const respondedLogs = logs.filter(c => Boolean(c.studentReflection || c.hasStudentFeedback || c.studentFeedbackStatus === "SUBMITTED"))
+      const respondedSessionCount = respondedLogs.length
+      const hasStudentResponded = isConsulted && respondedSessionCount > 0
+      const isPendingFeedback = isConsulted && respondedSessionCount === 0
       return {
         ...st,
         isConsulted,
         sessionCount: logs.length,
+        respondedSessionCount,
+        hasStudentResponded,
+        isPendingFeedback,
         latestMeetingDate: latestLog?.meetingDate || null,
         latestCounselor: latestLog?.teacher?.teacherName || latestLog?.evaluatorName || "GVCN",
         logs
@@ -241,6 +248,10 @@ export default function TeacherAdvisoryPage() {
     const consultedCount = studentRows.filter(s => s.isConsulted).length
     const unconsultedCount = totalStudents - consultedCount
     const consultedPercent = totalStudents > 0 ? Math.round((consultedCount / totalStudents) * 1000) / 10 : 0
+    const feedbackRespondedCount = studentRows.filter(s => s.hasStudentResponded).length
+    const feedbackPendingCount = studentRows.filter(s => s.isPendingFeedback).length
+    const feedbackRespondedPercent = consultedCount > 0 ? Math.round((feedbackRespondedCount / consultedCount) * 1000) / 10 : 0
+    const totalRespondedSessions = consultations.filter(c => Boolean(c.studentReflection || c.hasStudentFeedback || c.studentFeedbackStatus === "SUBMITTED")).length
 
     return {
       studentLogsMap: map,
@@ -248,7 +259,11 @@ export default function TeacherAdvisoryPage() {
       totalStudents,
       consultedCount,
       unconsultedCount,
-      consultedPercent
+      consultedPercent,
+      feedbackRespondedCount,
+      feedbackPendingCount,
+      feedbackRespondedPercent,
+      totalRespondedSessions
     }
   }, [students, consultations])
 
@@ -267,6 +282,8 @@ export default function TeacherAdvisoryPage() {
         "Giới tính": st.gender || "—",
         "Trạng thái tư vấn": st.isConsulted ? "Đã tư vấn" : "Chưa tư vấn",
         "Số lượt tư vấn": st.sessionCount,
+        "Tiến độ HS phản hồi 1:1": st.hasStudentResponded ? "Đã phản hồi 1:1" : st.isConsulted ? "Chờ HS phản hồi 1:1" : "Chưa tư vấn",
+        "Số buổi HS đã phản hồi 1:1": `${st.respondedSessionCount}/${st.sessionCount}`,
         "Ngày tư vấn gần nhất": st.latestMeetingDate ? new Date(st.latestMeetingDate).toLocaleDateString("vi-VN") : "—",
         "Cố vấn gần nhất": st.latestCounselor || "—",
         "Nội dung buổi gần nhất": st.logs?.[0]?.content || "—",
@@ -1465,7 +1482,7 @@ export default function TeacherAdvisoryPage() {
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>
-              Bước 5: Nhật ký Tư vấn 1:1 & Phối hợp 3 Bên ({classConsultationStats.consultedCount}/{classConsultationStats.totalStudents} HS)
+              Bước 5: Nhật ký Tư vấn 1:1 & Phối hợp 3 Bên (Đã TV: {classConsultationStats.consultedCount}/{classConsultationStats.totalStudents} HS • HS phản hồi 1:1: {classConsultationStats.feedbackRespondedCount}/{classConsultationStats.consultedCount} HS)
             </span>
           </button>
           <button
@@ -2302,17 +2319,17 @@ export default function TeacherAdvisoryPage() {
           {viewMode === "table" && (
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
                     
-                    <th className="p-3.5 border-r border-slate-200 w-52">Nhóm mục tiêu</th>
-                    <th className="p-3.5 border-r border-slate-200">Mục tiêu cụ thể</th>
-                    <th className="p-3.5 border-r border-slate-200 w-28">Mốc kiểm tra</th>
-                    <th className="p-3.5 border-r border-slate-200 w-44">Mức độ đạt</th>
-                    <th className="p-3.5">Ghi chú của GVCN / CVHT</th>
+                    <th className="p-3.5 border-r border-white/15 w-52 font-semibold">Nhóm mục tiêu</th>
+                    <th className="p-3.5 border-r border-white/15 font-semibold">Mục tiêu cụ thể</th>
+                    <th className="p-3.5 border-r border-white/15 w-28 font-semibold">Mốc kiểm tra</th>
+                    <th className="p-3.5 border-r border-white/15 w-44 font-semibold">Mức độ đạt</th>
+                    <th className="p-3.5 font-semibold">Ghi chú của GVCN / CVHT</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 font-semibold">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold">
                   {singleStudentTrackingRows.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-slate-400 font-bold">
@@ -2587,19 +2604,19 @@ export default function TeacherAdvisoryPage() {
             {/* Class-Wide Evaluation Table */}
             <div className="overflow-x-auto rounded-2xl border border-slate-200">
               <table className="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3 border-r border-slate-200 w-12 text-center">STT</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[180px]">Học sinh</th>
-                    <th className="p-3 border-r border-slate-200 w-28 text-center">Nộp MT</th>
-                    <th className="p-3 border-r border-slate-200 w-32 text-center">Điểm Tổng Kết (%)</th>
-                    <th className="p-3 border-r border-slate-200 w-28 text-center">Thang Rubric</th>
-                    <th className="p-3 border-r border-slate-200 w-32 text-center">Xếp loại</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[220px]">3 Tiêu chí Rubric (1-5)</th>
-                    <th className="p-3 text-center w-28">Thao tác</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="p-3 border-r border-white/15 w-12 text-center font-semibold">STT</th>
+                    <th className="p-3 border-r border-white/15 min-w-[180px] font-semibold">Học sinh</th>
+                    <th className="p-3 border-r border-white/15 w-28 text-center font-semibold">Nộp MT</th>
+                    <th className="p-3 border-r border-white/15 w-32 text-center font-semibold">Điểm Tổng Kết (%)</th>
+                    <th className="p-3 border-r border-white/15 w-28 text-center font-semibold">Thang Rubric</th>
+                    <th className="p-3 border-r border-white/15 w-32 text-center font-semibold">Xếp loại</th>
+                    <th className="p-3 border-r border-white/15 min-w-[220px] font-semibold">3 Tiêu chí Rubric (1-5)</th>
+                    <th className="p-3 text-center w-28 font-semibold">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-800">
                   {filteredClassEvalStudents.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="p-8 text-center text-slate-400 font-bold">
@@ -3087,18 +3104,18 @@ export default function TeacherAdvisoryPage() {
               {/* Excel Evaluation Table Format */}
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left border-collapse border border-slate-200">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                      <th className="p-3 border-r border-slate-200 min-w-[200px]">Nhóm mục tiêu (Trọng số)</th>
-                      <th className="p-3 border-r border-slate-200 min-w-[300px]">Mục tiêu cụ thể</th>
-                      <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
-                      <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức hoàn thành MT (1-5)</th>
-                      <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức độ chủ động (1-5)</th>
-                      <th className="p-3 border-r border-slate-200 min-w-[140px]">Thái độ tham gia (1-5)</th>
-                      <th className="p-3 min-w-[220px]">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b text-[11px] font-semibold">
+                      <th className="p-3 border-r border-white/15 min-w-[200px] font-semibold">Nhóm mục tiêu (Trọng số)</th>
+                      <th className="p-3 border-r border-white/15 min-w-[300px] font-semibold">Mục tiêu cụ thể</th>
+                      <th className="p-3 border-r border-white/15 min-w-[150px] font-semibold">Kết quả theo dõi</th>
+                      <th className="p-3 border-r border-white/15 min-w-[140px] font-semibold">Mức hoàn thành MT (1-5)</th>
+                      <th className="p-3 border-r border-white/15 min-w-[140px] font-semibold">Mức độ chủ động (1-5)</th>
+                      <th className="p-3 border-r border-white/15 min-w-[140px] font-semibold">Thái độ tham gia (1-5)</th>
+                      <th className="p-3 min-w-[220px] font-semibold">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {singleStudentTrackingRows.length > 0 ? (
                       singleStudentTrackingRows.map((item, idx) => {
                         const sameCatRows = singleStudentTrackingRows.filter(r => r.categoryKey === item.categoryKey || r.category === item.category)
@@ -3436,14 +3453,14 @@ export default function TeacherAdvisoryPage() {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left border-collapse border border-amber-300 bg-white">
-                  <thead>
-                    <tr className="bg-amber-100 text-amber-950 font-black border-b border-amber-300">
-                      <th className="p-3 border-r border-amber-300 w-1/6">Tiêu chí</th>
-                      <th className="p-3 border-r border-amber-300">Mức 1</th>
-                      <th className="p-3 border-r border-amber-300">Mức 2</th>
-                      <th className="p-3 border-r border-amber-300">Mức 3</th>
-                      <th className="p-3 border-r border-amber-300">Mức 4</th>
-                      <th className="p-3">Mức 5</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b border-amber-300 text-[11px] font-semibold">
+                      <th className="p-3 border-r border-white/15 w-1/6 font-semibold">Tiêu chí</th>
+                      <th className="p-3 border-r border-white/15 font-semibold">Mức 1</th>
+                      <th className="p-3 border-r border-white/15 font-semibold">Mức 2</th>
+                      <th className="p-3 border-r border-white/15 font-semibold">Mức 3</th>
+                      <th className="p-3 border-r border-white/15 font-semibold">Mức 4</th>
+                      <th className="p-3 font-semibold">Mức 5</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-amber-200 font-semibold text-slate-800">
@@ -3529,7 +3546,7 @@ export default function TeacherAdvisoryPage() {
           </div>
 
           {/* Executive KPI Metrics for Homeroom Teacher */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 tabular-nums">
             <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 space-y-1">
               <span className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-slate-400" />
@@ -3575,7 +3592,41 @@ export default function TeacherAdvisoryPage() {
               </p>
             </div>
 
-            <div className="bg-teal-50/70 border border-teal-200 rounded-2xl p-4 space-y-1">
+            <div
+              onClick={() => {
+                setConsultationTabMode("BY_STUDENT")
+                setTeacherStudentFilterStatus(
+                  teacherStudentFilterStatus === "FEEDBACK_DONE" ? "FEEDBACK_PENDING" : "FEEDBACK_DONE"
+                )
+              }}
+              className="bg-teal-50/70 border border-teal-200 rounded-2xl p-4 space-y-1.5 cursor-pointer hover:bg-teal-100/60 transition-all group"
+              title="Nhấn để lọc học sinh đã thực hiện phản hồi 1:1 / chờ phản hồi 1:1"
+            >
+              <span className="text-[10px] font-black uppercase text-[#00736E] flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-[#008B85]" />
+                <span>TIẾN ĐỘ HS PHẢN HỒI 1:1</span>
+              </span>
+              <p className="text-2xl font-black text-[#003B3A] tabular-nums">
+                {classConsultationStats.feedbackRespondedCount}/{classConsultationStats.consultedCount} HS{" "}
+                <span className="text-xs font-bold text-[#00736E]">
+                  ({classConsultationStats.feedbackRespondedPercent}%)
+                </span>
+              </p>
+              <div className="w-full bg-teal-200/80 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-[#00A19A] h-1.5 rounded-full transition-all"
+                  style={{ width: `${Math.min(classConsultationStats.feedbackRespondedPercent, 100)}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-slate-600 font-semibold">
+                {classConsultationStats.totalRespondedSessions}/{consultations.length} phiên đã phản hồi •{" "}
+                <span className="text-amber-700 font-bold">
+                  {classConsultationStats.feedbackPendingCount} HS chờ
+                </span>
+              </p>
+            </div>
+
+            <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 space-y-1">
               <span className="text-[10px] font-black uppercase text-teal-800 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-teal-800" />
                 <span>TỔNG LƯỢT TƯ VẤN</span>
@@ -3669,6 +3720,30 @@ export default function TeacherAdvisoryPage() {
                 >
                   Chưa tư vấn ({classConsultationStats.unconsultedCount})
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTeacherStudentFilterStatus("FEEDBACK_DONE")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tabular-nums ${
+                    teacherStudentFilterStatus === "FEEDBACK_DONE"
+                      ? "bg-[#008B85] text-white shadow-xs"
+                      : "bg-white text-[#00736E] border border-teal-200 hover:bg-teal-50"
+                  }`}
+                >
+                  HS đã phản hồi 1:1 ({classConsultationStats.feedbackRespondedCount})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTeacherStudentFilterStatus("FEEDBACK_PENDING")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tabular-nums ${
+                    teacherStudentFilterStatus === "FEEDBACK_PENDING"
+                      ? "bg-amber-600 text-white shadow-xs"
+                      : "bg-white text-amber-800 border border-amber-200 hover:bg-amber-50"
+                  }`}
+                >
+                  Chờ HS phản hồi 1:1 ({classConsultationStats.feedbackPendingCount})
+                </button>
               </div>
             )}
           </div>
@@ -3691,6 +3766,10 @@ export default function TeacherAdvisoryPage() {
                   list = list.filter(s => s.isConsulted)
                 } else if (teacherStudentFilterStatus === "NOT_CONSULTED") {
                   list = list.filter(s => !s.isConsulted)
+                } else if (teacherStudentFilterStatus === "FEEDBACK_DONE") {
+                  list = list.filter(s => s.hasStudentResponded)
+                } else if (teacherStudentFilterStatus === "FEEDBACK_PENDING") {
+                  list = list.filter(s => s.isPendingFeedback)
                 }
 
                 if (list.length === 0) {
@@ -3744,6 +3823,19 @@ export default function TeacherAdvisoryPage() {
                               <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black inline-flex items-center gap-1">
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                                 <span>Đã tư vấn ({st.sessionCount} buổi)</span>
+                              </span>
+                              {st.hasStudentResponded ? (
+                                <span className="ml-1.5 px-2.5 py-1 rounded-full bg-teal-100 text-[#003B3A] border border-teal-300 text-xs font-black inline-flex items-center gap-1 tabular-nums">
+                                  <MessageSquare className="w-3.5 h-3.5 text-[#008B85]" />
+                                  <span>HS đã phản hồi 1:1 ({st.respondedSessionCount}/{st.sessionCount} buổi)</span>
+                                </span>
+                              ) : (
+                                <span className="ml-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black inline-flex items-center gap-1 tabular-nums">
+                                  <Clock className="w-3.5 h-3.5 text-amber-700" />
+                                  <span>Chờ HS phản hồi 1:1 (0/{st.sessionCount} buổi)</span>
+                                </span>
+                              )}
+                              <span>
                               </span>
                               {st.latestMeetingDate && (
                                 <p className="text-[10px] text-slate-500 font-medium mt-0.5">
@@ -3814,6 +3906,15 @@ export default function TeacherAdvisoryPage() {
                                     <span className="font-extrabold text-[#003B3A] flex items-center gap-1">
                                       <Calendar className="w-3.5 h-3.5 text-teal-700" />
                                       <span>Ngày gặp: {c.meetingDate ? new Date(c.meetingDate).toLocaleDateString("vi-VN") : "—"}</span>
+                                      {c.studentReflection || c.hasStudentFeedback || c.studentFeedbackStatus === "SUBMITTED" ? (
+                                        <span className="ml-2 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold">
+                                          ✓ HS đã phản hồi 1:1
+                                        </span>
+                                      ) : (
+                                        <span className="ml-2 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold">
+                                          ⏳ Chờ HS phản hồi 1:1
+                                        </span>
+                                      )}
                                     </span>
                                     {c.deadline && (
                                       <span className="text-amber-800 font-bold text-[11px]">
@@ -3845,9 +3946,30 @@ export default function TeacherAdvisoryPage() {
                                   {c.difficulties && <p className="text-amber-900"><strong>Khó khăn ghi nhận:</strong> {c.difficulties}</p>}
                                   {c.nextActions && <p className="text-teal-900 font-semibold"><strong>Hành động tiếp theo:</strong> {c.nextActions}</p>}
                                   {c.notes && <p className="text-slate-600 italic"><strong>Ghi chú:</strong> {c.notes}</p>}
-                                  {c.studentReflection && (
+                                  {c.studentReflection ? (
                                     <div className="p-2 rounded-lg bg-emerald-100/90 border border-emerald-300 text-emerald-950 font-bold text-[11px] mt-1.5 shadow-2xs">
-                                      💬 <strong>Học sinh tự đánh giá:</strong> "{c.studentReflection}"
+                                      💬 <strong>Học sinh phản hồi 1:1:</strong> "{c.studentReflection}"
+                                      {c.postConsultationFeedback && (
+                                        <div className="mt-1 pt-1 border-t border-emerald-200/80 flex flex-wrap items-center gap-2 text-[10px] font-semibold text-emerald-900">
+                                          <span>Lắng nghe & tôn trọng: <strong>{c.postConsultationFeedback.listenedAndRespectedScore}/5</strong></span>
+                                          <span>• Hiểu việc cần làm: <strong>{c.postConsultationFeedback.understoodNextSteps ? "Đã hiểu rõ" : "Cần giải thích thêm"}</strong></span>
+                                          <span>• Mục tiêu & hành động: <strong>{c.postConsultationFeedback.goalAndActionSuitability === "PHU_HOP" ? "Phù hợp" : "Cần điều chỉnh"}</strong></span>
+                                          {c.postConsultationFeedback.wantsMoreDiscussion && (
+                                            <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">Muốn trao đổi thêm</span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="p-2 rounded-lg bg-amber-50/90 border border-amber-200 text-amber-900 font-semibold text-[11px] mt-1.5 flex items-center justify-between gap-2">
+                                      <span>⏳ Học sinh chưa thực hiện phản hồi 1:1 sau buổi tư vấn này.</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setActiveTab("student_feedback")}
+                                        className="px-2 py-0.5 rounded bg-white border border-amber-300 text-amber-900 text-[10px] font-bold hover:bg-amber-100 cursor-pointer"
+                                      >
+                                        Mở tab Phản hồi HS →
+                                      </button>
                                     </div>
                                   )}
                                 </div>
@@ -3869,21 +3991,21 @@ export default function TeacherAdvisoryPage() {
           {consultationTabMode === "ALL_LOGS" && (
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3 border-r border-slate-200 w-12 text-center">STT</th>
-                    <th className="p-3 border-r border-slate-200 w-28">Ngày gặp</th>
-                    <th className="p-3 border-r border-slate-200 w-1/5">Học sinh</th>
-                    <th className="p-3 border-r border-slate-200">Nội dung trao đổi</th>
-                    <th className="p-3 border-r border-slate-200">Khó khăn ghi nhận</th>
-                    <th className="p-3 border-r border-slate-200">Hành động tiếp theo</th>
-                    <th className="p-3 border-r border-slate-200 w-28">Thời hạn</th>
-                    <th className="p-3 border-r border-slate-200 w-28">Ghi chú</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[160px] bg-amber-50/70 text-amber-950">Tự đánh giá của Học sinh</th>
-                    <th className="p-3 text-center w-24">Thao tác</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="p-3 border-r border-white/15 w-12 text-center font-semibold">STT</th>
+                    <th className="p-3 border-r border-white/15 w-28 font-semibold">Ngày gặp</th>
+                    <th className="p-3 border-r border-white/15 w-1/5 font-semibold">Học sinh</th>
+                    <th className="p-3 border-r border-white/15 font-semibold">Nội dung trao đổi</th>
+                    <th className="p-3 border-r border-white/15 font-semibold">Khó khăn ghi nhận</th>
+                    <th className="p-3 border-r border-white/15 font-semibold">Hành động tiếp theo</th>
+                    <th className="p-3 border-r border-white/15 w-28 font-semibold">Thời hạn</th>
+                    <th className="p-3 border-r border-white/15 w-28 font-semibold">Ghi chú</th>
+                    <th className="p-3 border-r border-white/15 min-w-[160px] bg-[#003B3A] text-amber-200 font-semibold">Tự đánh giá của Học sinh</th>
+                    <th className="p-3 text-center w-24 font-semibold">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-800">
                   {consultations.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="p-8 text-center text-slate-400 font-medium">
@@ -3982,17 +4104,17 @@ export default function TeacherAdvisoryPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse border border-slate-200">
-              <thead>
-                <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                  <th className="p-3.5 border-r border-slate-200 w-36">1. Mốc thời gian</th>
-                  <th className="p-3.5 border-r border-slate-200 w-44">2. Phân loại cần giúp đỡ</th>
-                  <th className="p-3.5 border-r border-slate-200 w-36">3. Mức độ khẩn cấp</th>
-                  <th className="p-3.5 border-r border-slate-200 min-w-[240px]">4. Chi tiết điều em muốn Thầy/Cô hỗ trợ</th>
-                  <th className="p-3.5 border-r border-slate-200 w-44">5. Phản hồi & Xử lý của GVCN</th>
-                  <th className="p-3.5 min-w-[220px]">6. Lời nhắn / Phản hồi từ GVCN</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="p-3.5 border-r border-white/15 w-36 font-semibold">1. Mốc thời gian</th>
+                  <th className="p-3.5 border-r border-white/15 w-44 font-semibold">2. Phân loại cần giúp đỡ</th>
+                  <th className="p-3.5 border-r border-white/15 w-36 font-semibold">3. Mức độ khẩn cấp</th>
+                  <th className="p-3.5 border-r border-white/15 min-w-[240px] font-semibold">4. Chi tiết điều em muốn Thầy/Cô hỗ trợ</th>
+                  <th className="p-3.5 border-r border-white/15 w-44 font-semibold">5. Phản hồi & Xử lý của GVCN</th>
+                  <th className="p-3.5 min-w-[220px] font-semibold">6. Lời nhắn / Phản hồi từ GVCN</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-800">
                 {helpRequests.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
@@ -4221,19 +4343,19 @@ export default function TeacherAdvisoryPage() {
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse border border-slate-200">
-              <thead>
-                <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                  <th className="p-3 border-r border-slate-200 w-12 text-center">STT</th>
-                  <th className="p-3 border-r border-slate-200 w-44">Học sinh</th>
-                  <th className="p-3 border-r border-slate-200 w-32">Trạng thái</th>
-                  <th className="p-3 border-r border-slate-200 min-w-[200px]">Mục tiêu đang mở khóa</th>
-                  <th className="p-3 border-r border-slate-200 min-w-[220px]">Hành động 7 ngày & Chìa khóa</th>
-                  <th className="p-3 border-r border-slate-200 w-36">Tiến độ Sprint</th>
-                  <th className="p-3 border-r border-slate-200 min-w-[180px]">Đồng hành & Ghi chú GV</th>
-                  <th className="p-3 text-center w-24">Thao tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="p-3 border-r border-white/15 w-12 text-center font-semibold">STT</th>
+                  <th className="p-3 border-r border-white/15 w-44 font-semibold">Học sinh</th>
+                  <th className="p-3 border-r border-white/15 w-32 font-semibold">Trạng thái</th>
+                  <th className="p-3 border-r border-white/15 min-w-[200px] font-semibold">Mục tiêu đang mở khóa</th>
+                  <th className="p-3 border-r border-white/15 min-w-[220px] font-semibold">Hành động 7 ngày & Chìa khóa</th>
+                  <th className="p-3 border-r border-white/15 w-36 font-semibold">Tiến độ Sprint</th>
+                  <th className="p-3 border-r border-white/15 min-w-[180px] font-semibold">Đồng hành & Ghi chú GV</th>
+                  <th className="p-3 text-center w-24 font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-800">
                 {unlocksLoading ? (
                   <tr>
                     <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
@@ -4660,18 +4782,18 @@ export default function TeacherAdvisoryPage() {
           {/* Table of Requests */}
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse border border-slate-200">
-              <thead>
-                <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                  <th className="p-3.5 border-r border-slate-200 w-12 text-center">STT</th>
-                  <th className="p-3.5 border-r border-slate-200 w-52">Học Sinh</th>
-                  <th className="p-3.5 border-r border-slate-200 w-36">Thời Gian Gửi</th>
-                  <th className="p-3.5 border-r border-slate-200 min-w-[260px]">Lý Do Học Sinh Gửi Yêu Cầu</th>
-                  <th className="p-3.5 border-r border-slate-200 w-44 text-center">Trạng Thái</th>
-                  <th className="p-3.5 border-r border-slate-200 min-w-[220px]">Phản Hồi Của GVCN</th>
-                  <th className="p-3.5 text-center min-w-[170px]">Thao Tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="p-3.5 border-r border-white/15 w-12 text-center font-semibold">STT</th>
+                  <th className="p-3.5 border-r border-white/15 w-52 font-semibold">Học Sinh</th>
+                  <th className="p-3.5 border-r border-white/15 w-36 font-semibold">Thời Gian Gửi</th>
+                  <th className="p-3.5 border-r border-white/15 min-w-[260px] font-semibold">Lý Do Học Sinh Gửi Yêu Cầu</th>
+                  <th className="p-3.5 border-r border-white/15 w-44 text-center font-semibold">Trạng Thái</th>
+                  <th className="p-3.5 border-r border-white/15 min-w-[220px] font-semibold">Phản Hồi Của GVCN</th>
+                  <th className="p-3.5 text-center min-w-[170px] font-semibold">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-800">
                 {(() => {
                   const filtered = adjustmentRequests.filter((r: any) => {
                     if (requestStatusFilter === "ALL") return true

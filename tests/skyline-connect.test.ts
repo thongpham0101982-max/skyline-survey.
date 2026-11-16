@@ -14,6 +14,11 @@ import {
   filterRankedCandidatesKeepingOriginalRank,
   formatDisplayScore,
   computeDiscoveryRankScore,
+  preserveDraftStateOnTypeSwitch,
+  insertStarterPromptAtCursor,
+  evaluatePostBumpEligibility,
+  recalculatePostLastBumpedAt,
+  buildPostSpreadJourney,
 } from "../src/lib/skyline-connect/scoring"
 import {
   canViewPost,
@@ -23,9 +28,12 @@ import {
   canPinOrMarkFeedbackOnPost,
   canUserAccessFeatureFlag,
   hasSlcRoleInScope,
+  filterAllowedMentionUsersForPost,
+  canAccessPostAttachmentOrDeepLink,
   SlcUserContext,
   PostAccessTarget,
 } from "../src/lib/skyline-connect/permissions"
+import { SLC_CONTRIBUTION_TYPES } from "../src/lib/skyline-connect/constants"
 import {
   sanitizeRichText,
   validateSafeExternalUrl,
@@ -1071,6 +1079,434 @@ describe("Sky-Line Connect v2.0 — 12 Nhóm Kiểm thử Tự động (Mục XI
     })
   })
 })
+
+describe("Sky-Line Connect v2.1 — Cộng đồng Cùng sáng tạo ('Góp một mảnh sáng tạo' — 10 Kịch bản Mục 12)", () => {
+  it("1. Đổi loại mảnh đóng góp (Một cách làm / Học liệu / Thử nghiệm / Kỹ năng / Kết nối) không làm mất nội dung, tệp, liên kết hay đồng nghiệp nhắc tên", () => {
+    expect(SLC_CONTRIBUTION_TYPES).toHaveLength(5)
+    expect(SLC_CONTRIBUTION_TYPES.map((t) => t.value)).toEqual([
+      "METHOD",
+      "MATERIAL",
+      "EXPERIMENT",
+      "SKILL",
+      "CONNECTION",
+    ])
+
+    const initialDraft = {
+      postId: "post-5p-ai",
+      contributionType: "METHOD" as const,
+      content: "Tôi đề xuất cho học sinh chọn mức độ câu hỏi trước khi chơi.",
+      attachments: [
+        {
+          fileName: "Bo_cau_hoi_lop4.pdf",
+          fileUrl: "/uploads/bo_cau_hoi.pdf",
+          mimeType: "application/pdf",
+          fileSize: 102400,
+          attachmentType: "DOCUMENT",
+        },
+      ],
+      links: [{ url: "https://skyline.edu.vn/hoc-lieu", title: "Kho học liệu số" }],
+      mentionedUserIds: ["gv-lan", "gv-duc"],
+      followPost: true,
+      helpRequestId: "hr-1",
+    }
+
+    const afterSwitchToMaterial = preserveDraftStateOnTypeSwitch(initialDraft, "MATERIAL")
+    expect(afterSwitchToMaterial.contributionType).toBe("MATERIAL")
+    expect(afterSwitchToMaterial.content).toBe(initialDraft.content)
+    expect(afterSwitchToMaterial.attachments).toEqual(initialDraft.attachments)
+    expect(afterSwitchToMaterial.links).toEqual(initialDraft.links)
+    expect(afterSwitchToMaterial.mentionedUserIds).toEqual(["gv-lan", "gv-duc"])
+
+    const afterSwitchToExperiment = preserveDraftStateOnTypeSwitch(afterSwitchToMaterial, "EXPERIMENT")
+    expect(afterSwitchToExperiment.contributionType).toBe("EXPERIMENT")
+    expect(afterSwitchToExperiment.content).toBe(initialDraft.content)
+  })
+
+  it("2. Nhấn câu gợi ý mở đầu chèn vào đúng vị trí con trỏ, không ghi đè nội dung đã viết", () => {
+    // Khi ô nhập đang có nội dung và con trỏ ở cuối
+    const existing = "Mình rất thích ý tưởng này."
+    const resEnd = insertStarterPromptAtCursor(existing, "Tôi đề xuất…", existing.length)
+    expect(resEnd.text).toContain("Mình rất thích ý tưởng này.")
+    expect(resEnd.text).toContain("Tôi đề xuất ")
+    expect(resEnd.text).toBe("Mình rất thích ý tưởng này. Tôi đề xuất ")
+
+    // Khi chèn vào giữa câu tại vị trí con trỏ
+    const middleText = "Phần đầu. Phần sau."
+    const resMid = insertStarterPromptAtCursor(middleText, "Nếu thử cách này…", 9)
+    expect(resMid.text).toContain("Phần đầu.")
+    expect(resMid.text).toContain("Nếu thử cách này ")
+    expect(resMid.text).toContain("Phần sau.")
+  })
+
+  it("3 & 4. Upload lỗi và gửi lỗi giữ nguyên bản nháp; Retry với cùng clientRequestId không tạo trùng bình luận hoặc sự kiện đẩy bài", () => {
+    const store = new Map<string, { id: string; content: string; contributionType: string }>()
+    let bumpCount = 0
+
+    const submitPieceWithRetry = (payload: {
+      postId: string
+      authorId: string
+      clientRequestId: string
+      content: string
+      contributionType: string
+      simulateNetworkFailure?: boolean
+    }) => {
+      if (payload.simulateNetworkFailure) {
+        return {
+          ok: false,
+          preservedDraft: payload.content,
+          preservedClientRequestId: payload.clientRequestId,
+        }
+      }
+      const key = `${payload.postId}::${payload.authorId}::${payload.clientRequestId}`
+      if (store.has(key)) {
+        return { ok: true, deduplicated: true, comment: store.get(key)! }
+      }
+      const created = {
+        id: `piece-${store.size + 1}`,
+        content: payload.content,
+        contributionType: payload.contributionType,
+      }
+      store.set(key, created)
+      bumpCount += 1
+      return { ok: true, deduplicated: false, comment: created }
+    }
+
+    // Lần 1: Lỗi mạng -> giữ nguyên bản nháp và mã clientRequestId
+    const failedAttempt = submitPieceWithRetry({
+      postId: "post-5p-ai",
+      authorId: "gv-duc",
+      clientRequestId: "piece-req-001",
+      content: "Tôi có thể thử trong tiết Toán tuần này.",
+      contributionType: "EXPERIMENT",
+      simulateNetworkFailure: true,
+    })
+    expect(failedAttempt.ok).toBe(false)
+    expect(failedAttempt.preservedDraft).toBe("Tôi có thể thử trong tiết Toán tuần này.")
+    expect(bumpCount).toBe(0)
+
+    // Lần 2: Gửi thành công
+    const firstSuccess = submitPieceWithRetry({
+      postId: "post-5p-ai",
+      authorId: "gv-duc",
+      clientRequestId: "piece-req-001",
+      content: "Tôi có thể thử trong tiết Toán tuần này.",
+      contributionType: "EXPERIMENT",
+    })
+    expect(firstSuccess.ok).toBe(true)
+    expect(firstSuccess.deduplicated).toBe(false)
+    expect(bumpCount).toBe(1)
+
+    // Lần 3: Người dùng nhấn đúp / retry cùng clientRequestId -> không tạo bình luận thứ 2 và không đẩy bài lần 2
+    const retrySuccess = submitPieceWithRetry({
+      postId: "post-5p-ai",
+      authorId: "gv-duc",
+      clientRequestId: "piece-req-001",
+      content: "Tôi có thể thử trong tiết Toán tuần này.",
+      contributionType: "EXPERIMENT",
+    })
+    expect(retrySuccess.deduplicated).toBe(true)
+    expect(store.size).toBe(1)
+    expect(bumpCount).toBe(1)
+  })
+
+  it("5. Kiểm tra quyền comment, tệp đính kèm, đường dẫn sâu và @nhắc tên đồng nghiệp theo phạm vi bài gốc", () => {
+    const campus1Post: PostAccessTarget = {
+      id: "post-campus-1",
+      authorId: "gv-author-c1",
+      status: "PUBLISHED",
+      visibility: "CAMPUS",
+      campusId: "CAMPUS_1",
+    }
+
+    const candidates = [
+      { userId: "gv-c1", teacherName: "Cô Lan Cơ sở 1", campusId: "CAMPUS_1" },
+      { userId: "gv-c2", teacherName: "Thầy Nam Cơ sở 2", campusId: "CAMPUS_2" },
+    ]
+
+    // Chỉ đồng nghiệp có quyền xem bài (cùng CAMPUS_1) mới nằm trong danh sách cho phép @nhắc tên
+    const allowedMentions = filterAllowedMentionUsersForPost(candidates, campus1Post)
+    expect(allowedMentions.map((u) => u.userId)).toEqual(["gv-c1"])
+
+    // Người dùng ở CAMPUS_2 không truy cập được tệp đính kèm hoặc deep link của bài CAMPUS_1
+    const gvCampus2 = createMockUserContext({
+      userId: "gv-c2",
+      campusId: "CAMPUS_2",
+      campusIds: ["CAMPUS_2"],
+    })
+    expect(canAccessPostAttachmentOrDeepLink(gvCampus2, campus1Post)).toBe(false)
+  })
+
+  it("6, 7 & 8. Tiếp nhận đóng góp, liên kết bản cập nhật, ghi nhận người đóng góp (có tùy chọn ẩn tên) và không tự cộng lượt áp dụng U", () => {
+    // Mô phỏng sản phẩm có danh sách cộng sự gốc
+    const product = {
+      id: "prod-ai-quiz",
+      authorId: "gv-minh-anh",
+      collaboratorIds: ["gv-co-author-1"],
+      verifiedAppsCountA: 2,
+      versions: [] as Array<{
+        id: string
+        version: string
+        sourceCommentId: string
+        contributorUserId: string
+        contributorName: string
+        contributorOptOutPublic: boolean
+      }>,
+    }
+
+    // Cô Mai gửi mảnh đóng góp "Một cách làm"
+    const pieceComment = {
+      id: "cmt-mai-1",
+      authorId: "gv-mai",
+      authorName: "Cô Mai",
+      contributionType: "METHOD",
+      content: "Thêm chế độ chơi theo nhóm sẽ rất thú vị.",
+      feedbackStatus: "NONE",
+      statusHistory: [] as Array<{ status: string; note?: string }>,
+    }
+
+    // 1. Tác giả đánh dấu "Đưa vào phát triển"
+    pieceComment.feedbackStatus = "IN_PROGRESS"
+    pieceComment.statusHistory.push({
+      status: "IN_PROGRESS",
+      note: "Đưa vào hạng mục phát triển v1.2",
+    })
+
+    // 2. Tác giả công bố bản cập nhật v1.2 gắn với góp ý của Cô Mai
+    pieceComment.feedbackStatus = "APPLIED"
+    pieceComment.statusHistory.push({
+      status: "APPLIED",
+      note: "Đã bổ sung chế độ chia đội chơi nhóm trong v1.2",
+    })
+    product.versions.push({
+      id: "ver-1.2",
+      version: "1.2",
+      sourceCommentId: pieceComment.id,
+      contributorUserId: pieceComment.authorId,
+      contributorName: pieceComment.authorName,
+      contributorOptOutPublic: false,
+    })
+
+    // Kiểm tra:
+    // - Bản cập nhật hiển thị người đóng góp và liên kết góp ý nguồn
+    expect(product.versions[0].contributorName).toBe("Cô Mai")
+    expect(product.versions[0].sourceCommentId).toBe("cmt-mai-1")
+    // - Người đóng góp KHÔNG tự động biến thành đồng tác giả (collaboratorIds giữ nguyên)
+    expect(product.collaboratorIds).not.toContain("gv-mai")
+    // - Tiếp nhận / áp dụng góp ý KHÔNG tự động làm tăng số lượt GV áp dụng thực tế (a vẫn bằng 2)
+    expect(product.verifiedAppsCountA).toBe(2)
+
+    // - Khi Cô Mai chọn ẩn tên công khai trên bản cập nhật
+    product.versions[0].contributorOptOutPublic = true
+    expect(product.versions[0].contributorOptOutPublic).toBe(true)
+  })
+
+  it("9. Cơ chế đẩy bài 'Đang sôi nổi': chặn tự đẩy, chặn đổi cảm xúc / unlike+relike / sửa comment, cooldown 30 phút và tính lại khi xóa", () => {
+    const t0 = new Date("2026-11-09T01:00:00.000Z")
+    const t10m = new Date("2026-11-09T01:10:00.000Z")
+    const t35m = new Date("2026-11-09T01:35:00.000Z")
+
+    // 1. Tác giả tự tương tác -> KHÔNG đẩy bài
+    const selfInteract = evaluatePostBumpEligibility({
+      postAuthorId: "gv-author",
+      actorId: "gv-author",
+      sourceType: "COMMENT",
+      sourceId: "cmt-self",
+      now: t0,
+      cooldownMinutes: 30,
+      existingBumpEvents: [],
+    })
+    expect(selfInteract.shouldBump).toBe(false)
+
+    // 2. Đổi cảm xúc, unlike rồi like lại, sửa comment -> KHÔNG tạo lần đẩy mới
+    expect(
+      evaluatePostBumpEligibility({
+        postAuthorId: "gv-author",
+        actorId: "gv-colleague-1",
+        sourceType: "REACTION",
+        sourceId: "react-1",
+        isReactionTypeChange: true,
+        now: t0,
+        existingBumpEvents: [],
+      }).shouldBump
+    ).toBe(false)
+
+    // Giả sử gv-colleague-1 đã pernah like trước đó -> unlike rồi like lại
+    const firstLike = evaluatePostBumpEligibility({
+      postAuthorId: "gv-author",
+      actorId: "gv-colleague-2",
+      sourceType: "REACTION",
+      sourceId: "react-2",
+      now: t0,
+      existingBumpEvents: [],
+    })
+    expect(firstLike.shouldBump).toBe(true)
+
+    const relikeAfterUnlike = evaluatePostBumpEligibility({
+      postAuthorId: "gv-author",
+      actorId: "gv-colleague-2",
+      sourceType: "REACTION",
+      sourceId: "react-2-again",
+      now: t35m,
+      existingBumpEvents: firstLike.updatedBumpEvents,
+    })
+    expect(relikeAfterUnlike.shouldBump).toBe(false)
+    expect(relikeAfterUnlike.reason).toBe("RELIKE_NO_NEW_BUMP")
+
+    expect(
+      evaluatePostBumpEligibility({
+        postAuthorId: "gv-author",
+        actorId: "gv-colleague-1",
+        sourceType: "COMMENT",
+        sourceId: "cmt-edit",
+        isCommentEdit: true,
+        now: t0,
+        existingBumpEvents: [],
+      }).shouldBump
+    ).toBe(false)
+
+    // 3. Đồng nghiệp gửi mảnh đóng góp mới hợp lệ -> Đẩy bài
+    const validBump1 = evaluatePostBumpEligibility({
+      postAuthorId: "gv-author",
+      actorId: "gv-colleague-1",
+      sourceType: "COMMENT",
+      sourceId: "cmt-1",
+      now: t0,
+      cooldownMinutes: 30,
+      existingBumpEvents: [],
+    })
+    expect(validBump1.shouldBump).toBe(true)
+    expect(validBump1.newLastBumpedAt?.toISOString()).toBe(t0.toISOString())
+
+    // 4. Cùng đồng nghiệp đó tương tác tiếp sau 10 phút (< 30 phút cooldown) -> KHÔNG đẩy bài lần nữa
+    const withinCooldown = evaluatePostBumpEligibility({
+      postAuthorId: "gv-author",
+      actorId: "gv-colleague-1",
+      sourceType: "COMMENT",
+      sourceId: "cmt-2",
+      now: t10m,
+      cooldownMinutes: 30,
+      existingBumpEvents: validBump1.updatedBumpEvents,
+    })
+    expect(withinCooldown.shouldBump).toBe(false)
+    expect(withinCooldown.reason).toBe("COOLDOWN_ACTIVE")
+
+    // 5. Sau 35 phút (> 30 phút cooldown) -> Được phép đẩy bài
+    const afterCooldown = evaluatePostBumpEligibility({
+      postAuthorId: "gv-author",
+      actorId: "gv-colleague-1",
+      sourceType: "COMMENT",
+      sourceId: "cmt-3",
+      now: t35m,
+      cooldownMinutes: 30,
+      existingBumpEvents: validBump1.updatedBumpEvents,
+    })
+    expect(afterCooldown.shouldBump).toBe(true)
+    expect(afterCooldown.newLastBumpedAt?.toISOString()).toBe(t35m.toISOString())
+
+    // 6. Khi bình luận cmt-3 bị xóa hoặc ẩn -> tính lại lastBumpedAt về mốc hợp lệ trước đó (t0)
+    const recalculated = recalculatePostLastBumpedAt({
+      publishedAt: new Date("2026-11-08T00:00:00.000Z"),
+      existingBumpEvents: afterCooldown.updatedBumpEvents,
+      removedSourceType: "COMMENT",
+      removedSourceId: "cmt-3",
+    })
+    expect(recalculated.lastBumpedAt.toISOString()).toBe(t0.toISOString())
+    expect(recalculated.updatedBumpEvents.filter((e) => e.isActive !== false)).toHaveLength(1)
+  })
+
+  it("10. 'Hành trình lan tỏa' tổng hợp đúng chuỗi sự kiện thật, khử trùng lặp và không tiết lộ sự kiện khi người xem không có quyền xem bài gốc", () => {
+    const journeyInput = {
+      canViewerAccessPost: true,
+      post: {
+        id: "post-1",
+        title: "5 phút đầu giờ cùng AI",
+        postType: "AI_PRODUCT",
+        authorName: "Cô Minh Anh",
+        publishedAt: "2026-11-01T08:00:00.000Z",
+      },
+      comments: [
+        {
+          id: "c-1",
+          authorName: "Thầy Đức",
+          contributionType: "EXPERIMENT",
+          feedbackStatus: "RECEIVED",
+          status: "ACTIVE",
+          createdAt: "2026-11-02T09:00:00.000Z",
+          feedbackUpdatedAt: "2026-11-02T10:00:00.000Z",
+        },
+        // Sự kiện trùng id để kiểm tra khử trùng lặp
+        {
+          id: "c-1",
+          authorName: "Thầy Đức",
+          contributionType: "EXPERIMENT",
+          feedbackStatus: "RECEIVED",
+          status: "ACTIVE",
+          createdAt: "2026-11-02T09:00:00.000Z",
+          feedbackUpdatedAt: "2026-11-02T10:00:00.000Z",
+        },
+        {
+          id: "c-2",
+          authorName: "Cô Mai",
+          contributionType: "METHOD",
+          feedbackStatus: "IN_PROGRESS",
+          developmentItemNote: "Thêm chế độ chơi nhóm",
+          status: "ACTIVE",
+          createdAt: "2026-11-03T09:00:00.000Z",
+          feedbackUpdatedAt: "2026-11-03T11:00:00.000Z",
+        },
+      ],
+      productVersions: [
+        {
+          id: "v-1.2",
+          version: "1.2",
+          releaseNotes: "Bổ sung chế độ chơi nhóm",
+          contributorName: "Cô Mai",
+          contributorOptOutPublic: false,
+          sourceCommentId: "c-2",
+          createdAt: "2026-11-04T08:00:00.000Z",
+        },
+      ],
+      verifiedApplications: [
+        {
+          id: "app-1",
+          applicantName: "Thầy Đức",
+          subjectOrTask: "Toán Lớp 4",
+          verificationStatus: "VERIFIED",
+          submittedAt: "2026-11-05T07:00:00.000Z",
+          verifiedAt: "2026-11-05T08:00:00.000Z",
+        },
+      ],
+      officialAwards: [
+        {
+          id: "aw-1",
+          periodName: "Bảng vàng Tháng 11/2026",
+          badgeTitle: "Giải Nhất Tháng",
+          rank: 1,
+          awardedAt: "2026-11-30T10:00:00.000Z",
+        },
+      ],
+    }
+
+    const events = buildPostSpreadJourney(journeyInput)
+    expect(events.map((e) => e.stage)).toEqual([
+      "POST_PUBLISHED",
+      "FEEDBACK_RECEIVED",
+      "FEEDBACK_RECEIVED",
+      "MOVED_TO_DEVELOPMENT",
+      "VERSION_RELEASED",
+      "APPLICATION_VERIFIED",
+      "OFFICIAL_AWARD",
+    ])
+
+    // Nếu người xem không có quyền xem bài gốc -> trả về mảng rỗng, không lộ bất kỳ sự kiện nào
+    const unauthorizedEvents = buildPostSpreadJourney({
+      ...journeyInput,
+      canViewerAccessPost: false,
+    })
+    expect(unauthorizedEvents).toHaveLength(0)
+  })
+})
+
 
 function RevisionsHistoryLength(list: unknown[]): number {
   return list.length

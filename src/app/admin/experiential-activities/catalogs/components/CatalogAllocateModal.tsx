@@ -693,7 +693,7 @@ export function CatalogAllocateModal({
                   {/* Activity Details Table Preview */}
                   <div className="overflow-hidden border border-slate-200 rounded-lg text-[11px]">
                     <table className="w-full text-left border-collapse">
-                      <tbody>
+                      <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                         <tr className="border-b border-slate-100 bg-slate-50/70">
                           <td className="py-1.5 px-3 font-semibold text-slate-600 w-1/3">Tên hoạt động:</td>
                           <td className="py-1.5 px-3 font-bold text-slate-800">{catalogItem.name}</td>

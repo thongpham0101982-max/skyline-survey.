@@ -318,20 +318,20 @@ export default function ParentProgressTrackingTable({
         ) : viewMode === "table" ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/90 text-slate-500 text-[11px] font-semibold border-b border-slate-200/80">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold border-b">
                   <th className="py-2.5 px-2.5 w-9 text-center font-semibold">#</th>
-                  <th className="py-2.5 px-3 w-[110px]">1. Ngày & CVHT</th>
-                  <th className="py-2.5 px-3 min-w-[160px]">2. Nội dung tư vấn 1:1</th>
-                  <th className="py-2.5 px-3 min-w-[140px]">3. Khó khăn ghi nhận</th>
-                  <th className="py-2.5 px-3 min-w-[155px]">4. Hành động tiếp theo</th>
-                  <th className="py-2.5 px-2.5 w-[90px] text-center">5. Thời hạn</th>
-                  <th className="py-2.5 px-3 min-w-[135px]">6. Lời dặn Phụ huynh</th>
-                  <th className="py-2.5 px-3 min-w-[135px]">7. Tự đánh giá của Con</th>
-                  <th className="py-2.5 px-3 w-[200px]">8. Phản hồi Gia đình</th>
+                  <th className="py-2.5 px-3 w-[110px] font-semibold">1. Ngày & CVHT</th>
+                  <th className="py-2.5 px-3 min-w-[160px] font-semibold">2. Nội dung tư vấn 1:1</th>
+                  <th className="py-2.5 px-3 min-w-[140px] font-semibold">3. Khó khăn ghi nhận</th>
+                  <th className="py-2.5 px-3 min-w-[155px] font-semibold">4. Hành động tiếp theo</th>
+                  <th className="py-2.5 px-2.5 w-[90px] text-center font-semibold">5. Thời hạn</th>
+                  <th className="py-2.5 px-3 min-w-[135px] font-semibold">6. Lời dặn Phụ huynh</th>
+                  <th className="py-2.5 px-3 min-w-[135px] font-semibold">7. Tự đánh giá của Con</th>
+                  <th className="py-2.5 px-3 w-[200px] font-semibold">8. Phản hồi Gia đình</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs text-slate-700">
                 {consultations.map((c: any, idx: number) => {
                   const logId = c.id || String(idx)
                   const savedFb = localFeedbackText[logId] || c.parentFeedback || ""
@@ -598,16 +598,16 @@ export default function ParentProgressTrackingTable({
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 text-[11px] font-semibold border-b border-slate-200/70">
-                  <th className="py-2 px-3 w-10 text-center">#</th>
-                  <th className="py-2 px-3">Nội dung hành động 7 ngày</th>
-                  <th className="py-2 px-3 w-28 text-center">Hạn</th>
-                  <th className="py-2 px-3 w-36 text-center">Trạng thái</th>
-                  <th className="py-2 px-3">Minh chứng kết quả</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold border-b">
+                  <th className="py-2 px-3 w-10 text-center font-semibold">#</th>
+                  <th className="py-2 px-3 font-semibold">Nội dung hành động 7 ngày</th>
+                  <th className="py-2 px-3 w-28 text-center font-semibold">Hạn</th>
+                  <th className="py-2 px-3 w-36 text-center font-semibold">Trạng thái</th>
+                  <th className="py-2 px-3 font-semibold">Minh chứng kết quả</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
                 {actionItems.map((act: any, idx: number) => (
                   <tr key={act.id || idx} className="hover:bg-slate-50/60">
                     <td className="py-2.5 px-3 text-center text-slate-400 font-semibold">

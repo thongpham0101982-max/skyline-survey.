@@ -1,13 +1,25 @@
 "use client"
-import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Check, X, Trophy, Medal, Hash, FileText, Tag } from "lucide-react"
-import { 
-  createAchievementCategoryAction, 
-  updateAchievementCategoryAction, 
+
+import { useState, useMemo } from "react"
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  Check,
+  X,
+  Trophy,
+  Medal,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react"
+import {
+  createAchievementCategoryAction,
+  updateAchievementCategoryAction,
   deleteAchievementCategoryAction,
   createAchievementLevelAction,
   updateAchievementLevelAction,
-  deleteAchievementLevelAction
+  deleteAchievementLevelAction,
 } from "./actions"
 
 interface AchievementsClientProps {
@@ -16,87 +28,88 @@ interface AchievementsClientProps {
   academicYears: any[]
 }
 
-export function AchievementsClient({ 
-  initialCategories, 
-  initialLevels, 
-  academicYears 
+export function AchievementsClient({
+  initialCategories,
+  initialLevels,
 }: AchievementsClientProps) {
   const [categories, setCategories] = useState(initialCategories)
   const [levels, setLevels] = useState(initialLevels)
-  const [activeSubTab, setActiveSubTab] = useState<'categories' | 'levels'>('categories')
-  
-  const [yearId, setYearId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("selectedAcademicYear")
-      if (stored) return stored
-    }
-    const active = academicYears.find((y: any) => y.status === "ACTIVE")
-    return active ? active.id : (academicYears[0]?.id || "")
-  })
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("")
 
-  // Listen to year change event
-  useEffect(() => {
-    const handleYearChange = () => {
-      const stored = localStorage.getItem("selectedAcademicYear")
-      if (stored && stored !== yearId) {
-        setYearId(stored)
-      }
-    }
-    window.addEventListener("academicYearChanged", handleYearChange)
-    return () => window.removeEventListener("academicYearChanged", handleYearChange)
-  }, [yearId])
-
-  // Category State
-  const [editingCatId, setEditingCatId] = useState<string | null>(null)
-  const [editCatForm, setEditCatForm] = useState({ name: "", code: "", description: "" })
+  // Category Form State
   const [creatingCat, setCreatingCat] = useState(false)
   const [newCatForm, setNewCatForm] = useState({ name: "", code: "", description: "" })
+  const [editingCatId, setEditingCatId] = useState<string | null>(null)
+  const [editCatForm, setEditCatForm] = useState({ name: "", code: "", description: "" })
 
-  // Level State
-  const [editingLvlId, setEditingLvlId] = useState<string | null>(null)
-  const [editLvlForm, setEditLvlForm] = useState({ name: "", code: "", description: "", categoryId: "" })
+  // Level Form State
   const [creatingLvl, setCreatingLvl] = useState(false)
-  const [newLvlForm, setNewLvlForm] = useState({ name: "", code: "", description: "", categoryId: "" })
+  const [newLvlForm, setNewLvlForm] = useState({
+    name: "",
+    code: "",
+    description: "",
+    categoryId: "",
+  })
+  const [editingLvlId, setEditingLvlId] = useState<string | null>(null)
+  const [editLvlForm, setEditLvlForm] = useState({
+    name: "",
+    code: "",
+    description: "",
+    categoryId: "",
+  })
 
   const [saving, setSaving] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
+  const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
+  const showToast = (type: "success" | "error", text: string) => {
+    setToast({ type, text })
+    setTimeout(() => {
+      setToast((prev) => (prev?.text === text ? null : prev))
+    }, 3200)
+  }
 
   // --- Category Handlers ---
-  
   const handleCreateCategory = async () => {
     if (!newCatForm.name.trim() || !newCatForm.code.trim()) {
-      setErrorMsg("Vui lòng nhập Tên loại và Mã loại thành tích!")
+      showToast("error", "Vui lòng nhập Tên loại và Mã loại thành tích.")
       return
     }
     setSaving(true)
-    setErrorMsg("")
     try {
-      await createAchievementCategoryAction({ ...newCatForm, academicYearId: null })
-      setCategories([...categories, { ...newCatForm, id: `temp_${Date.now()}`, academicYearId: null }])
+      const created = await createAchievementCategoryAction({
+        ...newCatForm,
+        academicYearId: null,
+      })
+      setCategories((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "vi"))
+      )
       setNewCatForm({ name: "", code: "", description: "" })
       setCreatingCat(false)
-      window.location.reload()
+      showToast("success", `Đã thêm loại thành tích "${created.name}".`)
     } catch (e: any) {
-      setErrorMsg(e?.message || "Mã loại thành tích đã tồn tại hoặc có lỗi xảy ra.")
+      showToast("error", e?.message || "Mã loại thành tích đã tồn tại.")
     } finally {
       setSaving(false)
     }
   }
 
-  const handleEditCategory = (cat: any) => {
-    setEditingCatId(cat.id)
-    setEditCatForm({ name: cat.name, code: cat.code, description: cat.description || "" })
-  }
-
   const handleSaveEditCategory = async (id: string) => {
-    if (!editCatForm.name.trim() || !editCatForm.code.trim()) return
+    if (!editCatForm.name.trim() || !editCatForm.code.trim()) {
+      showToast("error", "Tên và Mã loại thành tích không được để trống.")
+      return
+    }
     setSaving(true)
     try {
-      await updateAchievementCategoryAction({ id, ...editCatForm, academicYearId: null })
-      setCategories(categories.map((c) => c.id === id ? { ...c, ...editCatForm } : c))
+      const updated = await updateAchievementCategoryAction({
+        id,
+        ...editCatForm,
+        academicYearId: null,
+      })
+      setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)))
       setEditingCatId(null)
-    } catch (e) {
-      alert("Mã loại thành tích đã tồn tại hoặc xảy ra lỗi.")
+      showToast("success", "Đã cập nhật loại thành tích.")
+    } catch (e: any) {
+      showToast("error", e?.message || "Không thể cập nhật loại thành tích.")
     } finally {
       setSaving(false)
     }
@@ -106,66 +119,60 @@ export function AchievementsClient({
     if (!confirm(`Xóa loại thành tích "${name}"?`)) return
     try {
       await deleteAchievementCategoryAction(id)
-      setCategories(categories.filter((c) => c.id !== id))
-    } catch (e) {
-      alert("Có lỗi xảy ra khi xóa loại thành tích.")
+      setCategories((prev) => prev.filter((c) => c.id !== id))
+      if (selectedCategoryFilter === id) setSelectedCategoryFilter("")
+      showToast("success", `Đã xóa loại thành tích "${name}".`)
+    } catch (e: any) {
+      showToast("error", e?.message || "Có lỗi xảy ra khi xóa loại thành tích.")
     }
   }
 
   // --- Level Handlers ---
-
   const handleCreateLevel = async () => {
     if (!newLvlForm.name.trim() || !newLvlForm.code.trim()) {
-      setErrorMsg("Vui lòng nhập Tên mức giải và Mã mức giải!")
+      showToast("error", "Vui lòng nhập Tên mức giải và Mã mức giải.")
       return
     }
     setSaving(true)
-    setErrorMsg("")
     try {
-      await createAchievementLevelAction({ 
-        ...newLvlForm, 
-        categoryId: newLvlForm.categoryId || null, 
-        academicYearId: null 
+      const created = await createAchievementLevelAction({
+        ...newLvlForm,
+        categoryId: newLvlForm.categoryId || selectedCategoryFilter || null,
+        academicYearId: null,
       })
-      setLevels([...levels, { ...newLvlForm, id: `temp_${Date.now()}`, academicYearId: null }])
+      setLevels((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "vi"))
+      )
       setNewLvlForm({ name: "", code: "", description: "", categoryId: "" })
       setCreatingLvl(false)
-      window.location.reload()
+      showToast("success", `Đã thêm mức giải "${created.name}".`)
     } catch (e: any) {
-      setErrorMsg(e?.message || "Mã mức giải đã tồn tại hoặc có lỗi xảy ra.")
+      showToast("error", e?.message || "Mã mức giải đã tồn tại.")
     } finally {
       setSaving(false)
     }
   }
 
-  const handleEditLevel = (lvl: any) => {
-    setEditingLvlId(lvl.id)
-    setEditLvlForm({ 
-      name: lvl.name, 
-      code: lvl.code, 
-      description: lvl.description || "", 
-      categoryId: lvl.categoryId || "" 
-    })
-  }
-
   const handleSaveEditLevel = async (id: string) => {
-    if (!editLvlForm.name.trim() || !editLvlForm.code.trim()) return
+    if (!editLvlForm.name.trim() || !editLvlForm.code.trim()) {
+      showToast("error", "Tên và Mã mức giải không được để trống.")
+      return
+    }
     setSaving(true)
     try {
-      const payload = {
+      const updated = await updateAchievementLevelAction({
         id,
         name: editLvlForm.name,
         code: editLvlForm.code,
         description: editLvlForm.description,
         categoryId: editLvlForm.categoryId || null,
-        academicYearId: null
-      }
-      await updateAchievementLevelAction(payload)
-      setLevels(levels.map((l) => l.id === id ? { ...l, ...editLvlForm } : l))
+        academicYearId: null,
+      })
+      setLevels((prev) => prev.map((l) => (l.id === id ? updated : l)))
       setEditingLvlId(null)
-      window.location.reload()
-    } catch (e) {
-      alert("Mã mức giải đã tồn tại hoặc xảy ra lỗi.")
+      showToast("success", "Đã cập nhật mức giải thưởng.")
+    } catch (e: any) {
+      showToast("error", e?.message || "Không thể cập nhật mức giải.")
     } finally {
       setSaving(false)
     }
@@ -175,112 +182,108 @@ export function AchievementsClient({
     if (!confirm(`Xóa mức giải "${name}"?`)) return
     try {
       await deleteAchievementLevelAction(id)
-      setLevels(levels.filter((l) => l.id !== id))
-    } catch (e) {
-      alert("Có lỗi xảy ra khi xóa mức giải.")
+      setLevels((prev) => prev.filter((l) => l.id !== id))
+      showToast("success", `Đã xóa mức giải "${name}".`)
+    } catch (e: any) {
+      showToast("error", e?.message || "Có lỗi xảy ra khi xóa mức giải.")
     }
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Sub-tabs header */}
-      <div className="flex gap-2 border-b border-slate-200 pb-px">
-        <button
-          onClick={() => { setActiveSubTab('categories'); setErrorMsg(""); setCreatingCat(false); setCreatingLvl(false); }}
-          className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
-            activeSubTab === 'categories' 
-              ? 'border-[#48BFE3] text-[#48BFE3]' 
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Trophy className="w-4 h-4" />
-          Loại Thành Tích
-        </button>
-        <button
-          onClick={() => { setActiveSubTab('levels'); setErrorMsg(""); setCreatingCat(false); setCreatingLvl(false); }}
-          className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
-            activeSubTab === 'levels' 
-              ? 'border-[#48BFE3] text-[#48BFE3]' 
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Medal className="w-4 h-4" />
-          Mức Giải thưởng
-        </button>
-      </div>
+  const filteredLevels = useMemo(() => {
+    if (!selectedCategoryFilter) return levels
+    return levels.filter((l) => l.categoryId === selectedCategoryFilter)
+  }, [levels, selectedCategoryFilter])
 
-      {activeSubTab === 'categories' ? (
-        // === CATEGORIES TAB ===
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-slate-500 text-sm font-medium">Tạo và quản lý các loại thành tích học sinh (ví dụ: Giải thưởng, Huy chương, Chứng nhận...).</p>
+  return (
+    <div className="space-y-3">
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg border text-xs font-semibold ${
+            toast.type === "success"
+              ? "bg-[#003B3A] text-white border-[#008B85]"
+              : "bg-rose-600 text-white border-rose-700"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle2 className="w-4 h-4 text-[#5EEAD4] shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-white shrink-0" />
+          )}
+          <span>{toast.text}</span>
+        </div>
+      )}
+
+      {/* Side-by-side 2-Column Academic Ledger Dictionary */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* LEFT COLUMN (5/12): Loại thành tích */}
+        <div className="lg:col-span-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#E2E8F0] flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 tabular-nums">
+              <Trophy className="w-4 h-4 text-[#008B85]" />
+              <span className="text-xs font-semibold text-[#003B3A]">
+                Loại thành tích ({categories.length})
+              </span>
+            </div>
             <button
-              onClick={() => { setCreatingCat(true); setErrorMsg("") }}
-              className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#48BFE3]/20 transition-all text-xs"
+              type="button"
+              onClick={() => {
+                setCreatingCat((v) => !v)
+                setEditingCatId(null)
+              }}
+              className="inline-flex items-center gap-1 bg-[#003B3A] hover:bg-[#002928] text-white px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              Thêm Loại Mới
+              <Plus className="w-3.5 h-3.5 text-[#5EEAD4]" />
+              <span>Thêm loại</span>
             </button>
           </div>
 
           {creatingCat && (
-            <div className="bg-white border-2 border-teal-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
-              <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-[#48BFE3]" />
-                Thêm Loại Thành Tích Mới
-              </h3>
-              {errorMsg && (
-                <div className="mb-4 text-red-700 bg-red-50 p-3 rounded-lg border border-red-100 text-xs font-semibold">
-                  {errorMsg}
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
-                    Tên Loại Thành Tích <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newCatForm.name}
-                    onChange={e => setNewCatForm({ ...newCatForm, name: e.target.value })}
-                    placeholder="Ví dụ: Giải thưởng, Huy chương, Chứng nhận..."
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none transition-all font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
-                    Mã (Code) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newCatForm.code}
-                    onChange={e => setNewCatForm({ ...newCatForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                    placeholder="Ví dụ: GIAI_THUONG"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-mono transition-all font-semibold"
-                  />
-                </div>
-              </div>
-              <div className="mt-4">
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Mô tả</label>
-                <textarea
-                  value={newCatForm.description}
-                  onChange={e => setNewCatForm({ ...newCatForm, description: e.target.value })}
-                  placeholder="Nhập mô tả chi tiết..."
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:border-[#48BFE3] outline-none font-semibold"
-                  rows={3}
+            <div className="p-3 bg-[#F8FAFC] border-b border-[#E2E8F0] space-y-2 text-xs">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={newCatForm.name}
+                  onChange={(e) => setNewCatForm({ ...newCatForm, name: e.target.value })}
+                  placeholder="Tên loại (VD: Giải thưởng) *"
+                  className="border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 bg-white focus:border-[#00A19A] outline-none"
+                />
+                <input
+                  type="text"
+                  value={newCatForm.code}
+                  onChange={(e) =>
+                    setNewCatForm({
+                      ...newCatForm,
+                      code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                    })
+                  }
+                  placeholder="Mã (GIAI_THUONG) *"
+                  className="border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 font-mono bg-white focus:border-[#00A19A] outline-none"
                 />
               </div>
-              <div className="flex items-center gap-3 mt-5 pt-5 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newCatForm.description}
+                  onChange={(e) => setNewCatForm({ ...newCatForm, description: e.target.value })}
+                  placeholder="Mô tả ngắn (tùy chọn)..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateCategory()
+                  }}
+                  className="flex-1 border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 bg-white focus:border-[#00A19A] outline-none"
+                />
                 <button
+                  type="button"
                   onClick={handleCreateCategory}
                   disabled={saving}
-                  className="px-6 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#48BFE3]/20 transition-all disabled:opacity-60"
+                  className="px-3 py-1.5 bg-[#008B85] hover:bg-[#00736E] text-white rounded-lg font-semibold transition-colors cursor-pointer"
                 >
-                  {saving ? "Đang lưu..." : "Lưu Lại"}
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Lưu"}
                 </button>
                 <button
-                  onClick={() => { setCreatingCat(false); setErrorMsg("") }}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs transition-all"
+                  type="button"
+                  onClick={() => setCreatingCat(false)}
+                  className="px-2.5 py-1.5 bg-white border border-[#E2E8F0] text-slate-600 rounded-lg font-medium cursor-pointer"
                 >
                   Hủy
                 </button>
@@ -288,208 +291,245 @@ export function AchievementsClient({
             </div>
           )}
 
-          <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 border-2 border-slate-100 overflow-hidden">
-            <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4">
-              <span className="font-bold text-slate-700 text-sm">Danh Sách Loại Thành Tích ({categories.length})</span>
+          {categories.length === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400">
+              Chưa có loại thành tích nào.
             </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-white">Tên loại</th>
+                    <th className="py-3 px-3 text-teal-100">Mã</th>
+                    <th className="py-3 px-3 text-center text-[#5EEAD4]">Mức giải</th>
+                    <th className="py-3 px-3 text-right text-white">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                  {categories.map((cat: any) => {
+                    const isEditing = editingCatId === cat.id
+                    const isSelected = selectedCategoryFilter === cat.id
+                    const levelCount = levels.filter((l) => l.categoryId === cat.id).length
 
-            {categories.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                <Trophy className="w-16 h-16 mb-4 opacity-20" />
-                <p className="font-bold text-lg mb-1">Chưa có loại thành tích nào</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {categories.map((cat: any) => {
-                  const isEditing = editingCatId === cat.id
-                  return (
-                    <div key={cat.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-teal-50 text-[#48BFE3] rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Trophy className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
+                    return (
+                      <tr
+                        key={cat.id}
+                        onClick={() => {
+                          if (!isEditing) {
+                            setSelectedCategoryFilter((prev) => (prev === cat.id ? "" : cat.id))
+                          }
+                        }}
+                        className={`transition-colors align-middle cursor-pointer ${
+                          isSelected
+                            ? "bg-[#F0FDFA]/80 hover:bg-[#F0FDFA]"
+                            : "hover:bg-[#F8FAFC]"
+                        }`}
+                      >
+                        <td className="py-3 px-3 align-middle">
                           {isEditing ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Tên Loại Thành Tích</label>
-                                <input
-                                  type="text"
-                                  value={editCatForm.name}
-                                  onChange={e => setEditCatForm({ ...editCatForm, name: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#48BFE3] font-semibold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Mã (Code)</label>
-                                <input
-                                  type="text"
-                                  value={editCatForm.code}
-                                  onChange={e => setEditCatForm({ ...editCatForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#48BFE3] font-mono font-semibold"
-                                />
-                              </div>
-                              <div className="md:col-span-2">
-                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Mô tả</label>
-                                <textarea
-                                  value={editCatForm.description}
-                                  onChange={e => setEditCatForm({ ...editCatForm, description: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-[#48BFE3] font-semibold"
-                                  rows={2}
-                                />
-                              </div>
-                            </div>
+                            <input
+                              type="text"
+                              value={editCatForm.name}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) =>
+                                setEditCatForm({ ...editCatForm, name: e.target.value })
+                              }
+                              className="w-full border border-[#00A19A] rounded-lg px-2 py-1 text-xs font-semibold bg-white outline-none"
+                            />
                           ) : (
                             <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-extrabold text-slate-800 text-sm">{cat.name}</h4>
-                                <span className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-500 font-mono font-black px-2 py-0.5 rounded-full border border-slate-200">
-                                  <Hash className="w-3 h-3 text-slate-400" />
-                                  {cat.code}
-                                </span>
-                              </div>
-                              <p className="text-slate-500 text-xs mt-1.5 flex items-start gap-1 font-semibold">
-                                <FileText className="w-3.5 h-3.5 mt-0.5 text-slate-400 flex-shrink-0" />
-                                <span>{cat.description || "Chưa có mô tả chi tiết."}</span>
-                              </p>
+                              <div className="font-semibold text-slate-900">{cat.name}</div>
+                              {cat.description && (
+                                <div className="text-[11px] text-slate-500 line-clamp-1">
+                                  {cat.description}
+                                </div>
+                              )}
                             </div>
                           )}
-                        </div>
+                        </td>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 self-start no-print">
+                        <td className="py-3 px-3 align-middle whitespace-nowrap">
                           {isEditing ? (
-                            <>
-                              <button
-                                onClick={() => handleSaveEditCategory(cat.id)}
-                                disabled={saving}
-                                className="w-7 h-7 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-lg flex items-center justify-center transition-all shadow-xs border border-emerald-100"
-                                title="Lưu thay đổi"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setEditingCatId(null)}
-                                className="w-7 h-7 bg-slate-50 text-slate-500 hover:bg-slate-200 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
-                                title="Hủy"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </>
+                            <input
+                              type="text"
+                              value={editCatForm.code}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) =>
+                                setEditCatForm({
+                                  ...editCatForm,
+                                  code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                                })
+                              }
+                              className="w-28 border border-[#00A19A] rounded-lg px-2 py-1 text-xs font-mono bg-white outline-none"
+                            />
                           ) : (
-                            <>
+                            <span className="px-2 py-0.5 rounded-md bg-[#F8FAFC] border border-[#E2E8F0] font-mono text-[11px] text-slate-700">
+                              {cat.code}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
+                            {levelCount}
+                          </span>
+                        </td>
+
+                        <td
+                          className="py-3 px-3 align-middle text-right whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {isEditing ? (
+                            <div className="inline-flex items-center gap-1">
                               <button
-                                onClick={() => handleEditCategory(cat)}
-                                className="w-7 h-7 bg-slate-50 text-slate-400 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
+                                type="button"
+                                onClick={() => handleSaveEditCategory(cat.id)}
+                                className="p-1.5 rounded-lg bg-[#003B3A] text-white hover:bg-[#00736E] cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingCatId(null)}
+                                className="p-1.5 rounded-lg bg-white border border-[#E2E8F0] text-slate-500 cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingCatId(cat.id)
+                                  setEditCatForm({
+                                    name: cat.name,
+                                    code: cat.code,
+                                    description: cat.description || "",
+                                  })
+                                }}
+                                className="p-1.5 text-slate-500 hover:text-[#003B3A] hover:bg-slate-100 rounded-lg cursor-pointer"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
+                                type="button"
                                 onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                                className="w-7 h-7 bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
+                                className="p-1.5 text-slate-400 hover:text-[#E11D48] hover:bg-rose-50 rounded-lg cursor-pointer"
                                 title="Xóa"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            </>
+                            </div>
                           )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      ) : (
-        // === LEVELS TAB ===
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-slate-500 text-sm font-medium">Tạo và quản lý các mức giải thưởng (ví dụ: Giải Nhất, Giải Nhì, Huy chương Vàng, Huy chương Bạc...).</p>
+
+        {/* RIGHT COLUMN (7/12): Mức giải thưởng */}
+        <div className="lg:col-span-7 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+          <div className="px-4 py-3 border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2 tabular-nums">
+              <Medal className="w-4 h-4 text-[#008B85]" />
+              <span className="text-xs font-semibold text-[#003B3A]">
+                Mức giải thưởng ({filteredLevels.length})
+              </span>
+              {selectedCategoryFilter && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategoryFilter("")}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-[11px] font-medium cursor-pointer"
+                >
+                  <span>
+                    Lọc: {categories.find((c) => c.id === selectedCategoryFilter)?.name}
+                  </span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
             <button
-              onClick={() => { setCreatingLvl(true); setErrorMsg("") }}
-              className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#48BFE3]/20 transition-all text-xs"
+              type="button"
+              onClick={() => {
+                setCreatingLvl((v) => !v)
+                setEditingLvlId(null)
+                if (!creatingLvl && selectedCategoryFilter) {
+                  setNewLvlForm((prev) => ({ ...prev, categoryId: selectedCategoryFilter }))
+                }
+              }}
+              className="inline-flex items-center gap-1 bg-[#003B3A] hover:bg-[#002928] text-white px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              Thêm Mức giải Mới
+              <Plus className="w-3.5 h-3.5 text-[#5EEAD4]" />
+              <span>Thêm mức giải</span>
             </button>
           </div>
 
           {creatingLvl && (
-            <div className="bg-white border-2 border-teal-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
-              <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-                <Medal className="w-5 h-5 text-[#48BFE3]" />
-                Thêm Mức giải Mới
-              </h3>
-              {errorMsg && (
-                <div className="mb-4 text-red-700 bg-red-50 p-3 rounded-lg border border-red-100 text-xs font-semibold">
-                  {errorMsg}
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
-                    Tên Mức giải <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newLvlForm.name}
-                    onChange={e => setNewLvlForm({ ...newLvlForm, name: e.target.value })}
-                    placeholder="Ví dụ: Giải Nhất, Huy chương Vàng..."
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none transition-all font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
-                    Mã (Code) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newLvlForm.code}
-                    onChange={e => setNewLvlForm({ ...newLvlForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                    placeholder="Ví dụ: NHAT, VANG"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-mono transition-all font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
-                    Thuộc Loại thành tích <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={newLvlForm.categoryId}
-                    onChange={e => setNewLvlForm({ ...newLvlForm, categoryId: e.target.value })}
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-white transition-all font-semibold"
-                  >
-                    <option value="">-- Chọn Loại thành tích --</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="mt-4">
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Mô tả</label>
-                <textarea
-                  value={newLvlForm.description}
-                  onChange={e => setNewLvlForm({ ...newLvlForm, description: e.target.value })}
-                  placeholder="Nhập mô tả chi tiết..."
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:border-[#48BFE3] outline-none font-semibold"
-                  rows={3}
+            <div className="p-3 bg-[#F8FAFC] border-b border-[#E2E8F0] space-y-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input
+                  type="text"
+                  value={newLvlForm.name}
+                  onChange={(e) => setNewLvlForm({ ...newLvlForm, name: e.target.value })}
+                  placeholder="Tên mức giải (VD: Giải Nhất) *"
+                  className="border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 bg-white focus:border-[#00A19A] outline-none"
                 />
+                <input
+                  type="text"
+                  value={newLvlForm.code}
+                  onChange={(e) =>
+                    setNewLvlForm({
+                      ...newLvlForm,
+                      code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                    })
+                  }
+                  placeholder="Mã (NHAT, VANG) *"
+                  className="border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 font-mono bg-white focus:border-[#00A19A] outline-none"
+                />
+                <select
+                  value={newLvlForm.categoryId}
+                  onChange={(e) => setNewLvlForm({ ...newLvlForm, categoryId: e.target.value })}
+                  className="border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 bg-white focus:border-[#00A19A] outline-none"
+                >
+                  <option value="">-- Thuộc loại thành tích --</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="flex items-center gap-3 mt-5 pt-5 border-t border-slate-100">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newLvlForm.description}
+                  onChange={(e) => setNewLvlForm({ ...newLvlForm, description: e.target.value })}
+                  placeholder="Mô tả thêm (tùy chọn)..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateLevel()
+                  }}
+                  className="flex-1 border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 bg-white focus:border-[#00A19A] outline-none"
+                />
                 <button
+                  type="button"
                   onClick={handleCreateLevel}
                   disabled={saving}
-                  className="px-6 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#48BFE3]/20 transition-all disabled:opacity-60"
+                  className="px-3 py-1.5 bg-[#008B85] hover:bg-[#00736E] text-white rounded-lg font-semibold transition-colors cursor-pointer"
                 >
-                  {saving ? "Đang lưu..." : "Lưu Lại"}
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Lưu"}
                 </button>
                 <button
-                  onClick={() => { setCreatingLvl(false); setErrorMsg("") }}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs transition-all"
+                  type="button"
+                  onClick={() => setCreatingLvl(false)}
+                  className="px-2.5 py-1.5 bg-white border border-[#E2E8F0] text-slate-600 rounded-lg font-medium cursor-pointer"
                 >
                   Hủy
                 </button>
@@ -497,147 +537,156 @@ export function AchievementsClient({
             </div>
           )}
 
-          <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 border-2 border-slate-100 overflow-hidden">
-            <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4">
-              <span className="font-bold text-slate-700 text-sm">Danh Sách Mức giải ({levels.length})</span>
+          {filteredLevels.length === 0 ? (
+            <div className="py-12 text-center text-xs text-slate-400">
+              Chưa có mức giải thưởng nào phù hợp.
             </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-white">Mức giải thưởng</th>
+                    <th className="py-3 px-3 text-teal-100">Mã</th>
+                    <th className="py-3 px-3 text-teal-100">Thuộc loại</th>
+                    <th className="py-3 px-3 text-right text-white">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                  {filteredLevels.map((lvl: any) => {
+                    const isEditing = editingLvlId === lvl.id
+                    const associatedCategory = categories.find((c) => c.id === lvl.categoryId)
 
-            {levels.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                <Medal className="w-16 h-16 mb-4 opacity-20" />
-                <p className="font-bold text-lg mb-1">Chưa có mức giải nào</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {levels.map((lvl: any) => {
-                  const isEditing = editingLvlId === lvl.id
-                  const associatedCategory = categories.find(c => c.id === lvl.categoryId)
-                  return (
-                    <div key={lvl.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-teal-50 text-teal-800 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Medal className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
+                    return (
+                      <tr
+                        key={lvl.id}
+                        className={`transition-colors align-middle ${
+                          isEditing ? "bg-[#F0FDFA]/60" : "hover:bg-[#F8FAFC]"
+                        }`}
+                      >
+                        <td className="py-3 px-3 align-middle">
                           {isEditing ? (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Tên Mức giải</label>
-                                <input
-                                  type="text"
-                                  value={editLvlForm.name}
-                                  onChange={e => setEditLvlForm({ ...editLvlForm, name: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#48BFE3] font-semibold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Mã (Code)</label>
-                                <input
-                                  type="text"
-                                  value={editLvlForm.code}
-                                  onChange={e => setEditLvlForm({ ...editLvlForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#48BFE3] font-mono font-semibold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Thuộc Loại thành tích</label>
-                                <select
-                                  value={editLvlForm.categoryId}
-                                  onChange={e => setEditLvlForm({ ...editLvlForm, categoryId: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#48BFE3] bg-white font-semibold"
-                                >
-                                  <option value="">-- Chọn Loại thành tích --</option>
-                                  {categories.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div className="md:col-span-3">
-                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Mô tả</label>
-                                <textarea
-                                  value={editLvlForm.description}
-                                  onChange={e => setEditLvlForm({ ...editLvlForm, description: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-[#48BFE3] font-semibold"
-                                  rows={2}
-                                />
-                              </div>
-                            </div>
+                            <input
+                              type="text"
+                              value={editLvlForm.name}
+                              onChange={(e) =>
+                                setEditLvlForm({ ...editLvlForm, name: e.target.value })
+                              }
+                              className="w-full border border-[#00A19A] rounded-lg px-2 py-1 text-xs font-semibold bg-white outline-none"
+                            />
                           ) : (
                             <div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <h4 className="font-extrabold text-slate-800 text-sm">{lvl.name}</h4>
-                                <span className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-500 font-mono font-black px-2 py-0.5 rounded-full border border-slate-200">
-                                  <Hash className="w-3 h-3 text-slate-400" />
-                                  {lvl.code}
-                                </span>
-                                {associatedCategory ? (
-                                  <span className="flex items-center gap-1 text-[10px] bg-[#48BFE3]/10 text-[#48BFE3] font-black px-2 py-0.5 rounded-full border border-[#48BFE3]/20">
-                                    <Tag className="w-3 h-3" />
-                                    {associatedCategory.name}
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center gap-1 text-[10px] bg-red-50 text-red-500 font-black px-2 py-0.5 rounded-full border border-red-200/50">
-                                    <Tag className="w-3 h-3" />
-                                    Chưa phân loại
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-slate-500 text-xs mt-1.5 flex items-start gap-1 font-semibold">
-                                <FileText className="w-3.5 h-3.5 mt-0.5 text-slate-400 flex-shrink-0" />
-                                <span>{lvl.description || "Chưa có mô tả chi tiết."}</span>
-                              </p>
+                              <div className="font-semibold text-slate-900">{lvl.name}</div>
+                              {lvl.description && (
+                                <div className="text-[11px] text-slate-500 line-clamp-1">
+                                  {lvl.description}
+                                </div>
+                              )}
                             </div>
                           )}
-                        </div>
+                        </td>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 self-start no-print">
+                        <td className="py-3 px-3 align-middle whitespace-nowrap">
                           {isEditing ? (
-                            <>
-                              <button
-                                onClick={() => handleSaveEditLevel(lvl.id)}
-                                disabled={saving}
-                                className="w-7 h-7 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-lg flex items-center justify-center transition-all shadow-xs border border-emerald-100"
-                                title="Lưu thay đổi"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setEditingLvlId(null)}
-                                className="w-7 h-7 bg-slate-50 text-slate-500 hover:bg-slate-200 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
-                                title="Hủy"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </>
+                            <input
+                              type="text"
+                              value={editLvlForm.code}
+                              onChange={(e) =>
+                                setEditLvlForm({
+                                  ...editLvlForm,
+                                  code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                                })
+                              }
+                              className="w-28 border border-[#00A19A] rounded-lg px-2 py-1 text-xs font-mono bg-white outline-none"
+                            />
                           ) : (
-                            <>
+                            <span className="px-2 py-0.5 rounded-md bg-[#F8FAFC] border border-[#E2E8F0] font-mono text-[11px] text-slate-700">
+                              {lvl.code}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3 align-middle whitespace-nowrap">
+                          {isEditing ? (
+                            <select
+                              value={editLvlForm.categoryId}
+                              onChange={(e) =>
+                                setEditLvlForm({ ...editLvlForm, categoryId: e.target.value })
+                              }
+                              className="border border-[#00A19A] rounded-lg px-2 py-1 text-xs bg-white outline-none"
+                            >
+                              <option value="">-- Chưa phân loại --</option>
+                              {categories.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.name}
+                                </option>
+                              ))}
+                            </select>
+                          ) : associatedCategory ? (
+                            <span className="px-2 py-0.5 rounded-full bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-[11px] font-medium">
+                              {associatedCategory.name}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[11px]">Chưa phân loại</span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
+                          {isEditing ? (
+                            <div className="inline-flex items-center gap-1">
                               <button
-                                onClick={() => handleEditLevel(lvl)}
-                                className="w-7 h-7 bg-slate-50 text-slate-400 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
+                                type="button"
+                                onClick={() => handleSaveEditLevel(lvl.id)}
+                                className="p-1.5 rounded-lg bg-[#003B3A] text-white hover:bg-[#00736E] cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingLvlId(null)}
+                                className="p-1.5 rounded-lg bg-white border border-[#E2E8F0] text-slate-500 cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingLvlId(lvl.id)
+                                  setEditLvlForm({
+                                    name: lvl.name,
+                                    code: lvl.code,
+                                    description: lvl.description || "",
+                                    categoryId: lvl.categoryId || "",
+                                  })
+                                }}
+                                className="p-1.5 text-slate-500 hover:text-[#003B3A] hover:bg-slate-100 rounded-lg cursor-pointer"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
+                                type="button"
                                 onClick={() => handleDeleteLevel(lvl.id, lvl.name)}
-                                className="w-7 h-7 bg-slate-50 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
+                                className="p-1.5 text-slate-400 hover:text-[#E11D48] hover:bg-rose-50 rounded-lg cursor-pointer"
                                 title="Xóa"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            </>
+                            </div>
                           )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

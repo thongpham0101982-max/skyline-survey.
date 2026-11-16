@@ -87,17 +87,17 @@ export function ResultImportPreview({
       {/* Table Preview */}
       <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-2xs max-h-96">
         <table className="w-full text-xs text-left">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold sticky top-0 z-10">
-            <tr>
-              <th className="py-2.5 px-3">Dòng</th>
-              <th className="py-2.5 px-3">Mã HS</th>
-              <th className="py-2.5 px-3">Môn học</th>
-              <th className="py-2.5 px-3 text-center">Điểm nạp</th>
-              <th className="py-2.5 px-3">Trạng thái</th>
-              <th className="py-2.5 px-3">Chi tiết / Hướng xử lý</th>
+          <thead className="bg-[#003B3A] border-b font-semibold sticky top-0 z-10 text-white border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="py-2.5 px-3 font-semibold">Dòng</th>
+              <th className="py-2.5 px-3 font-semibold">Mã HS</th>
+              <th className="py-2.5 px-3 font-semibold">Môn học</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Điểm nạp</th>
+              <th className="py-2.5 px-3 font-semibold">Trạng thái</th>
+              <th className="py-2.5 px-3 font-semibold">Chi tiết / Hướng xử lý</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {rows.map((r) => {
               const isErr = r.status === "ERROR" || r.status === "UNMATCHED_STUDENT"
               const isWarn = r.status === "WARNING"

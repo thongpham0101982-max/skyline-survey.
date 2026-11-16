@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense } from "react";
-import { Compass, Lightbulb, Bot, BookOpen, Search, Plus } from "lucide-react";
+import Link from "next/link";
+import { Compass, Lightbulb, Bot, BookOpen, Search, Plus, Puzzle, Users } from "lucide-react";
 import { SkylineConnectSubNav } from "@/components/skyline-connect/SkylineConnectSubNav";
 import { IdeaWallCard } from "@/components/skyline-connect/IdeaWallCard";
 import { PostComposerModal } from "@/components/skyline-connect/PostComposerModal";
 import { RatingAndApplicationModal } from "@/components/skyline-connect/RatingAndApplicationModal";
+import { ContributePieceModal } from "@/components/skyline-connect/ContributePieceModal";
+import { CONTRIBUTION_TYPE_BADGES } from "@/components/skyline-connect/CommentThreadSection";
 
 function ExploreContent() {
   const [activeCategory, setActiveCategory] = useState<"IDEA" | "AI_PRODUCT" | "EXPERIENCE">(
@@ -20,6 +23,12 @@ function ExploreContent() {
   const [data, setData] = useState<any>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState<any>(null);
+  const [contributeModalState, setContributeModalState] = useState<{
+    isOpen: boolean;
+    targetPost: any;
+    initialType?: any;
+    linkedHelpRequest?: any;
+  } | null>(null);
 
   const fetchExplore = useCallback(async () => {
     setLoading(true);
@@ -48,24 +57,51 @@ function ExploreContent() {
 
   const catalogs = data?.catalogs || {};
   const currentUserId = data?.currentUser?.userId || "";
+  const currentUserName = data?.currentUser?.fullName || "Giáo viên Sky-Line";
+
+  const handleOpenContributeModal = (
+    targetPost: any,
+    initialType?: any,
+    linkedHelpRequest?: any
+  ) => {
+    setContributeModalState({
+      isOpen: true,
+      targetPost: {
+        id: targetPost.id || targetPost.postId,
+        title: targetPost.title || targetPost.postTitle || "Ý tưởng sáng tạo",
+        authorId: targetPost.authorId,
+        authorName: targetPost.authorName || "Giáo viên Sky-Line",
+        authorAvatar: targetPost.authorAvatar || null,
+        coverImageUrl: targetPost.coverImageUrl || null,
+        postType: targetPost.postType,
+        isSeekingCollaborators: Boolean(targetPost.isSeekingCollaborators),
+        visibility: targetPost.visibility,
+        campusId: targetPost.campusId,
+        openHelpRequests: targetPost.openHelpRequests || [],
+        previewComments: targetPost.previewComments || [],
+      },
+      initialType: initialType || "METHOD",
+      linkedHelpRequest: linkedHelpRequest || null,
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-[#F5F8FA] -m-4 sm:-m-6 p-4 sm:p-6 space-y-5 text-slate-800">
+    <div className="min-h-screen bg-[#F8FAFC] -m-4 sm:-m-6 p-4 sm:p-6 space-y-5 text-slate-800">
       <SkylineConnectSubNav
         showAdminLink={Boolean(data?.currentUser?.permissions?.isAdmin)}
         onOpenComposer={() => setComposerOpen(true)}
       />
 
-      <header className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#123E4A] p-5 shadow-2xs space-y-4">
+      <header className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] p-5 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#123E4A] text-white flex items-center justify-center">
+            <div className="w-11 h-11 rounded-2xl bg-[#003B3A] text-white flex items-center justify-center">
               <Compass className="w-5 h-5 text-[#5EEAD4]" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold text-[#123E4A]">Khám phá sáng tạo</h1>
+              <h1 className="text-xl font-extrabold text-[#003B3A]">Khám phá sáng tạo</h1>
               <p className="text-xs text-slate-500">
-                Kho lưu trữ phân loại Ý tưởng dạy học, Sản phẩm AI và Học liệu trải nghiệm của giáo viên Sky-Line
+                Kho lưu trữ phân loại Ý tưởng dạy học, Sản phẩm AI, Học liệu và các lời mời cùng sáng tạo của giáo viên Sky-Line
               </p>
             </div>
           </div>
@@ -99,7 +135,7 @@ function ExploreContent() {
                   onClick={() => setActiveCategory(t.id)}
                   className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     active
-                      ? "bg-[#123E4A] text-white shadow-2xs"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
                   }`}
                 >
@@ -140,7 +176,7 @@ function ExploreContent() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as any)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-[#123E4A]"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-[#003B3A]"
             >
               <option value="USEFUL">Sắp xếp: Hữu ích nhất</option>
               <option value="NEWEST">Sắp xếp: Mới nhất</option>
@@ -149,6 +185,83 @@ function ExploreContent() {
           </div>
         </div>
       </header>
+
+      {/* Section 8: "Đang cần một đồng nghiệp..." in Community Explore */}
+      {data?.openHelpRequestsForSidebar && data.openHelpRequestsForSidebar.length > 0 && (
+        <section className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-xl bg-[#F0FDFA] border border-[#99F6E4] flex items-center justify-center text-[#159EAA]">
+                <Users className="w-4 h-4" />
+              </span>
+              <div>
+                <h2 className="text-sm font-extrabold text-[#003B3A]">
+                  Đang cần một đồng nghiệp…
+                </h2>
+                <p className="text-[11px] text-slate-500">
+                  Các bài viết đang mời đồng nghiệp cùng thử nghiệm, góp học liệu hoặc hỗ trợ chuyên môn
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {data.openHelpRequestsForSidebar.slice(0, 3).map((hr: any) => {
+              const b =
+                CONTRIBUTION_TYPE_BADGES[hr.supportType] ||
+                CONTRIBUTION_TYPE_BADGES.EXPERIMENT;
+              return (
+                <div
+                  key={hr.id}
+                  className="p-3.5 rounded-xl bg-gradient-to-br from-[#F8FAFC] to-[#F0FDFA]/60 border border-slate-200 flex flex-col justify-between gap-2.5"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${b.bg} ${b.text} ${b.border}`}
+                      >
+                        <span>{b.emoji}</span>
+                        <span>{b.label}</span>
+                      </span>
+                      {(hr.subjectCode || hr.gradeLevel) && (
+                        <span className="text-[10px] text-slate-500 font-semibold">
+                          {[hr.subjectCode, hr.gradeLevel].filter(Boolean).join(" • ")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs font-bold text-[#003B3A]">{hr.title}</div>
+                    <Link
+                      href={`/teacher/skyline-connect/posts/${hr.postId}`}
+                      className="text-[11px] text-slate-500 hover:text-[#159EAA] truncate block"
+                    >
+                      Bài gốc: {hr.postTitle} ({hr.authorName})
+                    </Link>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleOpenContributeModal(
+                        {
+                          id: hr.postId,
+                          title: hr.postTitle,
+                          authorId: hr.authorId,
+                          authorName: hr.authorName,
+                        },
+                        hr.supportType || "EXPERIMENT",
+                        hr
+                      )
+                    }
+                    className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-white hover:bg-[#003B3A] text-[#003B3A] hover:text-white border border-[#003B3A]/20 text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <Puzzle className="w-3.5 h-3.5 text-[#159EAA]" />
+                    <span>Tôi có thể giúp</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -163,6 +276,9 @@ function ExploreContent() {
               key={item.id}
               item={item}
               currentUserId={currentUserId}
+              currentUserName={currentUserName}
+              layoutMode="grid"
+              teachers={catalogs.teachers || []}
               onOpenRatingModal={(targetItem, mode) => {
                 const isProd =
                   targetItem.postType === "AI_PRODUCT" || Boolean(targetItem.linkedProduct);
@@ -180,13 +296,16 @@ function ExploreContent() {
                   postId: targetItem.id,
                 });
               }}
+              onOpenContributeModal={(targetItem, initialType, helpReq) =>
+                handleOpenContributeModal(targetItem, initialType, helpReq)
+              }
               onRefresh={fetchExplore}
             />
           ))}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-[#E2E8F0] p-10 text-center space-y-3">
-          <p className="text-sm font-bold text-[#123E4A]">
+          <p className="text-sm font-bold text-[#003B3A]">
             Chưa có nội dung trong phân mục này
           </p>
           <p className="text-xs text-slate-500">
@@ -201,6 +320,23 @@ function ExploreContent() {
             <span>Chia sẻ ngay</span>
           </button>
         </div>
+      )}
+
+      {contributeModalState && (
+        <ContributePieceModal
+          isOpen={contributeModalState.isOpen}
+          onClose={() => setContributeModalState(null)}
+          onSuccess={() => {
+            setContributeModalState(null);
+            fetchExplore();
+          }}
+          targetPost={contributeModalState.targetPost}
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+          teachers={catalogs.teachers || []}
+          initialContributionType={contributeModalState.initialType}
+          linkedHelpRequest={contributeModalState.linkedHelpRequest}
+        />
       )}
 
       <PostComposerModal

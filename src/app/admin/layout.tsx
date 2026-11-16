@@ -2,6 +2,7 @@ import { AdminMobileBottomNav } from "@/components/AdminMobileBottomNav"
 export const dynamic = "force-dynamic"
 
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import Link from "next/link"
 import { GraduationCap } from "lucide-react"
 
@@ -15,6 +16,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import { prisma } from "@/lib/db"
 import { APP_CATEGORIES } from "@/config/modules"
 import { getRoleReadableModules } from "@/lib/permissions"
+import { isUserAuthorizedForKtdbclWeeklyReports } from "@/lib/qa-workspace/weeklyReportSchema"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   let session: any = null
@@ -34,10 +36,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   let taskCount = 0
   let isTTCM = false
   let hasTeacherProfile = false
+  let isKtdbclWeeklyAllowed = false
 
   try {
     const pAny = prisma as any
     readableModules = await getRoleReadableModules(roleCode)
+    isKtdbclWeeklyAllowed = await isUserAuthorizedForKtdbclWeeklyReports(session?.user?.id, roleCode).catch(() => false)
+    if (isKtdbclWeeklyAllowed) {
+      if (!readableModules.includes("WEEKLY_REPORTS")) readableModules.push("WEEKLY_REPORTS")
+    } else {
+      readableModules = readableModules.filter(m => m !== "WEEKLY_REPORTS")
+    }
     if (pAny && pAny.workTask) {
       const currentUserId = (session?.user as any)?.id || ""
       taskCount = await pAny.workTask.count({
@@ -67,8 +76,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   // Redirect teachers without specific admin permissions to the teacher workspace
   if (["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(upperRole) && !["ADMIN", "SUPER_ADMIN"].includes(upperRole)) {
-    const adminOnlyModules = readableModules.filter(m => !["TASKS", "WEEKLY_REPORTS"].includes(m))
-    if (adminOnlyModules.length === 0) {
+    const reqHeaders = await headers().catch(() => null)
+    const currentPath = reqHeaders?.get("x-pathname") || ""
+    const isSharedTaskRoute =
+      currentPath.startsWith("/admin/tasks") ||
+      (isKtdbclWeeklyAllowed && currentPath.startsWith("/admin/weekly-reports")) ||
+      currentPath.startsWith("/admin/workhub")
+    const adminOnlyModules = readableModules.filter(m => !["TASKS", "WEEKLY_REPORTS"].includes(m) && !m.startsWith("WORKHUB_"))
+    if (adminOnlyModules.length === 0 && !isSharedTaskRoute) {
       redirect("/teacher")
     }
   }

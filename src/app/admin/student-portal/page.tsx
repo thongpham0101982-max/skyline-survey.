@@ -62,7 +62,7 @@ export default async function StudentPortalPage() {
         </div>
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Cấu hình Cổng ảnh Học Sinh</h1>
-          <p className="text-slate-500 font-medium">Bật/tắt cổng thu thập ảnh hồ sġ học sinh trực tuyến và quản lý tiến m�nh</p>
+          <p className="text-slate-500 font-medium">Bật/tắt cổng thu thập ảnh hồ sơ học sinh trực tuyến và quản lý tiến trình</p>
         </div>
       </div>
 

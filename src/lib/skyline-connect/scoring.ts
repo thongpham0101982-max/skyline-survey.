@@ -563,3 +563,515 @@ export function computeDiscoveryRankScore(item: {
   const underReviewedBoost = (item.validRatingCount ?? 0) < 5 ? 18 : 0
   return freshness + underReviewedBoost - exposurePenalty
 }
+
+// =============================================================================
+// CỘNG ĐỒNG CÙNG SÁNG TẠO — GỢI Ý MỞ ĐẦU, GIỮ NHÁP, ĐẨY BÀI & HÀNH TRÌNH LAN TỎA
+// =============================================================================
+
+export interface ContributePieceDraftState {
+  postId: string
+  contributionType: "METHOD" | "MATERIAL" | "EXPERIMENT" | "SKILL" | "CONNECTION"
+  content: string
+  links: Array<{ url: string; title?: string }>
+  attachments: Array<{
+    id?: string
+    fileName: string
+    fileUrl: string
+    mimeType: string
+    fileSize: number
+    attachmentType?: string
+  }>
+  mentionedUserIds: string[]
+  followPost: boolean
+  helpRequestId?: string | null
+  updatedAt?: string
+}
+
+/**
+ * Đổi loại mảnh đóng góp (Một cách làm / Học liệu / Thử nghiệm / Kỹ năng / Kết nối)
+ * nhưng giữ nguyên toàn bộ nội dung đang nhập, tệp đính kèm, liên kết và @nhắc tên.
+ */
+export function preserveDraftStateOnTypeSwitch(
+  draft: ContributePieceDraftState,
+  nextType: ContributePieceDraftState["contributionType"]
+): ContributePieceDraftState {
+  return {
+    ...draft,
+    contributionType: nextType,
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+/**
+ * Chèn câu gợi ý mở đầu vào ô nhập ở vị trí con trỏ phù hợp,
+ * TUYỆT ĐỐI KHÔNG ghi đè nội dung đã viết.
+ * Chuẩn hóa dấu ba chấm ("…" hoặc "...") ở cuối câu gợi ý thành khoảng trắng để GV viết tiếp tự nhiên.
+ */
+export function insertStarterPromptAtCursor(
+  currentText: string,
+  starterPrompt: string,
+  cursorPosition?: number | null
+): { text: string; nextCursorPosition: number } {
+  const normalizedStarter = starterPrompt.trim().replace(/(?:…|\.{3})+$/, "") + " "
+  const baseText = currentText ?? ""
+
+  if (!baseText.trim()) {
+    return {
+      text: normalizedStarter,
+      nextCursorPosition: normalizedStarter.length,
+    }
+  }
+
+  const pos =
+    typeof cursorPosition === "number" && cursorPosition >= 0 && cursorPosition <= baseText.length
+      ? cursorPosition
+      : baseText.length
+
+  const before = baseText.slice(0, pos)
+  const after = baseText.slice(pos)
+
+  const needsLeadingSpace = before.length > 0 && !/\s$/.test(before)
+  const prefix = needsLeadingSpace ? " " : ""
+  const needsTrailingSpace = after.length > 0 && !/^\s/.test(after) && !/\s$/.test(normalizedStarter)
+  const suffix = needsTrailingSpace ? " " : ""
+
+  const inserted = `${prefix}${normalizedStarter}${suffix}`
+  const nextText = `${before}${inserted}${after}`
+  return {
+    text: nextText,
+    nextCursorPosition: before.length + inserted.length,
+  }
+}
+
+export interface SlcPostBumpEvent {
+  id: string
+  actorId: string
+  sourceType: "REACTION" | "COMMENT"
+  sourceId: string
+  createdAt: string // ISO string
+  isActive?: boolean // false if source comment/reaction was deleted or hidden, while keeping history for anti-relike check
+}
+
+/**
+ * Đánh giá một tương tác mới có được đẩy bài ("Đang sôi nổi") hay không:
+ * - Tác giả tự tương tác KHÔNG đẩy bài.
+ * - Đổi cảm xúc (isReactionTypeChange), unlike rồi like lại (hasActorEverReactedOnPost),
+ *   hoặc sửa comment (isCommentEdit) KHÔNG tạo lần đẩy mới.
+ * - Một người với một bài chỉ tạo tối đa 1 lần đẩy trong khoảng cooldownMinutes (mặc định 30 phút).
+ */
+export function evaluatePostBumpEligibility(input: {
+  postAuthorId: string
+  actorId: string
+  sourceType: "REACTION" | "COMMENT"
+  sourceId: string
+  now?: Date | string
+  cooldownMinutes?: number
+  isReactionTypeChange?: boolean
+  isCommentEdit?: boolean
+  existingBumpEvents?: SlcPostBumpEvent[]
+}): {
+  shouldBump: boolean
+  reason?: string
+  updatedBumpEvents: SlcPostBumpEvent[]
+  newLastBumpedAt?: Date
+} {
+  const nowDate = input.now ? new Date(input.now) : new Date()
+  const nowMs = nowDate.getTime()
+  const cooldownMs = Math.max(1, input.cooldownMinutes ?? 30) * 60 * 1000
+  const events = Array.isArray(input.existingBumpEvents) ? [...input.existingBumpEvents] : []
+
+  if (!input.actorId || input.actorId === input.postAuthorId) {
+    return {
+      shouldBump: false,
+      reason: "AUTHOR_SELF_INTERACTION",
+      updatedBumpEvents: events,
+    }
+  }
+
+  if (input.isCommentEdit) {
+    return {
+      shouldBump: false,
+      reason: "COMMENT_EDIT_NO_BUMP",
+      updatedBumpEvents: events,
+    }
+  }
+
+  if (input.isReactionTypeChange) {
+    return {
+      shouldBump: false,
+      reason: "REACTION_TYPE_CHANGE_NO_BUMP",
+      updatedBumpEvents: events,
+    }
+  }
+
+  // Anti unlike-then-relike spam: if this user already created a REACTION bump on this post previously
+  // (even if they unliked it later), reliking does not create a new bump.
+  if (input.sourceType === "REACTION") {
+    const priorReactionBump = events.some(
+      (ev) => ev.actorId === input.actorId && ev.sourceType === "REACTION"
+    )
+    if (priorReactionBump) {
+      // Reactivate their original reaction bump event if it matches or keep existing history without creating a fresh bump
+      return {
+        shouldBump: false,
+        reason: "RELIKE_NO_NEW_BUMP",
+        updatedBumpEvents: events,
+      }
+    }
+  }
+
+  // Cooldown check: 1 user with 1 post can only create 1 bump within cooldownMinutes (default 30m)
+  const hasRecentBumpFromActor = events.some((ev) => {
+    if (ev.actorId !== input.actorId) return false
+    const evMs = new Date(ev.createdAt).getTime()
+    return !Number.isNaN(evMs) && nowMs - evMs < cooldownMs
+  })
+
+  if (hasRecentBumpFromActor) {
+    return {
+      shouldBump: false,
+      reason: "COOLDOWN_ACTIVE",
+      updatedBumpEvents: events,
+    }
+  }
+
+  const newEvent: SlcPostBumpEvent = {
+    id: `${input.sourceType}_${input.sourceId}_${nowMs}`,
+    actorId: input.actorId,
+    sourceType: input.sourceType,
+    sourceId: input.sourceId,
+    createdAt: nowDate.toISOString(),
+    isActive: true,
+  }
+
+  const updatedBumpEvents = [...events, newEvent]
+  return {
+    shouldBump: true,
+    updatedBumpEvents,
+    newLastBumpedAt: nowDate,
+  }
+}
+
+/**
+ * Khi một bình luận hoặc cảm xúc bị xóa hoặc ẩn kiểm duyệt:
+ * Đánh dấu sự kiện đẩy tương ứng là không còn hiệu lực (isActive = false, vẫn giữ lịch sử để chặn unlike-relike)
+ * và tính lại lastBumpedAt từ các tương tác hợp lệ còn lại (hoặc quay về publishedAt của bài).
+ */
+export function recalculatePostLastBumpedAt(input: {
+  publishedAt: Date | string
+  existingBumpEvents: SlcPostBumpEvent[]
+  removedSourceType?: "REACTION" | "COMMENT"
+  removedSourceId?: string
+  removedReactionActorId?: string
+  validActiveCommentIds?: Set<string>
+  validActiveReactionUserIds?: Set<string>
+}): {
+  updatedBumpEvents: SlcPostBumpEvent[]
+  lastBumpedAt: Date
+} {
+  const pubDate = new Date(input.publishedAt)
+  const updatedBumpEvents = (input.existingBumpEvents || []).map((ev) => {
+    let active = ev.isActive !== false
+    if (
+      input.removedSourceType &&
+      ev.sourceType === input.removedSourceType &&
+      input.removedSourceId &&
+      ev.sourceId === input.removedSourceId
+    ) {
+      active = false
+    }
+    if (
+      input.removedSourceType === "REACTION" &&
+      ev.sourceType === "REACTION" &&
+      input.removedReactionActorId &&
+      ev.actorId === input.removedReactionActorId
+    ) {
+      active = false
+    }
+    if (ev.sourceType === "COMMENT" && input.validActiveCommentIds) {
+      if (!input.validActiveCommentIds.has(ev.sourceId)) {
+        active = false
+      }
+    }
+    if (ev.sourceType === "REACTION" && input.validActiveReactionUserIds) {
+      if (!input.validActiveReactionUserIds.has(ev.actorId)) {
+        active = false
+      }
+    }
+    return { ...ev, isActive: active }
+  })
+
+  let maxMs = pubDate.getTime()
+  for (const ev of updatedBumpEvents) {
+    if (ev.isActive === false) continue
+    const t = new Date(ev.createdAt).getTime()
+    if (!Number.isNaN(t) && t > maxMs) {
+      maxMs = t
+    }
+  }
+
+  return {
+    updatedBumpEvents,
+    lastBumpedAt: new Date(maxMs),
+  }
+}
+
+export interface SlcSpreadJourneyEvent {
+  id: string
+  stage:
+    | "POST_PUBLISHED"
+    | "FEEDBACK_RECEIVED"
+    | "MOVED_TO_DEVELOPMENT"
+    | "VERSION_RELEASED"
+    | "APPLICATION_VERIFIED"
+    | "OFFICIAL_AWARD"
+  title: string
+  description: string
+  actorName?: string | null
+  timestamp: string
+  deepLink?: string | null
+  badgeLabel: string
+}
+
+/**
+ * Xây dựng "Hành trình lan tỏa" từ dữ liệu thật của bài đăng (tránh nhập lại hoặc tạo trùng),
+ * tôn trọng lựa chọn ẩn tên công khai của người đóng góp và quyền xem bài gốc.
+ */
+export function buildPostSpreadJourney(input: {
+  canViewerAccessPost: boolean
+  post: {
+    id: string
+    title?: string | null
+    postType: string
+    authorName: string
+    publishedAt: Date | string
+  }
+  comments?: Array<{
+    id: string
+    authorName: string
+    contributionType?: string
+    feedbackStatus: string
+    feedbackUpdatedAt?: Date | string | null
+    linkedProjectId?: string | null
+    developmentItemNote?: string | null
+    appliedChangeNote?: string | null
+    contributorOptOutPublic?: boolean
+    createdAt: Date | string
+    isDeleted?: boolean
+    status?: string
+  }>
+  productVersions?: Array<{
+    id: string
+    version: string
+    releaseNotes: string
+    sourceCommentId?: string | null
+    contributorName?: string | null
+    contributorOptOutPublic?: boolean
+    createdAt: Date | string
+  }>
+  verifiedApplications?: Array<{
+    id: string
+    applicantName: string
+    campusName?: string | null
+    subjectOrTask: string
+    verificationStatus: string
+    verifiedAt?: Date | string | null
+    submittedAt: Date | string
+  }>
+  officialAwards?: Array<{
+    id: string
+    periodName: string
+    badgeTitle: string
+    rank: number
+    awardedAt: Date | string
+  }>
+}): SlcSpreadJourneyEvent[] {
+  // Sự kiện không được tiết lộ nội dung vượt quyền bài gốc
+  if (!input.canViewerAccessPost) {
+    return []
+  }
+
+  const events: SlcSpreadJourneyEvent[] = []
+  const seenKeys = new Set<string>()
+
+  const pushUnique = (key: string, ev: SlcSpreadJourneyEvent) => {
+    if (seenKeys.has(key)) return
+    seenKeys.add(key)
+    events.push(ev)
+  }
+
+  // 1. Ý tưởng / Bài viết được đăng
+  const postPubIso = new Date(input.post.publishedAt).toISOString()
+  pushUnique(`POST_PUBLISHED_${input.post.id}`, {
+    id: `journey_post_${input.post.id}`,
+    stage: "POST_PUBLISHED",
+    title:
+      input.post.postType === "AI_PRODUCT"
+        ? "Sản phẩm AI được giới thiệu lên cộng đồng"
+        : "Ý tưởng được đăng tải trên Bức tường sáng tạo",
+    description: `${input.post.authorName} đã khởi xướng "${input.post.title || "Chia sẻ sáng tạo"}".`,
+    actorName: input.post.authorName,
+    timestamp: postPubIso,
+    deepLink: `/teacher/skyline-connect/posts/${input.post.id}`,
+    badgeLabel: "Khởi nguồn",
+  })
+
+  // 2. Góp ý được tiếp nhận & 3. Đóng góp được đưa vào phát triển
+  for (const c of input.comments || []) {
+    if (c.isDeleted || (c.status && c.status !== "ACTIVE")) continue
+    const contributorLabel = c.contributorOptOutPublic ? "Một đồng nghiệp Sky-Line" : c.authorName
+    const ts = new Date(c.feedbackUpdatedAt || c.createdAt).toISOString()
+
+    if (c.feedbackStatus === "RECEIVED" || c.feedbackStatus === "IN_PROGRESS" || c.feedbackStatus === "APPLIED") {
+      pushUnique(`FEEDBACK_RECEIVED_${c.id}`, {
+        id: `journey_received_${c.id}`,
+        stage: "FEEDBACK_RECEIVED",
+        title: "Góp ý được tác giả tiếp nhận",
+        description: `Mảnh đóng góp từ ${contributorLabel} đã được ghi nhận.`,
+        actorName: contributorLabel,
+        timestamp: new Date(c.createdAt).toISOString(),
+        deepLink: `/teacher/skyline-connect/posts/${input.post.id}?commentId=${c.id}`,
+        badgeLabel: "Đã tiếp nhận",
+      })
+    }
+
+    if (c.feedbackStatus === "IN_PROGRESS" || c.feedbackStatus === "APPLIED") {
+      const devNote = c.developmentItemNote || c.appliedChangeNote
+      pushUnique(`MOVED_TO_DEVELOPMENT_${c.id}`, {
+        id: `journey_dev_${c.id}`,
+        stage: "MOVED_TO_DEVELOPMENT",
+        title: "Đóng góp được đưa vào phát triển",
+        description: devNote
+          ? `Cùng phát triển từ góp ý của ${contributorLabel}: ${devNote}`
+          : `Ý kiến của ${contributorLabel} đã được đưa vào hạng mục phát triển.`,
+        actorName: contributorLabel,
+        timestamp: ts,
+        deepLink: `/teacher/skyline-connect/posts/${input.post.id}?commentId=${c.id}`,
+        badgeLabel: "Đưa vào phát triển",
+      })
+    }
+  }
+
+  // 4. Phiên bản mới được công bố
+  for (const v of input.productVersions || []) {
+    const hasCredit = v.contributorName && !v.contributorOptOutPublic
+    const creditText = hasCredit
+      ? ` (Có đóng góp từ ${v.contributorName})`
+      : v.sourceCommentId
+        ? " (Có đóng góp từ đồng nghiệp)"
+        : ""
+    pushUnique(`VERSION_RELEASED_${v.id}`, {
+      id: `journey_ver_${v.id}`,
+      stage: "VERSION_RELEASED",
+      title: `Phiên bản mới v${v.version} được công bố${creditText}`,
+      description: v.releaseNotes,
+      actorName: hasCredit ? v.contributorName : input.post.authorName,
+      timestamp: new Date(v.createdAt).toISOString(),
+      deepLink: v.sourceCommentId
+        ? `/teacher/skyline-connect/posts/${input.post.id}?commentId=${v.sourceCommentId}`
+        : `/teacher/skyline-connect/posts/${input.post.id}`,
+      badgeLabel: `Phiên bản v${v.version}`,
+    })
+  }
+
+  // 5. Trải nghiệm áp dụng được xác nhận
+  for (const app of input.verifiedApplications || []) {
+    if (app.verificationStatus !== "VERIFIED") continue
+    const ts = new Date(app.verifiedAt || app.submittedAt).toISOString()
+    pushUnique(`APPLICATION_VERIFIED_${app.id}`, {
+      id: `journey_app_${app.id}`,
+      stage: "APPLICATION_VERIFIED",
+      title: "Trải nghiệm áp dụng thực tế được xác nhận",
+      description: `${app.applicantName}${app.campusName ? ` (${app.campusName})` : ""} đã áp dụng vào "${app.subjectOrTask}".`,
+      actorName: app.applicantName,
+      timestamp: ts,
+      deepLink: `/teacher/skyline-connect/posts/${input.post.id}`,
+      badgeLabel: "Áp dụng thực tế",
+    })
+  }
+
+  // 6. Kết quả vinh danh chính thức
+  for (const aw of input.officialAwards || []) {
+    pushUnique(`OFFICIAL_AWARD_${aw.id}`, {
+      id: `journey_award_${aw.id}`,
+      stage: "OFFICIAL_AWARD",
+      title: `Vinh danh chính thức: ${aw.badgeTitle} (Hạng #${aw.rank})`,
+      description: `Được công nhận tại kỳ giải thưởng "${aw.periodName}".`,
+      actorName: input.post.authorName,
+      timestamp: new Date(aw.awardedAt).toISOString(),
+      deepLink: `/teacher/skyline-connect/hall-of-fame`,
+      badgeLabel: "Vinh danh",
+    })
+  }
+
+  return events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+}
+
+/**
+ * Công thức tính điểm sắp xếp "Đang thảo luận" (DISCUSSING) trên Tường chia sẻ:
+ * - Lượt thích và bình luận mới hợp lệ giúp bài tăng độ nổi bật.
+ * - Có suy giảm theo thời gian (time-decay) theo tuổi của bài và tuổi của từng tương tác.
+ * - Giới hạn tác động của tương tác lặp (tối đa 2 sự kiện tính điểm / 1 người dùng trên 1 bài),
+ *   loại bỏ hoàn toàn tự tương tác (actorId === authorId) và spam.
+ * - Bỏ thích (isActive === false) thu hồi điểm của lượt thích đó, tuyệt đối KHÔNG tạo thêm điểm.
+ */
+export function computeDiscussionHotScore(input: {
+  authorId: string
+  publishedAt: Date | string
+  bumpEvents?: Array<{
+    id?: string
+    actorId: string
+    sourceType: "REACTION" | "COMMENT"
+    sourceId?: string
+    createdAt: Date | string
+    isActive?: boolean
+  }>
+  reactionCount?: number
+  commentCount?: number
+  nowMs?: number
+}): number {
+  const now = input.nowMs ?? Date.now()
+  const pubMs = new Date(input.publishedAt).getTime()
+  const postAgeHours = Math.max(0, (now - pubMs) / (1000 * 60 * 60))
+
+  // Base freshness score with time decay
+  const baseFreshness = 12 / Math.pow(1 + postAgeHours / 24, 1.25)
+
+  const events = Array.isArray(input.bumpEvents) ? input.bumpEvents : []
+  if (events.length === 0) {
+    // Fallback if no granular bumpEvents array is present
+    const safeReactions = Math.min(20, Math.max(0, Number(input.reactionCount || 0)))
+    const safeComments = Math.min(30, Math.max(0, Number(input.commentCount || 0)))
+    const fallbackEngagement = safeReactions * 1.5 + safeComments * 3.0
+    return Number((baseFreshness + fallbackEngagement / Math.pow(1 + postAgeHours / 18, 1.35)).toFixed(6))
+  }
+
+  const actorEventCount = new Map<string, number>()
+  let engagementScore = 0
+
+  for (const ev of events) {
+    // Unliked / deleted / moderated events have isActive === false -> contribute 0 points
+    if (ev.isActive === false) continue
+    // Self-interaction never adds points
+    if (!ev.actorId || ev.actorId === input.authorId) continue
+
+    // Anti-spam / repeated interaction cap per user per post (max 2 scored interactions per actor)
+    const prevCount = actorEventCount.get(ev.actorId) || 0
+    if (prevCount >= 2) continue
+    actorEventCount.set(ev.actorId, prevCount + 1)
+
+    const evMs = new Date(ev.createdAt).getTime()
+    if (Number.isNaN(evMs)) continue
+    const evAgeHours = Math.max(0, (now - evMs) / (1000 * 60 * 60))
+
+    // Comments carry higher discussion weight than likes; second interaction by same user has diminishing weight
+    const rawWeight = ev.sourceType === "COMMENT" ? 4.0 : 2.0
+    const repeatDampener = prevCount === 0 ? 1.0 : 0.4
+    const decayedWeight = (rawWeight * repeatDampener) / Math.pow(1 + evAgeHours / 12, 1.35)
+
+    engagementScore += decayedWeight
+  }
+
+  return Number((baseFreshness + engagementScore).toFixed(6))
+}
+

@@ -123,19 +123,19 @@ export function ThkqDrilldownModal({ isOpen, onClose, cellData, allTargetStudent
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-slate-100/90 sticky top-0 z-10">
-                  <tr className="divide-x divide-slate-200">
-                    <th className="py-2 px-3 font-bold text-slate-700 w-12 text-center">STT</th>
-                    <th className="py-2 px-3 font-bold text-slate-700">Mã HS</th>
-                    <th className="py-2 px-3 font-bold text-slate-700">Họ và Tên</th>
-                    <th className="py-2 px-3 font-bold text-slate-700">Lớp</th>
-                    <th className="py-2 px-3 font-bold text-center text-slate-700 bg-red-100/50">Điểm số</th>
-                    <th className="py-2 px-3 font-bold text-slate-700">Diện đặc thù</th>
-                    <th className="py-2 px-3 font-bold text-slate-700">GVCN</th>
-                    <th className="py-2 px-3 font-bold text-center text-slate-700">Thao tác</th>
+                <thead className="bg-[#003B3A] sticky top-0 z-10 text-white border-b border-[#003B3A]">
+                  <tr className="divide-x text-[11px] font-semibold">
+                    <th className="py-2 px-3 font-bold w-12 text-center">STT</th>
+                    <th className="py-2 px-3 font-bold text-teal-100">Mã HS</th>
+                    <th className="py-2 px-3 font-bold text-teal-100">Họ và Tên</th>
+                    <th className="py-2 px-3 font-bold text-teal-100">Lớp</th>
+                    <th className="py-2 px-3 font-bold text-center bg-red-100/50">Điểm số</th>
+                    <th className="py-2 px-3 font-bold text-teal-100">Diện đặc thù</th>
+                    <th className="py-2 px-3 font-bold text-teal-100">GVCN</th>
+                    <th className="py-2 px-3 font-bold text-center">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {students.map((s, idx) => (
                     <tr key={`${s.studentId}_${idx}`} className="hover:bg-slate-50 transition divide-x divide-slate-100">
                       <td className="py-2 px-3 text-center text-slate-500 font-medium">{idx + 1}</td>

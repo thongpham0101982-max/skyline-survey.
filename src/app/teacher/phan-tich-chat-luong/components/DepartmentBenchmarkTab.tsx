@@ -147,20 +147,20 @@ export function DepartmentBenchmarkTab({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50/90 border-b border-slate-200/80 text-slate-600 font-semibold uppercase text-[10px] tracking-wider">
-                <th className="py-3 px-3 text-center">Xếp hạng</th>
-                <th className="py-3 px-4">Giáo viên Bộ môn</th>
-                <th className="py-3 px-3 text-center">Mã GV</th>
-                <th className="py-3 px-3 text-center">Số lớp phụ trách</th>
-                <th className="py-3 px-3 text-center">Số lượng đã chấm</th>
-                <th className="py-3 px-3 text-center">ĐTB Môn ({subjectName})</th>
-                <th className="py-3 px-3 text-center">So với TB Tổ (Δ)</th>
-                <th className="py-3 px-3 text-center">Tỉ lệ Đạt chuẩn SKL</th>
-                <th className="py-3 px-3 text-center">Tỉ lệ Khá - Giỏi</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b font-semibold text-[10px]">
+                <th className="py-3 px-3 text-center font-semibold">Xếp hạng</th>
+                <th className="py-3 px-4 font-semibold">Giáo viên Bộ môn</th>
+                <th className="py-3 px-3 text-center font-semibold">Mã GV</th>
+                <th className="py-3 px-3 text-center font-semibold">Số lớp phụ trách</th>
+                <th className="py-3 px-3 text-center font-semibold">Số lượng đã chấm</th>
+                <th className="py-3 px-3 text-center font-semibold">ĐTB Môn ({subjectName})</th>
+                <th className="py-3 px-3 text-center font-semibold">So với TB Tổ (Δ)</th>
+                <th className="py-3 px-3 text-center font-semibold">Tỉ lệ Đạt chuẩn SKL</th>
+                <th className="py-3 px-3 text-center font-semibold">Tỉ lệ Khá - Giỏi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
               {peers.map((peer: any, idx: number) => {
                 const isCurrent = peer.isCurrentTeacher
                 const displayName = isCurrent 

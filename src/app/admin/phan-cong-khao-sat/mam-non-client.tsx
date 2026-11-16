@@ -1135,18 +1135,18 @@ export function PhanCongMamNonClient({
         ) : (
           <div className="overflow-x-auto animate-in fade-in duration-300">
             <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#003B3A]/[0.03] border-b border-slate-200/80 text-[#003B3A]">
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider w-12 text-center">#</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Giáo viên phụ trách</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Khối / Nhóm tuổi</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Đợt khảo sát</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Ủy quyền Giáo vụ CS</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Ngày giao</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider text-right">Thao tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="bg-[#003B3A] text-white border-b border-[#003B3A] text-[11px] font-semibold">
+                  <th className="px-4 py-3 font-bold text-[11px] w-12 text-center">#</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Giáo viên phụ trách</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Khối / Nhóm tuổi</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Đợt khảo sát</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Ủy quyền Giáo vụ CS</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Ngày giao</th>
+                  <th className="px-4 py-3 font-bold text-[11px] text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {assignments.map((assign: any, idx: number) => {
                   const t = teachers.find(teach => teach.user?.id === assign.userId)
                   const tName = t?.teacherName || assign.user?.fullName || "Chưa rõ danh tính"

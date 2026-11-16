@@ -61,7 +61,7 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         ],
       },
       {
-        code: "MATH",
+        code: "MAT",
         nameVi: "Toán quốc tế",
         nameEn: "Maths",
         sheetName: "Maths",
@@ -110,7 +110,7 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         ],
       },
       {
-        code: "MATH",
+        code: "MAT",
         nameVi: "Toán quốc tế",
         nameEn: "Maths",
         sheetName: "Maths",
@@ -151,7 +151,7 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         ],
       },
       {
-        code: "MATH",
+        code: "MAT",
         nameVi: "Toán",
         nameEn: "Maths",
         sheetName: "Maths",
@@ -248,23 +248,81 @@ export function detectCtqtLevel(className?: string, grade?: string, level?: stri
 }
 
 /**
- * Check if a class is an International / Bilingual class eligible for CTQT
+ * Check if a class is an International / Bilingual class eligible for CTQT (Grade 1 - 12)
  */
-export function isCtqtClass(className?: string, educationSystem?: string): boolean {
+export function isCtqtClass(
+  className?: string,
+  educationSystem?: string,
+  level?: string | null,
+  grade?: string | null
+): boolean {
   if (!className) return false;
-  const upper = className.toUpperCase();
-  const eduUpper = (educationSystem || "").toUpperCase();
+  const upper = className.toUpperCase().trim();
+  const eduUpper = (educationSystem || "").toUpperCase().trim();
+  const levelLower = (level || "").toLowerCase().trim();
+
+  // Exclude preschool (Mầm non) classes from CTQT K-12 gradebook
+  if (levelLower.includes("mầm non") || levelLower.includes("mam non") || eduUpper.startsWith("MN")) {
+    return false;
+  }
 
   return (
     upper.includes("INT") ||
     upper.includes("UK") ||
+    upper.includes("COMPASS") ||
     upper.includes("CAMBRIDGE") ||
     upper.includes("BILINGUAL") ||
     upper.includes("QUOC TE") ||
     upper.includes("QUỐC TẾ") ||
     upper.endsWith("S") ||
+    eduUpper === "HNG" ||
+    eduUpper === "SB" ||
     eduUpper.includes("INT") ||
     eduUpper.includes("QUỐC TẾ") ||
     eduUpper.includes("UK")
   );
 }
+
+/**
+ * Extract numeric grade (1 - 12) from className or grade field for natural sorting
+ */
+export function extractCtqtGradeNumber(className?: string | null, grade?: string | null): number {
+  const normClass = (className || "").trim();
+  const classMatch = normClass.match(/^(\d{1,2})(?:\D|$)/);
+  if (classMatch) {
+    const num = parseInt(classMatch[1], 10);
+    if (num >= 1 && num <= 12) return num;
+  }
+
+  const normGrade = (grade || "").trim();
+  const gradeMatch = normGrade.match(/(\d{1,2})/);
+  if (gradeMatch) {
+    const num = parseInt(gradeMatch[1], 10);
+    if (num >= 1 && num <= 12) return num;
+  }
+
+  return 99;
+}
+
+/**
+ * Natural comparator for CTQT classes: sorts by Grade (1 -> 12), then natural className, then campus
+ */
+export function compareCtqtClasses(
+  a: { className?: string | null; grade?: string | null; campusName?: string | null; campus?: { campusName?: string | null } | null },
+  b: { className?: string | null; grade?: string | null; campusName?: string | null; campus?: { campusName?: string | null } | null }
+): number {
+  const gradeA = extractCtqtGradeNumber(a.className, a.grade);
+  const gradeB = extractCtqtGradeNumber(b.className, b.grade);
+  if (gradeA !== gradeB) return gradeA - gradeB;
+
+  const nameCompare = (a.className || "").localeCompare(b.className || "", "vi", {
+    numeric: true,
+    sensitivity: "base",
+  });
+  if (nameCompare !== 0) return nameCompare;
+
+  const campusA = a.campusName || a.campus?.campusName || "";
+  const campusB = b.campusName || b.campus?.campusName || "";
+  return campusA.localeCompare(campusB, "vi", { numeric: true });
+}
+

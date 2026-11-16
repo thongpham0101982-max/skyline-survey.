@@ -11,6 +11,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { buildStudentSpecialSubjectsPortfolio } from "@/lib/specialSubjectsPortfolio"
+import { buildStudentCtqtPortfolio } from "@/lib/ctqt/studentProfilePortfolio"
+import {
+  buildAchievementLabelMaps,
+  extractAchievementDisplayNames,
+  resolveAchievementCategoryLabel,
+  resolveAchievementLevelLabel,
+} from "@/lib/achievementFormatters"
 
 const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
 
@@ -86,6 +93,11 @@ export async function GET(req: NextRequest) {
               include: {
                 teacher: true
               }
+            },
+            ctqtTeachingAssignments: {
+              include: {
+                primaryTeacher: { select: { id: true, teacherName: true } }
+              }
             }
           }
         },
@@ -104,6 +116,12 @@ export async function GET(req: NextRequest) {
           include: {
             achievement: {
               include: {
+                academicYear: true,
+                teacher: true,
+                achievementRequests: {
+                  select: { id: true, examName: true, reviewedBy: true },
+                  take: 1
+                },
                 exam: {
                   include: {
                     round: true,
@@ -161,6 +179,12 @@ export async function GET(req: NextRequest) {
             }
           },
           orderBy: { createdAt: "desc" }
+        },
+        ctqtGradeEntries: {
+          orderBy: { updatedAt: "desc" }
+        },
+        ctqtCompetencyEntries: {
+          orderBy: { updatedAt: "desc" }
         }
       },
       orderBy: [
@@ -175,8 +199,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: [] })
     }
 
-    // Fetch all classes and teachers to build a normalized GVCN lookup map
-    const [allClassesData, allTeachersData] = await Promise.all([
+    // Fetch all classes, teachers, and achievement catalogs
+    const [allClassesData, allTeachersData, achCategoriesData, achLevelsData] = await Promise.all([
       prisma.class.findMany({
         select: {
           id: true,
@@ -199,8 +223,12 @@ export async function GET(req: NextRequest) {
           homeroomClass: true,
           campusId: true,
         }
-      })
+      }),
+      prisma.achievementCategory.findMany({ select: { id: true, code: true, name: true } }).catch(() => []),
+      prisma.achievementLevel.findMany({ select: { id: true, code: true, name: true, categoryId: true } }).catch(() => []),
     ]);
+
+    const achLabelMaps = buildAchievementLabelMaps(achCategoriesData, achLevelsData);
 
     const teacherMap = new Map<string, string>();
     for (const t of allTeachersData) {
@@ -257,6 +285,26 @@ export async function GET(req: NextRequest) {
           where: { studentCode: { in: studentCodesArr } },
           select: {
             studentCode: true,
+            achievements: {
+              include: {
+                achievement: {
+                  include: {
+                    academicYear: true,
+                    teacher: true,
+                    achievementRequests: {
+                      select: { id: true, examName: true, reviewedBy: true },
+                      take: 1
+                    },
+                    exam: {
+                      include: {
+                        round: true,
+                        category: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
             termScores: { include: { subject: true } },
             termSummaries: true,
             subjectGradeEntries: { include: { subject: true }, orderBy: { createdAt: "desc" } },
@@ -277,6 +325,12 @@ export async function GET(req: NextRequest) {
                 }
               },
               orderBy: { createdAt: "desc" }
+            },
+            ctqtGradeEntries: {
+              orderBy: { updatedAt: "desc" }
+            },
+            ctqtCompetencyEntries: {
+              orderBy: { updatedAt: "desc" }
             }
           }
         });
@@ -285,10 +339,33 @@ export async function GET(req: NextRequest) {
             crossScoreMap.set(cr.studentCode, { termScores: [], termSummaries: [], subjectGradeEntries: [] });
           }
           const b = crossScoreMap.get(cr.studentCode)! as any;
+          if (!b.achievements) b.achievements = [];
+          ((cr as any).achievements || []).forEach((sa: any) => {
+            if (academicYearId && academicYearId !== "all" && academicYearId !== "ALL") {
+              if (sa?.achievement?.academicYearId && sa.achievement.academicYearId !== academicYearId) {
+                return;
+              }
+            }
+            if (!b.achievements.some((ex: any) => ex.id === sa.id)) {
+              b.achievements.push(sa);
+            }
+          });
           if (!b.specialGradeEntries) b.specialGradeEntries = [];
           (cr.specialGradeEntries || []).forEach((sge: any) => {
             if (!b.specialGradeEntries.some((ex: any) => ex.id === sge.id || (ex.lessonId && ex.lessonId === sge.lessonId))) {
               b.specialGradeEntries.push(sge);
+            }
+          });
+          if (!b.ctqtGradeEntries) b.ctqtGradeEntries = [];
+          ((cr as any).ctqtGradeEntries || []).forEach((cge: any) => {
+            if (!b.ctqtGradeEntries.some((ex: any) => ex.id === cge.id)) {
+              b.ctqtGradeEntries.push(cge);
+            }
+          });
+          if (!b.ctqtCompetencyEntries) b.ctqtCompetencyEntries = [];
+          ((cr as any).ctqtCompetencyEntries || []).forEach((cce: any) => {
+            if (!b.ctqtCompetencyEntries.some((ex: any) => ex.id === cce.id)) {
+              b.ctqtCompetencyEntries.push(cce);
             }
           });
           (cr.termScores || []).forEach((ts: any) => {
@@ -322,21 +399,49 @@ export async function GET(req: NextRequest) {
 
     // Fetch K12 and Preschool entrance surveys scoped to current students
     let k12Surveys: any[] = []
+    const k12OrientationMap = new Map<string, any>()
     try {
       if (studentCodesArr.length > 0 || studentNamesArr.length > 0) {
         k12Surveys = await prisma.inputAssessmentStudent.findMany({
-          where: {
-            OR: [
-              ...(studentCodesArr.length > 0 ? [{ studentCode: { in: studentCodesArr } }] : []),
-              ...(studentNamesArr.length > 0 ? [{ fullName: { in: studentNamesArr } }] : [])
-            ]
-          },
           include: {
+            batch: {
+              include: { campus: true }
+            },
+            period: true,
             scores: {
               include: { subject: true }
             }
-          }
+          },
+          orderBy: { createdAt: "desc" }
         })
+      }
+      if (k12Surveys.length > 0) {
+        const k12Ids = k12Surveys.map((ks: any) => ks.id)
+        try {
+          if ((prisma as any).studentOrientationRecord) {
+            const oRecs = await (prisma as any).studentOrientationRecord.findMany({
+              where: { studentId: { in: k12Ids } }
+            })
+            for (const r of oRecs || []) {
+              if (r.studentId) k12OrientationMap.set(r.studentId, r)
+            }
+          }
+        } catch {}
+        try {
+          const cfgRecs = await prisma.assessmentConfig.findMany({
+            where: {
+              category: "ORIENTATION_RECORD_V1",
+              key: { in: k12Ids }
+            }
+          })
+          for (const c of cfgRecs || []) {
+            if (c.key && c.value && !k12OrientationMap.has(c.key)) {
+              try {
+                k12OrientationMap.set(c.key, JSON.parse(c.value))
+              } catch {}
+            }
+          }
+        } catch {}
       }
     } catch (err) {
       console.error("Error fetching scoped k12Surveys:", err)
@@ -567,6 +672,18 @@ export async function GET(req: NextRequest) {
             matchedSurvey = preschoolSurveys.find((x: any) => normName(x.fullName) === normName(s.studentName) && sameTime(x.dateOfBirth, s.dateOfBirth))
             if (matchedSurvey) {
               surveyType = "PRESCHOOL"
+            } else {
+              // Fallback: match by normalized fullName (preferring same grade if available)
+              const sGradeClean = String(s.class?.grade || "").replace(/\D/g, "")
+              matchedSurvey = k12Surveys.find((x: any) => {
+                if (normName(x.fullName) !== normName(s.studentName)) return false
+                if (!sGradeClean) return true
+                const xGradeClean = String(x.grade || "").replace(/\D/g, "")
+                return !xGradeClean || xGradeClean === sGradeClean
+              }) || k12Surveys.find((x: any) => normName(x.fullName) === normName(s.studentName))
+              if (matchedSurvey) {
+                surveyType = "K12"
+              }
             }
           }
         }
@@ -674,6 +791,32 @@ export async function GET(req: NextRequest) {
           teacherByClassAndSubject,
           homeroomTeacherName,
         }),
+        ctqtGradeEntries: (s.ctqtGradeEntries && s.ctqtGradeEntries.length > 0)
+          ? s.ctqtGradeEntries
+          : (((crossScoreMap.get(studentCode) as any)?.ctqtGradeEntries || []).filter(
+              (g: any) => !s.academicYearId || g.academicYearId === s.academicYearId || g.classId === s.classId
+            )),
+        ctqtCompetencyEntries: (s.ctqtCompetencyEntries && s.ctqtCompetencyEntries.length > 0)
+          ? s.ctqtCompetencyEntries
+          : (((crossScoreMap.get(studentCode) as any)?.ctqtCompetencyEntries || []).filter(
+              (c: any) => !s.academicYearId || c.academicYearId === s.academicYearId || c.classId === s.classId
+            )),
+        ctqtPortfolio: buildStudentCtqtPortfolio({
+          student: {
+            ...s,
+            className,
+            ctqtGradeEntries: (s.ctqtGradeEntries && s.ctqtGradeEntries.length > 0)
+              ? s.ctqtGradeEntries
+              : (((crossScoreMap.get(studentCode) as any)?.ctqtGradeEntries || []).filter(
+                  (g: any) => !s.academicYearId || g.academicYearId === s.academicYearId || g.classId === s.classId
+                )),
+            ctqtCompetencyEntries: (s.ctqtCompetencyEntries && s.ctqtCompetencyEntries.length > 0)
+              ? s.ctqtCompetencyEntries
+              : (((crossScoreMap.get(studentCode) as any)?.ctqtCompetencyEntries || []).filter(
+                  (c: any) => !s.academicYearId || c.academicYearId === s.academicYearId || c.classId === s.classId
+                )),
+          },
+        }),
         studentType: s.studentType || "CHINH_KHOA",
         studentTypeNote: s.studentTypeNote || "",
         convertedAt: s.convertedAt || null,
@@ -697,7 +840,51 @@ export async function GET(req: NextRequest) {
           const targetYearId = s.academicYearId || s.class?.academicYearId || academicYearId;
           return (s.careerOrientations || []).find((co: any) => co.academicYearId === targetYearId) || s.careerOrientations?.[0] || null;
         })(),
-        achievements: s.achievements || [],
+        achievements: (() => {
+          const crossAchs = (crossScoreMap.get(studentCode) as any)?.achievements || [];
+          const mergedMap = new Map<string, any>();
+          for (const sa of [...(s.achievements || []), ...crossAchs]) {
+            const key = sa?.id || `${sa?.achievementId}_${sa?.studentId}`;
+            if (key && !mergedMap.has(key)) mergedMap.set(key, sa);
+          }
+          return Array.from(mergedMap.values()).map((sa: any) => {
+            const ach = sa.achievement || sa || {};
+            const displayNames = extractAchievementDisplayNames(ach, sa);
+            const categoryLabel = resolveAchievementCategoryLabel(ach.category, achLabelMaps.categoryMap);
+            const levelLabel = resolveAchievementLevelLabel(
+              ach.level,
+              ach.category,
+              achLabelMaps.levelMap,
+              achLabelMaps.categoryMap
+            );
+            const resolvedTeacherName =
+              ach.teacherName ||
+              ach.teacher?.teacherName ||
+              (ach.teacherId ? teacherMap.get(ach.teacherId) : "") ||
+              "";
+            return {
+              ...sa,
+              studentCode,
+              studentName,
+              className,
+              campusName,
+              categoryLabel,
+              levelLabel,
+              examName: displayNames.examName,
+              teacherName: resolvedTeacherName || "—",
+              yearName: ach.academicYear?.name || yearName || "",
+              achievement: {
+                ...ach,
+                name: displayNames.achievementName,
+                exam: ach.exam || (displayNames.examName !== "Ngoài hệ thống" ? { name: displayNames.examName } : null),
+                categoryLabel,
+                levelLabel,
+                teacherName: resolvedTeacherName || null,
+                yearName: ach.academicYear?.name || yearName || "",
+              },
+            };
+          });
+        })(),
         projects: s.projectExperiences || [],
         experientialActivities: (() => {
           const studentP = allParticipants.filter((p: any) => {
@@ -828,10 +1015,13 @@ export async function GET(req: NextRequest) {
         entranceSurvey: matchedSurvey ? {
           ...matchedSurvey,
           type: surveyType,
+          orientationRecord: surveyType === "K12" ? (k12OrientationMap.get(matchedSurvey.id) || null) : null,
+          rawScores: surveyType === "K12" ? (matchedSurvey.scores || []) : [],
           scores: surveyType === "K12" ? (matchedSurvey.scores || []).map((sc: any) => ({
+            ...sc,
             subjectName: sc.subject?.name,
-            scores: sc.scores ? JSON.parse(sc.scores) : {},
-            comments: sc.comments ? JSON.parse(sc.comments) : {}
+            scores: sc.scores ? (typeof sc.scores === "string" ? (() => { try { return JSON.parse(sc.scores) } catch { return sc.scores } })() : sc.scores) : {},
+            comments: sc.comments ? (typeof sc.comments === "string" ? (() => { try { return JSON.parse(sc.comments) } catch { return sc.comments } })() : sc.comments) : {}
           })) : (preschoolScoresMap.get(matchedSurvey.id) || []).map((s: any) => ({
             areaName: s.criteria?.area?.name,
             criterionName: s.criteria?.name,

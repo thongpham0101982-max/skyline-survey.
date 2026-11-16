@@ -3,16 +3,18 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { normalizeKey } from "@/lib/competency-service";
 
-export async function GET(req: NextRequest) {
+const PURE_KSDV_CODES = new Set(["EPT", "NLTD", "TAv", "TAvd"]);
+
+export async function GET() {
   try {
     const session = await auth();
-  const user = session?.user;
+    const user = session?.user;
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const [subjects, competencies, subjectAliases, compAliases] = await Promise.all([
+    const [allSubjects, competencies, subjectAliases, compAliases] = await Promise.all([
       prisma.subject.findMany({
         select: { id: true, subjectCode: true, subjectName: true },
-        orderBy: { subjectName: "asc" },
+        orderBy: { subjectCode: "asc" },
       }),
       prisma.subjectCompetency.findMany({
         include: { subject: { select: { subjectName: true, subjectCode: true } } },
@@ -20,6 +22,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.subjectAlias.findMany({
         include: { subject: { select: { subjectName: true, subjectCode: true } } },
+        orderBy: { aliasPattern: "asc" },
       }),
       prisma.subjectCompetencyAlias.findMany({
         include: {
@@ -34,11 +37,19 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    const subjects = allSubjects.filter((s) => !PURE_KSDV_CODES.has(s.subjectCode));
+    // Loại trừ hoàn toàn mã DG_* khỏi Từ điển Alias tên môn (DG_* chỉ nằm tại Danh mục Mã môn ĐGNL)
+    const filteredSubjectAliases = subjectAliases.filter(
+      (a) =>
+        !PURE_KSDV_CODES.has(a.subject?.subjectCode || "") &&
+        !/^DG_/i.test(a.aliasPattern.trim())
+    );
+
     return NextResponse.json({
       success: true,
       subjects,
       competencies,
-      subjectAliases,
+      subjectAliases: filteredSubjectAliases,
       competencyAliases: compAliases,
     });
   } catch (error: any) {
@@ -49,7 +60,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-  const user = session?.user;
+    const user = session?.user;
     if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -74,6 +85,15 @@ export async function POST(req: NextRequest) {
     if (type === "SUBJECT_ALIAS") {
       if (!targetId || !aliasPattern) {
         return NextResponse.json({ error: "Thiếu thông tin alias môn học" }, { status: 400 });
+      }
+      if (/^DG_/i.test(String(aliasPattern).trim())) {
+        return NextResponse.json(
+          {
+            error:
+              "Mã môn Đánh giá năng lực (DG_*) chỉ được quản lý riêng tại mục 'Danh mục Mã môn ĐGNL', không lưu vào Từ điển Alias tên môn.",
+          },
+          { status: 400 }
+        );
       }
       const norm = normalizeKey(aliasPattern);
       const alias = await prisma.subjectAlias.upsert({

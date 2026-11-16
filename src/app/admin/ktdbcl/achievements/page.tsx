@@ -1,32 +1,54 @@
+import { cookies } from "next/headers"
 import { prisma } from "@/lib/db"
 import { AchievementsClient } from "./client"
 import { ExamTabs } from "@/components/ExamTabs"
 
 export const metadata = {
-  title: "Danh mục Thành tích | Admin Portal",
-  description: "Quản lý loại thành tích và mức giải của học sinh"
+  title: "Loại & Mức giải thưởng | Admin Portal",
+  description: "Quản lý từ điển loại thành tích và mức giải của học sinh",
 }
 
 export default async function AchievementsPage() {
-  const categories = await prisma.achievementCategory.findMany({
-    orderBy: { name: "asc" }
-  })
+  const cookieStore = await cookies()
+  const selectedYearCookie = cookieStore.get("selectedAcademicYear")?.value
 
-  const levels = await prisma.achievementLevel.findMany({
-    orderBy: { name: "asc" }
-  })
+  const [categories, levels, academicYears] = await Promise.all([
+    prisma.achievementCategory.findMany({
+      orderBy: { name: "asc" },
+    }),
+    prisma.achievementLevel.findMany({
+      orderBy: { name: "asc" },
+    }),
+    prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" },
+    }),
+  ])
 
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
+  const activeYear = academicYears.find((y) => y.status === "ACTIVE")
+  const initialYearId =
+    selectedYearCookie && academicYears.some((y) => y.id === selectedYearCookie)
+      ? selectedYearCookie
+      : activeYear?.id || academicYears[0]?.id || ""
+
+  const pendingRequestsCount = await prisma.studentAchievementRequest.count({
+    where: {
+      status: "PENDING",
+      ...(initialYearId ? { academicYearId: initialYearId } : {}),
+    },
   })
 
   return (
     <div className="max-w-7xl mx-auto">
-      <ExamTabs activeTab="achievements" />
-      <AchievementsClient 
-        initialCategories={categories} 
-        initialLevels={levels} 
-        academicYears={academicYears} 
+      <ExamTabs
+        activeTab="achievements"
+        pendingRequestsCount={pendingRequestsCount}
+        academicYears={academicYears}
+        initialYearId={initialYearId}
+      />
+      <AchievementsClient
+        initialCategories={categories}
+        initialLevels={levels}
+        academicYears={academicYears}
       />
     </div>
   )

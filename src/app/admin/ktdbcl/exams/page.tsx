@@ -1,54 +1,73 @@
+import { cookies } from "next/headers"
 import { prisma } from "@/lib/db"
 import { ExamsClient } from "./client"
 import { ExamTabs } from "@/components/ExamTabs"
 import { getAdminSession } from "@/lib/session"
 
 export const metadata = {
-  title: "Danh sách Kỳ thi | Admin Portal",
-  description: "Quản lý danh sách các kỳ thi học sinh"
+  title: "Danh sách kỳ thi theo năm học | Admin Portal",
+  description: "Quản lý danh sách các kỳ thi và sân chơi học sinh theo từng năm học",
 }
 
 export default async function ExamsPage() {
-  const session = await getAdminSession()
+  await getAdminSession()
+  const cookieStore = await cookies()
+  const selectedYearCookie = cookieStore.get("selectedAcademicYear")?.value
 
-  // Fetch exams including all related data and counts
-  const exams = await prisma.exam.findMany({
-    include: {
-      category: true,
-      round: true,
-      department: true,
-      _count: {
-        select: {
-          students: true,
-          achievements: true
-        }
-      }
+  const [exams, categories, rounds, departments, academicYears] = await Promise.all([
+    prisma.exam.findMany({
+      include: {
+        category: true,
+        round: true,
+        department: true,
+        academicYear: {
+          select: { id: true, name: true },
+        },
+        _count: {
+          select: {
+            students: true,
+            achievements: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.examCategory.findMany({
+      orderBy: { name: "asc" },
+    }),
+    prisma.examRound.findMany({
+      orderBy: { name: "asc" },
+    }),
+    prisma.department.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { name: "asc" },
+    }),
+    prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" },
+    }),
+  ])
+
+  const activeYear = academicYears.find((y) => y.status === "ACTIVE")
+  const initialYearId =
+    selectedYearCookie && academicYears.some((y) => y.id === selectedYearCookie)
+      ? selectedYearCookie
+      : activeYear?.id || academicYears[0]?.id || ""
+
+  const pendingRequestsCount = await prisma.studentAchievementRequest.count({
+    where: {
+      status: "PENDING",
+      ...(initialYearId ? { academicYearId: initialYearId } : {}),
     },
-    orderBy: { createdAt: "desc" }
-  })
-
-  // Fetch categories, rounds, departments for selection dropdowns
-  const categories = await prisma.examCategory.findMany({
-    orderBy: { name: "asc" }
-  })
-
-  const rounds = await prisma.examRound.findMany({
-    orderBy: { name: "asc" }
-  })
-
-  const departments = await prisma.department.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { name: "asc" }
-  })
-
-  // Fetch all academic years
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
   })
 
   return (
     <div className="max-w-7xl mx-auto">
-      <ExamTabs activeTab="exams" />
+      <ExamTabs
+        activeTab="exams"
+        pendingRequestsCount={pendingRequestsCount}
+        academicYears={academicYears}
+        initialYearId={initialYearId}
+      />
 
       <ExamsClient
         initialExams={exams}
@@ -56,6 +75,7 @@ export default async function ExamsPage() {
         rounds={rounds}
         departments={departments}
         academicYears={academicYears}
+        initialYearId={initialYearId}
       />
     </div>
   )

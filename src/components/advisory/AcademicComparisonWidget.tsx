@@ -420,18 +420,18 @@ export function AcademicComparisonWidget({
             ) : (
               <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-100/90 text-slate-700 uppercase font-black tracking-wider text-[11px]">
-                    <tr>
-                      <th className="p-3.5 pl-4">Môn Học</th>
-                      <th className="p-3.5 text-center">Điểm Mục Tiêu</th>
-                      <th className="p-3.5 text-center">Điểm Kiểm Tra</th>
-                      <th className="p-3.5 text-center">Độ Lệch (Δ)</th>
-                      <th className="p-3.5 text-center">Trạng Thái</th>
-                      <th className="p-3.5">Nhận Xét Của Thầy/Cô Bộ Môn</th>
-                      {isTeacherView && <th className="p-3.5 pr-4 text-center">Hành Động Cố Vấn</th>}
+                  <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="p-3.5 pl-4 font-semibold">Môn Học</th>
+                      <th className="p-3.5 text-center font-semibold">Điểm Mục Tiêu</th>
+                      <th className="p-3.5 text-center font-semibold">Điểm Kiểm Tra</th>
+                      <th className="p-3.5 text-center font-semibold">Độ Lệch (Δ)</th>
+                      <th className="p-3.5 text-center font-semibold">Trạng Thái</th>
+                      <th className="p-3.5 font-semibold">Nhận Xét Của Thầy/Cô Bộ Môn</th>
+                      {isTeacherView && <th className="p-3.5 pr-4 text-center font-semibold">Hành Động Cố Vấn</th>}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                  <tbody className="divide-y divide-[#E2E8F0] bg-white">
                     {filteredComparisons.map((row) => {
                       const isAlert = row.status === "ALERT"
                       const isNeedEffort = row.status === "NEED_EFFORT"

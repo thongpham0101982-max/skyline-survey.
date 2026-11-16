@@ -271,6 +271,65 @@ export async function POST(req) {
           console.error("Sync session examiner error:", syncErr);
        }
 
+       // Tạo thông báo trên hệ thống (NotificationBell) cho từng Giáo viên được phân công hiển thị rõ Kỳ, Đợt, Số lượng HS khảo sát
+       try {
+          const uniqueTeacherIds = Array.from(new Set(assignments.map((a: any) => a.teacherId).filter(Boolean))) as string[];
+          if (uniqueTeacherIds.length > 0 && resolvedPeriodId) {
+             const [periodObj, batchObj, periodStudents, allSubjects] = await Promise.all([
+                prisma.inputAssessmentPeriod.findUnique({ where: { id: resolvedPeriodId }, select: { name: true } }),
+                resolvedBatchId ? prisma.inputAssessmentBatch.findUnique({ where: { id: resolvedBatchId }, select: { name: true } }) : Promise.resolve(null),
+                prisma.inputAssessmentStudent.findMany({
+                   where: {
+                      periodId: resolvedPeriodId,
+                      ...(resolvedBatchId ? { batchId: resolvedBatchId } : {})
+                   },
+                   select: { id: true, grade: true, surveyFormType: true }
+                }),
+                prisma.assessmentSubject.findMany({ select: { id: true, name: true } })
+             ]);
+             const subjectMap = new Map(allSubjects.map((s: any) => [s.id, s.name]));
+             const periodName = periodObj?.name || "Kỳ khảo sát đầu vào";
+             const batchName = batchObj?.name || "Tất cả các đợt";
+
+             for (const tId of uniqueTeacherIds) {
+                const teacherAssigns = assignments.filter((a: any) => a.teacherId === tId);
+                const matchedStudentIds = new Set<string>();
+                const detailLabels: string[] = [];
+
+                for (const ta of teacherAssigns) {
+                   const taGrade = String(ta.grade || "").replace(/^Khối\s+/i, "").trim().toLowerCase();
+                   const subName = subjectMap.get(ta.subjectId) || "Môn khảo sát";
+                   const label = `${subName} (Khối ${ta.grade || "Tất cả"})`;
+                   if (!detailLabels.includes(label)) detailLabels.push(label);
+
+                   periodStudents.forEach((st: any) => {
+                      const stGrade = String(st.grade || "").replace(/^Khối\s+/i, "").trim().toLowerCase();
+                      if (!taGrade || taGrade === "tất cả" || stGrade === taGrade) {
+                         matchedStudentIds.add(st.id);
+                      }
+                   });
+                }
+
+                const studentCount = matchedStudentIds.size > 0 ? matchedStudentIds.size : periodStudents.length;
+                await prisma.notification.create({
+                   data: {
+                      userId: tId,
+                      title: `[Phân công Phỏng vấn định hướng Phổ thông] ${batchName} - ${periodName}`,
+                      message: `Thầy/Cô được phân công Phỏng vấn định hướng Phổ thông • Kỳ: ${periodName} • Đợt: ${batchName} • Số lượng: ${studentCount} HS khảo sát${detailLabels.length > 0 ? ` (${detailLabels.join(", ")})` : ""}.`,
+                      link: `/teacher/input-assessments?type=general&periodId=${resolvedPeriodId}&batchId=${resolvedBatchId || "all"}`,
+                      type: "TASK_ASSIGNED",
+                      category: "INPUT_ASSESSMENT",
+                      priority: "HIGH",
+                      sourceModule: "PHAN_CONG_KHAO_SAT",
+                      sourceId: resolvedBatchId || resolvedPeriodId
+                   }
+                });
+             }
+          }
+       } catch (notifErr) {
+          console.error("Create assignment notification error:", notifErr);
+       }
+
        return NextResponse.json({
           success: true,
           count: successCount,
@@ -742,6 +801,25 @@ export async function POST(req) {
             </html>
           `;
           
+          try {
+             const detailSummary = itemsArray.map((i: any) => `${i.subjectName} (Khối ${i.grade})`).join(", ");
+             await prisma.notification.create({
+                data: {
+                   userId,
+                   title: `[Phân công Phỏng vấn định hướng Phổ thông] ${group.batchName} - ${group.periodName}`,
+                   message: `Thầy/Cô được phân công Phỏng vấn định hướng Phổ thông • Kỳ: ${group.periodName} • Đợt: ${group.batchName} • Số lượng: ${matchedStudents.length} HS khảo sát${detailSummary ? ` (${detailSummary})` : ""}.`,
+                   link: `/teacher/input-assessments?type=general&periodId=${group.periodId}&batchId=${group.batchId || "all"}`,
+                   type: "TASK_ASSIGNED",
+                   category: "INPUT_ASSESSMENT",
+                   priority: "HIGH",
+                   sourceModule: "PHAN_CONG_KHAO_SAT",
+                   sourceId: group.batchId || group.periodId
+                }
+             });
+          } catch (inAppErr) {
+             console.error("Create in-app notification on NOTIFY error:", inAppErr);
+          }
+
           try {
              const campusHint = group.batchName || group.periodName || "";
              const giaovuCcEmail = getCampusGiaovuEmail(campusHint);

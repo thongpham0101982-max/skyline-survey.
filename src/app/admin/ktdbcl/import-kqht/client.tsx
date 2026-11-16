@@ -2026,11 +2026,11 @@ export function ImportKQHTClient({
 
                 <div className="overflow-x-auto border border-slate-100 rounded-xl">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
-                        <th className="p-3">Cột môn trong Excel</th>
-                        <th className="p-3">Môn học trong hệ thống</th>
-                        <th className="p-3 text-center">Trạng thái đối khớp</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="border-b text-[11px] font-semibold">
+                        <th className="p-3 font-semibold">Cột môn trong Excel</th>
+                        <th className="p-3 font-semibold">Môn học trong hệ thống</th>
+                        <th className="p-3 text-center font-semibold">Trạng thái đối khớp</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -2111,9 +2111,9 @@ export function ImportKQHTClient({
                 {/* Table container */}
                 <div className="overflow-x-auto border border-slate-100 rounded-xl max-h-[520px] overflow-y-auto">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0 z-10 whitespace-nowrap shadow-sm">
-                        <th className="p-3 w-10 text-center">
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="border-b sticky top-0 z-10 whitespace-nowrap shadow-sm text-[11px] font-semibold">
+                        <th className="p-3 w-10 text-center font-semibold">
                           <input 
                             type="checkbox"
                             checked={
@@ -2134,14 +2134,14 @@ export function ImportKQHTClient({
                             className="rounded accent-emerald-500"
                           />
                         </th>
-                        <th className="p-3">Mã học sinh</th>
-                        <th className="p-3">Họ và tên</th>
-                        <th className="p-3 text-center">Ngày sinh</th>
-                        <th className="p-3 text-center">Giới tính</th>
+                        <th className="p-3 font-semibold">Mã học sinh</th>
+                        <th className="p-3 font-semibold">Họ và tên</th>
+                        <th className="p-3 text-center font-semibold">Ngày sinh</th>
+                        <th className="p-3 text-center font-semibold">Giới tính</th>
 
                         {/* Dynamic Excel Subject Columns (Only active mapped & selected subjects) */}
                         {activeExcelSubjects.map(item => (
-                          <th key={item.excelHeader} className="p-3 text-center bg-teal-50/40 text-teal-800 border-x border-slate-100 font-bold">
+                          <th key={item.excelHeader} className="p-3 text-center bg-[#003B3A] border-x border-white/15 font-bold text-[#5EEAD4]">
                             {item.excelHeader}
                             <div className="text-[10px] font-normal text-teal-800">({item.mappedSubjectCode})</div>
                           </th>
@@ -2151,38 +2151,38 @@ export function ImportKQHTClient({
                         {currentEffectiveLevel === "SECONDARY" ? (
                           <>
                             {importAcademicRating && (
-                              <th className="p-3 text-center bg-amber-50/50 text-amber-900">Học lực</th>
+                              <th className="p-3 text-center bg-[#003B3A] text-amber-200 font-semibold">Học lực</th>
                             )}
                             {importConductRating && (
-                              <th className="p-3 text-center bg-amber-50/50 text-amber-900">Rèn luyện</th>
+                              <th className="p-3 text-center bg-[#003B3A] text-amber-200 font-semibold">Rèn luyện</th>
                             )}
                             {importConductRating && semester === "CN" && (
-                              <th className="p-3 text-center bg-amber-50/50 text-amber-900">KQRL sau hè</th>
+                              <th className="p-3 text-center bg-[#003B3A] text-amber-200 font-semibold">KQRL sau hè</th>
                             )}
                             {importAbsences && (
-                              <th className="p-3 text-center bg-teal-50/50 text-teal-900">Buổi nghỉ (P/K)</th>
+                              <th className="p-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Buổi nghỉ (P/K)</th>
                             )}
                             {importReward && (
-                              <th className="p-3 text-center bg-teal-50/50 text-teal-800">Danh hiệu</th>
+                              <th className="p-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Danh hiệu</th>
                             )}
                             {importPromotion && semester === "CN" && (
-                              <th className="p-3 text-center bg-teal-50/50 text-teal-800">Lên lớp</th>
+                              <th className="p-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Lên lớp</th>
                             )}
-                            <th className="p-3 text-center">Ghi chú</th>
+                            <th className="p-3 text-center font-semibold">Ghi chú</th>
                           </>
                         ) : (
                           <>
                             {importAcademicRating && (
-                              <th className="p-3 text-center bg-amber-50/50 text-amber-900">Đánh giá KQGD</th>
+                              <th className="p-3 text-center bg-[#003B3A] text-amber-200 font-semibold">Đánh giá KQGD</th>
                             )}
                             {importReward && (
-                              <th className="p-3 text-center bg-teal-50/50 text-teal-800">Khen thưởng</th>
+                              <th className="p-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Khen thưởng</th>
                             )}
-                            <th className="p-3 text-center">Ghi chú</th>
+                            <th className="p-3 text-center font-semibold">Ghi chú</th>
                           </>
                         )}
 
-                        <th className="p-3 text-center">Trạng thái</th>
+                        <th className="p-3 text-center font-semibold">Trạng thái</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -2460,16 +2460,16 @@ export function ImportKQHTClient({
               </label>
               <div className="overflow-x-auto border border-slate-100 rounded-xl max-h-[320px] overflow-y-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-550 font-bold border-b border-slate-100 sticky top-0 z-10">
-                      <th className="p-3 w-12 text-center">STT</th>
-                      <th className="p-3 w-28">Mã vnEdu</th>
-                      <th className="p-3">Họ và tên</th>
-                      <th className="p-3 w-28 text-center">Lớp</th>
-                      <th className="p-3 w-32 text-center">Trạng thái</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b sticky top-0 z-10 text-[11px] font-semibold">
+                      <th className="p-3 w-12 text-center font-semibold">STT</th>
+                      <th className="p-3 w-28 font-semibold">Mã vnEdu</th>
+                      <th className="p-3 font-semibold">Họ và tên</th>
+                      <th className="p-3 w-28 text-center font-semibold">Lớp</th>
+                      <th className="p-3 w-32 text-center font-semibold">Trạng thái</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {importResult.importedStudents.map((s, idx) => (
                       <tr key={s.studentCode + "_" + idx} className="hover:bg-slate-50/50 transition-colors">
                         <td className="p-3 text-center text-slate-400 font-medium">{idx + 1}</td>
@@ -2587,18 +2587,18 @@ export function ImportKQHTClient({
         ) : (
           <div className="overflow-x-auto border border-slate-100 rounded-xl max-h-[400px] overflow-y-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-550 font-bold border-b border-slate-100 sticky top-0 z-10">
-                  <th className="p-3 w-12 text-center">STT</th>
-                  <th className="p-3">Cơ sở</th>
-                  <th className="p-3">Mã lớp</th>
-                  <th className="p-3">Tên lớp</th>
-                  <th className="p-3 text-center">Học kỳ 1</th>
-                  <th className="p-3 text-center">Học kỳ 2</th>
-                  <th className="p-3 text-center">Cả năm</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b sticky top-0 z-10 text-[11px] font-semibold">
+                  <th className="p-3 w-12 text-center font-semibold">STT</th>
+                  <th className="p-3 font-semibold">Cơ sở</th>
+                  <th className="p-3 font-semibold">Mã lớp</th>
+                  <th className="p-3 font-semibold">Tên lớp</th>
+                  <th className="p-3 text-center font-semibold">Học kỳ 1</th>
+                  <th className="p-3 text-center font-semibold">Học kỳ 2</th>
+                  <th className="p-3 text-center font-semibold">Cả năm</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                 {filteredStatsClasses.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center p-8 text-slate-400 italic">Không có dữ liệu lớp học phù hợp với bộ lọc.</td>
@@ -2649,15 +2649,15 @@ export function ImportKQHTClient({
         <div className="bg-slate-900 text-slate-100 p-6 rounded-2xl shadow-sm overflow-x-auto text-[10px] font-mono mt-6">
           <h4 className="text-xs font-bold text-slate-300 mb-2">DEBUG: Raw Excel Cells (First 15 rows of {activeSheet})</h4>
           <table className="border-collapse border border-slate-700 w-full text-left">
-            <thead>
-              <tr className="bg-slate-800">
-                <th className="border border-slate-700 p-1">Row</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="text-[11px] font-semibold">
+                <th className="border border-slate-700 p-1 font-semibold">Row</th>
                 {Array.from({ length: Math.max(...debugActiveRawRows.map(r => r.length), 0) }).map((_, idx) => (
-                  <th key={idx} className="border border-slate-700 p-1">{String.fromCharCode(65 + idx)}</th>
+                  <th key={idx} className="border border-slate-700 p-1 font-semibold">{String.fromCharCode(65 + idx)}</th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
               {debugActiveRawRows.map((row, rIdx) => (
                 <tr key={rIdx}>
                   <td className="border border-slate-700 p-1 font-bold bg-slate-800 text-center">{rIdx + 1}</td>

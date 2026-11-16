@@ -91,22 +91,22 @@ export function ScatterDataTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider">
-              <th className="py-3 px-2 text-center w-8">STT</th>
-              <th className="py-3 px-3">Mã HS</th>
-              <th className="py-3 px-3">Họ và tên học sinh</th>
-              <th className="py-3 px-3">Lớp & Cơ sở</th>
-              <th className="py-3 px-3">Giáo viên phụ trách</th>
-              <th className="py-3 px-2 text-center">Trục X</th>
-              <th className="py-3 px-2 text-center">Trục Y</th>
-              <th className="py-3 px-2 text-center">Độ lệch (Δ)</th>
-              <th className="py-3 px-3 text-center">Phân nhóm Sky-Line</th>
-              <th className="py-3 px-3">Xếp loại GDPT 2018</th>
-              <th className="py-3 px-3 text-center">Thao tác</th>
+          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+            <tr className="border-b text-[10px] font-semibold">
+              <th className="py-3 px-2 text-center w-8 font-semibold">STT</th>
+              <th className="py-3 px-3 font-semibold">Mã HS</th>
+              <th className="py-3 px-3 font-semibold">Họ và tên học sinh</th>
+              <th className="py-3 px-3 font-semibold">Lớp & Cơ sở</th>
+              <th className="py-3 px-3 font-semibold">Giáo viên phụ trách</th>
+              <th className="py-3 px-2 text-center font-semibold">Trục X</th>
+              <th className="py-3 px-2 text-center font-semibold">Trục Y</th>
+              <th className="py-3 px-2 text-center font-semibold">Độ lệch (Δ)</th>
+              <th className="py-3 px-3 text-center font-semibold">Phân nhóm Sky-Line</th>
+              <th className="py-3 px-3 font-semibold">Xếp loại GDPT 2018</th>
+              <th className="py-3 px-3 text-center font-semibold">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {displayedRows.length === 0 ? (
               <tr>
                 <td colSpan={11} className="py-12 text-center text-slate-400 font-medium">

@@ -129,7 +129,8 @@ export async function sendEmail({
     const rawList: string[] = Array.isArray(input) ? input : String(input).split(/[,;]/);
     const valid = rawList
       .flatMap(e => String(e || '').split(/[,;]/))
-      .map(e => e.trim().replace(/^["']|["']$/g, ""))
+      .map(e => e.trim().replace(/^["']|["']$/g, "").replace(/@dkylineschool\.edu\.vn$/i, "@skylineschool.edu.vn"))
+      .map(e => e.toLowerCase() === "cc@skylineschool.edu.vn" ? "ktdbcl@skylineschool.edu.vn" : e)
       .filter(e => e && e.includes("@") && !e.includes(" ") && e.length > 5);
     
     const unique = Array.from(new Set(valid));

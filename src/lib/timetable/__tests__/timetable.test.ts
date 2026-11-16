@@ -2226,11 +2226,71 @@ describe("SSM Sky-Line Timetable v2 — 8 Acceptance Scenarios", () => {
     })
 
     expect(gradeReport.totalGradeQuota).toBe(40)
+    expect(gradeReport.totalQuotaHeS).toBe(40)
     expect(gradeReport.quotaDiffFromStandard).toBe(0)
     expect(gradeReport.classes[0].scheduledTotal).toBe(40)
     expect(gradeReport.classes[0].diffFromStandard).toBe(0)
     expect(gradeReport.classes[1].scheduledTotal).toBe(0)
     expect(gradeReport.classes[1].diffFromStandard).toBe(-40)
+
+    // Verify explicit Hệ S & Hệ I quota columns from SubjectQuota catalog
+    const dualCatalogReport = buildSingleGradeStats({
+      grade: "6",
+      classes,
+      quotaItems,
+      slots,
+      subjects,
+      subjectQuotas: [
+        {
+          id: "sq-s-math",
+          subjectId: "sub-math",
+          academicYearId: "ay-2026",
+          studyProgram: "Hệ S",
+          quota: 0,
+          quotaPrimary: 0,
+          quotaMiddle: 0,
+          quotaHigh: 0,
+          quotaG1: 0,
+          quotaG2: 0,
+          quotaG3: 0,
+          quotaG4: 0,
+          quotaG5: 0,
+          quotaG6: 4,
+          quotaG7: 0,
+          quotaG8: 0,
+          quotaG9: 0,
+          quotaG10: 0,
+          quotaG11: 0,
+          quotaG12: 0,
+        },
+        {
+          id: "sq-i-math",
+          subjectId: "sub-math",
+          academicYearId: "ay-2026",
+          studyProgram: "Hệ I",
+          quota: 0,
+          quotaPrimary: 0,
+          quotaMiddle: 0,
+          quotaHigh: 0,
+          quotaG1: 0,
+          quotaG2: 0,
+          quotaG3: 0,
+          quotaG4: 0,
+          quotaG5: 0,
+          quotaG6: 3,
+          quotaG7: 0,
+          quotaG8: 0,
+          quotaG9: 0,
+          quotaG10: 0,
+          quotaG11: 0,
+          quotaG12: 0,
+        },
+      ],
+      targetWeeklyPeriods: 40,
+    })
+    const mathRow = dualCatalogReport.subjectRows.find((r) => r.subjectId === "sub-math")!
+    expect(mathRow.quotaHeS).toBe(4)
+    expect(mathRow.quotaHeI).toBe(3)
 
     const matrix = buildAllGradesMatrixStats({
       classes,

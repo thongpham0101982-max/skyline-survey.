@@ -587,9 +587,9 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
         {/* TABLE CONTENT */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs whitespace-nowrap border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 text-slate-400 font-black uppercase tracking-wider text-[10px] border-b border-slate-100">
-                <th className="py-4 px-4 w-12 text-center">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="text-[10px] border-b font-semibold">
+                <th className="py-4 px-4 w-12 text-center font-semibold">
                   <input
                     type="checkbox"
                     checked={selectedStudentIds.length > 0 && selectedStudentIds.length === processedStudents.length}
@@ -600,17 +600,17 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                     className="w-4 h-4 rounded border-slate-300 text-[#48BFE3] focus:ring-[#48BFE3] cursor-pointer"
                   />
                 </th>
-                <th className="py-4 px-4">STT / Thông tin học sinh</th>
-                <th className="py-4 px-4">Ngày sinh</th>
-                <th className="py-4 px-4">Mã Học sinh</th>
-                <th className="py-4 px-4">Tài khoản PHHS (P + Mã HS)</th>
-                <th className="py-4 px-4 text-center">Quan hệ Multi-Child</th>
-                <th className="py-4 px-4 text-center">Trạng thái</th>
-                <th className="py-4 px-4 text-right pr-6">Thao tác</th>
+                <th className="py-4 px-4 font-semibold">STT / Thông tin học sinh</th>
+                <th className="py-4 px-4 font-semibold">Ngày sinh</th>
+                <th className="py-4 px-4 font-semibold">Mã Học sinh</th>
+                <th className="py-4 px-4 font-semibold">Tài khoản PHHS (P + Mã HS)</th>
+                <th className="py-4 px-4 text-center font-semibold">Quan hệ Multi-Child</th>
+                <th className="py-4 px-4 text-center font-semibold">Trạng thái</th>
+                <th className="py-4 px-4 text-right pr-6 font-semibold">Thao tác</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 font-medium">
+            <tbody className="divide-y divide-[#E2E8F0] font-medium">
               {(!selectedClassId || loading) && (
                 <tr>
                   <td colSpan={8} className="py-16 text-center">

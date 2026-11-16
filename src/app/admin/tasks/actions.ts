@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
 import { getOperationalScope } from "@/lib/session"
+import { getQaMetadataMapForTasks, upsertQaTaskMetadata } from "@/lib/qa-workspace/schemaInit"
 
 function resolveUserEmail(u: any) {
   let email = u?.teacher?.email || u?.email;
@@ -109,7 +110,7 @@ export async function createTask(data: any) {
       if (!primaryTask) primaryTask = task
       createdTasksCount++
 
-      const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
+      const appUrl = process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn"
       const startDateFormatted = new Date(task.startDate).toLocaleDateString("vi-VN")
       const endDateFormatted = new Date(task.endDate).toLocaleDateString("vi-VN")
 
@@ -331,6 +332,12 @@ export async function confirmTaskAssignment(taskId: string) {
       }
     })
 
+    await upsertQaTaskMetadata({
+      taskId,
+      workflowStatus: task.progress === "COMPLETED" ? "COMPLETED" : "IN_PROGRESS",
+      currentStepLabel: "Đã xác nhận nhận việc — Đang triển khai",
+    }).catch(() => ({}))
+
     // Send notification and email back to assigner
     if (task.assignedById && task.assignedById !== userId) {
       await prisma.notification.create({
@@ -346,7 +353,7 @@ export async function confirmTaskAssignment(taskId: string) {
       const assignerEmail = resolveUserEmail(task.assignedBy)
       if (assignerEmail) {
         try {
-          const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
+          const appUrl = process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn"
           const emailHtml = `
             <!DOCTYPE html>
             <html lang="vi">
@@ -503,7 +510,7 @@ export async function rejectTaskAssignment(taskId: string, reason: string) {
       const assignerEmail = resolveUserEmail(task.assignedBy)
       if (assignerEmail) {
         try {
-          const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
+          const appUrl = process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn"
           const emailHtml = `
             <!DOCTYPE html>
             <html lang="vi">
@@ -783,8 +790,27 @@ export async function remindTask(id: string) {
       })
     }
 
-    const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
+    const appUrl = process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn"
     const formattedDate = new Date(task.endDate).toLocaleDateString("vi-VN")
+    // Also include collaborators from qa_task_metadata so related members receive reminder emails
+    try {
+      const qaMap = await getQaMetadataMapForTasks([task])
+      const colIds = qaMap.get(task.id)?.collaboratorUserIds || []
+      if (colIds.length > 0) {
+        const colUsers = await prisma.user.findMany({
+          where: { id: { in: colIds }, status: "ACTIVE" },
+          select: { id: true, fullName: true, email: true, teacher: { select: { email: true } } },
+        })
+        const existingIds = new Set(targets.map((t: any) => t.id))
+        for (const cu of colUsers) {
+          if (!existingIds.has(cu.id)) {
+            targets.push(cu)
+            existingIds.add(cu.id)
+          }
+        }
+      }
+    } catch {}
+
     let sent = 0
 
     for (const u of targets) {
@@ -992,7 +1018,7 @@ export async function checkAndNotifyUpcomingTasks() {
             const resolvedEmail = resolveUserEmail(u)
             if (resolvedEmail) {
               try {
-                const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
+                const appUrl = process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn"
                 const emailHtml = `
                   <!DOCTYPE html>
                   <html lang="vi">

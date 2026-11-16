@@ -1301,19 +1301,19 @@ export function TTCMDepartmentSummaryTab({
           {/* Teacher Progress Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                  <th className="py-3 px-4 rounded-l-xl">STT</th>
-                  <th className="py-3 px-4 sticky left-0 bg-slate-50 z-10 shadow-xs">Giáo Viên</th>
-                  <th className="py-3 px-4">Chức Vụ</th>
-                  <th className="py-3 px-4 text-center">Tiết Dạy (Có phiếu / Chỉ tiêu)</th>
-                  <th className="py-3 px-4 text-center">Tiết Dự (Đã đánh giá / Chỉ tiêu)</th>
-                  <th className="py-3 px-4 text-center">Điểm TB Tiết Dạy</th>
-                  <th className="py-3 px-4 text-center">Đánh Giá Tiến Độ</th>
-                  <th className="py-3 px-4 text-right rounded-r-xl">Hành Động</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3 px-4 rounded-l-xl font-semibold">STT</th>
+                  <th className="py-3 px-4 sticky left-0 bg-[#003B3A] z-10 shadow-xs font-semibold">Giáo Viên</th>
+                  <th className="py-3 px-4 font-semibold">Chức Vụ</th>
+                  <th className="py-3 px-4 text-center font-semibold">Tiết Dạy (Có phiếu / Chỉ tiêu)</th>
+                  <th className="py-3 px-4 text-center font-semibold">Tiết Dự (Đã đánh giá / Chỉ tiêu)</th>
+                  <th className="py-3 px-4 text-center font-semibold">Điểm TB Tiết Dạy</th>
+                  <th className="py-3 px-4 text-center font-semibold">Đánh Giá Tiến Độ</th>
+                  <th className="py-3 px-4 text-right rounded-r-xl font-semibold">Hành Động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-semibold">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs font-semibold">
                 {filteredTeachersList.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400 font-bold">
@@ -1801,17 +1801,17 @@ export function TTCMDepartmentSummaryTab({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                    <th className="py-3 px-4 rounded-l-xl">Giáo Viên</th>
-                    <th className="py-3 px-4 text-center">Số Tiết Đã Đánh Giá</th>
-                    <th className="py-3 px-4 text-center">Điểm TB</th>
-                    <th className="py-3 px-4">Tiêu Chí Cảnh Báo Lặp Lại Nhiều Nhất</th>
-                    <th className="py-3 px-4">Góp Ý Điển Hình Gần Nhất</th>
-                    <th className="py-3 px-4 text-right rounded-r-xl">Chi Tiết</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-3 px-4 rounded-l-xl font-semibold">Giáo Viên</th>
+                    <th className="py-3 px-4 text-center font-semibold">Số Tiết Đã Đánh Giá</th>
+                    <th className="py-3 px-4 text-center font-semibold">Điểm TB</th>
+                    <th className="py-3 px-4 font-semibold">Tiêu Chí Cảnh Báo Lặp Lại Nhiều Nhất</th>
+                    <th className="py-3 px-4 font-semibold">Góp Ý Điển Hình Gần Nhất</th>
+                    <th className="py-3 px-4 text-right rounded-r-xl font-semibold">Chi Tiết</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-semibold">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs font-semibold">
                   {warningAnalytics.teacherWarnings.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-slate-400 font-bold">
@@ -1983,18 +1983,18 @@ export function TTCMDepartmentSummaryTab({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                    <th className="py-3 px-4 rounded-l-xl">Ngày & Tiết</th>
-                    <th className="py-3 px-4">Giáo Viên Dạy</th>
-                    <th className="py-3 px-4">Bài Dạy & Lớp</th>
-                    <th className="py-3 px-4">Người Dự Giờ</th>
-                    <th className="py-3 px-4 text-center">Điểm Đánh Giá</th>
-                    <th className="py-3 px-4 text-center">Xếp Loại</th>
-                    <th className="py-3 px-4 text-right rounded-r-xl">Thao Tác</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-3 px-4 rounded-l-xl font-semibold">Ngày & Tiết</th>
+                    <th className="py-3 px-4 font-semibold">Giáo Viên Dạy</th>
+                    <th className="py-3 px-4 font-semibold">Bài Dạy & Lớp</th>
+                    <th className="py-3 px-4 font-semibold">Người Dự Giờ</th>
+                    <th className="py-3 px-4 text-center font-semibold">Điểm Đánh Giá</th>
+                    <th className="py-3 px-4 text-center font-semibold">Xếp Loại</th>
+                    <th className="py-3 px-4 text-right rounded-r-xl font-semibold">Thao Tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-semibold">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs font-semibold">
                   {departmentEvaluations.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-slate-400 font-bold">

@@ -77,6 +77,20 @@ async function syncAdditionalCampuses(userId: string, additionalCampusIds: strin
   }
 }
 
+function isGdcsPosition(position?: any, positions?: any): boolean {
+  const norm = String(position || "").toUpperCase().trim();
+  if (["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(norm)) return true;
+  const arr = Array.isArray(positions)
+    ? positions
+    : typeof positions === "string"
+      ? (() => { try { return JSON.parse(positions); } catch { return []; } })()
+      : [];
+  if (Array.isArray(arr) && arr.some((p) => ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(String(p || "").toUpperCase().trim()))) {
+    return true;
+  }
+  return false;
+}
+
 export async function createTeacherAction(data: any) {
   try {
     const session = await auth()
@@ -114,11 +128,15 @@ export async function createTeacherAction(data: any) {
     const hashedPassword = await bcrypt.hash(teacherCode, 10)
     let userId: string
 
+    const shouldBeGdcs = isGdcsPosition(data.position, data.positions)
     if (existingUser) {
       userId = existingUser.id
+      if (shouldBeGdcs && ["TEACHER", "GV", "GV_MN"].includes(String(existingUser.role || "").toUpperCase().trim())) {
+        await prisma.user.update({ where: { id: existingUser.id }, data: { role: "GDCS" } }).catch(() => {})
+      }
     } else {
       const user = await prisma.user.create({
-        data: { fullName: teacherName, email: teacherCode, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
+        data: { fullName: teacherName, email: teacherCode, passwordHash: hashedPassword, role: shouldBeGdcs ? "GDCS" : "TEACHER", status: "ACTIVE" }
       })
       userId = user.id
     }
@@ -175,6 +193,7 @@ export async function createTeacherAction(data: any) {
 
     revalidatePath("/admin/teachers")
     revalidatePath("/admin/classes")
+    revalidatePath("/admin/campuses")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -237,14 +256,20 @@ export async function updateTeacherAction(data: any) {
       updateData
     )
 
-    if (teacherName || data.status !== undefined || updateData.teacherCode) {
-      const teacher = await prisma.teacher.findUnique({ where: { id } })
+    const shouldSyncGdcsRole = isGdcsPosition(data.position, data.positions)
+    if (teacherName || data.status !== undefined || updateData.teacherCode || shouldSyncGdcsRole) {
+      const teacher = await prisma.teacher.findUnique({ where: { id }, include: { user: true } })
       if (teacher) {
         const userUpdate: any = {}
         if (teacherName) userUpdate.fullName = teacherName
         if (data.status !== undefined) userUpdate.status = data.status
         if (updateData.teacherCode) userUpdate.email = updateData.teacherCode
-        await prisma.user.update({ where: { id: teacher.userId }, data: userUpdate }).catch(() => {})
+        if (shouldSyncGdcsRole && ["TEACHER", "GV", "GV_MN"].includes(String(teacher.user?.role || "").toUpperCase().trim())) {
+          userUpdate.role = "GDCS"
+        }
+        if (Object.keys(userUpdate).length > 0) {
+          await prisma.user.update({ where: { id: teacher.userId }, data: userUpdate }).catch(() => {})
+        }
       }
     }
 
@@ -281,6 +306,7 @@ export async function updateTeacherAction(data: any) {
     }
 
     revalidatePath("/admin/teachers")
+    revalidatePath("/admin/campuses")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }

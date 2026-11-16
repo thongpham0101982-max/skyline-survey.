@@ -364,16 +364,16 @@ export default function SklPsychReportViewer({
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100/80 text-slate-600 font-bold border-b border-slate-200">
-                <tr>
-                  <th className="p-3 whitespace-nowrap">Nhóm</th>
-                  <th className="p-3 whitespace-nowrap">Tên hiển thị</th>
-                  <th className="p-3">Điểm mạnh khi học tập & làm dự án</th>
-                  <th className="p-3">Vai trò phù hợp trong nhóm</th>
-                  <th className="p-3">Điểm cần lưu ý để hoàn thiện</th>
+              <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="p-3 whitespace-nowrap font-semibold">Nhóm</th>
+                  <th className="p-3 whitespace-nowrap font-semibold">Tên hiển thị</th>
+                  <th className="p-3 font-semibold">Điểm mạnh khi học tập & làm dự án</th>
+                  <th className="p-3 font-semibold">Vai trò phù hợp trong nhóm</th>
+                  <th className="p-3 font-semibold">Điểm cần lưu ý để hoàn thiện</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {(["D", "I", "S", "C"] as const).map(k => {
                   const meta = DISC_STYLE_TABLE[k]
                   const isP = k === primary
@@ -814,17 +814,17 @@ export default function SklPsychReportViewer({
           {showAllMbti && (
             <div className="overflow-x-auto border-t border-slate-200">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
-                  <tr>
-                    <th className="p-2.5">Mã</th>
-                    <th className="p-2.5">Tên hiển thị</th>
-                    <th className="p-2.5">Điểm mạnh tự nhiên</th>
-                    <th className="p-2.5">Phong cách học tập</th>
-                    <th className="p-2.5">Vai trò nhóm</th>
-                    <th className="p-2.5">Lĩnh vực tham khảo</th>
+                <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="p-2.5 font-semibold">Mã</th>
+                    <th className="p-2.5 font-semibold">Tên hiển thị</th>
+                    <th className="p-2.5 font-semibold">Điểm mạnh tự nhiên</th>
+                    <th className="p-2.5 font-semibold">Phong cách học tập</th>
+                    <th className="p-2.5 font-semibold">Vai trò nhóm</th>
+                    <th className="p-2.5 font-semibold">Lĩnh vực tham khảo</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {Object.values(MBTI_PROFILES).map(item => {
                     const isCurrent = item.code === code
                     return (

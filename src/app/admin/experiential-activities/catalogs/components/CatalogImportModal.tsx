@@ -211,19 +211,19 @@ export function CatalogImportModal({
               {/* Preview Table */}
               <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white max-h-[40vh]">
                 <table className="w-full text-xs text-left border-collapse">
-                  <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 text-slate-700 font-bold z-10">
-                    <tr>
-                      <th className="py-2.5 px-3 text-center w-12">STT</th>
-                      <th className="py-2.5 px-3 w-16">Khối</th>
-                      <th className="py-2.5 px-3">Tên hoạt động ngoại khóa</th>
-                      <th className="py-2.5 px-3">Chủ đề giáo dục</th>
-                      <th className="py-2.5 px-3">Môn chủ trì</th>
-                      <th className="py-2.5 px-3">Hình thức & Thời gian</th>
-                      <th className="py-2.5 px-3">Địa điểm dự kiến</th>
-                      <th className="py-2.5 px-3 text-center w-24">Trạng thái</th>
+                  <thead className="bg-[#003B3A] sticky top-0 border-b z-10 text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-3 text-center w-12 font-semibold">STT</th>
+                      <th className="py-2.5 px-3 w-16 font-semibold">Khối</th>
+                      <th className="py-2.5 px-3 font-semibold">Tên hoạt động ngoại khóa</th>
+                      <th className="py-2.5 px-3 font-semibold">Chủ đề giáo dục</th>
+                      <th className="py-2.5 px-3 font-semibold">Môn chủ trì</th>
+                      <th className="py-2.5 px-3 font-semibold">Hình thức & Thời gian</th>
+                      <th className="py-2.5 px-3 font-semibold">Địa điểm dự kiến</th>
+                      <th className="py-2.5 px-3 text-center w-24 font-semibold">Trạng thái</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                     {filteredRows.map((r, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-2.5 px-3 text-center text-slate-400 font-bold">{r.stt}</td>

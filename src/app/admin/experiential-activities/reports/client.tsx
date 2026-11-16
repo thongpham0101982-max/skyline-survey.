@@ -820,22 +820,22 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-12">#</th>
-                    <th className="py-3.5 px-4 min-w-[120px]">Cơ sở / Khối</th>
-                    <th className="py-3.5 px-4 min-w-[110px]">Lớp</th>
-                    <th className="py-3.5 px-4 min-w-[150px]">GVCN (Chủ nhiệm)</th>
-                    <th className="py-3.5 px-4 min-w-[180px]">GVBM / TCM Phụ trách</th>
-                    <th className="py-3.5 px-4 text-center min-w-[130px]">Số HĐ Đã Gán / Chuẩn</th>
-                    <th className="py-3.5 px-4 text-center min-w-[120px]">Đã Hoàn Thành</th>
-                    <th className="py-3.5 px-4 text-center min-w-[110px]">Đang ĐG</th>
-                    <th className="py-3.5 px-4 text-center min-w-[110px]">Chưa ĐG</th>
-                    <th className="py-3.5 px-4 min-w-[150px]">Tiến độ ĐG (%)</th>
-                    <th className="py-3.5 px-4 text-center min-w-[110px]">Thao tác</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-3.5 px-4 text-center w-12 font-semibold">#</th>
+                    <th className="py-3.5 px-4 min-w-[120px] font-semibold">Cơ sở / Khối</th>
+                    <th className="py-3.5 px-4 min-w-[110px] font-semibold">Lớp</th>
+                    <th className="py-3.5 px-4 min-w-[150px] font-semibold">GVCN (Chủ nhiệm)</th>
+                    <th className="py-3.5 px-4 min-w-[180px] font-semibold">GVBM / TCM Phụ trách</th>
+                    <th className="py-3.5 px-4 text-center min-w-[130px] font-semibold">Số HĐ Đã Gán / Chuẩn</th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px] font-semibold">Đã Hoàn Thành</th>
+                    <th className="py-3.5 px-4 text-center min-w-[110px] font-semibold">Đang ĐG</th>
+                    <th className="py-3.5 px-4 text-center min-w-[110px] font-semibold">Chưa ĐG</th>
+                    <th className="py-3.5 px-4 min-w-[150px] font-semibold">Tiến độ ĐG (%)</th>
+                    <th className="py-3.5 px-4 text-center min-w-[110px] font-semibold">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                   {filteredClassSummary.length === 0 ? (
                     <tr>
                       <td colSpan={11} className="py-12 text-center text-slate-400 font-bold">
@@ -974,21 +974,21 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-12">#</th>
-                    <th className="py-3.5 px-4 min-w-[100px]">Tháng</th>
-                    <th className="py-3.5 px-4 min-w-[120px]">Lớp (Cơ sở)</th>
-                    <th className="py-3.5 px-4 min-w-[220px]">Tên Hoạt Động Trải Nghiệm</th>
-                    <th className="py-3.5 px-4 min-w-[180px]">Chủ Đề &amp; Môn Phối Hợp</th>
-                    <th className="py-3.5 px-4 min-w-[140px]">Địa Điểm</th>
-                    <th className="py-3.5 px-4 min-w-[140px]">GVCN</th>
-                    <th className="py-3.5 px-4 min-w-[160px]">GVBM / TCM Phụ trách</th>
-                    <th className="py-3.5 px-4 text-center min-w-[120px]">Tiến Độ HS</th>
-                    <th className="py-3.5 px-4 min-w-[140px]">Tình Trạng Đánh Giá</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-3.5 px-4 text-center w-12 font-semibold">#</th>
+                    <th className="py-3.5 px-4 min-w-[100px] font-semibold">Tháng</th>
+                    <th className="py-3.5 px-4 min-w-[120px] font-semibold">Lớp (Cơ sở)</th>
+                    <th className="py-3.5 px-4 min-w-[220px] font-semibold">Tên Hoạt Động Trải Nghiệm</th>
+                    <th className="py-3.5 px-4 min-w-[180px] font-semibold">Chủ Đề &amp; Môn Phối Hợp</th>
+                    <th className="py-3.5 px-4 min-w-[140px] font-semibold">Địa Điểm</th>
+                    <th className="py-3.5 px-4 min-w-[140px] font-semibold">GVCN</th>
+                    <th className="py-3.5 px-4 min-w-[160px] font-semibold">GVBM / TCM Phụ trách</th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px] font-semibold">Tiến Độ HS</th>
+                    <th className="py-3.5 px-4 min-w-[140px] font-semibold">Tình Trạng Đánh Giá</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                   {filteredClassProgress.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="py-12 text-center text-slate-400 font-bold">
@@ -1107,19 +1107,19 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-12">#</th>
-                    <th className="py-3.5 px-4 min-w-[160px]">Cơ sở</th>
-                    <th className="py-3.5 px-4 min-w-[160px]">Cán bộ Tổ TLHN</th>
-                    <th className="py-3.5 px-4 text-center min-w-[120px]">Tổng HĐ phân bổ</th>
-                    <th className="py-3.5 px-4 text-center min-w-[120px]">Chưa tiếp nhận</th>
-                    <th className="py-3.5 px-4 text-center min-w-[120px]">Đã tiếp nhận</th>
-                    <th className="py-3.5 px-4 text-center min-w-[120px]">Đã triển khai</th>
-                    <th className="py-3.5 px-4 min-w-[160px]">Tỷ lệ triển khai lớp</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-3.5 px-4 text-center w-12 font-semibold">#</th>
+                    <th className="py-3.5 px-4 min-w-[160px] font-semibold">Cơ sở</th>
+                    <th className="py-3.5 px-4 min-w-[160px] font-semibold">Cán bộ Tổ TLHN</th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px] font-semibold">Tổng HĐ phân bổ</th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px] font-semibold">Chưa tiếp nhận</th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px] font-semibold">Đã tiếp nhận</th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px] font-semibold">Đã triển khai</th>
+                    <th className="py-3.5 px-4 min-w-[160px] font-semibold">Tỷ lệ triển khai lớp</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                   {(stats?.campusTLHNProgress || []).length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-slate-400 font-bold">

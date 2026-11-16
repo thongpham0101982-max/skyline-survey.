@@ -1,69 +1,93 @@
+import { cookies } from "next/headers"
 import { prisma } from "@/lib/db"
 import { StudentsClient } from "./client"
 import { ExamTabs } from "@/components/ExamTabs"
 import { getAdminSession } from "@/lib/session"
 
 export const metadata = {
-  title: "Đăng ký Dự thi | Admin Portal",
-  description: "Đăng ký dự thi cho học sinh"
+  title: "Đăng ký dự thi | Admin Portal",
+  description: "Quản lý danh sách học sinh đăng ký dự thi theo năm học",
 }
 
 export default async function StudentsPage() {
-  const session = await getAdminSession()
+  await getAdminSession()
+  const cookieStore = await cookies()
+  const selectedYearCookie = cookieStore.get("selectedAcademicYear")?.value
 
-  // Fetch exams
-  const exams = await prisma.exam.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      grade: true,
-      academicYearId: true,
-      _count: {
-        select: { students: true }
-      }
-    }
-  })
-
-  // Fetch campuses
-  const campuses = await prisma.campus.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { campusName: "asc" },
-    select: {
-      id: true,
-      campusName: true
-    }
-  })
-
-  // Fetch classes
-  const classes = await prisma.class.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { className: "asc" },
-    select: {
-      id: true,
-      className: true,
-      grade: true,
-      campusId: true,
-      academicYearId: true,
-      campus: {
-        select: { campusCode: true }
+  const [exams, campuses, classes, academicYears] = await Promise.all([
+    prisma.exam.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        grade: true,
+        academicYearId: true,
+        academicYear: { select: { id: true, name: true } },
+        _count: {
+          select: { students: true, achievements: true },
+        },
       },
-      _count: {
-        select: { students: true }
-      }
-    }
-  })
+    }),
+    prisma.campus.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { campusName: "asc" },
+      select: {
+        id: true,
+        campusName: true,
+      },
+    }),
+    prisma.class.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { className: "asc" },
+      select: {
+        id: true,
+        className: true,
+        grade: true,
+        campusId: true,
+        academicYearId: true,
+        campus: {
+          select: { campusCode: true },
+        },
+        _count: {
+          select: { students: true },
+        },
+      },
+    }),
+    prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" },
+    }),
+  ])
 
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
+  const activeYear = academicYears.find((y) => y.status === "ACTIVE")
+  const initialYearId =
+    selectedYearCookie && academicYears.some((y) => y.id === selectedYearCookie)
+      ? selectedYearCookie
+      : activeYear?.id || academicYears[0]?.id || ""
+
+  const pendingRequestsCount = await prisma.studentAchievementRequest.count({
+    where: {
+      status: "PENDING",
+      ...(initialYearId ? { academicYearId: initialYearId } : {}),
+    },
   })
 
   return (
     <div className="max-w-7xl mx-auto">
-      <ExamTabs activeTab="students" />
+      <ExamTabs
+        activeTab="students"
+        pendingRequestsCount={pendingRequestsCount}
+        academicYears={academicYears}
+        initialYearId={initialYearId}
+      />
 
-
-      <StudentsClient exams={exams} campuses={campuses} classes={classes} academicYears={academicYears} />
+      <StudentsClient
+        exams={exams}
+        campuses={campuses}
+        classes={classes}
+        academicYears={academicYears}
+        initialYearId={initialYearId}
+      />
     </div>
   )
 }

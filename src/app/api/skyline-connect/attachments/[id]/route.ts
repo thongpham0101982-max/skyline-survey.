@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { canViewPost } from "@/lib/skyline-connect/permissions";
-import { resolveSlcUserContext } from "@/lib/skyline-connect/service";
-import { ensureSlcSchema } from "@/lib/skyline-connect/schema-init";
+import { canViewPost, canViewSkill } from "@/lib/skyline-connect/permissions";
+import { resolveSlcUserContext, safeJsonParse } from "@/lib/skyline-connect/service";
+import { ensureSlcSchema, getSlcDb } from "@/lib/skyline-connect/schema-init";
 import fs from "fs";
 import path from "path";
 
@@ -30,7 +30,7 @@ export async function GET(
 
     await ensureSlcSchema();
     const { id } = await context.params;
-    const pAny = prisma as any;
+    const pAny = getSlcDb();
 
     const attachment = await pAny.slcAttachment.findUnique({
       where: { id },
@@ -81,6 +81,7 @@ export async function GET(
           status: post.status,
           visibility: post.visibility,
           campusId: post.campusId,
+          departmentId: post.departmentId,
           groupId: post.groupId,
           groupVisibility,
         })
@@ -93,11 +94,42 @@ export async function GET(
           { status: 403 }
         );
       }
-    } else if (attachment.uploaderId !== ctx.userId) {
-      return NextResponse.json(
-        { error: "PERMISSION_DENIED", message: "Không có quyền truy cập tệp nháp của người khác." },
-        { status: 403 }
-      );
+    } else {
+      // Check if linked to a skill via packageAttachmentId
+      const linkedSkill = await pAny.slcSkill
+        .findFirst({
+          where: { packageAttachmentId: attachment.id },
+        })
+        .catch(() => null);
+
+      if (linkedSkill) {
+        if (
+          !canViewSkill(ctx, {
+            id: linkedSkill.id,
+            authorId: linkedSkill.authorId,
+            status: linkedSkill.status,
+            publishedVersionId: linkedSkill.publishedVersionId,
+            visibility: linkedSkill.visibility,
+            campusId: linkedSkill.campusId,
+            departmentId: linkedSkill.departmentId,
+            groupId: linkedSkill.groupId,
+            subjectCode: linkedSkill.subjectCode,
+            collaboratorIds: safeJsonParse<Array<{ userId: string }>>(linkedSkill.collaboratorsJson, []).map(
+              (c) => c.userId
+            ),
+          })
+        ) {
+          return NextResponse.json(
+            { error: "PERMISSION_DENIED", message: "Thầy/Cô không có quyền tải tệp của Skill này." },
+            { status: 403 }
+          );
+        }
+      } else if (attachment.uploaderId !== ctx.userId) {
+        return NextResponse.json(
+          { error: "PERMISSION_DENIED", message: "Không có quyền truy cập tệp nháp của người khác." },
+          { status: 403 }
+        );
+      }
     }
 
     const storageDir = path.join(process.cwd(), ".slc_private_uploads");

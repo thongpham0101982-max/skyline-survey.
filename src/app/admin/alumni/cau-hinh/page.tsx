@@ -164,17 +164,17 @@ export default function AlumniConfigPage() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-gray-50/75 border-b border-gray-200 text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-3.5 px-4">Loại danh mục</th>
-                  <th className="py-3.5 px-3">Mã chuẩn hóa</th>
-                  <th className="py-3.5 px-4">Tên hiển thị (Tiếng Việt)</th>
-                  <th className="py-3.5 px-4">Tên tiếng Anh</th>
-                  <th className="py-3.5 px-3">Mã phân cấp</th>
-                  <th className="py-3.5 px-3 text-center">Trạng thái</th>
+              <thead className="bg-[#003B3A] border-b font-semibold text-[11px] text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3.5 px-4 font-semibold">Loại danh mục</th>
+                  <th className="py-3.5 px-3 font-semibold">Mã chuẩn hóa</th>
+                  <th className="py-3.5 px-4 font-semibold">Tên hiển thị (Tiếng Việt)</th>
+                  <th className="py-3.5 px-4 font-semibold">Tên tiếng Anh</th>
+                  <th className="py-3.5 px-3 font-semibold">Mã phân cấp</th>
+                  <th className="py-3.5 px-3 text-center font-semibold">Trạng thái</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-gray-400">

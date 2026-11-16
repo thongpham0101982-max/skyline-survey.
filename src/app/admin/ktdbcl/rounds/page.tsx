@@ -1,32 +1,55 @@
+import { cookies } from "next/headers"
 import { prisma } from "@/lib/db"
 import { RoundsClient } from "./client"
 import { ExamTabs } from "@/components/ExamTabs"
 
 export const metadata = {
-  title: "Danh mục Vòng thi | Admin Portal",
-  description: "Quản lý danh sách các vòng thi học sinh"
+  title: "Danh mục vòng thi | Admin Portal",
+  description: "Quản lý danh sách các vòng thi học sinh",
 }
 
 export default async function RoundsPage() {
-  const rounds = await prisma.examRound.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      exams: {
-        select: {
-          id: true,
-          academicYearId: true
-        }
-      }
-    }
-  })
+  const cookieStore = await cookies()
+  const selectedYearCookie = cookieStore.get("selectedAcademicYear")?.value
 
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
+  const [rounds, academicYears] = await Promise.all([
+    prisma.examRound.findMany({
+      orderBy: { name: "asc" },
+      include: {
+        exams: {
+          select: {
+            id: true,
+            academicYearId: true,
+          },
+        },
+      },
+    }),
+    prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" },
+    }),
+  ])
+
+  const activeYear = academicYears.find((y) => y.status === "ACTIVE")
+  const initialYearId =
+    selectedYearCookie && academicYears.some((y) => y.id === selectedYearCookie)
+      ? selectedYearCookie
+      : activeYear?.id || academicYears[0]?.id || ""
+
+  const pendingRequestsCount = await prisma.studentAchievementRequest.count({
+    where: {
+      status: "PENDING",
+      ...(initialYearId ? { academicYearId: initialYearId } : {}),
+    },
   })
 
   return (
     <div className="max-w-7xl mx-auto">
-      <ExamTabs activeTab="rounds" />
+      <ExamTabs
+        activeTab="rounds"
+        pendingRequestsCount={pendingRequestsCount}
+        academicYears={academicYears}
+        initialYearId={initialYearId}
+      />
       <RoundsClient initialRounds={rounds} academicYears={academicYears} />
     </div>
   )

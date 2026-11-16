@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db"
 import { CampusManagerClient } from "./client"
 import { PageHeader } from "@/components/PageHeader"
 
+export const dynamic = "force-dynamic"
+
 export default async function CampusPage() {
   const campuses = await prisma.campus.findMany({
     include: {
@@ -12,9 +14,49 @@ export default async function CampusPage() {
     orderBy: { campusCode: "asc" }
   })
 
+  const existingManagerIds = campuses
+    .map((c) => c.managerId)
+    .filter((id): id is string => Boolean(id))
+
   const gdcsUsers = await prisma.user.findMany({
     where: {
-      role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] }
+      OR: [
+        {
+          status: "ACTIVE",
+          OR: [
+            {
+              role: {
+                in: [
+                  "GDCS",
+                  "GĐCS",
+                  "GD_CS",
+                  "GĐ_CS",
+                  "gdcs",
+                  "gđcs",
+                  "gd_cs",
+                  "gđ_cs",
+                  "GIAO_VU",
+                  "GIAO_VU_CS",
+                  "BGH",
+                  "BGH_CS",
+                  "BGH_MN",
+                  "TBP"
+                ]
+              }
+            },
+            {
+              teacher: {
+                position: {
+                  in: ["GĐCS", "GDCS", "GĐ_CS", "GD_CS", "GIAO_VU", "GIAO_VU_CS", "BGH", "BGH_CS", "BGH_MN"]
+                }
+              }
+            },
+            { teacher: { positions: { contains: "GĐCS" } } },
+            { teacher: { positions: { contains: "GDCS" } } }
+          ]
+        },
+        ...(existingManagerIds.length > 0 ? [{ id: { in: existingManagerIds } }] : [])
+      ]
     },
     select: { id: true, fullName: true, email: true },
     orderBy: { fullName: "asc" }

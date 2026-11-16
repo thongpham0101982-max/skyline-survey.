@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import {
   getEntranceProgressDashboardData,
   executeEntranceWorkflowAction,
+  resolveEntranceViewerScope,
 } from "@/lib/entrance-progress/entranceProgressEngine";
 import {
   EntranceStageStatus,
@@ -38,6 +39,8 @@ export async function GET(req: Request) {
     const alertFilter = searchParams.get("alertFilter") || undefined;
     const search = searchParams.get("search") || undefined;
 
+    const viewerScope = await resolveEntranceViewerScope(session.user);
+
     const data = await getEntranceProgressDashboardData({
       academicYearId,
       level,
@@ -51,6 +54,9 @@ export async function GET(req: Request) {
       milestoneFilter,
       alertFilter,
       search,
+      viewerRole: viewerScope.viewerRole,
+      isSuperAdmin: viewerScope.isSuperAdmin,
+      allowedCampusCodes: viewerScope.allowedCampusCodes,
     });
 
     return NextResponse.json({

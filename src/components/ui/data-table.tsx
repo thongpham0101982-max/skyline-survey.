@@ -50,7 +50,7 @@ export function DataTable<T extends Record<string, any>>({
   const totalPages = Math.ceil(filteredData.length / pageSize) || 1
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize
-    return filteredData.slice(start, start + pageSize)
+    return paginatedDataSlice(filteredData, start, pageSize)
   }, [filteredData, currentPage, pageSize])
 
   const handleSearchChange = (val: string) => {
@@ -62,7 +62,7 @@ export function DataTable<T extends Record<string, any>>({
     <div className="space-y-4">
       {/* Search & Actions Bar */}
       {(searchKey || headerRightActions) && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#E2E8F0] shadow-xs">
           {searchKey ? (
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
@@ -71,7 +71,7 @@ export function DataTable<T extends Record<string, any>>({
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 font-medium focus:outline-none focus:bg-white focus:border-[#003B3A] focus:ring-2 focus:ring-[#003B3A]/10 transition-all"
+                className="w-full bg-white border border-slate-200/80 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 font-medium focus:outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 transition-all shadow-2xs"
               />
             </div>
           ) : <div />}
@@ -80,17 +80,17 @@ export function DataTable<T extends Record<string, any>>({
         </div>
       )}
 
-      {/* Table Surface */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+      {/* Table Surface — Chuẩn "Kết quả khảo sát theo đợt" (Sky-Line Academic Ledger) */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full border-collapse text-left text-xs tabular-nums">
-            <thead>
-              <tr className="bg-slate-50/90 border-b border-slate-200/70">
+          <table className="w-full text-left table-auto border-collapse tabular-nums">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
                 {columns.map((col, idx) => (
                   <th
                     key={idx}
                     className={cn(
-                      "px-4 py-3 font-semibold text-slate-600 text-xs tracking-tight whitespace-nowrap",
+                      "py-3 px-3.5 font-semibold text-teal-100 first:text-white last:text-white whitespace-nowrap",
                       col.className
                     )}
                   >
@@ -99,7 +99,7 @@ export function DataTable<T extends Record<string, any>>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
               {isLoading ? (
                 <tr>
                   <td colSpan={columns.length} className="py-12 text-center text-slate-400 font-semibold">
@@ -109,24 +109,28 @@ export function DataTable<T extends Record<string, any>>({
                 </tr>
               ) : paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="py-12 text-center text-slate-400">
-                    <Inbox className="size-8 mx-auto mb-2 text-slate-300" />
-                    <p className="font-semibold text-slate-500 text-balance">{emptyMessage}</p>
-                    {searchQuery && (
-                      <p className="text-[11px] text-slate-400 mt-1 text-pretty">
-                        Thử điều chỉnh từ khóa tìm kiếm: "{searchQuery}"
-                      </p>
-                    )}
+                  <td colSpan={columns.length} className="px-4 py-12 text-center border-b border-slate-100">
+                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                      <div className="w-11 h-11 rounded-2xl bg-[#F0FDFA] border border-[#CCFBF1] flex items-center justify-center text-[#00736E]">
+                        <Inbox className="w-5 h-5" />
+                      </div>
+                      <p className="text-sm font-bold text-slate-800 text-balance">{emptyMessage}</p>
+                      {searchQuery && (
+                        <p className="text-xs text-slate-500 text-pretty">
+                          Thử điều chỉnh từ khóa tìm kiếm: "{searchQuery}"
+                        </p>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginatedData.map((row, rowIdx) => (
                   <tr
                     key={rowIdx}
-                    className="hover:bg-slate-50/70 transition-colors duration-150"
+                    className="hover:bg-[#F8FAFC] transition-colors align-middle"
                   >
                     {columns.map((col, colIdx) => (
-                      <td key={colIdx} className={cn("px-4 py-3 text-slate-700 font-medium", col.className)}>
+                      <td key={colIdx} className={cn("py-3 px-3.5 text-slate-700 font-medium align-middle", col.className)}>
                         {col.cell ? col.cell(row, (currentPage - 1) * pageSize + rowIdx) : row[col.accessorKey as string]}
                       </td>
                     ))}
@@ -139,29 +143,28 @@ export function DataTable<T extends Record<string, any>>({
 
         {/* Pagination Footer */}
         {filteredData.length > pageSize && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/50">
-            <span className="text-[11px] font-semibold text-slate-500">
-              Hiển thị <strong>{Math.min(filteredData.length, (currentPage - 1) * pageSize + 1)}</strong> -{" "}
-              <strong>{Math.min(filteredData.length, currentPage * pageSize)}</strong> trên{" "}
-              <strong>{filteredData.length}</strong> dòng
+          <div className="px-4 py-3.5 bg-[#F8FAFC] border-t border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3 text-xs font-semibold tabular-nums">
+            <span className="text-xs text-slate-600 font-medium">
+              Hiển thị <strong className="font-bold text-[#003B3A]">{Math.min(filteredData.length, (currentPage - 1) * pageSize + 1)}–{Math.min(filteredData.length, currentPage * pageSize)}</strong> trong tổng số{" "}
+              <strong className="font-bold text-[#003B3A]">{filteredData.length}</strong> dòng
             </span>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 aria-label="Trang trước"
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                className="p-1.5 rounded-lg border border-[#E2E8F0] bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
               >
                 <ChevronLeft className="size-4" />
               </button>
-              <span className="text-xs font-bold text-slate-700 px-2 tabular-nums">
+              <span className="text-xs font-bold text-[#003B3A] px-2.5 py-1 rounded-lg bg-white border border-[#E2E8F0] tabular-nums">
                 {currentPage} / {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 aria-label="Trang sau"
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                className="p-1.5 rounded-lg border border-[#E2E8F0] bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -171,4 +174,8 @@ export function DataTable<T extends Record<string, any>>({
       </div>
     </div>
   )
+}
+
+function paginatedDataSlice<T>(arr: T[], start: number, pageSize: number): T[] {
+  return arr.slice(start, start + pageSize);
 }

@@ -94,6 +94,17 @@ export function resolveNotificationLink(n: { title?: string; message?: string; l
     const extractedQuery = extractTeacherAndTopic()
     return `/teacher/du-gio?tab=overview_slots${extractedQuery}&action=register`
   }
+  if (
+    text.includes("phỏng vấn định hướng") ||
+    text.includes("khảo sát đầu vào") ||
+    text.includes("ksđv") ||
+    text.includes("phân công khảo sát") ||
+    (n as any).category === "INPUT_ASSESSMENT"
+  ) {
+    return text.includes("mầm non")
+      ? "/teacher/input-assessments?type=preschool"
+      : "/teacher/input-assessments?type=general"
+  }
   if (text.includes("khảo sát") || text.includes("nps") || text.includes("survey")) {
     return "/teacher/nps"
   }
@@ -133,7 +144,7 @@ export function NotificationBell() {
         }
       }
     } catch (err) {
-      console.error("Failed to fetch notifications:", err)
+      // Bỏ qua lỗi mạng tạm thời khi tự động làm mới thông báo nền
     }
   }
 

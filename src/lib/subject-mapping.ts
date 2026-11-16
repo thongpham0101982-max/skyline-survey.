@@ -6,10 +6,10 @@
  *    - SKL: Chương trình đặc thù Hệ thống Giáo dục Sky-Line
  *    - BILINGUAL: Chương trình Song ngữ & Quốc tế (Chuẩn mã INT-...)
  *    - KSDV: Khảo sát đầu vào & Đánh giá năng lực (Môn NLTD độc lập, TAv, TAvd, EPT)
- * 2. Cung cấp bộ quy tắc phân giải (Resolver) cho File Excel nạp điểm:
+ * 2. Cung cấp bộ quy tắc phân giải (Resolver) cho File Excel nạp điểm KSĐV & học vụ:
  *    - File điểm MOET (Toán, Văn, Anh, KHTN, Sử, Địa, Lý, Hóa, Sinh, Tin, GDCD...)
- *    - File kết quả đánh giá năng lực ĐBCL (Mã DG_TOAN, DG_TIENG_VIET, DG_TIENG_ANH, DG_TAM_LY, DG_NLTD...)
- *    - File điểm Song ngữ (Mã INT-ENG, INT-MATH, INT-SCI, INT-READ, INT-GLOBAL, INT-AE, INT-IELTS, INT-SAT, INT-BUS, INT-AR, INT-CORE...)
+ *    - File kết quả khảo sát đầu vào KSĐV (NLTD, EPT, TAv, TAvd...) — Lưu ý: Mã môn ĐGNL (DG_*) được quản lý độc lập hoàn toàn tại Danh mục Mã môn ĐGNL (CompetencySubjectCatalog).
+ *    - File điểm Song ngữ (Mã INT-ENG, MAT, INT-SCI, INT-READ, INT-GLOBAL, INT-AE, INT-IELTS, INT-SAT, INT-BUS, INT-AR...)
  */
 
 export type SubjectCategory = "MOET" | "SKL" | "BILINGUAL" | "KSDV";
@@ -39,8 +39,8 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     name: "Năng lực tư duy",
     category: "KSDV",
     evaluationType: "SCORE",
-    aliases: ["nltd", "nang luc tu duy", "tu duy", "dg_nltd", "danh gia nang luc tu duy", "logic"],
-    assessmentCodes: ["NLTD", "DG_NLTD"],
+    aliases: ["nltd", "nang luc tu duy", "tu duy", "danh gia nang luc tu duy", "logic"],
+    assessmentCodes: ["NLTD"],
     description: "Môn Khảo sát Đầu vào độc lập (không ghép với môn Toán)"
   },
   {
@@ -70,8 +70,8 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     name: "English Placement Test (EPT)",
     category: "KSDV",
     evaluationType: "SCORE",
-    aliases: ["ept", "english placement test", "test ept", "dg_ept"],
-    assessmentCodes: ["EPT", "DG_EPT"],
+    aliases: ["ept", "english placement test", "test ept"],
+    assessmentCodes: ["EPT"],
     isSubSubject: false,
     description: "Bài kiểm tra xếp lớp tiếng Anh đầu vào độc lập (không thuộc môn TA)"
   },
@@ -84,17 +84,17 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     name: "English",
     category: "BILINGUAL",
     evaluationType: "SCORE",
-    aliases: ["int-eng", "english", "esl", "esa", "tieng anh song ngu", "eng", "int_eng"],
-    assessmentCodes: ["INT-ENG", "ESL", "ENG"],
+    aliases: ["int-eng", "english", "esl", "ela", "esa", "esl/a.e", "tieng anh song ngu", "eng", "int_eng"],
+    assessmentCodes: ["INT-ENG", "ESL", "ELA", "ESA", "ENG"],
     description: "Môn Tiếng Anh Song ngữ"
   },
   {
-    code: "INT-MATH",
+    code: "MAT",
     name: "Mathematics",
     category: "BILINGUAL",
     evaluationType: "SCORE",
-    aliases: ["int-math", "mathematics", "maths", "math", "toan song ngu", "maths cambridge", "mat", "int_math"],
-    assessmentCodes: ["INT-MATH", "MAT", "MATHS"],
+    aliases: ["mat", "int-math", "mathematics", "maths", "math", "toan song ngu", "maths cambridge", "maths_cambridge", "maths (cambridge)", "int_math"],
+    assessmentCodes: ["MAT", "INT-MATH", "MATH", "MATHS", "MATHS_CAMBRIDGE"],
     description: "Môn Toán Song ngữ / Cambridge"
   },
   {
@@ -169,15 +169,6 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     assessmentCodes: ["INT-AR", "AR", "ACR"],
     description: "Môn Nghiên cứu Học thuật A.R"
   },
-  {
-    code: "INT-CORE",
-    name: "Core Competencies các môn Học Song ngữ",
-    category: "BILINGUAL",
-    evaluationType: "SCORE",
-    aliases: ["int-core", "core competencies", "nang luc cot loi", "core", "int_core"],
-    assessmentCodes: ["INT-CORE", "CORE"],
-    description: "Đánh giá Năng lực Cốt lõi các môn Song ngữ"
-  },
 
   // ==========================================
   // 3. NHÓM MOET: Chương trình chuẩn Bộ GD&ĐT
@@ -187,8 +178,8 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     name: "Toán học",
     category: "MOET",
     evaluationType: "SCORE",
-    aliases: ["toa", "toan", "toan hoc", "mon toan", "dg_toan", "dg_toan_hoc"],
-    assessmentCodes: ["TOA", "DG_TOAN"],
+    aliases: ["toa", "toan", "toan hoc", "mon toan"],
+    assessmentCodes: ["TOA"],
     description: "Môn Toán theo chương trình Bộ GD&ĐT"
   },
   {
@@ -196,8 +187,8 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     name: "Tiếng Việt",
     category: "MOET",
     evaluationType: "SCORE",
-    aliases: ["tvi", "tieng viet", "mon tieng viet", "dg_tieng_viet", "dg_tv"],
-    assessmentCodes: ["TVI", "DG_TIENG_VIET"],
+    aliases: ["tvi", "tieng viet", "mon tieng viet"],
+    assessmentCodes: ["TVI"],
     description: "Môn Tiếng Việt (Cấp Tiểu học)"
   },
   {
@@ -205,8 +196,8 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     name: "Ngữ Văn",
     category: "MOET",
     evaluationType: "SCORE",
-    aliases: ["nva", "ngu van", "van", "mon ngu van", "mon van", "dg_ngu_van", "dg_van"],
-    assessmentCodes: ["NVA", "DG_NGU_VAN"],
+    aliases: ["nva", "ngu van", "van", "mon ngu van", "mon van"],
+    assessmentCodes: ["NVA"],
     description: "Môn Ngữ Văn (Cấp THCS / THPT)"
   },
   {
@@ -214,8 +205,8 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     name: "Tiếng Anh",
     category: "MOET",
     evaluationType: "SCORE",
-    aliases: ["ta", "tav", "tieng anh", "anh", "mon tieng anh", "dg_tieng_anh", "dg_ta"],
-    assessmentCodes: ["TA", "TAV", "DG_TIENG_ANH"],
+    aliases: ["ta", "tav", "tieng anh", "anh", "mon tieng anh"],
+    assessmentCodes: ["TA", "TAV"],
     description: "Môn Tiếng Anh theo chương trình Bộ GD&ĐT"
   },
   {
@@ -300,21 +291,21 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     description: "Môn Giáo dục quốc phòng và an ninh (THPT)"
   },
   {
-    code: "TIN_HOC",
+    code: "ICT",
     name: "Tin học / ICT",
     category: "MOET",
     evaluationType: "SCORE",
-    aliases: ["tin_hoc", "tin hoc", "tin", "ict", "ict-ai", "informatics"],
-    assessmentCodes: ["TIN_HOC", "ICT"],
+    aliases: ["ict", "tin_hoc", "tin hoc", "tin", "ict-ai", "informatics"],
+    assessmentCodes: ["ICT", "TIN_HOC"],
     description: "Môn Tin học / ICT"
   },
   {
-    code: "AM_NHAC",
+    code: "ANA",
     name: "Âm nhạc",
     category: "MOET",
     evaluationType: "GRADE",
-    aliases: ["am_nhac", "ana", "am nhac", "nhac", "mon am nhac", "music"],
-    assessmentCodes: ["AM_NHAC", "ANA"],
+    aliases: ["ana", "am_nhac", "am nhac", "nhac", "mon am nhac", "music"],
+    assessmentCodes: ["ANA", "AM_NHAC"],
     description: "Môn Âm nhạc (Đánh giá nhận xét)"
   },
   {
@@ -323,7 +314,7 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     category: "MOET",
     evaluationType: "GRADE",
     aliases: ["mtu", "mi_thuat", "mi thuat", "my thuat", "ve", "mon mi thuat", "mon my thuat", "art"],
-    assessmentCodes: ["MTU", "MI_THUAT", "DG_MT0"],
+    assessmentCodes: ["MTU", "MI_THUAT"],
     description: "Môn Mĩ thuật (Đánh giá nhận xét)"
   },
   {
@@ -371,8 +362,8 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     name: "Tâm lý",
     category: "SKL",
     evaluationType: "SCORE",
-    aliases: ["tly", "tam ly", "mon tam ly", "dg_tam_ly", "psychology"],
-    assessmentCodes: ["TLY", "DG_TAM_LY"],
+    aliases: ["tly", "tam ly", "mon tam ly", "psychology"],
+    assessmentCodes: ["TLY"],
     description: "Môn Tâm lý học đường Sky-Line"
   },
   {
@@ -410,15 +401,6 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     aliases: ["tnd", "trai nghiem - du an", "trai nghiem", "du an"],
     assessmentCodes: ["TND"],
     description: "Môn Trải nghiệm - Dự án thực tế"
-  },
-  {
-    code: "CD_CD",
-    name: "Chủ đề/Chuyên đề",
-    category: "SKL",
-    evaluationType: "SCORE",
-    aliases: ["cd_cd", "chu de", "chuyen de", "chu de/chuyen de"],
-    assessmentCodes: ["CD_CD"],
-    description: "Chủ đề / Chuyên đề học tập chuyên sâu"
   },
   {
     code: "TNH",
@@ -459,7 +441,7 @@ export function normalizeSubjectForImport(rawCodeOrName: string): SubjectSystemD
   );
   if (exactCodeMatch) return exactCodeMatch;
 
-  // 2. So khớp mã assessmentCode (ví dụ: DG_TOAN, DG_NLTD, ESL, MAT, READ)
+  // 2. So khớp mã assessmentCode khảo sát đầu vào (ví dụ: NLTD, EPT, ESL, MAT, READ)
   const assessmentMatch = SYSTEM_SUBJECTS.find(s =>
     s.assessmentCodes?.some(ac => ac.toLowerCase() === clean.toLowerCase())
   );
@@ -524,10 +506,10 @@ export function getAssessmentCodesForMainSubject(mainCode: string): string[] {
   if (!mainCode) return [];
   const code = mainCode.trim().toUpperCase();
   if (code === "TA" || code === "TAV") {
-    return ["TAv", "TAvd", "TA", "DG_TIENG_ANH"];
+    return ["TAv", "TAvd", "TA"];
   }
   if (code === "EPT") {
-    return ["EPT", "DG_EPT"];
+    return ["EPT"];
   }
   const match = SYSTEM_SUBJECTS.find(s => s.code.toUpperCase() === code);
   if (match) {

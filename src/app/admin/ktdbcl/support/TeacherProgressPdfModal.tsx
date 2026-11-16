@@ -1195,30 +1195,30 @@ export function TeacherProgressPdfModal({
                 </span>
               </h2>
               <table className="w-full text-left border-collapse border border-slate-300 text-[9.5px]">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-extrabold uppercase">
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center w-7">STT</th>
-                    <th className="border border-slate-300 px-2 py-1.5">Cơ sở đào tạo</th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">Tổng HS</th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">Cam kết</th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">Đang TD</th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">Đã xong</th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">Số GV</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold">
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center w-7 font-semibold">STT</th>
+                    <th className="border border-white/15 px-2 py-1.5 font-semibold">Cơ sở đào tạo</th>
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Tổng HS</th>
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Cam kết</th>
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Đang TD</th>
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Đã xong</th>
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Số GV</th>
                     {weeksList.map((w, idx) => (
-                      <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50/60 text-teal-800">
+                      <th key={idx} className="border border-white/15 px-1.5 py-1.5 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">
                         ĐG {w}
                       </th>
                     ))}
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50/70 text-[#135E5B]">
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center bg-[#003B3A] text-[#135E5B] font-semibold">
                       Đã ĐG {activeMonth}
                     </th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center bg-rose-50/60 text-rose-900">
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center bg-[#003B3A] text-rose-200 font-semibold">
                       Chưa ĐG
                     </th>
-                    <th className="border border-slate-300 px-2 py-1.5">Tình trạng Đánh giá Định kỳ tại Cơ sở</th>
+                    <th className="border border-white/15 px-2 py-1.5 font-semibold">Tình trạng Đánh giá Định kỳ tại Cơ sở</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                   {campusProgressStats.map((c, idx) => {
                     const pendingCount = Math.max(0, c.active - c.monthEvaluatedCount)
                     const evalRate = c.active > 0 ? Math.min(100, Math.round((c.monthEvaluatedCount / c.active) * 100)) : 100
@@ -1284,29 +1284,29 @@ export function TeacherProgressPdfModal({
                 </span>
               </h2>
               <table className="w-full text-left border-collapse border border-slate-300 text-[9.5px]">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-extrabold uppercase">
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center w-7">STT</th>
-                    <th className="border border-slate-300 px-2 py-1.5">Giáo viên / Chuyên viên</th>
-                    <th className="border border-slate-300 px-2 py-1.5">Cơ sở</th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">Tổng ca</th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">Đang TD</th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">Đã xong</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold">
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center w-7 font-semibold">STT</th>
+                    <th className="border border-white/15 px-2 py-1.5 font-semibold">Giáo viên / Chuyên viên</th>
+                    <th className="border border-white/15 px-2 py-1.5 font-semibold">Cơ sở</th>
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Tổng ca</th>
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Đang TD</th>
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Đã xong</th>
                     {weeksList.map((w, idx) => (
-                      <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50/60 text-teal-800">
+                      <th key={idx} className="border border-white/15 px-1.5 py-1.5 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">
                         {w}
                       </th>
                     ))}
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50/70 text-[#135E5B]">
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center bg-[#003B3A] text-[#135E5B] font-semibold">
                       ĐG {activeMonth}
                     </th>
-                    <th className="border border-slate-300 px-1.5 py-1.5 text-center">
+                    <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">
                       Các tháng đã ĐG
                     </th>
-                    <th className="border border-slate-300 px-2 py-1.5">Tình trạng Đánh giá Định kỳ của GV</th>
+                    <th className="border border-white/15 px-2 py-1.5 font-semibold">Tình trạng Đánh giá Định kỳ của GV</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                   {teacherPeriodicStats.map((tch, idx) => {
                     const pendingCount = Math.max(0, tch.active - tch.monthEvaluatedCount)
                     const evalRate = tch.active > 0 ? Math.min(100, Math.round((tch.monthEvaluatedCount / tch.active) * 100)) : 100
@@ -1368,28 +1368,28 @@ export function TeacherProgressPdfModal({
                   </span>
                 </h2>
                 <table className="w-full text-left border-collapse border border-slate-300 text-[9.5px]">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800 font-extrabold uppercase">
-                      <th className="border border-slate-300 px-1.5 py-1.5 text-center w-7">STT</th>
-                      <th className="border border-slate-300 px-2 py-1.5">Học sinh &amp; Mã HS</th>
-                      <th className="border border-slate-300 px-1.5 py-1.5">Lớp / Cơ sở</th>
-                      <th className="border border-slate-300 px-2 py-1.5">GV / Chuyên viên</th>
-                      <th className="border border-slate-300 px-1.5 py-1.5 text-center">Diện</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold">
+                      <th className="border border-white/15 px-1.5 py-1.5 text-center w-7 font-semibold">STT</th>
+                      <th className="border border-white/15 px-2 py-1.5 font-semibold">Học sinh &amp; Mã HS</th>
+                      <th className="border border-white/15 px-1.5 py-1.5 font-semibold">Lớp / Cơ sở</th>
+                      <th className="border border-white/15 px-2 py-1.5 font-semibold">GV / Chuyên viên</th>
+                      <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Diện</th>
                       {weeksList.map((w, idx) => (
-                        <th key={idx} className="border border-slate-300 px-1.5 py-1.5 text-center bg-teal-50/70 text-teal-800">
+                        <th key={idx} className="border border-white/15 px-1.5 py-1.5 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">
                           {w}
                         </th>
                       ))}
-                      <th className="border border-slate-300 px-1.5 py-1.5 text-center bg-amber-50/80 text-amber-950">
+                      <th className="border border-white/15 px-1.5 py-1.5 text-center bg-[#003B3A] text-amber-200 font-semibold">
                         Tổng kết {activeMonth}
                       </th>
-                      <th className="border border-slate-300 px-1.5 py-1.5 text-center">
+                      <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">
                         Tình trạng GV ĐG
                       </th>
-                      <th className="border border-slate-300 px-2 py-1.5">Nhận xét &amp; Đánh giá gần nhất</th>
+                      <th className="border border-white/15 px-2 py-1.5 font-semibold">Nhận xét &amp; Đánh giá gần nhất</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                     {displayTargets.map((t, idx) => {
                       const sName = t.student?.studentName || t.studentName || "Không rõ"
                       const sCode = t.student?.studentCode || t.studentCode || "—"
@@ -1510,12 +1510,12 @@ export function TeacherProgressPdfModal({
                   </span>
                 </h2>
                 <table className="w-full text-left border-collapse border border-slate-300 text-[9px]">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800 font-extrabold uppercase">
-                      <th className="border border-slate-300 px-1 py-1.5 text-center w-6">STT</th>
-                      <th className="border border-slate-300 px-1.5 py-1.5">Học sinh</th>
-                      <th className="border border-slate-300 px-1.5 py-1.5">Lớp / Cơ sở</th>
-                      <th className="border border-slate-300 px-1.5 py-1.5">GV phụ trách</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold">
+                      <th className="border border-white/15 px-1 py-1.5 text-center w-6 font-semibold">STT</th>
+                      <th className="border border-white/15 px-1.5 py-1.5 font-semibold">Học sinh</th>
+                      <th className="border border-white/15 px-1.5 py-1.5 font-semibold">Lớp / Cơ sở</th>
+                      <th className="border border-white/15 px-1.5 py-1.5 font-semibold">GV phụ trách</th>
                       {ACADEMIC_MONTHS.map((m, idx) => (
                         <th
                           key={idx}
@@ -1526,11 +1526,11 @@ export function TeacherProgressPdfModal({
                           {m.replace("Tháng ", "Th ")}
                         </th>
                       ))}
-                      <th className="border border-slate-300 px-1 py-1.5 text-center">Số tháng ĐG</th>
-                      <th className="border border-slate-300 px-1.5 py-1.5 text-center">Trạng thái</th>
+                      <th className="border border-white/15 px-1 py-1.5 text-center font-semibold">Số tháng ĐG</th>
+                      <th className="border border-white/15 px-1.5 py-1.5 text-center font-semibold">Trạng thái</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                     {displayTargets.map((t, idx) => {
                       const sName = t.student?.studentName || t.studentName || "Không rõ"
                       const sCode = t.student?.studentCode || t.studentCode || "—"

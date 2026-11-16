@@ -5589,11 +5589,11 @@ export function ObservationClient(props: ObservationClientProps) {
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                 {activeFilterTab === "gbm_request" ? (
-                  <tr className="bg-teal-50/80 border-b border-teal-200 text-teal-800 font-black uppercase text-[11px] tracking-wider">
+                  <tr className="border-b text-[11px] font-semibold">
                     {canDeleteAnySlot && (
-                      <th className="p-4 text-center w-10">
+                      <th className="p-4 text-center w-10 font-semibold">
                         <input
                           type="checkbox"
                           checked={isAllCurrentSelected}
@@ -5603,22 +5603,22 @@ export function ObservationClient(props: ObservationClientProps) {
                         />
                       </th>
                     )}
-                    <th className="p-4 text-center w-12">TT</th>
-                    <th className="p-4">GV Xin dự giờ</th>
-                    <th className="p-4">GV Dạy</th>
-                    <th className="p-4">Thời gian đăng ký</th>
-                    <th className="p-4">Môn học</th>
-                    <th className="p-4">Tên bài dạy / Chủ đề</th>
-                    <th className="p-4">Lớp</th>
-                    <th className="p-4">Tiết</th>
-                    <th className="p-4">Ngày dạy</th>
-                    <th className="p-4 text-center">Trạng thái</th>
-                    <th className="p-4 text-right">Thao tác</th>
+                    <th className="p-4 text-center w-12 font-semibold">TT</th>
+                    <th className="p-4 font-semibold">GV Xin dự giờ</th>
+                    <th className="p-4 font-semibold">GV Dạy</th>
+                    <th className="p-4 font-semibold">Thời gian đăng ký</th>
+                    <th className="p-4 font-semibold">Môn học</th>
+                    <th className="p-4 font-semibold">Tên bài dạy / Chủ đề</th>
+                    <th className="p-4 font-semibold">Lớp</th>
+                    <th className="p-4 font-semibold">Tiết</th>
+                    <th className="p-4 font-semibold">Ngày dạy</th>
+                    <th className="p-4 text-center font-semibold">Trạng thái</th>
+                    <th className="p-4 text-right font-semibold">Thao tác</th>
                   </tr>
                 ) : (
-                  <tr className="bg-slate-50/90 border-b border-slate-200/90 text-slate-700 font-extrabold uppercase text-[11px] tracking-wider">
+                  <tr className="border-b text-[11px] font-semibold">
                     {canDeleteAnySlot && (
-                      <th className="py-3.5 px-3 text-center w-10">
+                      <th className="py-3.5 px-3 text-center w-10 font-semibold">
                         <input
                           type="checkbox"
                           checked={isAllCurrentSelected}
@@ -5628,17 +5628,17 @@ export function ObservationClient(props: ObservationClientProps) {
                         />
                       </th>
                     )}
-                    <th className="py-3.5 px-3 text-center w-12 text-slate-400">TT</th>
-                    <th className="py-3.5 px-4">Giáo viên & Đơn vị</th>
-                    <th className="py-3.5 px-4">Tiết dạy & Môn học</th>
-                    <th className="py-3.5 px-4">Lịch dạy & Phòng</th>
-                    <th className="py-3.5 px-4">Người dự & Chỗ trống</th>
-                    <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                    <th className="py-3.5 px-4 text-right">{canDeleteAnySlot ? "Thao tác Quản trị" : "Thao tác"}</th>
+                    <th className="py-3.5 px-3 text-center w-12 font-semibold">TT</th>
+                    <th className="py-3.5 px-4 font-semibold">Giáo viên & Đơn vị</th>
+                    <th className="py-3.5 px-4 font-semibold">Tiết dạy & Môn học</th>
+                    <th className="py-3.5 px-4 font-semibold">Lịch dạy & Phòng</th>
+                    <th className="py-3.5 px-4 font-semibold">Người dự & Chỗ trống</th>
+                    <th className="py-3.5 px-4 text-center font-semibold">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right font-semibold">{canDeleteAnySlot ? "Thao tác Quản trị" : "Thao tác"}</th>
                   </tr>
                 )}
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700 bg-white">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs font-semibold text-slate-700 bg-white">
                 {tabFilteredSlots.map((slot, index) => {
                   const isHost = slot.teacherId === currentTeacher?.id;
                   const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
@@ -6498,16 +6498,16 @@ export function ObservationClient(props: ObservationClientProps) {
             ) : (
               <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-amber-50/60 border-b border-amber-200/80 text-amber-950 font-black uppercase text-[11px] tracking-wider">
-                      <th className="p-3.5 text-center w-12">TT</th>
-                      <th className="p-3.5 text-center w-20">Cơ sở</th>
-                      <th className="p-3.5 text-center w-36">Danh mục</th>
-                      <th className="p-3.5">Môn học & Tên bài dạy / Chủ đề</th>
-                      <th className="p-3.5">Thời gian & Lớp</th>
-                      <th className="p-3.5">GV Đăng ký dự giờ (Duyệt)</th>
-                      <th className="p-3.5 text-center">Giáo án</th>
-                      <th className="p-3.5 text-right">Thao tác</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b border-amber-200/80 text-[11px] font-semibold">
+                      <th className="p-3.5 text-center w-12 font-semibold">TT</th>
+                      <th className="p-3.5 text-center w-20 font-semibold">Cơ sở</th>
+                      <th className="p-3.5 text-center w-36 font-semibold">Danh mục</th>
+                      <th className="p-3.5 font-semibold">Môn học & Tên bài dạy / Chủ đề</th>
+                      <th className="p-3.5 font-semibold">Thời gian & Lớp</th>
+                      <th className="p-3.5 font-semibold">GV Đăng ký dự giờ (Duyệt)</th>
+                      <th className="p-3.5 text-center font-semibold">Giáo án</th>
+                      <th className="p-3.5 text-right font-semibold">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
@@ -7030,17 +7030,17 @@ export function ObservationClient(props: ObservationClientProps) {
             ) : (
               <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-teal-50/70 border-b border-teal-200 text-teal-950 font-black uppercase text-[11px] tracking-wider">
-                      <th className="p-3.5 text-center w-12">TT</th>
-                      <th className="p-3.5 text-center w-20">Cơ sở</th>
-                      <th className="p-3.5 text-center w-36">Danh mục</th>
-                      <th className="p-3.5">Giáo viên dạy</th>
-                      <th className="p-3.5">Môn học & Tên bài dạy / Chủ đề</th>
-                      <th className="p-3.5">Thời gian & Lớp</th>
-                      <th className="p-3.5 text-center">Trạng thái duyệt</th>
-                      <th className="p-3.5">Đánh giá kết quả</th>
-                      <th className="p-3.5 text-right">Thao tác</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b text-[11px] font-semibold">
+                      <th className="p-3.5 text-center w-12 font-semibold">TT</th>
+                      <th className="p-3.5 text-center w-20 font-semibold">Cơ sở</th>
+                      <th className="p-3.5 text-center w-36 font-semibold">Danh mục</th>
+                      <th className="p-3.5 font-semibold">Giáo viên dạy</th>
+                      <th className="p-3.5 font-semibold">Môn học & Tên bài dạy / Chủ đề</th>
+                      <th className="p-3.5 font-semibold">Thời gian & Lớp</th>
+                      <th className="p-3.5 text-center font-semibold">Trạng thái duyệt</th>
+                      <th className="p-3.5 font-semibold">Đánh giá kết quả</th>
+                      <th className="p-3.5 text-right font-semibold">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
@@ -8744,19 +8744,19 @@ export function ObservationClient(props: ObservationClientProps) {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-black uppercase text-[11px] tracking-wider">
-                      <th className="p-4">STT</th>
-                      <th className="p-4">GVBM Đánh giá</th>
-                      <th className="p-4">Tiết dạy & GV Dạy</th>
-                      <th className="p-4">Thời gian dạy</th>
-                      <th className="p-4">Điểm / Xếp loại cũ</th>
-                      <th className="p-4">Lý do xin mở lại</th>
-                      <th className="p-4">Trạng thái</th>
-                      <th className="p-4 text-center">Thao tác</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b text-[11px] font-semibold">
+                      <th className="p-4 font-semibold">STT</th>
+                      <th className="p-4 font-semibold">GVBM Đánh giá</th>
+                      <th className="p-4 font-semibold">Tiết dạy & GV Dạy</th>
+                      <th className="p-4 font-semibold">Thời gian dạy</th>
+                      <th className="p-4 font-semibold">Điểm / Xếp loại cũ</th>
+                      <th className="p-4 font-semibold">Lý do xin mở lại</th>
+                      <th className="p-4 font-semibold">Trạng thái</th>
+                      <th className="p-4 text-center font-semibold">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-[#E2E8F0] font-medium">
                     {filteredReEvalRequests.map((req, idx) => {
                       const status = req.evaluation.reEvaluationStatus;
                       const statusMap: Record<string, { label: string; bg: string }> = {

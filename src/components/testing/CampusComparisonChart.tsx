@@ -33,18 +33,18 @@ export function CampusComparisonChart({
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs text-left">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold">
-            <tr>
-              <th className="py-2.5 px-3">Cơ sở</th>
-              <th className="py-2.5 px-3 text-center">Số HS làm bài</th>
-              <th className="py-2.5 px-3 text-center">Điểm TB</th>
-              <th className="py-2.5 px-3 text-center">Chênh lệch vs Hệ thống</th>
-              <th className="py-2.5 px-3 text-center">Tỷ lệ Đạt (≥5)</th>
-              <th className="py-2.5 px-3 text-center">Tỷ lệ Giỏi (≥8)</th>
-              <th className="py-2.5 px-3 text-center">Độ lệch chuẩn</th>
+          <thead className="bg-[#003B3A] border-b font-semibold text-white border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="py-2.5 px-3 font-semibold">Cơ sở</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Số HS làm bài</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Điểm TB</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Chênh lệch vs Hệ thống</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Tỷ lệ Đạt (≥5)</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Tỷ lệ Giỏi (≥8)</th>
+              <th className="py-2.5 px-3 text-center font-semibold">Độ lệch chuẩn</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {campuses.map((c) => {
               const isAboveSystem = c.systemMeanDelta >= 0
 

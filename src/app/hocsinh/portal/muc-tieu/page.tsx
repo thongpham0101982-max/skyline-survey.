@@ -1283,15 +1283,15 @@ export default function StudentGoalPortalPage() {
           {trackingLogs.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 text-slate-700 uppercase font-black">
-                  <tr>
-                    <th className="p-3 rounded-l-xl">Mốc kiểm tra</th>
-                    <th className="p-3">Nội dung mục tiêu</th>
-                    <th className="p-3">Trạng thái tiến độ</th>
-                    <th className="p-3 rounded-r-xl">Nhận xét của GVCN / Thầy Cô</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="p-3 rounded-l-xl font-semibold">Mốc kiểm tra</th>
+                    <th className="p-3 font-semibold">Nội dung mục tiêu</th>
+                    <th className="p-3 font-semibold">Trạng thái tiến độ</th>
+                    <th className="p-3 rounded-r-xl font-semibold">Nhận xét của GVCN / Thầy Cô</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {trackingLogs.map((log: any, idx: number) => {
                     const checkPointNames: Record<string, string> = {
                       DAU_NAM: "1. Mốc Đầu Năm Học",

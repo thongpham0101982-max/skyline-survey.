@@ -929,19 +929,19 @@ export function HomeroomGradesClient({
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto max-h-[650px] custom-scrollbar">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead className="sticky top-0 z-20 bg-slate-800 text-white font-bold shadow-xs">
-                      <tr>
-                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
-                        <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
-                        <th className="py-3 px-3 min-w-[170px] border-r border-slate-700">Họ và tên</th>
-                        <th className="py-3 px-3 w-20 text-center border-r border-slate-700">Ngày sinh</th>
+                    <thead className="bg-[#003B3A] sticky top-0 z-20 text-white shadow-xs border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700 font-semibold">STT</th>
+                        <th className="py-3 px-3 w-28 border-r border-slate-700 font-semibold">Mã HS</th>
+                        <th className="py-3 px-3 min-w-[170px] border-r border-slate-700 font-semibold">Họ và tên</th>
+                        <th className="py-3 px-3 w-20 text-center border-r border-slate-700 font-semibold">Ngày sinh</th>
 
                         {data?.subjects?.map((sub: any) => {
                           const sc = data?.subjectComparisons?.find((c: any) => c.subjectId === sub.id)
                           return (
                             <th
                               key={sub.id}
-                              className="py-2.5 px-3 text-center border-r border-slate-700 bg-slate-700/70 min-w-[100px]"
+                              className="py-2.5 px-3 text-center border-r border-slate-700 bg-[#003B3A] min-w-[100px] font-semibold"
                             >
                               <div className="font-extrabold truncate max-w-[110px]" title={sub.name}>
                                 {sub.name}
@@ -953,30 +953,30 @@ export function HomeroomGradesClient({
                           )
                         })}
 
-                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[90px]">
+                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[90px] font-semibold">
                           ĐTB Lớp
                         </th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-rose-950 min-w-[90px]">
+                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-rose-950 min-w-[90px] font-semibold">
                           Số môn &lt; TB
                         </th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-amber-950 min-w-[95px]">
+                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-amber-950 min-w-[95px] font-semibold">
                           Số môn &lt; Chuẩn
                         </th>
-                        <th className="py-3 px-3 min-w-[140px] bg-slate-900 border-r border-slate-700">
+                        <th className="py-3 px-3 min-w-[140px] bg-[#003B3A] border-r border-slate-700 font-semibold">
                           Diện theo dõi / Cam kết
                         </th>
-                        <th className="py-3 px-3 min-w-[220px] bg-teal-950 border-r border-slate-700 text-left">
+                        <th className="py-3 px-3 min-w-[220px] bg-teal-950 border-r border-slate-700 text-left font-semibold">
                           <div className="flex items-center gap-1.5">
                             <MessageSquare className="w-3.5 h-3.5 text-teal-300" />
                             <span>Ý kiến & Nhận xét GVCN</span>
                           </div>
                         </th>
-                        <th className="py-3 px-3 text-center bg-teal-900 min-w-[110px] sticky right-0 z-20 shadow-md">
+                        <th className="py-3 px-3 text-center bg-teal-900 min-w-[110px] sticky right-0 z-20 shadow-md font-semibold">
                           Phiếu điểm
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {filteredStudents.length === 0 ? (
                         <tr>
                           <td colSpan={(data?.subjects?.length || 0) + 10} className="py-12 text-center text-slate-400 font-semibold">
@@ -1336,24 +1336,24 @@ export function HomeroomGradesClient({
 
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-800 text-white font-bold">
-                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
-                        <th className="py-3 px-3 min-w-[140px] border-r border-slate-700">Môn học</th>
-                        <th className="py-3 px-3 min-w-[150px] border-r border-slate-700">GV Giảng dạy</th>
-                        <th className="py-3 px-3 w-20 text-center border-r border-slate-700">Chuẩn</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 w-24">ĐTB Lớp</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-slate-700 w-24">ĐTB Khối</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-slate-900 w-24">Chênh lệch</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[110px]">Đạt chuẩn Lớp</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[110px]">Đạt chuẩn Khối</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[100px] bg-rose-950/70">0 - &lt;5đ</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[100px] bg-amber-950/70">5 - &lt;6.5đ</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[100px] bg-sky-950/70">6.5 - &lt;8đ</th>
-                        <th className="py-3 px-3 text-center min-w-[100px] bg-emerald-950/70">8 - 10đ</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-white text-[11px] font-semibold">
+                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700 font-semibold">STT</th>
+                        <th className="py-3 px-3 min-w-[140px] border-r border-slate-700 font-semibold">Môn học</th>
+                        <th className="py-3 px-3 min-w-[150px] border-r border-slate-700 font-semibold">GV Giảng dạy</th>
+                        <th className="py-3 px-3 w-20 text-center border-r border-slate-700 font-semibold">Chuẩn</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 w-24 font-semibold">ĐTB Lớp</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-[#003B3A] w-24 font-semibold">ĐTB Khối</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 bg-[#003B3A] w-24 font-semibold">Chênh lệch</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[110px] font-semibold">Đạt chuẩn Lớp</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[110px] font-semibold">Đạt chuẩn Khối</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[100px] bg-rose-950/70 font-semibold">0 - &lt;5đ</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[100px] bg-amber-950/70 font-semibold">5 - &lt;6.5đ</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 min-w-[100px] bg-sky-950/70 font-semibold">6.5 - &lt;8đ</th>
+                        <th className="py-3 px-3 text-center min-w-[100px] bg-emerald-950/70 font-semibold">8 - 10đ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {data?.subjectComparisons?.map((sc: any, idx: number) => {
                         const isHigher = sc.diffAvg >= 0
                         return (
@@ -1499,19 +1499,19 @@ export function HomeroomGradesClient({
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-800 text-white font-bold">
-                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
-                        <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
-                        <th className="py-3 px-3 min-w-[160px] border-r border-slate-700">Họ và tên</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 w-24">ĐTB Chung</th>
-                        <th className="py-3 px-3 min-w-[220px] border-r border-slate-700">Môn Dưới Chuẩn / Cần Chú Ý</th>
-                        <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-[#003B3A]">Hồ sơ Cam kết Đầu vào</th>
-                        <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-teal-950">Cam kết Học tập (SLC)</th>
-                        <th className="py-3 px-3 min-w-[200px] bg-pink-950 text-white">Hỗ trợ Tâm lý (Admin)</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-white text-[11px] font-semibold">
+                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700 font-semibold">STT</th>
+                        <th className="py-3 px-3 w-28 border-r border-slate-700 font-semibold">Mã HS</th>
+                        <th className="py-3 px-3 min-w-[160px] border-r border-slate-700 font-semibold">Họ và tên</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 w-24 font-semibold">ĐTB Chung</th>
+                        <th className="py-3 px-3 min-w-[220px] border-r border-slate-700 font-semibold">Môn Dưới Chuẩn / Cần Chú Ý</th>
+                        <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-[#003B3A] font-semibold">Hồ sơ Cam kết Đầu vào</th>
+                        <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-teal-950 font-semibold">Cam kết Học tập (SLC)</th>
+                        <th className="py-3 px-3 min-w-[200px] bg-pink-950 text-white font-semibold">Hỗ trợ Tâm lý (Admin)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {filteredTracking.length === 0 ? (
                         <tr>
                           <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
@@ -1757,36 +1757,36 @@ export function HomeroomGradesClient({
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-800 text-white font-bold">
-                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
-                        <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
-                        <th className="py-3 px-3 min-w-[160px] border-r border-slate-700">Họ và tên</th>
-                        <th className="py-3 px-3 text-center border-r border-slate-700 w-24">ĐTB Lớp</th>
-                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-sky-950">
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-white text-[11px] font-semibold">
+                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700 font-semibold">STT</th>
+                        <th className="py-3 px-3 w-28 border-r border-slate-700 font-semibold">Mã HS</th>
+                        <th className="py-3 px-3 min-w-[160px] border-r border-slate-700 font-semibold">Họ và tên</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 w-24 font-semibold">ĐTB Lớp</th>
+                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-sky-950 font-semibold">
                           <div className="flex items-center gap-1.5">
                             <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
                             <span>1. Ý kiến phản hồi của PHHS</span>
                           </div>
                         </th>
-                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-teal-950">
+                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-teal-950 font-semibold">
                           <div className="flex items-center gap-1.5">
                             <UserCheck className="w-3.5 h-3.5 text-teal-400" />
                             <span>2. Trao đổi & Nhận xét của GVCN</span>
                           </div>
                         </th>
-                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-blue-950">
+                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-blue-950 font-semibold">
                           <div className="flex items-center gap-1.5">
                             <Send className="w-3.5 h-3.5 text-blue-400" />
                             <span>3. Trạng thái chuyển đến GVBM liên quan</span>
                           </div>
                         </th>
-                        <th className="py-3 px-3 text-center bg-slate-900 min-w-[120px]">
+                        <th className="py-3 px-3 text-center bg-[#003B3A] min-w-[120px] font-semibold">
                           Thao tác
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {filteredFeedbackStudents.length === 0 ? (
                         <tr>
                           <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">

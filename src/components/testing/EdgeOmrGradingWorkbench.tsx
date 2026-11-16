@@ -765,17 +765,17 @@ export default function EdgeOmrGradingWorkbench({
         {queueItems.length > 0 && (
           <div className="overflow-x-auto pt-1">
             <table className="w-full text-[11px] text-left">
-              <thead className="bg-slate-50 text-slate-600 uppercase border-b border-slate-200">
-                <tr>
-                  <th className="py-2 px-2.5">Idempotency Key</th>
-                  <th className="py-2 px-2.5">SBD • Mã đề</th>
-                  <th className="py-2 px-2.5">Thông số CV (Góc nghiêng / Sáng)</th>
-                  <th className="py-2 px-2.5">Dung lượng gửi</th>
-                  <th className="py-2 px-2.5">Trạng thái Hàng đợi</th>
-                  <th className="py-2 px-2.5">Điểm Server chấm</th>
+              <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-2 px-2.5 font-semibold">Idempotency Key</th>
+                  <th className="py-2 px-2.5 font-semibold">SBD • Mã đề</th>
+                  <th className="py-2 px-2.5 font-semibold">Thông số CV (Góc nghiêng / Sáng)</th>
+                  <th className="py-2 px-2.5 font-semibold">Dung lượng gửi</th>
+                  <th className="py-2 px-2.5 font-semibold">Trạng thái Hàng đợi</th>
+                  <th className="py-2 px-2.5 font-semibold">Điểm Server chấm</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {queueItems.slice(0, 12).map((item) => (
                   <tr key={item.idempotencyKey} className="hover:bg-slate-50">
                     <td className="py-2 px-2.5 font-mono text-[10px] text-slate-500">
@@ -851,19 +851,19 @@ export default function EdgeOmrGradingWorkbench({
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-600 uppercase border-b border-slate-200">
-                <tr>
-                  <th className="py-2.5 px-3">Quy mô & Thiết bị</th>
-                  <th className="py-2.5 px-3">Upload Trước / Sau</th>
-                  <th className="py-2.5 px-3">Giảm băng thông</th>
-                  <th className="py-2.5 px-3">RAM Trình duyệt</th>
-                  <th className="py-2.5 px-3">Tốc độ / Phiếu</th>
-                  <th className="py-2.5 px-3">Chính xác / Rà soát</th>
-                  <th className="py-2.5 px-3">Lưu trữ Server</th>
-                  <th className="py-2.5 px-3">Khôi phục Offline</th>
+              <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-2.5 px-3 font-semibold">Quy mô & Thiết bị</th>
+                  <th className="py-2.5 px-3 font-semibold">Upload Trước / Sau</th>
+                  <th className="py-2.5 px-3 font-semibold">Giảm băng thông</th>
+                  <th className="py-2.5 px-3 font-semibold">RAM Trình duyệt</th>
+                  <th className="py-2.5 px-3 font-semibold">Tốc độ / Phiếu</th>
+                  <th className="py-2.5 px-3 font-semibold">Chính xác / Rà soát</th>
+                  <th className="py-2.5 px-3 font-semibold">Lưu trữ Server</th>
+                  <th className="py-2.5 px-3 font-semibold">Khôi phục Offline</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {benchmarkData.tiers.map((row, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
                     <td className="py-2 px-3 font-bold text-slate-900">

@@ -183,6 +183,9 @@ export async function POST(
     )
   } catch (error: any) {
     console.error("Lỗi tạo API Key:", error)
-    return NextResponse.json({ success: false, error: "Không thể khởi tạo khóa API mới" }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: error?.message || "Không thể khởi tạo khóa API mới" },
+      { status: 500 }
+    )
   }
 }

@@ -4,6 +4,12 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Baby, ClipboardList, ShieldAlert } from "lucide-react"
 import { InputAssessmentsClient } from "../input-assessments/client"
 import { PreschoolInputAssessmentsClient } from "../preschool-input-assessments/client"
+import {
+  isSuperAdminRole,
+  isKtdbclEntranceRole,
+  isGdcsOrBghEntranceRole,
+  isGiaoVuEntranceRole,
+} from "@/lib/entrance-progress/constants"
 
 interface SurveyConfigClientProps {
   initialTab: string
@@ -52,9 +58,9 @@ export function SurveyConfigClient({
   const router = useRouter()
   const pathname = usePathname()
 
-  const userRole = (currentUser?.role || "").toUpperCase()
-  const isAdminOrExamBoard = userRole === "ADMIN" || userRole === "KT_DBCL" || userRole === "KTDBCL"
-  const isGDCSOrGiaoVu = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole)
+  const userRole = (currentUser?.role || "").toUpperCase().trim()
+  const isAdminOrExamBoard = isSuperAdminRole(userRole) || isKtdbclEntranceRole(userRole)
+  const isGDCSOrGiaoVu = isGdcsOrBghEntranceRole(userRole) || isGiaoVuEntranceRole(userRole)
 
   // Kiểm tra quyền truy cập dựa trên permission module code và vai trò
   const hasK12Permission = isAdminOrExamBoard || 
@@ -110,42 +116,43 @@ export function SurveyConfigClient({
   return (
     <div className="space-y-6 max-w-[1440px] mx-auto">
       {/* Tab Selector Header */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        <div className="flex flex-wrap p-1 bg-slate-100/80 rounded-xl gap-1">
+      <div className="bg-white border border-[#E2E8F0] border-l-4 border-l-[#003B3A] shadow-2xs rounded-2xl px-4 py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-base font-bold text-[#003B3A] tracking-tight">
+            Cấu hình khảo sát đầu vào
+          </h1>
+          <p className="text-xs text-slate-500">
+            Thiết lập môn khảo sát, hệ đào tạo, khung năng lực và tiêu chí đánh giá theo bậc học
+          </p>
+        </div>
+        <div className="flex flex-wrap p-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl gap-1 shrink-0">
           {hasK12Permission && (
             <button
               onClick={() => handleTabChange("k12")}
-              className={`flex items-center justify-center gap-2.5 px-6 py-3 rounded-lg text-xs font-bold transition-all duration-300 ${
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 activeTab === "k12"
-                  ? "bg-[#48BFE3] text-white shadow-md shadow-teal-500/10 scale-[1.02]"
-                  : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-800"
+                  ? "bg-[#003B3A] text-white shadow-2xs"
+                  : "text-slate-600 hover:bg-white hover:text-[#003B3A]"
               }`}
             >
-              <ClipboardList className={`w-4 h-4 transition-transform duration-300 ${activeTab === "k12" ? "rotate-3" : ""}`} />
-              <span>Cấu hình KS Phổ thông</span>
+              <ClipboardList className={`w-3.5 h-3.5 ${activeTab === "k12" ? "text-[#00A19A]" : "text-slate-500"}`} />
+              <span>Phổ thông (K-12)</span>
             </button>
           )}
 
           {hasPreschoolPermission && (
             <button
               onClick={() => handleTabChange("preschool")}
-              className={`flex items-center justify-center gap-2.5 px-6 py-3 rounded-lg text-xs font-bold transition-all duration-300 ${
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 activeTab === "preschool"
-                  ? "bg-[#48BFE3] text-white shadow-md shadow-teal-500/10 scale-[1.02]"
-                  : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-800"
+                  ? "bg-[#003B3A] text-white shadow-2xs"
+                  : "text-slate-600 hover:bg-white hover:text-[#003B3A]"
               }`}
             >
-              <Baby className={`w-4 h-4 transition-transform duration-300 ${activeTab === "preschool" ? "scale-110" : ""}`} />
-              <span>Cấu hình KS Mầm non</span>
+              <Baby className={`w-3.5 h-3.5 ${activeTab === "preschool" ? "text-[#00A19A]" : "text-slate-500"}`} />
+              <span>Mầm non</span>
             </button>
           )}
-        </div>
-
-        <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-[#48BFE3]/5 rounded-xl border border-[#48BFE3]/10">
-          <span className="w-2 h-2 rounded-full bg-[#48BFE3] animate-ping" />
-          <span className="text-[11px] font-bold text-[#48BFE3] uppercase tracking-wider">
-            Trình quản lý Cấu hình Khảo sát
-          </span>
         </div>
       </div>
 

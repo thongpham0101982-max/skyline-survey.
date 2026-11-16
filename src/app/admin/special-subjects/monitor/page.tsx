@@ -977,18 +977,18 @@ function SpecialSubjectMonitorContent() {
           ) : (
             <div className="overflow-x-auto max-h-[580px] overflow-y-auto">
               <table className="w-full text-left border-collapse text-xs tabular-nums">
-                <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs border-b border-slate-200">
-                  <tr className="text-[11px] font-bold text-slate-600">
-                    <th className="py-2.5 px-3 w-10 text-center">STT</th>
-                    <th className="py-2.5 px-3.5 w-28">Mã HS</th>
-                    <th className="py-2.5 px-3.5 w-44">Họ và tên</th>
-                    <th className="py-2.5 px-2 w-24 text-center">Điểm danh</th>
+                <thead className="bg-[#003B3A] sticky top-0 z-10 backdrop-blur-xs border-b text-white border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold">
+                    <th className="py-2.5 px-3 w-10 text-center font-semibold">STT</th>
+                    <th className="py-2.5 px-3.5 w-28 font-semibold">Mã HS</th>
+                    <th className="py-2.5 px-3.5 w-44 font-semibold">Họ và tên</th>
+                    <th className="py-2.5 px-2 w-24 text-center font-semibold">Điểm danh</th>
 
                     {/* Dynamic Criteria Headers */}
                     {(currentLesson?.criteria || []).map((crit: any, idx: number) => (
                       <th 
                         key={`crit-hdr-${crit.id || idx}-${idx}`} 
-                        className="py-2.5 px-2.5 min-w-[130px] text-center border-l border-slate-200 group relative cursor-help"
+                        className="py-2.5 px-2.5 min-w-[130px] text-center border-l border-white/15 group relative cursor-help font-semibold"
                       >
                         <div className="flex flex-col items-center">
                           <span className="font-bold text-teal-800">TC {idx + 1}</span>
@@ -1028,18 +1028,18 @@ function SpecialSubjectMonitorContent() {
                       </th>
                     ))}
 
-                    <th className="py-2.5 px-3.5 w-32 text-center border-l border-slate-200 bg-teal-50/40">
+                    <th className="py-2.5 px-3.5 w-32 text-center border-l border-white/15 bg-[#003B3A] font-semibold">
                       Kết quả bài
                     </th>
-                    <th className="py-2.5 px-3.5 min-w-[180px] border-l border-slate-200">
+                    <th className="py-2.5 px-3.5 min-w-[180px] border-l border-white/15 font-semibold">
                       Nhận xét của giáo viên
                     </th>
-                    <th className="py-2.5 px-3 text-center w-28 border-l border-slate-200">
+                    <th className="py-2.5 px-3 text-center w-28 border-l border-white/15 font-semibold">
                       Trạng thái
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {filteredStudents.length > 0 ? (
                     filteredStudents.map((st: any, idx: number) => {
                       const studentKey = st.studentId || st.id;
@@ -1200,20 +1200,20 @@ function SpecialSubjectMonitorContent() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs tabular-nums">
-              <thead className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-bold text-[11px]">
-                <tr>
-                  <th className="py-2.5 px-3 w-10 text-center">STT</th>
-                  <th className="py-2.5 px-3 w-20">Cơ sở</th>
-                  <th className="py-2.5 px-3 w-28">Lớp học</th>
-                  <th className="py-2.5 px-3 w-28">Hệ / Mã CT</th>
-                  <th className="py-2.5 px-3.5">Giáo viên phụ trách</th>
-                  <th className="py-2.5 px-3 w-28 text-center">Vai trò</th>
-                  <th className="py-2.5 px-3 w-32 text-center">Tiến độ nhập điểm</th>
-                  <th className="py-2.5 px-3 w-32 text-center">Trạng thái sổ</th>
-                  <th className="py-2.5 px-3 w-36 text-center">Tác vụ giám sát</th>
+              <thead className="bg-[#003B3A] border-b text-[11px] text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-2.5 px-3 w-10 text-center font-semibold">STT</th>
+                  <th className="py-2.5 px-3 w-20 font-semibold">Cơ sở</th>
+                  <th className="py-2.5 px-3 w-28 font-semibold">Lớp học</th>
+                  <th className="py-2.5 px-3 w-28 font-semibold">Hệ / Mã CT</th>
+                  <th className="py-2.5 px-3.5 font-semibold">Giáo viên phụ trách</th>
+                  <th className="py-2.5 px-3 w-28 text-center font-semibold">Vai trò</th>
+                  <th className="py-2.5 px-3 w-32 text-center font-semibold">Tiến độ nhập điểm</th>
+                  <th className="py-2.5 px-3 w-32 text-center font-semibold">Trạng thái sổ</th>
+                  <th className="py-2.5 px-3 w-36 text-center font-semibold">Tác vụ giám sát</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {assignments.map((a: any, idx: number) => {
                   const evalCount = a._count?.gradeEntries || 0;
                   const isCurrent = a.id === selectedAssignmentId;

@@ -794,18 +794,18 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Mã YC</th>
-                    <th className="px-4 py-3">Học sinh / Lớp</th>
-                    <th className="px-4 py-3">Nhóm chủ đề & Nội dung</th>
-                    <th className="px-4 py-3">Ưu tiên / SLA</th>
-                    <th className="px-4 py-3">Người phụ trách</th>
-                    <th className="px-4 py-3">Trạng thái / Nhật ký</th>
-                    <th className="px-4 py-3 text-right">Thẩm định Đóng YC</th>
+                <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-4 py-3 font-semibold">Mã YC</th>
+                    <th className="px-4 py-3 font-semibold">Học sinh / Lớp</th>
+                    <th className="px-4 py-3 font-semibold">Nhóm chủ đề & Nội dung</th>
+                    <th className="px-4 py-3 font-semibold">Ưu tiên / SLA</th>
+                    <th className="px-4 py-3 font-semibold">Người phụ trách</th>
+                    <th className="px-4 py-3 font-semibold">Trạng thái / Nhật ký</th>
+                    <th className="px-4 py-3 text-right font-semibold">Thẩm định Đóng YC</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {cases.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
@@ -980,18 +980,18 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3">Giáo viên</th>
-                      <th className="px-4 py-3">Vai trò</th>
-                      <th className="px-4 py-3">Lớp / Môn</th>
-                      <th className="px-4 py-3">Số phản hồi</th>
-                      <th className="px-4 py-3">Promoters / Detractors</th>
-                      <th className="px-4 py-3">Điểm NPS</th>
-                      <th className="px-4 py-3">Điểm 5 tiêu chí (1–5)</th>
+                  <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3 font-semibold">Giáo viên</th>
+                      <th className="px-4 py-3 font-semibold">Vai trò</th>
+                      <th className="px-4 py-3 font-semibold">Lớp / Môn</th>
+                      <th className="px-4 py-3 font-semibold">Số phản hồi</th>
+                      <th className="px-4 py-3 font-semibold">Promoters / Detractors</th>
+                      <th className="px-4 py-3 font-semibold">Điểm NPS</th>
+                      <th className="px-4 py-3 font-semibold">Điểm 5 tiêu chí (1–5)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {(npsAnalytics?.byTeacher || []).length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
@@ -1107,18 +1107,18 @@ export default function AdminQualityCoordinationClient({ user }: Props) {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3">Mã vấn đề</th>
-                      <th className="px-4 py-3">Nội dung & Nguyên nhân xác minh</th>
-                      <th className="px-4 py-3">Biện pháp & Minh chứng</th>
-                      <th className="px-4 py-3">Phụ trách / Hạn</th>
-                      <th className="px-4 py-3">Tái diễn</th>
-                      <th className="px-4 py-3">Trạng thái</th>
-                      <th className="px-4 py-3 text-right">Xác minh hiệu quả</th>
+                  <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3 font-semibold">Mã vấn đề</th>
+                      <th className="px-4 py-3 font-semibold">Nội dung & Nguyên nhân xác minh</th>
+                      <th className="px-4 py-3 font-semibold">Biện pháp & Minh chứng</th>
+                      <th className="px-4 py-3 font-semibold">Phụ trách / Hạn</th>
+                      <th className="px-4 py-3 font-semibold">Tái diễn</th>
+                      <th className="px-4 py-3 font-semibold">Trạng thái</th>
+                      <th className="px-4 py-3 text-right font-semibold">Xác minh hiệu quả</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {improvements.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-4 py-8 text-center text-slate-400">

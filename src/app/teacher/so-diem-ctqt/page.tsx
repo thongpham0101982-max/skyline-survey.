@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { SoDiemCtqtTeacherClient } from "./client";
 import { Suspense } from "react";
-import { isCtqtClass } from "@/lib/ctqt/config";
+import { isCtqtClass, compareCtqtClasses } from "@/lib/ctqt/config";
 
 export const metadata = {
   title: "Sổ điểm CTQT & Rà soát Song ngữ | Giáo viên",
@@ -45,7 +45,9 @@ export default async function TeacherSoDiemCtqtPage() {
     orderBy: { className: "asc" },
   });
 
-  const ctqtClasses = rawClasses.filter(c => isCtqtClass(c.className, c.educationSystem || undefined));
+  const ctqtClasses = rawClasses
+    .filter(c => isCtqtClass(c.className, c.educationSystem || undefined, c.level, c.grade))
+    .sort(compareCtqtClasses);
 
   return (
     <Suspense fallback={<div className="p-8 text-center text-slate-500 font-semibold">Đang tải Sổ điểm CTQT...</div>}>

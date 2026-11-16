@@ -49,17 +49,17 @@ export function ExamPlanTimeline({ plans, onSelectPlan }: ExamPlanTimelineProps)
   return (
     <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-2xs">
       <table className="w-full text-xs text-left">
-        <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold uppercase tracking-wider">
-          <tr>
-            <th className="py-2.5 px-3">Kỳ kiểm tra</th>
-            <th className="py-2.5 px-3">Môn & Khối</th>
-            <th className="py-2.5 px-3">Hình thức</th>
-            <th className="py-2.5 px-3">Thời gian</th>
-            <th className="py-2.5 px-3">Phụ trách</th>
-            <th className="py-2.5 px-3 text-center">Trạng thái</th>
+        <thead className="bg-[#003B3A] border-b font-semibold text-white border-[#003B3A]">
+          <tr className="text-[11px] font-semibold whitespace-nowrap">
+            <th className="py-2.5 px-3 font-semibold">Kỳ kiểm tra</th>
+            <th className="py-2.5 px-3 font-semibold">Môn & Khối</th>
+            <th className="py-2.5 px-3 font-semibold">Hình thức</th>
+            <th className="py-2.5 px-3 font-semibold">Thời gian</th>
+            <th className="py-2.5 px-3 font-semibold">Phụ trách</th>
+            <th className="py-2.5 px-3 text-center font-semibold">Trạng thái</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-[#E2E8F0]">
           {plans.map((p) => {
             const FIcon = formatIconMap[p.format] || FileText
             const st = statusMap[p.status] || { status: "neutral", label: p.status }

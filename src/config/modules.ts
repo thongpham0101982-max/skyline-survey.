@@ -40,7 +40,46 @@ import {
   PenTool
 } from "lucide-react"
 
-export const APP_CATEGORIES = [
+export interface AppSubModuleItem {
+  code: string
+  name: string
+  href: string
+}
+
+export interface AppModuleItem {
+  code: string
+  name: string
+  icon: any
+  href: string
+  requiresAdmin?: boolean
+  subModules?: AppSubModuleItem[]
+}
+
+export interface AppCategoryItem {
+  id: string
+  name: string
+  color: string
+  icon: any
+  modules: AppModuleItem[]
+}
+
+export const APP_CATEGORIES: AppCategoryItem[] = [
+  {
+    id: "WORKHUB",
+    name: "WorkHub • Công việc & KPI",
+    color: "teal",
+    icon: Briefcase,
+    modules: [
+      { code: "WORKHUB_OVERVIEW", name: "Tổng quan", icon: LayoutDashboard, href: "/admin/workhub" },
+      { code: "WORKHUB_MY_TASKS", name: "Công việc của tôi", icon: ClipboardList, href: "/admin/workhub/my-tasks" },
+      { code: "WORKHUB_ASSIGNED_TASKS", name: "Công việc đã giao", icon: UserCheck, href: "/admin/workhub/assigned-tasks" },
+      { code: "WORKHUB_PLANS", name: "Kế hoạch công tác", icon: Calendar, href: "/admin/workhub/plans" },
+      { code: "WORKHUB_REPORTS", name: "Báo cáo tuần/tháng", icon: FileText, href: "/admin/workhub/reports" },
+      { code: "WORKHUB_KPIS", name: "Chỉ tiêu và KPI", icon: BarChart3, href: "/admin/workhub/kpis" },
+      { code: "WORKHUB_ORG_TRACKING", name: "Theo dõi phòng ban/cơ sở", icon: Building2, href: "/admin/workhub/org-tracking" },
+      { code: "WORKHUB_SETTINGS", name: "Cấu hình", icon: Settings, href: "/admin/workhub/settings" },
+    ],
+  },
   {
     id: "SYSTEM_KPIS",
     name: "KPIs Hệ thống",
@@ -137,14 +176,14 @@ export const APP_CATEGORIES = [
         code: "KTDBCL_EXAMS",
         name: "QL Thành tích",
         icon: Award,
-        href: "/admin/ktdbcl/categories",
+        href: "/admin/ktdbcl/results",
         subModules: [
-          { code: "KTDBCL_EXAM_CATEGORIES", name: "Quản lý danh mục", href: "/admin/ktdbcl/categories" },
+          { code: "KTDBCL_EXAM_RESULTS", name: "Nhập kết quả & Thành tích", href: "/admin/ktdbcl/results" },
+          { code: "KTDBCL_EXAM_LIST", name: "Danh sách kỳ thi", href: "/admin/ktdbcl/exams" },
+          { code: "KTDBCL_EXAM_STUDENTS", name: "Đăng ký dự thi", href: "/admin/ktdbcl/students" },
+          { code: "KTDBCL_EXAM_CATEGORIES", name: "Danh mục kỳ thi", href: "/admin/ktdbcl/categories" },
           { code: "KTDBCL_EXAM_ROUNDS", name: "Vòng thi", href: "/admin/ktdbcl/rounds" },
-          { code: "KTDBCL_EXAM_ACHIEVEMENTS", name: "Thành tích", href: "/admin/ktdbcl/achievements" },
-          { code: "KTDBCL_EXAM_LIST", name: "Danh sách Kỳ thi", href: "/admin/ktdbcl/exams" },
-          { code: "KTDBCL_EXAM_STUDENTS", name: "Đăng ký Dự thi", href: "/admin/ktdbcl/students" },
-          { code: "KTDBCL_EXAM_RESULTS", name: "Nhập điểm & Kết quả", href: "/admin/ktdbcl/results" },
+          { code: "KTDBCL_EXAM_ACHIEVEMENTS", name: "Loại & Mức giải", href: "/admin/ktdbcl/achievements" },
         ]
       },
       {
@@ -190,22 +229,43 @@ export const APP_CATEGORIES = [
         href: "/admin/ktdbcl/phan-tich-thkq"
       },
       {
-        code: "QL_DGNL",
-        name: "QL ĐGNL",
-        icon: Sparkles,
-        href: "/admin/competency-assessment/import",
-        subModules: [
-          { code: "COMPETENCY_IMPORT", name: "Import ĐGNL (Radar)", href: "/admin/competency-assessment/import" },
-          { code: "COMPETENCY_ALIASES", name: "Từ điển Alias Môn & NL", href: "/admin/competency-assessment/aliases" },
-          { code: "COMPETENCY_HISTORY", name: "Lịch sử Import ĐGNL", href: "/admin/competency-assessment/history" },
-        ]
-      },
-      {
         code: "KTDBCL_IMPORT_KQHT",
         name: "Import KQHT",
         icon: FileSpreadsheet,
         href: "/admin/ktdbcl/import-kqht?v=2.1"
       }
+    ]
+  },
+  {
+    id: "COMPETENCY_ASSESSMENT",
+    name: "QL ĐG Năng lực",
+    color: "teal",
+    icon: Sparkles,
+    modules: [
+      {
+        code: "COMPETENCY_IMPORT",
+        name: "Import ĐGNL (Radar)",
+        icon: Sparkles,
+        href: "/admin/competency-assessment/import",
+      },
+      {
+        code: "COMPETENCY_SUBJECTS",
+        name: "Danh mục Mã môn ĐGNL",
+        icon: BookOpen,
+        href: "/admin/competency-assessment/subjects",
+      },
+      {
+        code: "COMPETENCY_ALIASES",
+        name: "Từ điển Alias Môn & NL",
+        icon: Layers,
+        href: "/admin/competency-assessment/aliases",
+      },
+      {
+        code: "COMPETENCY_HISTORY",
+        name: "Lịch sử Import ĐGNL",
+        icon: RefreshCcw,
+        href: "/admin/competency-assessment/history",
+      },
     ]
   },
   {
@@ -284,7 +344,7 @@ export const APP_CATEGORIES = [
           { code: "TIMETABLE_OVERVIEW", name: "1. Tổng quan", href: "/admin/thoi-khoa-bieu" },
           { code: "TIMETABLE_CONFIG", name: "2. Cấu hình thời khóa biểu", href: "/admin/thoi-khoa-bieu/cau-hinh" },
           { code: "TIMETABLE_QUOTA", name: "3. Định mức & Phân công", href: "/admin/thoi-khoa-bieu/phan-cong" },
-          { code: "TIMETABLE_SCHEDULE", name: "4. Xếp thời khóa biểu", href: "/admin/thoi-khoa-bieu/xep-lich" },
+          { code: "TIMETABLE_SCHEDULE", name: "4. Xếp TKB (Kéo & Thả)", href: "/admin/thoi-khoa-bieu/xep-lich" },
           { code: "TIMETABLE_LOOKUP", name: "5. Tra cứu thời khóa biểu", href: "/admin/thoi-khoa-bieu/tra-cuu" },
           { code: "TIMETABLE_ADJUST", name: "6. Điều chỉnh & Dạy thay", href: "/admin/thoi-khoa-bieu/dieu-chinh" },
           { code: "TIMETABLE_PUBLISH", name: "7. Duyệt & Ban hành", href: "/admin/thoi-khoa-bieu/ban-hanh" },
@@ -306,6 +366,7 @@ export const APP_CATEGORIES = [
       { code: "TRA_CUU_KQHT", name: "2. Tra cứu Kết quả học tập", icon: FileText, href: "/admin/tra-cuu-hoc-sinh/ket-qua" },
       { code: "TRA_CUU_XEP_LOAI", name: "3. Tra cứu Xếp loại học tập", icon: CheckCircle2, href: "/admin/tra-cuu-hoc-sinh/xep-loai" },
       { code: "TRA_CUU_THANH_TICH", name: "4. Tra cứu Thành tích", icon: Trophy, href: "/admin/tra-cuu-hoc-sinh/thanh-tich" },
+      { code: "ADMIN_STUDENT_PROFILES", name: "Hồ sơ học sinh (CV năng lực)", icon: Users, href: "/admin/ho-so-hoc-sinh?v=2.1" },
     ]
   },
   {
@@ -336,43 +397,14 @@ export const APP_CATEGORIES = [
         href: "/admin/dieu-hanh-khao-sat"
       },
       {
-        code: "CAU_HINH_KHAO_SAT",
-        name: "Cấu hình Khảo sát",
-        icon: Settings,
-        href: "/admin/cau-hinh-khao-sat"
-      },
-      {
-        code: "CAU_HINH_FILE_DIEM_KSDV",
-        name: "Cấu hình File điểm KSĐV",
-        icon: FileSpreadsheet,
-        href: "/admin/cau-hinh-file-diem-ksdv",
-      },
-      { code: "INPUT_ASSESSMENT_REPORTS", name: "Xuất báo cáo", icon: FileSpreadsheet, href: "/admin/input-assessments/reports" },
-      {
         code: "STUDENT_INFO",
-        name: "Danh sách Khảo sát",
+        name: "Đợt & Danh sách khảo sát",
         icon: Users2,
         href: "/admin/student-info",
         subModules: [
           { code: "STUDENT_INFO_K12", name: "Phổ thông K-12", href: "/admin/student-info?tab=general" },
           { code: "STUDENT_INFO_MAM_NON", name: "Mầm non", href: "/admin/student-info?tab=preschool" }
         ]
-      },
-      {
-        code: "KET_QUA_KHAO_SAT",
-        name: "Kết quả khảo sát",
-        icon: Award,
-        href: "/admin/ket-qua-khao-sat",
-        subModules: [
-          { code: "KQKS_K12", name: "Phổ thông K-12", href: "/admin/ket-qua-khao-sat?tab=general" },
-          { code: "KQKS_MAM_NON", name: "Mầm non", href: "/admin/ket-qua-khao-sat?tab=preschool" }
-        ]
-      },
-      {
-        code: "ADMIN_STUDENT_PROFILES",
-        name: "Hồ sơ Học sinh",
-        icon: Users,
-        href: "/admin/ho-so-hoc-sinh?v=2.1"
       },
       {
         code: "PHAN_CONG_KHAO_SAT",
@@ -385,14 +417,42 @@ export const APP_CATEGORIES = [
         ]
       },
       {
+        code: "KET_QUA_KHAO_SAT",
+        name: "Kết quả & Định hướng",
+        icon: Award,
+        href: "/admin/ket-qua-khao-sat",
+        subModules: [
+          { code: "KQKS_K12", name: "Phổ thông K-12", href: "/admin/ket-qua-khao-sat?tab=general" },
+          { code: "KQKS_MAM_NON", name: "Mầm non", href: "/admin/ket-qua-khao-sat?tab=preschool" }
+        ]
+      },
+      {
         code: "XET_DUYET_KET_QUA",
-        name: "Xét duyệt Kết quả",
+        name: "Xét duyệt kết quả",
         icon: CheckCircle2,
         href: "/admin/xet-duyet-ket-qua",
         subModules: [
           { code: "INPUT_ASSESSMENTS_REPORTS", name: "Xét duyệt K-12", href: "/admin/xet-duyet-ket-qua?tab=k12" },
           { code: "XET_DUYET_MAM_NON", name: "Xét duyệt Mầm non", href: "/admin/xet-duyet-ket-qua?tab=preschool" }
         ]
+      },
+      {
+        code: "INPUT_ASSESSMENT_REPORTS",
+        name: "Văn bản & Xuất báo cáo",
+        icon: FileSpreadsheet,
+        href: "/admin/input-assessments/reports"
+      },
+      {
+        code: "CAU_HINH_KHAO_SAT",
+        name: "Cấu hình khảo sát",
+        icon: Settings,
+        href: "/admin/cau-hinh-khao-sat"
+      },
+      {
+        code: "CAU_HINH_FILE_DIEM_KSDV",
+        name: "Cấu hình file điểm KSĐV",
+        icon: FileSpreadsheet,
+        href: "/admin/cau-hinh-file-diem-ksdv",
       }
     ]
   },
@@ -453,7 +513,7 @@ export const APP_CATEGORIES = [
     icon: Briefcase,
     modules: [
       { code: "TASKS", name: "Điều hành Công việc", icon: ClipboardList, href: "/admin/tasks" },
-      { code: "WEEKLY_REPORTS", name: "Báo cáo Tuần", icon: FileSpreadsheet, href: "/admin/weekly-reports" },
+      { code: "WEEKLY_REPORTS", name: "Báo cáo Tuần KT&ĐBCL", icon: FileSpreadsheet, href: "/admin/weekly-reports" },
     ]
   }
 ];

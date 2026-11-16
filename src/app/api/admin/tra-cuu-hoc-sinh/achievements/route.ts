@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { extractAchievementDisplayNames } from "@/lib/achievementFormatters";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const academicYearId = searchParams.get("academicYearId");
+    const examId = searchParams.get("examId");
     const campusId = searchParams.get("campusId");
     const grade = searchParams.get("grade");
     const classId = searchParams.get("classId");
@@ -17,6 +19,11 @@ export async function GET(req: NextRequest) {
     const where: any = {};
     if (academicYearId && academicYearId !== "all") {
       where.academicYearId = academicYearId;
+    }
+    if (examId === "__EXTERNAL__") {
+      where.examId = null;
+    } else if (examId && examId !== "all") {
+      where.examId = examId;
     }
     if (level && level !== "all") {
       where.level = level;
@@ -47,6 +54,7 @@ export async function GET(req: NextRequest) {
 
       where.OR = [
         { name: { contains: search } },
+        { exam: { name: { contains: search } } },
         {
           students: {
             some: {
@@ -68,6 +76,8 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       include: {
         academicYear: { select: { id: true, name: true } },
+        exam: { select: { id: true, name: true, code: true } },
+        achievementRequests: { select: { id: true, examName: true }, take: 1 },
         students: {
           include: {
             student: {
@@ -119,18 +129,27 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const enrichedAchievements = achievements.map((ach) => ({
-      ...ach,
-      students: ach.students.map((sa) => ({
-        ...sa,
-        student: sa.student
-          ? {
-              ...sa.student,
-              vneduCode: vneduMap.get(sa.student.studentCode) || null,
-            }
-          : sa.student,
-      })),
-    }));
+    const enrichedAchievements = achievements.map((ach) => {
+      const displayNames = extractAchievementDisplayNames(ach);
+      return {
+        ...ach,
+        name: displayNames.achievementName,
+        exam:
+          ach.exam ||
+          (displayNames.examName !== "Ngoài hệ thống"
+            ? { id: "__EXTERNAL__", name: displayNames.examName, code: "EXT" }
+            : null),
+        students: ach.students.map((sa) => ({
+          ...sa,
+          student: sa.student
+            ? {
+                ...sa.student,
+                vneduCode: vneduMap.get(sa.student.studentCode) || null,
+              }
+            : sa.student,
+        })),
+      };
+    });
 
     return NextResponse.json({
       success: true,

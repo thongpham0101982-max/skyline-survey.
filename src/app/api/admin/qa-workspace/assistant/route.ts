@@ -173,7 +173,8 @@ export async function POST(req: NextRequest) {
         md += `- Không có nhiệm vụ tồn đọng chờ duyệt.\n`
       } else {
         pendingReview.slice(0, 8).forEach((t, idx) => {
-          md += `${idx + 1}. **${sanitizeUntrustedReferenceData(t.title, 140)}** (${t.assignedToUser?.fullName || t.assignedToRole}) — Trạng thái: *${WORKFLOW_STATUS_CONFIG[t.qaMeta.workflowStatus]?.label}* ➔ [Duyệt kết quả](/admin/tasks?taskId=${t.id})\n`
+          const wfKey = t.qaMeta.workflowStatus as keyof typeof WORKFLOW_STATUS_CONFIG
+          md += `${idx + 1}. **${sanitizeUntrustedReferenceData(t.title, 140)}** (${t.assignedToUser?.fullName || t.assignedToRole}) — Trạng thái: *${WORKFLOW_STATUS_CONFIG[wfKey]?.label}* ➔ [Duyệt kết quả](/admin/tasks?taskId=${t.id})\n`
         })
       }
 

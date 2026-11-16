@@ -5,6 +5,117 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 import { isOfficiallyApprovedConclusion } from "@/lib/entrance-progress/constants";
+import { buildStudentQuickApproveUrls, generateBatchApprovalToken } from "@/lib/k12-approval-service";
+
+function normalizeEmailAddr(raw?: string | null): string {
+  if (!raw || typeof raw !== "string") return "";
+  const cleaned = raw
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/@dkylineschool\.edu\.vn$/i, "@skylineschool.edu.vn")
+    .toLowerCase();
+  if (!cleaned.includes("@") || cleaned.includes(" ") || cleaned.length <= 5) return "";
+  return cleaned;
+}
+
+function addEmailToSet(targetSet: Set<string>, raw?: string | null) {
+  const norm = normalizeEmailAddr(raw);
+  if (norm && norm !== "admin@skyline.edu") {
+    targetSet.add(norm);
+  }
+}
+
+function extractCampusCodeFromText(raw?: string | null): string {
+  const s = String(raw || "").toUpperCase().trim();
+  if (!s) return "";
+  if (s.includes("CS1") || s.includes("RIVERSIDE") || s.includes("CƠ SỞ 1") || s.includes("CO SO 1")) return "CS1";
+  if (s.includes("CS2") || s.includes("CENTRAL") || s.includes("CƠ SỞ 2") || s.includes("CO SO 2")) return "CS2";
+  if (s.includes("CS3") || s.includes("GLOBAL") || s.includes("INTERNATIONAL") || s.includes("CƠ SỞ 3") || s.includes("CO SO 3")) return "CS3";
+  if (s.includes("CS4") || s.includes("HILL") || s.includes("CƠ SỞ 4") || s.includes("CO SO 4")) return "CS4";
+  if (s.includes("CS5") || s.includes("BEACH") || s.includes("CƠ SỞ 5") || s.includes("CO SO 5")) return "CS5";
+  return "";
+}
+
+function formatStudentScoreSummaryHtml(s: any): string {
+  if (s.detailedScoresText) return s.detailedScoresText;
+  if (!Array.isArray(s.scores) || s.scores.length === 0) return "—";
+
+  const lines: string[] = [];
+  for (const sc of s.scores) {
+    const sub = sc?.subject || {};
+    const subName = String(sub.name || sc.subjectName || "Môn").trim();
+    const sNameLower = subName.toLowerCase().normalize("NFC");
+    const sCode = String(sub.code || "").toLowerCase();
+
+    if (sCode.includes("pdh") || sCode.includes("orientation") || sNameLower.includes("định hướng")) {
+      lines.push(`<b>Phiếu định hướng:</b> Đã cập nhật`);
+      continue;
+    }
+
+    let vArr: any[] = [];
+    try {
+      const parsed = Array.isArray(sc.scores) ? sc.scores : JSON.parse(sc.scores || "[]");
+      vArr = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      vArr = sc.scores ? [sc.scores] : [];
+    }
+
+    if (sCode.includes("tci") || sCode.includes("cpt") || sNameLower.includes("chuẩn phát triển")) {
+      let tciMeta: any = null;
+      if (sc.comments) {
+        try {
+          const pc = JSON.parse(sc.comments);
+          const cArr = Array.isArray(pc) ? pc : [pc];
+          for (const item of cArr) {
+            if (typeof item === "string" && item.includes('"_tciMeta"')) {
+              const m = JSON.parse(item);
+              if (m?._tciMeta) tciMeta = m._tciMeta;
+            }
+          }
+        } catch {}
+      }
+      const passed = tciMeta?.countDat ?? vArr.filter(x => ["3", "Đạt", "DAT"].includes(String(x ?? "").trim())).length;
+      const total = vArr.length > 0 ? vArr.length : 16;
+      lines.push(`<b>${subName}:</b> ${passed}/${total} Đạt`);
+      continue;
+    }
+
+    if (sCode.includes("tly") || sNameLower.includes("tâm lý")) {
+      const scNum = parseFloat(vArr[6] ?? vArr[20] ?? vArr[0] ?? "0");
+      if (!isNaN(scNum)) {
+        const lvl = scNum <= 15 ? "Bình thường" : scNum <= 31 ? "Dấu hiệu nhẹ" : scNum <= 47 ? "Dấu hiệu vừa" : "Nguy cơ cao";
+        lines.push(`<b>${subName}:</b> ${lvl} (${scNum}đ)`);
+      } else {
+        lines.push(`<b>${subName}:</b> Đã khảo sát`);
+      }
+      continue;
+    }
+
+    if (sCode.includes("nltd") || sNameLower.includes("năng lực tư duy")) {
+      const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
+      if (pctVal !== undefined && pctVal !== null && String(pctVal).trim() !== "") {
+        lines.push(`<b>${subName}:</b> ${pctVal}%`);
+      }
+      continue;
+    }
+
+    const nonEmpty = vArr.filter(x => x !== undefined && x !== null && String(x).trim() !== "");
+    if (nonEmpty.length > 0) {
+      lines.push(`<b>${subName}:</b> ${nonEmpty[0]}`);
+    }
+  }
+
+  return lines.length > 0 ? lines.join("<br/>") : "—";
+}
+
+function cleanDirectorNoteForEmail(rawNote?: string | null): string {
+  if (!rawNote || typeof rawNote !== "string") return "—";
+  const withoutHistory = rawNote
+    .replace(/--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---[\s\S]*$/i, "")
+    .trim();
+  if (!withoutHistory) return "—";
+  return withoutHistory.replace(/\r?\n/g, "<br/>");
+}
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -21,7 +132,7 @@ export async function POST(req: Request) {
       batchName,
       campusId,
       campusName,
-      students, // Array of student objects with details
+      students,
       isPreschool,
       approverName,
       approverRole
@@ -34,92 +145,266 @@ export async function POST(req: Request) {
     const currentUserName = approverName || session.user.name || "Giám đốc Cơ sở";
     const currentUserEmail = session.user.email;
 
-    // 1. Xác định chính xác Cơ sở (Campus) của đợt xét duyệt
-    let targetCampus: any = null;
-    try {
-      if (campusId && campusId !== "all") {
-        targetCampus = await prisma.campus.findUnique({
-          where: { id: campusId },
-          include: { 
-            manager: {
-              include: { teacher: true }
-            } 
-          }
-        });
-      }
-
-      if (!targetCampus) {
-        // Thử tìm theo campusName hoặc thông tin cơ sở của học sinh đầu tiên
-        const rawSearch = (campusName || students[0]?.admissionCampus || students[0]?.registeredCampus || "").toUpperCase();
-        let targetCode = "";
-        if (rawSearch.includes("CS1") || rawSearch.includes("RIVERSIDE") || rawSearch.includes("CƠ SỞ 1")) targetCode = "CS1";
-        else if (rawSearch.includes("CS2") || rawSearch.includes("CENTRAL") || rawSearch.includes("CƠ SỞ 2")) targetCode = "CS2";
-        else if (rawSearch.includes("CS3") || rawSearch.includes("GLOBAL") || rawSearch.includes("CƠ SỞ 3")) targetCode = "CS3";
-        else if (rawSearch.includes("CS4") || rawSearch.includes("HILL") || rawSearch.includes("CƠ SỞ 4")) targetCode = "CS4";
-        else if (rawSearch.includes("CS5") || rawSearch.includes("BEACH") || rawSearch.includes("CƠ SỞ 5")) targetCode = "CS5";
-
-        if (targetCode) {
-          targetCampus = await prisma.campus.findFirst({
-            where: { campusCode: targetCode },
-            include: { 
-              manager: {
-                include: { teacher: true }
-              } 
-            }
-          });
+    // 1. Tải danh sách Cơ sở & thông tin Đợt khảo sát để định tuyến chính xác
+    const allCampuses = await prisma.campus.findMany({
+      include: {
+        manager: {
+          include: { teacher: true }
         }
       }
-    } catch (campusErr) {
-      console.warn("Could not resolve target campus:", campusErr);
+    }).catch(() => []);
+
+    let batchRecord: any = null;
+    if (batchId && batchId !== "all") {
+      try {
+        if (isPreschool) {
+          batchRecord = await (prisma as any).preschoolInputAssessmentBatch.findUnique({
+            where: { id: batchId }
+          });
+        } else {
+          batchRecord = await (prisma as any).inputAssessmentBatch.findUnique({
+            where: { id: batchId }
+          });
+        }
+      } catch {}
     }
 
-    const campusCode = (targetCampus?.campusCode || "").toUpperCase();
-    const finalCampusName = targetCampus?.campusName || campusName || (campusCode ? `Cơ sở ${campusCode}` : "Sky-Line Education System");
+    const targetCampusCodes = new Set<string>();
+    const targetCampusIds = new Set<string>();
 
-    // 2. Thu thập danh sách email: GĐCS, Tư vấn Cơ sở, và Ban KT&ĐBCL
+    const registerCampusMatch = (cObj: any) => {
+      if (!cObj) return;
+      if (cObj.id) targetCampusIds.add(cObj.id);
+      if (cObj.campusCode) targetCampusCodes.add(String(cObj.campusCode).toUpperCase().trim());
+    };
+
+    const resolveAndRegisterByRef = (ref?: string | null) => {
+      if (!ref || ref === "all") return;
+      const trimmed = String(ref).trim();
+      const byIdOrExact = allCampuses.find(
+        (c: any) =>
+          c.id === trimmed ||
+          String(c.campusCode || "").toUpperCase() === trimmed.toUpperCase() ||
+          String(c.campusName || "").toUpperCase() === trimmed.toUpperCase()
+      );
+      if (byIdOrExact) {
+        registerCampusMatch(byIdOrExact);
+        return;
+      }
+      const extractedCode = extractCampusCodeFromText(trimmed);
+      if (extractedCode) {
+        targetCampusCodes.add(extractedCode);
+        const byCode = allCampuses.find((c: any) => String(c.campusCode || "").toUpperCase() === extractedCode);
+        if (byCode) registerCampusMatch(byCode);
+      }
+    };
+
+    resolveAndRegisterByRef(campusId);
+    resolveAndRegisterByRef(campusName);
+    if (batchRecord?.campusId) resolveAndRegisterByRef(batchRecord.campusId);
+    if (batchRecord?.name) resolveAndRegisterByRef(batchRecord.name);
+    resolveAndRegisterByRef(batchName);
+
+    for (const s of students) {
+      resolveAndRegisterByRef(s?.admissionCampus);
+      resolveAndRegisterByRef(s?.registeredCampus);
+      resolveAndRegisterByRef(s?.campusId);
+      resolveAndRegisterByRef(s?.batch?.name);
+    }
+
+    // Nếu vẫn chưa xác định được cơ sở nào, mặc định CS1
+    if (targetCampusCodes.size === 0 && allCampuses.length > 0) {
+      const cs1 = allCampuses.find((c: any) => String(c.campusCode || "").toUpperCase() === "CS1") || allCampuses[0];
+      registerCampusMatch(cs1);
+    }
+
+    const resolvedCampuses = allCampuses.filter(
+      (c: any) => targetCampusIds.has(c.id) || targetCampusCodes.has(String(c.campusCode || "").toUpperCase())
+    );
+    const campusCodesList = Array.from(targetCampusCodes);
+    const primaryCampus = resolvedCampuses[0] || null;
+    const finalCampusName =
+      resolvedCampuses.length > 1
+        ? resolvedCampuses.map((c: any) => c.campusName || c.campusCode).join(", ")
+        : primaryCampus?.campusName ||
+          (campusName && campusName !== "all" ? campusName : "") ||
+          (campusCodesList[0] ? `Cơ sở ${campusCodesList[0]}` : "Hệ thống Giáo dục Sky-Line");
+
+    // 2. Đọc cấu hình định tuyến email từ AssessmentConfig (hoặc từ body.emailConfig)
+    let savedEmailCfg: any = body?.emailConfig || null;
+    if (!savedEmailCfg) {
+      try {
+        const cfgRow = await prisma.assessmentConfig.findFirst({
+          where: {
+            categoryType: "APPROVAL_EMAIL_CONFIG",
+            code: "EMAIL_ROUTING_V1"
+          },
+          orderBy: { updatedAt: "desc" }
+        });
+        if (cfgRow?.name) {
+          savedEmailCfg = JSON.parse(cfgRow.name);
+        }
+      } catch (cfgErr) {
+        console.warn("Could not load APPROVAL_EMAIL_CONFIG:", cfgErr);
+      }
+    }
+
+    const autoMergeDbStaff = savedEmailCfg?.autoMergeDbStaff !== false;
+    const groupCfg = {
+      gdcs: {
+        enabled: savedEmailCfg?.groups?.gdcs?.enabled !== false,
+        target: savedEmailCfg?.groups?.gdcs?.target === "cc" ? "cc" : "to"
+      },
+      tuvan: {
+        enabled: savedEmailCfg?.groups?.tuvan?.enabled !== false,
+        target: savedEmailCfg?.groups?.tuvan?.target === "cc" ? "cc" : "to"
+      },
+      giaovu: {
+        enabled: savedEmailCfg?.groups?.giaovu?.enabled !== false,
+        target: savedEmailCfg?.groups?.giaovu?.target === "cc" ? "cc" : "to"
+      },
+      ktdbcl: {
+        enabled: savedEmailCfg?.groups?.ktdbcl?.enabled !== false,
+        target: savedEmailCfg?.groups?.ktdbcl?.target === "to" ? "to" : "cc"
+      }
+    };
+
+    // Thu thập danh sách email 4 nhóm: GĐCS, Tư vấn Cơ sở, Giáo vụ Cơ sở và Ban KT&ĐBCL
     const gdcsEmails = new Set<string>();
     const tuvanEmails = new Set<string>();
+    const giaovuEmails = new Set<string>();
     const ktdbclEmails = new Set<string>();
 
-    // --- A. Giám đốc Cơ sở (GĐCS) ---
-    // (1) Manager từ Campus
-    if (targetCampus?.manager?.teacher?.email && targetCampus.manager.teacher.email.includes("@")) {
-      gdcsEmails.add(targetCampus.manager.teacher.email.trim());
-    }
-    if (targetCampus?.manager?.email && targetCampus.manager.email.includes("@")) {
-      gdcsEmails.add(targetCampus.manager.email.trim());
-    }
+    if (autoMergeDbStaff) {
+      // Tải bảng ánh xạ teacherCode -> email để giải quyết trường hợp User.email lưu mã nhân sự (0201...)
+      const allActiveTeachers = await prisma.teacher.findMany({
+        where: { status: "ACTIVE" },
+        include: {
+          departmentRel: true,
+          campus: true,
+          user: { select: { id: true, email: true, role: true } }
+        }
+      }).catch(() => []);
 
-    // (2) User có vai trò GDCS phân công cho cơ sở này
-    try {
-      if (targetCampus?.id) {
-        const gdcsAssignments = await prisma.userCampusAssignment.findMany({
-          where: {
-            campusId: targetCampus.id,
-            user: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"] } }
-          },
-          include: { user: { include: { teacher: true } } }
-        });
-        gdcsAssignments.forEach((a: any) => {
-          if (a.user?.teacher?.email && a.user.teacher.email.includes("@")) gdcsEmails.add(a.user.teacher.email.trim());
-          if (a.user?.email && a.user.email.includes("@")) gdcsEmails.add(a.user.email.trim());
-        });
+      const teacherByCode = new Map<string, any>();
+      const teacherByUserId = new Map<string, any>();
+      for (const t of allActiveTeachers) {
+        if (t.teacherCode) teacherByCode.set(String(t.teacherCode).trim(), t);
+        if (t.userId) teacherByUserId.set(String(t.userId).trim(), t);
       }
-    } catch (e) {
-      console.warn("Error fetching GDCS assignments:", e);
+
+      const resolveUserActualEmail = (u: any): string => {
+        if (!u) return "";
+        if (u.teacher?.email && u.teacher.email.includes("@")) return u.teacher.email;
+        const byUid = u.id ? teacherByUserId.get(String(u.id)) : null;
+        if (byUid?.email && byUid.email.includes("@")) return byUid.email;
+        const byCode = u.email ? teacherByCode.get(String(u.email).trim()) : null;
+        if (byCode?.email && byCode.email.includes("@")) return byCode.email;
+        if (u.email && u.email.includes("@")) return u.email;
+        return "";
+      };
+
+      // --- A. Giám đốc Cơ sở (GĐCS) ---
+      for (const cObj of resolvedCampuses) {
+        addEmailToSet(gdcsEmails, cObj.manager?.teacher?.email);
+        addEmailToSet(gdcsEmails, resolveUserActualEmail(cObj.manager));
+      }
+
+      // --- B & C & A từ UserCampusAssignment (GĐCS, Giáo vụ Cơ sở, Tư vấn Cơ sở được phân công phụ trách cơ sở) ---
+      if (targetCampusIds.size > 0) {
+        try {
+          const campusAssignments = await prisma.userCampusAssignment.findMany({
+            where: { campusId: { in: Array.from(targetCampusIds) } },
+            include: { user: { include: { teacher: true } } }
+          });
+          for (const a of campusAssignments) {
+            const u = a.user;
+            if (!u) continue;
+            const role = String(u.role || "").toUpperCase().trim();
+            const actualEmail = resolveUserActualEmail(u);
+            if (!actualEmail) continue;
+
+            if (["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(role)) {
+              addEmailToSet(gdcsEmails, actualEmail);
+            } else if (["GIAO_VU", "GIAO_VU_CS", "GVU", "GVCS"].includes(role)) {
+              addEmailToSet(giaovuEmails, actualEmail);
+            } else if (["TVAN", "TU_VAN", "TUYEN_SINH", "TVTS"].includes(role)) {
+              addEmailToSet(tuvanEmails, actualEmail);
+            }
+          }
+        } catch (assignErr) {
+          console.warn("Error fetching campus assignments for email:", assignErr);
+        }
+      }
+
+      // --- Tra cứu từ danh sách Giáo viên/Nhân sự hoạt động tại cơ sở (GĐCS, Giáo vụ, Tư vấn) ---
+      for (const t of allActiveTeachers) {
+        const tCampusCode = String(t.campus?.campusCode || "").toUpperCase().trim();
+        const isTargetCampus =
+          (t.campusId && targetCampusIds.has(t.campusId)) ||
+          (tCampusCode && targetCampusCodes.has(tCampusCode));
+        if (!isTargetCampus) continue;
+
+        const deptCode = String(t.departmentRel?.code || "").toUpperCase().trim();
+        const deptName = String(t.departmentRel?.name || "").toLowerCase().normalize("NFC");
+        const userRole = String(t.user?.role || "").toUpperCase().trim();
+        const tEmail = t.email || (t.user?.email?.includes("@") ? t.user.email : "");
+        if (!tEmail) continue;
+
+        if (
+          ["GĐ_CS", "GD_CS", "GDCS", "GĐCS"].includes(deptCode) ||
+          deptName.includes("giám đốc cơ sở") ||
+          deptName === "gđcs" ||
+          ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(userRole)
+        ) {
+          addEmailToSet(gdcsEmails, tEmail);
+        }
+
+        if (
+          deptCode.includes("GVU") ||
+          deptCode.includes("GIAOVU") ||
+          deptCode.includes("GIAO_VU") ||
+          deptName.includes("giáo vụ") ||
+          ["GIAO_VU", "GIAO_VU_CS", "GVU", "GVCS"].includes(userRole)
+        ) {
+          addEmailToSet(giaovuEmails, tEmail);
+        }
+
+        if (
+          ["TVAN", "TUVAN", "TUYENSINH", "TVTS"].includes(deptCode) ||
+          deptName.includes("tư vấn") ||
+          deptName.includes("tuyển sinh") ||
+          ["TVAN", "TU_VAN", "TUYEN_SINH", "TVTS"].includes(userRole)
+        ) {
+          addEmailToSet(tuvanEmails, tEmail);
+        }
+      }
+
+      // Nếu đợt khảo sát có gán Người phụ trách (thường là Giáo vụ cơ sở)
+      if (batchRecord?.assignedUserId) {
+        try {
+          const batchAssignee = await prisma.user.findUnique({
+            where: { id: batchRecord.assignedUserId },
+            include: { teacher: true }
+          });
+          if (batchAssignee) {
+            addEmailToSet(giaovuEmails, resolveUserActualEmail(batchAssignee));
+          }
+        } catch {}
+      }
+
+      // Nếu người đang đăng nhập duyệt là GĐCS
+      try {
+        const userRole = String((session?.user as any)?.role || "").toUpperCase();
+        if (userRole.includes("GD") || userRole.includes("GĐ")) {
+          const curTeacher = teacherByUserId.get(String((session.user as any).id));
+          addEmailToSet(gdcsEmails, curTeacher?.email);
+          addEmailToSet(gdcsEmails, currentUserEmail);
+        }
+      } catch {}
     }
 
-    // (3) Nếu người đang đăng nhập duyệt là GDCS
-    try {
-      const userRole = (session?.user as any)?.role?.toUpperCase() || "";
-      if (userRole.includes("GD") || userRole.includes("GĐ")) {
-        const curTeacher = await prisma.teacher.findFirst({ where: { userId: session.user.id } });
-        if (curTeacher?.email && curTeacher.email.includes("@")) gdcsEmails.add(curTeacher.email.trim());
-        if (currentUserEmail && currentUserEmail.includes("@")) gdcsEmails.add(currentUserEmail.trim());
-      }
-    } catch (e) {}
-
-    // (4) Danh bạ email GĐCS chính thức của Sky-Line (đảm bảo không bị thất lạc)
+    // --- Danh bạ chuẩn / Cấu hình theo từng Cơ sở Sky-Line ---
     const officialGdcsMap: Record<string, string[]> = {
       CS1: ["longtt@skylineschool.edu.vn", "gdcs.cs1@skylineschool.edu.vn"],
       CS2: ["khanhpt@skylineschool.edu.vn", "gdcs.cs2@skylineschool.edu.vn"],
@@ -127,70 +412,92 @@ export async function POST(req: Request) {
       CS4: ["trungct@skylineschool.edu.vn", "gdcs.cs4@skylineschool.edu.vn"],
       CS5: ["trungdq1@skylineschool.edu.vn", "gdcs.cs5@skylineschool.edu.vn"],
     };
-    if (campusCode && officialGdcsMap[campusCode]) {
-      officialGdcsMap[campusCode].forEach(e => gdcsEmails.add(e));
-    }
 
-    // --- B. Bộ phận Tư vấn Cơ sở (Tư vấn Tuyển sinh) ---
-    // (1) Tra cứu giáo viên/nhân viên thuộc phòng ban Tư vấn / Tuyển sinh của cơ sở
-    try {
-      if (targetCampus?.id) {
-        const tuvanTeachers = await prisma.teacher.findMany({
-          where: {
-            campusId: targetCampus.id,
-            status: "ACTIVE",
-            OR: [
-              { departmentRel: { code: { in: ["TVAN", "TUVAN", "TUYENSINH", "TVTS"] } } },
-              { departmentRel: { name: { contains: "tư vấn" } } },
-              { departmentRel: { name: { contains: "tuyển sinh" } } },
-              { departmentRel: { name: { contains: "Tư vấn" } } },
-              { departmentRel: { name: { contains: "Tuyển sinh" } } },
-              { user: { role: { in: ["TVAN", "TU_VAN", "TUYEN_SINH", "TVTS"] } } }
-            ]
-          },
-          select: { email: true, teacherName: true, user: { select: { email: true } } }
-        });
-        tuvanTeachers.forEach((t: any) => {
-          if (t.email && t.email.includes("@")) tuvanEmails.add(t.email.trim());
-          if (t.user?.email && t.user.email.includes("@")) tuvanEmails.add(t.user.email.trim());
-        });
-      }
-    } catch (tuvanErr) {
-      console.warn("Error fetching Tu Van teachers:", tuvanErr);
-    }
-
-    // (2) Danh bạ email Tư vấn Tuyển sinh chuẩn theo từng Cơ sở
     const officialTuvanMap: Record<string, string[]> = {
       CS1: ["thuongttn@skylineschool.edu.vn", "tuyensinh.cs1@skylineschool.edu.vn"],
-      CS2: ["hoaipt@skylineschool.edu.vn", "dinhnth@dkylineschool.edu.vn", "tuyensinh.cs2@skylineschool.edu.vn"],
-      CS3: ["thungatt@skylineschool.edu.vn", "tuyensinh.cs3@skylineschool.edu.vn"],
-      CS4: ["senttt@skylineschool.edu.vn", "tuyensinh.cs4@skylineschool.edu.vn"],
-      CS5: ["linhnmh@skylineschool.edu.vn", "quyenttx@skylineschool.edu.vn", "tuyensinh.cs5@skylineschool.edu.vn"],
+      CS2: [
+        "hoaipt@skylineschool.edu.vn",
+        "dinhnth@skylineschool.edu.vn",
+        "doanhtt@skylineschool.edu.vn",
+        "huyennt@skylineschool.edu.vn",
+        "tuyensinh.cs2@skylineschool.edu.vn",
+      ],
+      CS3: [
+        "thungatt@skylineschool.edu.vn",
+        "hapvy@skylineschool.edu.vn",
+        "tuyensinh.cs3@skylineschool.edu.vn",
+      ],
+      CS4: [
+        "senttt@skylineschool.edu.vn",
+        "anhntm@skylineschool.edu.vn",
+        "tuyensinh.cs4@skylineschool.edu.vn",
+      ],
+      CS5: [
+        "linhnmh@skylineschool.edu.vn",
+        "quyenttx@skylineschool.edu.vn",
+        "tuyensinh.cs5@skylineschool.edu.vn",
+      ],
     };
-    if (campusCode && officialTuvanMap[campusCode]) {
-      officialTuvanMap[campusCode].forEach(e => tuvanEmails.add(e));
+
+    const officialGiaovuMap: Record<string, string[]> = {
+      CS1: ["phuongvt@skylineschool.edu.vn", "thuda@skylineschool.edu.vn", "giaovu.cs1@skylineschool.edu.vn"],
+      CS2: ["thuda@skylineschool.edu.vn", "dunglp@skylineschool.edu.vn", "giaovu.cs2@skylineschool.edu.vn"],
+      CS3: ["thuda@skylineschool.edu.vn", "giaovu.cs3@skylineschool.edu.vn"],
+      CS4: ["bichtramtt@skylineschool.edu.vn", "giaovu.cs4@skylineschool.edu.vn"],
+      CS5: ["dunglp@skylineschool.edu.vn", "giaovu.cs5@skylineschool.edu.vn"],
+    };
+
+    for (const csCode of campusCodesList) {
+      const customCampusCfg = savedEmailCfg?.campuses?.[csCode];
+      const gdcsList = Array.isArray(customCampusCfg?.gdcs) ? customCampusCfg.gdcs : (officialGdcsMap[csCode] || []);
+      const tuvanList = Array.isArray(customCampusCfg?.tuvan) ? customCampusCfg.tuvan : (officialTuvanMap[csCode] || []);
+      const giaovuList = Array.isArray(customCampusCfg?.giaovu) ? customCampusCfg.giaovu : (officialGiaovuMap[csCode] || []);
+
+      gdcsList.forEach((e: string) => addEmailToSet(gdcsEmails, e));
+      tuvanList.forEach((e: string) => addEmailToSet(tuvanEmails, e));
+      giaovuList.forEach((e: string) => addEmailToSet(giaovuEmails, e));
     }
 
-    // --- C. Ban Kiểm tra & Đảm bảo Chất lượng (Ban KT&ĐBCL) ---
-    // Theo yêu cầu chỉ định: Ban KT&ĐBCL chỉ gửi đến 3 địa chỉ:
-    // 1. Thầy Dương Xuân Thắng: thangdx@skylineschool.edu.vn
-    // 2. Hòm thư ban: ktdbcl@skylineschool.edu.vn
-    // 3. Hòm thư khảo thí: bankhaothi@skylineschool.edu.vn
-    ktdbclEmails.add("thangdx@skylineschool.edu.vn");
-    ktdbclEmails.add("ktdbcl@skylineschool.edu.vn");
-    ktdbclEmails.add("bankhaothi@skylineschool.edu.vn");
+    // --- D. Ban Kiểm tra & Đảm bảo Chất lượng (Ban KT&ĐBCL) ---
+    const configuredKtdbclList = Array.isArray(savedEmailCfg?.ktdbclEmails)
+      ? savedEmailCfg.ktdbclEmails
+      : ["thangdx@skylineschool.edu.vn", "ktdbcl@skylineschool.edu.vn", "bankhaothi@skylineschool.edu.vn"];
+    configuredKtdbclList.forEach((e: string) => addEmailToSet(ktdbclEmails, e));
 
-    // Phân bổ Người nhận chính (To: GĐCS & Tư vấn Cơ sở) và Đồng kính gửi (CC: Ban KT&ĐBCL)
-    const toEmails = new Set<string>([...gdcsEmails, ...tuvanEmails]);
-    const ccEmails = new Set<string>([...ktdbclEmails]);
+    // Áp dụng cấu hình bật/tắt nhóm người nhận và phân bổ To / CC
+    if (!groupCfg.gdcs.enabled) gdcsEmails.clear();
+    if (!groupCfg.tuvan.enabled) tuvanEmails.clear();
+    if (!groupCfg.giaovu.enabled) giaovuEmails.clear();
+    if (!groupCfg.ktdbcl.enabled) ktdbclEmails.clear();
 
-    // Fallback an toàn nếu chưa có email nào
-    if (toEmails.size === 0) {
-      if (currentUserEmail && currentUserEmail.includes("@")) {
-        toEmails.add(currentUserEmail.trim());
-      } else {
-        toEmails.add("ktdbcl@skylineschool.edu.vn");
+    const toEmails = new Set<string>();
+    const ccEmails = new Set<string>();
+
+    const routeGroupSet = (groupSet: Set<string>, target: "to" | "cc") => {
+      for (const em of groupSet) {
+        if (target === "to") toEmails.add(em);
+        else ccEmails.add(em);
       }
+    };
+
+    if (groupCfg.gdcs.enabled) routeGroupSet(gdcsEmails, groupCfg.gdcs.target);
+    if (groupCfg.tuvan.enabled) routeGroupSet(tuvanEmails, groupCfg.tuvan.target);
+    if (groupCfg.giaovu.enabled) routeGroupSet(giaovuEmails, groupCfg.giaovu.target);
+    if (groupCfg.ktdbcl.enabled) routeGroupSet(ktdbclEmails, groupCfg.ktdbcl.target);
+
+    // Không để trùng lặp email giữa To và CC
+    for (const em of toEmails) {
+      ccEmails.delete(em);
+    }
+
+    // Fallback an toàn nếu chưa có email nào ở To (chuyển từ CC sang hoặc dùng fallback)
+    if (toEmails.size === 0 && ccEmails.size > 0) {
+      for (const em of ccEmails) toEmails.add(em);
+      ccEmails.clear();
+    }
+    if (toEmails.size === 0) {
+      const fb = normalizeEmailAddr(currentUserEmail) || "ktdbcl@skylineschool.edu.vn";
+      toEmails.add(fb);
     }
 
     // 3. Thống kê số lượng kết quả
@@ -207,10 +514,10 @@ export async function POST(req: Request) {
         absentCount++;
       } else if (res.includes("cam kết")) {
         committedCount++;
-      } else if (res.includes("đạt") || res.includes("miễn") || res.includes("học thử")) {
-        passedCount++;
       } else if (res.includes("không đạt")) {
         failedCount++;
+      } else if (res.includes("đạt") || res.includes("miễn") || res.includes("học thử")) {
+        passedCount++;
       } else {
         pendingCount++;
       }
@@ -223,27 +530,43 @@ export async function POST(req: Request) {
     }).format(new Date());
 
     const finalPeriodName = periodName || "Kỳ Khảo sát Tuyển sinh";
-    const finalBatchName = batchName || "Đợt khảo sát";
+    const finalBatchName = batchName || batchRecord?.name || "Đợt khảo sát";
 
     const emailSubject = `[Sky-line SMS - Xét Duyệt] Thông báo Kết quả Xét duyệt: ${finalBatchName} - ${finalCampusName}`;
 
-    // 4. Xây dựng Bảng HTML 10 cột dữ liệu chuẩn mực, sang trọng
+    const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
+    const protocol = req.headers.get("x-forwarded-proto") || "https";
+    const baseUrl = `${protocol}://${host}`;
+    const primaryGdcsEmail = Array.from(gdcsEmails)[0] || currentUserEmail || "gdcs@skylineschool.edu.vn";
+    const effPeriodId = periodId || students[0]?.periodId || "";
+    const effBatchId = batchId || students[0]?.batchId || "all";
+    const batchApproveToken = generateBatchApprovalToken(effPeriodId, effBatchId, Boolean(isPreschool), primaryGdcsEmail);
+    const batchQuickApproveUrl = `${baseUrl}/api/admin/quick-approve/k12?mode=batch&periodId=${encodeURIComponent(effPeriodId)}&batchId=${encodeURIComponent(effBatchId)}&isPreschool=${isPreschool ? "1" : "0"}&email=${encodeURIComponent(primaryGdcsEmail)}&token=${batchApproveToken}`;
+
+    // 4. Xây dựng Bảng HTML 10 cột chuẩn Sổ cái Học thuật Sky-Line:
+    // Mã HS | Học sinh | Ngày sinh | Giới tính | Khối | Hệ | Cơ sở | Kết quả khảo sát | KQ đã xét duyệt | Thao tác (Duyệt trên mail)
     const rowsHtml = students.map((s, idx) => {
       const dob = s.dateOfBirth
         ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN")
         : (s.dob || "—");
 
-      const gender = s.gender ? (s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "Nam") : "—";
-      const grade = s.grade ? `Khối ${s.grade}` : (s.className || "—");
-      const system = s.surveySystem || s.surveyFormType || "—";
-      const criteria = s.admissionCriteria || s.targetType || "—";
+      const gender = s.gender ? (s.gender === "FEMALE" || s.gender === "Nữ" || s.gender === "F" ? "Nữ" : "Nam") : "—";
+      const grade = s.grade
+        ? (isPreschool ? s.grade : (String(s.grade).toLowerCase().startsWith("khối") ? s.grade : `Khối ${s.grade}`))
+        : (s.className || "—");
+      const system = s.surveyFormType || s.surveySystem || "—";
+      const rowCampusCode =
+        extractCampusCodeFromText(s.admissionCampus) ||
+        extractCampusCodeFromText(s.registeredCampus) ||
+        extractCampusCodeFromText(s.batch?.name) ||
+        campusCodesList[0] ||
+        finalCampusName;
 
-      // Trạng thái duyệt badge
       const rawRes = (s.admissionResult || "").trim();
-      let badgeBg = "#F1F5F9";
-      let badgeColor = "#475569";
-      let badgeBorder = "#CBD5E1";
-      let statusLabel = rawRes || "Chưa duyệt";
+      let badgeBg = "#FFFBEB";
+      let badgeColor = "#D97706";
+      let badgeBorder = "#FDE68A";
+      let statusLabel = rawRes || "Chờ duyệt";
 
       if (s.isAbsent) {
         badgeBg = "#F1F5F9";
@@ -252,66 +575,106 @@ export async function POST(req: Request) {
         statusLabel = "Vắng khảo sát";
       } else if (rawRes.toLowerCase().includes("cam kết")) {
         badgeBg = "#FEF3C7";
-        badgeColor = "#92400E";
+        badgeColor = "#D97706";
         badgeBorder = "#FCD34D";
         statusLabel = rawRes || "Đạt cam kết";
       } else if (rawRes.toLowerCase().includes("không đạt")) {
         badgeBg = "#FEE2E2";
-        badgeColor = "#991B1B";
+        badgeColor = "#E11D48";
         badgeBorder = "#FCA5A5";
         statusLabel = rawRes || "Không đạt";
       } else if (rawRes.toLowerCase().includes("đạt") || rawRes.toLowerCase().includes("học thử") || rawRes.toLowerCase().includes("miễn")) {
         badgeBg = "#D1FAE5";
-        badgeColor = "#065F46";
+        badgeColor = "#059669";
         badgeBorder = "#6EE7B7";
-        statusLabel = rawRes || "Đạt";
+        statusLabel = rawRes === "Đạt" ? "Đạt chuẩn" : (rawRes || "Đạt chuẩn");
       }
 
-      // Kết quả chi tiết (Điểm chi tiết hoặc nhận xét đánh giá)
-      let scoreDetailHtml = "—";
-      if (s.detailedScoresText) {
-        scoreDetailHtml = s.detailedScoresText;
-      } else if (Array.isArray(s.scores) && s.scores.length > 0) {
-        scoreDetailHtml = s.scores.map((sc: any) => {
-          const subName = sc.subject?.name || sc.subjectName || "Môn";
-          let scoreVal = "";
-          try {
-            const arr = Array.isArray(sc.scores) ? sc.scores : JSON.parse(sc.scores || "[]");
-            scoreVal = arr.filter(Boolean).join(" | ") || "Chưa có điểm";
-          } catch {
-            scoreVal = String(sc.scores || "—");
-          }
-          return `<b>${subName}:</b> ${scoreVal}`;
-        }).join("<br/>");
-      }
+      const scoreDetailHtml = formatStudentScoreSummaryHtml(s);
+      const directorNoteHtml = cleanDirectorNoteForEmail(s.directorNote || s.notes || s.comment);
+      const studentBatchLabel = s.batch?.name || finalBatchName;
 
-      const directorNoteHtml = s.directorNote || s.notes || s.comment || "—";
+      const quickUrls = buildStudentQuickApproveUrls({
+        studentId: String(s.id || ""),
+        isPreschool: Boolean(isPreschool),
+        baseUrl,
+        recipientEmail: primaryGdcsEmail,
+        periodId: s.periodId || effPeriodId,
+        batchId: s.batchId || effBatchId
+      });
 
       return `
         <tr style="border-bottom: 1px solid #E2E8F0; background-color: ${idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'};">
-          <td style="padding: 11px 8px; font-size: 12px; font-weight: 700; color: #64748B; text-align: center;">${idx + 1}</td>
-          <td style="padding: 11px 8px; font-size: 12px; font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-weight: 800; color: #007A87; text-align: center;">${s.studentCode || "—"}</td>
-          <td style="padding: 11px 12px; font-size: 13px; font-weight: 800; color: #0F172A;">
-            ${s.fullName || "—"}
-          </td>
-          <td style="padding: 11px 8px; font-size: 12px; color: #475569; text-align: center;">${dob}</td>
-          <td style="padding: 11px 8px; font-size: 12px; color: #475569; text-align: center;">${gender}</td>
-          <td style="padding: 11px 8px; font-size: 12px; font-weight: 800; color: #003B3A; text-align: center;">${grade}</td>
-          <td style="padding: 11px 8px; font-size: 11.5px; font-weight: 600; color: #475569; text-align: center;">${system}</td>
-          <td style="padding: 11px 10px; font-size: 11.5px; color: #334155; line-height: 1.45;">${scoreDetailHtml}</td>
-          <td style="padding: 11px 8px; text-align: center;">
-            <span style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; border-radius: 6px; background-color: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder};">
-              ${statusLabel}
+          <!-- 1. Mã HS -->
+          <td style="padding: 11px 8px; text-align: left; white-space: nowrap;">
+            <span style="font-size: 11.5px; font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-weight: 700; color: #003B3A; background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 3px 7px; border-radius: 5px;">
+              ${s.studentCode || "—"}
             </span>
           </td>
-          <td style="padding: 11px 12px; font-size: 11.5px; font-style: italic; color: #334155; line-height: 1.45;">
-            ${directorNoteHtml}
+          <!-- 2. Học sinh -->
+          <td style="padding: 11px 10px;">
+            <div style="font-size: 13px; font-weight: 800; color: #0F172A;">${s.fullName || "—"}</div>
+            <div style="margin-top: 3px; font-size: 10.5px; color: #00736E; font-weight: 600;">
+              ${studentBatchLabel}
+            </div>
+          </td>
+          <!-- 3. Ngày sinh -->
+          <td style="padding: 11px 8px; font-size: 12px; color: #475569; text-align: center; white-space: nowrap;">${dob}</td>
+          <!-- 4. Giới tính -->
+          <td style="padding: 11px 8px; font-size: 12px; color: #475569; text-align: center; white-space: nowrap;">${gender}</td>
+          <!-- 5. Khối -->
+          <td style="padding: 11px 8px; font-size: 12px; font-weight: 700; color: #003B3A; text-align: center; white-space: nowrap;">${grade}</td>
+          <!-- 6. Hệ -->
+          <td style="padding: 11px 8px; font-size: 11.5px; font-weight: 600; color: #334155; text-align: center; white-space: nowrap;">${system}</td>
+          <!-- 7. Cơ sở -->
+          <td style="padding: 11px 8px; text-align: center; white-space: nowrap;">
+            <span style="display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: 700; color: #00736E; background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 5px;">
+              ${rowCampusCode}
+            </span>
+          </td>
+          <!-- 8. Kết quả khảo sát -->
+          <td style="padding: 11px 10px; font-size: 11.5px; color: #334155; line-height: 1.5;">${scoreDetailHtml}</td>
+          <!-- 9. KQ đã xét duyệt -->
+          <td style="padding: 11px 8px; text-align: center;">
+            <span style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; background-color: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder};">
+              ${statusLabel}
+            </span>
+            ${directorNoteHtml && directorNoteHtml !== "—" ? `
+              <div style="margin-top: 4px; font-size: 10.5px; color: #475569; font-style: italic; line-height: 1.35;">
+                ${directorNoteHtml}
+              </div>
+            ` : ""}
+          </td>
+          <!-- 10. Thao tác (GĐCS duyệt trực tiếp trên Email) -->
+          <td style="padding: 10px 10px; text-align: right; white-space: nowrap;">
+            ${s.id ? `
+              <div style="margin-bottom: 4px;">
+                <a href="${quickUrls.approveDatUrl}" target="_blank" style="display: inline-block; padding: 4px 9px; font-size: 10.5px; font-weight: 700; color: #FFFFFF; background-color: #059669; border-radius: 5px; text-decoration: none; margin-right: 3px;">
+                  ${quickUrls.primaryLabel}
+                </a>
+                <a href="${quickUrls.approveCamKetOrHocThuUrl}" target="_blank" style="display: inline-block; padding: 4px 9px; font-size: 10.5px; font-weight: 700; color: #FFFFFF; background-color: #D97706; border-radius: 5px; text-decoration: none;">
+                  ${quickUrls.secondaryLabel}
+                </a>
+              </div>
+              <div>
+                <a href="${quickUrls.approveKhongDatUrl}" target="_blank" style="display: inline-block; padding: 3px 8px; font-size: 10px; font-weight: 700; color: #E11D48; background-color: #FFF1F2; border: 1px solid #FECDD3; border-radius: 5px; text-decoration: none; margin-right: 3px;">
+                  ${quickUrls.rejectLabel}
+                </a>
+                <a href="${quickUrls.portalUrl}" target="_blank" style="display: inline-block; padding: 3px 8px; font-size: 10px; font-weight: 700; color: #003B3A; background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 5px; text-decoration: none;">
+                  Chi tiết
+                </a>
+              </div>
+            ` : `
+              <a href="${baseUrl}/admin/xet-duyet-ket-qua" target="_blank" style="display: inline-block; padding: 5px 10px; font-size: 11px; font-weight: 700; color: #FFFFFF; background-color: #003B3A; border-radius: 6px; text-decoration: none;">
+                Chi tiết
+              </a>
+            `}
           </td>
         </tr>
       `;
     }).join("");
 
-    // 5. HTML Toàn thể Email chuyên nghiệp, hiện đại, bám sát Brandname Sky-Line & tương thích 100% Microsoft Outlook
+    // 5. HTML Email chuẩn Sky-Line Academic Ledger & tương thích 100% Microsoft Outlook
     const emailHtml = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="vi">
@@ -327,9 +690,9 @@ export async function POST(req: Request) {
 </head>
 <body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; color: #1E293B;">
   
-  <!-- Preheader text (preview in email client) -->
+  <!-- Preheader text -->
   <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #FFFFFF; opacity: 0;">
-    Thông báo Kết quả Xét duyệt Khảo sát Tuyển sinh Sky-Line: ${finalBatchName} - ${finalCampusName}. Kết quả: ${passedCount}/${totalCount} Đạt.
+    Thông báo Kết quả Xét duyệt Khảo sát Tuyển sinh Sky-Line: ${finalBatchName} - ${finalCampusName}. Kết quả: ${passedCount + committedCount}/${totalCount} Đạt.
   </div>
 
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 24px 12px; min-width: 100%;">
@@ -337,7 +700,7 @@ export async function POST(req: Request) {
       <td align="center">
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#FFFFFF" style="max-width: 960px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0, 59, 58, 0.08); border: 1px solid #CBD5E1;">
           
-          <!-- BRAND HEADER (OUTLOOK-PROOF DEEP PINE BGCOLOR + GRADIENT) -->
+          <!-- BRAND HEADER -->
           <tr>
             <td bgcolor="#003B3A" style="background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #064E3B 50%, #007A87 100%); padding: 32px 36px; text-align: left; border-bottom: 4px solid #00A19A;">
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
@@ -361,26 +724,27 @@ export async function POST(req: Request) {
             <td style="padding: 24px 32px 20px 32px; background-color: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
               <div style="font-size: 13.5px; line-height: 1.6; color: #334155;">
                 <div style="margin-bottom: 8px;">
-                  <strong style="color: #003B3A;">Kính gửi:</strong> Giám đốc Cơ sở, Bộ phận Tư vấn Tuyển sinh và Ban Kiểm tra &amp; Đảm bảo Chất lượng (KT&amp;ĐBCL),
+                  <strong style="color: #003B3A;">Kính gửi:</strong> Giám đốc Cơ sở, Bộ phận Tư vấn Tuyển sinh Cơ sở, Bộ phận Giáo vụ Cơ sở và Ban Kiểm tra &amp; Đảm bảo Chất lượng (KT&amp;ĐBCL),
                 </div>
                 <div>
-                  Hệ thống ghi nhận <strong style="color: #003B3A;">${currentUserName}</strong> (${approverRole || "Giám đốc Cơ sở"}) đã hoàn tất xét duyệt kết quả cho các học sinh thuộc <strong style="color: #003B3A;">${finalBatchName}</strong> (${finalPeriodName}) tại cơ sở <strong style="color: #003B3A;">${finalCampusName}</strong> vào lúc <strong>${nowFormatted}</strong>.
+                  Hệ thống ghi nhận <strong style="color: #003B3A;">${currentUserName}</strong> (${approverRole || "Giám đốc Cơ sở"}) đã hoàn tất xét duyệt kết quả cho học sinh thuộc <strong style="color: #003B3A;">${finalBatchName}</strong> (${finalPeriodName}) tại cơ sở <strong style="color: #003B3A;">${finalCampusName}</strong> vào lúc <strong>${nowFormatted}</strong>.
                 </div>
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 14px; background-color: #F0FDFA; border-left: 4px solid #00A19A; border-radius: 6px;">
                   <tr>
-                    <td style="padding: 12px 16px; font-size: 12.5px; color: #0F766E; line-height: 1.6;">
+                    <td style="padding: 12px 16px; font-size: 12.5px; color: #0F766E; line-height: 1.65;">
                       📌 <strong style="color: #003B3A;">Phân công trách nhiệm &amp; Phối hợp xử lý:</strong><br/>
                       &bull; <strong>Bộ phận Tư vấn Tuyển sinh Cơ sở:</strong> Căn cứ kết quả đã phê duyệt chính thức để liên hệ Quý Phụ huynh, thông báo kết quả và hướng dẫn triển khai thủ tục nhập học theo đúng thời hạn quy định.<br/>
-                      &bull; <strong>Ban KT&amp;ĐBCL:</strong> Tiếp nhận dữ liệu, theo dõi và lưu trữ hồ sơ theo quy chuẩn bảo đảm chất lượng của Hệ thống Sky-Line.
+                      &bull; <strong>Bộ phận Giáo vụ Cơ sở:</strong> Tiếp nhận kết quả xét duyệt, phối hợp xếp lớp, theo dõi diện cam kết học tập / học thử hoặc bố trí lịch kiểm tra lại (nếu có).<br/>
+                      &bull; <strong>Ban KT&amp;ĐBCL:</strong> Tiếp nhận dữ liệu, giám sát quy trình và lưu trữ hồ sơ theo quy chuẩn đảm bảo chất lượng của Hệ thống Sky-Line.
                     </td>
                   </tr>
                 </table>
               </div>
 
-              <!-- KPI SUMMARY METRICS (TABLE-BASED WITH SOLID BGCOLORS) -->
+              <!-- KPI SUMMARY METRICS -->
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 18px;">
                 <tr>
-                  <td width="${absentCount > 0 ? '20%' : '24%'}" align="center" style="padding: 4px;">
+                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#F0FDFA" align="center" style="background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 12px; padding: 12px 8px; text-align: center;">
@@ -391,7 +755,7 @@ export async function POST(req: Request) {
                       </tr>
                     </table>
                   </td>
-                  <td width="${absentCount > 0 ? '20%' : '24%'}" align="center" style="padding: 4px;">
+                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#ECFDF5" align="center" style="background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 12px 8px; text-align: center;">
@@ -402,7 +766,7 @@ export async function POST(req: Request) {
                       </tr>
                     </table>
                   </td>
-                  <td width="${absentCount > 0 ? '20%' : '24%'}" align="center" style="padding: 4px;">
+                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#FFFBEB" align="center" style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 12px 8px; text-align: center;">
@@ -413,7 +777,7 @@ export async function POST(req: Request) {
                       </tr>
                     </table>
                   </td>
-                  <td width="${absentCount > 0 ? '20%' : '24%'}" align="center" style="padding: 4px;">
+                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#FEF2F2" align="center" style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 8px; text-align: center;">
@@ -459,23 +823,23 @@ export async function POST(req: Request) {
             </td>
           </tr>
 
-          <!-- DATA TABLE (10 COLUMNS WITH SKY-LINE DEEP PINE THEME) -->
+          <!-- DATA TABLE -->
           <tr>
             <td style="padding: 0 32px 24px 32px;">
               <div style="overflow-x: auto; border: 1px solid #CBD5E1; border-radius: 10px;">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; min-width: 860px; font-size: 12px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; min-width: 920px; font-size: 12px;">
                   <thead>
                     <tr bgcolor="#003B3A" style="background-color: #003B3A; border-bottom: 2px solid #00A19A;">
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: center; width: 36px; text-transform: uppercase; letter-spacing: 0.5px;">STT</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: center; width: 90px; text-transform: uppercase; letter-spacing: 0.5px;">Mã HS</th>
-                      <th style="padding: 11px 12px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: left; width: 140px; text-transform: uppercase; letter-spacing: 0.5px;">Họ và Tên</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: center; width: 80px; text-transform: uppercase; letter-spacing: 0.5px;">Ngày sinh</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: center; width: 60px; text-transform: uppercase; letter-spacing: 0.5px;">Giới tính</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: center; width: 60px; text-transform: uppercase; letter-spacing: 0.5px;">Khối</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: center; width: 80px; text-transform: uppercase; letter-spacing: 0.5px;">Hệ</th>
-                      <th style="padding: 11px 10px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: left; width: 140px; text-transform: uppercase; letter-spacing: 0.5px;">Điểm khảo sát</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: center; width: 110px; text-transform: uppercase; letter-spacing: 0.5px;">Kết quả</th>
-                      <th style="padding: 11px 12px; font-size: 11px; font-weight: 800; color: #FFFFFF; text-align: left; width: 140px; text-transform: uppercase; letter-spacing: 0.5px;">Ý kiến &amp; Chỉ đạo</th>
+                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: left; width: 88px; white-space: nowrap;">Mã HS</th>
+                      <th style="padding: 11px 10px; font-size: 11px; font-weight: 700; color: #FFFFFF; text-align: left; width: 155px;">Học sinh</th>
+                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 78px; white-space: nowrap;">Ngày sinh</th>
+                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 62px; white-space: nowrap;">Giới tính</th>
+                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 64px; white-space: nowrap;">Khối</th>
+                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 72px; white-space: nowrap;">Hệ</th>
+                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 64px; white-space: nowrap;">Cơ sở</th>
+                      <th style="padding: 11px 10px; font-size: 11px; font-weight: 700; color: #FFFFFF; text-align: left; width: 165px;">Kết quả khảo sát</th>
+                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #5EEAD4; text-align: center; width: 120px;">KQ đã xét duyệt</th>
+                      <th style="padding: 11px 10px; font-size: 11px; font-weight: 700; color: #FFFFFF; text-align: right; width: 145px; white-space: nowrap;">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -483,17 +847,28 @@ export async function POST(req: Request) {
                   </tbody>
                 </table>
               </div>
+              <div style="margin-top: 8px; font-size: 11.5px; color: #0F766E; font-weight: 600;">
+                💡 <strong>Duyệt trực tiếp trên Email:</strong> Thầy/Cô Giám đốc Cơ sở có thể bấm trực tiếp vào các nút <strong>✓ Duyệt Đạt</strong>, <strong>⚠ Cam kết</strong> hoặc <strong>✕ Không đạt</strong> ở cột <em>Thao tác</em> trên từng học sinh để phê duyệt hoặc điều chỉnh kết quả ngay mà không cần đăng nhập lại.
+              </div>
             </td>
           </tr>
 
-          <!-- BULLETPROOF ACTION BUTTON (OUTLOOK COMPATIBLE) -->
+          <!-- ACTION BUTTONS -->
           <tr>
-            <td style="padding: 26px 32px 30px 32px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
+            <td style="padding: 24px 32px 28px 32px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
                 <tr>
-                  <td align="center" bgcolor="#007A87" style="background-color: #007A87; background: linear-gradient(135deg, #003B3A 0%, #007A87 100%); border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 59, 58, 0.25);">
-                    <a href="https://ssm.skylineschool.edu.vn/admin/xet-duyet-ket-qua" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-                      🔗 Truy Cập Cổng Quản Lý Để Xem Hồ Sơ &amp; Biên Bản &rarr;
+                  ${pendingCount > 0 ? `
+                  <td align="center" bgcolor="#059669" style="background-color: #059669; border-radius: 10px; padding-right: 0;">
+                    <a href="${batchQuickApproveUrl}" target="_blank" style="display: inline-block; padding: 13px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                      ✓ Duyệt Đạt toàn bộ HS chờ duyệt (${pendingCount} HS)
+                    </a>
+                  </td>
+                  <td width="12"></td>
+                  ` : ""}
+                  <td align="center" bgcolor="#003B3A" style="background-color: #003B3A; border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 59, 58, 0.2);">
+                    <a href="${baseUrl}/admin/xet-duyet-ket-qua" target="_blank" style="display: inline-block; padding: 13px 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                      🔗 Truy cập Cổng quản lý để xem hồ sơ &amp; biên bản &rarr;
                     </a>
                   </td>
                 </tr>
@@ -514,8 +889,8 @@ export async function POST(req: Request) {
                 Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 700;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 700;">skylineschool.edu.vn</a>
               </div>
               <div style="margin-top: 10px; font-size: 10px; color: rgba(255, 255, 255, 0.5); line-height: 1.5;">
-                Email này được gửi tự động từ <b>Hệ thống Quản lý Khảo sát Tuyển sinh Sky-Line (Sky-line SMS)</b> khi Giám đốc Cơ sở hoàn tất xét duyệt kết quả.<br/>
-                <b>Người nhận chính (To):</b> Ban Giám đốc Cơ sở, Bộ phận Tư vấn Tuyển sinh &bull; <b>Đồng kính gửi (CC):</b> Ban KT&amp;ĐBCL.<br/>
+                Email này được gửi tự động từ <b>Hệ thống Quản lý Khảo sát Tuyển sinh Sky-Line (Sky-line SMS)</b> khi hoàn tất xét duyệt kết quả.<br/>
+                <b>Người nhận chính (To):</b> Giám đốc Cơ sở, Tư vấn Tuyển sinh Cơ sở, Giáo vụ Cơ sở &bull; <b>Đồng kính gửi (CC):</b> Ban KT&amp;ĐBCL.<br/>
                 Vui lòng không trả lời trực tiếp email này. &copy; ${new Date().getFullYear()} Sky-Line Education System. All rights reserved.
               </div>
             </td>
@@ -529,7 +904,7 @@ export async function POST(req: Request) {
 </html>
     `;
 
-    // 6. Gửi email qua SMTP
+    // 6. Gửi email qua SMTP & cập nhật Tiến độ Điều hành Khảo sát (Stage 6 & 7)
     const recipientsTo = Array.from(toEmails);
     const recipientsCc = Array.from(ccEmails);
 
@@ -555,7 +930,7 @@ export async function POST(req: Request) {
             stageNumber: 6,
             status: "COMPLETED",
             admissionResult: conclusion,
-            note: st.directorNote || `GĐCS phê duyệt kết luận: ${conclusion}`,
+            note: cleanDirectorNoteForEmail(st.directorNote) !== "—" ? cleanDirectorNoteForEmail(st.directorNote) : `GĐCS phê duyệt kết luận: ${conclusion}`,
             actor,
           });
           await executeEntranceWorkflowAction({
@@ -567,7 +942,7 @@ export async function POST(req: Request) {
             studentIds: [stId],
             stageNumber: 7,
             status: "COMPLETED",
-            note: `Đã bàn giao kết quả xét duyệt qua email cho Tư vấn (${recipientsTo.join(", ")})`,
+            note: `Đã gửi thông báo kết quả xét duyệt qua email đến GĐCS, Tư vấn Cơ sở, Giáo vụ Cơ sở & Ban KT&ĐBCL (${recipientsTo.join(", ")})`,
             actor,
           });
         }
@@ -589,6 +964,12 @@ export async function POST(req: Request) {
       sentCcCount: recipientsCc.length,
       toRecipients: recipientsTo,
       ccRecipients: recipientsCc,
+      groups: {
+        gdcs: Array.from(gdcsEmails),
+        tuvan: Array.from(tuvanEmails),
+        giaovu: Array.from(giaovuEmails),
+        ktdbcl: Array.from(ktdbclEmails)
+      },
       error: sendResult.error
     });
 

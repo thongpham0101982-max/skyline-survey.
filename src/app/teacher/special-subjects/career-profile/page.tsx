@@ -455,16 +455,16 @@ export default function CareerDevelopmentProfilePage() {
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
-                      <thead>
-                        <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
-                          <th className="py-2 px-3">Khối</th>
-                          <th className="py-2 px-3">Bài học</th>
-                          <th className="py-2 px-3">Chủ đề</th>
-                          <th className="py-2 px-3 text-center">Kết quả</th>
-                          <th className="py-2 px-3">Nhận xét của giáo viên</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="font-semibold border-b text-[11px]">
+                          <th className="py-2 px-3 font-semibold">Khối</th>
+                          <th className="py-2 px-3 font-semibold">Bài học</th>
+                          <th className="py-2 px-3 font-semibold">Chủ đề</th>
+                          <th className="py-2 px-3 text-center font-semibold">Kết quả</th>
+                          <th className="py-2 px-3 font-semibold">Nhận xét của giáo viên</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {profileData.gdhnGrades.map((g, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/60">
                             <td className="py-2 px-3 font-bold text-slate-700">Khối {g.lesson?.grade}</td>

@@ -333,23 +333,23 @@ export default function AdminExperientialList() {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-xs">
-                <thead className="bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase">
-                  <tr className="border-b border-slate-200">
-                    <th className="py-4 px-4 w-12 text-center">#</th>
-                    <th className="py-4 px-5 min-w-[120px]">Mã HĐ</th>
-                    <th className="py-4 px-5 min-w-[260px]">Tên &amp; Mạch</th>
-                    <th className="py-4 px-4 min-w-[140px] text-center">Tổ CM</th>
-                    <th className="py-4 px-4 min-w-[90px] text-center">Cơ sở</th>
-                    <th className="py-4 px-4 min-w-[110px] text-center">Khối</th>
-                    <th className="py-4 px-5 min-w-[120px]">Ngày</th>
-                    <th className="py-4 px-5 min-w-[100px] text-center">Lớp / HS</th>
-                    <th className="py-4 px-5 min-w-[100px]">Tiêu chí</th>
-                    <th className="py-4 px-5 min-w-[160px]">Tiến độ</th>
-                    <th className="py-4 px-5 min-w-[130px]">Trạng thái</th>
-                    <th className="py-4 px-5 text-right min-w-[180px]">Thao tác</th>
+                <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-4 px-4 w-12 text-center font-semibold">#</th>
+                    <th className="py-4 px-5 min-w-[120px] font-semibold">Mã HĐ</th>
+                    <th className="py-4 px-5 min-w-[260px] font-semibold">Tên &amp; Mạch</th>
+                    <th className="py-4 px-4 min-w-[140px] text-center font-semibold">Tổ CM</th>
+                    <th className="py-4 px-4 min-w-[90px] text-center font-semibold">Cơ sở</th>
+                    <th className="py-4 px-4 min-w-[110px] text-center font-semibold">Khối</th>
+                    <th className="py-4 px-5 min-w-[120px] font-semibold">Ngày</th>
+                    <th className="py-4 px-5 min-w-[100px] text-center font-semibold">Lớp / HS</th>
+                    <th className="py-4 px-5 min-w-[100px] font-semibold">Tiêu chí</th>
+                    <th className="py-4 px-5 min-w-[160px] font-semibold">Tiến độ</th>
+                    <th className="py-4 px-5 min-w-[130px] font-semibold">Trạng thái</th>
+                    <th className="py-4 px-5 text-right min-w-[180px] font-semibold">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                   {activities.map((act, i) => {
                     const badge = getStatusBadge(act.status);
                     const totalClasses = act.totalClassesCount || 0;

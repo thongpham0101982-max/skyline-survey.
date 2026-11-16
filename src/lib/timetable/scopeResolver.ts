@@ -357,6 +357,39 @@ export function mapEducationSystemToStudyProgram(educationSystem?: string | null
   return "DEFAULT"
 }
 
+export function resolveClassStudyProgram(cls: {
+  educationSystem?: string | null
+  className?: string | null
+}): "Hệ S" | "Hệ I" {
+  const mapped = mapEducationSystemToStudyProgram(cls.educationSystem)
+  if (mapped === "Hệ I") return "Hệ I"
+  if (mapped === "Hệ S") return "Hệ S"
+
+  const upperName = String(cls.className || "").trim().toUpperCase()
+  if (/(?:INT|UK|COMPASS|HNG|SB)/i.test(upperName)) {
+    return "Hệ I"
+  }
+  return "Hệ S"
+}
+
+export function sortClassesByGradeAndSystem<
+  T extends { className: string; grade?: string | null; educationSystem?: string | null }
+>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const ga = extractGradeNumber(a.grade, a.className) ?? 999
+    const gb = extractGradeNumber(b.grade, b.className) ?? 999
+    if (ga !== gb) return ga - gb
+
+    const sa = resolveClassStudyProgram(a) === "Hệ S" ? 0 : 1
+    const sb = resolveClassStudyProgram(b) === "Hệ S" ? 0 : 1
+    if (sa !== sb) return sa - sb
+
+    return String(a.className || "").localeCompare(String(b.className || ""), "vi", {
+      numeric: true,
+    })
+  })
+}
+
 export function extractGradeNumber(gradeStr?: string | null, className?: string | null): number | null {
   const raw = String(gradeStr || "").trim()
   const directMatch = raw.match(/(\d{1,2})/)

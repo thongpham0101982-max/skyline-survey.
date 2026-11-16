@@ -206,7 +206,7 @@ export function QaAssistantPanel({
 
     setConfirming(true)
     try {
-      const res = await createQaWorkspaceTask({
+      const res: any = await createQaWorkspaceTask({
         title: draft.title,
         description: draft.description,
         category: draft.category || "Khảo thí",
@@ -214,6 +214,7 @@ export function QaAssistantPanel({
         workspaceCardKey: draft.workspaceCardKey || "KHAO_THI",
         assignmentMode: draft.assignmentMode,
         assignedToUserId: draftAssigneeId,
+        collaboratorUserIds: draft.collaboratorUserIds || [],
         reviewerUserId: draftReviewerId || null,
         startDate: draft.startDateIso.slice(0, 10),
         endDate: draftEndDate,
@@ -221,8 +222,10 @@ export function QaAssistantPanel({
         deliverables: draftDeliverables,
         completionCriteria: draft.completionCriteria,
         requiredEvidences: draft.requiredEvidences,
+        checklist: draft.checklistSteps,
         checklistSteps: draft.checklistSteps,
         requiresApproval: true,
+        sendEmailNotification: true,
         scopeGradeLevel: draft.scopeGradeLevel,
         scopeSubject: draft.scopeSubject,
         academicYearId: years[0]?.id || null,
@@ -230,7 +233,7 @@ export function QaAssistantPanel({
 
       if (res.success) {
         setConfirmSuccessMsg(
-          "Đã phát hành phiếu giao việc thành công và gửi thông báo đến người nhận!"
+          `Đã phát hành phiếu giao việc thành công và gửi ${res.emailsSentCount || 0} email thông báo đến các thành viên liên quan!`
         )
         onTaskCreated()
       } else {
@@ -264,19 +267,19 @@ export function QaAssistantPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-xs">
-      <div className="w-full max-w-2xl bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
-        {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-teal-600 via-violet-800 to-emerald-600 text-white flex items-center justify-between">
+      <div className="w-full max-w-2xl bg-white h-full shadow-2xl border-l border-[#E2E8F0] flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+        {/* Header — Sky-Line Deep Pine (#003B3A) */}
+        <div className="px-6 py-4 bg-[#003B3A] border-b border-[#00A19A]/40 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-teal-700" />
+            <div className="w-10 h-10 rounded-xl bg-white/12 flex items-center justify-center border border-white/15">
+              <Sparkles className="w-5 h-5 text-[#5EEAD4]" />
             </div>
             <div>
               <h2 className="text-base font-extrabold text-white">
-                QA Assistant — Trợ lý Điều hành KT&ĐBCL
+                QA Assistant — Trợ lý điều hành KT&ĐBCL
               </h2>
-              <p className="text-[11px] text-teal-700">
-                Giao việc ngôn ngữ tự nhiên (Asia/Ho_Chi_Minh) • Rà soát tiến độ • Tổng hợp báo cáo
+              <p className="text-[11px] text-[#CCFBF1]">
+                Giao việc ngôn ngữ tự nhiên (Asia/Ho_Chi_Minh) • Báo mail tự động • Tổng hợp báo cáo
               </p>
             </div>
           </div>
@@ -348,19 +351,19 @@ export function QaAssistantPanel({
               </div>
 
               {/* Khung nhắc nhanh sang tạo phiếu NLP */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 border border-teal-200 flex items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-[#F0FDFA] border border-[#CCFBF1] flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-extrabold text-teal-800">
+                  <div className="text-xs font-extrabold text-[#003B3A]">
                     Giao việc nhanh bằng câu lệnh tiếng Việt tự nhiên
                   </div>
-                  <p className="text-[11px] text-teal-800 mt-0.5">
-                    Tự động quy đổi thời gian tương đối (Asia/Ho_Chi_Minh), tách bước thực hiện và kiểm tra trường còn thiếu.
+                  <p className="text-[11px] text-[#00736E] mt-0.5">
+                    Tự động quy đổi thời gian tương đối (Asia/Ho_Chi_Minh), tách bước thực hiện, kiểm tra trường còn thiếu và báo email.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveTab("NLP_DRAFT")}
-                  className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-500 text-white text-xs font-bold shrink-0 cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#004D47] text-white text-xs font-bold shrink-0 cursor-pointer"
                 >
                   Soạn phiếu ngay
                 </button>

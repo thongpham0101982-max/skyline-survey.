@@ -65,6 +65,11 @@ import {
   EntranceExceptionType,
   canUserConfirmStage,
   getStageDefinition,
+  resolveEntranceStageHref,
+  isKtdbclEntranceRole,
+  isGdcsOrBghEntranceRole,
+  isGiaoVuEntranceRole,
+  isTuVanEntranceRole,
 } from "@/lib/entrance-progress/constants";
 import type {
   StudentProgressRow,
@@ -108,7 +113,11 @@ export function EntranceOperationsDashboardClient({
   const [level, setLevel] = useState<"ALL" | "K12" | "PRESCHOOL">("ALL");
   const [periodId, setPeriodId] = useState<string>("ALL");
   const [batchId, setBatchId] = useState<string>("ALL");
-  const [campusCode, setCampusCode] = useState<string>("ALL");
+  const defaultSingleCampus =
+    initialData?.filterOptions?.campuses?.length === 1
+      ? initialData.filterOptions.campuses[0].campusCode
+      : "ALL";
+  const [campusCode, setCampusCode] = useState<string>(defaultSingleCampus);
   const [educationSystem, setEducationSystem] = useState<string>("ALL");
   const [grade, setGrade] = useState<string>("ALL");
   const [stageNumberFilter, setStageNumberFilter] = useState<number>(0);
@@ -336,7 +345,11 @@ export function EntranceOperationsDashboardClient({
     setLevel("ALL");
     setPeriodId("ALL");
     setBatchId("ALL");
-    setCampusCode("ALL");
+    setCampusCode(
+      filterOptions.campuses?.length === 1
+        ? filterOptions.campuses[0].campusCode
+        : "ALL"
+    );
     setEducationSystem("ALL");
     setGrade("ALL");
     setStageNumberFilter(0);
@@ -345,6 +358,41 @@ export function EntranceOperationsDashboardClient({
     setAlertFilter("ALL");
     setSearchQuery("");
   };
+
+  const selectedPeriodObj = useMemo(
+    () => (filterOptions.periods || []).find((p: any) => p.id === periodId),
+    [filterOptions.periods, periodId]
+  );
+
+  const isPreschoolContext = useMemo(() => {
+    if (level === "PRESCHOOL") return true;
+    if (level === "K12") return false;
+    if (selectedPeriodObj) return Boolean(selectedPeriodObj.isPreschool);
+    const upperRole = String(currentUser?.role || "").toUpperCase();
+    return ["BGH_MN", "BGH MN", "BGH_MAM_NON", "GV_MN"].some((r) =>
+      upperRole.includes(r)
+    );
+  }, [level, selectedPeriodObj, currentUser?.role]);
+
+  const roleBadgeLabel = useMemo(() => {
+    if (currentUser?.isSuperAdmin) return "Quản trị hệ thống";
+    if (isKtdbclEntranceRole(currentUser?.role)) return "Ban KT&ĐBCL";
+    if (isGdcsOrBghEntranceRole(currentUser?.role)) return "Giám đốc Cơ sở / BGH";
+    if (isGiaoVuEntranceRole(currentUser?.role)) return "Giáo vụ Cơ sở";
+    if (isTuVanEntranceRole(currentUser?.role)) return "Tư vấn Tuyển sinh";
+    return currentUser?.role || "Cán bộ điều hành";
+  }, [currentUser]);
+
+  const canManageException = useMemo(
+    () =>
+      Boolean(
+        currentUser?.isSuperAdmin ||
+          isKtdbclEntranceRole(currentUser?.role) ||
+          isGdcsOrBghEntranceRole(currentUser?.role) ||
+          isGiaoVuEntranceRole(currentUser?.role)
+      ),
+    [currentUser]
+  );
 
   // ─── Mở Modal Xác nhận ───
   const openActionModal = (params: {
@@ -459,7 +507,17 @@ export function EntranceOperationsDashboardClient({
       const wsStages = XLSX.utils.json_to_sheet(stageSheetRows);
       XLSX.utils.book_append_sheet(wb, wsStages, "1_Tien_Do_8_Cong_Doan");
 
-      // Sheet 2: Tiến độ Học sinh 8 Bước
+      // Sheet 2: Tiến độ Học sinh 7 Bước & GV phụ trách
+      const formatStageCellForExcel = (st?: any) => {
+        if (!st) return "";
+        const statusLabel = ENTRANCE_STAGE_STATUS_META[st.status as EntranceStageStatus]?.label || "";
+        const assignees =
+          Array.isArray(st.assignedNames) && st.assignedNames.length > 0
+            ? st.assignedNames.join(", ")
+            : "";
+        return assignees ? `${statusLabel} (${assignees})` : statusLabel;
+      };
+
       const studentSheetRows = studentRows.map((s, idx) => ({
         STT: idx + 1,
         "Mã HS": s.studentCode,
@@ -470,13 +528,21 @@ export function EntranceOperationsDashboardClient({
         "Cơ sở": s.campusName,
         "Kỳ khảo sát": s.periodName,
         "Đợt khảo sát": s.batchName,
-        "B1. Tạo đợt": ENTRANCE_STAGE_STATUS_META[s.stages[0]?.status]?.label || "",
-        "B2. Nhập DS": ENTRANCE_STAGE_STATUS_META[s.stages[1]?.status]?.label || "",
-        "B3. Phân công GV": ENTRANCE_STAGE_STATUS_META[s.stages[2]?.status]?.label || "",
-        "B4. GV đánh giá": ENTRANCE_STAGE_STATUS_META[s.stages[3]?.status]?.label || "",
-        "B5. Định hướng": ENTRANCE_STAGE_STATUS_META[s.stages[4]?.status]?.label || "",
-        "B6. Thẩm định & Duyệt": ENTRANCE_STAGE_STATUS_META[s.stages[5]?.status]?.label || "",
-        "B7. Bàn giao Tư vấn": ENTRANCE_STAGE_STATUS_META[s.stages[6]?.status]?.label || "",
+        "B1. Tạo đợt": formatStageCellForExcel(s.stages[0]),
+        "B2. Nhập DS": formatStageCellForExcel(s.stages[1]),
+        "B3. Phân công GV": formatStageCellForExcel(s.stages[2]),
+        "B4. GV đánh giá": formatStageCellForExcel(s.stages[3]),
+        "GV khảo sát phụ trách (B4)":
+          s.stages[3]?.assignedTooltip || s.stages[3]?.assignedNames?.join(", ") || "Chưa phân công",
+        "B5. Định hướng": formatStageCellForExcel(s.stages[4]),
+        "GV định hướng phụ trách (B5)":
+          s.stages[4]?.assignedTooltip || s.stages[4]?.assignedNames?.join(", ") || "Chưa phân công",
+        "B6. Thẩm định & Duyệt": formatStageCellForExcel(s.stages[5]),
+        "Người thẩm định / duyệt (B6)":
+          s.stages[5]?.assignedNames?.join(", ") || "Chưa phân công",
+        "B7. Bàn giao Tư vấn": formatStageCellForExcel(s.stages[6]),
+        "Người bàn giao / Tư vấn (B7)":
+          s.stages[6]?.assignedNames?.join(", ") || "Chưa phân công",
         "Hoàn thành Công việc CM": s.isWorkCompleted ? "Đã hoàn thành" : "Chưa xong",
         "Hoàn thành Xét duyệt": s.isApprovalCompleted ? "Đã phê duyệt" : "Chờ duyệt",
         "Kết luận Tuyển sinh": s.admissionResult || "Chưa kết luận",
@@ -556,70 +622,78 @@ export function EntranceOperationsDashboardClient({
         </div>
       )}
 
-      {/* ─── HEADER BANNER SKY-LINE ─── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00736E] text-white p-6 sm:p-7 shadow-xl border border-teal-700/40">
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[11px] font-bold uppercase tracking-wider text-teal-200">
-              <Activity className="w-3.5 h-3.5 text-[#48BFE3]" />
-              <span>Trung tâm Điều hành Tuyển sinh & Khảo thí Sky-Line</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-              Điều hành & Tiến độ Khảo sát Đầu vào
-            </h1>
-            <p className="text-xs sm:text-sm text-teal-100/90 max-w-3xl">
-              Giám sát thời gian thực toàn trình từ Tạo đợt → Nhập danh sách → Phân công GV → Đánh giá → Định hướng → Thẩm định xét duyệt → Bàn giao kết quả, văn bản cho Tư vấn.
-            </p>
+      {/* ─── HEADER MASTHEAD: SKY-LINE ACADEMIC LEDGER ─── */}
+      <header className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] px-5 py-4 shadow-2xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="space-y-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#F0FDFA] border border-[#CCFBF1] text-[11px] font-semibold text-[#00736E]">
+              <Activity className="w-3.5 h-3.5 text-[#00A19A]" />
+              <span>Trung tâm điều hành tuyển sinh & khảo thí</span>
+            </span>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] font-semibold text-[#003B3A]">
+              Vai trò: {roleBadgeLabel}
+            </span>
+            {filterOptions.campuses?.length === 1 && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-[11px] font-semibold text-[#00736E]">
+                Phạm vi: {filterOptions.campuses[0].campusName}
+              </span>
+            )}
           </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={() => fetchDashboard()}
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-all cursor-pointer"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              <span>Làm mới dữ liệu</span>
-            </button>
-            <button
-              onClick={handleExportExcel}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00A19A] hover:bg-[#008f89] text-xs font-bold text-white shadow-lg shadow-black/15 transition-all cursor-pointer"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Xuất Báo cáo Tiến độ Excel</span>
-            </button>
-          </div>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#003B3A]">
+            Điều hành & tiến độ khảo sát đầu vào
+          </h1>
+          <p className="text-xs text-slate-500 max-w-4xl">
+            Giám sát toàn trình theo thứ tự công việc: Tạo đợt → Nhập & bàn giao danh sách → Phân công GV → GV đánh giá → Bản định hướng → Thẩm định xét duyệt → Xuất văn bản & bàn giao Tư vấn.
+          </p>
         </div>
-      </div>
+
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onClick={() => fetchDashboard()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-xs font-semibold text-[#003B3A] transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#008B85] ${loading ? "animate-spin" : ""}`} />
+            <span>Làm mới dữ liệu</span>
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005B58] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-[#5EEAD4]" />
+            <span>Xuất báo cáo tiến độ Excel</span>
+          </button>
+        </div>
+      </header>
 
       {/* ─── KHU VỰC 1: KPI TỔNG HỢP TIẾN ĐỘ (PHÂN BIỆT RÕ 3 MỐC + CẢNH BÁO HẠN) ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3.5 tabular-nums">
         {/* Card 1: Tổng quy mô */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-2xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-                Tổng Quy mô Khảo sát
+              <p className="text-xs font-semibold text-slate-500">
+                Tổng quy mô khảo sát
               </p>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl font-black text-[#003B3A]">
+                <span className="text-2xl font-bold text-[#003B3A]">
                   {kpis.totalStudents}
                 </span>
-                <span className="text-xs font-bold text-slate-500">học sinh</span>
+                <span className="text-xs font-medium text-slate-500">học sinh</span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-[#003B3A]/10 text-[#003B3A] flex items-center justify-center">
-              <Users className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[#003B3A] flex items-center justify-center">
+              <Users className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+          <div className="mt-3 pt-2.5 border-t border-[#F1F5F9] flex items-center justify-between text-xs">
             <span className="text-slate-500 font-medium">
               Thuộc <strong className="text-slate-800">{kpis.totalBatches}</strong> đợt KS
             </span>
             {kpis.exceptionCount > 0 && (
               <button
                 onClick={() => setMilestoneFilter("EXCEPTION")}
-                className="px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 font-bold text-[11px] hover:bg-teal-50 transition-colors cursor-pointer"
+                className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] font-semibold text-[11px] hover:bg-teal-50 transition-colors cursor-pointer"
               >
                 {kpis.exceptionCount} Miễn/KS lại/Ngoại lệ
               </button>
@@ -634,28 +708,28 @@ export function EntranceOperationsDashboardClient({
               milestoneFilter === "WORK_COMPLETED" ? "ALL" : "WORK_COMPLETED"
             )
           }
-          className={`bg-white rounded-2xl border p-4 shadow-xs flex flex-col justify-between cursor-pointer transition-all ${
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex flex-col justify-between cursor-pointer transition-all ${
             milestoneFilter === "WORK_COMPLETED"
-              ? "border-[#00A19A] ring-2 ring-[#00A19A]/20"
-              : "border-slate-200/90 hover:border-teal-300"
+              ? "border-[#00A19A] ring-2 ring-[#00A19A]/15"
+              : "border-[#E2E8F0] hover:border-[#00A19A]"
           }`}
         >
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#00736E]">
-                1. Hoàn thành Công việc CM
+              <p className="text-xs font-semibold text-[#00736E]">
+                1. Hoàn thành chuyên môn (B1–B5)
               </p>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl font-black text-[#00736E]">
+                <span className="text-2xl font-bold text-[#003B3A]">
                   {kpis.workCompletedCount}/{kpis.totalStudents}
                 </span>
-                <span className="text-xs font-extrabold text-teal-600">
+                <span className="text-xs font-semibold text-[#008B85]">
                   ({kpis.workCompletedPct}%)
                 </span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#00A19A] flex items-center justify-center">
-              <ClipboardCheck className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] text-[#008B85] flex items-center justify-center">
+              <ClipboardCheck className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
@@ -665,8 +739,8 @@ export function EntranceOperationsDashboardClient({
                 style={{ width: `${kpis.workCompletedPct}%` }}
               />
             </div>
-            <p className="mt-1.5 text-[11px] text-slate-500 font-medium">
-              Đủ kết quả đánh giá (B4) & Bản định hướng (B5)
+            <p className="mt-1.5 text-[11px] text-slate-500">
+              Đủ kết quả đánh giá (B4) & bản định hướng (B5)
             </p>
           </div>
         </div>
@@ -680,35 +754,35 @@ export function EntranceOperationsDashboardClient({
                 : "APPROVAL_COMPLETED"
             )
           }
-          className={`bg-white rounded-2xl border p-4 shadow-xs flex flex-col justify-between cursor-pointer transition-all ${
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex flex-col justify-between cursor-pointer transition-all ${
             milestoneFilter === "APPROVAL_COMPLETED"
-              ? "border-emerald-500 ring-2 ring-emerald-500/20"
-              : "border-slate-200/90 hover:border-emerald-300"
+              ? "border-[#059669] ring-2 ring-emerald-500/15"
+              : "border-[#E2E8F0] hover:border-emerald-300"
           }`}
         >
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700">
-                2. Hoàn thành Xét duyệt
+              <p className="text-xs font-semibold text-[#059669]">
+                2. Hoàn thành xét duyệt (B6)
               </p>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl font-black text-emerald-700">
+                <span className="text-2xl font-bold text-[#059669]">
                   {kpis.approvalCompletedCount}/{kpis.totalStudents}
                 </span>
-                <span className="text-xs font-extrabold text-emerald-600">
+                <span className="text-xs font-semibold text-emerald-600">
                   ({kpis.approvalCompletedPct}%)
                 </span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Award className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 text-[#059669] flex items-center justify-center">
+              <Award className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="text-emerald-700 font-bold">
+          <div className="mt-3 pt-2 border-t border-[#F1F5F9] flex items-center justify-between text-[11px]">
+            <span className="text-[#059669] font-semibold">
               Đạt/Đủ ĐK thư: {kpis.approvedPassCount} HS
             </span>
-            <span className="text-amber-600 font-bold">
+            <span className="text-[#D97706] font-semibold">
               Chờ duyệt: {kpis.pendingApprovalCount} HS
             </span>
           </div>
@@ -723,65 +797,65 @@ export function EntranceOperationsDashboardClient({
                 : "NOTIFICATION_SENT"
             )
           }
-          className={`bg-white rounded-2xl border p-4 shadow-xs flex flex-col justify-between cursor-pointer transition-all ${
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex flex-col justify-between cursor-pointer transition-all ${
             milestoneFilter === "NOTIFICATION_SENT"
-              ? "border-sky-500 ring-2 ring-sky-500/20"
-              : "border-slate-200/90 hover:border-sky-300"
+              ? "border-[#008B85] ring-2 ring-[#00A19A]/15"
+              : "border-[#E2E8F0] hover:border-teal-300"
           }`}
         >
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-sky-700">
-                3. Hoàn thành Bàn giao Tư vấn
+              <p className="text-xs font-semibold text-[#00736E]">
+                3. Đã xuất văn bản & bàn giao (B7)
               </p>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl font-black text-sky-700">
+                <span className="text-2xl font-bold text-[#003B3A]">
                   {kpis.handoverCompletedCount}/{kpis.totalStudents}
                 </span>
-                <span className="text-xs font-extrabold text-sky-600">
-                  ({kpis.totalStudents > 0 ? Math.round((kpis.handoverCompletedCount / kpis.totalStudents) * 100) : 0}% đã bàn giao)
+                <span className="text-xs font-semibold text-[#008B85]">
+                  ({kpis.totalStudents > 0 ? Math.round((kpis.handoverCompletedCount / kpis.totalStudents) * 100) : 0}%)
                 </span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
-              <Send className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] text-[#008B85] flex items-center justify-center">
+              <Send className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-            <span className="text-slate-600 font-semibold">
+          <div className="mt-3 pt-2 border-t border-[#F1F5F9] flex items-center justify-between text-[11px]">
+            <span className="text-slate-500">
               Đã bàn giao hồ sơ & văn bản cho Tư vấn
             </span>
           </div>
         </div>
 
         {/* Card 5: Cảnh báo Gần hạn / Quá hạn / Cần điều chỉnh */}
-        <div className="bg-white rounded-2xl border border-rose-200/80 p-4 shadow-xs flex flex-col justify-between">
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-2xs flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-rose-600">
-                Cảnh báo Hạn & Tồn đọng
+              <p className="text-xs font-semibold text-[#E11D48]">
+                Cảnh báo hạn & tồn đọng
               </p>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl font-black text-rose-600">
+                <span className="text-2xl font-bold text-[#E11D48]">
                   {kpis.overdueCount + kpis.dueSoonCount}
                 </span>
-                <span className="text-xs font-bold text-slate-500">
+                <span className="text-xs font-medium text-slate-500">
                   cảnh báo hạn
                 </span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 text-[#E11D48] flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <div className="mt-3 pt-2 border-t border-[#F1F5F9] flex flex-wrap items-center gap-1.5 text-[11px]">
             <button
               onClick={() =>
                 setAlertFilter(alertFilter === "OVERDUE" ? "ALL" : "OVERDUE")
               }
-              className={`px-2 py-0.5 rounded-full font-bold cursor-pointer border ${
+              className={`px-2 py-0.5 rounded-md font-semibold cursor-pointer border ${
                 alertFilter === "OVERDUE"
-                  ? "bg-rose-600 text-white border-rose-600"
+                  ? "bg-[#E11D48] text-white border-[#E11D48]"
                   : "bg-rose-50 text-rose-700 border-rose-200"
               }`}
             >
@@ -791,9 +865,9 @@ export function EntranceOperationsDashboardClient({
               onClick={() =>
                 setAlertFilter(alertFilter === "DUE_SOON" ? "ALL" : "DUE_SOON")
               }
-              className={`px-2 py-0.5 rounded-full font-bold cursor-pointer border ${
+              className={`px-2 py-0.5 rounded-md font-semibold cursor-pointer border ${
                 alertFilter === "DUE_SOON"
-                  ? "bg-amber-500 text-white border-amber-500"
+                  ? "bg-[#D97706] text-white border-[#D97706]"
                   : "bg-amber-50 text-amber-700 border-amber-200"
               }`}
             >
@@ -807,9 +881,9 @@ export function EntranceOperationsDashboardClient({
                     : "NEEDS_ADJUSTMENT"
                 )
               }
-              className={`px-2 py-0.5 rounded-full font-bold cursor-pointer border ${
+              className={`px-2 py-0.5 rounded-md font-semibold cursor-pointer border ${
                 stageStatusFilter === "NEEDS_ADJUSTMENT"
-                  ? "bg-amber-500 text-white border-amber-200"
+                  ? "bg-[#D97706] text-white border-[#D97706]"
                   : "bg-amber-50 text-amber-800 border-amber-200"
               }`}
             >
@@ -820,29 +894,29 @@ export function EntranceOperationsDashboardClient({
       </div>
 
       {/* ─── KHU VỰC 2: THANH PIPELINE LIÊN THÔNG 7 CÔNG ĐOẠN & BIỂU ĐỒ TIẾN ĐỘ ─── */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-5">
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm sm:text-base font-black text-[#003B3A] flex items-center gap-2">
+            <h2 className="text-sm sm:text-base font-bold text-[#003B3A] flex items-center gap-2">
               <Layers className="w-4 h-4 text-[#00A19A]" />
-              <span>Chuỗi 7 Công đoạn Khảo sát Đầu vào & Liên kết Xử lý Trực tiếp</span>
+              <span>Chuỗi 7 công đoạn khảo sát đầu vào & liên kết xử lý trực tiếp</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Bấm vào từng công đoạn để lọc hồ sơ hoặc bấm biểu tượng mũi tên để chuyển thẳng tới màn hình nghiệp vụ tương ứng.
+              Bấm vào từng công đoạn để lọc hồ sơ hoặc bấm biểu tượng mở liên kết để đi thẳng tới đúng tab nghiệp vụ (giữ nguyên bộ lọc Đợt • Cơ sở • Khối đang chọn).
             </p>
           </div>
           <div className="flex items-center gap-2">
             {stageNumberFilter > 0 && (
               <button
                 onClick={() => setStageNumberFilter(0)}
-                className="px-3 py-1.5 rounded-xl bg-teal-50 text-[#00736E] border border-teal-200 text-xs font-bold hover:bg-teal-100 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-xs font-semibold hover:bg-teal-100 cursor-pointer"
               >
-                Bỏ lọc Công đoạn {stageNumberFilter} ✕
+                Bỏ lọc công đoạn {stageNumberFilter} ✕
               </button>
             )}
             <button
               onClick={() => setShowChart((v) => !v)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] text-xs font-semibold text-slate-600 hover:bg-[#F8FAFC] cursor-pointer"
             >
               <BarChart3 className="w-3.5 h-3.5 text-[#00A19A]" />
               <span>{showChart ? "Thu gọn biểu đồ" : "Mở biểu đồ tiến độ"}</span>
@@ -856,18 +930,28 @@ export function EntranceOperationsDashboardClient({
         </div>
 
         {/* 7-Stage Interactive Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2.5 tabular-nums">
           {stageChartData.map((stg: any) => {
             const isSelected = stageNumberFilter === stg.stageNumber;
-            const targetHref =
-              level === "PRESCHOOL"
-                ? stg.defaultHrefPreschool
-                : stg.defaultHrefK12;
+            const targetHref = resolveEntranceStageHref({
+              stageNumber: Number(stg.stageNumber),
+              isPreschool: isPreschoolContext,
+              userRole: currentUser?.role,
+              isSuperAdmin: currentUser?.isSuperAdmin,
+              periodId,
+              batchId,
+              campusCode,
+              grade,
+            });
             const canConfirm = canUserConfirmStage(
               currentUser?.role,
               stg.stageNumber,
               currentUser?.isSuperAdmin
             );
+            const isReadOnlyStageForViewer =
+              !canConfirm &&
+              ((stg.stageNumber === 6 && isGiaoVuEntranceRole(currentUser?.role)) ||
+                isTuVanEntranceRole(currentUser?.role));
 
             return (
               <div
@@ -879,21 +963,21 @@ export function EntranceOperationsDashboardClient({
                 }
                 className={`group relative rounded-2xl border p-3 transition-all cursor-pointer flex flex-col justify-between ${
                   isSelected
-                    ? "bg-[#003B3A] text-white border-[#003B3A] shadow-md scale-[1.01]"
-                    : "bg-slate-50/70 hover:bg-white border-slate-200/90 hover:border-[#00A19A] hover:shadow-xs"
+                    ? "bg-[#003B3A] text-white border-[#003B3A] shadow-sm"
+                    : "bg-[#F8FAFC] hover:bg-white border-[#E2E8F0] hover:border-[#00A19A] hover:shadow-2xs"
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-1 mb-1.5">
                     <span
-                      className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                      className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
                         isSelected
                           ? "bg-[#00A19A] text-white"
                           : stg.milestoneGroup === "WORK"
-                          ? "bg-teal-100/80 text-[#00736E]"
+                          ? "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]"
                           : stg.milestoneGroup === "APPROVAL"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-sky-100 text-sky-800"
+                          ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          : "bg-sky-50 text-sky-800 border border-sky-200"
                       }`}
                     >
                       Bước {stg.stageNumber}
@@ -901,37 +985,38 @@ export function EntranceOperationsDashboardClient({
                     <Link
                       href={targetHref}
                       onClick={(e) => e.stopPropagation()}
-                      title={`Mở màn hình: ${stg.name}`}
-                      className={`p-1 rounded-lg transition-colors ${
+                      title={`Đi tới màn hình xử lý Bước ${stg.stageNumber}: ${stg.name}`}
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[10.5px] font-semibold transition-colors ${
                         isSelected
-                          ? "text-teal-200 hover:bg-white/15 hover:text-white"
-                          : "text-slate-400 hover:bg-teal-50 hover:text-[#00736E]"
+                          ? "bg-white/10 text-teal-100 hover:bg-white/20 hover:text-white"
+                          : "bg-white border border-[#E2E8F0] text-[#00736E] hover:bg-[#F0FDFA] hover:border-[#00A19A]"
                       }`}
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Mở</span>
+                      <ExternalLink className="w-3 h-3" />
                     </Link>
                   </div>
 
                   <p
-                    className={`text-xs font-extrabold leading-snug line-clamp-2 ${
-                      isSelected ? "text-white" : "text-slate-800"
+                    className={`text-xs font-bold leading-snug line-clamp-2 ${
+                      isSelected ? "text-white" : "text-[#003B3A]"
                     }`}
                   >
                     {stg.name}
                   </p>
                   <p
-                    className={`text-[10px] mt-1 font-semibold truncate ${
-                      isSelected ? "text-teal-200" : "text-slate-500"
+                    className={`text-[11px] mt-1 font-medium truncate ${
+                      isSelected ? "text-teal-100" : "text-slate-500"
                     }`}
                     title={stg.responsibleLabel}
                   >
-                    👤 {stg.responsibleLabel}
+                    {stg.responsibleLabel}
                   </p>
                 </div>
 
-                <div className="mt-3 pt-2 border-t border-slate-200/50 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] font-black">
-                    <span className={isSelected ? "text-teal-200" : "text-[#00736E]"}>
+                <div className="mt-3 pt-2 border-t border-slate-200/60 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-bold">
+                    <span className={isSelected ? "text-[#5EEAD4]" : "text-[#00736E]"}>
                       {stg.completionPct}% hoàn thành
                     </span>
                     <span className={isSelected ? "text-white" : "text-slate-700"}>
@@ -944,10 +1029,10 @@ export function EntranceOperationsDashboardClient({
                       style={{ width: `${stg.completionPct}%` }}
                     />
                   </div>
-                  <div className="flex items-center justify-between text-[10px] font-bold pt-0.5">
+                  <div className="flex items-center justify-between text-[10.5px] font-semibold pt-0.5">
                     <span
                       className={
-                        isSelected ? "text-amber-300" : "text-teal-700"
+                        isSelected ? "text-amber-300" : "text-[#00736E]"
                       }
                     >
                       Đang làm: {stg.inProgress}
@@ -955,7 +1040,7 @@ export function EntranceOperationsDashboardClient({
                     {stg.needsAdjustment > 0 ? (
                       <span
                         className={
-                          isSelected ? "text-rose-300" : "text-rose-600"
+                          isSelected ? "text-rose-300" : "text-[#E11D48]"
                         }
                       >
                         Cần ĐC: {stg.needsAdjustment}
@@ -970,15 +1055,23 @@ export function EntranceOperationsDashboardClient({
                       </span>
                     )}
                   </div>
-                  {canConfirm && (
+                  {canConfirm ? (
                     <div
-                      className={`text-[9.5px] font-bold truncate pt-0.5 ${
-                        isSelected ? "text-emerald-300" : "text-emerald-700"
+                      className={`text-[10px] font-semibold truncate pt-0.5 ${
+                        isSelected ? "text-[#5EEAD4]" : "text-[#059669]"
                       }`}
                     >
                       ✓ Quyền: {stg.confirmButtonLabel}
                     </div>
-                  )}
+                  ) : isReadOnlyStageForViewer ? (
+                    <div
+                      className={`text-[10px] font-medium truncate pt-0.5 ${
+                        isSelected ? "text-teal-200" : "text-slate-500"
+                      }`}
+                    >
+                      Tra cứu tiến độ (Chỉ xem)
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );
@@ -1071,15 +1164,15 @@ export function EntranceOperationsDashboardClient({
       </div>
 
       {/* ─── KHU VỰC 3: BỘ LỌC ĐIỀU HÀNH ĐA CHIỀU ─── */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs space-y-3">
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-2xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#003B3A]">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#003B3A]">
             <Filter className="w-4 h-4 text-[#00A19A]" />
-            <span>Bộ lọc Điều hành (Đợt • Cơ sở • Hệ • Khối • Trạng thái)</span>
+            <span>Bộ lọc điều hành (Đợt • Cơ sở • Hệ • Khối • Trạng thái)</span>
           </div>
           <button
             onClick={resetFilters}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#00736E] cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#00736E] cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Đặt lại bộ lọc</span>
@@ -1089,13 +1182,13 @@ export function EntranceOperationsDashboardClient({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2.5">
           {/* Năm học */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
               Năm học
             </label>
             <select
               value={academicYearId}
               onChange={(e) => setAcademicYearId(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
             >
               {(filterOptions.academicYears || []).map((ay: any) => (
                 <option key={ay.id} value={ay.id}>
@@ -1107,7 +1200,7 @@ export function EntranceOperationsDashboardClient({
 
           {/* Cấp học */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
               Bậc học
             </label>
             <select
@@ -1115,7 +1208,7 @@ export function EntranceOperationsDashboardClient({
               onChange={(e) =>
                 setLevel(e.target.value as "ALL" | "K12" | "PRESCHOOL")
               }
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
             >
               <option value="ALL">Tất cả (K-12 & Mầm non)</option>
               <option value="K12">Phổ thông (K-12)</option>
@@ -1125,7 +1218,7 @@ export function EntranceOperationsDashboardClient({
 
           {/* Kỳ khảo sát */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
               Kỳ khảo sát
             </label>
             <select
@@ -1134,7 +1227,7 @@ export function EntranceOperationsDashboardClient({
                 setPeriodId(e.target.value);
                 setBatchId("ALL");
               }}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
             >
               <option value="ALL">Tất cả kỳ khảo sát</option>
               {(filterOptions.periods || []).map((p: any) => (
@@ -1148,13 +1241,13 @@ export function EntranceOperationsDashboardClient({
 
           {/* Đợt khảo sát */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
               Đợt khảo sát
             </label>
             <select
               value={batchId}
               onChange={(e) => setBatchId(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
             >
               <option value="ALL">Tất cả các đợt</option>
               {availableBatches.map((b: any) => (
@@ -1167,15 +1260,17 @@ export function EntranceOperationsDashboardClient({
 
           {/* Cơ sở */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
               Cơ sở
             </label>
             <select
               value={campusCode}
               onChange={(e) => setCampusCode(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
             >
-              <option value="ALL">Tất cả cơ sở</option>
+              {filterOptions.campuses?.length !== 1 && (
+                <option value="ALL">Tất cả cơ sở</option>
+              )}
               {(filterOptions.campuses || []).map((c: any) => (
                 <option key={c.id} value={c.campusCode}>
                   {c.campusName} ({c.campusCode})
@@ -1186,13 +1281,13 @@ export function EntranceOperationsDashboardClient({
 
           {/* Hệ đào tạo */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
               Hệ đào tạo
             </label>
             <select
               value={educationSystem}
               onChange={(e) => setEducationSystem(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
             >
               <option value="ALL">Tất cả hệ</option>
               {(filterOptions.educationSystems || []).map((sys: string) => (
@@ -1205,13 +1300,13 @@ export function EntranceOperationsDashboardClient({
 
           {/* Khối lớp */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
-              Khối / Nhóm lớp
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+              Khối / nhóm lớp
             </label>
             <select
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
             >
               <option value="ALL">Tất cả khối</option>
               {(filterOptions.grades || []).map((g: string) => (
@@ -1226,13 +1321,13 @@ export function EntranceOperationsDashboardClient({
 
           {/* Trạng thái bước */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
               Trạng thái bước
             </label>
             <select
               value={stageStatusFilter}
               onChange={(e) => setStageStatusFilter(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="NOT_STARTED">Chưa bắt đầu</option>
@@ -1493,11 +1588,11 @@ export function EntranceOperationsDashboardClient({
               </div>
             )}
 
-            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#003B3A] text-white text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-3 text-center w-10">
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-center w-10 text-white">
                       <input
                         type="checkbox"
                         checked={
@@ -1524,29 +1619,29 @@ export function EntranceOperationsDashboardClient({
                         className="rounded border-white/30 cursor-pointer"
                       />
                     </th>
-                    <th className="p-3 min-w-[200px]">Học sinh & Đợt KS</th>
-                    <th className="p-3 min-w-[120px]">Cơ sở • Khối/Hệ</th>
+                    <th className="py-3 px-3 min-w-[200px] text-white">Học sinh & đợt KS</th>
+                    <th className="py-3 px-3 min-w-[120px] text-teal-100">Cơ sở • Khối/Hệ</th>
                     {ENTRANCE_WORKFLOW_STAGES.map((stg) => (
                       <th
                         key={stg.stageNumber}
-                        className="p-2 text-center min-w-[92px] border-l border-white/10"
+                        className="py-2.5 px-2 text-center min-w-[116px] border-l border-white/10 text-teal-100"
                         title={`${stg.name} (${stg.responsibleLabel})`}
                       >
-                        <div>B{stg.stageNumber}</div>
-                        <div className="text-[9.5px] font-semibold text-teal-200 normal-case truncate max-w-[88px] mx-auto">
+                        <div className="text-white">Bước {stg.stageNumber}</div>
+                        <div className="text-[10px] font-medium text-teal-100 truncate max-w-[108px] mx-auto">
                           {stg.shortName.replace(/^\d+\.\s*/, "")}
                         </div>
                       </th>
                     ))}
-                    <th className="p-3 min-w-[175px] border-l border-white/10">
-                      3 Mốc & TT Thông báo
+                    <th className="py-3 px-3 min-w-[175px] border-l border-white/10 text-[#5EEAD4]">
+                      Kết quả 3 mốc
                     </th>
-                    <th className="p-3 text-center min-w-[110px]">
-                      Hạn & Thao tác
+                    <th className="py-3 px-3 text-center min-w-[110px] text-white">
+                      Thao tác
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-xs">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                   {paginatedStudents.length === 0 ? (
                     <tr>
                       <td
@@ -1567,7 +1662,11 @@ export function EntranceOperationsDashboardClient({
                       return (
                         <tr
                           key={stu.id}
-                          className="hover:bg-teal-50/30 transition-colors"
+                          className={`transition-colors align-middle ${
+                            selectedStudentIds.includes(stu.id)
+                              ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]"
+                              : "hover:bg-[#F8FAFC]"
+                          }`}
                         >
                           <td className="p-3 text-center">
                             <input
@@ -1635,7 +1734,7 @@ export function EntranceOperationsDashboardClient({
                             </div>
                           </td>
 
-                          {/* 8 Ô Công đoạn */}
+                          {/* 7 Ô Công đoạn (Hiển thị Trạng thái + Họ tên GV / Người phụ trách theo phân công) */}
                           {stu.stages.map((stItem) => {
                             const meta =
                               ENTRANCE_STAGE_STATUS_META[stItem.status];
@@ -1645,10 +1744,53 @@ export function EntranceOperationsDashboardClient({
                               currentUser.isSuperAdmin
                             );
 
+                            const subMetricText =
+                              stItem.stageNumber === 3 &&
+                              stItem.status !== "NOT_APPLICABLE" &&
+                              stu.assignedTeachersCount > 0
+                                ? `${stu.assignedTeachersCount} GV • ${stu.assignedSubjectsCount} môn`
+                                : stItem.stageNumber === 4 &&
+                                  stItem.status !== "NOT_APPLICABLE"
+                                ? `${stu.evaluatedSubjectsCount}/${Math.max(
+                                    1,
+                                    stu.assignedSubjectsCount
+                                  )} môn`
+                                : stItem.stageNumber === 6 &&
+                                  stu.admissionResult
+                                ? stu.admissionResult
+                                : stItem.stageNumber === 7 &&
+                                  stItem.status === "COMPLETED"
+                                ? stItem.confirmedAt
+                                  ? new Date(
+                                      stItem.confirmedAt
+                                    ).toLocaleDateString("vi-VN")
+                                  : "Đã bàn giao"
+                                : "";
+
+                            const assignedFullListText =
+                              stItem.assignedTooltip ||
+                              (stItem.assignedNames &&
+                              stItem.assignedNames.length > 0
+                                ? stItem.assignedNames.join(", ")
+                                : null);
+
+                            const tooltipLines = [
+                              `${stItem.name}: ${meta.label}`,
+                              stItem.detailText,
+                              `Phụ trách theo phân công: ${
+                                assignedFullListText || "Chưa phân công"
+                              }`,
+                              stItem.confirmedByName
+                                ? `Xác nhận bởi: ${stItem.confirmedByName}`
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join("\n");
+
                             return (
                               <td
                                 key={stItem.stageNumber}
-                                className="p-2 text-center border-l border-slate-100 align-middle"
+                                className="py-2.5 px-2 text-center border-l border-[#F1F5F9] align-middle"
                               >
                                 <button
                                   type="button"
@@ -1676,33 +1818,29 @@ export function EntranceOperationsDashboardClient({
                                       setDetailStudent(stu);
                                     }
                                   }}
-                                  title={`${stItem.name}: ${meta.label}\n${stItem.detailText}${
-                                    stItem.confirmedByName
-                                      ? `\nXác nhận bởi: ${stItem.confirmedByName}`
-                                      : ""
-                                  }`}
-                                  className={`w-full px-1.5 py-1.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${meta.badgeClass} hover:brightness-95`}
+                                  title={tooltipLines}
+                                  className={`w-full px-2 py-1.5 rounded-xl border text-[10px] font-semibold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${meta.badgeClass} hover:brightness-95`}
                                 >
-                                  <span className="flex items-center gap-1">
+                                  <span className="flex items-center gap-1 whitespace-nowrap">
                                     <span
-                                      className={`w-1.5 h-1.5 rounded-full ${meta.dotClass}`}
+                                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dotClass}`}
                                     />
                                     <span>{meta.shortLabel}</span>
                                   </span>
-                                  <span className="text-[9px] font-medium opacity-80 truncate max-w-[78px]">
-                                    {stItem.stageNumber === 4
-                                      ? `${stu.evaluatedSubjectsCount}/${Math.max(
-                                          1,
-                                          stu.assignedSubjectsCount
-                                        )} môn`
-                                      : stItem.stageNumber === 6 &&
-                                        stu.admissionResult
-                                      ? stu.admissionResult
-                                      : stItem.stageNumber === 8 &&
-                                        stu.isParentRead
-                                      ? "PH đã đọc"
-                                      : ""}
-                                  </span>
+                                  {subMetricText && (
+                                    <span className="text-[9.5px] font-medium opacity-85 truncate max-w-[104px] leading-tight">
+                                      {subMetricText}
+                                    </span>
+                                  )}
+                                  {stItem.assignedSummary ? (
+                                    <span className="w-full pt-0.5 mt-0.5 border-t border-slate-300/45 text-[10px] font-semibold text-[#003B3A] truncate max-w-[106px] leading-tight">
+                                      {stItem.assignedSummary}
+                                    </span>
+                                  ) : stItem.status !== "NOT_APPLICABLE" ? (
+                                    <span className="w-full pt-0.5 mt-0.5 border-t border-slate-200/70 text-[9.5px] font-normal text-slate-400 truncate max-w-[106px] leading-tight">
+                                      Chưa phân công
+                                    </span>
+                                  ) : null}
                                 </button>
                               </td>
                             );
@@ -1735,6 +1873,11 @@ export function EntranceOperationsDashboardClient({
                             </div>
                             <div className="flex items-center gap-1 flex-wrap">
                               <span
+                                title={
+                                  stu.stages[6]?.note ||
+                                  stu.stages[6]?.detailText ||
+                                  ""
+                                }
                                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                                   stu.stages[6]?.status === "COMPLETED"
                                     ? "bg-sky-50 text-sky-700 border-sky-200"
@@ -1746,6 +1889,26 @@ export function EntranceOperationsDashboardClient({
                                   : "Chưa bàn giao Tư vấn"}
                               </span>
                             </div>
+                            {stu.stages[6]?.status === "COMPLETED" &&
+                              (stu.stages[6]?.confirmedByName ||
+                                stu.stages[6]?.confirmedAt) && (
+                                <div
+                                  className="text-[9.5px] font-medium text-slate-500 truncate max-w-[185px]"
+                                  title={stu.stages[6]?.note || ""}
+                                >
+                                  {stu.stages[6]?.confirmedByName || "KT&ĐBCL"}{" "}
+                                  {stu.stages[6]?.confirmedAt
+                                    ? `• ${new Date(
+                                        stu.stages[6].confirmedAt
+                                      ).toLocaleString("vi-VN", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}`
+                                    : ""}
+                                </div>
+                              )}
                           </td>
 
                           {/* Hạn & Thao tác */}
@@ -1787,7 +1950,7 @@ export function EntranceOperationsDashboardClient({
 
             {/* Phân trang */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-2 text-xs font-bold text-slate-600">
+              <div className="flex items-center justify-between pt-2 text-xs font-semibold text-slate-600 tabular-nums">
                 <span>
                   Hiển thị {(currentPage - 1) * pageSize + 1}–
                   {Math.min(currentPage * pageSize, studentRows.length)} /{" "}
@@ -1822,20 +1985,20 @@ export function EntranceOperationsDashboardClient({
         {/* ─── TAB 2: TIẾN ĐỘ CẤP ĐỘ ĐỢT KHẢO SÁT ─── */}
         {activeTab === "batches" && (
           <div className="p-4">
-            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#003B3A] text-white text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-3">Kỳ & Đợt khảo sát</th>
-                    <th className="p-3">Cơ sở & Phụ trách</th>
-                    <th className="p-3 text-center">Thời hạn & Cảnh báo</th>
-                    <th className="p-3 text-center">Quy mô HS</th>
-                    <th className="p-3">Tiến độ 8 Công đoạn</th>
-                    <th className="p-3 text-center">3 Mốc Hoàn thành</th>
-                    <th className="p-3 text-center">Xác nhận Điều hành</th>
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-white">Kỳ & đợt khảo sát</th>
+                    <th className="py-3 px-3 text-teal-100">Cơ sở & phụ trách</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Thời hạn & cảnh báo</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Quy mô HS</th>
+                    <th className="py-3 px-3 text-teal-100">Tiến độ 7 công đoạn</th>
+                    <th className="py-3 px-3 text-center text-[#5EEAD4]">Kết quả 3 mốc</th>
+                    <th className="py-3 px-3 text-center text-white">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-xs">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                   {batchRows.length === 0 ? (
                     <tr>
                       <td
@@ -1918,7 +2081,11 @@ export function EntranceOperationsDashboardClient({
                                 return (
                                   <span
                                     key={s.stageNumber}
-                                    title={`${s.shortName}: ${m.label} (${s.completionPct}%)`}
+                                    title={`${s.shortName}: ${m.label} (${s.completionPct}%)${
+                                      s.confirmedByName
+                                        ? ` • Phụ trách: ${s.confirmedByName}`
+                                        : ""
+                                    }`}
                                     className={`px-2 py-1 rounded-lg border text-[10px] font-bold ${m.badgeClass}`}
                                   >
                                     B{s.stageNumber}: {s.completionPct}%
@@ -1966,26 +2133,48 @@ export function EntranceOperationsDashboardClient({
                                   : "Xác nhận Phân công (B3)"}
                               </button>
                             )}
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1 flex-wrap">
                               <Link
-                                href={
-                                  b.isPreschool
-                                    ? `/admin/phan-cong-khao-sat?tab=preschool&periodId=${b.periodId}&batchId=${b.id}`
-                                    : `/admin/phan-cong-khao-sat?tab=k12&periodId=${b.periodId}&batchId=${b.id}`
-                                }
-                                className="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold"
+                                href={resolveEntranceStageHref({
+                                  stageNumber: 3,
+                                  isPreschool: b.isPreschool,
+                                  userRole: currentUser.role,
+                                  isSuperAdmin: currentUser.isSuperAdmin,
+                                  periodId: b.periodId,
+                                  batchId: b.id,
+                                  campusCode: b.campusCode,
+                                })}
+                                className="px-2 py-1 rounded-lg border border-[#E2E8F0] text-slate-600 hover:bg-[#F8FAFC] hover:text-[#003B3A] text-[10.5px] font-semibold"
                               >
                                 Phân công
                               </Link>
                               <Link
-                                href={
-                                  b.isPreschool
-                                    ? `/admin/xet-duyet-ket-qua?tab=preschool&periodId=${b.periodId}&batchId=${b.id}`
-                                    : `/admin/xet-duyet-ket-qua?tab=k12&periodId=${b.periodId}&batchId=${b.id}`
-                                }
-                                className="px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] font-bold"
+                                href={resolveEntranceStageHref({
+                                  stageNumber: 6,
+                                  isPreschool: b.isPreschool,
+                                  userRole: currentUser.role,
+                                  isSuperAdmin: currentUser.isSuperAdmin,
+                                  periodId: b.periodId,
+                                  batchId: b.id,
+                                  campusCode: b.campusCode,
+                                })}
+                                className="px-2 py-1 rounded-lg border border-[#E2E8F0] text-slate-600 hover:bg-[#F8FAFC] hover:text-[#003B3A] text-[10.5px] font-semibold"
                               >
                                 Xét duyệt
+                              </Link>
+                              <Link
+                                href={resolveEntranceStageHref({
+                                  stageNumber: 7,
+                                  isPreschool: b.isPreschool,
+                                  userRole: currentUser.role,
+                                  isSuperAdmin: currentUser.isSuperAdmin,
+                                  periodId: b.periodId,
+                                  batchId: b.id,
+                                  campusCode: b.campusCode,
+                                })}
+                                className="px-2 py-1 rounded-lg border border-[#E2E8F0] text-[#00736E] hover:bg-[#F0FDFA] text-[10.5px] font-semibold"
+                              >
+                                Văn bản
                               </Link>
                             </div>
                           </td>
@@ -2002,22 +2191,22 @@ export function EntranceOperationsDashboardClient({
         {/* ─── TAB 3: BẢNG NHIỆM VỤ THEO GIÁO VIÊN / NGƯỜI PHỤ TRÁCH ─── */}
         {activeTab === "assignees" && (
           <div className="p-4">
-            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#003B3A] text-white text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-3">Người phụ trách & Vai trò</th>
-                    <th className="p-3">Công đoạn & Phạm vi</th>
-                    <th className="p-3">Kỳ / Đợt khảo sát</th>
-                    <th className="p-3 text-center">Tổng HS</th>
-                    <th className="p-3 text-center">Hoàn thành</th>
-                    <th className="p-3 text-center">Đang làm / Chưa BĐ</th>
-                    <th className="p-3 text-center">Cần điều chỉnh</th>
-                    <th className="p-3 text-center">Tiến độ & Hạn</th>
-                    <th className="p-3 text-center">Thao tác</th>
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-white">Người phụ trách & vai trò</th>
+                    <th className="py-3 px-3 text-teal-100">Công đoạn & phạm vi</th>
+                    <th className="py-3 px-3 text-teal-100">Kỳ / đợt khảo sát</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Tổng HS</th>
+                    <th className="py-3 px-3 text-center text-[#5EEAD4]">Hoàn thành</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Đang làm / chưa BĐ</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Cần điều chỉnh</th>
+                    <th className="py-3 px-3 text-center text-[#5EEAD4]">Tiến độ & hạn</th>
+                    <th className="py-3 px-3 text-center text-white">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-xs">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                   {assigneeRows.length === 0 ? (
                     <tr>
                       <td
@@ -2114,20 +2303,20 @@ export function EntranceOperationsDashboardClient({
         {/* ─── TAB 4: DANH SÁCH HỒ SƠ ĐANG TỒN ĐỌNG (BACKLOG) ─── */}
         {activeTab === "backlog" && (
           <div className="p-4">
-            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#003B3A] text-white text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-3">Cảnh báo hạn</th>
-                    <th className="p-3">Học sinh & Khối/Hệ</th>
-                    <th className="p-3">Cơ sở & Đợt khảo sát</th>
-                    <th className="p-3">Công đoạn đang tồn đọng</th>
-                    <th className="p-3">Nguyên nhân cụ thể</th>
-                    <th className="p-3">Bộ phận / Người phụ trách</th>
-                    <th className="p-3 text-center">Xử lý ngay</th>
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-[#5EEAD4]">Cảnh báo hạn</th>
+                    <th className="py-3 px-3 text-white">Học sinh & khối/hệ</th>
+                    <th className="py-3 px-3 text-teal-100">Cơ sở & đợt khảo sát</th>
+                    <th className="py-3 px-3 text-[#5EEAD4]">Công đoạn đang tồn đọng</th>
+                    <th className="py-3 px-3 text-teal-100">Nguyên nhân cụ thể</th>
+                    <th className="py-3 px-3 text-teal-100">Bộ phận / người phụ trách</th>
+                    <th className="py-3 px-3 text-center text-white">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-xs">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                   {backlogItems.length === 0 ? (
                     <tr>
                       <td
@@ -2255,20 +2444,68 @@ export function EntranceOperationsDashboardClient({
 
         {/* ─── TAB 5: LỊCH SỬ XÁC NHẬN & KIỂM SOÁT (AUDIT LOGS) ─── */}
         {activeTab === "audit" && (
-          <div className="p-4">
+          <div className="p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2.5">
+              <div className="text-xs font-bold text-[#003B3A] flex items-center gap-2">
+                <History className="w-4 h-4 text-[#00A19A]" />
+                <span>
+                  Nhật ký xác nhận công đoạn & gửi mail bàn giao Tư vấn ({auditLogs.length} bản ghi)
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setStageNumberFilter(0)}
+                  className={`px-2.5 py-1 rounded-lg font-bold border transition-colors cursor-pointer ${
+                    stageNumberFilter === 0
+                      ? "bg-[#003B3A] text-white border-[#003B3A]"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  Tất cả công đoạn
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStageNumberFilter(stageNumberFilter === 7 ? 0 : 7)
+                  }
+                  className={`px-2.5 py-1 rounded-lg font-bold border transition-colors cursor-pointer ${
+                    stageNumberFilter === 7
+                      ? "bg-[#00A19A] text-white border-[#00A19A]"
+                      : "bg-white text-[#00736E] border-teal-200 hover:bg-teal-50"
+                  }`}
+                >
+                  Bước 7: Nhật ký Bàn giao Tư vấn
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setStageNumberFilter(stageNumberFilter === 6 ? 0 : 6)
+                  }
+                  className={`px-2.5 py-1 rounded-lg font-bold border transition-colors cursor-pointer ${
+                    stageNumberFilter === 6
+                      ? "bg-emerald-600 text-white border-emerald-600"
+                      : "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                  }`}
+                >
+                  Bước 6: Nhật ký Xét duyệt
+                </button>
+              </div>
+            </div>
+
             <div className="overflow-x-auto border border-slate-200 rounded-2xl">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#003B3A] text-white text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="p-3">Thời gian</th>
-                    <th className="p-3">Người xác nhận & Vai trò</th>
-                    <th className="p-3">Công đoạn</th>
-                    <th className="p-3">Đối tượng / Học sinh</th>
-                    <th className="p-3">Thao tác & Trạng thái mới</th>
-                    <th className="p-3">Ghi chú / Lý do</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="bg-[#003B3A] text-white text-[11px] font-semibold">
+                    <th className="p-3 font-semibold">Thời gian</th>
+                    <th className="p-3 font-semibold">Người xác nhận & Vai trò</th>
+                    <th className="p-3 font-semibold">Công đoạn</th>
+                    <th className="p-3 font-semibold">Đối tượng / Học sinh</th>
+                    <th className="p-3 font-semibold">Thao tác & Trạng thái mới</th>
+                    <th className="p-3 font-semibold">Ghi chú / Lý do</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-xs">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs tabular-nums">
                   {auditLogs.length === 0 ? (
                     <tr>
                       <td
@@ -2283,12 +2520,25 @@ export function EntranceOperationsDashboardClient({
                       const stgDef = getStageDefinition(
                         Number(log.stageNumber) || 1
                       );
+                      const actDisplay =
+                        log.action === "CONFIRM"
+                          ? Number(log.stageNumber) === 7
+                            ? "Bàn giao Tư vấn"
+                            : "Xác nhận"
+                          : log.action === "REQUEST_ADJUSTMENT"
+                          ? "Yêu cầu điều chỉnh"
+                          : log.action;
+                      const statusDisplay = String(log.newStatus || "")
+                        .replace(/^COMPLETED\b/, "Hoàn thành")
+                        .replace(/^IN_PROGRESS\b/, "Đang thực hiện")
+                        .replace(/^NEEDS_ADJUSTMENT\b/, "Cần điều chỉnh");
+
                       return (
                         <tr
                           key={log.id}
                           className="hover:bg-slate-50 transition-colors"
                         >
-                          <td className="p-3 font-mono text-[11px] text-slate-600">
+                          <td className="p-3 font-mono text-[11px] text-slate-600 whitespace-nowrap">
                             {log.createdAt
                               ? new Date(log.createdAt).toLocaleString("vi-VN")
                               : "—"}
@@ -2316,7 +2566,7 @@ export function EntranceOperationsDashboardClient({
                           </td>
                           <td className="p-3">
                             <span className="px-2 py-0.5 rounded-lg bg-teal-50 text-[#00736E] border border-teal-200 font-bold text-[11px]">
-                              {log.action} → {log.newStatus}
+                              {actDisplay} → {statusDisplay}
                             </span>
                           </td>
                           <td className="p-3 text-slate-600">
@@ -2369,32 +2619,32 @@ export function EntranceOperationsDashboardClient({
 
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
               {/* Thanh trạng thái 3 mốc & Ngoại lệ */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3 rounded-2xl bg-teal-50/70 border border-teal-200">
-                  <div className="text-[10px] font-black uppercase text-[#00736E]">
-                    1. Mốc Công việc Chuyên môn
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 tabular-nums">
+                <div className="p-3 rounded-2xl bg-[#F0FDFA] border border-[#CCFBF1]">
+                  <div className="text-[11px] font-semibold text-[#00736E]">
+                    1. Mốc công việc chuyên môn
                   </div>
-                  <div className="text-xs font-extrabold text-slate-800 mt-1">
+                  <div className="text-xs font-bold text-slate-800 mt-1">
                     {detailStudent.isWorkCompleted
-                      ? "✓ Đã hoàn thành (Đủ điểm & Định hướng)"
+                      ? "✓ Đã hoàn thành (Đủ điểm & định hướng)"
                       : "Đang thực hiện"}
                   </div>
                 </div>
                 <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200">
-                  <div className="text-[10px] font-black uppercase text-emerald-700">
-                    2. Mốc Xét duyệt Kết luận
+                  <div className="text-[11px] font-semibold text-emerald-700">
+                    2. Mốc xét duyệt kết luận
                   </div>
-                  <div className="text-xs font-extrabold text-slate-800 mt-1">
+                  <div className="text-xs font-bold text-slate-800 mt-1">
                     {detailStudent.isApprovalCompleted
                       ? `✓ Đã duyệt: ${detailStudent.admissionResult}`
                       : "Chờ thẩm định phê duyệt"}
                   </div>
                 </div>
                 <div className="p-3 rounded-2xl bg-sky-50/70 border border-sky-200">
-                  <div className="text-[10px] font-black uppercase text-sky-700">
-                    3. Mốc Bàn giao Tư vấn
+                  <div className="text-[11px] font-semibold text-sky-700">
+                    3. Mốc xuất văn bản & bàn giao Tư vấn
                   </div>
-                  <div className="text-xs font-extrabold text-slate-800 mt-1">
+                  <div className="text-xs font-bold text-slate-800 mt-1">
                     {detailStudent.stages[6]?.status === "COMPLETED"
                       ? "✓ Đã bàn giao hồ sơ & văn bản cho Tư vấn"
                       : "Chưa bàn giao Tư vấn"}
@@ -2403,40 +2653,42 @@ export function EntranceOperationsDashboardClient({
               </div>
 
               {/* Thiết lập nhanh Trường hợp Ngoại lệ / Miễn KS / Khảo sát lại */}
-              <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-700">
+                  <span className="font-semibold text-slate-700">
                     Phân loại hồ sơ:
                   </span>
                   <span
-                    className={`px-2.5 py-0.5 rounded-full font-bold border ${
+                    className={`px-2.5 py-0.5 rounded-md font-semibold border ${
                       EXCEPTION_TYPE_META[detailStudent.exceptionType].badgeClass
                     }`}
                   >
                     {EXCEPTION_TYPE_META[detailStudent.exceptionType].label}
                   </span>
                 </div>
-                <button
-                  onClick={() =>
-                    openActionModal({
-                      title: `Cập nhật diện Miễn khảo sát / Khảo sát lại / Ngoại lệ - ${detailStudent.fullName}`,
-                      targetScope: "STUDENT",
-                      action: "SET_EXCEPTION",
-                      stageNumber: detailStudent.currentStageNumber,
-                      periodId: detailStudent.periodId,
-                      batchId: detailStudent.batchId,
-                      isPreschool: detailStudent.isPreschool,
-                      studentIds: [detailStudent.id],
-                      studentSummary: `${detailStudent.fullName} (${detailStudent.studentCode})`,
-                    })
-                  }
-                  className="px-3 py-1 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-50 text-teal-800 font-bold cursor-pointer"
-                >
-                  Thiết lập Miễn KS / KS lại / Ngoại lệ
-                </button>
+                {canManageException && (
+                  <button
+                    onClick={() =>
+                      openActionModal({
+                        title: `Cập nhật diện Miễn khảo sát / Khảo sát lại / Ngoại lệ - ${detailStudent.fullName}`,
+                        targetScope: "STUDENT",
+                        action: "SET_EXCEPTION",
+                        stageNumber: detailStudent.currentStageNumber,
+                        periodId: detailStudent.periodId,
+                        batchId: detailStudent.batchId,
+                        isPreschool: detailStudent.isPreschool,
+                        studentIds: [detailStudent.id],
+                        studentSummary: `${detailStudent.fullName} (${detailStudent.studentCode})`,
+                      })
+                    }
+                    className="px-3 py-1 rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] hover:bg-teal-100 text-[#00736E] font-semibold cursor-pointer"
+                  >
+                    Thiết lập miễn KS / KS lại / ngoại lệ
+                  </button>
+                )}
               </div>
 
-              {/* Danh sách 8 Công đoạn của Học sinh */}
+              {/* Danh sách 7 Công đoạn của Học sinh */}
               <div className="space-y-2.5">
                 {detailStudent.stages.map((st) => {
                   const meta = ENTRANCE_STAGE_STATUS_META[st.status];
@@ -2445,33 +2697,53 @@ export function EntranceOperationsDashboardClient({
                     st.stageNumber,
                     currentUser.isSuperAdmin
                   );
+                  const assignedDisplay =
+                    st.assignedTooltip ||
+                    (st.assignedNames && st.assignedNames.length > 0
+                      ? st.assignedNames.join(", ")
+                      : null);
+
                   return (
                     <div
                       key={st.stageNumber}
-                      className="p-3.5 rounded-2xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-teal-300 transition-colors"
+                      className="p-3.5 rounded-2xl border border-[#E2E8F0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-teal-300 transition-colors"
                     >
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white text-[10.5px] font-black">
+                          <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white text-[10.5px] font-bold tabular-nums">
                             Bước {st.stageNumber}
                           </span>
-                          <span className="font-extrabold text-slate-800 text-xs sm:text-sm">
+                          <span className="font-bold text-slate-800 text-xs sm:text-sm">
                             {st.name}
                           </span>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border ${meta.badgeClass}`}
+                            className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold border ${meta.badgeClass}`}
                           >
                             {meta.label}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 font-medium">
-                          {st.detailText} • Phụ trách:{" "}
+                          {st.detailText} • Bộ phận:{" "}
                           <strong className="text-slate-800">
                             {st.responsibleLabel}
                           </strong>
                         </p>
+                        <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                          <span className="text-slate-500 font-medium">
+                            GV / Người phụ trách theo phân công:
+                          </span>
+                          {assignedDisplay ? (
+                            <span className="px-2 py-0.5 rounded-lg bg-[#F0FDFA] text-[#003B3A] border border-[#CCFBF1] font-semibold">
+                              {assignedDisplay}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic">
+                              Chưa phân công
+                            </span>
+                          )}
+                        </div>
                         {(st.confirmedByName || st.note) && (
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-slate-500 tabular-nums">
                             {st.confirmedByName && (
                               <span>
                                 ✓ Xác nhận bởi:{" "}
@@ -2512,7 +2784,7 @@ export function EntranceOperationsDashboardClient({
                                     detailStudent.canIssueCongratulation,
                                 })
                               }
-                              className="px-3 py-1.5 rounded-xl bg-[#00A19A] hover:bg-[#008f89] text-white text-xs font-bold cursor-pointer"
+                              className="px-3 py-1.5 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-semibold cursor-pointer"
                             >
                               Xác nhận
                             </button>
@@ -2530,7 +2802,7 @@ export function EntranceOperationsDashboardClient({
                                   studentSummary: `${detailStudent.fullName} (${detailStudent.studentCode})`,
                                 })
                               }
-                              className="px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-[#E11D48] text-xs font-semibold cursor-pointer"
                             >
                               Cần ĐC
                             </button>
@@ -2538,7 +2810,7 @@ export function EntranceOperationsDashboardClient({
                         )}
                         <Link
                           href={st.actionHref}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#E2E8F0] hover:bg-[#F8FAFC] text-slate-700 text-xs font-semibold"
                         >
                           <span>Màn hình xử lý</span>
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -2560,9 +2832,9 @@ export function EntranceOperationsDashboardClient({
                 );
                 if (stuLogs.length === 0) return null;
                 return (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-2.5">
+                  <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-[#003B3A] flex items-center gap-1.5">
+                      <h4 className="text-xs font-bold text-[#003B3A] flex items-center gap-1.5 tabular-nums">
                         <History className="w-4 h-4 text-[#00A19A]" />
                         <span>Lược sử thực hiện & xác nhận của hồ sơ ({stuLogs.length})</span>
                       </h4>
@@ -2639,15 +2911,40 @@ export function EntranceOperationsDashboardClient({
 
             <div className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
               {confirmModal.studentSummary && (
-                <div className="p-3 rounded-xl bg-teal-50/70 border border-teal-200 font-bold text-[#003B3A]">
-                  Đối tượng: {confirmModal.studentSummary}
+                <div className="p-3 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] space-y-1 text-[#003B3A]">
+                  <div className="font-bold">
+                    Đối tượng: {confirmModal.studentSummary}
+                  </div>
+                  {confirmModal.studentIds?.length === 1 &&
+                    (() => {
+                      const targetStu = studentRows.find(
+                        (s) => s.id === confirmModal.studentIds[0]
+                      );
+                      const targetStage = targetStu?.stages.find(
+                        (st) => st.stageNumber === confirmModal.stageNumber
+                      );
+                      const assignedText =
+                        targetStage?.assignedTooltip ||
+                        (targetStage?.assignedNames &&
+                        targetStage.assignedNames.length > 0
+                          ? targetStage.assignedNames.join(", ")
+                          : null);
+                      return assignedText ? (
+                        <div className="text-[11px] font-medium text-[#00736E]">
+                          GV / Người phụ trách theo phân công:{" "}
+                          <strong className="text-[#003B3A]">
+                            {assignedText}
+                          </strong>
+                        </div>
+                      ) : null;
+                    })()}
                 </div>
               )}
 
               {/* Chọn trạng thái bước nếu là CONFIRM */}
               {confirmModal.action === "CONFIRM" && (
                 <div>
-                  <label className="block font-extrabold uppercase text-slate-500 mb-1.5">
+                  <label className="block font-semibold text-slate-700 mb-1.5">
                     Trạng thái công đoạn
                   </label>
                   <select
@@ -2658,7 +2955,7 @@ export function EntranceOperationsDashboardClient({
                         status: e.target.value as EntranceStageStatus,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+                    className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2.5 font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
                   >
                     <option value="COMPLETED">Hoàn thành (COMPLETED)</option>
                     <option value="IN_PROGRESS">
@@ -2678,7 +2975,7 @@ export function EntranceOperationsDashboardClient({
               {confirmModal.stageNumber === 6 &&
                 confirmModal.action === "CONFIRM" && (
                   <div>
-                    <label className="block font-extrabold uppercase text-slate-500 mb-1.5">
+                    <label className="block font-semibold text-slate-700 mb-1.5">
                       Kết luận thẩm định & xét duyệt chính thức *
                     </label>
                     <select
@@ -2689,7 +2986,7 @@ export function EntranceOperationsDashboardClient({
                           admissionResult: e.target.value,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+                      className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2.5 font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
                     >
                       <option value="Đạt">Đạt (Trúng tuyển chuẩn)</option>
                       <option value="Đạt cam kết">
@@ -2716,7 +3013,7 @@ export function EntranceOperationsDashboardClient({
               {confirmModal.stageNumber === 7 &&
                 confirmModal.action === "CONFIRM" && (
                   <div className="space-y-2">
-                    <label className="block font-extrabold uppercase text-slate-500">
+                    <label className="block font-semibold text-slate-700">
                       Văn bản chuẩn bị & bàn giao cho Tư vấn
                     </label>
                     {!confirmModal.canIssueCongrat && (
@@ -2751,10 +3048,10 @@ export function EntranceOperationsDashboardClient({
                                   : [...f.documentTypes, doc.id],
                               }))
                             }
-                            className={`px-3 py-1.5 rounded-xl border font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                            className={`px-3 py-1.5 rounded-xl border font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                               checked
                                 ? "bg-[#003B3A] text-white border-[#003B3A]"
-                                : "bg-slate-50 text-slate-700 border-slate-200"
+                                : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0]"
                             }`}
                           >
                             {checked ? "✓ " : ""}
@@ -2769,7 +3066,7 @@ export function EntranceOperationsDashboardClient({
               {/* Thiết lập Ngoại lệ */}
               {confirmModal.action === "SET_EXCEPTION" && (
                 <div>
-                  <label className="block font-extrabold uppercase text-slate-500 mb-1.5">
+                  <label className="block font-semibold text-slate-700 mb-1.5">
                     Loại hồ sơ đặc biệt / ngoại lệ
                   </label>
                   <select
@@ -2780,7 +3077,7 @@ export function EntranceOperationsDashboardClient({
                         exceptionType: e.target.value as EntranceExceptionType,
                       }))
                     }
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 font-bold text-slate-800 outline-none focus:border-[#00A19A]"
+                    className="w-full rounded-xl border border-[#E2E8F0] px-3.5 py-2.5 font-semibold text-slate-800 outline-none focus:border-[#00A19A]"
                   >
                     <option value="NONE">Hồ sơ khảo sát tiêu chuẩn</option>
                     <option value="EXEMPT">
@@ -2799,7 +3096,7 @@ export function EntranceOperationsDashboardClient({
 
               {/* Ghi chú / Lý do */}
               <div>
-                <label className="block font-extrabold uppercase text-slate-500 mb-1.5">
+                <label className="block font-semibold text-slate-700 mb-1.5">
                   Ghi chú / Nội dung xác nhận (Lưu lịch sử kiểm soát)
                 </label>
                 <textarea
@@ -2809,11 +3106,11 @@ export function EntranceOperationsDashboardClient({
                     setModalForm((f) => ({ ...f, note: e.target.value }))
                   }
                   placeholder="Nhập ghi chú xác nhận, lý do điều chỉnh hoặc thông tin bàn giao..."
-                  className="w-full rounded-xl border border-slate-200 p-3 font-medium text-slate-800 outline-none focus:border-[#00A19A]"
+                  className="w-full rounded-xl border border-[#E2E8F0] p-3 font-medium text-slate-800 outline-none focus:border-[#00A19A]"
                 />
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-slate-500 flex items-center justify-between">
                 <span>
                   Người xác nhận: <strong>{currentUser.fullName}</strong> (
                   {currentUser.role})
@@ -2844,6 +3141,7 @@ export function EntranceOperationsDashboardClient({
                         st.status === "COMPLETED" ||
                         st.status === "NEEDS_ADJUSTMENT" ||
                         Boolean(st.confirmedByName) ||
+                        Boolean(st.assignedSummary) ||
                         (st.stageNumber >= 4 && st.status === "IN_PROGRESS")
                     )
                   : [];
@@ -2853,13 +3151,13 @@ export function EntranceOperationsDashboardClient({
                 }
 
                 return (
-                  <div className="rounded-2xl border border-teal-200/80 bg-teal-50/30 p-3.5 space-y-2.5">
+                  <div className="rounded-2xl border border-[#CCFBF1] bg-[#F0FDFA]/50 p-3.5 space-y-2.5 tabular-nums">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#003B3A] flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-[#003B3A] flex items-center gap-1.5">
                         <History className="w-3.5 h-3.5 text-[#00A19A]" />
                         <span>Lược sử các công đoạn đã thực hiện</span>
                       </span>
-                      <span className="text-[10px] font-bold text-[#00736E] bg-teal-100/80 px-2 py-0.5 rounded-full">
+                      <span className="text-[10.5px] font-semibold text-[#00736E] bg-teal-100/80 px-2 py-0.5 rounded-full">
                         {targetStu
                           ? `Tiến độ: ${targetStu.overallProgressPct}%`
                           : `${targetAuditLogs.length} bản ghi`}
@@ -2873,16 +3171,16 @@ export function EntranceOperationsDashboardClient({
                           return (
                             <div
                               key={st.stageNumber}
-                              className="p-2 rounded-xl bg-white border border-slate-200/90 flex items-start justify-between gap-2 text-[11px]"
+                              className="p-2 rounded-xl bg-white border border-[#E2E8F0] flex items-start justify-between gap-2 text-[11px]"
                             >
                               <div className="space-y-0.5">
-                                <div className="font-extrabold text-[#003B3A] flex items-center gap-1.5 flex-wrap">
+                                <div className="font-bold text-[#003B3A] flex items-center gap-1.5 flex-wrap">
                                   <span className="px-1.5 py-0.2 rounded bg-[#003B3A] text-white text-[9.5px]">
                                     B{st.stageNumber}
                                   </span>
                                   <span>{st.shortName.replace(/^\d+\.\s*/, "")}</span>
                                   <span
-                                    className={`px-1.5 py-0.2 rounded-full text-[9.5px] font-bold border ${stMeta.badgeClass}`}
+                                    className={`px-1.5 py-0.2 rounded-full text-[9.5px] font-semibold border ${stMeta.badgeClass}`}
                                   >
                                     {stMeta.label}
                                   </span>
@@ -2890,13 +3188,13 @@ export function EntranceOperationsDashboardClient({
                                 <div className="text-slate-600 font-medium">
                                   {st.detailText}
                                 </div>
-                                {(st.confirmedByName || st.note) && (
+                                {(st.confirmedByName || st.assignedSummary || st.note) && (
                                   <div className="text-[10px] text-slate-500">
-                                    {st.confirmedByName && (
+                                    {(st.confirmedByName || st.assignedSummary) && (
                                       <span>
-                                        Thực hiện/Xác nhận:{" "}
+                                        Phụ trách / xác nhận:{" "}
                                         <strong className="text-slate-700">
-                                          {st.confirmedByName}
+                                          {st.confirmedByName || st.assignedSummary}
                                         </strong>
                                       </span>
                                     )}
@@ -2921,7 +3219,7 @@ export function EntranceOperationsDashboardClient({
 
                     {targetAuditLogs.filter((l: any) => !l.isDerived).length > 0 && (
                       <div className="pt-1.5 border-t border-teal-200/60 space-y-1">
-                        <div className="text-[10px] font-extrabold uppercase text-slate-500">
+                        <div className="text-[10.5px] font-semibold text-slate-600">
                           Nhật ký thao tác xác nhận gần nhất:
                         </div>
                         <div className="max-h-28 overflow-y-auto space-y-1 pr-1">

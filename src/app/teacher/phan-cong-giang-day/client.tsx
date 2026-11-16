@@ -602,16 +602,16 @@ export function TeachingAssignmentClient({
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs font-semibold">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    <th className="px-6 py-4">Lớp học</th>
-                    <th className="px-6 py-4">Môn học</th>
-                    <th className="px-6 py-4">Học kỳ</th>
-                    <th className="px-6 py-4">Năm học</th>
-                    <th className="px-6 py-4">Trạng thái</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[10px] font-semibold">
+                    <th className="px-6 py-4 font-semibold">Lớp học</th>
+                    <th className="px-6 py-4 font-semibold">Môn học</th>
+                    <th className="px-6 py-4 font-semibold">Học kỳ</th>
+                    <th className="px-6 py-4 font-semibold">Năm học</th>
+                    <th className="px-6 py-4 font-semibold">Trạng thái</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
                   {filteredMyAssignments.map((a) => (
                     <tr key={a.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-6 py-4">

@@ -344,21 +344,21 @@ export function MonthlyEnrollmentClient({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 text-slate-500 uppercase font-black border-b border-slate-100">
-                <tr>
-                  <th className="py-3.5 px-4">Kỳ Chốt</th>
-                  <th className="py-3.5 px-3">Ngày Chốt</th>
-                  <th className="py-3.5 px-3 text-right">Đầu Tháng</th>
-                  <th className="py-3.5 px-3 text-right text-emerald-600">Tăng (+)</th>
-                  <th className="py-3.5 px-3 text-right text-rose-600">Giảm (-)</th>
-                  <th className="py-3.5 px-3 text-right font-black text-[#003B3A]">Cuối Tháng</th>
-                  <th className="py-3.5 px-3 text-center">Phổ thông / MN</th>
-                  <th className="py-3.5 px-3 text-center">Duy trì</th>
-                  <th className="py-3.5 px-3 text-center">Trạng thái</th>
-                  <th className="py-3.5 px-4 text-center">Thao tác</th>
+              <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3.5 px-4 font-semibold">Kỳ Chốt</th>
+                  <th className="py-3.5 px-3 font-semibold">Ngày Chốt</th>
+                  <th className="py-3.5 px-3 text-right font-semibold">Đầu Tháng</th>
+                  <th className="py-3.5 px-3 text-right text-[#5EEAD4] font-semibold">Tăng (+)</th>
+                  <th className="py-3.5 px-3 text-right text-rose-200 font-semibold">Giảm (-)</th>
+                  <th className="py-3.5 px-3 text-right text-[#003B3A] font-semibold">Cuối Tháng</th>
+                  <th className="py-3.5 px-3 text-center font-semibold">Phổ thông / MN</th>
+                  <th className="py-3.5 px-3 text-center font-semibold">Duy trì</th>
+                  <th className="py-3.5 px-3 text-center font-semibold">Trạng thái</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                 {snapshots.map((s: any) => {
                   const netChange = s.increaseCount - s.decreaseCount
                   return (
@@ -564,20 +564,20 @@ export function MonthlyEnrollmentClient({
             ) : (
               <div className="overflow-y-auto flex-1 border border-slate-100 rounded-2xl">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 sticky top-0 text-slate-500 uppercase font-black border-b border-slate-100">
-                    <tr>
-                      <th className="py-2.5 px-3">Khối</th>
-                      <th className="py-2.5 px-3">Tên Lớp</th>
-                      <th className="py-2.5 px-3">Cấp học</th>
-                      <th className="py-2.5 px-3 text-right">Đầu tháng</th>
-                      <th className="py-2.5 px-3 text-right text-emerald-600">Tăng (+)</th>
-                      <th className="py-2.5 px-3 text-right text-rose-600">Giảm (-)</th>
-                      <th className="py-2.5 px-3 text-right font-black text-[#00A19A]">Cuối tháng</th>
-                      <th className="py-2.5 px-3 text-right">Định mức</th>
-                      <th className="py-2.5 px-3 text-center">Lấp đầy</th>
+                  <thead className="bg-[#003B3A] sticky top-0 border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-3 font-semibold">Khối</th>
+                      <th className="py-2.5 px-3 font-semibold">Tên Lớp</th>
+                      <th className="py-2.5 px-3 font-semibold">Cấp học</th>
+                      <th className="py-2.5 px-3 text-right font-semibold">Đầu tháng</th>
+                      <th className="py-2.5 px-3 text-right text-[#5EEAD4] font-semibold">Tăng (+)</th>
+                      <th className="py-2.5 px-3 text-right text-rose-200 font-semibold">Giảm (-)</th>
+                      <th className="py-2.5 px-3 text-right text-[#5EEAD4] font-semibold">Cuối tháng</th>
+                      <th className="py-2.5 px-3 text-right font-semibold">Định mức</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Lấp đầy</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                  <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                     {(snapshotDetail?.classEnrollments || []).map((c: any) => (
                       <tr key={c.id} className="hover:bg-slate-50/60">
                         <td className="py-2 px-3 font-bold text-slate-500">{c.grade}</td>

@@ -36,7 +36,10 @@ export default async function TeacherManagerPage() {
       select: { id: true, code: true, name: true, blockCM: true }
     }),
     prisma.subject.findMany({
-      where: { status: "ACTIVE" },
+      where: {
+        status: "ACTIVE",
+        OR: [{ category: null }, { NOT: { category: "KSDV" } }]
+      },
       orderBy: { subjectName: "asc" },
       select: { id: true, subjectCode: true, subjectName: true }
     }),

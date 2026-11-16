@@ -1,15 +1,23 @@
 import { prisma } from "@/lib/db"
 import { canViewPost, isSuperOrCommunityAdmin, hasSlcRoleInScope, SlcUserContext } from "./permissions"
-import { computeBayesianScoreC, computeDiscoveryRankScore } from "./scoring"
-import { ensureSlcSchema } from "./schema-init"
+import {
+  buildPostSpreadJourney,
+  computeBayesianScoreC,
+  computeDiscoveryRankScore,
+  computeDiscussionHotScore,
+  SlcPostBumpEvent,
+} from "./scoring"
+import { ensureSlcSchema, getSlcDb } from "./schema-init"
 import { safeJsonParse, computeOrLoadPeriodHallOfFame } from "./service"
 
 export interface WallFilterParams {
-  tab?: "ALL" | "NEW_IDEAS" | "AI_PRODUCTS" | "SEEKING_COLLABORATORS" | "SAVED"
-  sort?: "NEWEST" | "USEFUL" | "DISCOVER"
+  tab?: "ALL" | "NEW_IDEAS" | "AI_PRODUCTS" | "SKILLS" | "SEEKING_COLLABORATORS" | "SAVED"
+  sort?: "ACTIVE" | "NEWEST" | "DISCUSSING" | "MOST_APPLIED" | "USEFUL" | "DISCOVER"
   followingOnly?: boolean
   search?: string
   campusId?: string
+  departmentId?: string
+  visibility?: string
   subjectCode?: string
   gradeLevel?: string
   postType?: string
@@ -35,7 +43,7 @@ export interface WallFilterParams {
  */
 export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterParams = {}) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const page = Math.max(1, Number(params.page || 1))
   const pageSize = Math.min(36, Math.max(1, Number(params.pageSize || 12)))
@@ -48,9 +56,12 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
     ideas,
     products,
     projects,
+    skills,
     userReactions,
     userSaved,
     userFollows,
+    allHelpRequests,
+    userAppliedConfirmations,
   ] = await Promise.all([
     pAny.slcPost.findMany({
       where: {
@@ -68,6 +79,7 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
         members: { where: { status: "APPROVED" } },
       },
     }),
+    pAny.slcSkill?.findMany().catch(() => []) ?? [],
     pAny.slcReaction.findMany({
       where: { userId: ctx.userId, targetType: "POST" },
     }),
@@ -77,6 +89,16 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
     pAny.slcFollow.findMany({
       where: { followerId: ctx.userId },
     }),
+    pAny.slcHelpRequest
+      ?.findMany({
+        orderBy: { createdAt: "desc" },
+      })
+      .catch(() => []) ?? [],
+    pAny.slcAppliedConfirmation
+      ?.findMany({
+        where: { userId: ctx.userId },
+      })
+      .catch(() => []) ?? [],
   ])
 
   const groupMap = new Map<string, any>(groups.map((g: any) => [String(g.id), g]))
@@ -90,6 +112,18 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
   const projectById = new Map<string, any>(projects.map((p: any) => [String(p.id), p]))
   const projectByPostId = new Map<string, any>(
     projects.filter((p: any) => p.postId).map((p: any) => [String(p.postId), p])
+  )
+  const skillById = new Map<string, any>(skills.map((s: any) => [String(s.id), s]))
+  const skillByPostId = new Map<string, any>(
+    skills.filter((s: any) => s.postId).map((s: any) => [String(s.postId), s])
+  )
+  const userAppliedTargetKeys = new Set<string>(
+    userAppliedConfirmations.map((a: any) => `${a.targetType}:${a.targetId}`)
+  )
+  const userAppliedPostIds = new Set<string>(
+    userAppliedConfirmations
+      .map((a: any) => String(a.postId || (a.targetType === "POST" ? a.targetId : "")))
+      .filter(Boolean)
   )
 
   const reactionByPostId = new Map<string, string>(
@@ -116,7 +150,7 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
     userFollows.filter((f: any) => f.targetType === "PROJECT").map((f: any) => String(f.targetId))
   )
 
-  // 1. Filter by permission (including sharedFromPostId check!)
+  // 1. Filter by permission (including sharedFromPostId & DEPARTMENT check!)
   const accessiblePosts = rawPosts.filter((post: any) => {
     const grp = post.groupId ? groupMap.get(post.groupId) : null
     let sourceTarget = null
@@ -133,6 +167,7 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
         status: src.status,
         visibility: src.visibility,
         campusId: src.campusId,
+        departmentId: src.departmentId,
         groupId: src.groupId,
         groupVisibility: srcGrp?.visibility || null,
       }
@@ -146,6 +181,7 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
         status: post.status,
         visibility: post.visibility,
         campusId: post.campusId,
+        departmentId: post.departmentId,
         groupId: post.groupId,
         groupVisibility: grp?.visibility || null,
       },
@@ -153,7 +189,15 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
     )
   })
 
-  // Enrich each accessible post with Idea / Product / Project metadata
+  const helpRequestsByPostId = new Map<string, any[]>()
+  for (const hr of allHelpRequests) {
+    if (!hr.postId) continue
+    const arr = helpRequestsByPostId.get(String(hr.postId)) || []
+    arr.push(hr)
+    helpRequestsByPostId.set(String(hr.postId), arr)
+  }
+
+  // Enrich each accessible post with Idea / Product / Project / Skill metadata
   const enrichedPosts = accessiblePosts.map((post: any) => {
     const linkedIdea =
       (post.linkedIdeaId && ideaById.get(post.linkedIdeaId)) || ideaByPostId.get(post.id) || null
@@ -165,28 +209,67 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
       (post.linkedProjectId && projectById.get(post.linkedProjectId)) ||
       projectByPostId.get(post.id) ||
       null
+    const linkedSkill =
+      (post.linkedSkillId && skillById.get(post.linkedSkillId)) ||
+      skillByPostId.get(post.id) ||
+      null
     const sourcePost = post.sharedFromPostId ? postMap.get(post.sharedFromPostId) || null : null
+    const postHelpRequests = helpRequestsByPostId.get(post.id) || []
+    const openHelpRequests = postHelpRequests.filter((h: any) => h.status === "OPEN")
 
     const subjectCodes = safeJsonParse<string[]>(post.subjectCodesJson, [])
     const gradeLevels = safeJsonParse<string[]>(post.gradeLevelsJson, [])
     const purposeTags = safeJsonParse<string[]>(post.purposeTagsJson, [])
     const tags = safeJsonParse<string[]>(post.tagsJson, [])
     const mentionedUserIds = safeJsonParse<string[]>(post.mentionedUserIdsJson, [])
+    const collaboratorIds = safeJsonParse<string[]>(post.collaboratorIdsJson, [])
+    const collaboratorNames = safeJsonParse<string[]>(post.collaboratorNamesJson, [])
 
     const isSaved =
       savedPostIds.has(post.id) ||
       (linkedIdea && savedTargetKeys.has(`IDEA:${linkedIdea.id}`)) ||
       (linkedProduct && savedTargetKeys.has(`PRODUCT:${linkedProduct.id}`)) ||
-      (linkedProject && savedTargetKeys.has(`PROJECT:${linkedProject.id}`))
+      (linkedProject && savedTargetKeys.has(`PROJECT:${linkedProject.id}`)) ||
+      (linkedSkill && savedTargetKeys.has(`SKILL:${linkedSkill.id}`))
+
+    const hasUserApplied =
+      userAppliedPostIds.has(post.id) ||
+      userAppliedTargetKeys.has(`POST:${post.id}`) ||
+      (linkedSkill && userAppliedTargetKeys.has(`SKILL:${linkedSkill.id}`)) ||
+      (linkedProduct && userAppliedTargetKeys.has(`PRODUCT:${linkedProduct.id}`))
+
+    const totalAppliedCount = Math.max(
+      Number(post.appliedCount || 0),
+      Number(linkedSkill?.appliedCount || 0),
+      Number(linkedProduct?.selfAppliedCount || 0)
+    )
 
     const isSeekingCollaborators =
       (linkedIdea && linkedIdea.status === "SEEKING_COLLABORATORS") ||
-      (linkedProject && linkedProject.status === "SEEKING_COLLABORATORS")
+      (linkedProject && linkedProject.status === "SEEKING_COLLABORATORS") ||
+      openHelpRequests.length > 0
 
     const avgRating =
-      linkedProduct?.avgRating ?? linkedIdea?.avgRating ?? 0
+      linkedSkill?.avgRating ?? linkedProduct?.avgRating ?? linkedIdea?.avgRating ?? 0
     const validRatingCount =
-      linkedProduct?.validRatingCount ?? linkedIdea?.validRatingCount ?? 0
+      linkedSkill?.validRatingCount ??
+      linkedProduct?.validRatingCount ??
+      linkedIdea?.validRatingCount ??
+      0
+
+    const bumpedAtMs = post.lastBumpedAt
+      ? new Date(post.lastBumpedAt).getTime()
+      : new Date(post.publishedAt).getTime()
+    const pubAtMs = new Date(post.publishedAt).getTime()
+    const isActivelyBumped = bumpedAtMs > pubAtMs + 1000
+    const bumpEvents = safeJsonParse<SlcPostBumpEvent[]>(post.bumpEventsJson, [])
+    const discussionHotScore = computeDiscussionHotScore({
+      authorId: post.authorId,
+      publishedAt: post.publishedAt,
+      bumpEvents,
+      reactionCount: post.reactionCount,
+      commentCount: post.commentCount,
+    })
 
     return {
       ...post,
@@ -195,9 +278,18 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
       purposeTags,
       tags,
       mentionedUserIds,
+      collaboratorIds,
+      collaboratorNames,
       linkedIdea,
       linkedProduct,
       linkedProject,
+      linkedSkill,
+      helpRequests: postHelpRequests,
+      openHelpRequests,
+      isActivelyBumped,
+      discussionHotScore,
+      totalAppliedCount,
+      hasUserApplied: Boolean(hasUserApplied),
       sourcePost: sourcePost
         ? {
             id: sourcePost.id,
@@ -230,13 +322,24 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
   const filtered = enrichedPosts.filter((p: any) => {
     if (tab === "NEW_IDEAS" && p.postType !== "IDEA") return false
     if (tab === "AI_PRODUCTS" && p.postType !== "AI_PRODUCT") return false
+    if (tab === "SKILLS" && p.postType !== "SKILL" && !p.linkedSkill) return false
     if (tab === "SEEKING_COLLABORATORS" && !p.isSeekingCollaborators) return false
     if (tab === "SAVED" && !p.isSaved) return false
 
     if (params.postType && params.postType !== "ALL" && p.postType !== params.postType) {
       return false
     }
+    if (params.visibility && params.visibility !== "ALL" && p.visibility !== params.visibility) {
+      return false
+    }
     if (params.campusId && params.campusId !== "ALL" && p.campusId !== params.campusId) {
+      return false
+    }
+    if (
+      params.departmentId &&
+      params.departmentId !== "ALL" &&
+      p.departmentId !== params.departmentId
+    ) {
       return false
     }
     if (
@@ -274,13 +377,18 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
         p.title || "",
         p.summary || "",
         p.content || "",
+        p.topicName || "",
         p.authorName || "",
         p.campusName || "",
+        p.departmentName || "",
         p.linkedProduct?.utilitySummary || "",
         p.linkedIdea?.problemStatement || "",
+        p.linkedSkill?.name || "",
+        p.linkedSkill?.purpose || "",
         ...(p.tags || []),
         ...(p.subjectCodes || []),
         ...(p.gradeLevels || []),
+        ...(p.collaboratorNames || []),
       ]
         .join(" ")
         .toLowerCase()
@@ -291,9 +399,49 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
     return true
   })
 
-  // Sort according to effectiveSort: NEWEST | USEFUL | DISCOVER
+  // Sort according to effectiveSort: NEWEST | DISCUSSING | MOST_APPLIED | ACTIVE | USEFUL | DISCOVER
   const sorted = [...filtered].sort((a: any, b: any) => {
+    // Pinned posts stay at the top
+    if (Boolean(a.isPinned) !== Boolean(b.isPinned)) {
+      return a.isPinned ? -1 : 1
+    }
+
+    if (effectiveSort === "DISCUSSING") {
+      const scoreDiff = Number(b.discussionHotScore || 0) - Number(a.discussionHotScore || 0)
+      if (Math.abs(scoreDiff) > 1e-6) return scoreDiff
+      const bumpA = a.lastBumpedAt
+        ? new Date(a.lastBumpedAt).getTime()
+        : new Date(a.publishedAt).getTime()
+      const bumpB = b.lastBumpedAt
+        ? new Date(b.lastBumpedAt).getTime()
+        : new Date(b.publishedAt).getTime()
+      if (bumpB !== bumpA) return bumpB - bumpA
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    }
+
+    if (effectiveSort === "MOST_APPLIED") {
+      const appDiff = Number(b.totalAppliedCount || 0) - Number(a.totalAppliedCount || 0)
+      if (appDiff !== 0) return appDiff
+      const reactDiff = Number(b.reactionCount || 0) - Number(a.reactionCount || 0)
+      if (reactDiff !== 0) return reactDiff
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    }
+
     if (effectiveSort === "NEWEST") {
+      const tA = new Date(a.publishedAt).getTime()
+      const tB = new Date(b.publishedAt).getTime()
+      if (tB !== tA) return tB - tA
+      return String(b.id).localeCompare(String(a.id))
+    }
+
+    if (effectiveSort === "ACTIVE") {
+      const bumpA = a.lastBumpedAt
+        ? new Date(a.lastBumpedAt).getTime()
+        : new Date(a.publishedAt).getTime()
+      const bumpB = b.lastBumpedAt
+        ? new Date(b.lastBumpedAt).getTime()
+        : new Date(b.publishedAt).getTime()
+      if (bumpB !== bumpA) return bumpB - bumpA
       const tA = new Date(a.publishedAt).getTime()
       const tB = new Date(b.publishedAt).getTime()
       if (tB !== tA) return tB - tA
@@ -314,6 +462,16 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
     if (Math.abs(dB - dA) > 1e-6) return dB - dA
     return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   })
+
+  const latestBumpTimestamp =
+    sorted.length > 0
+      ? sorted.reduce((maxMs: number, item: any) => {
+          const t = item.lastBumpedAt
+            ? new Date(item.lastBumpedAt).getTime()
+            : new Date(item.publishedAt).getTime()
+          return t > maxMs ? t : maxMs
+        }, 0)
+      : 0
 
   const total = sorted.length
   const startIndex = (page - 1) * pageSize
@@ -391,11 +549,17 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
     attachments: attachmentsByPost.get(p.id) || [],
     previewComments: (previewByPost.get(p.id) || []).map((c: any) => ({
       ...c,
-      replies: repliesByParent.get(c.id) || [],
+      links: safeJsonParse<Array<{ url: string; title?: string }>>(c.linksJson, []),
+      statusHistory: safeJsonParse<any[]>(c.statusHistoryJson, []),
+      replies: (repliesByParent.get(c.id) || []).map((r: any) => ({
+        ...r,
+        links: safeJsonParse<Array<{ url: string; title?: string }>>(r.linksJson, []),
+        statusHistory: safeJsonParse<any[]>(r.statusHistoryJson, []),
+      })),
     })),
   }))
 
-  // Right sidebar data: Open projects seeking collaborators & popular topics
+  // Right sidebar data: Open projects seeking collaborators & open colleague help requests ("Đang cần một đồng nghiệp...")
   const openProjectsForSidebar = projects
     .filter((proj: any) => {
       if (proj.status !== "SEEKING_COLLABORATORS") return false
@@ -412,10 +576,26 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
       gradeLevels: safeJsonParse<string[]>(proj.gradeLevelsJson, []),
     }))
 
+  const accessiblePostIdSet = new Set(accessiblePosts.map((p: any) => String(p.id)))
+  const openHelpRequestsForSidebar = allHelpRequests
+    .filter((hr: any) => hr.status === "OPEN" && accessiblePostIdSet.has(String(hr.postId)))
+    .slice(0, 6)
+    .map((hr: any) => {
+      const parentPost = postMap.get(String(hr.postId))
+      return {
+        ...hr,
+        postTitle: parentPost?.title || "Chia sẻ sáng tạo",
+        postAuthorName: parentPost?.authorName || hr.authorName,
+        postCoverImageUrl: parentPost?.coverImageUrl || null,
+      }
+    })
+
   return {
     items,
     editorialFeatured,
     openProjectsForSidebar,
+    openHelpRequestsForSidebar,
+    latestBumpTimestamp,
     pagination: {
       page,
       pageSize,
@@ -428,20 +608,21 @@ export async function querySlcWallFeed(ctx: SlcUserContext, params: WallFilterPa
 
 /**
  * Truy vấn bình luận theo luồng 2 cấp có phân trang (mặc định tải thêm theo trang, hỗ trợ sắp xếp Mới nhất / Cũ nhất,
- * bình luận ghim luôn nằm đầu với nhãn rõ).
+ * lọc Tất cả trao đổi (ALL) hoặc Mảnh đóng góp (CONTRIBUTIONS / loại cụ thể), bình luận ghim luôn nằm đầu với nhãn rõ).
  */
 export async function querySlcPostComments(
   ctx: SlcUserContext,
   input: {
     postId: string
     sort?: "NEWEST" | "OLDEST"
+    filterType?: "ALL" | "CONTRIBUTIONS" | "METHOD" | "MATERIAL" | "EXPERIMENT" | "SKILL" | "CONNECTION"
     page?: number
     pageSize?: number
     replyPageSize?: number
   }
 ) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const post = await pAny.slcPost.findUnique({ where: { id: input.postId } })
   if (!post) {
@@ -471,6 +652,7 @@ export async function querySlcPostComments(
   const page = Math.max(1, Number(input.page || 1))
   const pageSize = Math.min(50, Math.max(1, Number(input.pageSize || 10)))
   const sortOrder = input.sort === "OLDEST" ? "asc" : "desc"
+  const filterType = input.filterType || "ALL"
 
   const allComments = await pAny.slcComment.findMany({
     where: {
@@ -521,6 +703,8 @@ export async function querySlcPostComments(
       const arr = repliesByParent.get(c.parentId) || []
       arr.push({
         ...c,
+        links: safeJsonParse<Array<{ url: string; title?: string }>>(c.linksJson, []),
+        statusHistory: safeJsonParse<any[]>(c.statusHistoryJson, []),
         attachments: attByComment.get(c.id) || [],
         userReaction: reactionByComment.get(c.id) || null,
       })
@@ -535,11 +719,33 @@ export async function querySlcPostComments(
   }
 
   // Filter top-level comments: keep active ones, OR deleted ones ONLY if they have active replies (placeholder rule!)
-  const topLevel = allComments.filter((c: any) => {
+  const allTopLevel = allComments.filter((c: any) => {
     if (c.parentId !== null) return false
     if (!c.isDeleted && c.status === "ACTIVE") return true
     const activeReplies = repliesByParent.get(c.id) || []
     return c.isDeleted && activeReplies.length > 0
+  })
+
+  // Calculate counts for filter tabs ("Tất cả trao đổi" vs "Mảnh đóng góp")
+  const activeTopAndReplies = allComments.filter((c: any) => !c.isDeleted && c.status === "ACTIVE")
+  const contributionPiecesCount = activeTopAndReplies.filter(
+    (c: any) => c.contributionType && c.contributionType !== "NONE"
+  ).length
+
+  const topLevel = allTopLevel.filter((c: any) => {
+    if (filterType === "ALL") return true
+    const cType = c.contributionType || "NONE"
+    const replies = repliesByParent.get(c.id) || []
+    if (filterType === "CONTRIBUTIONS") {
+      return (
+        (!c.isDeleted && cType !== "NONE") ||
+        replies.some((r: any) => r.contributionType && r.contributionType !== "NONE")
+      )
+    }
+    return (
+      (!c.isDeleted && cType === filterType) ||
+      replies.some((r: any) => r.contributionType === filterType)
+    )
   })
 
   const totalTopLevel = topLevel.length
@@ -547,6 +753,8 @@ export async function querySlcPostComments(
   const pagedTop = topLevel.slice(startIndex, startIndex + pageSize).map((c: any) => ({
     ...c,
     content: c.isDeleted ? "Bình luận đã được xóa" : c.content,
+    links: c.isDeleted ? [] : safeJsonParse<Array<{ url: string; title?: string }>>(c.linksJson, []),
+    statusHistory: c.isDeleted ? [] : safeJsonParse<any[]>(c.statusHistoryJson, []),
     // Never expose attachments of a deleted comment
     attachments: c.isDeleted ? [] : attByComment.get(c.id) || [],
     userReaction: c.isDeleted ? null : reactionByComment.get(c.id) || null,
@@ -554,13 +762,25 @@ export async function querySlcPostComments(
   }))
 
   // Active comment count strictly excludes placeholders and hidden comments
-  const activeCommentCount = allComments.filter(
-    (c: any) => !c.isDeleted && c.status === "ACTIVE"
-  ).length
+  const activeCommentCount = activeTopAndReplies.length
+
+  // Top 3 recent contribution pieces ("Những mảnh ghép vừa được gửi")
+  const recentContributions = activeTopAndReplies
+    .filter((c: any) => c.contributionType && c.contributionType !== "NONE")
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3)
+    .map((c: any) => ({
+      ...c,
+      links: safeJsonParse<Array<{ url: string; title?: string }>>(c.linksJson, []),
+      statusHistory: safeJsonParse<any[]>(c.statusHistoryJson, []),
+      attachments: attByComment.get(c.id) || [],
+    }))
 
   return {
     comments: pagedTop,
     activeCommentCount,
+    contributionPiecesCount,
+    recentContributions,
     pagination: {
       page,
       pageSize,
@@ -571,11 +791,12 @@ export async function querySlcPostComments(
 }
 
 /**
- * Truy vấn chi tiết bài đăng / Ý tưởng / Sản phẩm AI / Dự án kèm đánh giá, lịch sử phiên bản và bình luận.
+ * Truy vấn chi tiết bài đăng / Ý tưởng / Sản phẩm AI / Dự án kèm đánh giá, lịch sử phiên bản, lời mời đồng nghiệp,
+ * Hành trình lan tỏa và bình luận.
  */
 export async function getSlcPostFullDetail(ctx: SlcUserContext, postId: string) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const post = await pAny.slcPost.findUnique({
     where: { id: postId },
@@ -639,7 +860,7 @@ export async function getSlcPostFullDetail(ctx: SlcUserContext, postId: string) 
       .catch(() => null)
   }
 
-  const [linkedIdea, linkedProduct, linkedProject, userReaction, userSaved, userFollow] =
+  const [linkedIdea, linkedProduct, linkedProject, userReaction, userSaved, userFollow, helpRequests] =
     await Promise.all([
       post.linkedIdeaId
         ? pAny.slcIdea.findUnique({ where: { id: post.linkedIdeaId } })
@@ -699,12 +920,18 @@ export async function getSlcPostFullDetail(ctx: SlcUserContext, postId: string) 
           },
         },
       }),
+      pAny.slcHelpRequest
+        ?.findMany({
+          where: { postId: post.id },
+          orderBy: { createdAt: "desc" },
+        })
+        .catch(() => []) ?? [],
     ])
 
   const ratingTargetType = linkedProduct ? "PRODUCT" : linkedIdea ? "IDEA" : null
   const ratingTargetId = linkedProduct?.id || linkedIdea?.id || null
 
-  const [ratings, expertEvaluations, commentData] = await Promise.all([
+  const [ratings, expertEvaluations, commentData, officialAwards] = await Promise.all([
     ratingTargetType && ratingTargetId
       ? pAny.slcRating.findMany({
           where: {
@@ -727,9 +954,33 @@ export async function getSlcPostFullDetail(ctx: SlcUserContext, postId: string) 
         })
       : [],
     querySlcPostComments(ctx, { postId: post.id, page: 1, pageSize: 20 }),
+    ratingTargetId
+      ? pAny.slcCommunityBadge
+          ?.findMany({
+            where: { targetId: ratingTargetId },
+            orderBy: { awardedAt: "asc" },
+          })
+          .catch(() => []) ?? []
+      : [],
   ])
 
   const myRating = ratings.find((r: any) => r.reviewerId === ctx.userId) || null
+
+  // Build "Hành trình lan tỏa" from real post, comments, versions, verified applications, and official awards
+  const spreadJourney = buildPostSpreadJourney({
+    canViewerAccessPost: true,
+    post: {
+      id: post.id,
+      title: post.title,
+      postType: post.postType,
+      authorName: post.authorName,
+      publishedAt: post.publishedAt,
+    },
+    comments: commentData.comments,
+    productVersions: linkedProduct?.versions || [],
+    verifiedApplications: linkedProduct?.applications || [],
+    officialAwards,
+  })
 
   return {
     status: "OK" as const,
@@ -748,6 +999,8 @@ export async function getSlcPostFullDetail(ctx: SlcUserContext, postId: string) 
             neededRoles: safeJsonParse<string[]>(linkedProject.neededRolesJson, []),
           }
         : null,
+      helpRequests,
+      spreadJourney,
       userReaction: userReaction?.reactionType || null,
       isSaved: Boolean(userSaved),
       isFollowingPost: Boolean(userFollow),
@@ -765,6 +1018,8 @@ export async function getSlcPostFullDetail(ctx: SlcUserContext, postId: string) 
       expertEvaluations,
       comments: commentData.comments,
       activeCommentCount: commentData.activeCommentCount,
+      contributionPiecesCount: commentData.contributionPiecesCount,
+      recentContributions: commentData.recentContributions,
       commentPagination: commentData.pagination,
     },
   }
@@ -777,7 +1032,7 @@ export async function getSlcPostFullDetail(ctx: SlcUserContext, postId: string) 
  */
 export async function getSlcMySpaceAndProfile(ctx: SlcUserContext, targetUserId?: string) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
   const uid = targetUserId || ctx.userId
   const isSelf = uid === ctx.userId
 
@@ -957,7 +1212,7 @@ export async function getSlcTeacherOverviewWidget(ctx: SlcUserContext | null) {
       return { enabled: false, products: [], openProjects: [], recentIdeas: [] }
     }
     await ensureSlcSchema()
-    const pAny = prisma as any
+    const pAny = getSlcDb()
 
     const [products, openProjects, recentIdeas] = await Promise.all([
       pAny.slcProduct
@@ -1011,7 +1266,7 @@ export async function getSlcTeacherOverviewWidget(ctx: SlcUserContext | null) {
  */
 export async function getSlcAdminOverviewData(ctx: SlcUserContext) {
   await ensureSlcSchema()
-  const pAny = prisma as any
+  const pAny = getSlcDb()
 
   const canAccessAdmin =
     isSuperOrCommunityAdmin(ctx) ||

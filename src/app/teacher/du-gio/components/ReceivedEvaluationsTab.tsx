@@ -1250,17 +1250,17 @@ export function ReceivedEvaluationsTab({
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
-                  <th className="p-3.5 text-center w-12">TT</th>
-                  <th className="p-3.5">Vai trò & Hình thức</th>
-                  <th className="p-3.5">Giáo viên dạy</th>
-                  <th className="p-3.5">Giáo viên dự (Đánh giá)</th>
-                  <th className="p-3.5">Môn học & Chủ đề / Lớp</th>
-                  <th className="p-3.5">Thời gian / Phòng</th>
-                  <th className="p-3.5 text-center">Kết quả đánh giá</th>
-                  <th className="p-3.5 text-center">Trạng thái</th>
-                  <th className="p-3.5 text-right">Thao tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="p-3.5 text-center w-12 font-semibold">TT</th>
+                  <th className="p-3.5 font-semibold">Vai trò & Hình thức</th>
+                  <th className="p-3.5 font-semibold">Giáo viên dạy</th>
+                  <th className="p-3.5 font-semibold">Giáo viên dự (Đánh giá)</th>
+                  <th className="p-3.5 font-semibold">Môn học & Chủ đề / Lớp</th>
+                  <th className="p-3.5 font-semibold">Thời gian / Phòng</th>
+                  <th className="p-3.5 text-center font-semibold">Kết quả đánh giá</th>
+                  <th className="p-3.5 text-center font-semibold">Trạng thái</th>
+                  <th className="p-3.5 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">

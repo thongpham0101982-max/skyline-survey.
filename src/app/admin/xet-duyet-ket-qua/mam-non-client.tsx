@@ -5,6 +5,14 @@ import * as XLSX from "xlsx"
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
 import {
+  isSuperAdminRole,
+  isKtdbclEntranceRole,
+  isGdcsOrBghEntranceRole,
+  isGiaoVuEntranceRole,
+  isTuVanEntranceRole,
+  isCampusScopedEntranceRole,
+} from "@/lib/entrance-progress/constants";
+import {
   Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
   X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, Info, Building, Printer
@@ -341,14 +349,16 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const criteriaGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
-  const isSystemAdmin = userRole === "ADMIN";
-  const isBGHUser = ["ADMIN", "KT_DBCL", "KTDBCL", "BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole) ||
-    (Array.isArray(rolePermissions) && rolePermissions.some((p: any) => (p.module === "XET_DUYET_MAM_NON" || p.module === "XET_DUYET_KET_QUA") && (p.canRead || p.canUpdate)));
-  const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+  const isSystemAdmin = isSuperAdminRole(userRole) || isKtdbclEntranceRole(userRole);
+  const isGiaoVuOrTuVan = isGiaoVuEntranceRole(userRole) || isTuVanEntranceRole(userRole);
+  const isBGHUser = !isGiaoVuOrTuVan && (isSystemAdmin || ["BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole) ||
+    (Array.isArray(rolePermissions) && rolePermissions.some((p: any) => (p.module === "XDKQ_MAM_NON" || p.module === "XET_DUYET_MAM_NON" || p.module === "XET_DUYET_KET_QUA") && p.canUpdate)));
+  const isGDCSUser = !isGiaoVuOrTuVan && isGdcsOrBghEntranceRole(userRole) && !["BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON"].includes(userRole);
+  const isCampusScoped = isCampusScopedEntranceRole(userRole) && (currentUser?.campusIds?.length || 0) > 0;
 
   const filteredCampuses = useMemo(() => {
-    return campuses.filter(c => !isGDCSUser || currentUser?.campusIds?.includes(c.id));
-  }, [campuses, isGDCSUser, currentUser]);
+    return campuses.filter(c => !isCampusScoped || currentUser?.campusIds?.includes(c.id));
+  }, [campuses, isCampusScoped, currentUser]);
 
   const showBghSection = true;
   const showGdcsSection = true;
@@ -1235,7 +1245,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 // Đánh giá phát triển
   const [devTab, setDevTab] = useState<"stats" | "assess" | "xetDuyet" | "manage" | "dgkqHocThu" | "xuatThuChucMung">("xetDuyet");
   const [ageGroupFilter, setAgeGroupFilter] = useState("12 đến 18 tháng");
-﻿  const [chartCampusId, setChartCampusId] = useState("all");
+  const [chartCampusId, setChartCampusId] = useState("all");
 
   const [cSearch, setCSearch] = useState("");
   const [approvalFilter, setApprovalFilter] = useState("");
@@ -1955,7 +1965,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         CS4: "bghmn.cs4@skylineschool.edu.vn",
         CS5: "bghmn.cs5@skylineschool.edu.vn",
       },
-      cc: "cc@skylineschool.edu.vn"
+      cc: "ktdbcl@skylineschool.edu.vn"
     };
 
     (campuses || []).forEach((c) => {
@@ -2998,21 +3008,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
 
             <table class="assessment-table" className="border border-slate-200 border-collapse">
-              <thead>
-                <tr>
-                  <th colspan="2" className="p-2 border border-slate-200">NỘI DUNG ĐÁNH GIÁ</th>
-                  <th colspan="3" className="p-2 border border-slate-200">KẾT QUẢ</th>
-                  <th rowspan="2" className="p-2 border border-slate-200">GHI CHÚ</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th colspan="2" className="p-2 border border-white/15 font-semibold">Nội dung đánh giá</th>
+                  <th colspan="3" className="p-2 border border-white/15 font-semibold">Kết quả</th>
+                  <th rowspan="2" className="p-2 border border-white/15 font-semibold">Ghi chú</th>
                 </tr>
-                <tr>
-                  <th className="p-2 border border-slate-200">LĨNH VỰC</th>
-                  <th className="p-2 border border-slate-200">TIÊU CHÍ</th>
-                  <th className="p-2 border border-slate-200">Chưa<br/>thể hiện</th>
-                  <th className="p-2 border border-slate-200">Bắt đầu<br/>thể hiện</th>
-                  <th className="p-2 border border-slate-200">Thể hiện<br/>tốt</th>
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="p-2 border border-white/15 font-semibold">Lĩnh vực</th>
+                  <th className="p-2 border border-white/15 font-semibold">Tiêu chí</th>
+                  <th className="p-2 border border-white/15 font-semibold">Chưa<br/>thể hiện</th>
+                  <th className="p-2 border border-white/15 font-semibold">Bắt đầu<br/>thể hiện</th>
+                  <th className="p-2 border border-white/15 font-semibold">Thể hiện<br/>tốt</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                 ${tableRowsHtml}
               </tbody>
             </table>
@@ -3267,7 +3277,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               })
             }).then(res => res.json()).then(mailRes => {
               if (mailRes.success) {
-                notify("Đã gửi email thông báo kết quả đến GĐCS, Tư vấn Cơ sở và Ban KT&ĐBCL!", "ok");
+                notify("Đã gửi email thông báo kết quả đến GĐCS, Tư vấn Cơ sở, Giáo vụ Cơ sở và Ban KT&ĐBCL!", "ok");
               }
             }).catch(() => {});
           } catch(mailErr) {}
@@ -3821,12 +3831,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       ) : (
                         <div className="overflow-x-auto bg-white border border-slate-300 rounded-none shadow-none">
                           <table className="w-full text-left border-collapse">
-                            <thead className="bg-[#48BFE3]/5/70 border-b border-slate-300">
-                              <tr>
-                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>)}
+                            <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] border border-white/15 font-semibold">{h}</th>)}
                               </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                               {p.batches.map(b => {
                                 const campus = campuses.find(c => c.id === b.campusId);
                                 let baseName = b.name;
@@ -4312,12 +4322,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {configs.length === 0 ? <Empty text="Chưa có danh mục nào" /> : (
                 <div className="overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left border-collapse">
-                    <thead className="bg-[#48BFE3]/5 border-b border-slate-300">
-                      <tr>
-                        <th className="p-2 w-12 border border-slate-200">
+                    <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="p-2 w-12 border border-white/15 font-semibold">
                           <input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={configs.length > 0 && cfgSelected.length === configs.length} onChange={e => setCfgSelected(e.target.checked ? configs.map(c => c.id) : [])} />
                         </th>
-                        {["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>)}
+                        {["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] border border-white/15 font-semibold">{h}</th>)}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-teal-50">
@@ -4396,13 +4406,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             ) : (
               <div className="overflow-x-auto custom-scrollbar flex-1">
                 <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
-                  <thead className="bg-[#48BFE3]/5 border-b border-slate-300">
-                    <tr>
-                      <th className="p-2 w-12 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
-                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">{h}</th>)}
+                  <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="p-2 w-12 border border-white/15 font-semibold"><input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
+                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] border border-white/15 font-semibold">{h}</th>)}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {filtChildren.map((child, i) => (
                       <tr key={child.id} className={`hover:bg-[#48BFE3]/5/30 transition-colors ${cSelected.includes(child.id) ? "bg-[#48BFE3]/5/50" : ""}`}>
                         <td className="p-2 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={cSelected.includes(child.id)} onChange={e => setCSelected(e.target.checked ? [...cSelected, child.id] : cSelected.filter(id => id !== child.id))} /></td>
@@ -4430,37 +4440,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
           
           {/* Custom Preschool/School Styled Tab Bar */}
-          ﻿          {/* Custom Preschool/School Styled Tab Bar */}
+                    {/* Custom Preschool/School Styled Tab Bar */}
           {latestBatchInfo && devTab !== "stats" && (
-            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-amber-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
-            
-            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start sm:items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform duration-300">
-                  <AlertCircle className="w-6 h-6 text-amber-600 animate-pulse" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1.5">
-                    <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-amber-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/90 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
-                      Thông báo
-                    </span>
-                    <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-amber-600 text-white font-bold shadow-sm text-xs tracking-wide">
-                      {latestBatchInfo.name}
-                    </span> 
-                    <span className="opacity-90">thuộc Kỳ</span> 
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-white text-slate-700 font-bold border border-amber-200/80 shadow-2xs text-xs">
-                      {latestBatchInfo.periodName}
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-800/80 font-medium mt-1">
-                    Vui lòng rà soát đánh giá các lĩnh vực phát triển và hoàn tất phê duyệt kết quả tuyển sinh Mầm non.
-                  </p>
-                </div>
+            <div className="no-print mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50/90 border border-amber-200/90 text-slate-800 text-xs">
+              <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-600 text-white font-semibold text-[11px]">
+                  <AlertCircle className="w-3.5 h-3.5" /> Đợt khảo sát mới nhất
+                </span>
+                <span className="font-bold text-slate-900 truncate">{latestBatchInfo.name}</span>
+                <span className="text-slate-500 text-xs hidden sm:inline">
+                  thuộc kỳ <strong className="text-slate-700 font-semibold">{latestBatchInfo.periodName}</strong>
+                </span>
               </div>
-
               <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                 <button
                   onClick={() => {
@@ -4468,74 +4459,43 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     setCBatchId(latestBatchInfo.id);
                     setDevTab("xetDuyet");
                   }}
-                  className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white text-xs font-black rounded-xl shadow-md shadow-amber-600/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                 >
-                  <span>Xem & Xét duyệt đợt này</span>
+                  <span>Chuyển đến đợt này</span>
                 </button>
               </div>
             </div>
-            </div>
           )}
-          <div className="bg-[#EBF5F4]/60 backdrop-blur-md p-1.5 rounded-3xl flex flex-wrap gap-2 w-fit border border-[#48BFE3]/15 shadow-sm no-print mb-6">
-            <button
-              onClick={() => setDevTab("stats")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
-                devTab === "stats" 
-                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
-              }`}
-            >
-              <BarChart3 className="w-4 h-4"/>
-              THỐNG KÊ PHÂN TÍCH
-            </button>
-            <button
-              onClick={() => setDevTab("assess")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
-                devTab === "assess" 
-                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
-              }`}
-            >
-              <Users className="w-4 h-4"/>
-              GV ĐÁNH GIÁ
-            </button>
-            <button
-              onClick={() => setDevTab("xetDuyet")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
-                devTab === "xetDuyet" 
-                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
-              }`}
-            >
-              <CheckCircle2 className="w-4 h-4"/>
-              DUYỆT KQĐG
-            </button>
-            <button
-              onClick={() => setDevTab("dgkqHocThu")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
-                devTab === "dgkqHocThu" 
-                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
-              }`}
-            >
-              <Sparkles className="w-4 h-4"/>
-              DUYỆT KQ HỌC THỬ
-            </button>
-            <button
-              onClick={() => setDevTab("xuatThuChucMung")}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
-                devTab === "xuatThuChucMung" 
-                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
-              }`}
-            >
-              <GraduationCap className="w-4 h-4"/>
-              XUẤT THƯ CHÚC MỪNG
-            </button>
+
+          {/* Sky-Line Academic Ledger Sub-navigation */}
+          <div className="bg-white p-2 rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] no-print mb-4 flex flex-wrap items-center gap-1.5">
+            {([
+              { id: "xetDuyet", label: "Duyệt kết quả đánh giá", icon: CheckCircle2 },
+              { id: "dgkqHocThu", label: "Duyệt kết quả học thử", icon: ClipboardList },
+              { id: "assess", label: "Giáo viên đánh giá", icon: Users },
+              { id: "xuatThuChucMung", label: "Xuất thư thông báo & Cam kết", icon: GraduationCap },
+              { id: "stats", label: "Báo cáo & Thống kê", icon: BarChart3 }
+            ] as const).map(item => {
+              const Icon = item.icon;
+              const isActive = devTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setDevTab(item.id)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                    isActive
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#5EEAD4]" : "text-[#008B85]"}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-
-﻿          {/* Sub-tab: Thống kê Phân tích */}
+          {/* Sub-tab: Thống kê Phân tích */}
           {devTab === "stats" && (
             <div className="space-y-8 animate-in fade-in duration-300 text-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm bg-white">
 
@@ -5040,8 +5000,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <>
                     <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-[#0B2E2B] to-[#0F3D38] text-white select-none">
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-white select-none text-[11px] font-semibold">
                           {assessCols.map(col => (
                             <th key={col.id} className={`px-4 py-3 text-[10px] font-black text-[#9ECFCB] uppercase tracking-wider border-b border-[#0D3330]/20 ${col.width}`}>
                               {col.label}
@@ -5049,7 +5009,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100/80">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {paginatedStudents.map((s, idx) => {
                             const statusBadge = () => {
                               if (s.scoredCount > 0) {
@@ -5112,174 +5072,96 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
           {/* Sub-tab: Duyệt KQĐG */}
           {devTab === "xetDuyet" && (
-            <div className="space-y-6">
-              
-              {/* Premium Dashboard-style Filter Bar */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-end mb-6">
-                <div className="group relative w-full">
-                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
-                    <Calendar className="w-3.5 h-3.5 text-slate-800"/> Kỳ Khảo sát
-                  </label>
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03)] border border-slate-200/90 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kỳ khảo sát</label>
+                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer">
+                    <option value="all">Tất cả các kỳ</option>
+                    {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Đợt khảo sát</label>
+                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer" disabled={!cPeriodId}>
+                    <option value="">Tất cả đợt</option>
+                    {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </div>
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Cơ sở</label>
+                  <select value={cCampusFilter} onChange={e => setCCampusFilter(e.target.value)} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer">
+                    <option value="">Tất cả cơ sở</option>
+                    {filteredCampuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
+                  </select>
+                </div>
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nhóm tuổi</label>
+                  <select value={cAgeGroupFilter} onChange={e => setCAgeGroupFilter(e.target.value)} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer">
+                    <option value="">Tất cả nhóm tuổi</option>
+                    <option value="12 đến 18 tháng">12 đến 18 tháng</option>
+                    <option value="18 đến 24 tháng">18 đến 24 tháng</option>
+                    <option value="24 đến 36 tháng">24 đến 36 tháng</option>
+                    <option value="3 tuổi đến 4 tuổi">3 tuổi đến 4 tuổi</option>
+                    <option value="4 tuổi đến 5 tuổi">4 tuổi đến 5 tuổi</option>
+                    <option value="5 tuổi đến 6 tuổi">5 tuổi đến 6 tuổi</option>
+                  </select>
+                </div>
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Trạng thái duyệt</label>
+                  <select value={approvalFilter} onChange={e => setApprovalFilter(e.target.value)} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer">
+                    <option value="">Tất cả kết quả</option>
+                    <option value="CHUA_DUYET">Chưa duyệt</option>
+                    <option value="DAT_MIEN_HOC_THU">Đạt - Miễn học thử</option>
+                    <option value="DAT_HOC_THU">Đạt - Học thử</option>
+                    <option value="DAT">Đạt</option>
+                    <option value="KHONG_DAT">Không đạt</option>
+                    <option value="Y_KIEN_KHAC">Ý kiến khác</option>
+                  </select>
+                </div>
+                <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tìm kiếm</label>
                   <div className="relative">
-                    <select 
-                      value={cPeriodId} 
-                      onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
-                    >
-                      <option value="all">Tất cả các kỳ</option>
-                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
+                    <input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tên hoặc mã bé..." className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl pl-8 pr-3 py-2 outline-none font-medium text-slate-800 transition-all text-xs" />
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   </div>
                 </div>
-
-                <div className="group relative w-full">
-                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
-                    <Layers className="w-3.5 h-3.5 text-slate-800"/> Đợt khảo sát
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={cBatchId} 
-                      onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
-                      disabled={!cPeriodId}
-                    >
-                      <option value="">Tất cả đợt</option>
-                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group relative w-full">
-                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
-                    <Building className="w-3.5 h-3.5 text-slate-800"/> Cơ sở
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={cCampusFilter} 
-                      onChange={e => setCCampusFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
-                    >
-                      <option value="">Tất cả Cơ sở</option>
-                      {filteredCampuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group relative w-full">
-                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
-                    <Layers className="w-3.5 h-3.5 text-slate-800"/> Nhóm tuổi
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={cAgeGroupFilter} 
-                      onChange={e => setCAgeGroupFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
-                    >
-                      <option value="">Tất cả Nhóm tuổi</option>
-                      <option value="12 đến 18 tháng">12 đến 18 tháng</option>
-                      <option value="18 đến 24 tháng">18 đến 24 tháng</option>
-                      <option value="24 đến 36 tháng">24 đến 36 tháng</option>
-                      <option value="3 tuổi đến 4 tuổi">3 tuổi đến 4 tuổi</option>
-                      <option value="4 tuổi đến 5 tuổi">4 tuổi đến 5 tuổi</option>
-                      <option value="5 tuổi đến 6 tuổi">5 tuổi đến 6 tuổi</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-<div className="group relative w-full">
-                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
-                    <Sparkles className="w-3.5 h-3.5 text-slate-800"/> Kết quả
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={approvalFilter} 
-                      onChange={e => setApprovalFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
-                    >
-                      <option value="">-- Tất cả --</option>
-                      <option value="CHUA_DUYET">Chưa duyệt</option>
-                      <option value="DAT_MIEN_HOC_THU">Đạt - Miễn Học Thử</option>
-                      <option value="DAT_HOC_THU">Đạt - Học Thử</option>
-                      <option value="DAT">Đạt</option>
-                      <option value="KHONG_DAT">Không đạt</option>
-                      <option value="Y_KIEN_KHAC">Ý kiến khác</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="group relative w-full">
-                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
-                    <Search className="w-3.5 h-3.5 text-slate-800"/> Tìm nhanh
-                  </label>
-                  <div className="relative">
-                    <input 
-                      value={cSearch} 
-                      onChange={e => setCSearch(e.target.value)} 
-                      placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
-                    />
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-
                 <div className="flex gap-2">
-                  <button 
-                    onClick={fetchStudentSummaries} 
-                    className="h-10 px-4 text-xs font-black uppercase text-white bg-[#48BFE3] hover:bg-[#008F89] hover:scale-[1.01] rounded-2xl shadow-sm hover:shadow-md shadow-[#48BFE3]/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
-                  >
-                    <Search className="w-4 h-4" /> Tìm
+                  <button onClick={fetchStudentSummaries} className="h-9 px-3.5 text-xs font-semibold text-white bg-[#003B3A] hover:bg-[#005854] rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer w-full">
+                    <Search className="w-3.5 h-3.5 text-[#5EEAD4]" /> Lọc
                   </button>
-                  <button
-                    onClick={exportDevExcel}
-                    disabled={filteredStudents.length === 0}
-                    className="h-10 px-4 text-xs font-black uppercase text-slate-800 bg-white hover:bg-[#EBF5F4]/40 hover:scale-[1.01] rounded-2xl shadow-sm border border-emerald-250/80 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:scale-100 disabled:bg-slate-50 w-full"
-                  >
-                    <Download className="w-4 h-4" /> Xuất Excel
+                  <button onClick={exportDevExcel} disabled={filteredStudents.length === 0} className="h-9 px-3 text-xs font-semibold text-[#003B3A] bg-white hover:bg-[#F0FDFA] rounded-xl border border-slate-200 hover:border-[#008B85] transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 w-full">
+                    <Download className="w-3.5 h-3.5 text-[#008B85]" /> Excel
                   </button>
                 </div>
               </div>
 
-              {/* Table Section */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03)] border border-slate-200/90 overflow-hidden tabular-nums">
                 {sumLoading ? (
                   <div className="flex flex-col items-center justify-center p-16 gap-3">
-                    <Loader2 className="w-8 h-8 text-slate-800 animate-spin" />
-                    <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">Đang tải danh sách...</span>
+                    <Loader2 className="w-7 h-7 text-[#008B85] animate-spin" />
+                    <span className="text-slate-500 font-semibold text-xs">Đang tải danh sách hồ sơ...</span>
                   </div>
                 ) : filteredStudents.length === 0 ? (
-                  <Empty text={cPeriodId ? "Chưa có bé nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Hãy thêm học sinh trước" : ""} />
+                  <Empty text={cPeriodId ? "Chưa có hồ sơ trẻ nào" : "Vui lòng chọn kỳ khảo sát"} sub={cPeriodId ? "Hãy kiểm tra lại bộ lọc hiện tại" : ""} />
                 ) : (
                   <>
                     <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-[#0B2E2B] to-[#0F3D38] text-white select-none">
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="border-b select-none text-[11px] font-semibold">
                           {xetDuyetCols.filter(col => {
                             if (col.id === "bghApproval") return showBghSection;
                             if (col.id === "gdcsApproval") return showGdcsSection;
                             return true;
                           }).map(col => (
-                            <th key={col.id} className={`px-4 py-3 text-[10px] font-black text-[#9ECFCB] uppercase tracking-wider border-b border-[#0D3330]/20 ${col.width}`}>
+                            <th key={col.id} className={`px-4 py-3 text-[11px] font-semibold text-slate-600 border-b border-slate-200 ${col.width}`}>
                               {col.label}
                             </th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100/80">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {paginatedStudents.map((s, idx) => {
                             const getResultBadge = (res: string) => {
                               if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
@@ -5616,8 +5498,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <>
                     <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-[#0B2E2B] to-[#0F3D38] text-white select-none">
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-white select-none text-[11px] font-semibold">
                           {dgkqHocThuCols.map(col => (
                             <th key={col.id} className={`px-4 py-3 text-[10px] font-black text-[#9ECFCB] uppercase tracking-wider border-b border-[#0D3330]/20 ${col.width}`}>
                               {col.label}
@@ -5625,7 +5507,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100/80">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {paginatedStudents.map((s, idx) => {
                             const isExempt = (s.admissionResult || "").toUpperCase().includes("MIỄN") || (s.admissionResult || "").toUpperCase().includes("MIEN");
                             const resultBadge = () => {
@@ -5822,8 +5704,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <>
                     <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-[#0B2E2B] to-[#0F3D38] text-white select-none">
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-white select-none text-[11px] font-semibold">
                           {xuatThuChucMungCols.map(col => (
                             <th key={col.id} className={`px-4 py-3 text-[10px] font-black text-[#9ECFCB] uppercase tracking-wider border-b border-[#0D3330]/20 ${col.width}`}>
                               {col.label}
@@ -5831,7 +5713,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100/80">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {paginatedStudents.map((s, idx) => {
                             const resultBadge = () => {
                               if (s.probationaryResult === "DAT") {
@@ -6085,10 +5967,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           ) : (
                             <div className="overflow-x-auto bg-white border border-slate-300 rounded-none shadow-none">
                               <table className="w-full text-left border-collapse">
-                                <thead className="bg-[#48BFE3]/5/50 border-b border-slate-300">
-                                  <tr>
+                                <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                                  <tr className="text-[11px] font-semibold whitespace-nowrap">
                                     {["STT", "Mã", "Tên Tiêu Chí", "Nhóm tuổi", "Thao tác"].map(h => (
-                                      <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>
+                                      <th key={h} className="p-2 text-[10px] border border-white/15 font-semibold">{h}</th>
                                     ))}
                                   </tr>
                                 </thead>
@@ -7141,17 +7023,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                 <div className="border border-slate-300 rounded-none overflow-hidden max-h-[260px] overflow-y-auto">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="text-slate-500 font-bold uppercase text-[9px] tracking-wider text-xs font-semibold">
-                        <th className="p-2 w-10 text-center border border-slate-200">Gửi</th>
-                        <th className="p-2 border border-slate-200">Mã học sinh</th>
-                        <th className="p-2 border border-slate-200">Họ và tên</th>
-                        <th className="p-2 border border-slate-200">Nhóm tuổi</th>
-                        <th className="p-2 border border-slate-200">Hệ khảo sát</th>
-                        <th className="p-2 border border-slate-200">Kết quả</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[9px] text-xs font-semibold">
+                        <th className="p-2 w-10 text-center border border-white/15 font-semibold">Gửi</th>
+                        <th className="p-2 border border-white/15 font-semibold">Mã học sinh</th>
+                        <th className="p-2 border border-white/15 font-semibold">Họ và tên</th>
+                        <th className="p-2 border border-white/15 font-semibold">Nhóm tuổi</th>
+                        <th className="p-2 border border-white/15 font-semibold">Hệ khảo sát</th>
+                        <th className="p-2 border border-white/15 font-semibold">Kết quả</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                       {emailStudents.map((s, idx) => (
                         <tr 
                           key={s.id} 
@@ -8005,7 +7887,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <th className="p-2 p-2 font-bold text-center uppercase text-slate-950 w-32 border border-slate-200">Số lượng</th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                             {([]).map((item, idx) => (
                               <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
                                 <td className="px-3 py-2.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
@@ -8110,7 +7992,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   let parsedCols = { scores: [] };
                   try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [] }; } } catch {}
 
-                  const failedCriteria = scoreVals.map((v, idx) => v === "2" ? (parsedCols.scores[idx] || (isChildDev ? [
+                  const failedCriteria = scoreVals.map((v, idx) => ["2", "Không đạt", "KHONG_DAT"].includes(String(v ?? "").trim()) ? (parsedCols.scores[idx] || (isChildDev ? [
     "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
     "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
     "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
@@ -8128,7 +8010,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
     "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
 ][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
-                  const skippedCriteria = scoreVals.map((v, idx) => v === "1" ? (parsedCols.scores[idx] || (isChildDev ? [
+                  const skippedCriteria = scoreVals.map((v, idx) => ["1", "Không làm", "KHONG_LAM"].includes(String(v ?? "").trim()) ? (parsedCols.scores[idx] || (isChildDev ? [
     "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
     "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
     "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
@@ -9038,16 +8920,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   
                   <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left table-fixed border-collapse">
-                      <thead className="bg-slate-100/70 border-b border-slate-200">
-                        <tr>
-                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider w-[40%]">Tiêu chí đánh giá</th>
-                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-[15%]">Chưa thể hiện</th>
-                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-[15%]">Bắt đầu thể hiện</th>
-                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-[15%]">Thể hiện tốt</th>
-                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider w-[15%]">Ghi chú</th>
+                      <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="p-3 text-[10px] w-[40%] font-semibold">Tiêu chí đánh giá</th>
+                          <th className="p-3 text-[10px] text-center w-[15%] font-semibold">Chưa thể hiện</th>
+                          <th className="p-3 text-[10px] text-center w-[15%] font-semibold">Bắt đầu thể hiện</th>
+                          <th className="p-3 text-[10px] text-center w-[15%] font-semibold">Thể hiện tốt</th>
+                          <th className="p-3 text-[10px] w-[15%] font-semibold">Ghi chú</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {area.criteria?.map(crit => {
                           const currentScore = probScores[crit.id] || { result: "", note: "" };
                           

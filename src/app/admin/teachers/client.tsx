@@ -633,9 +633,9 @@ export function TeacherManagerClient({
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 bg-[#003B3A] text-white">
-                <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-12 border border-slate-200">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b bg-[#003B3A] text-white text-[11px] font-semibold">
+                <th className="p-2 text-center text-[11px] w-12 border border-white/15 font-semibold">
                   <input type="checkbox" className="w-4 h-4 rounded text-[#48BFE3] cursor-pointer"
                     checked={displayed.length > 0 && selectedDisplayedIds.length === displayed.length}
                     onChange={(e) => {
@@ -644,20 +644,20 @@ export function TeacherManagerClient({
                     }}
                   />
                 </th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-12 border border-slate-200">#</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-28 border border-slate-200">Mã GV</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider min-w-[200px] border border-slate-200">Họ và Tên</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider min-w-[180px] border border-slate-200">Email</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-40 border border-slate-200">Cơ sở</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-48 border border-slate-200">Tổ chuyên môn</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider min-w-[180px] border border-slate-200">Bộ phận phụ trách (TBP)</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-36 border border-slate-200">Chức vụ</th>
-                <th className="p-2 p-2 text-left text-[11px] font-black uppercase tracking-wider w-56 border border-slate-200">Tài khoản</th>
-                <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-32 border border-slate-200">Trạng thái</th>
-                <th className="p-2 p-2 text-center text-[11px] font-black uppercase tracking-wider w-32 border border-slate-200">Thao tác</th>
+                <th className="p-2 text-left text-[11px] w-12 border border-white/15 font-semibold">#</th>
+                <th className="p-2 text-left text-[11px] w-28 border border-white/15 font-semibold">Mã GV</th>
+                <th className="p-2 text-left text-[11px] min-w-[200px] border border-white/15 font-semibold">Họ và Tên</th>
+                <th className="p-2 text-left text-[11px] min-w-[180px] border border-white/15 font-semibold">Email</th>
+                <th className="p-2 text-left text-[11px] w-40 border border-white/15 font-semibold">Cơ sở</th>
+                <th className="p-2 text-left text-[11px] w-48 border border-white/15 font-semibold">Tổ chuyên môn</th>
+                <th className="p-2 text-left text-[11px] min-w-[180px] border border-white/15 font-semibold">Bộ phận phụ trách (TBP)</th>
+                <th className="p-2 text-left text-[11px] w-36 border border-white/15 font-semibold">Chức vụ</th>
+                <th className="p-2 text-left text-[11px] w-56 border border-white/15 font-semibold">Tài khoản</th>
+                <th className="p-2 text-center text-[11px] w-32 border border-white/15 font-semibold">Trạng thái</th>
+                <th className="p-2 text-center text-[11px] w-32 border border-white/15 font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {displayed.length === 0 ? (
                 <tr>
                   <td colSpan={12} className="p-2 p-2 text-center border border-slate-200">

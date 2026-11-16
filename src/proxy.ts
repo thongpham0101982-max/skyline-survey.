@@ -26,8 +26,10 @@ export default auth((req) => {
   
   if (!isLoggedIn && !isOnLogin) {
     const loginUrl = new URL('/login', req.nextUrl)
-    if (pathname.startsWith('/profile/verify/')) {
+    if (pathname && pathname !== '/') {
       loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search)
+    }
+    if (pathname.startsWith('/profile/verify/')) {
       loginUrl.searchParams.set('role', 'PARENT')
     }
     return NextResponse.redirect(loginUrl)
@@ -65,7 +67,13 @@ export default auth((req) => {
     }
   }
   
-  const response = NextResponse.next()
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-pathname', pathname)
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
     response.headers.set("X-Frame-Options", "SAMEORIGIN")
     response.headers.set("X-Content-Type-Options", "nosniff")
     response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")

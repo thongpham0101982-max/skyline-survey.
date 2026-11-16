@@ -358,9 +358,9 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
         {/* Departments List Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
-                <th className="w-12 p-3.5 text-center">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[10px] font-semibold">
+                <th className="w-12 p-3.5 text-center font-semibold">
                   <input
                     type="checkbox"
                     checked={filtered.length > 0 && selectedIds.length === filtered.length}
@@ -368,15 +368,15 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
                     className="w-4 h-4 rounded text-teal-800 focus:ring-indigo-500 cursor-pointer"
                   />
                 </th>
-                <th className="p-3.5">Mã Tổ</th>
-                <th className="p-3.5 w-1/3">Tên Tổ Chuyên Môn</th>
-                <th className="p-3.5">Bộ Phận Trực Thuộc</th>
-                <th className="p-3.5 text-center">Số GV</th>
-                <th className="p-3.5">Mô tả</th>
-                <th className="p-3.5 text-center w-24">Thao tác</th>
+                <th className="p-3.5 font-semibold">Mã Tổ</th>
+                <th className="p-3.5 w-1/3 font-semibold">Tên Tổ Chuyên Môn</th>
+                <th className="p-3.5 font-semibold">Bộ Phận Trực Thuộc</th>
+                <th className="p-3.5 text-center font-semibold">Số GV</th>
+                <th className="p-3.5 font-semibold">Mô tả</th>
+                <th className="p-3.5 text-center w-24 font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="p-12 text-center text-slate-400">

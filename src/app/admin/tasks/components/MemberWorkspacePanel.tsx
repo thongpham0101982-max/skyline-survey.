@@ -130,10 +130,10 @@ export function MemberWorkspacePanel({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-xs">
       <div className="w-full max-w-2xl bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
-        {/* Header thông tin tài khoản thực */}
-        <div className="px-6 py-5 bg-gradient-to-r from-slate-900 via-violet-950 to-slate-900 text-white flex items-start justify-between gap-4">
+        {/* Header thông tin tài khoản thực — Sky-Line Deep Pine (#003B3A) */}
+        <div className="px-6 py-5 bg-[#003B3A] border-b border-[#00A19A]/40 text-white flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-teal-500 border-2 border-teal-200 text-white font-black text-xl flex items-center justify-center shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-[#00A19A] border-2 border-[#CCFBF1] text-white font-black text-xl flex items-center justify-center shrink-0">
               {String(member.fullName || "U")
                 .trim()
                 .split(" ")
@@ -143,18 +143,18 @@ export function MemberWorkspacePanel({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg font-extrabold text-white">{member.fullName}</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/30 text-teal-700 border border-teal-400/40">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/15 text-[#CCFBF1] border border-white/25">
                   {member.role}
                 </span>
               </div>
-              <div className="text-xs text-slate-300 flex items-center gap-3 mt-1 flex-wrap">
+              <div className="text-xs text-teal-100 flex items-center gap-3 mt-1 flex-wrap">
                 <span className="inline-flex items-center gap-1">
-                  <Mail className="w-3.5 h-3.5 text-teal-700" />
+                  <Mail className="w-3.5 h-3.5 text-[#5EEAD4]" />
                   {member.email}
                 </span>
                 {member.teacher?.departmentRel?.name && (
                   <span className="inline-flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-teal-300" />
+                    <Briefcase className="w-3.5 h-3.5 text-[#5EEAD4]" />
                     {member.teacher.departmentRel.name}
                   </span>
                 )}

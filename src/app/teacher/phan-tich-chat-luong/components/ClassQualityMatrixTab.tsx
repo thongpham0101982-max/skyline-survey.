@@ -105,21 +105,21 @@ export function ClassQualityMatrixTab({
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/90 border-b border-slate-200/80 text-slate-600 font-semibold uppercase text-[10px] tracking-wider">
-                  <th className="py-3 px-4">Lớp phụ trách</th>
-                  <th className="py-3 px-3 text-center">Sĩ số / Đã chấm</th>
-                  <th className="py-3 px-3 text-center">ĐTB Môn</th>
-                  <th className="py-3 px-3 text-center">Trung vị</th>
-                  <th className="py-3 px-3 text-center">Min - Max</th>
-                  <th className="py-3 px-3 text-center">Độ lệch (σ)</th>
-                  <th className="py-3 px-3 min-w-[170px] text-center">Cơ cấu Phổ điểm (5 Dải)</th>
-                  <th className="py-3 px-3 text-center">Đạt Chuẩn SKL</th>
-                  <th className="py-3 px-3 text-center">Chỉ tiêu Quota</th>
-                  <th className="py-3 px-4 text-center">Hành động</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b font-semibold text-[10px]">
+                  <th className="py-3 px-4 font-semibold">Lớp phụ trách</th>
+                  <th className="py-3 px-3 text-center font-semibold">Sĩ số / Đã chấm</th>
+                  <th className="py-3 px-3 text-center font-semibold">ĐTB Môn</th>
+                  <th className="py-3 px-3 text-center font-semibold">Trung vị</th>
+                  <th className="py-3 px-3 text-center font-semibold">Min - Max</th>
+                  <th className="py-3 px-3 text-center font-semibold">Độ lệch (σ)</th>
+                  <th className="py-3 px-3 min-w-[170px] text-center font-semibold">Cơ cấu Phổ điểm (5 Dải)</th>
+                  <th className="py-3 px-3 text-center font-semibold">Đạt Chuẩn SKL</th>
+                  <th className="py-3 px-3 text-center font-semibold">Chỉ tiêu Quota</th>
+                  <th className="py-3 px-4 text-center font-semibold">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
                 {classAnalytics.map((c) => {
                   const b = c.bands || {}
                   const excPct = b.excellent?.pct || 0
@@ -276,21 +276,21 @@ export function ClassQualityMatrixTab({
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/90 border-b border-slate-200/80 text-slate-600 font-semibold uppercase text-[10px] tracking-wider">
-                  <th className="py-3 px-4">Lớp phụ trách</th>
-                  <th className="py-3 px-3 text-center">Sĩ số</th>
-                  <th className="py-3 px-3 text-center">KSĐN</th>
-                  <th className="py-3 px-3 text-center">GK1</th>
-                  <th className="py-3 px-3 text-center">Δ (GK1 - KSĐN)</th>
-                  <th className="py-3 px-3 text-center">CK1</th>
-                  <th className="py-3 px-3 text-center">Δ (CK1 - GK1)</th>
-                  <th className="py-3 px-3 text-center">GK2</th>
-                  <th className="py-3 px-3 text-center">CK2</th>
-                  <th className="py-3 px-3 text-center">Đánh giá Tiến trình</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b font-semibold text-[10px]">
+                  <th className="py-3 px-4 font-semibold">Lớp phụ trách</th>
+                  <th className="py-3 px-3 text-center font-semibold">Sĩ số</th>
+                  <th className="py-3 px-3 text-center font-semibold">KSĐN</th>
+                  <th className="py-3 px-3 text-center font-semibold">GK1</th>
+                  <th className="py-3 px-3 text-center font-semibold">Δ (GK1 - KSĐN)</th>
+                  <th className="py-3 px-3 text-center font-semibold">CK1</th>
+                  <th className="py-3 px-3 text-center font-semibold">Δ (CK1 - GK1)</th>
+                  <th className="py-3 px-3 text-center font-semibold">GK2</th>
+                  <th className="py-3 px-3 text-center font-semibold">CK2</th>
+                  <th className="py-3 px-3 text-center font-semibold">Đánh giá Tiến trình</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] text-slate-700">
                 {trendMatrix.map((t) => {
                   const p = t.periodStats || {}
                   const d = t.deltas || {}

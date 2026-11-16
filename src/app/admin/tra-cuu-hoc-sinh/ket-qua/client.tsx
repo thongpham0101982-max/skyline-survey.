@@ -495,19 +495,19 @@ export default function KetQuaClient() {
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
-                      <tr>
-                        <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                        <th className="py-3.5 px-4 min-w-[160px]">Môn học</th>
+                    <thead className="bg-[#003B3A] border-b text-xs font-semibold text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="py-3.5 px-4 w-12 text-center font-semibold">STT</th>
+                        <th className="py-3.5 px-4 min-w-[160px] font-semibold">Môn học</th>
                         {MILESTONES.map((m) => (
-                          <th key={m.key} className="py-3.5 px-3 text-center">
+                          <th key={m.key} className="py-3.5 px-3 text-center font-semibold">
                             {m.short}
                           </th>
                         ))}
-                        <th className="py-3.5 px-4 min-w-[200px]">Nhận xét của giáo viên</th>
+                        <th className="py-3.5 px-4 min-w-[200px] font-semibold">Nhận xét của giáo viên</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {subjects.length === 0 ? (
                         <tr>
                           <td colSpan={9} className="py-8 text-center text-slate-500">
@@ -606,21 +606,21 @@ export default function KetQuaClient() {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
-                    <tr>
-                      <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                      <th className="py-3.5 px-4">Mã HS</th>
-                      <th className="py-3.5 px-4 min-w-[180px]">Họ và tên</th>
-                      <th className="py-3.5 px-3 text-center">Giới tính</th>
+                  <thead className="bg-[#003B3A] border-b text-xs font-semibold text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-3.5 px-4 w-12 text-center font-semibold">STT</th>
+                      <th className="py-3.5 px-4 font-semibold">Mã HS</th>
+                      <th className="py-3.5 px-4 min-w-[180px] font-semibold">Họ và tên</th>
+                      <th className="py-3.5 px-3 text-center font-semibold">Giới tính</th>
                       {MILESTONES.map((m) => (
                         <th key={m.key} className="py-3.5 px-3 text-center font-bold">
                           {m.short}
                         </th>
                       ))}
-                      <th className="py-3.5 px-3 text-center">Xu hướng</th>
+                      <th className="py-3.5 px-3 text-center font-semibold">Xu hướng</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {matrixRows.length === 0 ? (
                       <tr>
                         <td colSpan={10} className="py-8 text-center text-slate-500">

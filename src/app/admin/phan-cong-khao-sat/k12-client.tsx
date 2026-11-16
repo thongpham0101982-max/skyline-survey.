@@ -801,11 +801,12 @@ export function PhanCongK12Client({
       const insight = analyzeStudentAcademicAndRegulation(st, regulationConfig)
       insight.recommendedSubjectNames.forEach(n => allRecSubjectNames.add(n))
       if (st.grade) allGrades.add(String(st.grade).replace(/\D/g, "") || String(st.grade))
-      const sys = String(st.surveySystem || "").toUpperCase().trim()
+      const sys = String(insight.resolvedSystemCode || st.surveyFormType || st.surveySystem || "").toUpperCase().trim()
       if (sys) {
         currentEduSystems.forEach((es: any) => {
           const code = String(es.code || "").toUpperCase()
-          if (sys.includes(code) || code.includes(sys)) {
+          if (code.startsWith("MN")) return
+          if (sys === code || sys.includes(code) || code.includes(sys)) {
             allSystems.add(es.code)
           }
         })
@@ -1301,17 +1302,17 @@ export function PhanCongK12Client({
 
                       <div className="overflow-x-auto max-h-72 overflow-y-auto rounded-xl border border-slate-200/80 custom-scrollbar">
                         <table className="w-full text-left border-collapse text-xs">
-                          <thead className="sticky top-0 z-10 bg-slate-50/95 border-b border-slate-200/80 text-[#003B3A]">
-                            <tr>
-                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider w-8 text-center">#</th>
-                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider min-w-[170px]">Học sinh & Trường cũ</th>
-                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider min-w-[125px]">Nguyện vọng ĐK</th>
-                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider min-w-[250px]">Kết quả Học tập & Điểm trường cũ</th>
-                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider min-w-[260px]">Đối chiếu Quy chế & Môn cần KS</th>
-                              <th className="px-3 py-2 font-bold text-[10px] uppercase tracking-wider text-right w-32">Thao tác</th>
+                          <thead className="bg-[#003B3A] sticky top-0 z-10 border-b text-white border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="px-3 py-2 font-bold text-[10px] w-8 text-center">#</th>
+                              <th className="px-3 py-2 font-bold text-[10px] min-w-[170px]">Học sinh & Trường cũ</th>
+                              <th className="px-3 py-2 font-bold text-[10px] min-w-[125px]">Nguyện vọng ĐK</th>
+                              <th className="px-3 py-2 font-bold text-[10px] min-w-[250px]">Kết quả Học tập & Điểm trường cũ</th>
+                              <th className="px-3 py-2 font-bold text-[10px] min-w-[260px]">Đối chiếu Quy chế & Môn cần KS</th>
+                              <th className="px-3 py-2 font-bold text-[10px] text-right w-32">Thao tác</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 bg-white">
+                          <tbody className="divide-y divide-[#E2E8F0] bg-white">
                             {studentsList.map((st: any, sIdx: number) => {
                               const insight = analyzeStudentAcademicAndRegulation(st, regulationConfig)
                               const sysCode = st.surveySystem || "HNS"
@@ -1352,19 +1353,19 @@ export function PhanCongK12Client({
                                     )}
                                   </td>
 
-                                  <td className="px-3 py-2.5">
-                                    <div className="flex flex-wrap items-center gap-1">
-                                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${getSystemBadgeStyle(sysCode)}`}>
-                                        Hệ {sysCode}
-                                      </span>
-                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/70">
-                                        {criteria}
-                                      </span>
-                                    </div>
-                                    <div className="text-[11px] text-slate-400 mt-1">
-                                      Hình thức: <strong className="text-slate-600 font-medium">{st.surveyFormType || "Offline"}</strong>
-                                    </div>
-                                  </td>
+                                    <td className="px-3 py-2.5">
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${getSystemBadgeStyle(insight.resolvedSystemCode || sysCode)}`}>
+                                          Hệ {insight.resolvedSystemCode || sysCode}
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/70">
+                                          {criteria}
+                                        </span>
+                                      </div>
+                                      <div className="text-[11px] text-slate-500 mt-1">
+                                        Thời điểm: <strong className="text-[#003B3A] font-semibold">{insight.intakeTimingLabel}</strong>
+                                      </div>
+                                    </td>
 
                                   <td className="px-3 py-2.5">
                                     <div className="flex flex-wrap items-center gap-1.5 mb-1">
@@ -1421,16 +1422,25 @@ export function PhanCongK12Client({
                                         {insight.regulationBadgeLabel}
                                       </span>
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-1 mt-1">
-                                      <span className="text-[10px] font-semibold text-slate-500 mr-0.5">Cần KS:</span>
-                                      {insight.recommendedSubjectNames.map((subName, idx) => (
-                                        <span
-                                          key={idx}
-                                          className="px-1.5 py-0.2 rounded bg-[#00736E]/10 text-[#005854] border border-[#00736E]/25 text-[10px] font-bold"
-                                        >
-                                          {subName}
-                                        </span>
-                                      ))}
+                                      <div className="flex flex-wrap items-center gap-1 mt-1">
+                                        <span className="text-[10px] font-semibold text-slate-500 mr-0.5">Cần KS:</span>
+                                        {insight.recommendedSubjectNames.map((subName, idx) => {
+                                          const isOrient = insight.orientationSubjectNames?.includes(subName)
+                                          return (
+                                            <span
+                                              key={idx}
+                                              title={isOrient ? "Chỉ dùng để định hướng đầu vào, không dùng làm tiêu chí xét tuyển" : undefined}
+                                              className={`px-1.5 py-0.2 rounded border text-[10px] font-bold ${
+                                                isOrient
+                                                  ? "bg-teal-50/70 text-[#00736E] border-teal-200"
+                                                  : "bg-[#00736E]/10 text-[#005854] border-[#00736E]/25"
+                                              }`}
+                                            >
+                                              {subName}
+                                              {isOrient ? " (Định hướng)" : ""}
+                                            </span>
+                                          )
+                                        })}
                                       {insight.exemptedSubjectNames.map((exName, idx) => (
                                         <span
                                           key={idx}
@@ -2101,18 +2111,18 @@ export function PhanCongK12Client({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#003B3A]/[0.03] border-b border-slate-200/80 text-[#003B3A]">
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider w-12 text-center">#</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Giáo viên phụ trách</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Môn khảo sát</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Khối lớp</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider">Hệ đào tạo</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider text-center">Học sinh</th>
-                  <th className="px-4 py-3 font-bold text-[11px] uppercase tracking-wider text-right">Thao tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="bg-[#003B3A] text-white border-b border-[#003B3A] text-[11px] font-semibold">
+                  <th className="px-4 py-3 font-bold text-[11px] w-12 text-center">#</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Giáo viên phụ trách</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Môn khảo sát</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Khối lớp</th>
+                  <th className="px-4 py-3 font-bold text-[11px]">Hệ đào tạo</th>
+                  <th className="px-4 py-3 font-bold text-[11px] text-center">Học sinh</th>
+                  <th className="px-4 py-3 font-bold text-[11px] text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {groupedAssignments.map((a, idx) => {
                   const assignedStudents = getAssignedStudentsForGroup(a)
                   const isCurrentSelectedTeacher = asTeacherId === a.userId
@@ -2300,18 +2310,18 @@ export function PhanCongK12Client({
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50/90 border-b border-slate-200/70 text-[#003B3A]">
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider w-10 text-center">#</th>
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider w-24">Mã HS</th>
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider">Họ và tên</th>
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider text-center w-24">Khối • Hệ</th>
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider">Kết quả Học tập & Điểm trường cũ</th>
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider">Đối chiếu Quy chế</th>
-                      <th className="px-3.5 py-2.5 font-bold text-[11px] uppercase tracking-wider text-right w-36">Thao tác</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b border-[#003B3A] text-white text-[11px] font-semibold">
+                      <th className="px-3.5 py-2.5 font-bold text-[11px] w-10 text-center">#</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px] w-24">Mã HS</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px]">Họ và tên</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px] text-center w-24">Khối • Hệ</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px]">Kết quả Học tập & Điểm trường cũ</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px]">Đối chiếu Quy chế</th>
+                      <th className="px-3.5 py-2.5 font-bold text-[11px] text-right w-36">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {getAssignedStudentsForGroup(viewingStudentAssignment).map((st: any, sIdx: number) => {
                       const sysCode = st.surveySystem || st.surveyFormType || "Tiêu chuẩn"
                       const insight = analyzeStudentAcademicAndRegulation(st, regulationConfig)

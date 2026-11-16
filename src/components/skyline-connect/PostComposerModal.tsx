@@ -27,7 +27,10 @@ export interface ComposerInitialData {
   summary?: string;
   content?: string;
   coverImageUrl?: string | null;
-  visibility?: "SYSTEM" | "CAMPUS" | "GROUP";
+  videoUrl?: string | null;
+  demoUrl?: string | null;
+  topicName?: string | null;
+  visibility?: "DEPARTMENT" | "CAMPUS" | "SYSTEM" | "GROUP";
   groupId?: string | null;
   status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   subjectCodes?: string[];
@@ -101,7 +104,10 @@ export function PostComposerModal({
   const [summary, setSummary] = useState(initialData?.summary || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [coverImageUrl, setCoverImageUrl] = useState(initialData?.coverImageUrl || "");
-  const [visibility, setVisibility] = useState<"SYSTEM" | "CAMPUS" | "GROUP">(
+  const [videoUrl, setVideoUrl] = useState(initialData?.videoUrl || "");
+  const [demoUrl, setDemoUrl] = useState(initialData?.demoUrl || "");
+  const [topicName, setTopicName] = useState(initialData?.topicName || "");
+  const [visibility, setVisibility] = useState<"DEPARTMENT" | "CAMPUS" | "SYSTEM" | "GROUP">(
     initialData?.visibility || "SYSTEM"
   );
   const [groupId, setGroupId] = useState(initialData?.groupId || "");
@@ -185,6 +191,9 @@ export function PostComposerModal({
       setSummary(initialData?.summary || "");
       setContent(initialData?.content || "");
       setCoverImageUrl(initialData?.coverImageUrl || "");
+      setVideoUrl(initialData?.videoUrl || "");
+      setDemoUrl(initialData?.demoUrl || "");
+      setTopicName(initialData?.topicName || "");
       setVisibility(initialData?.visibility || "SYSTEM");
       setGroupId(initialData?.groupId || "");
       setSubjectCodes(initialData?.subjectCodes || []);
@@ -385,6 +394,9 @@ export function PostComposerModal({
           summary: summary.trim(),
           content: content.trim(),
           coverImageUrl: coverImageUrl.trim() || null,
+          videoUrl: videoUrl.trim() || null,
+          demoUrl: demoUrl.trim() || productUrl.trim() || null,
+          topicName: topicName.trim() || null,
           visibility,
           groupId: visibility === "GROUP" ? groupId : null,
           status: targetStatus,
@@ -393,6 +405,7 @@ export function PostComposerModal({
           purposeTags,
           tags,
           mentionedUserIds: taggedTeachers.map((t) => t.userId),
+          collaboratorIds: taggedTeachers.map((t) => t.userId),
           hasStudentDataPiiChecked: piiChecked,
           problemStatement: problemStatement.trim(),
           proposedSolution: content.trim(),
@@ -546,14 +559,15 @@ export function PostComposerModal({
 
           {/* 2. Phạm vi hiển thị */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Phạm vi hiển thị
+                Phạm vi chia sẻ (Tổ chuyên môn, Cơ sở, Toàn hệ thống hoặc Nhóm)
               </label>
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { id: "SYSTEM" as const, label: "Toàn hệ thống", icon: Globe },
+                  { id: "DEPARTMENT" as const, label: "Tổ chuyên môn", icon: BookOpen },
                   { id: "CAMPUS" as const, label: "Cơ sở của tôi", icon: Building2 },
+                  { id: "SYSTEM" as const, label: "Toàn hệ thống", icon: Globe },
                   { id: "GROUP" as const, label: "Nhóm chuyên môn", icon: Users },
                 ].map((v) => {
                   const VIcon = v.icon;
@@ -562,9 +576,9 @@ export function PostComposerModal({
                       key={v.id}
                       type="button"
                       onClick={() => setVisibility(v.id)}
-                      className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         visibility === v.id
-                          ? "bg-[#123E4A] text-white border-[#123E4A]"
+                          ? "bg-[#003B3A] text-white border-[#003B3A]"
                           : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                       }`}
                     >
@@ -577,7 +591,7 @@ export function PostComposerModal({
             </div>
 
             {visibility === "GROUP" && (
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Chọn nhóm chuyên môn <span className="text-rose-600">*</span>
                 </label>
@@ -599,13 +613,13 @@ export function PostComposerModal({
             )}
           </div>
 
-          {/* 3. Tiêu đề & Tóm tắt (Không bắt buộc với Chia sẻ thông thường) */}
+          {/* 3. Tiêu đề, Tóm tắt, Chủ đề & Liên kết Video/Demo */}
           {postType !== "GENERAL" && (
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   {postType === "AI_PRODUCT"
-                    ? "Tên sản phẩm AI *"
+                    ? "Tên ứng dụng / sản phẩm AI *"
                     : postType === "IDEA"
                     ? "Tiêu đề ý tưởng dạy học *"
                     : postType === "PROJECT"
@@ -634,6 +648,45 @@ export function PostComposerModal({
                   placeholder="Tóm tắt trong 1–2 câu về công dụng đối với học sinh hoặc giáo viên..."
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-medium focus:outline-none focus:border-[#159EAA]"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Chủ đề / Bài học
+                  </label>
+                  <input
+                    type="text"
+                    value={topicName}
+                    onChange={(e) => setTopicName(e.target.value)}
+                    placeholder="VD: Phân số / Đọc hiểu..."
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Liên kết Video minh họa
+                  </label>
+                  <input
+                    type="url"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="https://youtube.com/... hoặc Drive"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Liên kết Ứng dụng / Demo
+                  </label>
+                  <input
+                    type="url"
+                    value={demoUrl}
+                    onChange={(e) => setDemoUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs"
+                  />
+                </div>
               </div>
             </div>
           )}

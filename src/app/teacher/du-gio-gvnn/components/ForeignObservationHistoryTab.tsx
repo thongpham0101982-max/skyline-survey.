@@ -623,16 +623,16 @@ export function ForeignObservationHistoryTab({
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-black uppercase text-[11px] tracking-wider">
-                  <th className="p-4 text-center w-12">{t.colNo}</th>
-                  <th className="p-4 text-center w-24">{lang === "en" ? "Campus" : "Cơ sở"}</th>
-                  <th className="p-4">{t.colHostTeacher}</th>
-                  <th className="p-4">{t.colObserver}</th>
-                  <th className="p-4">{lang === "en" ? "Lesson Topic & Skills" : "Bài dạy & Kỹ năng"}</th>
-                  <th className="p-4">{t.colDatePeriod}</th>
-                  <th className="p-4 text-center">{t.colRatingScore}</th>
-                  <th className="p-4 text-right">{t.colActions}</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="p-4 text-center w-12 font-semibold">{t.colNo}</th>
+                  <th className="p-4 text-center w-24 font-semibold">{lang === "en" ? "Campus" : "Cơ sở"}</th>
+                  <th className="p-4 font-semibold">{t.colHostTeacher}</th>
+                  <th className="p-4 font-semibold">{t.colObserver}</th>
+                  <th className="p-4 font-semibold">{lang === "en" ? "Lesson Topic & Skills" : "Bài dạy & Kỹ năng"}</th>
+                  <th className="p-4 font-semibold">{t.colDatePeriod}</th>
+                  <th className="p-4 text-center font-semibold">{t.colRatingScore}</th>
+                  <th className="p-4 text-right font-semibold">{t.colActions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">

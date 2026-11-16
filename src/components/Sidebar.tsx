@@ -41,7 +41,8 @@ import {
   QrCode,
   PenTool,
   FileCheck,
-  Users
+  Users,
+  Puzzle
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 import {
@@ -71,16 +72,21 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const subjectParam = searchParams?.get("subject")?.toUpperCase()
   const isSuperAdmin = actualRole === "ADMIN" || actualRole === "Admin"
   const normalizedRole = (actualRole || "").toUpperCase()
-  const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "BGH", "BGH_CS", "BGH_MN", "BGH MN", "BGH_MAM_NON"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS")
+  const isGiaoVu = ["GIAO_VU", "GIAO_VU_CS", "GVU"].some(r => normalizedRole.includes(r))
+  const isTuVan = ["TVAN", "TU_VAN", "TVTS", "TUYEN_SINH"].some(r => normalizedRole.includes(r))
+  const isKtdbcl = ["KHAO_THI", "KT_DBCL", "KTDBCL", "TB_DHCM", "BAN_DHCM", "DBCL"].some(r => normalizedRole.includes(r))
+  const isGDCS = !isGiaoVu && (["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN", "BGH MN", "BGH_MAM_NON"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS"))
   
   const [lang, setLang] = useState<SupportedLanguage>("vi")
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hasPreschool, setHasPreschool] = useState(false)
   const [hasGeneral, setHasGeneral] = useState(false)
+  const [preschoolStudentCount, setPreschoolStudentCount] = useState(0)
+  const [generalStudentCount, setGeneralStudentCount] = useState(0)
   const [specialSubjectCodes, setSpecialSubjectCodes] = useState<string[]>(assignedSpecialSubjects || [])
   const [loadingAssignments, setLoadingAssignments] = useState(true)
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, COMPETENCY_ASSESSMENT: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
   const [pendingSignatureCount, setPendingSignatureCount] = useState<number>(0)
   const [expandedTeacherGroups, setExpandedTeacherGroups] = useState<Record<string, boolean>>({
     GROUP_01: true,
@@ -152,24 +158,36 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     if (module === "TEACHER_TRANSFERS") {
       hasParent = hasParent || permissionModules?.includes("TEACHERS") || permissionModules?.includes("STUDENT_TRANSFERS") || false
     }
+    if (
+      module === "COMPETENCY_IMPORT" ||
+      module === "COMPETENCY_SUBJECTS" ||
+      module === "COMPETENCY_ALIASES" ||
+      module === "COMPETENCY_HISTORY"
+    ) {
+      hasParent =
+        hasParent ||
+        permissionModules?.includes("QL_DGNL") ||
+        permissionModules?.includes("COMPETENCY_ASSESSMENT") ||
+        false
+    }
     if (module === "KPI_IP21_REFLECTION_PRIDE") {
       hasParent =
         hasParent ||
         isGDCS ||
-        normalizedRole.includes("KTDBCL") ||
-        normalizedRole.includes("DBCL") ||
+        isKtdbcl ||
         permissionModules?.includes("SURVEY_PERIODS") ||
         permissionModules?.includes("COMPETENCY_ASSESSMENT") ||
+        permissionModules?.includes("QL_DGNL") ||
+        permissionModules?.includes("COMPETENCY_IMPORT") ||
         false
     }
     if (module === "DIEU_HANH_KHAO_SAT") {
       hasParent =
         hasParent ||
         isGDCS ||
-        normalizedRole.includes("KTDBCL") ||
-        normalizedRole.includes("DBCL") ||
-        normalizedRole.includes("GIAO_VU") ||
-        normalizedRole.includes("TU_VAN") ||
+        isKtdbcl ||
+        isGiaoVu ||
+        isTuVan ||
         permissionModules?.includes("CAU_HINH_KHAO_SAT") ||
         permissionModules?.includes("STUDENT_INFO") ||
         permissionModules?.includes("PHAN_CONG_KHAO_SAT") ||
@@ -177,6 +195,9 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         permissionModules?.includes("XET_DUYET_KET_QUA") ||
         permissionModules?.includes("INPUT_ASSESSMENTS") ||
         false
+    }
+    if (module === "WORKHUB_ASSIGNED_TASKS" || module === "WORKHUB_ORG_TRACKING") {
+      hasParent = hasParent || isTTCM || isGDCS || isKtdbcl || false
     }
     if (hasParent) return true
     if (subModules && subModules.length > 0) {
@@ -214,10 +235,19 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
-            const hasPre = data.some((a) => a.isPreschool || a.subjectId === "preschool");
-            const hasGen = data.some((a) => !(a.isPreschool || a.subjectId === "preschool"));
+            const preList = data.filter((a) => a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation");
+            const genList = data.filter((a) => !(a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation") && !String(a.id || "").startsWith("synthesized_"));
+            const hasPre = preList.length > 0;
+            const hasGen = genList.length > 0;
             setHasPreschool(hasPre);
             setHasGeneral(hasGen);
+            const preCount = preList.reduce((sum, a) => sum + (Number(a.studentCount) || 0), 0);
+            const genCount = genList.reduce((sum, a) => sum + (Number(a.studentCount) || 0), 0);
+            setPreschoolStudentCount(preCount);
+            setGeneralStudentCount(genCount);
+            if (hasPre || hasGen) {
+              setExpandedTeacherGroups(prev => ({ ...prev, GROUP_05: true }));
+            }
           }
           setLoadingAssignments(false);
         })
@@ -277,8 +307,8 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         })
         .catch(() => {});
 
-      if (pathname.startsWith("/teacher/skyline-connect")) {
-        setExpandedTeacherGroups(prev => ({ ...prev, SKYLINE_CONNECT: true }));
+      if (pathname.startsWith("/teacher/skyline-connect") || pathname.startsWith("/teacher/cong-dong-sang-tao")) {
+        setExpandedTeacherGroups(prev => ({ ...prev, GROUP_12: true, SKYLINE_CONNECT: true }));
       } else if (
         pathname === "/teacher" ||
         pathname.startsWith("/teacher/tasks") ||
@@ -601,6 +631,33 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     {!isCollapsed && <span className="break-words leading-tight py-0.5">{lang === "en" ? "Personal Overview" : "Tổng quan cá nhân"}</span>}
                   </Link>
 
+                  {/* 1b. Sky-Line Connect — Nằm ngay dưới Tổng quan */}
+                  <Link
+                    href="/teacher/skyline-connect"
+                    onClick={() => setIsOpen(false)}
+                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-semibold ${
+                      pathname.startsWith("/teacher/skyline-connect")
+                        ? "bg-gradient-to-r from-[#00A19A]/45 to-teal-500/25 border border-[#5EEAD4]/50 text-white shadow-md shadow-black/15"
+                        : "text-white/90 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
+                      pathname.startsWith("/teacher/skyline-connect")
+                        ? "bg-[#00A19A]/40 border border-teal-300/70 text-[#5EEAD4] shadow-[0_0_8px_rgba(0,161,154,0.45)]"
+                        : "bg-white/10 border border-white/15 text-[#5EEAD4] group-hover:text-teal-200 group-hover:scale-110"
+                    }`}>
+                      <Puzzle className="w-4 h-4" />
+                    </div>
+                    {!isCollapsed && (
+                      <div className="flex items-center justify-between flex-1 gap-1.5 min-w-0">
+                        <span className="break-words leading-tight py-0.5">Sky-Line Connect</span>
+                        <span className="text-[9px] bg-[#00A19A]/35 text-[#99F6E4] border border-[#5EEAD4]/40 px-1.5 py-0.5 rounded-full font-semibold shrink-0">
+                          {lang === "en" ? "Co-create" : "Sáng tạo"}
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+
                   {/* 2. Nhiệm vụ của tôi */}
                   <Link
                     href="/teacher/tasks"
@@ -629,6 +686,30 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                           <span className="w-2 h-2 rounded-full bg-teal-400/80 shrink-0" />
                         )}
                       </div>
+                    )}
+                  </Link>
+
+                  {/* 2b. WorkHub • Công việc, Báo cáo & KPI */}
+                  <Link
+                    href="/admin/workhub"
+                    onClick={() => setIsOpen(false)}
+                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
+                      pathname.startsWith("/admin/workhub")
+                        ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10"
+                        : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
+                      pathname.startsWith("/admin/workhub")
+                        ? "bg-teal-500/30 border border-teal-400/50 text-teal-300"
+                        : "bg-white/10 border border-white/15 text-slate-300 group-hover:text-teal-300"
+                    }`}>
+                      <BarChart3 className="w-4 h-4" />
+                    </div>
+                    {!isCollapsed && (
+                      <span className="break-words leading-tight py-0.5">
+                        {lang === "en" ? "WorkHub (Tasks • Reports • KPI)" : "WorkHub (Công việc • Báo cáo • KPI)"}
+                      </span>
                     )}
                   </Link>
 
@@ -1211,44 +1292,68 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     expandedTeacherGroups.GROUP_05 || isCollapsed ? "max-h-[800px] opacity-100 visible mt-1" : "max-h-0 opacity-0 invisible"
                   }`}
                 >
-                  {/* Khảo sát định hướng đầu vào */}
-                  {hasPreschool && !hasGeneral ? (
+                  {/* Phỏng vấn định hướng (Mầm non / Phổ thông tùy theo Phân công) */}
+                  {(hasPreschool || (isPreschoolRole && !hasGeneral)) && (
                     <Link
                       href="/teacher/input-assessments?type=preschool"
                       onClick={() => setIsOpen(false)}
-                      className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                        pathname.includes("/teacher/input-assessments")
+                      className={`group relative flex items-center justify-between ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
+                        pathname.includes("/teacher/input-assessments") && (typeParam === "preschool" || !hasGeneral)
                           ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10"
                           : "text-white/75 hover:text-white hover:bg-white/10 hover:translate-x-1"
                       }`}
                     >
-                      <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                        pathname.includes("/teacher/input-assessments")
-                          ? "bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
-                          : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-amber-300 group-hover:scale-110"
-                      }`}>
-                        <ClipboardCheck className="w-4 h-4" />
+                      <div className="flex items-center min-w-0">
+                        <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
+                          pathname.includes("/teacher/input-assessments") && (typeParam === "preschool" || !hasGeneral)
+                            ? "bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                            : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-amber-300 group-hover:scale-110"
+                        }`}>
+                          <ClipboardCheck className="w-4 h-4" />
+                        </div>
+                        {!isCollapsed && (
+                          <span className="break-words leading-tight py-0.5">
+                            {lang === "en" ? "Entrance Orientation (Preschool)" : "Phỏng vấn định hướng Mầm non"}
+                          </span>
+                        )}
                       </div>
-                      {!isCollapsed && <span className="break-words leading-tight py-0.5">{lang === "en" ? "Entrance Orientation (Preschool)" : "Khảo sát định hướng đầu vào (Mầm non)"}</span>}
+                      {!isCollapsed && preschoolStudentCount > 0 && (
+                        <span className="ml-1.5 shrink-0 px-1.5 py-0.5 rounded-md bg-amber-500/25 border border-amber-400/40 text-amber-200 text-[10px] font-bold tabular-nums">
+                          {preschoolStudentCount} HS
+                        </span>
+                      )}
                     </Link>
-                  ) : (
+                  )}
+
+                  {(hasGeneral || (!hasPreschool && !isPreschoolRole)) && (
                     <Link
                       href="/teacher/input-assessments?type=general"
                       onClick={() => setIsOpen(false)}
-                      className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                        pathname.includes("/teacher/input-assessments")
+                      className={`group relative flex items-center justify-between ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
+                        pathname.includes("/teacher/input-assessments") && (typeParam !== "preschool" || !hasPreschool)
                           ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10"
                           : "text-white/75 hover:text-white hover:bg-white/10 hover:translate-x-1"
                       }`}
                     >
-                      <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                        pathname.includes("/teacher/input-assessments")
-                          ? "bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
-                          : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-amber-300 group-hover:scale-110"
-                      }`}>
-                        <ClipboardCheck className="w-4 h-4" />
+                      <div className="flex items-center min-w-0">
+                        <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
+                          pathname.includes("/teacher/input-assessments") && (typeParam !== "preschool" || !hasPreschool)
+                            ? "bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                            : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-amber-300 group-hover:scale-110"
+                        }`}>
+                          <ClipboardCheck className="w-4 h-4" />
+                        </div>
+                        {!isCollapsed && (
+                          <span className="break-words leading-tight py-0.5">
+                            {lang === "en" ? "Entrance Orientation (K-12)" : "Phỏng vấn định hướng Phổ thông"}
+                          </span>
+                        )}
                       </div>
-                      {!isCollapsed && <span className="break-words leading-tight py-0.5">{lang === "en" ? "Entrance Orientation Assessment" : "Khảo sát định hướng đầu vào"}</span>}
+                      {!isCollapsed && generalStudentCount > 0 && (
+                        <span className="ml-1.5 shrink-0 px-1.5 py-0.5 rounded-md bg-amber-500/25 border border-amber-400/40 text-amber-200 text-[10px] font-bold tabular-nums">
+                          {generalStudentCount} HS
+                        </span>
+                      )}
                     </Link>
                   )}
 
@@ -1834,6 +1939,37 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     expandedTeacherGroups.GROUP_12 || isCollapsed ? "max-h-[800px] opacity-100 visible mt-1" : "max-h-0 opacity-0 invisible"
                   }`}
                 >
+                  {/* Cộng đồng sáng tạo & Skills môn học (Tiện ích -> Cộng đồng sáng tạo) */}
+                  <Link
+                    href="/teacher/skyline-connect"
+                    onClick={() => setIsOpen(false)}
+                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
+                      pathname.startsWith("/teacher/skyline-connect") ||
+                      pathname.startsWith("/teacher/cong-dong-sang-tao")
+                        ? "bg-gradient-to-r from-[#00A19A]/45 to-teal-500/25 border border-[#5EEAD4]/50 text-white shadow-md shadow-black/15"
+                        : "text-white/85 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
+                      pathname.startsWith("/teacher/skyline-connect") ||
+                      pathname.startsWith("/teacher/cong-dong-sang-tao")
+                        ? "bg-[#00A19A]/40 border border-teal-300/70 text-[#5EEAD4] shadow-[0_0_8px_rgba(0,161,154,0.45)]"
+                        : "bg-white/10 border border-white/15 text-[#5EEAD4] group-hover:text-teal-200 group-hover:scale-110"
+                    }`}>
+                      <Puzzle className="w-4 h-4" />
+                    </div>
+                    {!isCollapsed && (
+                      <div className="flex items-center justify-between flex-1 min-w-0">
+                        <span className="break-words leading-tight py-0.5">
+                          {lang === "en" ? "Creative Community & Skills" : "Cộng đồng sáng tạo"}
+                        </span>
+                        <span className="text-[9px] bg-[#00A19A]/35 text-[#99F6E4] border border-[#5EEAD4]/40 px-1.5 py-0.5 rounded-full font-semibold ml-1 shrink-0">
+                          Skills
+                        </span>
+                      </div>
+                    )}
+                  </Link>
+
                   {/* Chữ ký số & Hồ sơ chờ ký (Mục gộp mới với 2 tab, có badge số lượng hồ sơ chờ ký) */}
                   <Link
                     href="/teacher/chu-ky-so"

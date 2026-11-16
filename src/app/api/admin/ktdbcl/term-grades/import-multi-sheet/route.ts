@@ -100,27 +100,25 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    // Custom alias mappings for MOET subjects
+    // Custom alias mappings for MOET & Sky-Line canonical subjects
     const manualAliases: Record<string, string[]> = {
       "TOA": ["toán", "toan", "toan hoc"],
       "VLI": ["vật lí", "vật lý", "vat li", "vat ly", "lí", "ly"],
       "HHO": ["hóa học", "hóa", "hoa hoc", "hoa"],
       "SHO": ["sinh học", "sinh", "sinh hoc"],
-      "TIN_HOC": ["tin học", "tin hoc", "tin", "ict"],
+      "ICT": ["tin học", "tin hoc", "tin", "ict", "tin_hoc", "tin học / ict"],
       "NVA": ["ngữ văn", "ngu van", "văn", "van"],
-      "LICH_SU": ["lịch sử", "lich su", "sử", "su"],
-      "LSU": ["lịch sử & giáo dục địa phương", "lịch sử", "lich su", "sử"],
+      "LSU": ["lịch sử & giáo dục địa phương", "lịch sử", "lich su", "lich_su", "sử", "su"],
       "DLI": ["địa lí", "địa lý", "dia li", "dia ly", "địa", "dia"],
-      "TA": ["tiếng anh", "tieng anh", "ngoại ngữ 1", "ngoai ngu 1", "nn1", "anh"],
-      "TAV": ["tiếng anh", "ngoại ngữ 1", "nn1"],
+      "TA": ["tiếng anh", "tieng anh", "ngoại ngữ 1", "ngoai ngu 1", "nn1", "anh", "tav"],
       "TNH": ["ngoại ngữ 2", "ngoai ngu 2", "nn2", "tiếng nhật", "tiếng đức"],
-      "GDKTPL": ["giáo dục kinh tế và pháp luật", "gdkt&pl", "gdktpl", "kinh tế và pháp luật", "kt&pl"],
-      "GKP": ["giáo dục kinh tế và pháp luật", "gdkt&pl", "gdktpl"],
+      "GKP": ["giáo dục kinh tế và pháp luật", "gdkt&pl", "gdktpl", "kinh tế và pháp luật", "kt&pl"],
       "GDQPAN": ["giáo dục quốc phòng và an ninh", "gdqp&an", "gdqp", "quốc phòng"],
       "GTC": ["giáo dục thể chất", "gdtc", "thể chất", "thể dục"],
       "MTU": ["mĩ thuật", "mỹ thuật", "mi thuat", "my thuat", "mi_thuat", "mtu"],
-      "AM_NHAC": ["âm nhạc", "am nhac"],
-      "ANA": ["âm nhạc", "am nhac"],
+      "ANA": ["âm nhạc", "am nhac", "am_nhac", "môn âm nhạc"],
+      "STE": ["stem", "công nghệ", "cong nghe", "stem / công nghệ"],
+      "GCX": ["cảm xúc xã hội", "giáo dục cảm xúc xã hội", "cd_cxxh", "sel"],
       "HDTNHN": ["hoạt động trải nghiệm, hướng nghiệp", "hđtn-hn", "hdtn-hn", "hđtn&hn", "hđtn", "hdtn", "trải nghiệm, hướng nghiệp"],
       "NDGDCDP": ["giáo dục địa phương", "gd địa phương", "gddp", "gdđp"],
       "KHT": ["khoa học tự nhiên", "khtn"],

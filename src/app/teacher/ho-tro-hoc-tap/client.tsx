@@ -604,12 +604,18 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         setClassStudents(data)
       }
       
-      // Auto-populate default subject
+      // Auto-populate default subject (exclude Tâm lý / Hướng nghiệp from Academic subjects)
       const selectedClassObj = currentClasses.find(c => c.id === classId)
       const classSubjects = selectedClassObj?.subjects || []
       if (classSubjects.length > 0) {
-        const defaultSubs = classSubjects.map((s: any) => s.subjectName || s.name || "")
-        setSelectedSubjects([defaultSubs[0]])
+        const defaultSubs = classSubjects
+          .map((s: any) => s.subjectName || s.name || "")
+          .filter((sName: string) => {
+            const lower = (sName || "").toLowerCase()
+            return !lower.includes("tâm lý") && !lower.includes("tam ly") && !lower.includes("psychology") &&
+                   !lower.includes("hướng nghiệp") && !lower.includes("huong nghiep")
+          })
+        setSelectedSubjects(defaultSubs.length > 0 ? [defaultSubs[0]] : [])
         // Pre-fetch commitment candidates for this class based on teacher's subjects
         fetchCommitmentCandidates(classId, defaultSubs)
       } else {
@@ -1400,31 +1406,36 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
 
 
-  // 1. Flatten / Split each student by their committed subjects (Unified Tiếng Anh - TAV)
+  // 1. Flatten / Split each student by their committed subjects (Unified Tiếng Anh - TAV, excluding Tâm lý / Hướng nghiệp)
   const flattenedCommitmentRows = useMemo(() => {
     const rows: any[] = [];
     (entranceCommitmentStudents || []).forEach((s: any) => {
-      const rawSubs = s.committedSubjects && s.committedSubjects.length > 0
+      const rawSubs = (s.committedSubjects && s.committedSubjects.length > 0
         ? s.committedSubjects
-        : ["Văn hóa"];
+        : ["Văn hóa"]).filter((sub: string) => {
+          const l = (sub || "").toLowerCase();
+          return !l.includes("tâm lý") && !l.includes("tam ly") && !l.includes("psychology") &&
+                 !l.includes("hướng nghiệp") && !l.includes("huong nghiep");
+        });
+
+      if (rawSubs.length === 0) return;
 
       // Normalize keeping Tiếng Việt and Ngữ Văn distinct, passing student's className
       const normalizedSubs = Array.from(new Set(rawSubs.map((sub: string) => normalizeSubjectNameClient(sub, s.className))));
 
       normalizedSubs.forEach((sub: any) => {
+        const lowerSub = (sub || "").toLowerCase();
+        if (lowerSub.includes("tâm lý") || lowerSub.includes("hướng nghiệp")) return;
         const rowId = `${s.id}___${sub}`;
         const isMatchedTeacher = (s.matchedSubjects || []).some((ms: string) => normalizeSubjectNameClient(ms, s.className) === sub);
         const score = getScoreForSubject(s, sub);
-        const hasPsych = (sub || "").toLowerCase().includes("tâm lý");
         const existingTarget = (targets || []).find((t: any) => 
-          t.studentId === s.id && (
-            (t.reason && (
-              t.reason.toLowerCase().includes(sub.toLowerCase()) || 
-              normalizeSubjectNameClient(t.reason, s.className) === sub ||
-              (sub === "Tiếng Việt" && (t.reason.toLowerCase().includes("tiếng việt") || t.reason.toLowerCase().includes("văn"))) ||
-              (sub === "Ngữ Văn" && (t.reason.toLowerCase().includes("ngữ văn") || t.reason.toLowerCase().includes("văn")))
-            )) ||
-            (hasPsych && t.supportType === "PSYCHOLOGICAL")
+          t.studentId === s.id && t.supportType === "ACADEMIC" && (
+            !t.reason ||
+            t.reason.toLowerCase().includes(sub.toLowerCase()) || 
+            normalizeSubjectNameClient(t.reason, s.className) === sub ||
+            (sub === "Tiếng Việt" && (t.reason.toLowerCase().includes("tiếng việt") || t.reason.toLowerCase().includes("văn"))) ||
+            (sub === "Ngữ Văn" && (t.reason.toLowerCase().includes("ngữ văn") || t.reason.toLowerCase().includes("văn")))
           )
         );
 
@@ -1554,13 +1565,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
   const filteredTargets = useMemo(() => {
     const seenKeys = new Set<string>();
     return targets.filter(t => {
+      if (t.supportType === "ACADEMIC") {
+        const rLower = (t.reason || "").toLowerCase();
+        if (rLower === "tâm lý" || rLower === "hướng nghiệp") return false;
+      }
+
       const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
       const isCreatedByMe = t.createdById === teacher?.id;
-      const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher?.id);
-      const isHomeroomStudent = homeroomClasses.some(c => c.students?.some((s: any) => s.id === t.studentId));
-      const isClassTeacher = assignedClasses.some((c: any) => c.id === t.student?.classId);
+      const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher?.id || a.teacher?.id === teacher?.id);
+      const isHomeroomStudent = homeroomClasses.some(c => c.id === t.student?.classId || c.students?.some((s: any) => s.id === t.studentId));
 
-      const isCKDV = isCommitmentTarget && (isHomeroomStudent || isClassTeacher);
+      const isCKDV = isCommitmentTarget && (isHomeroomStudent || isAssignedToMe);
       const isBSTD = !isCommitmentTarget && (isCreatedByMe || isAssignedToMe);
 
       if (!isCKDV && !isBSTD) return false;
@@ -2550,9 +2565,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           </div>
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 w-10">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="px-4 py-3 w-10 font-semibold">
                     <input type="checkbox" onChange={e => {
                       if (e.target.checked) {
                         const allIds = filteredTargets.map((t: any) => t.id);
@@ -2560,18 +2575,18 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       } else setSelectedEvalTargetIds([]);
                     }} className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"/>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TT</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Đối tượng</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mức hiện tại</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">TT</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Mã HS</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Họ và tên</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Lớp</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Ngày nhập học</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Đối tượng</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Môn Cam kết</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold">Mức hiện tại</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-sm">
+              <tbody className="divide-y divide-[#E2E8F0] text-sm">
                 {filteredTargets.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="text-center py-10 text-slate-400">
@@ -3062,34 +3077,34 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200/80 text-left">
-                    <thead className="bg-slate-50/90 text-slate-700 font-extrabold text-[11px] uppercase tracking-wider">
-                      <tr>
-                        <th className="px-3 py-3 text-center w-10 sticky left-0 bg-slate-50 z-10">TT</th>
-                        <th className="px-3 py-3 whitespace-nowrap sticky left-10 bg-slate-50 z-10">Mã HS</th>
-                        <th className="px-4 py-3 whitespace-nowrap sticky left-24 bg-slate-50 z-10">Họ và tên</th>
-                        <th className="px-3 py-3 text-center whitespace-nowrap">Lớp</th>
-                        <th className="px-3 py-3 text-center whitespace-nowrap">Đối tượng</th>
-                        <th className="px-3 py-3 whitespace-nowrap">Môn bồi dưỡng</th>
+                    <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="px-3 py-3 text-center w-10 sticky left-0 bg-[#003B3A] z-10 font-semibold">TT</th>
+                        <th className="px-3 py-3 whitespace-nowrap sticky left-10 bg-[#003B3A] z-10 font-semibold">Mã HS</th>
+                        <th className="px-4 py-3 whitespace-nowrap sticky left-24 bg-[#003B3A] z-10 font-semibold">Họ và tên</th>
+                        <th className="px-3 py-3 text-center whitespace-nowrap font-semibold">Lớp</th>
+                        <th className="px-3 py-3 text-center whitespace-nowrap font-semibold">Đối tượng</th>
+                        <th className="px-3 py-3 whitespace-nowrap font-semibold">Môn bồi dưỡng</th>
 
                         {/* Weekly Columns for this month */}
                         {weeksList.map((w: string) => (
                           <th
                             key={w}
-                            className="px-3 py-3 text-center text-xs font-black whitespace-nowrap text-teal-900 bg-teal-50/70 border-l border-r border-teal-100"
+                            className="px-3 py-3 text-center text-xs whitespace-nowrap bg-[#003B3A] border-l border-r border-white/15 text-[#5EEAD4] font-semibold"
                           >
                             📅 {w}
                           </th>
                         ))}
 
                         {/* ⭐ Monthly summary column */}
-                        <th className="px-4 py-3 text-center text-xs font-black whitespace-nowrap text-amber-900 bg-amber-100/80 border-l border-r border-amber-200">
+                        <th className="px-4 py-3 text-center text-xs whitespace-nowrap bg-[#003B3A] border-l border-r border-white/15 text-amber-200 font-semibold">
                           ⭐ Tổng kết {activeMonth}
                         </th>
 
-                        <th className="px-4 py-3 text-center whitespace-nowrap sticky right-0 bg-slate-50 z-10">Thao tác</th>
+                        <th className="px-4 py-3 text-center whitespace-nowrap sticky right-0 bg-[#003B3A] z-10 font-semibold">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs">
                       {matrixTargets.length === 0 ? (
                         <tr>
                           <td colSpan={7 + weeksList.length} className="text-center py-12 text-slate-400 font-medium">
@@ -3288,14 +3303,14 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200/80 text-left">
-                  <thead className="bg-slate-50/90 text-slate-600 font-extrabold text-[11px] uppercase tracking-wider">
-                    <tr>
-                      <th className="px-3 py-3 text-center w-10 sticky left-0 bg-slate-50 z-10">TT</th>
-                      <th className="px-3 py-3 whitespace-nowrap sticky left-10 bg-slate-50 z-10">Mã HS</th>
-                      <th className="px-4 py-3 whitespace-nowrap sticky left-24 bg-slate-50 z-10">Họ và tên</th>
-                      <th className="px-3 py-3 text-center whitespace-nowrap">Lớp</th>
-                      <th className="px-3 py-3 text-center whitespace-nowrap">Đối tượng</th>
-                      <th className="px-3 py-3 whitespace-nowrap">Môn bồi dưỡng</th>
+                  <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-3 py-3 text-center w-10 sticky left-0 bg-[#003B3A] z-10 font-semibold">TT</th>
+                      <th className="px-3 py-3 whitespace-nowrap sticky left-10 bg-[#003B3A] z-10 font-semibold">Mã HS</th>
+                      <th className="px-4 py-3 whitespace-nowrap sticky left-24 bg-[#003B3A] z-10 font-semibold">Họ và tên</th>
+                      <th className="px-3 py-3 text-center whitespace-nowrap font-semibold">Lớp</th>
+                      <th className="px-3 py-3 text-center whitespace-nowrap font-semibold">Đối tượng</th>
+                      <th className="px-3 py-3 whitespace-nowrap font-semibold">Môn bồi dưỡng</th>
 
                       {/* 10 Month Columns */}
                       {ACADEMIC_MONTHS.map((m) => {
@@ -3314,10 +3329,10 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                         );
                       })}
 
-                      <th className="px-4 py-3 text-center whitespace-nowrap sticky right-0 bg-slate-50 z-10">Thao tác</th>
+                      <th className="px-4 py-3 text-center whitespace-nowrap sticky right-0 bg-[#003B3A] z-10 font-semibold">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs">
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs">
                     {matrixTargets.length === 0 ? (
                       <tr>
                         <td colSpan={17} className="text-center py-12 text-slate-400 font-medium">
@@ -3460,22 +3475,22 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200 text-left">
-                  <thead className="bg-slate-50 text-slate-600 font-extrabold text-[11px] uppercase tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3 text-center w-12">STT</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Mã HS</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Họ và tên</th>
-                      <th className="px-4 py-3 text-center whitespace-nowrap">Lớp</th>
-                      <th className="px-3 py-3 text-center whitespace-nowrap">Đối tượng</th>
-                      <th className="px-4 py-3 text-center whitespace-nowrap">Kỳ đánh giá</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Kết quả (Mức độ)</th>
-                      <th className="px-6 py-3">Nhật ký nhận xét chi tiết</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Đề xuất hành động</th>
-                      <th className="px-4 py-3 text-center whitespace-nowrap">Ngày ghi</th>
-                      <th className="px-4 py-3 text-center whitespace-nowrap">Thao tác</th>
+                  <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3 text-center w-12 font-semibold">STT</th>
+                      <th className="px-4 py-3 whitespace-nowrap font-semibold">Mã HS</th>
+                      <th className="px-5 py-3 whitespace-nowrap font-semibold">Họ và tên</th>
+                      <th className="px-4 py-3 text-center whitespace-nowrap font-semibold">Lớp</th>
+                      <th className="px-3 py-3 text-center whitespace-nowrap font-semibold">Đối tượng</th>
+                      <th className="px-4 py-3 text-center whitespace-nowrap font-semibold">Kỳ đánh giá</th>
+                      <th className="px-4 py-3 whitespace-nowrap font-semibold">Kết quả (Mức độ)</th>
+                      <th className="px-6 py-3 font-semibold">Nhật ký nhận xét chi tiết</th>
+                      <th className="px-5 py-3 whitespace-nowrap font-semibold">Đề xuất hành động</th>
+                      <th className="px-4 py-3 text-center whitespace-nowrap font-semibold">Ngày ghi</th>
+                      <th className="px-4 py-3 text-center whitespace-nowrap font-semibold">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs">
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs">
                     {filteredSummaryEvaluations.length === 0 ? (
                       <tr>
                         <td colSpan={11} className="text-center py-12 text-slate-400 font-medium">
@@ -4279,9 +4294,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       {/* Subject Students Table */}
                       <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-slate-200">
-                          <thead className="bg-slate-50/70">
-                            <tr>
-                              <th className="px-4 py-3 w-10 text-center">
+                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="px-4 py-3 w-10 text-center font-semibold">
                                 <input
                                   type="checkbox"
                                   checked={isAllGroupSelected}
@@ -4293,17 +4308,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                   className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"
                                 />
                               </th>
-                              <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
-                              <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
-                              <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
-                              <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
-                              <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
-                              <th className="px-5 py-3 text-left text-xs font-bold text-teal-800 uppercase tracking-wider">Môn cam kết</th>
-                              <th className="px-5 py-3 text-left text-xs font-bold text-teal-800 uppercase tracking-wider">Điểm KS</th>
-                              <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thao tác</th>
+                              <th className="px-5 py-3 text-center text-xs font-bold w-12">TT</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold">Mã HS</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold">Họ và tên</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold">Lớp</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold">Ngày nhập học</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-[#5EEAD4]">Môn cam kết</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-[#5EEAD4]">Điểm KS</th>
+                              <th className="px-5 py-3 text-center text-xs font-bold">Thao tác</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-200 text-sm">
+                          <tbody className="divide-y divide-[#E2E8F0] text-sm">
                             {group.rows.map((row: any, index: number) => {
                               return (
                                 <tr key={row.rowId} className="hover:bg-slate-50/60 transition-colors">
@@ -4373,9 +4388,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
             /* LIST VIEW TABLE (SEPARATED BY SUBJECT PER ROW) */
             <div className="bg-white border rounded-2xl overflow-hidden shadow-xs">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-3 w-10 text-center">
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-4 py-3 w-10 text-center font-semibold">
                       <input 
                         type="checkbox" 
                         checked={filteredFlattenedCommitments.length > 0 && filteredFlattenedCommitments.every((r: any) => selectedCommitmentRowIds.includes(r.rowId))} 
@@ -4386,17 +4401,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                         className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"
                       />
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm KS</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thao tác</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold w-12">TT</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold">Mã HS</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold">Họ và tên</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold">Lớp</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold">Ngày nhập học</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold">Môn Cam kết</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold">Điểm KS</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 text-sm">
+                <tbody className="divide-y divide-[#E2E8F0] text-sm">
                   {filteredFlattenedCommitments.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="text-center py-10 text-slate-400">
@@ -4510,18 +4525,18 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           )}
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Chương trình hỗ trợ</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn học cần bồi dưỡng</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày đề xuất</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng</th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="px-6 py-3 text-left text-xs font-bold">Học sinh</th>
+                <th className="px-6 py-3 text-left text-xs font-bold">Lớp</th>
+                <th className="px-6 py-3 text-left text-xs font-bold">Chương trình hỗ trợ</th>
+                <th className="px-6 py-3 text-left text-xs font-bold">Môn học cần bồi dưỡng</th>
+                <th className="px-6 py-3 text-left text-xs font-bold">Ngày đề xuất</th>
+                <th className="px-6 py-3 text-left text-xs font-bold">Trạng thái bồi dưỡng</th>
+                <th className="px-6 py-3 text-center text-xs font-bold">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 text-sm">
+            <tbody className="divide-y divide-[#E2E8F0] text-sm">
               {groupedHistoryTargets.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-10 text-slate-400">
@@ -5178,17 +5193,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                     </div>
                     <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl bg-slate-50/50">
                       <table className="w-full text-xs text-left">
-                        <thead className="bg-slate-100 text-slate-700 font-bold sticky top-0">
-                          <tr>
-                            <th className="p-2.5 text-center w-12">STT</th>
-                            <th className="p-2.5">Mã HS</th>
-                            <th className="p-2.5">Họ và tên</th>
-                            <th className="p-2.5">Lớp</th>
-                            <th className="p-2.5">Môn/Lĩnh vực</th>
-                            <th className="p-2.5 text-center">Đối tượng</th>
+                        <thead className="bg-[#003B3A] sticky top-0 text-white border-b border-[#003B3A]">
+                          <tr className="text-[11px] font-semibold whitespace-nowrap">
+                            <th className="p-2.5 text-center w-12 font-semibold">STT</th>
+                            <th className="p-2.5 font-semibold">Mã HS</th>
+                            <th className="p-2.5 font-semibold">Họ và tên</th>
+                            <th className="p-2.5 font-semibold">Lớp</th>
+                            <th className="p-2.5 font-semibold">Môn/Lĩnh vực</th>
+                            <th className="p-2.5 text-center font-semibold">Đối tượng</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 bg-white">
+                        <tbody className="divide-y divide-[#E2E8F0] bg-white">
                           {selectedEvalTargetIds.map((tid, idx) => {
                             const tObj = filteredTargets.find((t: any) => t.id === tid);
                             const isComm = tObj?.sourceType === "ADMISSION" || (tObj?.notes && tObj?.notes.includes("Cam kết Khảo sát đầu vào"));
@@ -6448,15 +6463,15 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 <span className="text-xs text-slate-500 font-bold block">Bảng điểm đánh giá năng lực mầm non:</span>
                                 <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
                                   <table className="min-w-full divide-y divide-slate-200 text-xs">
-                                    <thead className="bg-slate-50">
-                                      <tr>
-                                        <th className="px-4 py-2.5 text-left font-bold text-slate-500">Lĩnh vực phát triển</th>
-                                        <th className="px-4 py-2.5 text-left font-bold text-slate-500">Tiêu chí đánh giá</th>
-                                        <th className="px-4 py-2.5 text-center font-bold text-slate-500">Kết quả</th>
-                                        <th className="px-4 py-2.5 text-left font-bold text-slate-500">Ghi chú tiêu chí</th>
+                                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                        <th className="px-4 py-2.5 text-left font-bold">Lĩnh vực phát triển</th>
+                                        <th className="px-4 py-2.5 text-left font-bold">Tiêu chí đánh giá</th>
+                                        <th className="px-4 py-2.5 text-center font-bold">Kết quả</th>
+                                        <th className="px-4 py-2.5 text-left font-bold">Ghi chú tiêu chí</th>
                                       </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-200 bg-white">
+                                    <tbody className="divide-y divide-[#E2E8F0] bg-white">
                                       {entrance.scores.map((s: any, idx: number) => (
                                         <tr key={idx} className="hover:bg-slate-50/50">
                                           <td className="px-4 py-2 font-bold text-slate-700 whitespace-nowrap">{s.areaName}</td>

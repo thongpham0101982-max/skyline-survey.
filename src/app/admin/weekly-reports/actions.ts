@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { sendEmail } from "@/lib/mail"
 import { getOperationalScope } from "@/lib/session"
+import { dispatchKtdbclWednesdayReminders } from "@/lib/qa-workspace/weeklyReportEmailService"
 
 function resolveUserEmail(u: any) {
   let email = u?.teacher?.email || u?.email;
@@ -437,6 +438,9 @@ export async function getConsolidatedReports(roleCode: string, weekNumber: numbe
 }
 
 export async function sendWeeklyReportEmailReminders(targetWeek?: number, targetMonth?: number, targetYear?: number, targetUserId?: string) {
+  return dispatchKtdbclWednesdayReminders({ weekNumber: targetWeek, month: targetMonth, year: targetYear, targetUserId, force: true, triggeredBy: "MANUAL_UI" })
+}
+export async function _legacySendWeeklyReportEmailRemindersUnused(targetWeek?: number, targetMonth?: number, targetYear?: number, targetUserId?: string) {
   try {
     const now = new Date()
     const year = targetYear || now.getFullYear()

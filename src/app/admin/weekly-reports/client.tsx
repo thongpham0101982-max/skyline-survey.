@@ -1,3194 +1,768 @@
 "use client"
-import { getDefaultAcademicYearClient } from "@/lib/academicYear"
-import { useState, useEffect, useMemo } from "react"
-import { 
-  Star, Target, BookmarkCheck, CheckCheck, FileText, Plus, Trash2, Save, Send, Calendar, MessageSquare, 
-  CheckCircle2, Clock, AlertTriangle, MinusCircle, User, BarChart3, 
-  Users, TrendingUp, ClipboardList, Table2, Bell, Download, Copy, History, Edit3, Eye, Search, Filter, X,
-  UserCheck, AlertCircle, Sparkles, ChevronRight, Layers, ArrowRight, Check, Settings, UserPlus, Shield,
-  Award, Trophy, Percent
-} from "lucide-react"
-import { 
-  getWeeklyReport, getAllWeeklyReports, saveWeeklyReport, addManagerComment, 
-  addManagerItemNote, getConsolidatedReports, getDashboardStats, sendWeeklyReportEmailReminders,
-  getUserReportHistory, deleteWeeklyReport, getPersonalProgressCards,
-  getDepartmentTeachers, assignTeachersToDepartment, removeTeacherFromDepartment,
-  updateTeacherDepartmentPosition, getAllTeachersForAssignment, setTeacherPrimaryDepartment,
-  getMonthlyTaskGroupProgress, addDirectorItemEvaluation, saveDirectorReportComment,
-  getMonthlyQualityKpiSummary
-} from "./actions"
+
+import React, { useCallback, useMemo, useState } from "react"
+import Link from "next/link"
+import toast from "react-hot-toast"
 import * as XLSX from "xlsx"
+import {
+  ArrowUpRight,
+  BarChart3,
+  CheckSquare,
+  ClipboardEdit,
+  LayoutGrid,
+  RefreshCw,
+  Settings,
+  ShieldCheck,
+} from "lucide-react"
+import {
+  confirmKtdbclReportItems,
+  EnrichedWeeklyReportItem,
+  flagOverdueAndRequestExplanationAction,
+  getKtdbclWorkspaceSnapshot,
+  saveKtdbclWeeklyReport,
+  scanAndRequestOverdueExplanationsAction,
+  sendKtdbclDirectorReportNowAction,
+  submitStaffOverdueExplanationAction,
+  syncQaWorkspaceTasksToReportDraft,
+  triggerKtdbclReminderNowAction,
+  updateKtdbclAutomationSettingsAction,
+  updateKtdbclSpecialistGroupMembersAction,
+} from "./ktdbcl_actions"
+import type {
+  KtdbclMemberProfile,
+  KtdbclWeeklyAutomationConfig,
+  MonthWeekDefinition,
+  WeeklyAutomationLogRecord,
+} from "@/lib/qa-workspace/weeklyReportSchema"
+import type { KtdbclAiQualityReport } from "@/lib/qa-workspace/weeklyAiQualityAgent"
+import { QualityDashboardTab } from "./components/QualityDashboardTab"
+import { ReviewAndConfirmTab } from "./components/ReviewAndConfirmTab"
+import { MemberAndGroupCardsTab } from "./components/MemberAndGroupCardsTab"
+import { ComposeAndExplainTab, DraftReportRow } from "./components/ComposeAndExplainTab"
+import { AutomationAndRosterTab } from "./components/AutomationAndRosterTab"
 
-function getWeeksOfMonth(month: number, year: number) {
-  const weeks: { weekNum: number; start: string; end: string; label: string }[] = []
-  const lastDay = new Date(year, month, 0)
-  const current = new Date(year, month - 1, 1)
-  while (current.getDay() !== 1 && current <= lastDay) current.setDate(current.getDate() + 1)
-  let weekNum = 1
-  while (current <= lastDay) {
-    const start = new Date(current)
-    const friday = new Date(current); friday.setDate(friday.getDate() + 4)
-    const end = friday > lastDay ? new Date(lastDay) : friday
-    weeks.push({ 
-      weekNum, 
-      start: start.toLocaleDateString("vi-VN"), 
-      end: end.toLocaleDateString("vi-VN"),
-      label: "Tuần " + weekNum + " (" + start.getDate() + "/" + (start.getMonth()+1) + " - " + end.getDate() + "/" + (end.getMonth()+1) + ")" 
-    })
-    weekNum++; current.setDate(current.getDate() + 7)
+type ActiveTabKey = "dashboard" | "review" | "cards" | "compose" | "automation"
+
+interface SnapshotData {
+  success: boolean
+  period: {
+    weekNumber: number
+    month: number
+    year: number
+    allWeeks: MonthWeekDefinition[]
   }
-  return weeks
+  authority: {
+    userId: string
+    userName: string
+    isLeadership: boolean
+    isDirectorAuthority: boolean
+  }
+  department: {
+    id: string
+    code: string
+    name: string
+    divisionCode: string
+  }
+  members: KtdbclMemberProfile[]
+  directorCandidates: KtdbclMemberProfile[]
+  taskGroups: Array<{
+    id: string
+    name: string
+    code: string | null
+    leaderUserId: string | null
+    memberUserIds: string[]
+  }>
+  specialistGroupNames: string[]
+  taskCategories: Array<{ id: string; name: string; weight?: number }>
+  weekItems: EnrichedWeeklyReportItem[]
+  monthItems: EnrichedWeeklyReportItem[]
+  memberWeeklyTimeline: any[]
+  weeklyAnalysis: KtdbclAiQualityReport
+  monthlyAnalysis: KtdbclAiQualityReport
+  automationConfig: KtdbclWeeklyAutomationConfig
+  automationLogs: WeeklyAutomationLogRecord[]
 }
 
-const PROGRESS = [
-  { value: "NOT_STARTED", label: "Chưa bắt đầu", color: "bg-slate-100 text-slate-600 border-slate-300", barColor: "#94a3b8" },
-  { value: "DOING", label: "Đang thực hiện", color: "bg-blue-100 text-blue-700 border-blue-200", barColor: "#3b82f6" },
-  { value: "COMPLETED", label: "Hoàn thành", color: "bg-emerald-100 text-emerald-700 border-emerald-200", barColor: "#10b981" },
-  { value: "NOT_COMPLETED", label: "Chưa hoàn thành", color: "bg-amber-100 text-amber-700 border-amber-200", barColor: "#f59e0b" },
-]
-
-interface ReportItem { 
-  id?: string; 
-  mainTask?: string; 
-  category?: string;
-  taskGroup?: string;
-  workContent: string; 
-  expectedCompletion?: string; 
-  progress: string; 
-  proposedSolution: string; 
-  managerNote?: string 
+interface WeeklyReportClientProps {
+  currentUserId: string
+  currentUserName: string
+  years: Array<{ id: string; name: string; isOff: boolean }>
+  initialSnapshot: SnapshotData
+  initialTab?: string
 }
 
-function formatExpectedDate(dateStr?: string) {
-  if (!dateStr) return "-"
-  if (dateStr.includes("-")) {
-    const parts = dateStr.split("-")
-    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
-  }
-  return dateStr
+function normalizeInitialTab(raw?: string): ActiveTabKey {
+  if (raw === "review") return "review"
+  if (raw === "cards") return "cards"
+  if (raw === "compose") return "compose"
+  if (raw === "automation") return "automation"
+  return "dashboard"
 }
 
-export function WeeklyReportClient({ 
-  currentRole, 
-  currentUserId, 
-  currentUserName, 
-  years, 
-  staffUsers, 
-  roles,
-  operationalScope,
-  divisions,
-  defaultDeptId: initialDefaultDeptId = "",
-  defaultDivisionCode = "",
-  taskCategories = [],
-  taskGroups = []
-}: any) {
-  const now = new Date()
-  
-  // Scope permissions
-  const isSuperAdmin = operationalScope?.isSuperAdmin || false
-  const isHeadOfAcademic = operationalScope?.isHeadOfAcademic || false
-  const isTBP = operationalScope?.isTBP || false
-  const isDirectTBP = operationalScope?.isDirectTBP || false
-  const isTTCM = operationalScope?.isTTCM || false
-  const isDirectTTCM = operationalScope?.isDirectTTCM || false
-  const isManager = operationalScope?.isManager ?? (currentRole === "ADMIN" || isTBP || isTTCM)
-
-  // Default tab: "cards" if manager, otherwise "personal"
-  const [activeTab, setActiveTab] = useState<"cards"|"dashboard"|"consolidated"|"config"|"personal"|"history">(
-    isManager ? "cards" : "personal"
+export function WeeklyReportClient({
+  currentUserId,
+  currentUserName,
+  years,
+  initialSnapshot,
+  initialTab,
+}: WeeklyReportClientProps) {
+  const [snapshot, setSnapshot] = useState<SnapshotData>(initialSnapshot)
+  const [activeTab, setActiveTab] = useState<ActiveTabKey>(() =>
+    normalizeInitialTab(initialTab)
   )
-  
-  const [month, setMonth] = useState(now.getMonth() + 1)
-  const [year, setYear] = useState(now.getFullYear())
-  const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
-  const [weeks, setWeeks] = useState<any[]>([])
-  const [selectedWeek, setSelectedWeek] = useState(1)
-  const [items, setItems] = useState<ReportItem[]>([])
-  const [reportId, setReportId] = useState("")
-  const [reportStatus, setReportStatus] = useState("")
-  const [managerComment, setManagerComment] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [reminding, setReminding] = useState(false)
-  const [remindingUserId, setRemindingUserId] = useState<string | null>(null)
-  const [viewUserId, setViewUserId] = useState(currentUserId)
-  const [mgmtComment, setMgmtComment] = useState("")
-  const [editingItemNote, setEditingItemNote] = useState<string|null>(null)
-  const [itemNoteText, setItemNoteText] = useState("")
-  const [toastMsg, setToastMsg] = useState<{msg: string, type: string} | null>(null)
+  const [scopeMode, setScopeMode] = useState<"WEEKLY" | "MONTHLY">("WEEKLY")
 
-  // "Mặc định thì chỉ xuất hiện Tổ mặc định"
-  const resolvedDefaultDeptId = initialDefaultDeptId || (roles && roles.length > 0 ? (roles[0].id || roles[0].code) : "")
-  const resolvedDefaultDivCode = defaultDivisionCode || 
-    roles?.find((r: any) => r.id === resolvedDefaultDeptId || r.code === resolvedDefaultDeptId)?.divisionCode || 
-    (divisions && divisions.length > 0 ? divisions[0].code : "")
-
-  // Cascading Filter State: Theo mặc định thì CHỈ XUẤT HIỆN TỔ MẶC ĐỊNH
-  const [filterDivisionCode, setFilterDivisionCode] = useState<string>(
-    isDirectTBP && operationalScope?.managedDivisions?.length > 0 
-      ? operationalScope.managedDivisions[0] 
-      : (resolvedDefaultDivCode || "ALL")
+  const [weekNumber, setWeekNumber] = useState<number>(
+    initialSnapshot?.period?.weekNumber || 1
   )
-  const [filterDeptId, setFilterDeptId] = useState<string>(resolvedDefaultDeptId || "ALL")
-  const [filterTeacherUserId, setFilterTeacherUserId] = useState<string>("ALL")
-
-  // Task Group & Category helpers
-  const availableGroups = useMemo(() => {
-    const defaultList = [
-      "Khảo thí Phổ thông",
-      "Khảo thí Tổng hợp",
-      "Khảo thí TA&CTQT",
-      "ĐBCL Học sinh",
-      "ĐBCL"
-    ]
-    const dbNames = (taskGroups || []).map((g: any) => g.name)
-    return Array.from(new Set([...defaultList, ...dbNames]))
-  }, [taskGroups])
-
-  // Consolidated View Mode: "week" (Tuần) | "month" (Tháng) | "kpi" (KPI Tháng)
-  const [consolidatedViewMode, setConsolidatedViewMode] = useState<"week" | "month" | "kpi">("week")
-  const [filterConsolidatedGroup, setFilterConsolidatedGroup] = useState<string>("ALL")
-  const [monthlyTaskGroupData, setMonthlyTaskGroupData] = useState<any>(null)
-  const [loadingMonthlyGroup, setLoadingMonthlyGroup] = useState(false)
-  const [monthlyKpiData, setMonthlyKpiData] = useState<any>(null)
-  const [loadingMonthlyKpi, setLoadingMonthlyKpi] = useState(false)
-  const [kpiSearch, setKpiSearch] = useState("")
-  const [kpiFilterGrade, setKpiFilterGrade] = useState("ALL")
-  const [selectedStaffForKpiDetail, setSelectedStaffForKpiDetail] = useState<any | null>(null)
-
-  // Quick Director evaluation modal state
-  const [evaluatingDirectorItem, setEvaluatingDirectorItem] = useState<any | null>(null)
-  const [evaluatingDirectorReport, setEvaluatingDirectorReport] = useState<any | null>(null)
-  const [evalRating, setEvalRating] = useState("GOOD")
-  const [evalQualityScore, setEvalQualityScore] = useState<number | string>(8.5)
-  const [evalNote, setEvalNote] = useState("")
-  const [submittingEvaluation, setSubmittingEvaluation] = useState(false)
-
-  // Director comment in Personal Card modal
-  const [modalDirectorCommentInput, setModalDirectorCommentInput] = useState("")
-  const [modalSavingDirectorComment, setModalSavingDirectorComment] = useState(false)
-
-  const loadMonthlyTaskGroup = async () => {
-    setLoadingMonthlyGroup(true)
-    const res = await getMonthlyTaskGroupProgress(month, year, filterDeptId)
-    if (res.success) {
-      setMonthlyTaskGroupData(res)
-    }
-    setLoadingMonthlyGroup(false)
-  }
-
-  const loadMonthlyKpi = async () => {
-    setLoadingMonthlyKpi(true)
-    const res = await getMonthlyQualityKpiSummary(month, year, filterDeptId, filterDivisionCode)
-    if (res.success) {
-      setMonthlyKpiData(res)
-    }
-    setLoadingMonthlyKpi(false)
-  }
-
-  // Personal Cards State
-  const [personalCards, setPersonalCards] = useState<any[]>([])
-  const [cardsSummary, setCardsSummary] = useState<any>({ totalStaff: 0, submittedCount: 0, pendingCount: 0, reviewedCount: 0 })
-  const [cardSearch, setCardSearch] = useState("")
-  const [cardStatusFilter, setCardStatusFilter] = useState<string>("ALL")
-  const [selectedStaffForModal, setSelectedStaffForModal] = useState<any | null>(null)
-  const [modalReportData, setModalReportData] = useState<any | null>(null)
-  const [modalCommentInput, setModalCommentInput] = useState("")
-  const [modalSavingComment, setModalSavingComment] = useState(false)
-
-  // ================= CONFIGURATION TAB STATE =================
-  const [configDivisionCode, setConfigDivisionCode] = useState<string>(
-    isDirectTBP && operationalScope?.managedDivisions?.length > 0 
-      ? operationalScope.managedDivisions[0] 
-      : (resolvedDefaultDivCode || divisions?.[0]?.code || "BP_TRUNG_HOC")
+  const [month, setMonth] = useState<number>(
+    initialSnapshot?.period?.month || new Date().getMonth() + 1
   )
-  const [configDeptId, setConfigDeptId] = useState<string>(resolvedDefaultDeptId || "")
-  const [deptTeachers, setDeptTeachers] = useState<any[]>([])
-  const [loadingDeptTeachers, setLoadingDeptTeachers] = useState(false)
-  
-  // Add Teachers Modal
-  const [showAddTeacherModal, setShowAddTeacherModal] = useState(false)
-  const [allAvailableTeachers, setAllAvailableTeachers] = useState<any[]>([])
-  const [loadingAvailableTeachers, setLoadingAvailableTeachers] = useState(false)
-  const [addTeacherSearch, setAddTeacherSearch] = useState("")
-  const [selectedTeacherIdsToAdd, setSelectedTeacherIdsToAdd] = useState<string[]>([])
-  const [defaultAddPosition, setDefaultAddPosition] = useState("GV")
-  const [submittingAssign, setSubmittingAssign] = useState(false)
+  const [year, setYear] = useState<number>(
+    initialSnapshot?.period?.year || new Date().getFullYear()
+  )
+  const activeAcademicYear = useMemo(
+    () => years.find((y) => !y.isOff) || years[0] || null,
+    [years]
+  )
+  const [academicYearId, setAcademicYearId] = useState<string>(
+    activeAcademicYear?.id || ""
+  )
 
-  // ================= DEFAULT DIVISION & DEPARTMENT PREFERENCE =================
-  const [defaultDivCode, setDefaultDivCode] = useState<string>("")
-  const [defaultDeptId, setDefaultDeptId] = useState<string>("")
+  const [isLoadingSnapshot, setIsLoadingSnapshot] = useState<boolean>(false)
+  const [isRefreshingAi, setIsRefreshingAi] = useState<boolean>(false)
+  const [actionBusyKey, setActionBusyKey] = useState<string | null>(null)
 
-  // Load saved default preferences from localStorage on mount: Mặc định luôn chỉ xuất hiện Tổ mặc định
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const savedDiv = localStorage.getItem("skyline_default_division_code")
-        const savedDept = localStorage.getItem("skyline_default_dept_id")
-        const targetDiv = savedDiv || resolvedDefaultDivCode
-        const targetDept = savedDept || resolvedDefaultDeptId
+  // Shared review filters
+  const [reviewGroupFilter, setReviewGroupFilter] = useState<string>("ALL")
+  const [reviewMemberFilter, setReviewMemberFilter] = useState<string>("ALL")
 
-        if (targetDiv) {
-          setDefaultDivCode(targetDiv)
-          setFilterDivisionCode(targetDiv)
-          setConfigDivisionCode(targetDiv)
-        }
-        if (targetDept) {
-          setDefaultDeptId(targetDept)
-          setFilterDeptId(targetDept)
-          setConfigDeptId(targetDept)
-        }
-      }
-    } catch (e) {
-      console.warn("Could not read localStorage defaults", e)
-    }
-  }, [resolvedDefaultDivCode, resolvedDefaultDeptId])
+  // Compose target member
+  const defaultComposeUserId = useMemo(() => {
+    const inKt = initialSnapshot?.members?.find((m) => m.id === currentUserId)
+    return inKt?.id || initialSnapshot?.members?.[0]?.id || currentUserId
+  }, [currentUserId, initialSnapshot])
+  const [composeTargetUserId, setComposeTargetUserId] =
+    useState<string>(defaultComposeUserId)
 
-  // Handler: Set current selected Division & Department as user default
-  const handleSetAsDefault = (divCode: string, deptId: string) => {
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("skyline_default_division_code", divCode)
-        localStorage.setItem("skyline_default_dept_id", deptId)
-        setDefaultDivCode(divCode)
-        setDefaultDeptId(deptId)
-      }
-      const divObj = divisions?.find((d: any) => d.code === divCode)
-      const deptObj = roles?.find((r: any) => r.id === deptId || r.code === deptId)
-      const divName = divObj?.name || divCode
-      const deptName = deptObj?.name || deptId
-      setToastMsg({
-        msg: `⭐ Đã đặt "${divName} - ${deptName}" làm Bộ phận & Tổ CM mặc định của bạn!`,
-        type: "success"
-      })
-      setTimeout(() => setToastMsg(null), 4000)
-    } catch (e: any) {
-      alert("Không thể lưu cài đặt mặc định: " + e.message)
-    }
-  }
-
-  // Handler: 1-Click apply default Division & Department
-  const handleApplyDefault = () => {
-    try {
-      let targetDiv = defaultDivCode || (typeof window !== "undefined" ? localStorage.getItem("skyline_default_division_code") : null)
-      let targetDept = defaultDeptId || (typeof window !== "undefined" ? localStorage.getItem("skyline_default_dept_id") : null)
-
-      // If no custom default set yet, find user's own department & division
-      if (!targetDiv || !targetDept) {
-        const curStaff = staffUsers?.find((u: any) => u.id === currentUserId)
-        const userDept = curStaff?.teacher?.departmentRel
-        if (userDept) {
-          targetDiv = userDept.divisionCode || targetDiv
-          targetDept = userDept.id || userDept.code || targetDept
-        } else if (isDirectTBP && operationalScope?.managedDivisions?.length > 0) {
-          targetDiv = operationalScope.managedDivisions[0]
-        }
-      }
-
-      if (!targetDiv && divisions && divisions.length > 0) targetDiv = divisions[0].code
-      if (!targetDept && roles && roles.length > 0) targetDept = roles[0].id || roles[0].code
-
-      if (targetDiv) {
-        setFilterDivisionCode(targetDiv)
-        setConfigDivisionCode(targetDiv)
-      }
-      if (targetDept) {
-        setFilterDeptId(targetDept)
-        setConfigDeptId(targetDept)
-      }
-      setFilterTeacherUserId("ALL")
-
-      const divObj = divisions?.find((d: any) => d.code === targetDiv)
-      const deptObj = roles?.find((r: any) => r.id === targetDept || r.code === targetDept)
-      const divName = divObj?.name || targetDiv || "Bộ phận"
-      const deptName = deptObj?.name || targetDept || "Tổ CM"
-
-      setToastMsg({
-        msg: `🎯 Đã chọn mặc định: ${divName} - ${deptName}`,
-        type: "success"
-      })
-      setTimeout(() => setToastMsg(null), 3000)
-    } catch (e: any) {
-      console.error(e)
-    }
-  }
-
-  // Handler: Set teacher primary default department
-  const handleSetPrimaryDept = async (teacherId: string, teacherName: string) => {
-    if (!configDeptId) return
-    const res = await setTeacherPrimaryDepartment(configDeptId, teacherId)
-    if (res.success) {
-      setToastMsg({
-        msg: `⭐ Đã đặt tổ này làm Tổ CM mặc định cho GV ${teacherName}!`,
-        type: "success"
-      })
-      setTimeout(() => setToastMsg(null), 3500)
-      loadConfigDepartmentTeachers()
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-
-  // History State
-  const [historyReports, setHistoryReports] = useState<any[]>([])
-  const [historySearch, setHistorySearch] = useState("")
-  const [viewingHistoryReport, setViewingHistoryReport] = useState<any|null>(null)
-
-  // Consolidated State
-  const [consolidatedData, setConsolidatedData] = useState<any[]>([])
-  
-  // Dashboard State
-  const [stats, setStats] = useState<any>({ totalTasks: 0, completed: 0, overdue: 0, inProgress: 0, pending: 0 })
-  const [chartData, setChartData] = useState<any>({})
-
-  const getRoleName = (code: string) => {
-    return roles?.find((r: any) => r.code === code || r.name === code || r.id === code)?.name || code;
-  }
-
-  // Filtered department list for cascading selection based on filterDivisionCode
-  const availableDepts = useMemo(() => {
-    if (!roles) return []
-    if (filterDivisionCode === "ALL") return roles
-    return roles.filter((r: any) => !r.divisionCode || r.divisionCode === filterDivisionCode)
-  }, [roles, filterDivisionCode])
-
-  // Filtered department list for Configuration Tab
-  const configAvailableDepts = useMemo(() => {
-    if (!roles) return []
-    if (!configDivisionCode || configDivisionCode === "ALL") return roles
-    return roles.filter((r: any) => !r.divisionCode || r.divisionCode === configDivisionCode)
-  }, [roles, configDivisionCode])
-
-  // Set default configDeptId when configAvailableDepts changes
-  useEffect(() => {
-    if (configAvailableDepts.length > 0) {
-      if (!configDeptId || !configAvailableDepts.some((d: any) => d.id === configDeptId || d.code === configDeptId)) {
-        setConfigDeptId(configAvailableDepts[0].id || configAvailableDepts[0].code)
-      }
-    } else {
-      setConfigDeptId("")
-    }
-  }, [configAvailableDepts])
-
-  // Teachers filtered by selected Department for the cascading dropdown
-  const teachersInSelectedDept = useMemo(() => {
-    if (filterDeptId === "ALL") {
-      // If no department is selected, filter by division if selected
-      if (filterDivisionCode === "ALL") return staffUsers || []
-      return (staffUsers || []).filter((u: any) => {
-        const div = u.teacher?.departmentRel?.divisionCode
-        return div === filterDivisionCode
-      })
-    }
-    return (staffUsers || []).filter((u: any) => {
-      const dId = u.teacher?.departmentRel?.id
-      const dCode = u.teacher?.departmentRel?.code
-      const dName = u.teacher?.departmentRel?.name
-      return dId === filterDeptId || dCode === filterDeptId || dName === filterDeptId
-    })
-  }, [staffUsers, filterDeptId, filterDivisionCode])
-
-  const groupedStaff = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    (staffUsers || []).forEach((u: any) => {
-      const deptName = u.teacher?.departmentRel?.name || getRoleName(u.role);
-      if (!groups[deptName]) groups[deptName] = [];
-      groups[deptName].push(u);
-    });
-    return groups;
-  }, [staffUsers, roles]);
-
-  useEffect(() => { setWeeks(getWeeksOfMonth(month, year)) }, [month, year])
-  
-  // Load data based on tab
-  useEffect(() => {
-    if (activeTab === "cards") loadPersonalCards()
-    else if (activeTab === "personal") loadReport()
-    else if (activeTab === "consolidated") {
-      if (consolidatedViewMode === "week") loadConsolidated()
-      else if (consolidatedViewMode === "month") loadMonthlyTaskGroup()
-      else if (consolidatedViewMode === "kpi") loadMonthlyKpi()
-    }
-    else if (activeTab === "dashboard") loadDashboard()
-    else if (activeTab === "history") loadHistory()
-    else if (activeTab === "config") loadConfigDepartmentTeachers()
-  }, [selectedWeek, month, year, viewUserId, activeTab, consolidatedViewMode, filterDivisionCode, filterDeptId, filterTeacherUserId, academicYearId, configDeptId])
-
-  const loadPersonalCards = async () => {
-    setLoading(true)
-    const res = await getPersonalProgressCards(
-      selectedWeek, 
-      month, 
-      year, 
-      academicYearId, 
-      filterDivisionCode, 
-      filterDeptId
-    )
-    if (res.success) {
-      setPersonalCards(res.cards || [])
-      setCardsSummary(res.summary || { totalStaff: 0, submittedCount: 0, pendingCount: 0, reviewedCount: 0 })
-    }
-    setLoading(false)
-  }
-
-  const loadReport = async () => {
-    setLoading(true)
-    const uid = isManager ? viewUserId : currentUserId
-    const res = await getWeeklyReport(uid, selectedWeek, month, year)
-    if (res.success && res.report) {
-      setItems(res.report.items.map((i: any) => ({ 
-        id: i.id, 
-        mainTask: i.mainTask, 
-        category: i.category || "",
-        taskGroup: i.taskGroup || "",
-        workContent: i.workContent, 
-        expectedCompletion: i.expectedCompletion || "",
-        progress: i.progress, 
-        proposedSolution: i.proposedSolution || "", 
-        managerNote: i.managerNote || "" 
-      })))
-      setReportId(res.report.id)
-      setReportStatus(res.report.status)
-      setManagerComment(res.report.managerComment || "")
-    } else { 
-      setItems([
-        { taskGroup: "", category: "", mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" },
-        { taskGroup: "", category: "", mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" },
-        { taskGroup: "", category: "", mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" }
-      ])
-      setReportId("")
-      setReportStatus("")
-      setManagerComment("") 
-    }
-    setLoading(false)
-  }
-
-  const loadConsolidated = async () => {
-    setLoading(true)
-    const res = await getConsolidatedReports(filterDeptId, selectedWeek, month, year, filterDivisionCode)
-    if (res.success) {
-      // If a specific teacher is selected, filter by that teacher
-      let data = res.reports || []
-      if (filterTeacherUserId && filterTeacherUserId !== "ALL") {
-        data = data.filter((r: any) => r.user?.id === filterTeacherUserId)
-      }
-      setConsolidatedData(data)
-    }
-    setLoading(false)
-  }
-
-  const loadDashboard = async () => {
-    setLoading(true)
-    const res = await getDashboardStats(month, year, filterDivisionCode, filterDeptId)
-    if (res.success) { setStats(res.stats); setChartData(res.chartData) }
-    setLoading(false)
-  }
-
-  const loadHistory = async () => {
-    setLoading(true)
-    const uid = isManager ? viewUserId : currentUserId
-    const res = await getUserReportHistory(uid)
-    if (res.success) setHistoryReports(res.reports)
-    setLoading(false)
-  }
-
-  // Load Department Teachers for Configuration Tab
-  const loadConfigDepartmentTeachers = async () => {
-    if (!configDeptId) return
-    setLoadingDeptTeachers(true)
-    const res = await getDepartmentTeachers(configDeptId)
-    if (res.success) {
-      setDeptTeachers(res.teachers || [])
-    } else {
-      setDeptTeachers([])
-    }
-    setLoadingDeptTeachers(false)
-  }
-
-  // Open modal to add teachers to current department
-  const handleOpenAddTeacherModal = async () => {
-    setShowAddTeacherModal(true)
-    setSelectedTeacherIdsToAdd([])
-    setLoadingAvailableTeachers(true)
-    const res = await getAllTeachersForAssignment()
-    if (res.success) {
-      setAllAvailableTeachers(res.teachers || [])
-    }
-    setLoadingAvailableTeachers(false)
-  }
-
-  const handleSaveAssignedTeachers = async () => {
-    if (!configDeptId || selectedTeacherIdsToAdd.length === 0) {
-      alert("Vui lòng chọn ít nhất 1 Giáo viên để gán vào Tổ!")
-      return
-    }
-    setSubmittingAssign(true)
-    const res = await assignTeachersToDepartment(configDeptId, selectedTeacherIdsToAdd, defaultAddPosition)
-    setSubmittingAssign(false)
-    if (res.success) {
-      setToastMsg({ msg: `✅ Đã gán ${res.count} giáo viên vào Tổ thành công!`, type: "success" })
-      setTimeout(() => setToastMsg(null), 3000)
-      setShowAddTeacherModal(false)
-      loadConfigDepartmentTeachers()
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleRemoveTeacher = async (teacherId: string, teacherName: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn gỡ giáo viên "${teacherName}" khỏi Tổ này không?`)) return
-    const res = await removeTeacherFromDepartment(configDeptId, teacherId)
-    if (res.success) {
-      setToastMsg({ msg: `🗑️ Đã gỡ ${teacherName} khỏi Tổ!`, type: "success" })
-      setTimeout(() => setToastMsg(null), 3000)
-      loadConfigDepartmentTeachers()
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleUpdatePosition = async (teacherId: string, position: string) => {
-    const res = await updateTeacherDepartmentPosition(configDeptId, teacherId, position)
-    if (res.success) {
-      setToastMsg({ msg: "✅ Đã cập nhật chức vụ thành công!", type: "success" })
-      setTimeout(() => setToastMsg(null), 2000)
-      loadConfigDepartmentTeachers()
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleOpenCardReportModal = async (card: any) => {
-    setSelectedStaffForModal(card)
-    setModalCommentInput(card.managerComment || "")
-    setModalDirectorCommentInput(card.directorComment || "")
-    setModalReportData(null)
-    if (card.reportId) {
-      const res = await getWeeklyReport(card.userId, selectedWeek, month, year)
-      if (res.success && res.report) {
-        setModalReportData(res.report)
-        setModalDirectorCommentInput(res.report.directorComment || card.directorComment || "")
-      }
-    }
-  }
-
-  const handleSaveModalComment = async () => {
-    if (!selectedStaffForModal?.reportId) {
-      alert("Nhân sự này chưa nộp báo cáo tuần để nhận xét!")
-      return
-    }
-    if (!modalCommentInput.trim()) return
-    setModalSavingComment(true)
-    const res = await addManagerComment(selectedStaffForModal.reportId, modalCommentInput.trim())
-    setModalSavingComment(false)
-    if (res.success) {
-      setToastMsg({ msg: "✅ Đã lưu nhận xét chỉ đạo của Ban Quản Lý thành công!", type: "success" })
-      setTimeout(() => setToastMsg(null), 3000)
-      loadPersonalCards()
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleSaveModalDirectorComment = async () => {
-    if (!selectedStaffForModal?.reportId) {
-      alert("Nhân sự này chưa nộp báo cáo tuần để đánh giá!")
-      return
-    }
-    setModalSavingDirectorComment(true)
-    const res = await saveDirectorReportComment(selectedStaffForModal.reportId, modalDirectorCommentInput.trim())
-    setModalSavingDirectorComment(false)
-    if (res.success) {
-      setToastMsg({ msg: "⭐ Đã lưu đánh giá & ý kiến Giám Đốc Ban thành công!", type: "success" })
-      setTimeout(() => setToastMsg(null), 3000)
-      loadPersonalCards()
-      if (consolidatedViewMode === "week") loadConsolidated()
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleOpenDirectorEvaluationModal = (item: any, report: any) => {
-    setEvaluatingDirectorItem(item)
-    setEvaluatingDirectorReport(report)
-    setEvalRating(item.directorRating || "GOOD")
-    setEvalQualityScore(item.qualityScore ?? (item.directorRating === "EXCELLENT" ? 10 : item.directorRating === "GOOD" ? 8.5 : item.directorRating === "SATISFACTORY" ? 7.0 : item.directorRating === "NEEDS_IMPROVEMENT" ? 5.0 : 8.5))
-    setEvalNote(item.directorNote || "")
-  }
-
-  const handleSaveDirectorEvaluation = async () => {
-    if (!evaluatingDirectorItem?.id) return
-    setSubmittingEvaluation(true)
-    const scoreVal = typeof evalQualityScore === "number" ? evalQualityScore : parseFloat(String(evalQualityScore))
-    const res = await addDirectorItemEvaluation(evaluatingDirectorItem.id, {
-      directorNote: evalNote.trim(),
-      directorRating: evalRating,
-      qualityScore: !isNaN(scoreVal) ? scoreVal : null
-    })
-    setSubmittingEvaluation(false)
-    if (res.success) {
-      setToastMsg({ msg: "⭐ Đã cập nhật đánh giá của Giám Đốc Ban thành công!", type: "success" })
-      setTimeout(() => setToastMsg(null), 3500)
-      setConsolidatedData((prev: any[]) => prev.map((rpt: any) => {
-        if (rpt.id === evaluatingDirectorReport?.id) {
-          return {
-            ...rpt,
-            items: rpt.items.map((it: any) => {
-              if (it.id === evaluatingDirectorItem.id) {
-                return {
-                  ...it,
-                  directorNote: evalNote.trim(),
-                  directorRating: evalRating,
-                  qualityScore: !isNaN(scoreVal) ? scoreVal : null
-                }
-              }
-              return it
-            })
-          }
-        }
-        return rpt
-      }))
-      setEvaluatingDirectorItem(null)
-      setEvaluatingDirectorReport(null)
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleRemindSingleStaff = async (staffUserId: string, staffName: string) => {
-    setRemindingUserId(staffUserId)
-    const res = await sendWeeklyReportEmailReminders(selectedWeek, month, year, staffUserId)
-    setRemindingUserId(null)
-    if (res.success) {
-      setToastMsg({ msg: `🔔 Đã gửi thông báo hệ thống nhắc nộp báo cáo cho ${staffName}!`, type: "success" })
-      setTimeout(() => setToastMsg(null), 3500)
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleSendReminderAllPending = async () => {
-    setReminding(true)
-    const res = await sendWeeklyReportEmailReminders(selectedWeek, month, year)
-    setReminding(false)
-    if (res.success) {
-      setToastMsg({ 
-        msg: `🔔 Đã gửi thông báo hệ thống nhắc nộp báo cáo cho ${res.remindedCount} nhân sự chưa nộp!`, 
-        type: "success" 
-      })
-      setTimeout(() => setToastMsg(null), 4000)
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleEditPastReport = (report: any) => {
-    setMonth(report.month)
-    setYear(report.year)
-    setSelectedWeek(report.weekNumber)
-    setActiveTab("personal")
-    setToastMsg({ 
-      msg: `✏️ Đã mở báo cáo Tuần ${report.weekNumber} (Tháng ${report.month}/${report.year}) để hiệu chỉnh!`, 
-      type: "success" 
-    })
-    setTimeout(() => setToastMsg(null), 4000)
-  }
-
-  const handleDeleteReport = async (rptId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa báo cáo này không?")) return
-    const res = await deleteWeeklyReport(rptId)
-    if (res.success) {
-      setToastMsg({ msg: "🗑️ Đã xóa báo cáo thành công!", type: "success" })
-      setTimeout(() => setToastMsg(null), 3000)
-      loadHistory()
-    } else alert("Lỗi: " + res.error)
-  }
-
-  const addRows = (count: number = 1) => {
-    const newRows: ReportItem[] = Array.from({ length: count }, () => ({
-      taskGroup: "", category: "", mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: ""
-    }))
-    setItems(prev => [...prev, ...newRows])
-  }
-
-  const removeRow = (idx: number) => {
-    setItems(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const updateItem = (idx: number, field: string, value: string) => {
-    setItems(items.map((item, i) => i === idx ? { ...item, [field]: value } : item))
-  }
-
-  const handleCategoryChange = (idx: number, catName: string) => {
-    const found = taskCategories.find((c: any) => c.name === catName)
-    setItems(prev => prev.map((item, i) => {
-      if (i !== idx) return item
-      const updated = { ...item, category: catName, mainTask: catName }
-      if (found?.groupName) {
-        updated.taskGroup = found.groupName
-      }
-      return updated
-    }))
-  }
-
-  const handleSave = async () => {
-    const activeItems = items.filter(i => 
-      (i.taskGroup && i.taskGroup.trim()) || 
-      (i.category && i.category.trim()) || 
-      (i.mainTask && i.mainTask.trim()) || 
-      i.workContent.trim() || 
-      i.expectedCompletion?.trim()
-    )
-    if (activeItems.length === 0) return alert("Vui lòng nhập ít nhất 1 công việc!")
-    
-    // Kiểm tra tính bắt buộc cho các công việc
-    for (let i = 0; i < activeItems.length; i++) {
-      const it = activeItems[i]
-      if (!it.taskGroup?.trim() && !it.category?.trim() && !it.mainTask?.trim()) {
-        return alert(`⚠️ Vui lòng chọn "Nhóm công việc" hoặc "Danh mục công việc" ở dòng ${i + 1}!`)
-      }
-      if (!it.workContent || !it.workContent.trim()) {
-        return alert(`⚠️ Vui lòng nhập "Nội dung công việc chi tiết" ở dòng ${i + 1}!`)
-      }
-      if (!it.expectedCompletion || !it.expectedCompletion.trim()) {
-        const taskName = it.category || it.taskGroup || it.mainTask || `dòng ${i + 1}`
-        return alert(`⚠️ Bắt buộc: Vui lòng chọn "Mốc dự kiến hoàn thành" cho "${taskName}"!`)
-      }
-    }
-
-    setSaving(true)
-    const res = await saveWeeklyReport({ 
-      weekNumber: selectedWeek, 
-      month, 
-      year, 
-      academicYearId, 
-      targetUserId: isManager ? viewUserId : undefined,
-      items: activeItems.map(i => ({ 
-        mainTask: i.category || i.taskGroup || i.mainTask || "Công việc", 
-        category: i.category || "",
-        taskGroup: i.taskGroup || "",
-        workContent: i.workContent, 
-        expectedCompletion: i.expectedCompletion,
-        progress: i.progress, 
-        proposedSolution: i.proposedSolution 
-      })) 
-    })
-    setSaving(false)
-    if (res.success) { 
-      setToastMsg({ msg: "✅ Báo cáo tuần đã được lưu thành công!", type: "success" })
-      setTimeout(() => setToastMsg(null), 3000)
-      loadReport() 
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const exportToExcel = () => {
-    if (consolidatedViewMode === "month" && monthlyTaskGroupData) {
-      // Export Monthly Matrix
-      const matrix = monthlyTaskGroupData.staffMatrix || []
-      const groups = monthlyTaskGroupData.allGroups || []
-      if (matrix.length === 0) return alert("Không có dữ liệu tiến độ tháng để xuất Excel!")
-      
-      const rows = matrix.map((st: any, idx: number) => {
-        const row: any = {
-          "STT": idx + 1,
-          "Họ và Tên": st.fullName,
-          "Tổ / Bộ phận": st.departmentName,
-          "Email": st.email,
-        }
-        groups.forEach((g: string) => {
-          const gData = st.groups?.[g]
-          row[g] = gData && gData.total > 0 ? `${gData.completed}/${gData.total} (${Math.round((gData.completed/gData.total)*100)}%)` : "-"
+  const reloadSnapshot = useCallback(
+    async (nextWeek = weekNumber, nextMonth = month, nextYear = year) => {
+      setIsLoadingSnapshot(true)
+      try {
+        const res = await getKtdbclWorkspaceSnapshot({
+          weekNumber: nextWeek,
+          month: nextMonth,
+          year: nextYear,
         })
-        row["Tổng việc trong tháng"] = st.totalMonth
-        row["Đã hoàn thành"] = st.completedMonth
-        row["Tỷ lệ hoàn thành"] = st.totalMonth > 0 ? `${Math.round((st.completedMonth/st.totalMonth)*100)}%` : "0%"
-        return row
-      })
-      const ws = XLSX.utils.json_to_sheet(rows)
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, `Tien_do_thang_${month}_${year}`)
-      XLSX.writeFile(wb, `Tien_do_nhan_su_theo_nhom_cv_Thang_${month}_${year}.xlsx`)
-      return
-    }
+        if (res.success) {
+          setSnapshot(res as unknown as SnapshotData)
+          if (res.period?.weekNumber) setWeekNumber(res.period.weekNumber)
+        } else {
+          toast.error(res.error || "Không thể tải dữ liệu Ban KT&ĐBCL")
+        }
+      } finally {
+        setIsLoadingSnapshot(false)
+      }
+    },
+    [weekNumber, month, year]
+  )
 
-    if (consolidatedData.length === 0) return alert("Không có dữ liệu để xuất Excel!")
-    const rows: any[] = []
-    let stt = 1
-    consolidatedData.forEach((report: any) => {
-      report.items.forEach((item: any) => {
-        if (filterConsolidatedGroup !== "ALL" && item.taskGroup !== filterConsolidatedGroup) return
-        const catObj = (taskCategories || []).find((c: any) => c.name?.trim().toLowerCase() === (item.category || item.mainTask || "").trim().toLowerCase())
-        const weight = catObj?.weight || 1.0
-
-        rows.push({
-          "STT": stt++,
-          "Mã Email": report.user?.email || "",
-          "Họ và Tên": report.user?.fullName || "",
-          "Chức danh / Tổ": report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role),
-          "Nhóm Công Việc": item.taskGroup || "-",
-          "Danh Mục Công Việc": item.category || item.mainTask || "-",
-          "Trọng Số": `x${weight}`,
-          "Nội Dung Công Việc": item.workContent,
-          "Mốc Dự Kiến Hoàn Thành": formatExpectedDate(item.expectedCompletion),
-          "Tiến Độ": PROGRESS.find(p => p.value === item.progress)?.label || item.progress,
-          "Đề Xuất Giải Pháp": item.proposedSolution || "",
-          "Nhận Xét Của QL": item.managerNote || "",
-          "Đánh Giá Của GĐB": item.directorNote || report.directorComment || "",
-          "Xếp Loại GĐB": item.directorRating ? (
-            item.directorRating === "EXCELLENT" ? "Xuất sắc (10đ)" :
-            item.directorRating === "GOOD" ? "Tốt (8.5đ)" :
-            item.directorRating === "SATISFACTORY" ? "Đạt chuẩn (7đ)" : "Cần cải thiện (5đ)"
-          ) : "",
-          "Điểm Chất Lượng": item.qualityScore ?? ""
-        })
-      })
-    })
-    const ws = XLSX.utils.json_to_sheet(rows)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, `BaoCaoTuan_${selectedWeek}_${month}_${year}`)
-    XLSX.writeFile(wb, `BaoCaoTuan_Tuan${selectedWeek}_Thang${month}_${year}.xlsx`)
+  const handlePeriodChange = async (
+    nextWeek: number,
+    nextMonth: number,
+    nextYear: number
+  ) => {
+    setWeekNumber(nextWeek)
+    setMonth(nextMonth)
+    setYear(nextYear)
+    await reloadSnapshot(nextWeek, nextMonth, nextYear)
   }
 
-  // Handler: Export Monthly KPI Report to Excel
-  const handleExportKpiExcel = () => {
-    if (!monthlyKpiData || !monthlyKpiData.staffKpis || monthlyKpiData.staffKpis.length === 0) {
-      alert("Không có dữ liệu KPI tháng để xuất Excel!")
-      return
-    }
-
-    const rows: any[] = []
-    let stt = 1
-    monthlyKpiData.staffKpis.forEach((st: any) => {
-      rows.push({
-        "STT": stt++,
-        "Mã / Email": st.email,
-        "Họ và Tên": st.fullName,
-        "Tổ / Bộ phận": st.departmentName,
-        "Chức vụ": st.position,
-        "Tổng Số Việc Tháng": st.totalTasks,
-        "Số Việc Hoàn Thành": st.completedTasks,
-        "Số Việc Đang Làm": st.doingTasks,
-        "Số Việc Chưa Xong": st.notCompletedTasks,
-        "Tổng Trọng Số Đảm Nhận": st.totalWeight,
-        "Tỷ Lệ Hoàn Thành Có Trọng Số (%)": `${st.weightedProgressRate}%`,
-        "Điểm KPI Tháng (Thang 10)": st.avgKpiScore,
-        "Xếp Loại KPI": `${st.kpiGrade} - ${st.kpiGradeLabel}`,
-        "Số Việc Được GĐB Đánh Giá": st.directorEvaluatedCount,
-        "Ý Kiến / Chỉ Đạo Của GĐB": st.directorComments.join("; ") || "Đã rà soát chất lượng"
+  const handleRefreshAiAnalysis = async (scope: "WEEKLY" | "MONTHLY") => {
+    setIsRefreshingAi(true)
+    try {
+      const resp = await fetch("/api/admin/weekly-reports/ai-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scopeType: scope,
+          weekNumber,
+          month,
+          year,
+          useCache: false,
+        }),
       })
-    })
-
-    const ws = XLSX.utils.json_to_sheet(rows)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, `KPI_Thang_${month}_${year}`)
-    XLSX.writeFile(wb, `BaoCao_KPI_ChatLuong_Thang${month}_${year}.xlsx`)
+      const json = await resp.json()
+      if (json.success && json.aiReport) {
+        setSnapshot((prev) => ({
+          ...prev,
+          ...(scope === "WEEKLY"
+            ? { weeklyAnalysis: json.aiReport }
+            : { monthlyAnalysis: json.aiReport }),
+        }))
+        toast.success(
+          `AI Agent đã phân tích xong chất lượng ${
+            scope === "WEEKLY" ? `Tuần ${weekNumber}` : `Tháng ${month}/${year}`
+          }`
+        )
+      } else {
+        toast.error(json.error || "Không chạy được phân tích AI Agent")
+      }
+    } catch {
+      toast.error("Lỗi kết nối tới dịch vụ AI Agent")
+    } finally {
+      setIsRefreshingAi(false)
+    }
   }
 
-  // Filtered Cards
-  const filteredCards = useMemo(() => {
-    return personalCards.filter(card => {
-      const q = cardSearch.trim().toLowerCase()
-      const matchQuery = !q || 
-        card.fullName.toLowerCase().includes(q) || 
-        card.email.toLowerCase().includes(q) ||
-        card.departmentName.toLowerCase().includes(q) ||
-        card.position.toLowerCase().includes(q)
+  const handleRemindUnsubmitted = async (targetUserId?: string) => {
+    setActionBusyKey(targetUserId ? `REMIND_${targetUserId}` : "REMIND_ALL")
+    try {
+      const res: any = await triggerKtdbclReminderNowAction({
+        weekNumber,
+        month,
+        year,
+        targetUserId,
+      })
+      if (res.success) {
+        toast.success(
+          `Đã gửi nhắc báo cáo (${res.remindedCount} thông báo, ${res.emailSentCount} email)`
+        )
+        await reloadSnapshot()
+      } else {
+        toast.error(res.error || "Không gửi được thông báo nhắc việc")
+      }
+    } finally {
+      setActionBusyKey(null)
+    }
+  }
 
-      const matchStatus = cardStatusFilter === "ALL" ||
-        (cardStatusFilter === "PENDING" && (card.submissionStatus === "NOT_SUBMITTED" || card.submissionStatus === "DRAFT")) ||
-        (cardStatusFilter === "SUBMITTED" && (card.submissionStatus === "SUBMITTED" || card.submissionStatus === "REVIEWED")) ||
-        (cardStatusFilter === "REVIEWED" && card.submissionStatus === "REVIEWED") ||
-        (cardStatusFilter === "OVERDUE" && card.tasks?.overdue > 0)
+  const handleSendDirectorReport = async (scope: "WEEKLY" | "MONTHLY") => {
+    setActionBusyKey("SEND_DIRECTOR")
+    try {
+      const res: any = await sendKtdbclDirectorReportNowAction({
+        scopeType: scope,
+        weekNumber,
+        month,
+        year,
+      })
+      if (res.success) {
+        const emailList = Array.isArray(res.recipientEmails) ? res.recipientEmails.join(", ") : "Giám đốc Ban"
+        toast.success(
+          `Đã gửi Báo cáo ${scope === "WEEKLY" ? "Tuần" : "Tháng"} cho Giám đốc Ban (${emailList})`
+        )
+        await reloadSnapshot()
+      } else {
+        toast.error(res.error || "Không gửi được báo cáo cho Giám đốc Ban")
+      }
+    } finally {
+      setActionBusyKey(null)
+    }
+  }
 
-      const matchDept = filterDeptId === "ALL" || 
-        card.departmentId === filterDeptId || 
-        card.departmentCode === filterDeptId || 
-        card.departmentName === filterDeptId
+  const handleScanOverdue = async () => {
+    setActionBusyKey("SCAN_OVERDUE")
+    try {
+      const res: any = await scanAndRequestOverdueExplanationsAction({
+        weekNumber,
+        month,
+        year,
+        scopeType: scopeMode,
+      })
+      if (res.success) {
+        if (res.flaggedCount === 0) {
+          toast.success(res.message || "Không có đầu việc quá hạn mới cần yêu cầu giải trình.")
+        } else {
+          toast.success(
+            `Đã gắn cờ ${res.flaggedCount} việc trễ hạn & gửi ${res.emailSentCount} email yêu cầu giải trình`
+          )
+          await reloadSnapshot()
+        }
+      } else {
+        toast.error(res.error || "Lỗi quét đầu việc quá hạn")
+      }
+    } finally {
+      setActionBusyKey(null)
+    }
+  }
 
-      const matchTeacher = filterTeacherUserId === "ALL" || card.userId === filterTeacherUserId
+  const handleExportExcel = () => {
+    const activeItems =
+      scopeMode === "WEEKLY" ? snapshot.weekItems : snapshot.monthItems
+    const activeAi =
+      scopeMode === "WEEKLY" ? snapshot.weeklyAnalysis : snapshot.monthlyAnalysis
 
-      return matchQuery && matchStatus && matchDept && matchTeacher
-    })
-  }, [personalCards, cardSearch, cardStatusFilter, filterDeptId, filterTeacherUserId])
+    const wb = XLSX.utils.book_new()
 
-  const filteredHistory = useMemo(() => {
-    if (!historySearch.trim()) return historyReports
-    const q = historySearch.toLowerCase()
-    return historyReports.filter(r => 
-      `tuần ${r.weekNumber}`.includes(q) ||
-      `tháng ${r.month}`.includes(q) ||
-      `${r.year}`.includes(q) ||
-      r.items.some((i: any) => i.mainTask?.toLowerCase().includes(q) || i.workContent?.toLowerCase().includes(q))
+    // Sheet 1: Tổng hợp đầu việc Ban KT&ĐBCL
+    const itemSheetRows = activeItems.map((it, idx) => ({
+      STT: idx + 1,
+      "Tuần": `Tuần ${it.weekNumber}`,
+      "Nhân sự thực hiện": it.userFullName,
+      "Vị trí": it.userPosition,
+      "Nhóm chuyên môn": it.taskGroup,
+      "Đầu việc chính": it.mainTask,
+      "Nội dung chi tiết": it.workContent,
+      "Dự kiến HT": it.expectedCompletion || "",
+      "Tiến độ":
+        it.progress === "COMPLETED"
+          ? "Hoàn thành"
+          : it.progress === "DOING"
+          ? "Đang thực hiện"
+          : "Chưa bắt đầu",
+      "Trạng thái xác nhận":
+        it.meta.confirmStatus === "DIRECTOR_CONFIRMED"
+          ? "Giám đốc Ban đã xác nhận"
+          : it.meta.confirmStatus === "MANAGER_CONFIRMED"
+          ? "Quản lý đã xác nhận"
+          : it.meta.confirmStatus === "OVERDUE_EXPLANATION_REQUIRED"
+          ? "Yêu cầu giải trình"
+          : it.meta.confirmStatus === "EXPLANATION_SUBMITTED"
+          ? "Đã nộp giải trình"
+          : "Chờ xác nhận",
+      "Điểm chất lượng (/10)": it.computedQualityScore,
+      "Giải pháp / Giải trình":
+        it.meta.staffExplanation || it.proposedSolution || "",
+      "Nhận xét Quản lý / GĐB": it.directorNote || it.managerNote || "",
+    }))
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet(itemSheetRows),
+      "Dau_Viec_KTDBCL"
     )
-  }, [historyReports, historySearch])
 
-  // Get current division label
-  const currentDivisionLabel = useMemo(() => {
-    if (isSuperAdmin || isHeadOfAcademic) return "Ban Điều Hành / Toàn Trường"
-    if (isDirectTBP) {
-      const divNames = operationalScope?.managedDivisions?.map((d: string) => {
-        const found = divisions?.find((div: any) => div.code === d)
-        return found?.name || d
-      }).join(", ")
-      return `Trưởng Bộ Phận (${divNames || 'Chuyên môn'})`
-    }
-    if (isDirectTTCM) {
-      const deptNames = operationalScope?.scopedDepartments?.map((d: any) => d.name).join(", ")
-      return `Tổ Trưởng Chuyên Môn (${deptNames || 'Tổ CM'})`
-    }
-    return "Giáo viên / Nhân viên"
-  }, [isSuperAdmin, isHeadOfAcademic, isDirectTBP, isDirectTTCM, operationalScope, divisions])
+    // Sheet 2: Hiệu suất & KPI từng Cá nhân
+    const kpiRows = activeAi.individualAnalyses.map((ind, idx) => ({
+      STT: idx + 1,
+      "Họ và tên": ind.fullName,
+      "Vị trí": ind.position,
+      "Nhóm chuyên môn": ind.specialistGroups.join(", "),
+      "Tuần đã nộp": `${ind.submittedWeeksCount}/${ind.expectedWeeksCount}`,
+      "Đầu việc hoàn thành": `${ind.completedItems}/${ind.totalItems}`,
+      "Tỷ lệ hoàn thành (%)": ind.completionRate,
+      "Đã xác nhận HT": ind.confirmedByLeadershipCount,
+      "Việc trễ hạn": ind.overdueCount,
+      "Chỉ số hiệu suất (%)": ind.efficiencyScore,
+      "Điểm chất lượng (/10)": ind.avgQualityScore,
+      "Xếp loại KPI": `Hạng ${ind.kpiGrade} (${ind.kpiGradeLabel})`,
+      "Đánh giá AI Agent": ind.aiCoachingRecommendation,
+    }))
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet(kpiRows),
+      "Hieu_Suat_Ca_Nhan"
+    )
 
-  // Filtered available teachers in Add Modal
-  const filteredAvailableTeachers = useMemo(() => {
-    const assignedIds = new Set(deptTeachers.map(t => t.id))
-    return allAvailableTeachers.filter(t => {
-      if (assignedIds.has(t.id)) return false
-      if (!addTeacherSearch.trim()) return true
-      const q = addTeacherSearch.toLowerCase().trim()
-      return (
-        t.teacherName.toLowerCase().includes(q) ||
-        t.teacherCode.toLowerCase().includes(q) ||
-        t.email.toLowerCase().includes(q) ||
-        t.campusName.toLowerCase().includes(q)
-      )
-    })
-  }, [allAvailableTeachers, deptTeachers, addTeacherSearch])
+    const fileName =
+      scopeMode === "WEEKLY"
+        ? `BaoCaoTuan_BanKTDBCL_Tuan${weekNumber}_T${month}_${year}.xlsx`
+        : `BaoCaoThang_BanKTDBCL_Thang${month}_${year}.xlsx`
+
+    XLSX.writeFile(wb, fileName)
+  }
+
+  const activeAiReport =
+    scopeMode === "WEEKLY" ? snapshot.weeklyAnalysis : snapshot.monthlyAnalysis
+  const activeReviewItems =
+    scopeMode === "WEEKLY" ? snapshot.weekItems : snapshot.monthItems
+
+  // Count pending items needing leadership confirmation or staff explanation
+  const pendingConfirmCount = useMemo(
+    () =>
+      snapshot.weekItems.filter(
+        (i) =>
+          i.progress === "COMPLETED" &&
+          i.meta.confirmStatus !== "MANAGER_CONFIRMED" &&
+          i.meta.confirmStatus !== "DIRECTOR_CONFIRMED"
+      ).length,
+    [snapshot.weekItems]
+  )
+
+  const myPendingExplanationCount = useMemo(
+    () =>
+      snapshot.monthItems.filter(
+        (i) =>
+          i.userId === currentUserId &&
+          i.meta.confirmStatus === "OVERDUE_EXPLANATION_REQUIRED"
+      ).length,
+    [snapshot.monthItems, currentUserId]
+  )
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto p-4 sm:p-6 bg-slate-50/50 min-h-screen">
-      {/* Toast Notification */}
-      {toastMsg && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border max-w-md animate-in slide-in-from-top-4 duration-300 ${
-          toastMsg.type === 'success' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-red-600 border-red-500 text-white'
-        }`}>
-          <CheckCircle2 className="w-6 h-6 flex-shrink-0 text-white" />
-          <div className="flex-1">
-            <p className="font-bold text-sm">Thông báo</p>
-            <p className="text-xs opacity-95">{toastMsg.msg}</p>
-          </div>
-          <button onClick={() => setToastMsg(null)} className="p-1 hover:bg-white/20 rounded-lg"><X className="w-4 h-4" /></button>
-        </div>
-      )}
-
-      {/* Modal: Add Teachers to Department */}
-      {showAddTeacherModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#48BFE3] font-black">
-                  <UserPlus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-800">
-                    Thêm Giáo viên vào Tổ Chuyên Môn
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Tổ đang chọn: <strong>{roles?.find((r: any) => r.id === configDeptId || r.code === configDeptId)?.name}</strong>
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowAddTeacherModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-5 border-b bg-white space-y-3">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="relative flex-1 w-full">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    value={addTeacherSearch}
-                    onChange={e => setAddTeacherSearch(e.target.value)}
-                    placeholder="Tìm theo tên, mã GV, cơ sở..."
-                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3]"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <label className="text-xs font-bold text-slate-600 whitespace-nowrap">Chức vụ gán:</label>
-                  <select
-                    value={defaultAddPosition}
-                    onChange={e => setDefaultAddPosition(e.target.value)}
-                    className="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50"
-                  >
-                    <option value="GV">GV (Giáo viên)</option>
-                    <option value="TTCM">TTCM (Tổ trưởng)</option>
-                    <option value="TPTCM">TPTCM (Tổ phó)</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-[11px] pt-1">
-                <p className="text-slate-500">
-                  Đã chọn: <strong className="text-teal-700">{selectedTeacherIdsToAdd.length}</strong> giáo viên
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const allIds = filteredAvailableTeachers.map(t => t.id)
-                      setSelectedTeacherIdsToAdd(allIds)
-                    }}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition-all"
-                  >
-                    ☑️ Chọn tất cả ({filteredAvailableTeachers.length})
-                  </button>
-                  {selectedTeacherIdsToAdd.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTeacherIdsToAdd([])}
-                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all"
-                    >
-                      Bỏ chọn
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 overflow-y-auto flex-1 max-h-96">
-              {loadingAvailableTeachers ? (
-                <div className="py-12 text-center text-slate-400 text-xs">Đang tải danh sách giáo viên...</div>
-              ) : filteredAvailableTeachers.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 text-xs">
-                  Không tìm thấy giáo viên nào phù hợp hoặc tất cả đã thuộc tổ này!
-                </div>
-              ) : (
-                <div className="divide-y border rounded-2xl overflow-hidden">
-                  {filteredAvailableTeachers.map(t => {
-                    const isSelected = selectedTeacherIdsToAdd.includes(t.id)
-                    return (
-                      <div
-                        key={t.id}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedTeacherIdsToAdd(prev => prev.filter(id => id !== t.id))
-                          } else {
-                            setSelectedTeacherIdsToAdd(prev => [...prev, t.id])
-                          }
-                        }}
-                        className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${
-                          isSelected ? "bg-teal-50/70" : "hover:bg-slate-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}} // handled by parent div
-                            className="rounded text-[#48BFE3] focus:ring-[#48BFE3] w-4 h-4"
-                          />
-                          <div>
-                            <p className="font-extrabold text-xs text-slate-800">{t.teacherName}</p>
-                            <p className="text-[11px] text-slate-400">
-                              Mã: {t.teacherCode} &bull; {t.email} &bull; {t.campusName}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 border">
-                          Hiện tại: {t.currentDeptName}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 border-t bg-slate-50 flex justify-between items-center">
-              <button
-                onClick={() => setShowAddTeacherModal(false)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={handleSaveAssignedTeachers}
-                disabled={submittingAssign || selectedTeacherIdsToAdd.length === 0}
-                className="bg-[#48BFE3] hover:bg-[#00A19A] disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all"
-              >
-                {submittingAssign ? "Đang gán..." : `Gán ${selectedTeacherIdsToAdd.length} GV vào Tổ`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: View & Quick Comment from Card */}
-      {selectedStaffForModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#48BFE3] font-black">
-                  {selectedStaffForModal.fullName.slice(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-800 flex items-center gap-2">
-                    {selectedStaffForModal.fullName}
-                    <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-slate-200 text-slate-700">
-                      {selectedStaffForModal.departmentName}
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Báo cáo Tuần {selectedWeek} (Tháng {month}/{year}) &bull; {selectedStaffForModal.email}
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setSelectedStaffForModal(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-5 flex-1">
-              {modalReportData && modalReportData.items?.length > 0 ? (
-                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                        <th className="p-3 text-center w-10">STT</th>
-                        <th className="p-3 min-w-[140px]">Task chính</th>
-                        <th className="p-3 min-w-[220px]">Nội dung công việc</th>
-                        <th className="p-3 min-w-[125px]">Dự kiến HT</th>
-                        <th className="p-3 w-28">Tiến độ</th>
-                        <th className="p-3 min-w-[160px]">Đề xuất giải pháp</th>
-                        <th className="p-3 min-w-[160px]">Nhận xét QL</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y font-medium">
-                      {modalReportData.items.map((item: any, idx: number) => {
-                        const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
-                        return (
-                          <tr key={idx} className="hover:bg-slate-50">
-                            <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                            <td className="p-3 font-bold text-teal-800">
-                              {item.taskGroup && (
-                                <span className="block text-[10px] text-teal-700 font-semibold mb-0.5">
-                                  [{item.taskGroup}]
-                                </span>
-                              )}
-                              {item.category || item.mainTask}
-                            </td>
-                            <td className="p-3 text-slate-700 leading-relaxed break-words">{item.workContent}</td>
-                            <td className="p-3 text-slate-700 font-semibold whitespace-nowrap">
-                              {formatExpectedDate(item.expectedCompletion)}
-                            </td>
-                            <td className="p-3">
-                              <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
-                                {prog.label}
-                              </span>
-                            </td>
-                            <td className="p-3 text-slate-500 italic break-words">{item.proposedSolution || "-"}</td>
-                            <td className="p-3 text-slate-700 break-words">{item.managerNote || "-"}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="p-8 text-center bg-amber-50/50 rounded-2xl border border-amber-200 text-amber-800">
-                  <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-                  <p className="font-bold text-sm">Nhân sự chưa nộp báo cáo tuần {selectedWeek}!</p>
-                  <p className="text-xs text-amber-600 mt-1">Hạn định kỳ nộp báo cáo là trước 14h00 Thứ 5 hàng tuần.</p>
-                  <button
-                    onClick={() => handleRemindSingleStaff(selectedStaffForModal.userId, selectedStaffForModal.fullName)}
-                    className="mt-4 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-sm"
-                  >
-                    <Bell className="w-4 h-4" /> Gửi thông báo nhắc nhở
-                  </button>
-                </div>
-              )}
-
-              {modalReportData && (
-                <div className="p-4 bg-teal-50/70 border border-teal-200 rounded-2xl space-y-3">
-                  <label className="block text-xs font-bold text-teal-900 flex items-center gap-1.5">
-                    <MessageSquare className="w-4 h-4 text-[#48BFE3]" /> Nhận xét chỉ đạo của Ban Quản Lý (TBP / Trưởng Ban):
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={modalCommentInput}
-                    onChange={e => setModalCommentInput(e.target.value)}
-                    placeholder="Nhập nhận xét, đánh giá kết quả và chỉ đạo công việc cho nhân sự này..."
-                    className="w-full p-3 border border-teal-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white text-slate-800"
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      onClick={handleSaveModalComment}
-                      disabled={modalSavingComment}
-                      className="bg-[#48BFE3] hover:bg-[#00A19A] text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
-                    >
-                      <Save className="w-4 h-4" /> {modalSavingComment ? "Đang lưu..." : "Lưu nhận xét chỉ đạo"}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {modalReportData && (
-                <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-3">
-                  <label className="block text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                    <Award className="w-4 h-4 text-amber-600" /> Đánh giá & Nhận xét của Giám Đốc Ban (GĐB):
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={modalDirectorCommentInput}
-                    onChange={e => setModalDirectorCommentInput(e.target.value)}
-                    placeholder="Nhập ý kiến đánh giá chất lượng công việc, chỉ đạo định hướng từ Giám Đốc Ban..."
-                    className="w-full p-3 border border-amber-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500 bg-white text-slate-800"
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      onClick={handleSaveModalDirectorComment}
-                      disabled={modalSavingDirectorComment}
-                      className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
-                    >
-                      <Save className="w-4 h-4" /> {modalSavingDirectorComment ? "Đang lưu..." : "Lưu đánh giá GĐB"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 border-t bg-slate-50 flex justify-between items-center">
-              <span className="text-xs text-slate-400">Trạng thái: <strong>{selectedStaffForModal.submissionStatus}</strong></span>
-              <button
-                onClick={() => setSelectedStaffForModal(null)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Header Bar */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#48BFE3] shadow-sm">
-            <FileText className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
-                Báo cáo Tuần Giáo viên & Nhân sự
+    <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-6 space-y-5">
+      {/* Masthead Sổ cái Học thuật — Gói gọn chuyên biệt trong Bộ phận chuyên môn: Ban KT&ĐBCL */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+          <div className="border-l-4 border-[#003B3A] pl-4 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-lg md:text-xl font-bold text-[#003B3A]">
+                Quản trị Chất lượng Công việc & Báo cáo Tuần
               </h1>
-              <span className="text-[11px] px-3 py-1 bg-gradient-to-r from-teal-500/10 to-teal-700/10 text-teal-800 border border-teal-200 rounded-full font-extrabold">
-                {currentDivisionLabel}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Bộ phận chuyên môn: Ban KT&ĐBCL
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Cấu hình nhân sự theo Bộ phận & Tổ CM &bull; Chỉ thấy danh sách GV thuộc TCM đó &bull; Bám sát tiến độ & Thẻ cá nhân
+            <p className="text-xs text-slate-600">
+              Tự động nhắc báo cáo Thứ Tư 14:00 • Tự động gửi báo cáo Tuần & Tháng cho Giám đốc Ban • AI Agent phân tích hiệu suất Nhóm & Cá nhân
             </p>
           </div>
+
+          {/* Thanh chọn Kỳ báo cáo gọn gàng (Đã loại bỏ hoàn toàn bộ lọc đa bộ phận toàn trường rườm rà) */}
+          <div className="flex flex-wrap items-center gap-2 tabular-nums">
+            <select
+              value={month}
+              onChange={(e) => handlePeriodChange(1, Number(e.target.value), year)}
+              className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-[#003B3A] focus:outline-none focus:border-[#00A19A]"
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <option key={m} value={m}>
+                  Tháng {m}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={year}
+              onChange={(e) => handlePeriodChange(1, month, Number(e.target.value))}
+              className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-[#003B3A] focus:outline-none focus:border-[#00A19A]"
+            >
+              {[year - 1, year, year + 1].map((y) => (
+                <option key={y} value={y}>
+                  Năm {y}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={weekNumber}
+              onChange={(e) => handlePeriodChange(Number(e.target.value), month, year)}
+              className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-[#003B3A] focus:outline-none focus:border-[#00A19A]"
+            >
+              {(snapshot.period.allWeeks || []).map((w) => (
+                <option key={w.weekNum} value={w.weekNum}>
+                  {w.label}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              disabled={isLoadingSnapshot}
+              onClick={() => reloadSnapshot()}
+              className="p-2 rounded-xl border border-[#E2E8F0] bg-white text-slate-600 hover:text-[#003B3A] hover:bg-[#F8FAFC] transition-colors"
+              title="Làm mới dữ liệu"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoadingSnapshot ? "animate-spin" : ""}`} />
+            </button>
+
+            <Link
+              href="/admin/tasks"
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-teal-100 transition-colors"
+            >
+              QA Workspace
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {isManager && (
-            <button
-              onClick={handleSendReminderAllPending}
-              disabled={reminding}
-              className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-sm font-bold text-xs"
-            >
-              <Bell className="w-4 h-4" /> 
-              {reminding ? "Đang gửi thông báo..." : `Nhắc nộp báo cáo (${cardsSummary.pendingCount} chưa nộp)`}
-            </button>
-          )}
-
-          {activeTab === "consolidated" && isManager && (
-            <button
-              onClick={exportToExcel}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-sm font-bold text-xs"
-            >
-              <Download className="w-4 h-4" /> {consolidatedViewMode === "month" ? "Xuất Excel Tiến độ Tháng" : "Xuất Excel Tổng hợp"}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="flex bg-white rounded-2xl shadow-sm border border-slate-200 p-1.5 gap-1.5 flex-wrap">
-        {[
-          ...(isManager ? [{ key: "cards", label: "📇 Thẻ Tiến Độ Cá Nhân", icon: Users }] : []),
-          ...(isManager ? [{ key: "dashboard", label: "📊 Thống Kê & Bám Sát", icon: BarChart3 }] : []),
-          ...(isManager ? [{ key: "consolidated", label: "📋 Tổng Hợp Báo Cáo", icon: Table2 }] : []),
-          ...(isManager ? [{ key: "config", label: "⚙️ Cấu hình Nhân sự Tổ CM", icon: Settings }] : []),
-          { key: "personal", label: "📝 Lập & Hiệu Chỉnh Báo Cáo", icon: Edit3 },
-          { key: "history", label: "📜 Lịch Sử Đã Nộp", icon: History },
-        ].map(tab => (
+        {/* Segmented Navigation 5 Tab trực quan */}
+        <div className="mt-4 pt-4 border-t border-[#F1F5F9] flex flex-wrap items-center gap-1.5 tabular-nums">
           <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
-            className={`flex-1 min-w-[145px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
-              activeTab === tab.key
-                ? "bg-[#48BFE3] text-white shadow-md"
-                : "text-slate-500 hover:text-teal-700 hover:bg-teal-50/50"
+            type="button"
+            onClick={() => setActiveTab("dashboard")}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+              activeTab === "dashboard"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "bg-[#F8FAFC] text-slate-700 hover:bg-slate-100 border border-[#E2E8F0]"
             }`}
           >
-            <tab.icon className="w-4 h-4" /> {tab.label}
+            <BarChart3 className="w-3.5 h-3.5" />
+            Dashboard chất lượng & hiệu suất
           </button>
-        ))}
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("review")}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+              activeTab === "review"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "bg-[#F8FAFC] text-slate-700 hover:bg-slate-100 border border-[#E2E8F0]"
+            }`}
+          >
+            <CheckSquare className="w-3.5 h-3.5" />
+            Xác nhận hoàn thành & giải trình
+            {pendingConfirmCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-[#00A19A] text-white">
+                {pendingConfirmCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("cards")}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+              activeTab === "cards"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "bg-[#F8FAFC] text-slate-700 hover:bg-slate-100 border border-[#E2E8F0]"
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Tiến độ Nhóm & Cá nhân ({snapshot.members.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("compose")}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+              activeTab === "compose"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "bg-[#F8FAFC] text-slate-700 hover:bg-slate-100 border border-[#E2E8F0]"
+            }`}
+          >
+            <ClipboardEdit className="w-3.5 h-3.5" />
+            Lập báo cáo tuần & giải trình
+            {myPendingExplanationCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-[#E11D48] text-white">
+                {myPendingExplanationCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("automation")}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+              activeTab === "automation"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "bg-[#F8FAFC] text-slate-700 hover:bg-slate-100 border border-[#E2E8F0]"
+            }`}
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Tự động hóa & cấu hình Ban
+          </button>
+        </div>
       </div>
 
-      {/* ============ 3-TIER CASCADING FILTER BAR (For Cards, Consolidated, Dashboard, Personal) ============ */}
-      {activeTab !== "history" && activeTab !== "config" && (
-        <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5">Tháng</label>
-              <select
-                value={month}
-                onChange={e => setMonth(+e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                  <option key={m} value={m}>Tháng {m}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5">Năm</label>
-              <select
-                value={year}
-                onChange={e => setYear(+e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50"
-              >
-                {[2024, 2025, 2026, 2027].map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5">Năm học</label>
-              <select
-                value={academicYearId}
-                onChange={e => setAcademicYearId(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50"
-              >
-                {(years || []).filter((y: any) => !y.isOff).map((y: any) => (
-                  <option key={y.id} value={y.id}>{y.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5">Tuần báo cáo</label>
-              <select
-                value={selectedWeek}
-                onChange={e => setSelectedWeek(+e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50"
-              >
-                {weeks.map(w => (
-                  <option key={w.weekNum} value={w.weekNum}>{w.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* CASCADING FILTER: 1. Bộ Phận -> 2. Tổ CM -> 3. Chỉ thấy GV thuộc TCM đó */}
-          {isManager && (
-            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 pb-1">
-              <span className="text-[11px] font-black uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
-                <Filter className="w-3.5 h-3.5 text-[#48BFE3]" /> Bộ lọc 3 cấp bám sát tổ chuyên môn
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleApplyDefault}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 shadow-2xs transition-all active:scale-95"
-                  title="Nhấp 1-click để đưa bộ lọc về đúng Bộ phận & Tổ CM mặc định"
-                >
-                  <Target className="w-3.5 h-3.5 text-[#48BFE3]" /> Chọn mặc định
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetAsDefault(filterDivisionCode, filterDeptId)}
-                  disabled={filterDivisionCode === "ALL" || filterDeptId === "ALL"}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs transition-all disabled:opacity-40 active:scale-95"
-                  title="Lưu bộ lọc hiện tại làm mặc định của bạn"
-                >
-                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Đặt làm mặc định
-                </button>
-              </div>
-            </div>
-          )}
-          {isManager && (
-            <div className="pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-                  <Layers className="w-3.5 h-3.5 text-[#48BFE3]" /> 1. Chọn Bộ Phận Chuyên Môn
-                </label>
-                <select
-                  disabled={isDirectTBP}
-                  value={filterDivisionCode}
-                  onChange={e => {
-                    const newDiv = e.target.value
-                    setFilterDivisionCode(newDiv)
-                    const deptsInDiv = roles?.filter((r: any) => !r.divisionCode || r.divisionCode === newDiv) || []
-                    const matchDef = deptsInDiv.find((d: any) => d.id === (defaultDeptId || resolvedDefaultDeptId) || d.code === (defaultDeptId || resolvedDefaultDeptId))
-                    const targetDept = matchDef ? (matchDef.id || matchDef.code) : (deptsInDiv[0]?.id || deptsInDiv[0]?.code || "ALL")
-                    setFilterDeptId(targetDept)
-                    setFilterTeacherUserId("ALL")
-                  }}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50 disabled:opacity-75"
-                >
-                  <option value="ALL">-- Tất cả Bộ phận --</option>
-                  {(divisions || []).map((div: any) => (
-                    <option key={div.code} value={div.code}>{div.name} ({div.code})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-[#48BFE3]" /> 2. Chọn Tổ Chuyên Môn (TCM)
-                </label>
-                <select
-                  value={filterDeptId}
-                  onChange={e => {
-                    setFilterDeptId(e.target.value)
-                    setFilterTeacherUserId("ALL")
-                  }}
-                  className="w-full p-2.5 border border-teal-200 rounded-xl text-xs font-extrabold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-teal-50/40 text-teal-900"
-                >
-                  {(isSuperAdmin || isHeadOfAcademic) && (
-                    <option value="ALL">-- Tất cả Tổ Chuyên môn trong Bộ phận --</option>
-                  )}
-                  {availableDepts.map((d: any) => {
-                    const isDef = (d.id === (defaultDeptId || resolvedDefaultDeptId) || d.code === (defaultDeptId || resolvedDefaultDeptId))
-                    return (
-                      <option key={d.id || d.code} value={d.id || d.code}>
-                        {d.name} {isDef ? "⭐ (Tổ mặc định)" : ""}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-[#48BFE3]" /> 3. Chỉ thấy Danh sách GV thuộc TCM đó
-                </label>
-                <select
-                  value={filterTeacherUserId}
-                  onChange={e => {
-                    setFilterTeacherUserId(e.target.value)
-                    if (e.target.value !== "ALL") setViewUserId(e.target.value)
-                  }}
-                  className="w-full p-2.5 border border-teal-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white text-teal-900 shadow-sm"
-                >
-                  <option value="ALL">
-                    {filterDeptId !== "ALL" 
-                      ? `-- Tất cả ${teachersInSelectedDept.length} GV thuộc tổ này --`
-                      : "-- Tất cả GV trong phạm vi --"
-                    }
-                  </option>
-                  {teachersInSelectedDept.map((u: any) => (
-                    <option key={u.id} value={u.id}>
-                      {u.fullName} ({u.email || u.teacher?.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
+      {/* Nội dung Tab đang chọn */}
+      {activeTab === "dashboard" && (
+        <QualityDashboardTab
+          scopeMode={scopeMode}
+          onChangeScopeMode={setScopeMode}
+          weekNumber={weekNumber}
+          month={month}
+          year={year}
+          isLeadership={snapshot.authority.isLeadership}
+          aiReport={activeAiReport}
+          isRefreshingAi={isRefreshingAi}
+          onRefreshAiAnalysis={handleRefreshAiAnalysis}
+          onRemindUnsubmitted={handleRemindUnsubmitted}
+          onSendDirectorReport={handleSendDirectorReport}
+          onScanOverdueAndRequestExplanation={handleScanOverdue}
+          onExportExcel={handleExportExcel}
+          onSelectGroupToReview={(gName) => {
+            setReviewGroupFilter(gName)
+            setReviewMemberFilter("ALL")
+            setActiveTab("review")
+          }}
+          onSelectMemberToReview={(uid) => {
+            setReviewMemberFilter(uid)
+            setReviewGroupFilter("ALL")
+            setActiveTab("review")
+          }}
+          wednesdayReminderEnabled={
+            snapshot.automationConfig.wednesdayReminderEnabled
+          }
+          weeklyDirectorEnabled={
+            snapshot.automationConfig.weeklyDirectorReportEnabled
+          }
+          monthlyDirectorEnabled={
+            snapshot.automationConfig.monthlyDirectorReportEnabled
+          }
+          actionBusyKey={actionBusyKey}
+        />
       )}
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-10 h-10 border-4 border-teal-200 border-t-[#48BFE3] rounded-full animate-spin"></div>
-          <p className="text-xs font-bold text-slate-400">Đang tải dữ liệu...</p>
-        </div>
-      ) : (
-        <>
-          {/* ============ TAB: CẤU HÌNH NHÂN SỰ THEO TỔ CM & BỘ PHẬN ============ */}
-          {activeTab === "config" && isManager && (
-            <div className="space-y-6">
-              {/* Configuration Header Box */}
-              <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                      <Settings className="w-5 h-5 text-[#48BFE3]" /> Cấu Hình Nhân Sự: Chọn Bộ Phận & Tổ Chuyên Môn
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Gán Giáo viên vào đúng Tổ CM để các chức năng Báo cáo, Điều hành chỉ hiển thị Giáo viên thuộc Tổ đó
-                    </p>
-                  </div>
-
-                  {/* Nút Chọn Mặc Định & Đặt Làm Mặc Định */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleApplyDefault}
-                      className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 px-3.5 py-2 rounded-xl text-xs font-black shadow-xs transition-all active:scale-95"
-                      title="Chọn nhanh Bộ phận & Tổ CM mặc định của bạn"
-                    >
-                      <Target className="w-4 h-4 text-[#48BFE3]" /> Chọn mặc định
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSetAsDefault(configDivisionCode, configDeptId)}
-                      className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2 rounded-xl text-xs font-extrabold shadow-xs transition-all active:scale-95"
-                      title="Lưu Bộ phận & Tổ CM đang chọn làm mặc định cho các lần sau"
-                    >
-                      <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> Đặt làm mặc định
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-                      <Layers className="w-3.5 h-3.5 text-[#48BFE3]" /> 1. Chọn Bộ Phận
-                    </label>
-                    <select
-                      disabled={isDirectTBP}
-                      value={configDivisionCode}
-                      onChange={e => setConfigDivisionCode(e.target.value)}
-                      className="w-full p-3 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50 disabled:opacity-80"
-                    >
-                      {(divisions || []).map((div: any) => (
-                        <option key={div.code} value={div.code}>{div.name} ({div.code})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-[#48BFE3]" /> 2. Chọn Tổ Chuyên Môn (TCM)
-                    </label>
-                    <select
-                      value={configDeptId}
-                      onChange={e => setConfigDeptId(e.target.value)}
-                      className="w-full p-3 border border-teal-200 rounded-xl text-xs font-extrabold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-teal-50/50 text-teal-900"
-                    >
-                      {configAvailableDepts.map((d: any) => (
-                        <option key={d.id || d.code} value={d.id || d.code}>{d.name} ({d.code})</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Default badge indicator */}
-                <div className="pt-2 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-semibold">Mặc định đã lưu:</span>
-                    {defaultDivCode && defaultDeptId ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-100/80 text-teal-800 font-bold border border-teal-200">
-                        <BookmarkCheck className="w-3 h-3 text-[#48BFE3]" />
-                        {divisions?.find((d: any) => d.code === defaultDivCode)?.name || defaultDivCode} • {roles?.find((r: any) => r.id === defaultDeptId || r.code === defaultDeptId)?.name || defaultDeptId}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 italic">Chưa lưu (Bấm "Đặt làm mặc định" để lưu)</span>
-                    )}
-                  </div>
-                  {configDivisionCode === defaultDivCode && configDeptId === defaultDeptId ? (
-                    <span className="text-emerald-600 font-black flex items-center gap-1 text-[11px]">
-                      <Check className="w-3 h-3" /> Đang xem đúng tổ mặc định
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleApplyDefault}
-                      className="text-[#48BFE3] hover:underline font-bold text-[11px]"
-                    >
-                      Bấm để chọn mặc định
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Department Teachers List Box */}
-              <div className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                  <div>
-                    <h4 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                      <Users className="w-5 h-5 text-teal-600" />
-                      Danh Sách Giáo Viên Thuộc: {roles?.find((r: any) => r.id === configDeptId || r.code === configDeptId)?.name || "Tổ chuyên môn"}
-                    </h4>
-                    <p className="text-xs text-slate-400">
-                      Hiện có <strong>{deptTeachers.length}</strong> giáo viên thuộc tổ này
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleOpenAddTeacherModal}
-                    className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#00A19A] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all"
-                  >
-                    <UserPlus className="w-4 h-4" /> Thêm / Gán Giáo Viên Vào Tổ Này
-                  </button>
-                </div>
-
-                {loadingDeptTeachers ? (
-                  <div className="py-12 text-center text-slate-400 text-xs font-bold">Đang tải danh sách giáo viên trong tổ...</div>
-                ) : deptTeachers.length === 0 ? (
-                  <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed text-slate-400">
-                    <Users className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                    <p className="font-bold text-sm text-slate-600">Tổ này hiện chưa có giáo viên nào!</p>
-                    <p className="text-xs mt-1">Bấm nút "Thêm / Gán Giáo Viên Vào Tổ Này" ở trên để đưa giáo viên vào tổ.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                          <th className="p-3 text-center w-12">STT</th>
-                          <th className="p-3 min-w-[200px]">Họ và Tên Giáo viên</th>
-                          <th className="p-3 min-w-[150px]">Email</th>
-                          <th className="p-3 min-w-[120px]">Cơ sở</th>
-                          <th className="p-3 w-44">Chức vụ trong Tổ</th>
-                          <th className="p-3 text-center w-36">Tổ Mặc Định</th>
-                          <th className="p-3 text-center w-24">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y font-medium">
-                        {deptTeachers.map((t, idx) => (
-                          <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                            <td className="p-3 font-extrabold text-slate-800 flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#48BFE3] flex items-center justify-center font-black text-xs">
-                                {t.teacherName.slice(0, 2).toUpperCase()}
-                              </div>
-                              <div>
-                                <div>{t.teacherName}</div>
-                                <div className="text-[10px] text-slate-400 font-normal">Mã: {t.teacherCode}</div>
-                              </div>
-                            </td>
-                            <td className="p-3 text-slate-600">{t.email || "-"}</td>
-                            <td className="p-3 text-slate-600">{t.campusName || "-"}</td>
-                            <td className="p-3">
-                              <select
-                                value={t.position}
-                                onChange={e => handleUpdatePosition(t.id, e.target.value)}
-                                className="p-1.5 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white w-full"
-                              >
-                                <option value="GV">GV (Thành viên)</option>
-                                <option value="TTCM">TTCM (Tổ trưởng)</option>
-                                <option value="TPTCM">TPTCM (Tổ phó)</option>
-                              </select>
-                            </td>
-                            <td className="p-3 text-center">
-                              {t.isPrimary ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
-                                  <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-600" /> Mặc định
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleSetPrimaryDept(t.id, t.teacherName)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-500 hover:text-amber-800 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 transition-all active:scale-95"
-                                  title="Chọn tổ này làm Tổ Chuyên Môn chính (mặc định) cho giáo viên"
-                                >
-                                  <Star className="w-3.5 h-3.5 text-slate-400 hover:text-amber-500" /> Chọn mặc định
-                                </button>
-                              )}
-                            </td>
-                            <td className="p-3 text-center">
-                              <button
-                                onClick={() => handleRemoveTeacher(t.id, t.teacherName)}
-                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                title="Gỡ khỏi tổ này"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ============ TAB: CARDS THEO DÕI TIẾN ĐỘ CÁ NHÂN ============ */}
-          {activeTab === "cards" && isManager && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black">
-                    <Users className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Tổng Nhân Sự</p>
-                    <p className="text-2xl font-black text-slate-800">{cardsSummary.totalStaff}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Đã Nộp Báo Cáo</p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-black text-emerald-600">{cardsSummary.submittedCount}</p>
-                      <span className="text-xs font-bold text-slate-400">
-                        ({cardsSummary.totalStaff > 0 ? Math.round((cardsSummary.submittedCount / cardsSummary.totalStaff) * 100) : 0}%)
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Chưa Nộp Báo Cáo</p>
-                    <p className="text-2xl font-black text-amber-600">{cardsSummary.pendingCount}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center font-black">
-                    <MessageSquare className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Đã Duyệt / Nhận Xét</p>
-                    <p className="text-2xl font-black text-teal-800">{cardsSummary.reviewedCount}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cards Filter Bar */}
-              <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    value={cardSearch}
-                    onChange={e => setCardSearch(e.target.value)}
-                    placeholder="Tìm theo họ tên, email, chức danh..."
-                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3]"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <select
-                    value={cardStatusFilter}
-                    onChange={e => setCardStatusFilter(e.target.value)}
-                    className="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50"
-                  >
-                    <option value="ALL">-- Tất cả trạng thái nộp --</option>
-                    <option value="PENDING">🔴 Chưa nộp báo cáo</option>
-                    <option value="SUBMITTED">🟢 Đã nộp báo cáo</option>
-                    <option value="REVIEWED">🟣 Đã nhận xét / duyệt</option>
-                    <option value="OVERDUE">⚠️ Có việc trễ hạn</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Cards Grid */}
-              {filteredCards.length === 0 ? (
-                <div className="bg-white p-12 text-center rounded-3xl border border-slate-100 text-slate-400">
-                  <Users className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                  <p className="font-bold text-sm text-slate-600">Không tìm thấy giáo viên phù hợp bộ lọc!</p>
-                  <p className="text-xs mt-1">Vui lòng thay đổi từ khóa tìm kiếm hoặc chọn lại Bộ phận / Tổ CM.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredCards.map(card => {
-                    const isSubmitted = card.submissionStatus === "SUBMITTED" || card.submissionStatus === "REVIEWED"
-                    const isReviewed = card.submissionStatus === "REVIEWED"
-                    const rateColor = card.completionRate >= 80 ? "bg-emerald-500" : card.completionRate >= 50 ? "bg-blue-500" : "bg-amber-500"
-
-                    return (
-                      <div
-                        key={card.userId}
-                        className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
-                      >
-                        <div className="p-5 space-y-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-teal-500 to-[#48BFE3] text-white flex items-center justify-center font-black text-sm shadow-sm">
-                                {card.fullName.slice(0, 2).toUpperCase()}
-                              </div>
-                              <div>
-                                <h4 className="font-extrabold text-sm text-slate-800 leading-snug group-hover:text-teal-700 transition-colors">
-                                  {card.fullName}
-                                </h4>
-                                <p className="text-[11px] text-slate-400 truncate max-w-[150px]">{card.email}</p>
-                              </div>
-                            </div>
-                            
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 uppercase border">
-                              {card.position}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-2 pt-1">
-                            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1 truncate max-w-[140px]">
-                              <Layers className="w-3 h-3 text-[#48BFE3] flex-shrink-0" /> {card.departmentName}
-                            </span>
-
-                            {isReviewed ? (
-                              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-teal-50 text-teal-800 border border-teal-200 flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> Đã duyệt
-                              </span>
-                            ) : isSubmitted ? (
-                              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                                <Check className="w-3 h-3" /> Đã nộp
-                              </span>
-                            ) : (
-                              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> Chưa nộp
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="space-y-1.5 pt-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="font-bold text-slate-500 text-[11px]">Tiến độ công việc</span>
-                              <span className="font-black text-slate-800 text-[11px]">{card.completionRate}%</span>
-                            </div>
-                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full transition-all duration-500 ${rateColor}`} 
-                                style={{ width: `${card.completionRate}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-4 gap-1.5 p-2 bg-slate-50 rounded-2xl text-center">
-                            <div>
-                              <p className="text-[10px] text-slate-400 font-bold">Xong</p>
-                              <p className="text-xs font-black text-emerald-600">{card.reportCompleted}</p>
-                            </div>
-                            <div>
-                              <p className="text-[10px] text-slate-400 font-bold">Đang làm</p>
-                              <p className="text-xs font-black text-blue-600">{card.reportDoing}</p>
-                            </div>
-                            <div>
-                              <p className="text-[10px] text-slate-400 font-bold">Chưa xong</p>
-                              <p className="text-xs font-black text-amber-600">{card.reportNotCompleted}</p>
-                            </div>
-                            <div>
-                              <p className="text-[10px] text-slate-400 font-bold">Trễ hạn</p>
-                              <p className="text-xs font-black text-red-600">{card.tasks?.overdue || 0}</p>
-                            </div>
-                          </div>
-
-                          {card.managerComment && (
-                            <div className="p-2.5 bg-teal-50/60 rounded-xl border border-teal-100 text-[11px] text-teal-900 line-clamp-2">
-                              💬 <strong>QL:</strong> {card.managerComment}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="p-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-1.5">
-                          <button
-                            onClick={() => handleOpenCardReportModal(card)}
-                            className="flex-1 py-1.5 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 font-bold text-xs flex items-center justify-center gap-1 shadow-2xl transition-all"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-[#48BFE3]" /> Xem & Duyệt
-                          </button>
-
-                          {!isSubmitted && (
-                            <button
-                              onClick={() => handleRemindSingleStaff(card.userId, card.fullName)}
-                              disabled={remindingUserId === card.userId}
-                              className="py-1.5 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 rounded-xl font-bold text-xs flex items-center gap-1 transition-all"
-                              title="Gửi thông báo nhắc nộp báo cáo trong hệ thống cho nhân sự này"
-                            >
-                              <Bell className="w-3.5 h-3.5" /> 
-                              {remindingUserId === card.userId ? "..." : "Nhắc"}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ============ TAB: DASHBOARD THỐNG KÊ ============ */}
-          {activeTab === "dashboard" && isManager && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                    <ClipboardList className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Tổng Task Giao</p>
-                    <p className="text-2xl font-black text-slate-800">{stats.totalTasks}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Hoàn thành</p>
-                    <p className="text-2xl font-black text-emerald-600">{stats.completed}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Đang thực hiện</p>
-                    <p className="text-2xl font-black text-blue-600">{stats.inProgress}</p>
-                  </div>
-                </div>
-
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold">
-                    <AlertTriangle className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">Trễ hạn</p>
-                    <p className="text-2xl font-black text-red-600">{stats.overdue}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-6 shadow-sm space-y-4">
-                <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-[#48BFE3]" /> Ma trận Tiến độ Báo cáo Tuần trong Tháng {month}/{year}
-                </h3>
-
-                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                        <th className="p-3 min-w-[200px]">Họ và Tên Nhân sự</th>
-                        {weeks.map(w => (
-                          <th key={w.weekNum} className="p-3 text-center min-w-[120px]">
-                            Tuần {w.weekNum}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y font-medium">
-                      {Object.entries(chartData as Record<string, any>).map(([uid, u]: any) => (
-                        <tr key={uid} className="hover:bg-slate-50">
-                          <td className="p-3 font-bold text-slate-800">{u.name}</td>
-                          {weeks.map(w => {
-                            const st = u.weeks?.[w.weekNum]
-                            if (!st) {
-                              return (
-                                <td key={w.weekNum} className="p-3 text-center text-slate-300">
-                                  Chưa nộp
-                                </td>
-                              )
-                            }
-                            return (
-                              <td key={w.weekNum} className="p-3 text-center">
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                  {st.completed}/{st.total} xong
-                                </span>
-                              </td>
-                            )
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ============ TAB: CONSOLIDATED TỔNG HỢP ============ */}
-          {activeTab === "consolidated" && isManager && (
-            <div className="space-y-5">
-              {/* Mode Switcher: Tuần vs Tháng */}
-              <div className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit flex-wrap">
-                  <button
-                    onClick={() => setConsolidatedViewMode("week")}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                      consolidatedViewMode === "week"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <Calendar className="w-4 h-4 text-[#48BFE3]" />
-                    1. Báo cáo Tổng Hợp Theo Tuần {selectedWeek}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setConsolidatedViewMode("month")
-                      loadMonthlyTaskGroup()
-                    }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                      consolidatedViewMode === "month"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <BarChart3 className="w-4 h-4 text-emerald-600" />
-                    2. Bảng Tiến Độ Tháng & Gợi Ý Hành Động
-                  </button>
-                  <button
-                    onClick={() => {
-                      setConsolidatedViewMode("kpi")
-                      loadMonthlyKpi()
-                    }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                      consolidatedViewMode === "kpi"
-                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <Award className={`w-4 h-4 ${consolidatedViewMode === "kpi" ? "text-white" : "text-amber-600"}`} />
-                    3. Tự Tổng Hợp Chất Lượng CV & Đánh Giá KPIs Tháng
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {consolidatedViewMode === "month" && (
-                    <button
-                      onClick={loadMonthlyTaskGroup}
-                      disabled={loadingMonthlyGroup}
-                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-                      {loadingMonthlyGroup ? "Đang phân tích..." : "Cập nhật dữ liệu tháng"}
-                    </button>
-                  )}
-                  {consolidatedViewMode === "kpi" && (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button
-                        onClick={loadMonthlyKpi}
-                        disabled={loadingMonthlyKpi}
-                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                        {loadingMonthlyKpi ? "Đang tổng hợp..." : "Cập nhật dữ liệu KPI"}
-                      </button>
-                      <button
-                        onClick={handleExportKpiExcel}
-                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Xuất Excel KPI Tháng
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ----------------- SUB-VIEW: BÁO CÁO TUẦN ----------------- */}
-              {consolidatedViewMode === "week" && (
-                <div className="space-y-4">
-                  {/* Task Group Filter Pills for Week */}
-                  <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-sm space-y-3">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                        <Filter className="w-3.5 h-3.5 text-[#48BFE3]" /> Rà soát theo Nhóm công việc:
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {filterDeptId !== "ALL" 
-                          ? `Tổ: ${roles?.find((r: any) => r.id === filterDeptId || r.code === filterDeptId)?.name} (${consolidatedData.length} báo cáo)`
-                          : `Tổng cộng ${consolidatedData.length} báo cáo nộp trong tuần`
-                        }
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <button
-                        onClick={() => setFilterConsolidatedGroup("ALL")}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          filterConsolidatedGroup === "ALL"
-                            ? "bg-slate-800 text-white shadow-sm"
-                            : "bg-slate-100 hover:bg-slate-200 text-slate-600"
-                        }`}
-                      >
-                        Tất cả các nhóm
-                      </button>
-                      {availableGroups.map((gName: string) => {
-                        // Count tasks in this group for this week
-                        let groupCount = 0
-                        consolidatedData.forEach((r: any) => {
-                          r.items.forEach((it: any) => {
-                            if (it.taskGroup === gName) groupCount++
-                          })
-                        })
-                        return (
-                          <button
-                            key={gName}
-                            onClick={() => setFilterConsolidatedGroup(gName)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                              filterConsolidatedGroup === gName
-                                ? "bg-[#00A19A] text-white shadow-sm"
-                                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                            }`}
-                          >
-                            <span>{gName}</span>
-                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                              filterConsolidatedGroup === gName ? "bg-white/20 text-white" : "bg-white text-slate-600"
-                            }`}>
-                              {groupCount}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Consolidated Week Table */}
-                  <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
-                    <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                            <th className="p-3 text-center w-12">STT</th>
-                            <th className="p-3 min-w-[140px]">Nhân sự / Tổ</th>
-                            <th className="p-3 min-w-[140px]">Nhóm công việc</th>
-                            <th className="p-3 min-w-[140px]">Danh mục công việc</th>
-                            <th className="p-3 min-w-[220px]">Nội dung công việc chi tiết</th>
-                            <th className="p-3 min-w-[110px]">Dự kiến HT</th>
-                            <th className="p-3 w-28">Tiến độ</th>
-                            <th className="p-3 min-w-[150px]">Đề xuất giải pháp</th>
-                            <th className="p-3 min-w-[150px]">Nhận xét QL</th>
-                            <th className="p-3 min-w-[210px] text-amber-900 bg-amber-50/70 border-b border-amber-200">
-                              <div className="flex items-center gap-1.5">
-                                <Award className="w-3.5 h-3.5 text-amber-600" />
-                                <span>Đánh Giá Của GĐB</span>
-                              </div>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y font-medium">
-                          {consolidatedData.length === 0 ? (
-                            <tr>
-                              <td colSpan={10} className="p-8 text-center text-slate-400">
-                                Chưa có báo cáo nào được nộp cho tuần này theo bộ lọc hiện tại!
-                              </td>
-                            </tr>
-                          ) : (
-                            (() => {
-                              const rows: any[] = []
-                              let count = 0
-                              consolidatedData.forEach((report: any) => {
-                                report.items.forEach((item: any) => {
-                                  if (filterConsolidatedGroup !== "ALL" && item.taskGroup !== filterConsolidatedGroup) return
-                                  count++
-                                  const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
-                                  const catObj = (taskCategories || []).find((c: any) => c.name?.trim().toLowerCase() === (item.category || item.mainTask || "").trim().toLowerCase())
-                                  const weight = catObj?.weight || 1.0
-
-                                  rows.push(
-                                    <tr key={`${report.id}_${item.id || count}`} className="hover:bg-slate-50 transition-colors">
-                                      <td className="p-3 text-center text-slate-400 font-bold">{count}</td>
-                                      <td className="p-3 font-bold text-slate-800">
-                                        <div>{report.user?.fullName}</div>
-                                        <div className="text-[10px] text-slate-400 font-normal">
-                                          {report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role)}
-                                        </div>
-                                      </td>
-                                      <td className="p-3">
-                                        <span className="px-2 py-1 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 font-bold text-[11px] inline-block">
-                                          {item.taskGroup || "Chưa gán nhóm"}
-                                        </span>
-                                      </td>
-                                      <td className="p-3 font-semibold text-slate-800">
-                                        <div>{item.category || item.mainTask || "-"}</div>
-                                        <span className="inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
-                                          ⚖️ Trọng số: x{weight}
-                                        </span>
-                                      </td>
-                                      <td className="p-3 text-slate-700 leading-relaxed">{item.workContent}</td>
-                                      <td className="p-3 text-slate-700 font-semibold whitespace-nowrap">
-                                        {formatExpectedDate(item.expectedCompletion)}
-                                      </td>
-                                      <td className="p-3">
-                                        <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
-                                          {prog.label}
-                                        </span>
-                                      </td>
-                                      <td className="p-3 text-slate-500 italic">{item.proposedSolution || "-"}</td>
-                                      <td className="p-3 text-slate-700">{item.managerNote || report.managerComment || "-"}</td>
-                                      <td className="p-3 bg-amber-50/25 border-l border-amber-100">
-                                        <div className="space-y-1.5">
-                                          {item.directorRating && (
-                                            <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${
-                                              item.directorRating === "EXCELLENT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
-                                              item.directorRating === "GOOD" ? "bg-blue-100 text-blue-800 border-blue-300" :
-                                              item.directorRating === "SATISFACTORY" ? "bg-amber-100 text-amber-800 border-amber-300" :
-                                              "bg-rose-100 text-rose-800 border-rose-300"
-                                            }`}>
-                                              {item.directorRating === "EXCELLENT" ? "⭐ Xuất sắc (10đ)" :
-                                               item.directorRating === "GOOD" ? "✅ Tốt (8.5đ)" :
-                                               item.directorRating === "SATISFACTORY" ? "⚠️ Đạt chuẩn (7đ)" :
-                                               "❌ Cần cải thiện (5đ)"}
-                                            </span>
-                                          )}
-                                          <div className="text-xs text-slate-800 font-medium leading-relaxed">
-                                            {item.directorNote || report.directorComment || (
-                                              <span className="text-slate-400 italic text-[11px]">Chưa có đánh giá</span>
-                                            )}
-                                          </div>
-                                          {isManager && (
-                                            <button
-                                              onClick={() => handleOpenDirectorEvaluationModal(item, report)}
-                                              className="inline-flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-900 font-bold hover:underline mt-1"
-                                            >
-                                              <Edit3 className="w-3 h-3" />
-                                              {item.directorNote || item.directorRating ? "Sửa đánh giá GĐB" : "+ GĐB đánh giá"}
-                                            </button>
-                                          )}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )
-                                })
-                              })
-                              if (rows.length === 0) {
-                                return (
-                                  <tr>
-                                    <td colSpan={10} className="p-8 text-center text-slate-400">
-                                      Không có công việc nào thuộc nhóm "{filterConsolidatedGroup}" trong tuần này!
-                                    </td>
-                                  </tr>
-                                )
-                              }
-                              return rows
-                            })()
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ----------------- SUB-VIEW: BẢNG TIẾN ĐỘ THÁNG & GỢI Ý HÀNH ĐỘNG ----------------- */}
-              {consolidatedViewMode === "month" && (
-                <div className="space-y-6">
-                  {/* BẢNG TIẾN ĐỘ CÁ NHÂN THEO NHÓM CV THÁNG */}
-                  <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                      <div>
-                        <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                          <BarChart3 className="w-5 h-5 text-emerald-600" /> Bảng Tiến Độ Cá Nhân Theo Nhóm Công Việc (Tháng {month}/{year})
-                        </h3>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          Tỷ lệ hoàn thành công việc theo từng nhóm chuyên môn (Khảo thí & ĐBCL) trong tháng
-                        </p>
-                      </div>
-                    </div>
-
-                    {loadingMonthlyGroup ? (
-                      <div className="p-12 text-center text-slate-400 font-semibold">
-                        Đang tổng hợp dữ liệu tiến độ tháng và tính toán gợi ý hành động...
-                      </div>
-                    ) : !monthlyTaskGroupData || (monthlyTaskGroupData.staffMatrix || []).length === 0 ? (
-                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500">
-                        Chưa có dữ liệu báo cáo tuần nào được ghi nhận trong Tháng {month}/{year}.
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                              <th className="p-3 text-center w-10">STT</th>
-                              <th className="p-3 min-w-[160px]">Họ và Tên Nhân Sự</th>
-                              <th className="p-3 min-w-[130px]">Tổ / Chức Danh</th>
-                              {availableGroups.map((gName: string) => (
-                                <th key={gName} className="p-3 text-center min-w-[130px]">
-                                  {gName}
-                                </th>
-                              ))}
-                              <th className="p-3 text-center min-w-[110px]">Tổng Việc Tháng</th>
-                              <th className="p-3 text-center min-w-[130px]">Tiến Độ Tháng</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y font-medium">
-                            {monthlyTaskGroupData.staffMatrix.map((st: any, sIdx: number) => {
-                              const overallRate = st.totalMonth > 0 ? Math.round((st.completedMonth / st.totalMonth) * 100) : 0
-                              return (
-                                <tr key={st.userId || sIdx} className="hover:bg-slate-50">
-                                  <td className="p-3 text-center text-slate-400 font-bold">{sIdx + 1}</td>
-                                  <td className="p-3 font-bold text-slate-800">
-                                    <div>{st.fullName}</div>
-                                    <div className="text-[10px] text-slate-400 font-normal">{st.email}</div>
-                                  </td>
-                                  <td className="p-3 text-slate-600 font-semibold">{st.departmentName}</td>
-                                  {availableGroups.map((gName: string) => {
-                                    const gData = st.groups?.[gName]
-                                    if (!gData || gData.total === 0) {
-                                      return (
-                                        <td key={gName} className="p-3 text-center text-slate-300 font-medium">
-                                          -
-                                        </td>
-                                      )
-                                    }
-                                    const rate = Math.round((gData.completed / gData.total) * 100)
-                                    return (
-                                      <td key={gName} className="p-3 text-center">
-                                        <div className="font-bold text-slate-700">
-                                          {gData.completed}/{gData.total}
-                                        </div>
-                                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1">
-                                          <div
-                                            className={`h-full ${
-                                              rate >= 80 ? "bg-emerald-500" : rate >= 50 ? "bg-blue-500" : "bg-amber-500"
-                                            }`}
-                                            style={{ width: `${rate}%` }}
-                                          />
-                                        </div>
-                                        <span className="text-[10px] text-slate-400">{rate}%</span>
-                                      </td>
-                                    )
-                                  })}
-                                  <td className="p-3 text-center font-bold text-slate-800">
-                                    {st.completedMonth} / {st.totalMonth} việc
-                                  </td>
-                                  <td className="p-3 text-center">
-                                    <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                                      overallRate >= 80 
-                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200" 
-                                        : overallRate >= 50 
-                                          ? "bg-blue-100 text-blue-800 border border-blue-200" 
-                                          : "bg-amber-100 text-amber-800 border border-amber-200"
-                                    }`}>
-                                      {overallRate}% Hoàn thành
-                                    </span>
-                                  </td>
-                                </tr>
-                              )
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* KHỐI GỢI Ý HÀNH ĐỘNG TIẾP THEO (AI / ANALYTICS RECOMMENDATIONS) */}
-                  <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 text-white shadow-xl space-y-4">
-                    <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-gradient-to-tr from-amber-400 to-amber-600 rounded-2xl shadow-lg">
-                          <Sparkles className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-base font-extrabold tracking-wide flex items-center gap-2">
-                            GỢI Ý HÀNH ĐỘNG TIẾP THEO CHO BAN ĐIỀU HÀNH & TỔ QUẢN LÝ
-                          </h3>
-                          <p className="text-xs text-slate-300 mt-0.5">
-                            Hệ thống tự động rà soát tiến độ thực tế theo từng nhóm CV trong tháng, phát hiện nhóm công việc nghẽn và tổng hợp các đề xuất giải pháp để đưa ra khuyến nghị xử lý:
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {loadingMonthlyGroup ? (
-                      <div className="p-6 text-center text-slate-400 text-xs">Đang xử lý khuyến nghị...</div>
-                    ) : monthlyTaskGroupData?.recommendations && monthlyTaskGroupData.recommendations.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                        {monthlyTaskGroupData.recommendations.map((rec: any, idx: number) => {
-                          const isHigh = rec.priority === "HIGH"
-                          const isMedium = rec.priority === "MEDIUM"
-                          return (
-                            <div 
-                              key={idx}
-                              className={`rounded-2xl p-4 border transition-all ${
-                                isHigh 
-                                  ? "bg-red-950/40 border-red-500/40" 
-                                  : isMedium 
-                                    ? "bg-amber-950/40 border-amber-500/40" 
-                                    : "bg-teal-950/40 border-teal-500/40"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2 mb-2">
-                                <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
-                                  isHigh 
-                                    ? "bg-red-500 text-white" 
-                                    : isMedium 
-                                      ? "bg-amber-500 text-slate-900" 
-                                      : "bg-teal-500 text-white"
-                                }`}>
-                                  {isHigh ? "🔴 Ưu tiên cao" : isMedium ? "🟡 Cần theo dõi" : "🟢 Đề xuất tháo gỡ"}
-                                </span>
-                                <span className="text-xs font-bold text-slate-300">
-                                  Nhóm: {rec.groupName}
-                                </span>
-                              </div>
-
-                              <h4 className="text-sm font-bold text-white mb-1.5 flex items-center gap-1.5">
-                                <AlertTriangle className={`w-4 h-4 ${isHigh ? "text-red-400" : isMedium ? "text-amber-400" : "text-teal-400"}`} />
-                                {rec.title}
-                              </h4>
-                              <p className="text-xs text-slate-300 leading-relaxed mb-3">
-                                {rec.content}
-                              </p>
-
-                              {rec.proposedSolutions && rec.proposedSolutions.length > 0 && (
-                                <div className="bg-black/30 rounded-xl p-3 border border-white/5 space-y-1.5">
-                                  <p className="text-[11px] font-bold text-amber-300">
-                                    💬 Đề xuất giải pháp từ nhân sự trong nhóm cần xem xét:
-                                  </p>
-                                  <ul className="text-xs text-slate-200 list-disc list-inside space-y-1 italic">
-                                    {rec.proposedSolutions.map((sol: string, sI: number) => (
-                                      <li key={sI}>{sol}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      <div className="p-6 text-center bg-white/5 rounded-2xl border border-white/10 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
-                        <CheckCircle2 className="w-5 h-5" />
-                        Tất cả các nhóm công việc đang bám sát tiến độ hoàn thành tốt trong tháng! Không có điểm nghẽn nghiêm trọng.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* ----------------- SUB-VIEW: TỰ TỔNG HỢP CHẤT LƯỢNG CV & ĐÁNH GIÁ KPIS THÁNG ----------------- */}
-              {consolidatedViewMode === "kpi" && (
-                <div className="space-y-6">
-                  {/* BẢNG TỔNG QUAN CHỈ SỐ KPI THÁNG */}
-                  <div className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-6 shadow-sm space-y-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                      <div>
-                        <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                          <Award className="w-5 h-5 text-amber-500" /> Bảng Tự Động Tổng Hợp Chất Lượng Công Việc & KPIs Tháng {month}/{year}
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Hệ thống tự động quy đổi trọng số danh mục (Task Weight), tỷ lệ hoàn thành và tổng hợp điểm đánh giá của Giám Đốc Ban để xếp loại KPI nhân sự.
-                        </p>
-                      </div>
-                    </div>
-
-                    {loadingMonthlyKpi ? (
-                      <div className="p-12 text-center text-slate-400 font-semibold">
-                        Đang tổng hợp dữ liệu chất lượng công việc, trọng số và tính toán chỉ số KPI tháng...
-                      </div>
-                    ) : !monthlyKpiData || (monthlyKpiData.staffKpis || []).length === 0 ? (
-                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500">
-                        Chưa có dữ liệu báo cáo công việc nào được ghi nhận trong Tháng {month}/{year}.
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {/* 4 Cards Summary */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="p-4 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-600/50 border border-teal-200/70 shadow-2xs">
-                            <div className="flex items-center justify-between text-teal-800 mb-2">
-                              <span className="text-xs font-bold uppercase tracking-wider">Tổng nhân sự</span>
-                              <Users className="w-4 h-4" />
-                            </div>
-                            <div className="text-2xl font-black text-teal-800">
-                              {monthlyKpiData.summary?.totalStaff || 0}
-                            </div>
-                            <div className="text-[11px] text-teal-800/80 font-medium mt-1">
-                              Tổng cộng {monthlyKpiData.summary?.totalTasksMonth || 0} đầu việc tháng
-                            </div>
-                          </div>
-
-                          <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/70 shadow-2xs">
-                            <div className="flex items-center justify-between text-amber-800 mb-2">
-                              <span className="text-xs font-bold uppercase tracking-wider">Điểm KPI Trung Bình</span>
-                              <Award className="w-4 h-4 text-amber-600" />
-                            </div>
-                            <div className="text-2xl font-black text-amber-950 flex items-baseline gap-1.5">
-                              <span>{monthlyKpiData.summary?.avgKpiScore || 0}</span>
-                              <span className="text-xs font-bold text-amber-700">/ 10.0</span>
-                            </div>
-                            <div className="text-[11px] text-amber-800 font-medium mt-1">
-                              Hoàn thành có trọng số: <strong>{monthlyKpiData.summary?.avgCompletionRate || 0}%</strong>
-                            </div>
-                          </div>
-
-                          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/70 shadow-2xs">
-                            <div className="flex items-center justify-between text-emerald-700 mb-2">
-                              <span className="text-xs font-bold uppercase tracking-wider">Xếp loại A (Xuất sắc)</span>
-                              <Trophy className="w-4 h-4 text-emerald-600" />
-                            </div>
-                            <div className="text-2xl font-black text-emerald-950">
-                              {monthlyKpiData.summary?.gradeACount || 0}
-                            </div>
-                            <div className="text-[11px] text-emerald-700/80 font-medium mt-1">
-                              Hạng B (Hoàn thành tốt): <strong>{monthlyKpiData.summary?.gradeBCount || 0}</strong> nhân sự
-                            </div>
-                          </div>
-
-                          <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/60 border border-slate-200 shadow-2xs">
-                            <div className="flex items-center justify-between text-slate-700 mb-2">
-                              <span className="text-xs font-bold uppercase tracking-wider">Hạng C & D</span>
-                              <AlertCircle className="w-4 h-4 text-slate-500" />
-                            </div>
-                            <div className="text-2xl font-black text-slate-800">
-                              {(monthlyKpiData.summary?.gradeCCount || 0) + (monthlyKpiData.summary?.gradeDCount || 0)}
-                            </div>
-                            <div className="text-[11px] text-slate-500 font-medium mt-1">
-                              Hạng C: {monthlyKpiData.summary?.gradeCCount || 0} | Cần cải thiện: {monthlyKpiData.summary?.gradeDCount || 0}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Search & Filter Bar */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                          <div className="flex items-center gap-2 flex-1 max-w-md">
-                            <div className="relative flex-1">
-                              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                              <input
-                                type="text"
-                                value={kpiSearch}
-                                onChange={e => setKpiSearch(e.target.value)}
-                                placeholder="Tìm theo tên nhân sự, email, chức danh..."
-                                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-amber-500 bg-white"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-bold text-slate-500 mr-1">Lọc xếp loại:</span>
-                            {["ALL", "A", "B", "C", "D"].map(g => (
-                              <button
-                                key={g}
-                                onClick={() => setKpiFilterGrade(g)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                                  kpiFilterGrade === g
-                                    ? "bg-slate-800 text-white shadow-xs"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                }`}
-                              >
-                                {g === "ALL" ? "Tất cả" : `Hạng ${g}`}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* BẢNG CHI TIẾT ĐÁNH GIÁ CHẤT LƯỢNG CV & KPI THÁNG */}
-                        <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                          <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                              <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                                <th className="p-3 text-center w-10">STT</th>
-                                <th className="p-3 min-w-[170px]">Họ và Tên Nhân Sự</th>
-                                <th className="p-3 min-w-[130px]">Tổ / Chức Danh</th>
-                                <th className="p-3 text-center min-w-[100px]">Tổng Việc</th>
-                                <th className="p-3 text-center min-w-[100px]">Trọng Số (ΣW)</th>
-                                <th className="p-3 text-center min-w-[130px]">Tiến Độ Có Trọng Số</th>
-                                <th className="p-3 text-center min-w-[120px]">Điểm KPI Tháng</th>
-                                <th className="p-3 text-center min-w-[120px]">Xếp Loại KPI</th>
-                                <th className="p-3 min-w-[200px]">Đánh Giá / Ý Kiến GĐB</th>
-                                <th className="p-3 text-center min-w-[100px]">Thao Tác</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y font-medium">
-                              {(() => {
-                                const filtered = (monthlyKpiData.staffKpis || []).filter((st: any) => {
-                                  const q = kpiSearch.trim().toLowerCase()
-                                  const matchQ = !q || st.fullName.toLowerCase().includes(q) || st.email.toLowerCase().includes(q) || st.departmentName?.toLowerCase().includes(q)
-                                  const matchG = kpiFilterGrade === "ALL" || st.kpiGrade === kpiFilterGrade
-                                  return matchQ && matchG
-                                })
-
-                                if (filtered.length === 0) {
-                                  return (
-                                    <tr>
-                                      <td colSpan={10} className="p-8 text-center text-slate-400">
-                                        Không tìm thấy nhân sự phù hợp với điều kiện tìm kiếm/lọc!
-                                      </td>
-                                    </tr>
-                                  )
-                                }
-
-                                return filtered.map((st: any, idx: number) => (
-                                  <tr key={st.userId || idx} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                                    <td className="p-3 font-bold text-slate-800">
-                                      <div>{st.fullName}</div>
-                                      <div className="text-[10px] text-slate-400 font-normal">{st.email}</div>
-                                    </td>
-                                    <td className="p-3 text-slate-600 font-semibold">
-                                      <div>{st.departmentName}</div>
-                                      <div className="text-[10px] text-slate-400">{st.position}</div>
-                                    </td>
-                                    <td className="p-3 text-center font-bold text-slate-700">
-                                      <div>{st.completedTasks}/{st.totalTasks}</div>
-                                      <div className="text-[10px] text-slate-400 font-normal">việc hoàn thành</div>
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <span className="font-extrabold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px]">
-                                        x{st.totalWeight}
-                                      </span>
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <div className="font-extrabold text-slate-800">{st.weightedProgressRate}%</div>
-                                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1 max-w-[90px] mx-auto">
-                                        <div
-                                          className={`h-full ${
-                                            st.weightedProgressRate >= 80 ? "bg-emerald-500" :
-                                            st.weightedProgressRate >= 50 ? "bg-blue-500" : "bg-amber-500"
-                                          }`}
-                                          style={{ width: `${st.weightedProgressRate}%` }}
-                                        />
-                                      </div>
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <span className="text-base font-black text-slate-900">
-                                        {st.avgKpiScore}
-                                      </span>
-                                      <span className="text-[10px] text-slate-400 font-bold"> / 10</span>
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <span className={`inline-block px-2.5 py-1 rounded-xl text-xs font-black border ${st.kpiColor} shadow-2xs`}>
-                                        {st.kpiGrade} - {st.kpiGradeLabel}
-                                      </span>
-                                    </td>
-                                    <td className="p-3 text-slate-700">
-                                      {st.directorComments && st.directorComments.length > 0 ? (
-                                        <div className="space-y-1 text-xs font-medium">
-                                          {st.directorComments.slice(0, 2).map((dc: string, dIdx: number) => (
-                                            <div key={dIdx} className="text-amber-950 bg-amber-50/80 p-1.5 rounded-lg border border-amber-200/60 leading-tight">
-                                              {dc}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : st.directorEvaluatedCount > 0 ? (
-                                        <span className="text-emerald-700 text-xs font-bold flex items-center gap-1">
-                                          <Check className="w-3.5 h-3.5" /> GĐB đã đánh giá {st.directorEvaluatedCount} việc
-                                        </span>
-                                      ) : (
-                                        <span className="text-slate-400 italic text-[11px]">Đánh giá theo tiến độ chuẩn</span>
-                                      )}
-                                    </td>
-                                    <td className="p-3 text-center">
-                                      <button
-                                        onClick={() => setSelectedStaffForKpiDetail(st)}
-                                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs inline-flex items-center gap-1 transition-all"
-                                      >
-                                        <Eye className="w-3.5 h-3.5 text-[#48BFE3]" /> Chi tiết
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ))
-                              })()}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ============ TAB: PERSONAL LẬP BÁO CÁO ============ */}
-          {activeTab === "personal" && (
-            <div className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                    <Edit3 className="w-5 h-5 text-[#48BFE3]" /> Nội dung Báo cáo Tuần {selectedWeek} (Tháng {month}/{year})
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Người lập: <strong>{staffUsers.find((u: any) => u.id === (isManager ? viewUserId : currentUserId))?.fullName || currentUserName}</strong>
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => addRows(1)}
-                    className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition-all"
-                  >
-                    <Plus className="w-4 h-4" /> Thêm dòng
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#00A19A] text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-md"
-                  >
-                    <Save className="w-4 h-4" /> {saving ? "Đang lưu..." : "Lưu Báo Cáo"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                      <th className="p-3 text-center w-10">STT</th>
-                      <th className="p-3 min-w-[160px]">Nhóm công việc <span className="text-red-500 font-bold">*</span></th>
-                      <th className="p-3 min-w-[170px]">Danh mục công việc</th>
-                      <th className="p-3 min-w-[240px]">Nội dung công việc chi tiết <span className="text-red-500 font-bold">*</span></th>
-                      <th className="p-3 min-w-[150px]">
-                        <span className="flex items-center gap-1 text-slate-700">
-                          Mốc dự kiến HT <span className="text-red-500 font-bold">*</span>
-                        </span>
-                      </th>
-                      <th className="p-3 w-36">Tiến độ</th>
-                      <th className="p-3 min-w-[180px]">Đề xuất giải pháp (nếu có)</th>
-                      <th className="p-3 text-center w-14">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y font-medium">
-                    {items.map((item, idx) => {
-                      const relevantCategories = item.taskGroup
-                        ? taskCategories.filter((c: any) => !c.groupName || c.groupName === item.taskGroup)
-                        : taskCategories
-
-                      return (
-                        <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                          
-                          {/* Nhóm công việc */}
-                          <td className="p-3">
-                            <select
-                              value={item.taskGroup || ""}
-                              onChange={e => updateItem(idx, "taskGroup", e.target.value)}
-                              className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-bold text-slate-800 bg-white"
-                            >
-                              <option value="">-- Chọn Nhóm CV --</option>
-                              {availableGroups.map((g: string) => (
-                                <option key={g} value={g}>{g}</option>
-                              ))}
-                            </select>
-                          </td>
-
-                          {/* Danh mục công việc */}
-                          <td className="p-3">
-                            <select
-                              value={item.category || item.mainTask || ""}
-                              onChange={e => handleCategoryChange(idx, e.target.value)}
-                              className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-medium text-slate-700 bg-white"
-                            >
-                              <option value="">-- Chọn Danh mục --</option>
-                              {relevantCategories.map((c: any) => (
-                                <option key={c.id || c.name} value={c.name}>
-                                  {c.name} {c.groupName ? `(${c.groupName})` : ""}
-                                </option>
-                              ))}
-                              {item.category && !relevantCategories.some((c: any) => c.name === item.category) && (
-                                <option value={item.category}>{item.category}</option>
-                              )}
-                            </select>
-                          </td>
-
-                          {/* Nội dung công việc chi tiết */}
-                          <td className="p-3">
-                            <textarea
-                              rows={2}
-                              value={item.workContent}
-                              onChange={e => updateItem(idx, "workContent", e.target.value)}
-                              placeholder="Mô tả công việc thực hiện trong tuần..."
-                              className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-700"
-                            />
-                          </td>
-
-                          {/* Mốc dự kiến HT */}
-                          <td className="p-3">
-                            <input
-                              type="date"
-                              value={item.expectedCompletion || ""}
-                              onChange={e => updateItem(idx, "expectedCompletion", e.target.value)}
-                              className={`w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-semibold text-slate-700 transition-all ${
-                                !item.expectedCompletion && (item.taskGroup || item.category || item.workContent)
-                                  ? "border-amber-400 bg-amber-50/50 focus:border-amber-500"
-                                  : "border-slate-200 bg-white"
-                              }`}
-                              title="Mốc dự kiến hoàn thành (bắt buộc)"
-                            />
-                          </td>
-
-                          {/* Tiến độ */}
-                          <td className="p-3">
-                            <select
-                              value={item.progress}
-                              onChange={e => updateItem(idx, "progress", e.target.value)}
-                              className="w-full p-2 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white"
-                            >
-                              {PROGRESS.map(p => (
-                                <option key={p.value} value={p.value}>{p.label}</option>
-                              ))}
-                            </select>
-                          </td>
-
-                          {/* Đề xuất giải pháp */}
-                          <td className="p-3">
-                            <input
-                              type="text"
-                              value={item.proposedSolution}
-                              onChange={e => updateItem(idx, "proposedSolution", e.target.value)}
-                              placeholder="Đề xuất giải pháp..."
-                              className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-600 italic"
-                            />
-                          </td>
-
-                          {/* Thao tác */}
-                          <td className="p-3 text-center">
-                            <button
-                              onClick={() => removeRow(idx)}
-                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                              title="Xóa dòng này"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {managerComment && (
-                <div className="p-4 bg-teal-50 border border-teal-200 rounded-2xl">
-                  <p className="text-xs font-bold text-teal-800 mb-1">💬 Nhận xét chỉ đạo của Ban Quản Lý (TBP / Trưởng Ban):</p>
-                  <p className="text-xs text-slate-700 whitespace-pre-wrap">{managerComment}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ============ TAB: HISTORY ============ */}
-          {activeTab === "history" && (
-            <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                    <History className="w-5 h-5 text-[#48BFE3]" /> Lịch sử Báo cáo Tuần đã gửi
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Tổng cộng {filteredHistory.length} báo cáo tuần đã lưu
-                  </p>
-                </div>
-
-                <div className="relative w-full sm:w-64">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    value={historySearch}
-                    onChange={e => setHistorySearch(e.target.value)}
-                    placeholder="Tìm kiếm công việc, tuần..."
-                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3]"
-                  />
-                </div>
-              </div>
-
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                      <th className="p-3 text-center w-12">STT</th>
-                      <th className="p-3 min-w-[120px]">Thời gian</th>
-                      <th className="p-3 min-w-[200px]">Task chính thực hiện</th>
-                      <th className="p-3 w-28 text-center">Trạng thái</th>
-                      <th className="p-3 min-w-[200px]">Nhận xét Ban Quản Lý</th>
-                      <th className="p-3 text-center w-28">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y font-medium">
-                    {filteredHistory.map((rpt, idx) => (
-                      <tr key={rpt.id} className="hover:bg-slate-50">
-                        <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                        <td className="p-3 font-bold text-slate-800">
-                          Tuần {rpt.weekNumber} &bull; Tháng {rpt.month}/{rpt.year}
-                        </td>
-                        <td className="p-3 text-slate-700">
-                          {rpt.items.map((i: any) => i.taskGroup ? `[${i.taskGroup}] ${i.category || i.mainTask}` : (i.category || i.mainTask)).filter(Boolean).join("; ") || "-"}
-                        </td>
-                        <td className="p-3 text-center">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                            rpt.status === "REVIEWED" ? "bg-teal-50 text-teal-800" : "bg-emerald-100 text-emerald-800"
-                          }`}>
-                            {rpt.status === "REVIEWED" ? "Đã duyệt" : "Đã nộp"}
-                          </span>
-                        </td>
-                        <td className="p-3 text-slate-600 italic">
-                          {rpt.managerComment || "-"}
-                        </td>
-                        <td className="p-3 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleEditPastReport(rpt)}
-                              className="p-1.5 text-[#48BFE3] hover:bg-teal-50 rounded-lg"
-                              title="Hiệu chỉnh báo cáo này"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            {isManager && (
-                              <button
-                                onClick={() => handleDeleteReport(rpt.id)}
-                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                                title="Xóa báo cáo này"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
+      {activeTab === "review" && (
+        <ReviewAndConfirmTab
+          scopeMode={scopeMode}
+          onChangeScopeMode={setScopeMode}
+          weekNumber={weekNumber}
+          month={month}
+          year={year}
+          items={activeReviewItems}
+          specialistGroups={snapshot.specialistGroupNames}
+          members={snapshot.members}
+          selectedGroup={reviewGroupFilter}
+          onSelectGroup={setReviewGroupFilter}
+          selectedMemberId={reviewMemberFilter}
+          onSelectMemberId={setReviewMemberFilter}
+          isLeadership={snapshot.authority.isLeadership}
+          isDirectorAuthority={snapshot.authority.isDirectorAuthority}
+          currentUserId={currentUserId}
+          onConfirmItems={async (payload) => {
+            const res = await confirmKtdbclReportItems(payload)
+            if (res.success) {
+              toast.success(
+                `Đã xác nhận hoàn thành ${res.confirmedCount} đầu việc (${res.emailSentCount} email đã gửi)`
+              )
+              await reloadSnapshot()
+            } else {
+              toast.error(res.error || "Lỗi xác nhận hoàn thành")
+            }
+          }}
+          onFlagOverdueItems={async (payload) => {
+            const res = await flagOverdueAndRequestExplanationAction(payload)
+            if (res.success) {
+              toast.success(
+                `Đã gửi cảnh báo trễ hạn & yêu cầu giải trình (${res.emailSentCount} email)`
+              )
+              await reloadSnapshot()
+            } else {
+              toast.error(res.error || "Lỗi gửi yêu cầu giải trình")
+            }
+          }}
+          onSubmitExplanation={async (payload) => {
+            const res = await submitStaffOverdueExplanationAction(payload)
+            if (res.success) {
+              toast.success("Đã gửi giải trình tiến độ đến Quản lý & Giám đốc Ban")
+              await reloadSnapshot()
+            } else {
+              toast.error(res.error || "Lỗi gửi giải trình")
+            }
+          }}
+        />
       )}
 
-      {/* ============ MODAL: ĐÁNH GIÁ CHỈ ĐẠO CỦA GIÁM ĐỐC BAN (GĐB) ============ */}
-      {evaluatingDirectorItem && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2.5 bg-amber-100 text-amber-800 rounded-2xl">
-                  <Award className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-800">
-                    Đánh Giá & Nhận Xét Của Giám Đốc Ban (GĐB)
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Nhân sự: <strong>{evaluatingDirectorReport?.user?.fullName}</strong> - Tuần {selectedWeek} Tháng {month}/{year}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => { setEvaluatingDirectorItem(null); setEvaluatingDirectorReport(null) }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Task Info Context */}
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5 text-xs">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-extrabold text-slate-800">
-                  {evaluatingDirectorItem.category || evaluatingDirectorItem.mainTask || "Công việc"}
-                </span>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                  Trọng số: x{(() => {
-                    const c = (taskCategories || []).find((x: any) => x.name?.trim().toLowerCase() === (evaluatingDirectorItem.category || evaluatingDirectorItem.mainTask || "").trim().toLowerCase())
-                    return c?.weight || 1.0
-                  })()}
-                </span>
-              </div>
-              <p className="text-slate-600 leading-relaxed font-medium">
-                {evaluatingDirectorItem.workContent}
-              </p>
-              <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500">
-                <span>Tiến độ: <strong>{evaluatingDirectorItem.progress}</strong></span>
-                {evaluatingDirectorItem.expectedCompletion && (
-                  <span>• Dự kiến: <strong>{formatExpectedDate(evaluatingDirectorItem.expectedCompletion)}</strong></span>
-                )}
-              </div>
-            </div>
-
-            {/* Rating Selector */}
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Xếp loại chất lượng công việc của GĐB:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: "EXCELLENT", label: "⭐ Xuất sắc (10đ)", score: 10, color: "border-emerald-500 bg-emerald-50 text-emerald-900" },
-                    { value: "GOOD", label: "✅ Hoàn thành tốt (8.5đ)", score: 8.5, color: "border-blue-500 bg-blue-50 text-blue-900" },
-                    { value: "SATISFACTORY", label: "⚠️ Đạt chuẩn (7.0đ)", score: 7.0, color: "border-amber-500 bg-amber-50 text-amber-900" },
-                    { value: "NEEDS_IMPROVEMENT", label: "❌ Cần cải thiện (5.0đ)", score: 5.0, color: "border-rose-500 bg-rose-50 text-rose-900" },
-                  ].map(r => (
-                    <button
-                      key={r.value}
-                      type="button"
-                      onClick={() => { setEvalRating(r.value); setEvalQualityScore(r.score) }}
-                      className={`p-2.5 rounded-xl border text-xs font-extrabold text-left transition-all ${
-                        evalRating === r.value ? `${r.color} ring-2 ring-amber-400 shadow-xs` : "border-slate-200 hover:bg-slate-50 text-slate-700"
-                      }`}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Điểm chất lượng cụ thể (Thang điểm 1 - 10):
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="1"
-                  max="10"
-                  value={evalQualityScore}
-                  onChange={e => setEvalQualityScore(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-extrabold text-slate-800 outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Ý kiến chỉ đạo / Nhận xét của Giám Đốc Ban:
-                </label>
-                <textarea
-                  rows={3}
-                  value={evalNote}
-                  onChange={e => setEvalNote(e.target.value)}
-                  placeholder="Nhập ý kiến đánh giá chất lượng, định hướng xử lý từ Giám Đốc Ban..."
-                  className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500 text-slate-800 leading-relaxed font-medium"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => { setEvaluatingDirectorItem(null); setEvaluatingDirectorReport(null) }}
-                className="px-4 py-2 border rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveDirectorEvaluation}
-                disabled={submittingEvaluation}
-                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
-              >
-                <Save className="w-4 h-4" />
-                {submittingEvaluation ? "Đang lưu..." : "Lưu đánh giá GĐB"}
-              </button>
-            </div>
-          </div>
-        </div>
+      {activeTab === "cards" && (
+        <MemberAndGroupCardsTab
+          weekNumber={weekNumber}
+          month={month}
+          year={year}
+          aiReport={activeAiReport}
+          memberTimeline={snapshot.memberWeeklyTimeline}
+          isLeadership={snapshot.authority.isLeadership}
+          currentUserId={currentUserId}
+          onOpenMemberReview={(uid) => {
+            setReviewMemberFilter(uid)
+            setReviewGroupFilter("ALL")
+            setActiveTab("review")
+          }}
+          onOpenComposeForMember={async (uid, wk) => {
+            setComposeTargetUserId(uid)
+            if (wk && wk !== weekNumber) {
+              await handlePeriodChange(wk, month, year)
+            }
+            setActiveTab("compose")
+          }}
+          onRemindMember={(uid) => handleRemindUnsubmitted(uid)}
+          onOpenGroupReview={(gName) => {
+            setReviewGroupFilter(gName)
+            setReviewMemberFilter("ALL")
+            setActiveTab("review")
+          }}
+        />
       )}
 
-      {/* ============ MODAL: CHI TIẾT CÔNG VIỆC & BẢNG ĐIỂM KPI THÁNG ============ */}
-      {selectedStaffForKpiDetail && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
-                  <Award className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-800">
-                    Chi Tiết Công Việc & Điểm KPI Tháng {month}/{year}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Nhân sự: <strong>{selectedStaffForKpiDetail.fullName}</strong> ({selectedStaffForKpiDetail.departmentName} - {selectedStaffForKpiDetail.position})
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedStaffForKpiDetail(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {activeTab === "compose" && (
+        <ComposeAndExplainTab
+          weekNumber={weekNumber}
+          month={month}
+          year={year}
+          allWeeks={snapshot.period.allWeeks}
+          onChangeWeek={(wk) => handlePeriodChange(wk, month, year)}
+          currentUserId={currentUserId}
+          isLeadership={snapshot.authority.isLeadership}
+          members={snapshot.members}
+          specialistGroups={snapshot.specialistGroupNames}
+          taskCategories={snapshot.taskCategories}
+          targetUserId={composeTargetUserId}
+          onChangeTargetUserId={setComposeTargetUserId}
+          existingWeekItems={snapshot.weekItems.filter(
+            (i) => i.userId === composeTargetUserId
+          )}
+          allMonthItemsForTarget={snapshot.monthItems.filter(
+            (i) => i.userId === composeTargetUserId
+          )}
+          onSyncFromQaWorkspace={async (targetUid) => {
+            const res = await syncQaWorkspaceTasksToReportDraft({
+              targetUserId: targetUid,
+              weekNumber,
+              month,
+              year,
+            })
+            if (res.success) {
+              if (res.draftItems.length === 0) {
+                toast("Không có nhiệm vụ nào trên QA Workspace của nhân sự này.")
+              } else {
+                toast.success(
+                  `Đã đồng bộ ${res.draftItems.length} nhiệm vụ từ QA Workspace`
+                )
+              }
+              return res.draftItems
+            }
+            toast.error(res.error || "Lỗi đồng bộ QA Workspace")
+            return []
+          }}
+          onSaveReport={async (targetUid, rows: DraftReportRow[]) => {
+            const res = await saveKtdbclWeeklyReport({
+              weekNumber,
+              month,
+              year,
+              academicYearId: academicYearId || undefined,
+              targetUserId: targetUid,
+              items: rows,
+            })
+            if (res.success) {
+              toast.success(`Đã lưu & nộp Báo cáo Tuần ${weekNumber} thành công`)
+              await reloadSnapshot()
+            } else {
+              toast.error(res.error || "Không thể lưu báo cáo tuần")
+            }
+          }}
+          onSubmitExplanation={async (payload) => {
+            const res = await submitStaffOverdueExplanationAction(payload)
+            if (res.success) {
+              toast.success("Đã gửi giải trình trễ tiến độ thành công")
+              await reloadSnapshot()
+            } else {
+              toast.error(res.error || "Lỗi gửi giải trình")
+            }
+          }}
+        />
+      )}
 
-            {/* Top Score Banner */}
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-amber-600 rounded-2xl border border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className={`px-4 py-2 rounded-2xl text-base font-black border ${selectedStaffForKpiDetail.kpiColor} shadow-sm`}>
-                  Hạng {selectedStaffForKpiDetail.kpiGrade}: {selectedStaffForKpiDetail.kpiGradeLabel}
-                </span>
-                <div>
-                  <div className="text-sm font-bold text-slate-800">
-                    Điểm KPI: <span className="text-lg text-amber-900 font-black">{selectedStaffForKpiDetail.avgKpiScore}</span> / 10.0
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    Tỷ lệ hoàn thành có trọng số: <strong>{selectedStaffForKpiDetail.weightedProgressRate}%</strong> | Tổng trọng số: <strong>x{selectedStaffForKpiDetail.totalWeight}</strong>
-                  </div>
-                </div>
-              </div>
-              <div className="text-xs text-slate-600 bg-white/80 p-2.5 rounded-xl border border-amber-200 font-medium">
-                Công thức: Điểm KPI = Σ(Điểm CV × Trọng số) / Σ(Trọng số)
-              </div>
-            </div>
-
-            {/* List of Tasks in Month */}
-            <div className="overflow-y-auto flex-1 border border-slate-200 rounded-2xl">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase sticky top-0 bg-slate-50 z-10">
-                    <th className="p-2.5 text-center w-10">Tuần</th>
-                    <th className="p-2.5 min-w-[120px]">Danh mục & Trọng số</th>
-                    <th className="p-2.5 min-w-[200px]">Nội dung công việc</th>
-                    <th className="p-2.5 w-24">Tiến độ</th>
-                    <th className="p-2.5 min-w-[130px]">Nhận xét QL</th>
-                    <th className="p-2.5 min-w-[170px] bg-amber-50/70 text-amber-900">Đánh giá GĐB & Điểm</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y font-medium">
-                  {selectedStaffForKpiDetail.tasks?.map((t: any, tIdx: number) => {
-                    const prog = PROGRESS.find(p => p.value === t.progress) || PROGRESS[0]
-                    return (
-                      <tr key={t.id || tIdx} className="hover:bg-slate-50">
-                        <td className="p-2.5 text-center font-bold text-slate-500">T{t.weekNumber}</td>
-                        <td className="p-2.5">
-                          <div className="font-extrabold text-slate-800">{t.category || t.mainTask || "-"}</div>
-                          <span className="inline-block mt-0.5 text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                            ⚖️ Trọng số: x{t.weight}
-                          </span>
-                        </td>
-                        <td className="p-2.5 text-slate-700 leading-relaxed">{t.workContent}</td>
-                        <td className="p-2.5">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${prog.color}`}>
-                            {prog.label}
-                          </span>
-                        </td>
-                        <td className="p-2.5 text-slate-600">{t.managerNote || "-"}</td>
-                        <td className="p-2.5 bg-amber-50/20">
-                          <div className="space-y-1">
-                            {t.directorRating && (
-                              <span className="inline-block px-1.5 py-0.2 text-[9px] font-bold rounded bg-amber-100 text-amber-900 border border-amber-200">
-                                {t.directorRating} ({t.qualityScore}đ)
-                              </span>
-                            )}
-                            <div className="text-[11px] text-slate-800 font-medium">
-                              {t.directorNote || (
-                                <span className="text-slate-400 italic">Điểm quy đổi: {t.qualityScore}đ</span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex items-center justify-end pt-2 border-t border-slate-100">
-              <button
-                onClick={() => setSelectedStaffForKpiDetail(null)}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2 rounded-xl text-xs font-bold"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
+      {activeTab === "automation" && (
+        <AutomationAndRosterTab
+          config={snapshot.automationConfig}
+          logs={snapshot.automationLogs}
+          members={snapshot.members}
+          directorCandidates={snapshot.directorCandidates}
+          taskGroups={snapshot.taskGroups}
+          specialistGroupNames={snapshot.specialistGroupNames}
+          isLeadership={snapshot.authority.isLeadership}
+          onSaveConfig={async (patch) => {
+            const res = await updateKtdbclAutomationSettingsAction(patch)
+            if (res.success) {
+              toast.success("Đã lưu cấu hình tự động hóa Ban KT&ĐBCL")
+              await reloadSnapshot()
+            } else {
+              toast.error(res.error || "Lỗi lưu cấu hình")
+            }
+          }}
+          onSaveSpecialistGroup={async (payload) => {
+            const res = await updateKtdbclSpecialistGroupMembersAction(payload)
+            if (res.success) {
+              toast.success(`Đã cập nhật nhân sự nhóm ${payload.groupName}`)
+              await reloadSnapshot()
+            } else {
+              toast.error(res.error || "Lỗi cập nhật nhóm")
+            }
+          }}
+          onTriggerWednesdayReminderNow={() => handleRemindUnsubmitted()}
+          onTriggerDirectorReportNow={(scope) => handleSendDirectorReport(scope)}
+        />
       )}
     </div>
   )

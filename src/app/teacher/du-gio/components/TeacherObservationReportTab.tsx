@@ -672,11 +672,11 @@ export function TeacherObservationReportTab({
 
           <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-[#003B3A] text-white font-black uppercase text-[10.5px] tracking-wider">
-                  <th className="p-3 text-center w-12 border-r border-teal-900/40">TT</th>
-                  <th className="p-3 border-r border-teal-900/40">Tháng</th>
-                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[200px]">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="bg-[#003B3A] text-white text-[10.5px] text-[11px] font-semibold">
+                  <th className="p-3 text-center w-12 border-r border-teal-900/40 font-semibold">TT</th>
+                  <th className="p-3 border-r border-teal-900/40 font-semibold">Tháng</th>
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[200px] font-semibold">
                     <div className="flex items-center justify-center gap-1">
                       <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
                       <span>Tiết Trực Tiếp Dạy</span>
@@ -685,7 +685,7 @@ export function TeacherObservationReportTab({
                       Tổng • K12 • MN • GVNN
                     </div>
                   </th>
-                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[220px]">
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[220px] font-semibold">
                     <div className="flex items-center justify-center gap-1">
                       <Eye className="w-3.5 h-3.5 text-cyan-300" />
                       <span>Tiết Đi Dự Giờ (Đã Nộp)</span>
@@ -694,24 +694,24 @@ export function TeacherObservationReportTab({
                       Tổng • K12 • MN • GVNN
                     </div>
                   </th>
-                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[120px]">
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[120px] font-semibold">
                     <span>Chỉ Tiêu Tháng</span>
                   </th>
-                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[90px]">
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[90px] font-semibold">
                     <span>Nợ Phiếu</span>
                   </th>
-                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[100px]">
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[100px] font-semibold">
                     <span>Điểm TB Dạy</span>
                   </th>
-                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[130px]">
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[130px] font-semibold">
                     <span>Đánh Giá Tháng</span>
                   </th>
-                  <th className="p-3 text-center w-24">
+                  <th className="p-3 text-center w-24 font-semibold">
                     <span>Chi Tiết</span>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                 {monthlyStatsList.map((st, idx) => {
                   const isExpanded = expandedMonthKey === st.monthKey;
                   const targetObs = st.targetObserved || 1;
@@ -942,20 +942,20 @@ export function TeacherObservationReportTab({
                               ) : (
                                 <div className="overflow-x-auto rounded-xl border border-slate-200/80">
                                   <table className="w-full text-left text-xs border-collapse">
-                                    <thead>
-                                      <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-extrabold uppercase text-[10px]">
-                                        <th className="p-2.5 text-center w-10">STT</th>
-                                        <th className="p-2.5">Ngày & Tiết</th>
-                                        <th className="p-2.5 text-center">Vai Trò</th>
-                                        <th className="p-2.5">Giáo Viên Liên Quan</th>
-                                        <th className="p-2.5">Lớp & Cơ Sở</th>
-                                        <th className="p-2.5">Môn & Tên Bài Dạy / Chủ Đề</th>
-                                        <th className="p-2.5 text-center">Danh Mục</th>
-                                        <th className="p-2.5 text-center">Điểm & Xếp Loại</th>
-                                        <th className="p-2.5 text-center">Trạng Thái</th>
+                                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                      <tr className="border-b text-[10px] font-semibold">
+                                        <th className="p-2.5 text-center w-10 font-semibold">STT</th>
+                                        <th className="p-2.5 font-semibold">Ngày & Tiết</th>
+                                        <th className="p-2.5 text-center font-semibold">Vai Trò</th>
+                                        <th className="p-2.5 font-semibold">Giáo Viên Liên Quan</th>
+                                        <th className="p-2.5 font-semibold">Lớp & Cơ Sở</th>
+                                        <th className="p-2.5 font-semibold">Môn & Tên Bài Dạy / Chủ Đề</th>
+                                        <th className="p-2.5 text-center font-semibold">Danh Mục</th>
+                                        <th className="p-2.5 text-center font-semibold">Điểm & Xếp Loại</th>
+                                        <th className="p-2.5 text-center font-semibold">Trạng Thái</th>
                                       </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                    <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                                       {monthSlots.map((item: any, slotIdx: number) => {
                                         const isHostRole = item.role === "HOST";
                                         const evalScore = isHostRole
@@ -1072,17 +1072,17 @@ export function TeacherObservationReportTab({
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-amber-50/70 border-b border-amber-200 text-amber-950 font-black uppercase text-[10.5px]">
-                  <th className="p-3.5 text-center w-12">TT</th>
-                  <th className="p-3.5">Ngày & Tiết</th>
-                  <th className="p-3.5">Lớp & Cơ sở</th>
-                  <th className="p-3.5">Môn học & Tên bài dạy / Chủ đề</th>
-                  <th className="p-3.5 text-center">Danh mục</th>
-                  <th className="p-3.5 text-center">Hình thức</th>
-                  <th className="p-3.5 text-center">Người dự</th>
-                  <th className="p-3.5 text-center">Điểm TB</th>
-                  <th className="p-3.5 text-center">Đánh giá</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b border-amber-200 text-[10.5px] text-[11px] font-semibold">
+                  <th className="p-3.5 text-center w-12 font-semibold">TT</th>
+                  <th className="p-3.5 font-semibold">Ngày & Tiết</th>
+                  <th className="p-3.5 font-semibold">Lớp & Cơ sở</th>
+                  <th className="p-3.5 font-semibold">Môn học & Tên bài dạy / Chủ đề</th>
+                  <th className="p-3.5 text-center font-semibold">Danh mục</th>
+                  <th className="p-3.5 text-center font-semibold">Hình thức</th>
+                  <th className="p-3.5 text-center font-semibold">Người dự</th>
+                  <th className="p-3.5 text-center font-semibold">Điểm TB</th>
+                  <th className="p-3.5 text-center font-semibold">Đánh giá</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">
@@ -1179,17 +1179,17 @@ export function TeacherObservationReportTab({
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-teal-50/70 border-b border-teal-200 text-teal-950 font-black uppercase text-[10.5px]">
-                  <th className="p-3.5 text-center w-12">TT</th>
-                  <th className="p-3.5">Ngày & Tiết</th>
-                  <th className="p-3.5">Giáo viên dạy</th>
-                  <th className="p-3.5">Môn & Bài dạy</th>
-                  <th className="p-3.5 text-center">Danh mục</th>
-                  <th className="p-3.5 text-center">Hình thức</th>
-                  <th className="p-3.5 text-center">Điểm chấm</th>
-                  <th className="p-3.5">Nhận xét chung</th>
-                  <th className="p-3.5 text-center">Trạng thái phiếu</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[10.5px] text-[11px] font-semibold">
+                  <th className="p-3.5 text-center w-12 font-semibold">TT</th>
+                  <th className="p-3.5 font-semibold">Ngày & Tiết</th>
+                  <th className="p-3.5 font-semibold">Giáo viên dạy</th>
+                  <th className="p-3.5 font-semibold">Môn & Bài dạy</th>
+                  <th className="p-3.5 text-center font-semibold">Danh mục</th>
+                  <th className="p-3.5 text-center font-semibold">Hình thức</th>
+                  <th className="p-3.5 text-center font-semibold">Điểm chấm</th>
+                  <th className="p-3.5 font-semibold">Nhận xét chung</th>
+                  <th className="p-3.5 text-center font-semibold">Trạng thái phiếu</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150 font-semibold text-slate-700">

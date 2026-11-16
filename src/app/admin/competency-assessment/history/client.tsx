@@ -116,18 +116,18 @@ export function HistoryClient({ currentUser }: HistoryClientProps) {
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
-              <tr>
-                <th className="py-3 px-4">Mã đợt / Tên file</th>
-                <th className="py-3 px-4">Năm học & Kỳ</th>
-                <th className="py-3 px-4">Người import</th>
-                <th className="py-3 px-4 text-center">Tổng dòng</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4 text-center">Thời gian</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
+            <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-3 px-4 font-semibold">Mã đợt / Tên file</th>
+                <th className="py-3 px-4 font-semibold">Năm học & Kỳ</th>
+                <th className="py-3 px-4 font-semibold">Người import</th>
+                <th className="py-3 px-4 text-center font-semibold">Tổng dòng</th>
+                <th className="py-3 px-4 text-center font-semibold">Trạng thái</th>
+                <th className="py-3 px-4 text-center font-semibold">Thời gian</th>
+                <th className="py-3 px-4 text-right font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+            <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-400">

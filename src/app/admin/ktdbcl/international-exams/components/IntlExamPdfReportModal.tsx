@@ -638,23 +638,23 @@ export default function IntlExamPdfReportModal({
                   I. Tổng quan Quy mô & 4 Mẫu số Quản trị trong Kỳ báo cáo
                 </h2>
                 <table className="w-full border border-slate-300 text-xs">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800">
-                      <th className="border border-slate-300 px-3 py-2 text-center font-bold">
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold">
+                      <th className="border border-white/15 px-3 py-2 text-center font-bold">
                         1. Số học sinh duy nhất (Unique Students)
                       </th>
-                      <th className="border border-slate-300 px-3 py-2 text-center font-bold">
+                      <th className="border border-white/15 px-3 py-2 text-center font-bold">
                         2. Tổng số lượt dự thi (Hoàn thành / Vắng)
                       </th>
-                      <th className="border border-slate-300 px-3 py-2 text-center font-bold">
+                      <th className="border border-white/15 px-3 py-2 text-center font-bold">
                         3. Tổng điểm thành phần Kỹ năng / Môn
                       </th>
-                      <th className="border border-slate-300 px-3 py-2 text-center font-bold">
+                      <th className="border border-white/15 px-3 py-2 text-center font-bold">
                         4. Số Chứng chỉ Quốc tế đạt được
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                     <tr className="text-center font-black text-sm">
                       <td className="border border-slate-300 px-3 py-2.5 text-teal-800">
                         {stats.uniqueStudents} học sinh
@@ -681,20 +681,20 @@ export default function IntlExamPdfReportModal({
                   II. Tổng hợp Kết quả Chuyên biệt theo Từng Tổ chức Khảo thí
                 </h2>
                 <table className="w-full border border-slate-300 text-xs">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800">
-                      <th className="border border-slate-300 px-2.5 py-2 text-left font-bold">
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold">
+                      <th className="border border-white/15 px-2.5 py-2 text-left font-bold">
                         Nhóm Kỳ thi / Tổ chức Khảo thí
                       </th>
-                      <th className="border border-slate-300 px-2.5 py-2 text-center font-bold">
+                      <th className="border border-white/15 px-2.5 py-2 text-center font-bold">
                         Số lượt hoàn thành
                       </th>
-                      <th className="border border-slate-300 px-2.5 py-2 text-left font-bold">
+                      <th className="border border-white/15 px-2.5 py-2 text-left font-bold">
                         Chỉ số Chất lượng Trọng tâm theo Quy chuẩn Chính thức
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                     <tr>
                       <td className="border border-slate-300 px-2.5 py-2 font-bold">
                         1. Cambridge YLE (Starters / Movers / Flyers)
@@ -770,35 +770,35 @@ export default function IntlExamPdfReportModal({
                   III. Thống kê So sánh Số lượng theo Cơ sở SSM
                 </h2>
                 <table className="w-full border border-slate-300 text-xs">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-800">
-                      <th className="border border-slate-300 px-2 py-1.5 text-left font-bold">
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold">
+                      <th className="border border-white/15 px-2 py-1.5 text-left font-bold">
                         Cơ sở
                       </th>
-                      <th className="border border-slate-300 px-2 py-1.5 text-center font-bold">
+                      <th className="border border-white/15 px-2 py-1.5 text-center font-bold">
                         Học sinh duy nhất
                       </th>
-                      <th className="border border-slate-300 px-2 py-1.5 text-center font-bold">
+                      <th className="border border-white/15 px-2 py-1.5 text-center font-bold">
                         Tổng lượt thi
                       </th>
-                      <th className="border border-slate-300 px-2 py-1.5 text-center font-bold">
+                      <th className="border border-white/15 px-2 py-1.5 text-center font-bold">
                         Cambridge YLE
                       </th>
-                      <th className="border border-slate-300 px-2 py-1.5 text-center font-bold">
+                      <th className="border border-white/15 px-2 py-1.5 text-center font-bold">
                         KET / PET
                       </th>
-                      <th className="border border-slate-300 px-2 py-1.5 text-center font-bold">
+                      <th className="border border-white/15 px-2 py-1.5 text-center font-bold">
                         IELTS
                       </th>
-                      <th className="border border-slate-300 px-2 py-1.5 text-center font-bold">
+                      <th className="border border-white/15 px-2 py-1.5 text-center font-bold">
                         Pearson
                       </th>
-                      <th className="border border-slate-300 px-2 py-1.5 text-center font-bold">
+                      <th className="border border-white/15 px-2 py-1.5 text-center font-bold">
                         Checkpoint
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                     {stats.byCampus.map((row) => (
                       <tr key={row.campusCode} className="text-center">
                         <td className="border border-slate-300 px-2 py-1.5 text-left font-bold">
@@ -835,32 +835,32 @@ export default function IntlExamPdfReportModal({
                   </div>
                 ) : (
                   <table className="w-full border border-slate-300 text-[11px]">
-                    <thead>
-                      <tr className="bg-slate-100 text-slate-800">
-                        <th className="border border-slate-300 px-2 py-1.5 text-center font-bold w-8">
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold">
+                        <th className="border border-white/15 px-2 py-1.5 text-center font-bold w-8">
                           STT
                         </th>
-                        <th className="border border-slate-300 px-2 py-1.5 text-left font-bold">
+                        <th className="border border-white/15 px-2 py-1.5 text-left font-bold">
                           Mã HS SSM
                         </th>
-                        <th className="border border-slate-300 px-2 py-1.5 text-left font-bold">
+                        <th className="border border-white/15 px-2 py-1.5 text-left font-bold">
                           Họ và tên Học sinh
                         </th>
-                        <th className="border border-slate-300 px-2 py-1.5 text-center font-bold">
+                        <th className="border border-white/15 px-2 py-1.5 text-center font-bold">
                           Lớp / CS
                         </th>
-                        <th className="border border-slate-300 px-2 py-1.5 text-left font-bold">
+                        <th className="border border-white/15 px-2 py-1.5 text-left font-bold">
                           Kỳ thi & Thời gian
                         </th>
-                        <th className="border border-slate-300 px-2 py-1.5 text-left font-bold">
+                        <th className="border border-white/15 px-2 py-1.5 text-left font-bold">
                           Kết quả Tổng
                         </th>
-                        <th className="border border-slate-300 px-2 py-1.5 text-left font-bold">
+                        <th className="border border-white/15 px-2 py-1.5 text-left font-bold">
                           Chi tiết Kỹ năng / Môn học
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                       {reportResults.map((r, idx) => (
                         <tr key={r.id}>
                           <td className="border border-slate-300 px-2 py-1.5 text-center">

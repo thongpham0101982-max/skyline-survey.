@@ -19,7 +19,160 @@ security:
 
 paths:
   # =========================================================================
-  # 1. HỌC SINH (STUDENTS)
+  # 0. CỔNG CHIA SẺ DỮ LIỆU TỔNG HỢP ĐỘC LẬP (UNIFIED SNAPSHOT GATEWAY)
+  # 2 Bảng độc lập: api_snapshot_teachers & api_snapshot_students
+  # Gom từ 116 bảng SSM - Tối ưu truy vấn < 15ms - Che giấu PII (Nghị định 13/2023)
+  # =========================================================================
+  /api/v1/unified/teachers:
+    get:
+      summary: Lấy danh bạ tổng hợp giáo viên từ bảng phẳng độc lập
+      description: |
+        Truy vấn từ bảng `api_snapshot_teachers` gom toàn bộ 37 bảng liên quan GV (hồ sơ, chức danh, phân công, điểm QA).
+        Yêu cầu quyền: `teachers:directory:read` hoặc `teachers:read`.
+        Tự động che số điện thoại cá nhân nếu không có toàn quyền theo NĐ 13/2023/NĐ-CP.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: campusId
+          in: query
+          schema: { type: string }
+        - name: departmentId
+          in: query
+          schema: { type: string }
+        - name: position
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, default: ACTIVE }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Danh sách giáo viên tổng hợp kèm phân trang & thông tin bảo mật
+        '401':
+          description: Thiếu hoặc sai khóa API
+        '403':
+          description: Cơ sở hoặc tổ chuyên môn nằm ngoài phạm vi ủy quyền
+
+  /api/v1/unified/teachers/{id}:
+    get:
+      summary: Xem chi tiết hồ sơ giáo viên tổng hợp
+      description: |
+        Tra cứu theo `teacherId` hoặc `teacherCode`. Trả về chi tiết phân công giảng dạy (lớp, môn, số tiết/tuần) và điểm KPI/QA.
+        Yêu cầu quyền: `teachers:directory:read` hoặc `teachers:read`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Chi tiết giáo viên thành công
+        '404':
+          description: Không tìm thấy giáo viên
+
+  /api/v1/unified/teachers/sync:
+    post:
+      summary: Kích hoạt làm tươi / đồng bộ bảng snapshot giáo viên
+      description: Làm tươi bảng `api_snapshot_teachers` từ các bảng OLTP vận hành. Yêu cầu Quản trị viên hoặc API Key có quyền `teachers:write`.
+      responses:
+        '200':
+          description: Đồng bộ thành công
+        '403':
+          description: Quyền truy cập bị từ chối
+
+  /api/v1/unified/students:
+    get:
+      summary: Lấy danh sách học sinh tổng hợp từ bảng phẳng độc lập
+      description: |
+        Truy vấn từ bảng `api_snapshot_students` gom toàn bộ 55 bảng liên quan HS (hồ sơ, điểm số, rèn luyện, khảo sát, thành tích).
+        Yêu cầu quyền: `students:profile:read` hoặc `students:read`.
+        Thông tin liên hệ phụ huynh (SĐT, email, địa chỉ) tự động che giấu theo Nghị định 13/2023/NĐ-CP trừ khi có quyền `students:contact:read` hoặc `students:read`.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: campusId
+          in: query
+          schema: { type: string }
+        - name: classId
+          in: query
+          schema: { type: string }
+        - name: grade
+          in: query
+          schema: { type: string }
+        - name: academicYearId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, default: ACTIVE }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Danh sách học sinh tổng hợp kèm phân trang & thông tin bảo mật
+        '401':
+          description: Thiếu hoặc sai khóa API
+        '403':
+          description: Cơ sở hoặc lớp nằm ngoài phạm vi ủy quyền
+
+  /api/v1/unified/students/{id}:
+    get:
+      summary: Xem chi tiết hồ sơ học sinh tổng hợp
+      description: |
+        Tra cứu theo `studentId` hoặc `studentCode`. Trả về chi tiết kết quả học tập (GPA, hạnh kiểm), khảo sát, và thành tích ngoại khóa.
+        Yêu cầu quyền: `students:profile:read` hoặc `students:read`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Chi tiết học sinh thành công
+        '404':
+          description: Không tìm thấy học sinh
+
+  /api/v1/unified/students/{id}/academic:
+    get:
+      summary: Tra cứu học bạ điện tử & Bảng điểm chi tiết
+      description: |
+        Trả về chi tiết bảng điểm môn học (`SubjectGradeEntry`), điểm định kỳ, điểm tổng kết và hồ sơ hướng nghiệp Holland.
+        Yêu cầu quyền: `grades:read`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Bảng điểm chi tiết thành công
+        '403':
+          description: Không có quyền grades:read hoặc học sinh ngoài phạm vi cơ sở
+
+  /api/v1/unified/students/sync:
+    post:
+      summary: Kích hoạt làm tươi / đồng bộ bảng snapshot học sinh
+      description: Làm tươi bảng `api_snapshot_students` từ các bảng OLTP vận hành. Yêu cầu Quản trị viên hoặc API Key có quyền `students:write`.
+      responses:
+        '200':
+          description: Đồng bộ thành công
+        '403':
+          description: Quyền truy cập bị từ chối
+
+  # =========================================================================
+  # 1. HỌC SINH (STUDENTS - LEGACY)
   # =========================================================================
   /api/v1/students:
     get:

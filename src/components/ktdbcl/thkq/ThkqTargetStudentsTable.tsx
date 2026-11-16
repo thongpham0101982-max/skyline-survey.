@@ -164,23 +164,23 @@ export function ThkqTargetStudentsTable({
       {/* Bảng danh sách chi tiết */}
       <div className="overflow-x-auto rounded-xl border border-slate-200 mt-4 max-h-[500px]">
         <table className="w-full text-left border-collapse text-xs">
-          <thead className="bg-slate-100/90 sticky top-0 z-20 backdrop-blur-xs">
-            <tr className="divide-x divide-slate-200">
-              <th className="py-2.5 px-3 font-bold text-slate-700">Mã HS</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Họ và Tên</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Lớp</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Cơ sở</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Kỳ khảo sát</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Môn học</th>
-              <th className="py-2.5 px-3 font-bold text-center text-slate-700 bg-slate-200/50">Điểm số</th>
-              <th className="py-2.5 px-3 font-bold text-center text-slate-700">Chuẩn Sky-Line</th>
-              <th className="py-2.5 px-3 font-bold text-center text-slate-700">Chênh lệch (Δ)</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Diện theo dõi đặc thù</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">GVCN</th>
-              <th className="py-2.5 px-3 font-bold text-center text-slate-700">Thao tác</th>
+          <thead className="bg-[#003B3A] sticky top-0 z-20 backdrop-blur-xs text-white border-b border-[#003B3A]">
+            <tr className="divide-x text-[11px] font-semibold">
+              <th className="py-2.5 px-3 font-bold text-teal-100">Mã HS</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Họ và Tên</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Lớp</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Cơ sở</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Kỳ khảo sát</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Môn học</th>
+              <th className="py-2.5 px-3 font-bold text-center bg-[#003B3A]">Điểm số</th>
+              <th className="py-2.5 px-3 font-bold text-center">Chuẩn Sky-Line</th>
+              <th className="py-2.5 px-3 font-bold text-center">Chênh lệch (Δ)</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Diện theo dõi đặc thù</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">GVCN</th>
+              <th className="py-2.5 px-3 font-bold text-center">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {filteredStudents.length === 0 ? (
               <tr>
                 <td colSpan={12} className="py-8 text-center text-slate-400">

@@ -909,30 +909,30 @@ export default function UnifiedStudentProgressMatrix({
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse tabular-nums">
-            <thead>
-              <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                <th className="p-3 border-r border-slate-200/80 min-w-[210px]">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="p-3 border-r border-white/15 min-w-[210px] font-semibold">
                   1. Học sinh, lớp, GVCN/CVHT
                 </th>
-                <th className="p-3 border-r border-slate-200/80 min-w-[130px]">2. Mục tiêu</th>
-                <th className="p-3 border-r border-slate-200/80 min-w-[130px]">3. Tư vấn 1:1</th>
-                <th className="p-3 border-r border-slate-200/80 min-w-[155px]">
+                <th className="p-3 border-r border-white/15 min-w-[130px] font-semibold">2. Mục tiêu</th>
+                <th className="p-3 border-r border-white/15 min-w-[130px] font-semibold">3. Tư vấn 1:1</th>
+                <th className="p-3 border-r border-white/15 min-w-[155px] font-semibold">
                   4. Tự đánh giá và phản hồi HS
                 </th>
-                <th className="p-3 border-r border-slate-200/80 min-w-[155px]">5. GVBM đánh giá</th>
-                <th className="p-3 border-r border-slate-200/80 min-w-[165px]">
+                <th className="p-3 border-r border-white/15 min-w-[155px] font-semibold">5. GVBM đánh giá</th>
+                <th className="p-3 border-r border-white/15 min-w-[165px] font-semibold">
                   6. GV TLHN đánh giá
                 </th>
-                <th className="p-3 border-r border-slate-200/80 min-w-[140px]">
+                <th className="p-3 border-r border-white/15 min-w-[140px] font-semibold">
                   7. GVCN/CVHT đánh giá
                 </th>
-                <th className="p-3 border-r border-slate-200/80 min-w-[150px]">
+                <th className="p-3 border-r border-white/15 min-w-[150px] font-semibold">
                   8. Kết quả tiến bộ
                 </th>
-                <th className="p-3 min-w-[195px]">9. Bước tiếp theo</th>
+                <th className="p-3 min-w-[195px] font-semibold">9. Bước tiếp theo</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200/80 text-slate-800">
+            <tbody className="divide-y divide-[#E2E8F0] text-slate-800">
               {loading ? (
                 <tr>
                   <td colSpan={9} className="p-10 text-center text-slate-400 font-medium">

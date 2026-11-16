@@ -185,20 +185,20 @@ export function QaAnalyticsReportModal({
             </h3>
             <div className="overflow-x-auto border border-slate-200 rounded-xl">
               <table className="w-full text-xs text-left">
-                <thead className="bg-slate-100 text-slate-700 font-extrabold">
-                  <tr>
-                    <th className="p-3">Nhóm chuyên môn</th>
-                    <th className="p-3 text-center">Tổng (N)</th>
-                    <th className="p-3 text-center">Đang mở</th>
-                    <th className="p-3 text-center">Đang làm</th>
-                    <th className="p-3 text-center">Chờ duyệt</th>
-                    <th className="p-3 text-center">Hoàn thành</th>
-                    <th className="p-3 text-center">Đúng hạn</th>
-                    <th className="p-3 text-center">Nộp trễ</th>
-                    <th className="p-3 text-center">Quá hạn chưa nộp</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="p-3 font-semibold">Nhóm chuyên môn</th>
+                    <th className="p-3 text-center font-semibold">Tổng (N)</th>
+                    <th className="p-3 text-center font-semibold">Đang mở</th>
+                    <th className="p-3 text-center font-semibold">Đang làm</th>
+                    <th className="p-3 text-center font-semibold">Chờ duyệt</th>
+                    <th className="p-3 text-center font-semibold">Hoàn thành</th>
+                    <th className="p-3 text-center font-semibold">Đúng hạn</th>
+                    <th className="p-3 text-center font-semibold">Nộp trễ</th>
+                    <th className="p-3 text-center font-semibold">Quá hạn chưa nộp</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {report.byGroup.map(row => (
                     <tr key={row.key} className="hover:bg-slate-50">
                       <td className="p-3 font-bold text-slate-900">{row.label}</td>
@@ -295,12 +295,12 @@ export function QaSmartReminderModal({
     setDispatching(true)
     setResultMsg(null)
     try {
-      const res = await dispatchSmartQaReminders()
+      const res: any = await dispatchSmartQaReminders()
       if (res.success) {
         setLogs(res.recentLogs || [])
         onDispatched(res.recentLogs || [])
         setResultMsg(
-          `Đã rà soát 6 kịch bản nhắc việc: Phát hành ${res.sentNotifications} thông báo gộp (${res.recordedItems} mục mới, tự động chặn gửi trùng trong ngày).`
+          `Đã rà soát 6 kịch bản nhắc việc: Phát hành ${res.sentNotifications} thông báo hệ thống & ${res.sentEmails || 0} email nhắc việc gộp (${res.recordedItems} mục mới, tự động chặn gửi trùng trong ngày).`
         )
       } else {
         setResultMsg(res.error || "Không thể gửi nhắc việc.")

@@ -2768,22 +2768,22 @@ export function AdminTongHopClient({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600 tracking-wider">
-                  <th className="py-3 px-3 text-center w-12">STT</th>
-                  <th className="py-3 px-4 min-w-[200px]">Giám đốc Cơ sở</th>
-                  <th className="py-3 px-3 text-center min-w-[120px]">Cơ sở phụ trách</th>
-                  <th className="py-3 px-3 text-center min-w-[90px]">Chỉ tiêu dự</th>
-                  <th className="py-3 px-3 text-center min-w-[120px]">Đã tham gia dự</th>
-                  <th className="py-3 px-3 text-center min-w-[100px]">Số tiết dạy</th>
-                  <th className="py-3 px-3 text-center min-w-[110px]">Đã đánh giá</th>
-                  <th className="py-3 px-3 text-center min-w-[110px]">Phiếu chưa nộp</th>
-                  <th className="py-3 px-3 text-center min-w-[130px]">Tiến độ dự</th>
-                  <th className="py-3 px-3 text-center min-w-[140px]">Đánh giá trạng thái</th>
-                  <th className="py-3 px-3 text-center min-w-[120px]">Thao tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3 px-3 text-center w-12 font-semibold">STT</th>
+                  <th className="py-3 px-4 min-w-[200px] font-semibold">Giám đốc Cơ sở</th>
+                  <th className="py-3 px-3 text-center min-w-[120px] font-semibold">Cơ sở phụ trách</th>
+                  <th className="py-3 px-3 text-center min-w-[90px] font-semibold">Chỉ tiêu dự</th>
+                  <th className="py-3 px-3 text-center min-w-[120px] font-semibold">Đã tham gia dự</th>
+                  <th className="py-3 px-3 text-center min-w-[100px] font-semibold">Số tiết dạy</th>
+                  <th className="py-3 px-3 text-center min-w-[110px] font-semibold">Đã đánh giá</th>
+                  <th className="py-3 px-3 text-center min-w-[110px] font-semibold">Phiếu chưa nộp</th>
+                  <th className="py-3 px-3 text-center min-w-[130px] font-semibold">Tiến độ dự</th>
+                  <th className="py-3 px-3 text-center min-w-[140px] font-semibold">Đánh giá trạng thái</th>
+                  <th className="py-3 px-3 text-center min-w-[120px] font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs">
                 {filteredGdcsMonthlyData.length === 0 ? (
                   <tr>
                     <td colSpan={11} className="py-8 text-center text-slate-400">
@@ -2996,19 +2996,19 @@ export function AdminTongHopClient({
                                   ) : (
                                     <div className="overflow-x-auto">
                                       <table className="w-full text-left text-xs border-collapse">
-                                        <thead>
-                                          <tr className="bg-slate-50 text-[10px] font-bold uppercase text-slate-600 border-b border-slate-200">
-                                            <th className="py-2 px-2.5 text-center w-10">STT</th>
-                                            <th className="py-2 px-3 min-w-[100px]">Ngày & Tiết</th>
-                                            <th className="py-2 px-3 min-w-[140px]">Môn học & Lớp</th>
-                                            <th className="py-2 px-3 text-center min-w-[100px]">Cơ sở</th>
-                                            <th className="py-2 px-3 text-center min-w-[100px]">Hình thức</th>
-                                            <th className="py-2 px-3 text-center min-w-[120px]">Số người tham gia dự</th>
-                                            <th className="py-2 px-3 text-center min-w-[100px]">Điểm TB</th>
-                                            <th className="py-2 px-3 text-center min-w-[100px]">Trạng thái</th>
+                                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                          <tr className="text-[10px] border-b font-semibold">
+                                            <th className="py-2 px-2.5 text-center w-10 font-semibold">STT</th>
+                                            <th className="py-2 px-3 min-w-[100px] font-semibold">Ngày & Tiết</th>
+                                            <th className="py-2 px-3 min-w-[140px] font-semibold">Môn học & Lớp</th>
+                                            <th className="py-2 px-3 text-center min-w-[100px] font-semibold">Cơ sở</th>
+                                            <th className="py-2 px-3 text-center min-w-[100px] font-semibold">Hình thức</th>
+                                            <th className="py-2 px-3 text-center min-w-[120px] font-semibold">Số người tham gia dự</th>
+                                            <th className="py-2 px-3 text-center min-w-[100px] font-semibold">Điểm TB</th>
+                                            <th className="py-2 px-3 text-center min-w-[100px] font-semibold">Trạng thái</th>
                                           </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-slate-100">
+                                        <tbody className="divide-y divide-[#E2E8F0]">
                                           {gdcs.taughtDetails.map((slot: any, sIdx: number) => {
                                             const slotBadge = getCampusBadge(slot.campusName);
                                             return (
@@ -3071,19 +3071,19 @@ export function AdminTongHopClient({
                                 ) : (
                                   <div className="overflow-x-auto">
                                     <table className="w-full text-left text-xs border-collapse">
-                                      <thead>
-                                        <tr className="bg-slate-50 text-[10px] font-bold uppercase text-slate-600 border-b border-slate-200">
-                                          <th className="py-2 px-2.5 text-center w-10">STT</th>
-                                          <th className="py-2 px-3 min-w-[100px]">Ngày & Tiết</th>
-                                          <th className="py-2 px-3 min-w-[140px]">Giáo viên được dự</th>
-                                          <th className="py-2 px-3 min-w-[130px]">Môn học & Lớp</th>
-                                          <th className="py-2 px-3 text-center min-w-[100px]">Cơ sở</th>
-                                          <th className="py-2 px-3 text-center min-w-[100px]">Hình thức</th>
-                                          <th className="py-2 px-3 text-center min-w-[100px]">Điểm & Xếp loại</th>
-                                          <th className="py-2 px-3 text-center min-w-[120px]">Trạng thái phiếu</th>
+                                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                        <tr className="text-[10px] border-b font-semibold">
+                                          <th className="py-2 px-2.5 text-center w-10 font-semibold">STT</th>
+                                          <th className="py-2 px-3 min-w-[100px] font-semibold">Ngày & Tiết</th>
+                                          <th className="py-2 px-3 min-w-[140px] font-semibold">Giáo viên được dự</th>
+                                          <th className="py-2 px-3 min-w-[130px] font-semibold">Môn học & Lớp</th>
+                                          <th className="py-2 px-3 text-center min-w-[100px] font-semibold">Cơ sở</th>
+                                          <th className="py-2 px-3 text-center min-w-[100px] font-semibold">Hình thức</th>
+                                          <th className="py-2 px-3 text-center min-w-[100px] font-semibold">Điểm & Xếp loại</th>
+                                          <th className="py-2 px-3 text-center min-w-[120px] font-semibold">Trạng thái phiếu</th>
                                         </tr>
                                       </thead>
-                                      <tbody className="divide-y divide-slate-100">
+                                      <tbody className="divide-y divide-[#E2E8F0]">
                                         {gdcs.details.map((slot: any, sIdx: number) => {
                                           const slotDateStr = slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "N/A";
                                           const slotBadge = getCampusBadge(slot.campusName);
@@ -3910,17 +3910,17 @@ export function AdminTongHopClient({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-600">
-                    <th className="py-2 pr-2">Cơ sở</th>
-                    <th className="py-2 px-2 text-center">Số tiết</th>
-                    <th className="py-2 px-2 text-center">Đột xuất</th>
-                    <th className="py-2 px-2 text-center">ĐTB K-12</th>
-                    <th className="py-2 px-2 text-center">Tỷ lệ Giỏi</th>
-                    <th className="py-2 pl-2 text-right">Đạt chuẩn</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-2 pr-2 font-semibold">Cơ sở</th>
+                    <th className="py-2 px-2 text-center font-semibold">Số tiết</th>
+                    <th className="py-2 px-2 text-center font-semibold">Đột xuất</th>
+                    <th className="py-2 px-2 text-center font-semibold">ĐTB K-12</th>
+                    <th className="py-2 px-2 text-center font-semibold">Tỷ lệ Giỏi</th>
+                    <th className="py-2 pl-2 text-right font-semibold">Đạt chuẩn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {qaAnalytics.campusList.map(c => {
                     const cAvg = c.k12Count > 0 ? (c.k12Sum / c.k12Count).toFixed(2) : "-";
                     const cGioiPct = c.totalEvals > 0 ? Math.round((c.gioiCount / c.totalEvals) * 100) : 0;
@@ -4050,19 +4050,19 @@ export function AdminTongHopClient({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-600 bg-slate-50/50">
-                  <th className="py-2.5 px-3">Mã</th>
-                  <th className="py-2.5 px-3">Nội dung tiêu chí kiểm định</th>
-                  <th className="py-2.5 px-3">Chuẩn sư phạm</th>
-                  <th className="py-2.5 px-3 text-center">Tối đa</th>
-                  <th className="py-2.5 px-3 text-center">Điểm TB</th>
-                  <th className="py-2.5 px-3 text-center">Tỷ lệ đạt (%)</th>
-                  <th className="py-2.5 px-3 text-center">Tiết bị trừ điểm</th>
-                  <th className="py-2.5 px-3 text-right">Đánh giá ĐBCL</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-2.5 px-3 font-semibold">Mã</th>
+                  <th className="py-2.5 px-3 font-semibold">Nội dung tiêu chí kiểm định</th>
+                  <th className="py-2.5 px-3 font-semibold">Chuẩn sư phạm</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Tối đa</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Điểm TB</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Tỷ lệ đạt (%)</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Tiết bị trừ điểm</th>
+                  <th className="py-2.5 px-3 text-right font-semibold">Đánh giá ĐBCL</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {qaAnalytics.k12CriteriaStats.map(c => {
                   const isTop = c.pct >= 96;
                   const isWeak = c.pct < 93;
@@ -4138,20 +4138,20 @@ export function AdminTongHopClient({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-600 bg-slate-50/50">
-                  <th className="py-2.5 px-3">STT</th>
-                  <th className="py-2.5 px-3">Tổ Chuyên Môn</th>
-                  <th className="py-2.5 px-3">Tổ trưởng CM (TTCM)</th>
-                  <th className="py-2.5 px-3 text-center">Số GV</th>
-                  <th className="py-2.5 px-3 text-center">Tổng tiết dạy</th>
-                  <th className="py-2.5 px-3 text-center">Dạy đột xuất</th>
-                  <th className="py-2.5 px-3 text-center">Tổng tiết dự</th>
-                  <th className="py-2.5 px-3 text-center">Số phiếu ĐG</th>
-                  <th className="py-2.5 px-3 text-right">Tỷ lệ Đạt chuẩn</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-2.5 px-3 font-semibold">STT</th>
+                  <th className="py-2.5 px-3 font-semibold">Tổ Chuyên Môn</th>
+                  <th className="py-2.5 px-3 font-semibold">Tổ trưởng CM (TTCM)</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Số GV</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Tổng tiết dạy</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Dạy đột xuất</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Tổng tiết dự</th>
+                  <th className="py-2.5 px-3 text-center font-semibold">Số phiếu ĐG</th>
+                  <th className="py-2.5 px-3 text-right font-semibold">Tỷ lệ Đạt chuẩn</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {allDepartmentsSummary.map((d: any, idx: number) => (
                   <tr key={d.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-2.5 px-3 font-semibold text-slate-500">{idx + 1}</td>
@@ -4532,27 +4532,27 @@ export function AdminTongHopClient({
             /* VIEW 1: BẢNG MA TRẬN 2 CHIỀU (PIVOT GRID - CHUẨN QUẢN TRỊ, KHÔNG ICON DỮ LIỆU) */
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-700 tracking-wider">
-                    <th className="py-3 px-3 text-center w-12 border-r border-slate-200">STT</th>
-                    <th className="py-3 px-3 min-w-[170px] max-w-[210px] border-r border-slate-200">Họ và Tên TTCM</th>
-                    <th className="py-3 px-2 text-center w-20 border-r border-slate-200">Chức vụ</th>
-                    <th className="py-3 px-3 min-w-[130px] border-r border-slate-200">Tổ chuyên môn</th>
-                    <th className="py-3 px-3 min-w-[120px] border-r border-slate-200">Cơ sở công tác</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-3 px-3 text-center w-12 border-r border-white/15 font-semibold">STT</th>
+                    <th className="py-3 px-3 min-w-[170px] max-w-[210px] border-r border-white/15 font-semibold">Họ và Tên TTCM</th>
+                    <th className="py-3 px-2 text-center w-20 border-r border-white/15 font-semibold">Chức vụ</th>
+                    <th className="py-3 px-3 min-w-[130px] border-r border-white/15 font-semibold">Tổ chuyên môn</th>
+                    <th className="py-3 px-3 min-w-[120px] border-r border-white/15 font-semibold">Cơ sở công tác</th>
                     {distinctObservedCampusNames.map(cn => (
-                      <th key={cn} className="py-3 px-2 text-center min-w-[85px] border-r border-slate-200 bg-slate-100/70 text-slate-800 font-bold">
+                      <th key={cn} className="py-3 px-2 text-center min-w-[85px] border-r border-white/15 bg-[#003B3A] font-bold">
                         {cn}
                       </th>
                     ))}
-                    <th className="py-3 px-2 text-center w-24 border-r border-slate-200 bg-teal-50/60 text-teal-900 font-bold">
+                    <th className="py-3 px-2 text-center w-24 border-r border-white/15 bg-[#003B3A] font-bold text-[#5EEAD4]">
                       Tổng dự
                     </th>
-                    <th className="py-3 px-2 text-center w-28 border-r border-slate-200">Chỉ tiêu</th>
-                    <th className="py-3 px-2 text-center w-28 border-r border-slate-200">Đánh giá</th>
-                    <th className="py-3 px-2 text-center w-24">Thao tác</th>
+                    <th className="py-3 px-2 text-center w-28 border-r border-white/15 font-semibold">Chỉ tiêu</th>
+                    <th className="py-3 px-2 text-center w-28 border-r border-white/15 font-semibold">Đánh giá</th>
+                    <th className="py-3 px-2 text-center w-24 font-semibold">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs">
                   {filteredTTCMMatrix.map((item, idx) => {
                     const campusPeriodsMap = new Map(item.breakdown.map(b => [b.campusName, b.periods]));
                     const campusSurpriseMap = new Map(item.breakdown.map(b => [b.campusName, b.surprisePeriods]));
@@ -4773,22 +4773,22 @@ export function AdminTongHopClient({
             /* VIEW 2: BẢNG DANH SÁCH CHI TIẾT (CHUẨN QUẢN TRỊ, KHÔNG ICON DỮ LIỆU) */
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-700 tracking-wider">
-                    <th className="py-3 px-3 text-center w-12 border-r border-slate-200">STT</th>
-                    <th className="py-3 px-3 min-w-[170px] max-w-[210px] border-r border-slate-200">Họ và Tên TTCM</th>
-                    <th className="py-3 px-2 text-center w-20 border-r border-slate-200">Chức vụ</th>
-                    <th className="py-3 px-3 min-w-[130px] border-r border-slate-200">Tổ chuyên môn</th>
-                    <th className="py-3 px-3 min-w-[120px] border-r border-slate-200">Cơ sở công tác</th>
-                    <th className="py-3 px-3 min-w-[140px] border-r border-slate-200">Cơ sở dự giờ</th>
-                    <th className="py-3 px-2 text-center w-24 border-r border-slate-200">Phân loại</th>
-                    <th className="py-3 px-2 text-center w-24 border-r border-slate-200">Số tiết</th>
-                    <th className="py-3 px-2 text-center w-28 border-r border-slate-200">Chỉ tiêu</th>
-                    <th className="py-3 px-2 text-center w-28 border-r border-slate-200">Đánh giá</th>
-                    <th className="py-3 px-2 text-center w-24">Thao tác</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="py-3 px-3 text-center w-12 border-r border-white/15 font-semibold">STT</th>
+                    <th className="py-3 px-3 min-w-[170px] max-w-[210px] border-r border-white/15 font-semibold">Họ và Tên TTCM</th>
+                    <th className="py-3 px-2 text-center w-20 border-r border-white/15 font-semibold">Chức vụ</th>
+                    <th className="py-3 px-3 min-w-[130px] border-r border-white/15 font-semibold">Tổ chuyên môn</th>
+                    <th className="py-3 px-3 min-w-[120px] border-r border-white/15 font-semibold">Cơ sở công tác</th>
+                    <th className="py-3 px-3 min-w-[140px] border-r border-white/15 font-semibold">Cơ sở dự giờ</th>
+                    <th className="py-3 px-2 text-center w-24 border-r border-white/15 font-semibold">Phân loại</th>
+                    <th className="py-3 px-2 text-center w-24 border-r border-white/15 font-semibold">Số tiết</th>
+                    <th className="py-3 px-2 text-center w-28 border-r border-white/15 font-semibold">Chỉ tiêu</th>
+                    <th className="py-3 px-2 text-center w-28 border-r border-white/15 font-semibold">Đánh giá</th>
+                    <th className="py-3 px-2 text-center w-24 font-semibold">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs">
                   {filteredTTCMMatrix.map((item, idx) => {
                     const rowCount = item.breakdown.length;
                     return item.breakdown.map((b, bIdx) => (
@@ -6049,19 +6049,19 @@ export function AdminTongHopClient({
 
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600 tracking-wider">
-                            <th className="py-2.5 px-3 text-center w-12">STT</th>
-                            <th className="py-2.5 px-4 min-w-[200px]">Tổ Chuyên Môn</th>
-                            <th className="py-2.5 px-3 text-center min-w-[90px]">Giáo Viên</th>
-                            <th className="py-2.5 px-3 text-center min-w-[110px]">Tổng Tiết Dạy</th>
-                            <th className="py-2.5 px-3 text-center min-w-[110px] text-amber-900 bg-amber-50/40">Dạy đột xuất</th>
-                            <th className="py-2.5 px-3 text-center min-w-[110px]">Tổng Tiết Dự</th>
-                            <th className="py-2.5 px-3 text-center min-w-[110px] text-amber-900 bg-amber-50/40">Dự đột xuất</th>
-                            <th className="py-2.5 px-3 text-center min-w-[90px]">Thao tác</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="border-b text-[11px] font-semibold">
+                            <th className="py-2.5 px-3 text-center w-12 font-semibold">STT</th>
+                            <th className="py-2.5 px-4 min-w-[200px] font-semibold">Tổ Chuyên Môn</th>
+                            <th className="py-2.5 px-3 text-center min-w-[90px] font-semibold">Giáo Viên</th>
+                            <th className="py-2.5 px-3 text-center min-w-[110px] font-semibold">Tổng Tiết Dạy</th>
+                            <th className="py-2.5 px-3 text-center min-w-[110px] bg-[#003B3A] text-amber-200 font-semibold">Dạy đột xuất</th>
+                            <th className="py-2.5 px-3 text-center min-w-[110px] font-semibold">Tổng Tiết Dự</th>
+                            <th className="py-2.5 px-3 text-center min-w-[110px] bg-[#003B3A] text-amber-200 font-semibold">Dự đột xuất</th>
+                            <th className="py-2.5 px-3 text-center min-w-[90px] font-semibold">Thao tác</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-xs">
+                        <tbody className="divide-y divide-[#E2E8F0] text-xs">
                           {allDepartmentsSummary.map((dept: any, idx: number) => {
                             const isCurrentSelected = selectedDeptId === dept.id;
                             return (
@@ -6182,16 +6182,16 @@ export function AdminTongHopClient({
 
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600 tracking-wider">
-                            <th className="py-2.5 px-3 text-center w-10">STT</th>
-                            <th className="py-2.5 px-4 min-w-[200px]">Giáo viên Bộ môn</th>
-                            <th className="py-2.5 px-3 text-center min-w-[140px]">Tiết Dạy</th>
-                            <th className="py-2.5 px-3 text-center min-w-[140px]">Tiết Dự</th>
-                            <th className="py-2.5 px-3 text-center w-24">Chi tiết</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="border-b text-[11px] font-semibold">
+                            <th className="py-2.5 px-3 text-center w-10 font-semibold">STT</th>
+                            <th className="py-2.5 px-4 min-w-[200px] font-semibold">Giáo viên Bộ môn</th>
+                            <th className="py-2.5 px-3 text-center min-w-[140px] font-semibold">Tiết Dạy</th>
+                            <th className="py-2.5 px-3 text-center min-w-[140px] font-semibold">Tiết Dự</th>
+                            <th className="py-2.5 px-3 text-center w-24 font-semibold">Chi tiết</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-xs">
+                        <tbody className="divide-y divide-[#E2E8F0] text-xs">
                           {deptTeacherMatrix.map((t: any, idx: number) => {
                             const isSelected = selectedTeacherId === t.id;
                             return (
@@ -6650,15 +6650,15 @@ export function AdminTongHopClient({
 
                 <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 shadow-2xs">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead className="bg-slate-100 text-slate-700 text-[10px] font-black uppercase sticky top-0 z-10 border-b border-slate-200">
-                      <tr>
-                        <th className="py-2 px-2 text-center w-8">STT</th>
-                        <th className="py-2 px-3 min-w-[160px]">Giáo viên Bộ môn</th>
-                        <th className="py-2 px-2 text-center min-w-[130px]">Tiết Dạy</th>
-                        <th className="py-2 px-2 text-center min-w-[130px]">Tiết Dự</th>
+                    <thead className="bg-[#003B3A] text-[10px] sticky top-0 z-10 border-b text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="py-2 px-2 text-center w-8 font-semibold">STT</th>
+                        <th className="py-2 px-3 min-w-[160px] font-semibold">Giáo viên Bộ môn</th>
+                        <th className="py-2 px-2 text-center min-w-[130px] font-semibold">Tiết Dạy</th>
+                        <th className="py-2 px-2 text-center min-w-[130px] font-semibold">Tiết Dự</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white text-[11px]">
+                    <tbody className="divide-y divide-[#E2E8F0] bg-white text-[11px]">
                       {emailPreviewTeacherMatrix.map((t, idx) => (
                         <tr key={t.id} className="hover:bg-slate-50/80">
                           <td className="py-2 px-2 text-center font-bold text-slate-400 text-[10px]">{idx + 1}</td>
@@ -7011,18 +7011,18 @@ export function AdminTongHopClient({
                   {/* List of slots preview */}
                   <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                     <table className="w-full text-left border-collapse text-[11px]">
-                      <thead className="bg-slate-50 sticky top-0 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200">
-                        <tr>
-                          <th className="p-2 text-center w-8">STT</th>
-                          <th className="p-2">Ngày & Tiết</th>
-                          <th className="p-2">GV được dự</th>
-                          <th className="p-2">Môn / Lớp</th>
-                          <th className="p-2 text-center">Cơ sở</th>
-                          <th className="p-2 text-center">Điểm số</th>
-                          <th className="p-2 text-center">Trạng thái</th>
+                      <thead className="bg-[#003B3A] sticky top-0 text-[10px] border-b text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="p-2 text-center w-8 font-semibold">STT</th>
+                          <th className="p-2 font-semibold">Ngày & Tiết</th>
+                          <th className="p-2 font-semibold">GV được dự</th>
+                          <th className="p-2 font-semibold">Môn / Lớp</th>
+                          <th className="p-2 text-center font-semibold">Cơ sở</th>
+                          <th className="p-2 text-center font-semibold">Điểm số</th>
+                          <th className="p-2 text-center font-semibold">Trạng thái</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {selectedGdcsForEmail.details?.map((d: any, idx: number) => (
                           <tr key={idx} className="hover:bg-slate-50">
                             <td className="p-2 text-center font-bold text-slate-400">{idx + 1}</td>
@@ -7192,18 +7192,18 @@ export function AdminTongHopClient({
 
                 <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 shadow-2xs">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead className="bg-slate-100 text-slate-700 text-[10px] font-black uppercase sticky top-0 z-10 border-b border-slate-200">
-                      <tr>
-                        <th className="py-2 px-2 text-center w-8">STT</th>
-                        <th className="py-2 px-3 min-w-[150px]">Tổ Chuyên Môn</th>
-                        <th className="py-2 px-2 text-center w-20">Giáo Viên</th>
-                        <th className="py-2 px-2 text-center w-24">Tổng Dạy</th>
-                        <th className="py-2 px-2 text-center w-24 text-amber-900 bg-amber-50/50">Dạy ĐX</th>
-                        <th className="py-2 px-2 text-center w-24">Tổng Dự</th>
-                        <th className="py-2 px-2 text-center w-24 text-amber-900 bg-amber-50/50">Dự ĐX</th>
+                    <thead className="bg-[#003B3A] text-[10px] sticky top-0 z-10 border-b text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="py-2 px-2 text-center w-8 font-semibold">STT</th>
+                        <th className="py-2 px-3 min-w-[150px] font-semibold">Tổ Chuyên Môn</th>
+                        <th className="py-2 px-2 text-center w-20 font-semibold">Giáo Viên</th>
+                        <th className="py-2 px-2 text-center w-24 font-semibold">Tổng Dạy</th>
+                        <th className="py-2 px-2 text-center w-24 bg-[#003B3A] text-amber-200 font-semibold">Dạy ĐX</th>
+                        <th className="py-2 px-2 text-center w-24 font-semibold">Tổng Dự</th>
+                        <th className="py-2 px-2 text-center w-24 bg-[#003B3A] text-amber-200 font-semibold">Dự ĐX</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white text-[11px]">
+                    <tbody className="divide-y divide-[#E2E8F0] bg-white text-[11px]">
                       {allDeptsEmailSummary.map((d, idx) => (
                         <tr key={d.id} className="hover:bg-slate-50/80">
                           <td className="py-2 px-2 text-center font-bold text-slate-400 text-[10px]">{idx + 1}</td>
@@ -7555,16 +7555,16 @@ export function AdminTongHopClient({
 
                     <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl">
                       <table className="w-full text-left border-collapse text-xs">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[10px] font-bold uppercase sticky top-0">
-                          <tr>
-                            <th className="py-2 px-2 text-center w-8">STT</th>
-                            <th className="py-2 px-3">Tổ Chuyên Môn</th>
-                            <th className="py-2 px-3">Tổ Trưởng (TTCM)</th>
-                            <th className="py-2 px-3">Email Nhận</th>
-                            <th className="py-2 px-2 text-center w-24">Trạng Thái</th>
+                        <thead className="bg-[#003B3A] border-b text-[10px] sticky top-0 text-white border-[#003B3A]">
+                          <tr className="text-[11px] font-semibold whitespace-nowrap">
+                            <th className="py-2 px-2 text-center w-8 font-semibold">STT</th>
+                            <th className="py-2 px-3 font-semibold">Tổ Chuyên Môn</th>
+                            <th className="py-2 px-3 font-semibold">Tổ Trưởng (TTCM)</th>
+                            <th className="py-2 px-3 font-semibold">Email Nhận</th>
+                            <th className="py-2 px-2 text-center w-24 font-semibold">Trạng Thái</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#E2E8F0]">
                           {previewDepts.map((d: any, idx: number) => (
                             <tr key={d.id} className="hover:bg-slate-50">
                               <td className="py-2 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>

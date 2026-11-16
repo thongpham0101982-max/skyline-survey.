@@ -940,18 +940,18 @@ function UniversalSpecialSubjectEvaluationContent() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto max-h-[650px]">
               <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-100/90 text-slate-700 uppercase tracking-wider font-bold border-b border-slate-200 sticky top-0 z-20">
-                    <th className="py-3 px-3 w-12 text-center bg-slate-100">STT</th>
-                    <th className="py-3 px-3 w-28 bg-slate-100">Mã HS</th>
-                    <th className="py-3 px-4 min-w-[180px] bg-slate-100">Họ và tên</th>
-                    <th className="py-3 px-2 w-24 text-center bg-slate-100">Điểm danh</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b sticky top-0 z-20 text-[11px] font-semibold">
+                    <th className="py-3 px-3 w-12 text-center bg-[#003B3A] font-semibold">STT</th>
+                    <th className="py-3 px-3 w-28 bg-[#003B3A] font-semibold">Mã HS</th>
+                    <th className="py-3 px-4 min-w-[180px] bg-[#003B3A] font-semibold">Họ và tên</th>
+                    <th className="py-3 px-2 w-24 text-center bg-[#003B3A] font-semibold">Điểm danh</th>
 
                     {/* DYNAMIC CRITERIA HEADERS */}
                     {(currentLesson?.criteria || []).map((crit, idx) => (
                       <th 
                         key={`crit-header-${crit.id || idx}-${idx}`} 
-                        className="py-3 px-3 min-w-[140px] text-center border-l border-slate-200 group relative cursor-help"
+                        className="py-3 px-3 min-w-[140px] text-center border-l border-white/15 group relative cursor-help font-semibold"
                       >
                         <div className="flex flex-col items-center">
                           <span className="font-extrabold text-teal-800">TC {idx + 1}</span>
@@ -973,18 +973,18 @@ function UniversalSpecialSubjectEvaluationContent() {
                       </th>
                     ))}
 
-                    <th className="py-3 px-3 w-28 text-center border-l border-slate-200 bg-teal-50/50">
+                    <th className="py-3 px-3 w-28 text-center border-l border-white/15 bg-[#003B3A] font-semibold">
                       Kết quả bài
                     </th>
-                    <th className="py-3 px-3 min-w-[160px] border-l border-slate-200">
+                    <th className="py-3 px-3 min-w-[160px] border-l border-white/15 font-semibold">
                       Nhận xét của giáo viên
                     </th>
-                    <th className="py-3 px-2 w-12 text-center border-l border-slate-200">
+                    <th className="py-3 px-2 w-12 text-center border-l border-white/15 font-semibold">
                       Lịch sử
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {displayedStudents.map((st, idx) => {
                     const isAbsent = st.attendanceStatus === "ABSENT";
                     return (

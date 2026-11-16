@@ -1,6 +1,6 @@
 "use client"
-import { useState } from "react"
-import { Plus, Edit2, Trash2, Check, X, MapPin, Building2, Search } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Plus, Edit2, Trash2, X, MapPin, Building2, Search } from "lucide-react"
 import { createCampus, updateCampus, deleteCampus } from "./actions"
 
 export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
@@ -12,21 +12,29 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
 
-  const filtered = (campuses || []).filter((c: any) => 
-    (c.campusName || "").toLowerCase().includes(search.toLowerCase()) || 
-    (c.campusCode || "").toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    setCampuses(initialCampuses || [])
+  }, [initialCampuses])
+
+  const filtered = (campuses || []).filter((c: any) =>
+    (c.campusName || "").toLowerCase().includes(search.toLowerCase()) ||
+    (c.campusCode || "").toLowerCase().includes(search.toLowerCase()) ||
+    (c.address || "").toLowerCase().includes(search.toLowerCase()) ||
+    (c.manager?.fullName || "").toLowerCase().includes(search.toLowerCase())
   )
 
   const handleSave = async () => {
     if (!form.code || !form.name) {
-      setError("Vui lòng nhập đầy đủ Mã và Tên cơ sở!"); return
+      setError("Vui lòng nhập đầy đủ Mã và Tên cơ sở!")
+      return
     }
-    setSaving(true); setError("")
+    setSaving(true)
+    setError("")
     try {
-      const res = editingId 
+      const res = editingId
         ? await updateCampus(editingId, form.code, form.name, form.address, undefined, form.managerId)
         : await createCampus(form.code, form.name, form.address, form.managerId)
-      
+
       if (res.success) {
         window.location.reload()
       } else {
@@ -53,117 +61,184 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" placeholder="Tìm kiếm cơ sở..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-50 outline-none transition-all" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm cơ sở, người phụ trách..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 outline-none transition-all bg-white"
+          />
         </div>
-        <button onClick={() => { setShowAddForm(true); setEditingId(null); setForm({ code: "", name: "", address: "", managerId: "" }) }}
-          className="flex items-center gap-2 bg-[#48BFE3] text-white px-6 py-3 rounded-2xl hover:bg-[#009085] font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95">
-          <Plus className="w-5 h-5" /> Thêm Cơ Sở
+        <button
+          onClick={() => {
+            setShowAddForm(true)
+            setEditingId(null)
+            setError("")
+            setForm({ code: "", name: "", address: "", managerId: "" })
+          }}
+          className="flex items-center gap-2 bg-[#003B3A] text-white px-5 py-2.5 rounded-xl hover:bg-[#00736E] text-sm font-semibold shadow-sm transition-all active:scale-95"
+        >
+          <Plus className="w-4 h-4" /> Thêm cơ sở
         </button>
       </div>
 
       {(showAddForm || editingId) && (
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-2xl shadow-slate-200/50 animate-in fade-in slide-in-from-top-4">
-          <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
-            <div className="p-2 text-xs font-semibold">
-              <Building2 className="w-6 h-6 text-[#48BFE3]" />
-            </div>
-            {editingId ? "Cập nhật Cơ sở" : "Thêm Cơ sở Mới"}
+        <div className="bg-white border border-slate-200 border-l-4 border-l-[#003B3A] rounded-2xl p-6 shadow-sm animate-in fade-in slide-in-from-top-4">
+          <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2.5">
+            <Building2 className="w-5 h-5 text-[#00A19A]" />
+            {editingId ? "Cập nhật cơ sở" : "Thêm cơ sở mới"}
           </h3>
-          {error && <div className="text-red-600 p-4 text-sm font-semibold mb-6 flex items-center gap-2 text-xs font-semibold">
-            <X className="w-5 h-5" /> {error}
-          </div>}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Mã Cơ sở *</label>
-              <input type="text" value={form.code} onChange={e => setForm({...form, code: e.target.value.toUpperCase()})}
-                placeholder="VD: CS1" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all" />
+          {error && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm font-medium mb-5 flex items-center gap-2">
+              <X className="w-4 h-4 shrink-0" /> {error}
             </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tên Cơ sở *</label>
-              <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                placeholder="VD: Skyline Central" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all" />
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-slate-700">Mã cơ sở *</label>
+              <input
+                type="text"
+                value={form.code}
+                onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })}
+                placeholder="VD: CS1"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold tabular-nums outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
+              />
             </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Tên đầy đủ</label>
-              <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
-                placeholder="Tên đầy đủ" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all" />
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-slate-700">Tên cơ sở *</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+                placeholder="VD: CS1"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
+              />
             </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Người phụ trách</label>
-              <select value={form.managerId} onChange={e => setForm({...form, managerId: e.target.value})}
-                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none bg-white focus:border-teal-200 focus:ring-4 focus:ring-indigo-50 transition-all">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-slate-700">Tên đầy đủ</label>
+              <input
+                type="text"
+                value={form.address}
+                onChange={e => setForm({ ...form, address: e.target.value })}
+                placeholder="VD: Sky-Line Beach"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-slate-700">Người phụ trách (GĐCS)</label>
+              <select
+                value={form.managerId}
+                onChange={e => setForm({ ...form, managerId: e.target.value })}
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-medium tabular-nums outline-none bg-white focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
+              >
                 <option value="">-- Chưa phân công --</option>
                 {gdcsUsers.map((u: any) => (
-                  <option key={u.id} value={u.id}>{u.fullName} ({u.email})</option>
+                  <option key={u.id} value={u.id}>
+                    {u.fullName} ({u.email})
+                  </option>
                 ))}
               </select>
             </div>
           </div>
-          <div className="flex gap-4 mt-8">
-            <button onClick={handleSave} disabled={saving} className="bg-[#48BFE3] text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl shadow-indigo-200 hover:bg-[#009085] disabled:opacity-50 transition-all active:scale-95">
-              {saving ? "Số liệu đang được lưu..." : "Lưu Thay Đổi"}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-[#003B3A] text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#00736E] disabled:opacity-50 transition-all active:scale-95"
+            >
+              {saving ? "Đang lưu thay đổi..." : "Lưu thay đổi"}
             </button>
-            <button onClick={() => { setShowAddForm(false); setEditingId(null) }} className="bg-slate-100 text-slate-600 px-8 py-3 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all">Hủy bỏ</button>
+            <button
+              onClick={() => {
+                setShowAddForm(false)
+                setEditingId(null)
+                setError("")
+              }}
+              className="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-200 transition-all"
+            >
+              Hủy bỏ
+            </button>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-100/50 overflow-hidden">
-        <div className="overflow-x-auto custom-scrollbar flex-1">
-          <table className="w-full text-left whitespace-nowrap border-collapse">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left whitespace-nowrap border-collapse tabular-nums">
             <thead>
-              <tr className="text-xs font-semibold">
-                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Mã Cơ sở</th>
-                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Tên Cơ sở</th>
-                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Tên đầy đủ</th>
-                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Người phụ trách</th>
-                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Trạng thái</th>
-                <th className="p-2 p-2 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Hành động</th>
+              <tr className="bg-slate-50/80 border-b border-slate-200">
+                <th className="px-4 py-3 text-xs font-semibold text-slate-600">Mã cơ sở</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-600">Tên cơ sở</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-600">Tên đầy đủ</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-600">Người phụ trách (GĐCS)</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-600">Trạng thái</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-600 text-right">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {filtered.map((c: any) => (
-                <tr key={c.id} className="hover:bg-[#48BFE3]/10/30 transition-colors group">
-                  <td className="p-2 p-2 border border-slate-200">
-                    <span className="text-teal-800 font-black text-xs tracking-wider text-xs font-semibold">
-                      {c.campusCode}
-                    </span>
+                <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="px-4 py-3 text-sm font-bold text-[#003B3A]">
+                    {c.campusCode}
                   </td>
-                  <td className="p-2 p-2 border border-slate-200">
-                    <div className="font-extrabold text-slate-900">{c.campusName}</div>
+                  <td className="px-4 py-3 text-sm font-semibold text-slate-900">
+                    {c.campusName}
                   </td>
-                  <td className="p-2 p-2 border border-slate-200">
-                    <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
-                      <MapPin className="w-4 h-4 text-slate-300" />
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                       {c.address || "Chưa cập nhật"}
                     </div>
                   </td>
-                  <td className="p-2 p-2 border border-slate-200">
-                    <div className="font-semibold text-slate-700 text-sm">
-                      {c.manager ? (
-                        <span className="text-teal-800 font-bold text-xs text-xs font-semibold">
-                          {c.manager.fullName}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 italic text-xs">Chưa phân công</span>
-                      )}
-                    </div>
+                  <td className="px-4 py-3 text-sm">
+                    {c.manager ? (
+                      <span className="text-[#00736E] font-semibold">
+                        {c.manager.fullName}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 italic text-xs">Chưa phân công</span>
+                    )}
                   </td>
-                  <td className="p-2 p-2 border border-slate-200">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${c.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${c.status === "ACTIVE" ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        c.status === "ACTIVE"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-slate-100 text-slate-600 border border-slate-200"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          c.status === "ACTIVE" ? "bg-emerald-600" : "bg-slate-400"
+                        }`}
+                      />
                       {c.status === "ACTIVE" ? "Hoạt động" : "Ngưng"}
                     </span>
                   </td>
-                  <td className="p-2 p-2 text-right border border-slate-200">
-                    <div className="flex items-center justify-end gap-3 opacity-100 transition-all ">
-                      <button onClick={() => { setEditingId(c.id); setForm({ code: c.campusCode, name: c.campusName, address: c.address || "", managerId: c.managerId || "" }); setShowAddForm(false); }}
-                        className="p-2.5 text-[#48BFE3] hover:bg-white hover:shadow-md rounded-xl transition-all border border-transparent hover:border-teal-200">
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingId(c.id)
+                          setError("")
+                          setForm({
+                            code: c.campusCode,
+                            name: c.campusName,
+                            address: c.address || "",
+                            managerId: c.managerId || ""
+                          })
+                          setShowAddForm(false)
+                        }}
+                        title="Chỉnh sửa cơ sở"
+                        className="p-2 text-[#008B85] hover:bg-teal-50 rounded-lg transition-all border border-transparent hover:border-teal-200"
+                      >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(c.id, c.campusName)}
-                        className="p-2.5 text-red-500 hover:bg-white hover:shadow-md rounded-xl transition-all border border-transparent hover:border-red-100">
+                      <button
+                        onClick={() => handleDelete(c.id, c.campusName)}
+                        title="Xóa cơ sở"
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-all border border-transparent hover:border-rose-200"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -172,10 +247,10 @@ export function CampusManagerClient({ initialCampuses, gdcsUsers = [] }: any) {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-2 p-2 text-center border border-slate-200">
-                    <div className="flex flex-col items-center gap-3 text-slate-400">
-                      <Building2 className="w-12 h-12 opacity-20" />
-                      <p className="font-bold">Không tìm thấy cơ sở nào phù hợp</p>
+                  <td colSpan={6} className="px-4 py-10 text-center">
+                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                      <Building2 className="w-10 h-10 opacity-30" />
+                      <p className="text-sm font-medium">Không tìm thấy cơ sở nào phù hợp</p>
                     </div>
                   </td>
                 </tr>

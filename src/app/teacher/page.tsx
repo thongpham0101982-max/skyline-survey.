@@ -19,6 +19,8 @@ import {
   Search,
   CalendarDays,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   RefreshCw,
   BarChart3,
   Clock,
@@ -66,6 +68,25 @@ interface MetricData {
     positions: string | null
     mainSubject: string | null
   } | null
+  entranceAssignments?: {
+    hasGeneral: boolean
+    hasPreschool: boolean
+    isPreschoolTeacher: boolean
+    generalStudentCount: number
+    preschoolStudentCount: number
+    totalStudentCount: number
+    batches: Array<{
+      key: string
+      periodId: string
+      periodName: string
+      batchId: string | null
+      batchName: string
+      isPreschool: boolean
+      studentCount: number
+      subjects: string[]
+      grades: string[]
+    }>
+  }
 }
 
 interface ActionCard {
@@ -88,6 +109,8 @@ export default function TeacherDashboard() {
   const [refreshing, setRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState<"ALL" | "GVCN" | "GVBM" | "UTILITIES">("ALL")
   const [searchQuery, setSearchQuery] = useState<string>("")
+  const [selectedEntrancePeriod, setSelectedEntrancePeriod] = useState<string>("ALL")
+  const [isEntranceExpanded, setIsEntranceExpanded] = useState<boolean>(false)
   const [viewMode, setViewMode] = useState<"TEACHER" | "ADMIN">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("teacher_view_mode")
@@ -205,123 +228,202 @@ export default function TeacherDashboard() {
     remedialStudentsCount: 0
   }
 
-  const actionItems: ActionCard[] = useMemo(() => [
-    {
-      id: "gvcn-classes",
-      groupId: "GVCN",
-      groupName: "Công tác GVCN",
-      title: "Lớp Chủ nhiệm",
-      desc: "Theo dõi sĩ số, danh sách học sinh, ban cán sự và báo cáo chuyên cần lớp phụ trách.",
-      href: "/teacher/classes",
-      icon: Users,
-      badgeText: `${finalMetrics.totalClasses} lớp`,
-      badgeVariant: "skyline",
-      metricValue: finalMetrics.totalClasses
-    },
-    {
-      id: "gvcn-records",
-      groupId: "GVCN",
-      groupName: "Công tác GVCN",
-      title: "Hồ sơ học tập HS",
-      desc: "Tra cứu toàn diện thông tin học sinh, lịch sử học tập, khen thưởng và xuất phiếu.",
-      href: "/teacher/ho-so-hoc-sinh",
-      icon: BookOpen,
-      badgeText: `${finalMetrics.totalStudents} HS`,
-      badgeVariant: "default",
-      metricValue: finalMetrics.totalStudents
-    },
-    {
-      id: "gvcn-remedial",
-      groupId: "GVCN",
-      groupName: "Công tác GVCN",
-      title: "Phụ đạo – Bồi dưỡng",
-      desc: "Lập danh sách học sinh cần phụ đạo văn hóa, hỗ trợ tâm lý và theo dõi tiến độ.",
-      href: "/teacher/ho-tro-hoc-tap",
-      icon: Heart,
-      badgeText: `${finalMetrics.remedialStudentsCount || 0} cần hỗ trợ`,
-      badgeVariant: finalMetrics.remedialStudentsCount ? "accent" : "secondary",
-      metricValue: finalMetrics.remedialStudentsCount
-    },
-    {
-      id: "gvbm-grading",
-      groupId: "GVBM",
-      groupName: "Chuyên môn GVBM",
-      title: "Sổ điểm – CT Bộ",
-      desc: "Quản lý điểm và nhận xét theo chương trình Bộ GD&ĐT (thường xuyên, giữa kỳ, cuối kỳ).",
-      href: "/teacher/so-diem-nhan-xet",
-      icon: ClipboardCheck,
-      badgeText: "CT Bộ",
-      badgeVariant: "success"
-    },
-    {
-      id: "gvbm-observation",
-      groupId: "GVBM",
-      groupName: "Chuyên môn GVBM",
-      title: "Dự giờ & Phát triển chuyên môn",
-      desc: "Đăng ký tiết dạy thao giảng, lập phiếu đánh giá tiết dạy và xem tổng hợp góp ý chuyên môn.",
-      href: "/teacher/du-gio",
-      icon: Eye,
-      badgeText: `${finalMetrics.totalObservedLessons || 0} tiết`,
-      badgeVariant: "skyline",
-      metricValue: finalMetrics.totalObservedLessons
-    },
-    {
-      id: "gvbm-entrance",
-      groupId: "GVBM",
-      groupName: "Chuyên môn GVBM",
-      title: "Khảo sát đầu vào K-12",
-      desc: "Nhập điểm và nhận xét đánh giá năng lực học sinh mới đầu cấp phổ thông.",
-      href: "/teacher/input-assessments?type=general",
-      icon: Compass,
-      badgeText: "Đầu vào",
-      badgeVariant: "default"
-    },
-    {
-      id: "gvbm-experiential",
-      groupId: "GVBM",
-      groupName: "Chuyên môn GVBM",
-      title: "Sổ Hoạt động trải nghiệm",
-      desc: "Theo dõi, đánh giá hoạt động trải nghiệm và bài thu hoạch của học sinh.",
-      href: "/teacher/experiential-activities",
-      icon: GraduationCap,
-      badgeText: "Trải nghiệm",
-      badgeVariant: "accent"
-    },
-    {
-      id: "gvbm-assignments",
-      groupId: "GVBM",
-      groupName: "Chuyên môn GVBM",
-      title: "Phân công giảng dạy",
-      desc: "Tra cứu phân công chuyên môn, định mức tiết dạy và danh sách lớp được giao.",
-      href: "/teacher/phan-cong-giang-day",
-      icon: BookMarked,
-      badgeText: `${finalMetrics.totalAssignments} môn`,
-      badgeVariant: "secondary",
-      metricValue: finalMetrics.totalAssignments
-    },
-    {
-      id: "util-schedule",
-      groupId: "UTILITIES",
-      groupName: "Lịch & Tiện ích",
-      title: "Thời khóa biểu",
-      desc: "Xem lịch dạy theo tuần, vị trí phòng học, thời gian biểu từng tiết học trong ngày.",
-      href: "/teacher/thoi-khoa-bieu",
-      icon: CalendarDays,
-      badgeText: "TKB Tuần",
-      badgeVariant: "default"
-    },
-    {
-      id: "util-surveys",
-      groupId: "UTILITIES",
-      groupName: "Lịch & Tiện ích",
-      title: "Khảo sát Giáo viên",
-      desc: "Tham gia các phiếu khảo sát ý kiến định kỳ của Nhà trường dành cho giáo viên.",
-      href: "/teacher/surveys",
-      icon: FileText,
-      badgeText: "Khảo sát",
-      badgeVariant: "skyline"
+  const entranceBatches = useMemo(
+    () => finalMetrics.entranceAssignments?.batches || [],
+    [finalMetrics.entranceAssignments?.batches]
+  )
+
+  const entrancePeriodTabs = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; batchCount: number; studentCount: number }>()
+    for (const b of entranceBatches) {
+      const existing = map.get(b.periodId)
+      if (!existing) {
+        map.set(b.periodId, {
+          id: b.periodId,
+          name: b.periodName,
+          batchCount: 1,
+          studentCount: b.studentCount
+        })
+      } else {
+        existing.batchCount += 1
+        existing.studentCount += b.studentCount
+      }
     }
-  ], [finalMetrics])
+    return Array.from(map.values())
+  }, [entranceBatches])
+
+  const filteredEntranceBatches = useMemo(() => {
+    if (selectedEntrancePeriod === "ALL") return entranceBatches
+    const matched = entranceBatches.filter(b => b.periodId === selectedEntrancePeriod)
+    return matched.length > 0 ? matched : entranceBatches
+  }, [entranceBatches, selectedEntrancePeriod])
+
+  const INITIAL_VISIBLE_ENTRANCE_ROWS = 3
+  const visibleEntranceBatches = isEntranceExpanded
+    ? filteredEntranceBatches
+    : filteredEntranceBatches.slice(0, INITIAL_VISIBLE_ENTRANCE_ROWS)
+
+  const actionItems: ActionCard[] = useMemo(() => {
+    const ent = finalMetrics.entranceAssignments
+    const hasPre = Boolean(ent?.hasPreschool)
+    const hasGen = Boolean(ent?.hasGeneral)
+    const isPreRole = Boolean(ent?.isPreschoolTeacher)
+    const preBatches = (ent?.batches || []).filter(b => b.isPreschool)
+    const genBatches = (ent?.batches || []).filter(b => !b.isPreschool)
+    const latestPre = preBatches[0]
+    const latestGen = genBatches[0]
+
+    const buildPreschoolCard = (): ActionCard => ({
+      id: "gvbm-entrance-preschool",
+      groupId: "GVBM",
+      groupName: "Chuyên môn GVBM",
+      title: "Phỏng vấn định hướng Mầm non",
+      desc: latestPre
+        ? `Kỳ: ${latestPre.periodName} • Đợt: ${latestPre.batchName} • Số lượng: ${ent?.preschoolStudentCount || latestPre.studentCount || 0} HS khảo sát.`
+        : "Đánh giá trải nghiệm và phỏng vấn định hướng đầu vào bậc Mầm non theo phân công.",
+      href: latestPre
+        ? `/teacher/input-assessments?type=preschool&periodId=${latestPre.periodId}&batchId=${latestPre.batchId || "all"}`
+        : "/teacher/input-assessments?type=preschool",
+      icon: Compass,
+      badgeText: (ent?.preschoolStudentCount || 0) > 0 ? `${ent?.preschoolStudentCount} HS khảo sát` : "Mầm non",
+      badgeVariant: (ent?.preschoolStudentCount || 0) > 0 ? "accent" : "default",
+      metricValue: ent?.preschoolStudentCount || 0
+    })
+
+    const buildGeneralCard = (): ActionCard => ({
+      id: "gvbm-entrance-general",
+      groupId: "GVBM",
+      groupName: "Chuyên môn GVBM",
+      title: "Phỏng vấn định hướng Phổ thông",
+      desc: latestGen
+        ? `Kỳ: ${latestGen.periodName} • Đợt: ${latestGen.batchName} • Số lượng: ${ent?.generalStudentCount || latestGen.studentCount || 0} HS khảo sát.`
+        : "Nhập điểm, nhận xét và phỏng vấn định hướng học sinh mới bậc Phổ thông theo phân công.",
+      href: latestGen
+        ? `/teacher/input-assessments?type=general&periodId=${latestGen.periodId}&batchId=${latestGen.batchId || "all"}`
+        : "/teacher/input-assessments?type=general",
+      icon: Compass,
+      badgeText: (ent?.generalStudentCount || 0) > 0 ? `${ent?.generalStudentCount} HS khảo sát` : "Phổ thông",
+      badgeVariant: (ent?.generalStudentCount || 0) > 0 ? "accent" : "default",
+      metricValue: ent?.generalStudentCount || 0
+    })
+
+    const entranceCards: ActionCard[] = []
+    if (hasPre && hasGen) {
+      entranceCards.push(buildPreschoolCard(), buildGeneralCard())
+    } else if (hasPre || (isPreRole && !hasGen)) {
+      entranceCards.push(buildPreschoolCard())
+    } else {
+      entranceCards.push(buildGeneralCard())
+    }
+
+    return [
+      {
+        id: "gvcn-classes",
+        groupId: "GVCN",
+        groupName: "Công tác GVCN",
+        title: "Lớp Chủ nhiệm",
+        desc: "Theo dõi sĩ số, danh sách học sinh, ban cán sự và báo cáo chuyên cần lớp phụ trách.",
+        href: "/teacher/classes",
+        icon: Users,
+        badgeText: `${finalMetrics.totalClasses} lớp`,
+        badgeVariant: "skyline",
+        metricValue: finalMetrics.totalClasses
+      },
+      {
+        id: "gvcn-records",
+        groupId: "GVCN",
+        groupName: "Công tác GVCN",
+        title: "Hồ sơ học tập HS",
+        desc: "Tra cứu toàn diện thông tin học sinh, lịch sử học tập, khen thưởng và xuất phiếu.",
+        href: "/teacher/ho-so-hoc-sinh",
+        icon: BookOpen,
+        badgeText: `${finalMetrics.totalStudents} HS`,
+        badgeVariant: "default",
+        metricValue: finalMetrics.totalStudents
+      },
+      {
+        id: "gvcn-remedial",
+        groupId: "GVCN",
+        groupName: "Công tác GVCN",
+        title: "Phụ đạo – Bồi dưỡng",
+        desc: "Lập danh sách học sinh cần phụ đạo văn hóa, hỗ trợ tâm lý và theo dõi tiến độ.",
+        href: "/teacher/ho-tro-hoc-tap",
+        icon: Heart,
+        badgeText: `${finalMetrics.remedialStudentsCount || 0} cần hỗ trợ`,
+        badgeVariant: finalMetrics.remedialStudentsCount ? "accent" : "secondary",
+        metricValue: finalMetrics.remedialStudentsCount
+      },
+      {
+        id: "gvbm-grading",
+        groupId: "GVBM",
+        groupName: "Chuyên môn GVBM",
+        title: "Sổ điểm – CT Bộ",
+        desc: "Quản lý điểm và nhận xét theo chương trình Bộ GD&ĐT (thường xuyên, giữa kỳ, cuối kỳ).",
+        href: "/teacher/so-diem-nhan-xet",
+        icon: ClipboardCheck,
+        badgeText: "CT Bộ",
+        badgeVariant: "success"
+      },
+      {
+        id: "gvbm-observation",
+        groupId: "GVBM",
+        groupName: "Chuyên môn GVBM",
+        title: "Dự giờ & Phát triển chuyên môn",
+        desc: "Đăng ký tiết dạy thao giảng, lập phiếu đánh giá tiết dạy và xem tổng hợp góp ý chuyên môn.",
+        href: "/teacher/du-gio",
+        icon: Eye,
+        badgeText: `${finalMetrics.totalObservedLessons || 0} tiết`,
+        badgeVariant: "skyline",
+        metricValue: finalMetrics.totalObservedLessons
+      },
+      ...entranceCards,
+      {
+        id: "gvbm-experiential",
+        groupId: "GVBM",
+        groupName: "Chuyên môn GVBM",
+        title: "Sổ Hoạt động trải nghiệm",
+        desc: "Theo dõi, đánh giá hoạt động trải nghiệm và bài thu hoạch của học sinh.",
+        href: "/teacher/experiential-activities",
+        icon: GraduationCap,
+        badgeText: "Trải nghiệm",
+        badgeVariant: "accent"
+      },
+      {
+        id: "gvbm-assignments",
+        groupId: "GVBM",
+        groupName: "Chuyên môn GVBM",
+        title: "Phân công giảng dạy",
+        desc: "Tra cứu phân công chuyên môn, định mức tiết dạy và danh sách lớp được giao.",
+        href: "/teacher/phan-cong-giang-day",
+        icon: BookMarked,
+        badgeText: `${finalMetrics.totalAssignments} môn`,
+        badgeVariant: "secondary",
+        metricValue: finalMetrics.totalAssignments
+      },
+      {
+        id: "util-schedule",
+        groupId: "UTILITIES",
+        groupName: "Lịch & Tiện ích",
+        title: "Thời khóa biểu",
+        desc: "Xem lịch dạy theo tuần, vị trí phòng học, thời gian biểu từng tiết học trong ngày.",
+        href: "/teacher/thoi-khoa-bieu",
+        icon: CalendarDays,
+        badgeText: "TKB Tuần",
+        badgeVariant: "default"
+      },
+      {
+        id: "util-surveys",
+        groupId: "UTILITIES",
+        groupName: "Lịch & Tiện ích",
+        title: "Khảo sát Giáo viên",
+        desc: "Tham gia các phiếu khảo sát ý kiến định kỳ của Nhà trường dành cho giáo viên.",
+        href: "/teacher/surveys",
+        icon: FileText,
+        badgeText: "Khảo sát",
+        badgeVariant: "skyline"
+      }
+    ]
+  }, [finalMetrics])
 
   const managerActionItems: ActionCard[] = useMemo(() => [
     {
@@ -347,17 +449,28 @@ export default function TeacherDashboard() {
       badgeText: "Báo cáo CLGD",
       badgeVariant: "accent"
     },
-    {
-      id: "admin-weekly-report",
-      groupId: "GVBM",
-      groupName: "Điều hành Chuyên môn",
-      title: "Báo cáo Tuần & Sinh hoạt Tổ",
-      desc: "Ghi nhận nội dung sinh hoạt chuyên môn, kế hoạch tuần và đánh giá hoạt động sư phạm.",
-      href: "/teacher/bao-cao-tuan",
-      icon: ClipboardCheck,
-      badgeText: "Báo cáo tuần",
-      badgeVariant: "default"
-    },
+    ...(
+      (
+        String((session?.user as any)?.role || "").toUpperCase().includes("KT") ||
+        String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("KT") ||
+        String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("ĐBCL") ||
+        String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("DBCL")
+      )
+        ? [
+            {
+              id: "admin-weekly-report",
+              groupId: "GVBM" as const,
+              groupName: "Điều hành Chuyên môn",
+              title: "Báo cáo Tuần Ban KT&ĐBCL",
+              desc: "Lập báo cáo công việc tuần, theo dõi hiệu suất và xác nhận tiến độ chuyên biệt của Ban KT&ĐBCL.",
+              href: "/admin/weekly-reports",
+              icon: ClipboardCheck,
+              badgeText: "Ban KT&ĐBCL",
+              badgeVariant: "default" as const,
+            },
+          ]
+        : []
+    ),
     {
       id: "admin-assignments",
       groupId: "GVBM",
@@ -438,13 +551,16 @@ export default function TeacherDashboard() {
         { id: "UTILITIES" as const, label: "Tiện ích & Khảo sát" }
       ]
     }
+    const gvcnCount = actionItems.filter(i => i.groupId === "GVCN").length
+    const gvbmCount = actionItems.filter(i => i.groupId === "GVBM").length
+    const utilCount = actionItems.filter(i => i.groupId === "UTILITIES").length
     return [
       { id: "ALL" as const, label: `Tất cả (${actionItems.length})` },
-      { id: "GVCN" as const, label: "Công tác GVCN (3)" },
-      { id: "GVBM" as const, label: "Chuyên môn GVBM (5)" },
-      { id: "UTILITIES" as const, label: "Lịch & Tiện ích (2)" }
+      { id: "GVCN" as const, label: `Công tác GVCN (${gvcnCount})` },
+      { id: "GVBM" as const, label: `Chuyên môn GVBM (${gvbmCount})` },
+      { id: "UTILITIES" as const, label: `Lịch & Tiện ích (${utilCount})` }
     ]
-  }, [viewMode, managerActionItems.length, actionItems.length])
+  }, [viewMode, managerActionItems, actionItems])
 
   // Render cụm Controls: Cơ sở (Hill | Global | Hệ thống) và Chế độ (Quản lý | Cá nhân)
   const renderTopControls = (isHeaderSlot = false) => (
@@ -562,6 +678,172 @@ export default function TeacherDashboard() {
 
       {/* KHỐI GỌN: CÓ GÌ MỚI TRÊN SKY-LINE CONNECT? */}
       <SkylineConnectOverviewWidget />
+
+      {/* THÔNG BÁO PHÂN CÔNG PHỎNG VẤN ĐỊNH HƯỚNG — BẢNG SỔ CÁI THU GỌN (ACADEMIC LEDGER) */}
+      {entranceBatches.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 border-l-4 border-l-[#003B3A] shadow-2xs overflow-hidden">
+          {/* Header Strip gọn trên 1 hàng */}
+          <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="w-7 h-7 rounded-lg bg-[#003B3A] text-white flex items-center justify-center shrink-0">
+                <Compass className="w-3.5 h-3.5" />
+              </div>
+              <h3 className="text-sm font-bold text-[#003B3A]">
+                Thông báo phân công Phỏng vấn định hướng
+              </h3>
+              <div className="flex items-center gap-1.5 tabular-nums">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white text-slate-700 border border-slate-200">
+                  {entranceBatches.length} đợt
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#00A19A]/10 text-[#00736E] border border-[#00A19A]/25">
+                  {finalMetrics.entranceAssignments?.totalStudentCount || 0} HS khảo sát
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Segmented Filter theo Kỳ khảo sát (khi có >= 2 kỳ) */}
+              {entrancePeriodTabs.length > 1 && (
+                <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200/80 max-w-full overflow-x-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEntrancePeriod("ALL")}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer tabular-nums ${
+                      selectedEntrancePeriod === "ALL"
+                        ? "bg-white text-[#003B3A] shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Tất cả ({entranceBatches.length})
+                  </button>
+                  {entrancePeriodTabs.map((pt) => (
+                    <button
+                      key={pt.id}
+                      type="button"
+                      onClick={() => setSelectedEntrancePeriod(pt.id)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer tabular-nums ${
+                        selectedEntrancePeriod === pt.id
+                          ? "bg-white text-[#00736E] shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {pt.name} ({pt.batchCount})
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <Link
+                href={`/teacher/input-assessments?type=${finalMetrics.entranceAssignments?.hasPreschool && !finalMetrics.entranceAssignments?.hasGeneral ? "preschool" : "general"}`}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#00736E] hover:text-[#003B3A] bg-teal-50/70 hover:bg-teal-100/70 border border-teal-200/70 transition-colors whitespace-nowrap"
+              >
+                <span>Mở cổng khảo sát</span>
+                <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Bảng Sổ cái gọn gàng — Giới hạn chiều cao không rải tràn trang */}
+          <div className={isEntranceExpanded ? "max-h-[250px] overflow-y-auto overflow-x-auto" : "overflow-x-auto"}>
+            <table className="w-full text-left border-collapse tabular-nums">
+              <thead className="bg-[#003B3A] sticky top-0 z-10 border-b text-[11px] font-semibold text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-2 pl-4 pr-3 whitespace-nowrap font-semibold">Phân hệ & Kỳ khảo sát</th>
+                  <th className="py-2 px-3 font-semibold">Đợt khảo sát</th>
+                  <th className="py-2 px-3 hidden md:table-cell font-semibold">Nội dung & Khối</th>
+                  <th className="py-2 px-3 text-right whitespace-nowrap font-semibold">Số lượng</th>
+                  <th className="py-2 pl-3 pr-4 text-right whitespace-nowrap font-semibold">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E2E8F0] text-xs">
+                {visibleEntranceBatches.map((b) => {
+                  const detailStr = [
+                    b.subjects.length > 0 ? b.subjects.join(", ") : "",
+                    b.grades.length > 0 ? `${b.isPreschool ? "Nhóm" : "Khối"} ${b.grades.join(", ")}` : ""
+                  ].filter(Boolean).join(" • ")
+
+                  return (
+                    <tr key={b.key} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-2 pl-4 pr-3 whitespace-nowrap align-middle">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                            b.isPreschool
+                              ? "bg-amber-50 text-amber-800 border-amber-200"
+                              : "bg-teal-50 text-[#00736E] border-teal-200"
+                          }`}>
+                            {b.isPreschool ? "Mầm non" : "Phổ thông"}
+                          </span>
+                          <span className="font-semibold text-[#003B3A]">{b.periodName}</span>
+                        </div>
+                      </td>
+
+                      <td className="py-2 px-3 align-middle max-w-[220px] sm:max-w-[320px] lg:max-w-[400px]">
+                        <div className="font-semibold text-slate-800 truncate" title={b.batchName}>
+                          {b.batchName}
+                        </div>
+                        {detailStr && (
+                          <div className="text-[11px] text-slate-500 truncate md:hidden" title={detailStr}>
+                            {detailStr}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-2 px-3 align-middle hidden md:table-cell max-w-[240px]">
+                        <div className="text-slate-600 truncate" title={detailStr}>
+                          {detailStr || "—"}
+                        </div>
+                      </td>
+
+                      <td className="py-2 px-3 text-right whitespace-nowrap align-middle">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                          {b.studentCount} HS
+                        </span>
+                      </td>
+
+                      <td className="py-2 pl-3 pr-4 text-right whitespace-nowrap align-middle">
+                        <Link
+                          href={`/teacher/input-assessments?type=${b.isPreschool ? "preschool" : "general"}&periodId=${b.periodId}&batchId=${b.batchId || "all"}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#003B3A] hover:bg-[#005854] text-white transition-colors"
+                        >
+                          <span>Vào khảo sát</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </Link>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer thu gọn / mở rộng khi có nhiều hơn 3 đợt */}
+          {filteredEntranceBatches.length > INITIAL_VISIBLE_ENTRANCE_ROWS && (
+            <div className="px-4 py-2 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+              <span className="text-slate-500 tabular-nums">
+                Hiển thị <strong className="font-semibold text-slate-700">{visibleEntranceBatches.length}</strong> / <strong className="font-semibold text-slate-700">{filteredEntranceBatches.length}</strong> đợt khảo sát
+                {isEntranceExpanded ? " (cuộn trong khung để xem)" : " mới nhất"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsEntranceExpanded(prev => !prev)}
+                className="inline-flex items-center gap-1 font-semibold text-[#00736E] hover:text-[#003B3A] transition-colors cursor-pointer tabular-nums"
+              >
+                {isEntranceExpanded ? (
+                  <>
+                    <span>Thu gọn danh sách</span>
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </>
+                ) : (
+                  <>
+                    <span>Xem thêm {filteredEntranceBatches.length - INITIAL_VISIBLE_ENTRANCE_ROWS} đợt khác</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 2. BANNER ĐẾM NGƯỢC HẠN CHỐT CHUẨN HỆ THỐNG */}
       <DeadlineCountdownBanner
@@ -856,25 +1138,30 @@ export default function TeacherDashboard() {
                         </Link>
                       </div>
 
-                      {/* Row 3: Báo cáo Tuần & Sinh hoạt Tổ */}
-                      <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <span className="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                            3
-                          </span>
-                          <div>
-                            <div className="font-bold text-slate-800 text-sm">Báo Cáo Tuần & Sinh Hoạt Tổ</div>
-                            <div className="text-xs text-slate-400">Cập nhật biên bản sinh hoạt tổ và kế hoạch tuần</div>
+                      {/* Row 3: Báo cáo Tuần — Chỉ hiển thị riêng cho BP/Tổ chuyên môn Ban KT&ĐBCL */}
+                      {(String((session?.user as any)?.role || "").toUpperCase().includes("KT") ||
+                        String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("KT") ||
+                        String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("ĐBCL") ||
+                        String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("DBCL")) && (
+                        <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <span className="w-7 h-7 rounded-xl bg-[#003B3A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                              3
+                            </span>
+                            <div>
+                              <div className="font-bold text-slate-800 text-sm">Báo cáo Tuần Ban KT&ĐBCL</div>
+                              <div className="text-xs text-slate-400">Quản trị tiến độ & chất lượng công việc chuyên biệt Ban KT&ĐBCL</div>
+                            </div>
                           </div>
+                          <Link
+                            href="/admin/weekly-reports"
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#F0FDFA] hover:bg-teal-100 text-[#00736E] border border-teal-200 transition-all shadow-2xs active:scale-95 min-h-[40px] sm:min-h-[36px]"
+                          >
+                            <ClipboardCheck className="w-4 h-4 text-[#00A19A]" />
+                            <span>Mở Báo cáo Tuần</span>
+                          </Link>
                         </div>
-                        <Link
-                          href="/teacher/bao-cao-tuan"
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-all shadow-2xs active:scale-95 min-h-[40px] sm:min-h-[36px]"
-                        >
-                          <ClipboardCheck className="w-4 h-4 text-amber-600" />
-                          <span>Mở Báo cáo Tuần</span>
-                        </Link>
-                      </div>
+                      )}
                     </>
                   ) : (
                     <>
@@ -1185,12 +1472,16 @@ export default function TeacherDashboard() {
                         {item.title}
                       </h4>
                       {item.badgeText && (
-                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums ${
+                          item.id.startsWith("gvbm-entrance") && Number(item.metricValue) > 0
+                            ? "bg-amber-50 text-amber-800 border border-amber-200"
+                            : "text-slate-500 bg-slate-100"
+                        }`}>
                           {item.badgeText}
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
+                    <p className="text-[11px] text-slate-500 font-normal line-clamp-2 mt-0.5 leading-snug">
                       {item.desc}
                     </p>
                   </div>
@@ -1221,13 +1512,18 @@ export default function TeacherDashboard() {
               <BarChart3 className="w-5 h-5 text-[#00A19A]" />
               <span className="text-[10px] font-bold">Báo cáo CL</span>
             </Link>
-            <Link
-              href="/teacher/bao-cao-tuan"
-              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
-            >
-              <ClipboardCheck className="w-5 h-5 text-emerald-500" />
-              <span className="text-[10px] font-bold">Báo cáo tuần</span>
-            </Link>
+            {(String((session?.user as any)?.role || "").toUpperCase().includes("KT") ||
+              String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("KT") ||
+              String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("ĐBCL") ||
+              String(finalMetrics.managedDepartmentName || "").toUpperCase().includes("DBCL")) && (
+              <Link
+                href="/admin/weekly-reports"
+                className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+              >
+                <ClipboardCheck className="w-5 h-5 text-emerald-500" />
+                <span className="text-[10px] font-bold">BC Tuần KT</span>
+              </Link>
+            )}
             <Link
               href="/teacher/phan-cong-giang-day"
               className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"

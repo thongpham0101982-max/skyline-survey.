@@ -444,20 +444,20 @@ export default function XepLoaiClient() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
-              <tr>
-                <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                <th className="py-3.5 px-4">Mã HS</th>
-                <th className="py-3.5 px-4">Họ và tên</th>
-                <th className="py-3.5 px-4">Lớp & Cơ sở</th>
-                <th className="py-3.5 px-4 text-center">Điểm TB (GPA)</th>
-                <th className="py-3.5 px-4 text-center">Xếp loại học lực</th>
-                <th className="py-3.5 px-4 text-center">Rèn luyện</th>
-                <th className="py-3.5 px-4 text-center">Nghỉ học</th>
-                <th className="py-3.5 px-4">Đánh giá chung</th>
+            <thead className="bg-[#003B3A] border-b text-xs font-semibold text-white border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-3.5 px-4 w-12 text-center font-semibold">STT</th>
+                <th className="py-3.5 px-4 font-semibold">Mã HS</th>
+                <th className="py-3.5 px-4 font-semibold">Họ và tên</th>
+                <th className="py-3.5 px-4 font-semibold">Lớp & Cơ sở</th>
+                <th className="py-3.5 px-4 text-center font-semibold">Điểm TB (GPA)</th>
+                <th className="py-3.5 px-4 text-center font-semibold">Xếp loại học lực</th>
+                <th className="py-3.5 px-4 text-center font-semibold">Rèn luyện</th>
+                <th className="py-3.5 px-4 text-center font-semibold">Nghỉ học</th>
+                <th className="py-3.5 px-4 font-semibold">Đánh giá chung</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {loading ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-slate-500">

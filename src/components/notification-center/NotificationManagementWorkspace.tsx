@@ -884,16 +884,16 @@ export function NotificationManagementWorkspace({
 
                     <div className="max-h-60 overflow-y-auto rounded-2xl border border-slate-200">
                       <table className="w-full text-left border-collapse text-xs">
-                        <thead className="bg-slate-50 text-slate-500 font-extrabold sticky top-0">
-                          <tr>
-                            <th className="p-2.5">Người nhận</th>
-                            <th className="p-2.5">Học sinh / Lớp</th>
-                            <th className="p-2.5 text-center">1. Gửi</th>
-                            <th className="p-2.5 text-center">2. Đã đọc</th>
-                            <th className="p-2.5 text-center">3. Xác nhận</th>
+                        <thead className="bg-[#003B3A] sticky top-0 text-white border-b border-[#003B3A]">
+                          <tr className="text-[11px] font-semibold whitespace-nowrap">
+                            <th className="p-2.5 font-semibold">Người nhận</th>
+                            <th className="p-2.5 font-semibold">Học sinh / Lớp</th>
+                            <th className="p-2.5 text-center font-semibold">1. Gửi</th>
+                            <th className="p-2.5 text-center font-semibold">2. Đã đọc</th>
+                            <th className="p-2.5 text-center font-semibold">3. Xác nhận</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#E2E8F0]">
                           {(selectedDetail.recipients || []).slice(0, 60).map((r: any) => (
                             <tr key={r.id} className="hover:bg-slate-50/80">
                               <td className="p-2.5 font-bold text-slate-800">

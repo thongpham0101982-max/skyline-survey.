@@ -327,21 +327,21 @@ export function ScatterPlotClient({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase text-[10px]">
-                  <th className="py-2.5 px-3">Lớp học</th>
-                  <th className="py-2.5 px-3">Cơ sở</th>
-                  <th className="py-2.5 px-3">Giáo viên phụ trách</th>
-                  <th className="py-2.5 px-2 text-center">Sỹ số</th>
-                  <th className="py-2.5 px-2 text-center">TB Gốc (X)</th>
-                  <th className="py-2.5 px-2 text-center">TB Hiện tại (Y)</th>
-                  <th className="py-2.5 px-2 text-center">Độ lệch chuẩn (σ)</th>
-                  <th className="py-2.5 px-2 text-center">Biến thiên (CV%)</th>
-                  <th className="py-2.5 px-2 text-center">Tỷ lệ Đạt chuẩn</th>
-                  <th className="py-2.5 px-2 text-center">Số HS &lt; 5đ</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[10px] font-semibold">
+                  <th className="py-2.5 px-3 font-semibold">Lớp học</th>
+                  <th className="py-2.5 px-3 font-semibold">Cơ sở</th>
+                  <th className="py-2.5 px-3 font-semibold">Giáo viên phụ trách</th>
+                  <th className="py-2.5 px-2 text-center font-semibold">Sỹ số</th>
+                  <th className="py-2.5 px-2 text-center font-semibold">TB Gốc (X)</th>
+                  <th className="py-2.5 px-2 text-center font-semibold">TB Hiện tại (Y)</th>
+                  <th className="py-2.5 px-2 text-center font-semibold">Độ lệch chuẩn (σ)</th>
+                  <th className="py-2.5 px-2 text-center font-semibold">Biến thiên (CV%)</th>
+                  <th className="py-2.5 px-2 text-center font-semibold">Tỷ lệ Đạt chuẩn</th>
+                  <th className="py-2.5 px-2 text-center font-semibold">Số HS &lt; 5đ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {scatterData.classesAggregated.map(cls => (
                   <tr key={cls.classId} className="hover:bg-slate-50/80">
                     <td className="py-2.5 px-3 font-black text-teal-900">{cls.className}</td>

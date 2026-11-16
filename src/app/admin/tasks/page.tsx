@@ -225,9 +225,18 @@ export default async function TasksPage() {
     }),
     prisma.campus
       .findMany({
-        select: { id: true, name: true, code: true },
-        orderBy: { name: "asc" },
+        select: { id: true, campusName: true, campusCode: true },
+        orderBy: { campusName: "asc" },
       })
+      .then(list =>
+        list.map(c => ({
+          id: c.id,
+          name: c.campusName,
+          code: c.campusCode,
+          campusName: c.campusName,
+          campusCode: c.campusCode,
+        }))
+      )
       .catch(() => []),
     prisma.qualityImprovementAction
       .findMany({
@@ -235,7 +244,7 @@ export default async function TasksPage() {
         take: 100,
       })
       .catch(() => []),
-    inspectConnectedSourceModules().catch(() => []),
+    inspectConnectedSourceModules({}).catch(() => []),
     getRecentQaReminders(40).catch(() => []),
   ])
 

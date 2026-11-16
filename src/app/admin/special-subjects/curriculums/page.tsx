@@ -10,6 +10,8 @@ import {
   Search, 
   Sparkles, 
   ChevronRight, 
+  ChevronDown,
+  ChevronUp,
   Award, 
   RefreshCcw,
   FileText,
@@ -33,6 +35,7 @@ export default function SpecialSubjectsCurriculumsPage() {
   const [loading, setLoading] = useState(true);
   const [curriculums, setCurriculums] = useState<any[]>([]);
   const [tc01sMapping, setTc01sMapping] = useState<any | null>(null);
+  const [showReconciliationPanel, setShowReconciliationPanel] = useState(false);
   const [showSourceMappingTable, setShowSourceMappingTable] = useState(false);
   const [selectedCurriculumId, setSelectedCurriculumId] = useState<string>("");
   const [activeGrade, setActiveGrade] = useState("1");
@@ -319,6 +322,17 @@ export default function SpecialSubjectsCurriculumsPage() {
               <span className="text-[10px] px-2 py-0.5 bg-teal-100/80 text-teal-800 rounded font-semibold tabular-nums">
                 {allLessons.length} bài học • {gradeConfig.periodMinutes > 0 ? `${gradeConfig.periodMinutes} phút/tiết` : "Chưa cấu hình thời lượng / tuần / học kỳ"}
               </span>
+              {activeCurriculum?.subject?.code === "FIN_EDU" && activeGrade === "1" && tc01sMapping && (
+                <button
+                  onClick={() => setShowReconciliationPanel(prev => !prev)}
+                  className="text-[10px] px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 rounded font-semibold inline-flex items-center gap-1 transition-all"
+                  title="Bật/tắt bảng đối chiếu chuẩn hóa mã nguồn và danh sách cần rà soát chuyên môn"
+                >
+                  <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                  <span>{showReconciliationPanel ? "Ẩn đối chiếu mã nguồn" : "Đối chiếu mã nguồn & rà soát"}</span>
+                  {showReconciliationPanel ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+              )}
             </div>
             <p className="text-xs text-slate-700 leading-relaxed max-w-4xl">
               {gradeConfig.overallGoal || `Chương trình môn ${activeCurriculum?.subject?.name} khối ${activeGrade} rèn luyện kiến thức, kỹ năng và thái độ theo chuẩn năng lực.`}
@@ -334,8 +348,8 @@ export default function SpecialSubjectsCurriculumsPage() {
         </div>
       )}
 
-      {/* TC01S Source Code Normalization & Anomaly Reconciliation Panel (Grade 1 FIN_EDU) */}
-      {activeCurriculum?.subject?.code === "FIN_EDU" && activeGrade === "1" && tc01sMapping && (
+      {/* TC01S Source Code Normalization & Anomaly Reconciliation Panel (Grade 1 FIN_EDU - Collapsed by default) */}
+      {activeCurriculum?.subject?.code === "FIN_EDU" && activeGrade === "1" && tc01sMapping && showReconciliationPanel && (
         <div className="bg-white rounded-xl p-4 border-l-4 border-[#003B3A] border border-slate-200/90 shadow-2xs space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -347,12 +361,21 @@ export default function SpecialSubjectsCurriculumsPage() {
                 Tổng cộng: <strong>{tc01sMapping.summary?.topicsCount} chủ đề</strong> • <strong>{tc01sMapping.summary?.lessonsCount} bài học</strong> • <strong>{tc01sMapping.summary?.criteriaCount} tiêu chuẩn</strong> (Hiểu: {tc01sMapping.summary?.competencyCounts?.["Hiểu"]}, Biết: {tc01sMapping.summary?.competencyCounts?.["Biết"]}, Vận dụng: {tc01sMapping.summary?.competencyCounts?.["Vận dụng"]}). {tc01sMapping.durationNote}
               </p>
             </div>
-            <button
-              onClick={() => setShowSourceMappingTable(prev => !prev)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition-all"
-            >
-              {showSourceMappingTable ? "Ẩn bảng ánh xạ 46 tiêu chuẩn nguồn" : "Xem bảng ánh xạ 46 tiêu chuẩn nguồn → ID hệ thống"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSourceMappingTable(prev => !prev)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition-all"
+              >
+                {showSourceMappingTable ? "Ẩn bảng ánh xạ 46 tiêu chuẩn nguồn" : "Xem bảng ánh xạ 46 tiêu chuẩn nguồn → ID hệ thống"}
+              </button>
+              <button
+                onClick={() => setShowReconciliationPanel(false)}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all inline-flex items-center gap-1"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+                <span>Thu gọn</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
@@ -390,17 +413,17 @@ export default function SpecialSubjectsCurriculumsPage() {
           {showSourceMappingTable && (
             <div className="overflow-x-auto max-h-80 overflow-y-auto border border-slate-200 rounded-xl mt-2">
               <table className="w-full text-left border-collapse text-[11px] tabular-nums">
-                <thead className="sticky top-0 bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                  <tr>
-                    <th className="py-2 px-2.5 w-14 text-center">Dòng Excel</th>
-                    <th className="py-2 px-2.5">Chủ đề nguồn & Mã cột P</th>
-                    <th className="py-2 px-2.5">Bài học nguồn & Mã cột Q</th>
-                    <th className="py-2 px-2.5">Mã tiêu chuẩn nguồn</th>
-                    <th className="py-2 px-2.5 text-center">Mức / Năng lực nguồn</th>
-                    <th className="py-2 px-2.5">Ánh xạ ID hệ thống SSM</th>
+                <thead className="bg-[#003B3A] sticky top-0 border-b text-white border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-2 px-2.5 w-14 text-center font-semibold">Dòng Excel</th>
+                    <th className="py-2 px-2.5 font-semibold">Chủ đề nguồn & Mã cột P</th>
+                    <th className="py-2 px-2.5 font-semibold">Bài học nguồn & Mã cột Q</th>
+                    <th className="py-2 px-2.5 font-semibold">Mã tiêu chuẩn nguồn</th>
+                    <th className="py-2 px-2.5 text-center font-semibold">Mức / Năng lực nguồn</th>
+                    <th className="py-2 px-2.5 font-semibold">Ánh xạ ID hệ thống SSM</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {(tc01sMapping.records || []).map((rec: any) => (
                     <tr key={rec.excelRow} className={rec.hasLevelCompetencyMismatch ? "bg-amber-50/70" : "hover:bg-slate-50"}>
                       <td className="py-1.5 px-2.5 text-center font-mono font-bold text-slate-600">{rec.excelRow}</td>
@@ -458,17 +481,17 @@ export default function SpecialSubjectsCurriculumsPage() {
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs tabular-nums">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-600">
-                <th className="py-2.5 px-3 w-14 text-center">{gradeConfig?.periodMinutes > 0 ? "Tiết" : "Bài"}</th>
-                <th className="py-2.5 px-3.5 w-44">Chủ đề</th>
-                <th className="py-2.5 px-3.5 w-52">Tên bài học</th>
-                <th className="py-2.5 px-3.5 w-40 text-center">Tiêu chuẩn năng lực</th>
-                <th className="py-2.5 px-3.5">Mục tiêu & Yêu cầu cần đạt</th>
-                <th className="py-2.5 px-3 text-center w-20">Chi tiết</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-2.5 px-3 w-14 text-center font-semibold">{gradeConfig?.periodMinutes > 0 ? "Tiết" : "Bài"}</th>
+                <th className="py-2.5 px-3.5 w-44 font-semibold">Chủ đề</th>
+                <th className="py-2.5 px-3.5 w-52 font-semibold">Tên bài học</th>
+                <th className="py-2.5 px-3.5 w-40 text-center font-semibold">Tiêu chuẩn năng lực</th>
+                <th className="py-2.5 px-3.5 font-semibold">Mục tiêu & Yêu cầu cần đạt</th>
+                <th className="py-2.5 px-3 text-center w-20 font-semibold">Chi tiết</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {filteredLessons.map((les: any) => {
                 const isProject = les.isProject;
                 const criteria = les.criteria || [];
@@ -751,18 +774,18 @@ export default function SpecialSubjectsCurriculumsPage() {
 
                   <div className="border border-slate-200 rounded-xl overflow-hidden">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 text-[11px] font-bold text-slate-600 uppercase">
-                        <tr>
-                          <th className="py-2 px-3">Chọn</th>
-                          <th className="py-2 px-3">Sheet</th>
-                          <th className="py-2 px-3 text-center">Khối</th>
-                          <th className="py-2 px-3 text-center">Chủ đề</th>
-                          <th className="py-2 px-3 text-center">Bài học</th>
-                          <th className="py-2 px-3 text-center">Tiêu chuẩn</th>
-                          <th className="py-2 px-3">Trạng thái kiểm tra</th>
+                      <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="py-2 px-3 font-semibold">Chọn</th>
+                          <th className="py-2 px-3 font-semibold">Sheet</th>
+                          <th className="py-2 px-3 text-center font-semibold">Khối</th>
+                          <th className="py-2 px-3 text-center font-semibold">Chủ đề</th>
+                          <th className="py-2 px-3 text-center font-semibold">Bài học</th>
+                          <th className="py-2 px-3 text-center font-semibold">Tiêu chuẩn</th>
+                          <th className="py-2 px-3 font-semibold">Trạng thái kiểm tra</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {(previewData.sheets || []).map((sheet: any) => {
                           const isSelected = importSelectedGrades.includes(sheet.grade);
                           return (
@@ -852,18 +875,18 @@ export default function SpecialSubjectsCurriculumsPage() {
 
                         <div className="max-h-60 overflow-y-auto border border-amber-200/90 rounded-lg bg-white">
                           <table className="w-full text-left text-xs">
-                            <thead className="sticky top-0 bg-amber-100/90 backdrop-blur-xs text-[10px] font-bold text-amber-950 uppercase border-b border-amber-200">
-                              <tr>
-                                <th className="py-2 px-2.5 text-center w-10">STT</th>
-                                <th className="py-2 px-3 w-36">Mã tiêu chuẩn</th>
-                                <th className="py-2 px-2 text-center w-16">Mức</th>
-                                <th className="py-2 px-3 w-28 text-center">Phân loại cũ</th>
-                                <th className="py-2 px-1 text-center w-6"></th>
-                                <th className="py-2 px-3 w-28 text-center">Phân loại mới</th>
-                                <th className="py-2 px-3">Mô tả tiêu chuẩn</th>
+                            <thead className="sticky top-0 z-10 bg-[#003B3A] text-white border-b border-[#003B3A]">
+                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                <th className="py-2 px-2.5 text-center w-10 font-semibold">STT</th>
+                                <th className="py-2 px-3 w-36 font-semibold">Mã tiêu chuẩn</th>
+                                <th className="py-2 px-2 text-center w-16 font-semibold">Mức</th>
+                                <th className="py-2 px-3 w-28 text-center font-semibold">Phân loại cũ</th>
+                                <th className="py-2 px-1 text-center w-6 font-semibold"></th>
+                                <th className="py-2 px-3 w-28 text-center font-semibold">Phân loại mới</th>
+                                <th className="py-2 px-3 font-semibold">Mô tả tiêu chuẩn</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 text-[11px]">
+                            <tbody className="divide-y divide-[#E2E8F0] text-[11px]">
                               {sheet.diffSummary.changedCriteria.map((item: any, idx: number) => {
                                 const oldBadge = item.oldCompetency === "Hiểu" ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                   : item.oldCompetency === "Biết" ? "bg-blue-50 text-blue-800 border-blue-200"

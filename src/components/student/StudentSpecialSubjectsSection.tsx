@@ -217,16 +217,16 @@ export function StudentSpecialSubjectsSection({
       ) : (
         <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50 text-[10px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
-              <tr>
-                <th className="py-2.5 px-3 w-[18%]">Môn học</th>
-                <th className="py-2.5 px-3 w-[22%]">Chủ đề</th>
-                <th className="py-2.5 px-3 w-[28%]">Bài học</th>
-                <th className="py-2.5 px-2 text-center w-[12%]">Kết quả bài</th>
-                <th className="py-2.5 px-3 w-[20%]">Nhận xét của giáo viên</th>
+            <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-2.5 px-3 w-[18%] font-semibold">Môn học</th>
+                <th className="py-2.5 px-3 w-[22%] font-semibold">Chủ đề</th>
+                <th className="py-2.5 px-3 w-[28%] font-semibold">Bài học</th>
+                <th className="py-2.5 px-2 text-center w-[12%] font-semibold">Kết quả bài</th>
+                <th className="py-2.5 px-3 w-[20%] font-semibold">Nhận xét của giáo viên</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+            <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
               {portfolio.map((sub) => {
                 const { Icon, iconBg } = getSubjectVisual(sub.code);
                 const meta = SPECIAL_SUBJECTS_CATALOG_META[sub.code];

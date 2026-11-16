@@ -777,23 +777,23 @@ export function DetailedStatementView({
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-200">
-                <th className="py-2.5 px-3 w-10 text-center">STT</th>
-                <th className="py-2.5 px-3 w-24">Ngày</th>
-                <th className="py-2.5 px-3 w-24">Danh mục</th>
-                <th className="py-2.5 px-3 w-16 text-center">Vai trò</th>
-                <th className="py-2.5 px-3 w-14 text-center">Số tiết</th>
-                <th className="py-2.5 px-3 min-w-[140px]">Môn & Lớp</th>
-                <th className="py-2.5 px-3 min-w-[180px]">Tên bài dạy / Chủ đề</th>
-                <th className="py-2.5 px-3 min-w-[150px]">Người tham gia</th>
-                <th className="py-2.5 px-3 w-24">Cơ sở</th>
-                <th className="py-2.5 px-3 w-20 text-center">Đánh giá</th>
-                <th className="py-2.5 px-3 w-20 text-center">Hợp lệ</th>
-                <th className="py-2.5 px-2 w-8 text-center"></th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-2.5 px-3 w-10 text-center font-semibold">STT</th>
+                <th className="py-2.5 px-3 w-24 font-semibold">Ngày</th>
+                <th className="py-2.5 px-3 w-24 font-semibold">Danh mục</th>
+                <th className="py-2.5 px-3 w-16 text-center font-semibold">Vai trò</th>
+                <th className="py-2.5 px-3 w-14 text-center font-semibold">Số tiết</th>
+                <th className="py-2.5 px-3 min-w-[140px] font-semibold">Môn & Lớp</th>
+                <th className="py-2.5 px-3 min-w-[180px] font-semibold">Tên bài dạy / Chủ đề</th>
+                <th className="py-2.5 px-3 min-w-[150px] font-semibold">Người tham gia</th>
+                <th className="py-2.5 px-3 w-24 font-semibold">Cơ sở</th>
+                <th className="py-2.5 px-3 w-20 text-center font-semibold">Đánh giá</th>
+                <th className="py-2.5 px-3 w-20 text-center font-semibold">Hợp lệ</th>
+                <th className="py-2.5 px-2 w-8 text-center font-semibold"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {ledgerRows.length === 0 ? (
                 <tr>
                   <td colSpan={12} className="py-10 text-center text-slate-400 font-medium">

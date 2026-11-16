@@ -300,19 +300,19 @@ export default function AlumniListPage() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-gray-50/75 border-b border-gray-200 text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
-                <tr>
-                  <th className="py-3.5 px-4">Họ và tên</th>
-                  <th className="py-3.5 px-3">Mã học sinh</th>
-                  <th className="py-3.5 px-3">Cơ sở / Khóa</th>
-                  <th className="py-3.5 px-3">Học tập / Nghề nghiệp hiện tại</th>
-                  <th className="py-3.5 px-3">Nơi sống</th>
-                  <th className="py-3.5 px-3 text-center">Xác minh</th>
-                  <th className="py-3.5 px-3 text-center">Mã QR</th>
-                  <th className="py-3.5 px-4 text-right">Thao tác</th>
+              <thead className="bg-[#003B3A] border-b font-semibold text-[11px] text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3.5 px-4 font-semibold">Họ và tên</th>
+                  <th className="py-3.5 px-3 font-semibold">Mã học sinh</th>
+                  <th className="py-3.5 px-3 font-semibold">Cơ sở / Khóa</th>
+                  <th className="py-3.5 px-3 font-semibold">Học tập / Nghề nghiệp hiện tại</th>
+                  <th className="py-3.5 px-3 font-semibold">Nơi sống</th>
+                  <th className="py-3.5 px-3 text-center font-semibold">Xác minh</th>
+                  <th className="py-3.5 px-3 text-center font-semibold">Mã QR</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {loading ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-gray-400">

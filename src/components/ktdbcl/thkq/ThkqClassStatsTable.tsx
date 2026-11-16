@@ -103,13 +103,13 @@ export function ThkqClassStatsTable({ classStats, onSelectClass }: Props) {
       {/* Bảng dữ liệu */}
       <div className="overflow-x-auto rounded-xl border border-slate-200 mt-4 max-h-[550px]">
         <table className="w-full text-left border-collapse text-xs">
-          <thead className="bg-slate-100/95 sticky top-0 z-20 backdrop-blur-xs">
-            <tr className="divide-x divide-slate-200">
-              <th className="py-2.5 px-3 font-bold text-slate-700">Lớp</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Khối</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Cơ sở</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">Môn học</th>
-              <th className="py-2.5 px-3 font-bold text-slate-700">GVCN</th>
+          <thead className="bg-[#003B3A] sticky top-0 z-20 backdrop-blur-xs text-white border-b border-[#003B3A]">
+            <tr className="divide-x text-[11px] font-semibold">
+              <th className="py-2.5 px-3 font-bold text-teal-100">Lớp</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Khối</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Cơ sở</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">Môn học</th>
+              <th className="py-2.5 px-3 font-bold text-teal-100">GVCN</th>
               <th
                 onClick={() => handleSort("studentCount")}
                 className="py-2.5 px-3 font-bold text-center text-slate-700 cursor-pointer hover:bg-slate-200"
@@ -185,12 +185,12 @@ export function ThkqClassStatsTable({ classStats, onSelectClass }: Props) {
                   Điểm 10 <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
-              <th className="py-2.5 px-3 font-bold text-center text-slate-700">
+              <th className="py-2.5 px-3 font-bold text-center">
                 Đánh giá & Khuyến nghị Sư phạm
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {sortedData.length === 0 ? (
               <tr>
                 <td colSpan={15} className="py-8 text-center text-slate-400">

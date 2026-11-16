@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { buildStudentCtqtPortfolio } from "@/lib/ctqt/studentProfilePortfolio";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +83,15 @@ export async function GET(req: NextRequest) {
         take: pageSize,
         orderBy: [{ class: { grade: "asc" } }, { studentName: "asc" }],
         include: {
-          class: true,
+          class: {
+            include: {
+              ctqtTeachingAssignments: {
+                include: {
+                  primaryTeacher: { select: { id: true, teacherName: true } }
+                }
+              }
+            }
+          },
           campus: true,
           academicYear: true,
           parents: {
@@ -107,6 +116,12 @@ export async function GET(req: NextRequest) {
               }
             },
             orderBy: { createdAt: "desc" }
+          },
+          ctqtGradeEntries: {
+            orderBy: { updatedAt: "desc" }
+          },
+          ctqtCompetencyEntries: {
+            orderBy: { updatedAt: "desc" }
           }
         },
       }),
@@ -150,7 +165,10 @@ export async function GET(req: NextRequest) {
         enrollmentDate: s.convertedAt ? s.convertedAt.toISOString() : null,
         emergencyContact: primaryParent?.phone || null,
         allergies: s.studentTypeNote || null,
-        specialGradeEntries: s.specialGradeEntries || []
+        specialGradeEntries: s.specialGradeEntries || [],
+        ctqtGradeEntries: s.ctqtGradeEntries || [],
+        ctqtCompetencyEntries: s.ctqtCompetencyEntries || [],
+        ctqtPortfolio: buildStudentCtqtPortfolio({ student: s })
       };
     });
 

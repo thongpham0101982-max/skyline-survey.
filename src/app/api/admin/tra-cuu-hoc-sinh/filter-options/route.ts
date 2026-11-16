@@ -1,11 +1,11 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const [academicYears, campuses, classes] = await Promise.all([
+    const [academicYears, campuses, classes, exams] = await Promise.all([
       prisma.academicYear.findMany({
         orderBy: { name: "desc" },
         select: { id: true, name: true, status: true },
@@ -25,6 +25,15 @@ export async function GET() {
           academicYearId: true,
         },
       }),
+      prisma.exam.findMany({
+        orderBy: [{ createdAt: "desc" }, { name: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          academicYearId: true,
+        },
+      }),
     ]);
 
     const activeYear = academicYears.find((y) => y.status === "ACTIVE") || academicYears[0];
@@ -35,6 +44,7 @@ export async function GET() {
         academicYears,
         campuses,
         classes,
+        exams,
         activeYearId: activeYear?.id || "",
         activeYearName: activeYear?.name || "",
       },

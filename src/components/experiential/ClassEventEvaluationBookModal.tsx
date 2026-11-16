@@ -746,7 +746,7 @@ export default function ClassEventEvaluationBookModal({
 
                   {/* Bảng tóm tắt thông tin tổ chức */}
                   <table className="w-full border-collapse border border-slate-400 mb-4 text-[12px]">
-                    <tbody>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                       <tr>
                         <td className="border border-slate-400 p-2 bg-slate-50 font-bold w-1/4">1. Tên hoạt động / Dự án:</td>
                         <td className="border border-slate-400 p-2 font-bold text-slate-900" colSpan={3}>
@@ -865,19 +865,19 @@ export default function ClassEventEvaluationBookModal({
 
                   {/* Bảng Danh sách Học sinh - Cố định 190mm chuẩn A4 dọc */}
                   <table className="w-full table-fixed border-collapse border border-slate-500 text-[10.5px] leading-tight">
-                    <thead>
-                      <tr className="bg-slate-200/90 text-center font-bold text-slate-900">
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "5%" }}>STT</th>
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "12%" }}>Mã HS</th>
-                        <th className="border border-slate-400 p-1 text-left pl-2" style={{ width: "23%" }}>Họ và tên học sinh</th>
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "10%" }}>Tham gia</th>
-                        <th className="border border-slate-400 p-1 text-left pl-1.5" style={{ width: "16%" }}>Vai trò (6 Vai trò)</th>
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "11%" }}>Xếp loại</th>
-                        <th className="border border-slate-400 p-1 text-center" style={{ width: "8%" }}>% Điểm</th>
-                        <th className="border border-slate-400 p-1 text-left pl-2" style={{ width: "15%" }}>Nhận xét chi tiết của GVCN</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-center text-[11px] font-semibold">
+                        <th className="border border-slate-400 p-1 text-center font-semibold" style={{ width: "5%" }}>STT</th>
+                        <th className="border border-slate-400 p-1 text-center font-semibold" style={{ width: "12%" }}>Mã HS</th>
+                        <th className="border border-slate-400 p-1 text-left pl-2 font-semibold" style={{ width: "23%" }}>Họ và tên học sinh</th>
+                        <th className="border border-slate-400 p-1 text-center font-semibold" style={{ width: "10%" }}>Tham gia</th>
+                        <th className="border border-slate-400 p-1 text-left pl-1.5 font-semibold" style={{ width: "16%" }}>Vai trò (6 Vai trò)</th>
+                        <th className="border border-slate-400 p-1 text-center font-semibold" style={{ width: "11%" }}>Xếp loại</th>
+                        <th className="border border-slate-400 p-1 text-center font-semibold" style={{ width: "8%" }}>% Điểm</th>
+                        <th className="border border-slate-400 p-1 text-left pl-2 font-semibold" style={{ width: "15%" }}>Nhận xét chi tiết của GVCN</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                       {classStudents.length === 0 ? (
                         <tr>
                           <td colSpan={8} className="border border-slate-400 p-4 text-center text-slate-500 italic">

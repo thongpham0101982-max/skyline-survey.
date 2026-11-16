@@ -3,6 +3,75 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
+import { buildStudentQuickApproveUrls, generateBatchApprovalToken } from "@/lib/k12-approval-service";
+
+function extractShortCampus(raw?: string | null): string {
+  const s = String(raw || "").trim();
+  if (!s) return "Sky-Line";
+  const upper = s.toUpperCase();
+  if (upper.includes("CS1") || upper.includes("RIVERSIDE")) return "CS1";
+  if (upper.includes("CS2") || upper.includes("CENTRAL")) return "CS2";
+  if (upper.includes("CS3") || upper.includes("GLOBAL") || upper.includes("INTERNATIONAL")) return "CS3";
+  if (upper.includes("CS4") || upper.includes("HILL")) return "CS4";
+  if (upper.includes("CS5") || upper.includes("BEACH")) return "CS5";
+  return s;
+}
+
+function summarizeStudentScoresForEmail(s: any): string {
+  const lines: string[] = [];
+  if (Array.isArray(s.scores) && s.scores.length > 0) {
+    for (const sc of s.scores) {
+      const sub = sc?.subject || {};
+      const subName = String(sub.name || sc.subjectName || "Môn").trim();
+      const sNameLower = subName.toLowerCase().normalize("NFC");
+      const sCode = String(sub.code || "").toLowerCase();
+      if (sCode.includes("pdh") || sCode.includes("orientation") || sNameLower.includes("định hướng")) continue;
+
+      let vArr: any[] = [];
+      try {
+        const parsed = Array.isArray(sc.scores) ? sc.scores : JSON.parse(sc.scores || "[]");
+        vArr = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        vArr = sc.scores ? [sc.scores] : [];
+      }
+
+      if (sCode.includes("tci") || sCode.includes("cpt") || sNameLower.includes("chuẩn phát triển")) {
+        const passed = vArr.filter(x => ["3", "Đạt", "DAT"].includes(String(x ?? "").trim())).length;
+        const total = vArr.length > 0 ? vArr.length : 16;
+        lines.push(`<b>${subName}:</b> ${passed}/${total} Đạt`);
+        continue;
+      }
+      if (sCode.includes("tly") || sNameLower.includes("tâm lý")) {
+        const scNum = parseFloat(vArr[6] ?? vArr[20] ?? vArr[0] ?? "0");
+        if (!isNaN(scNum)) {
+          const lvl = scNum <= 15 ? "Bình thường" : scNum <= 31 ? "Dấu hiệu nhẹ" : scNum <= 47 ? "Dấu hiệu vừa" : "Nguy cơ cao";
+          lines.push(`<b>${subName}:</b> ${lvl} (${scNum}đ)`);
+        }
+        continue;
+      }
+      if (sCode.includes("nltd") || sNameLower.includes("năng lực tư duy")) {
+        const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
+        if (pctVal !== undefined && pctVal !== null && String(pctVal).trim() !== "") {
+          lines.push(`<b>${subName}:</b> ${pctVal}%`);
+        }
+        continue;
+      }
+      const nonEmpty = vArr.filter(x => x !== undefined && x !== null && String(x).trim() !== "");
+      if (nonEmpty.length > 0) {
+        lines.push(`<b>${subName}:</b> ${nonEmpty[0]}`);
+      }
+    }
+  }
+  if (lines.length === 0) {
+    if (s.mathScore !== null && s.mathScore !== undefined) lines.push(`<b>Toán:</b> ${s.mathScore}đ`);
+    if (s.literatureScore !== null && s.literatureScore !== undefined) lines.push(`<b>TV/Văn:</b> ${s.literatureScore}đ`);
+    if (s.writtenEnglishScore !== null && s.writtenEnglishScore !== undefined) lines.push(`<b>TA Viết:</b> ${s.writtenEnglishScore}đ`);
+    if (s.oralEnglishScore !== null && s.oralEnglishScore !== undefined) lines.push(`<b>TA Nói:</b> ${s.oralEnglishScore}đ`);
+    if (s.psychologyScore !== null && s.psychologyScore !== undefined) lines.push(`<b>Tâm lý:</b> ${s.psychologyScore}đ`);
+    if (s.devAssessmentResult) lines.push(`<b>Đánh giá:</b> ${s.devAssessmentResult}`);
+  }
+  return lines.length > 0 ? lines.join("<br/>") : "—";
+}
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -33,12 +102,13 @@ export async function POST(req: Request) {
         if (batchObj) batchName = batchObj.name;
       }
 
-      const whereClause = { periodId };
+      const whereClause: any = { periodId };
       if (batchId && batchId !== "all") {
         whereClause.batchId = batchId;
       }
       students = await prisma.preschoolInputAssessmentStudent.findMany({
         where: whereClause,
+        include: { batch: true, period: true },
         orderBy: { fullName: "asc" }
       });
     } else {
@@ -54,12 +124,19 @@ export async function POST(req: Request) {
         if (batchObj) batchName = batchObj.name;
       }
 
-      const whereClause = { periodId };
+      const whereClause: any = { periodId };
       if (batchId && batchId !== "all") {
         whereClause.batchId = batchId;
       }
       students = await prisma.inputAssessmentStudent.findMany({
         where: whereClause,
+        include: {
+          batch: true,
+          period: true,
+          scores: {
+            include: { subject: true }
+          }
+        },
         orderBy: { fullName: "asc" }
       });
     }
@@ -81,61 +158,120 @@ export async function POST(req: Request) {
       pendingCount = totalStudents - passedCount - failedCount - committedCount;
     }
 
-    const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
+    const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
     const protocol = req.headers.get("x-forwarded-proto") || "https";
     const baseUrl = `${protocol}://${host}`;
 
     const isOpenDay = !isPreschool && (periodName.toLowerCase().includes("open day") || periodName.toLowerCase().includes("openday"));
 
-    const getEmailHtml = (studentGroup: any[], totalStudentsCount: number, passed: number, failed: number, committed: number, pending: number) => {
+    const getEmailHtml = (
+      studentGroup: any[],
+      totalStudentsCount: number,
+      passed: number,
+      failed: number,
+      committed: number,
+      pending: number,
+      recipientGdcsEmail: string
+    ) => {
+      const batchToken = generateBatchApprovalToken(periodId, batchId, Boolean(isPreschool), recipientGdcsEmail);
+      const batchQuickApproveUrl = `${baseUrl}/api/admin/quick-approve/k12?mode=batch&periodId=${encodeURIComponent(periodId)}&batchId=${encodeURIComponent(batchId)}&isPreschool=${isPreschool ? "1" : "0"}&email=${encodeURIComponent(recipientGdcsEmail)}&token=${batchToken}`;
+
       const rowsHtml = studentGroup.map((s, idx) => {
         const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—";
-        const resultText = s.admissionResult || "Chưa xét duyệt";
-        let resColor = "#4b5563", resBg = "#f3f4f6", resBorder = "#e5e7eb";
+        const gender = s.gender ? (s.gender === "FEMALE" || s.gender === "Nữ" || s.gender === "F" ? "Nữ" : "Nam") : "—";
+        const grade = s.grade
+          ? (isPreschool ? s.grade : (String(s.grade).toLowerCase().startsWith("khối") ? s.grade : `Khối ${s.grade}`))
+          : "—";
+        const system = s.surveyFormType || s.surveySystem || "—";
+        const shortCampus = extractShortCampus(s.admissionCampus || s.registeredCampus || s.batch?.name || batchName);
+        const scoreDetailHtml = summarizeStudentScoresForEmail(s);
+
+        const resultText = s.admissionResult || "Chờ duyệt";
+        let resColor = "#D97706", resBg = "#FFFBEB", resBorder = "#FDE68A";
 
         if (isPreschool) {
           if (resultText.toUpperCase().includes("ĐẠT")) {
-            resColor = "#047857"; resBg = "#ecfdf5"; resBorder = "#a7f3d0";
+            resColor = "#059669"; resBg = "#ECFDF5"; resBorder = "#A7F3D0";
           } else if (resultText.toUpperCase().includes("KHÔNG")) {
-            resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca";
+            resColor = "#E11D48"; resBg = "#FEF2F2"; resBorder = "#FECACA";
           } else if (resultText === "Học thử") {
-            resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe";
+            resColor = "#00736E"; resBg = "#F0FDFA"; resBorder = "#CCFBF1";
           }
         } else {
           if (resultText === "Đạt") {
-            resColor = "#047857"; resBg = "#ecfdf5"; resBorder = "#a7f3d0";
+            resColor = "#059669"; resBg = "#ECFDF5"; resBorder = "#A7F3D0";
           } else if (resultText === "Đạt cam kết") {
-            resColor = "#b45309"; resBg = "#fef3c7"; resBorder = "#fde68a";
+            resColor = "#D97706"; resBg = "#FEF3C7"; resBorder = "#FDE68A";
           } else if (resultText.includes("Không đạt")) {
-            resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca";
+            resColor = "#E11D48"; resBg = "#FEF2F2"; resBorder = "#FECACA";
           } else if (resultText === "Học thử") {
-            resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe";
+            resColor = "#00736E"; resBg = "#F0FDFA"; resBorder = "#CCFBF1";
           }
         }
 
-        let detailNote = "";
-        if (isPreschool) {
-          detailNote = s.devAssessmentResult || s.devImportantNote || s.directorNote || "—";
-        } else {
-          detailNote = s.directorNote || "—";
-        }
-        if (detailNote.length > 50) {
-          detailNote = detailNote.substring(0, 47) + "...";
-        }
+        const quickUrls = buildStudentQuickApproveUrls({
+          studentId: String(s.id || ""),
+          isPreschool: Boolean(isPreschool),
+          baseUrl,
+          recipientEmail: recipientGdcsEmail,
+          periodId: s.periodId || periodId,
+          batchId: s.batchId || batchId
+        });
 
         return `
-          <tr style="border-bottom:1px solid #f1f5f9; background:${idx % 2 === 0 ? "#fff" : "#f8fafc"};">
-            <td style="padding:12px 10px; text-align:center; font-size:13px; font-weight:600; color:#64748b;" className="p-2 border border-slate-200">${idx + 1}</td>
-            <td style="padding:12px 10px; font-size:13px; font-weight:700; color:#1E1B4B;" className="p-2 border border-slate-200">${s.fullName || "—"}</td>
-            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;" className="p-2 border border-slate-200">${s.studentCode || "—"}</td>
-            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;" className="p-2 border border-slate-200">K${s.grade || "—"}</td>
-            <td style="padding:12px 10px; text-align:center; font-size:13px; color:#334155;" className="p-2 border border-slate-200">${dob}</td>
-            <td style="padding:12px 10px; text-align:center;" className="p-2 border border-slate-200">
-              <span style="display:inline-block; padding:4px 10px; border-radius:50px; font-size:10px; font-weight:700; color:${resColor}; background:${resBg}; border:1px solid ${resBorder}; text-transform:uppercase;">
-                ${resultText}
+          <tr style="border-bottom:1px solid #E2E8F0; background:${idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC"};">
+            <!-- 1. Mã HS -->
+            <td style="padding:11px 8px; text-align:left; white-space:nowrap;">
+              <span style="font-size:11.5px; font-family:SFMono-Regular, Consolas, monospace; font-weight:700; color:#003B3A; background:#F8FAFC; border:1px solid #E2E8F0; padding:3px 7px; border-radius:5px;">
+                ${s.studentCode || "—"}
               </span>
             </td>
-            <td style="padding:12px 10px; font-size:13px; color:#4b5563;" className="p-2 border border-slate-200">${detailNote}</td>
+            <!-- 2. Học sinh -->
+            <td style="padding:11px 10px;">
+              <div style="font-size:13px; font-weight:800; color:#0F172A;">${s.fullName || "—"}</div>
+              <div style="font-size:10.5px; color:#00736E; font-weight:600; margin-top:2px;">${s.batch?.name || batchName}</div>
+            </td>
+            <!-- 3. Ngày sinh -->
+            <td style="padding:11px 8px; text-align:center; font-size:12px; color:#475569; white-space:nowrap;">${dob}</td>
+            <!-- 4. Giới tính -->
+            <td style="padding:11px 8px; text-align:center; font-size:12px; color:#475569; white-space:nowrap;">${gender}</td>
+            <!-- 5. Khối -->
+            <td style="padding:11px 8px; text-align:center; font-size:12px; font-weight:700; color:#003B3A; white-space:nowrap;">${grade}</td>
+            <!-- 6. Hệ -->
+            <td style="padding:11px 8px; text-align:center; font-size:11.5px; font-weight:600; color:#334155; white-space:nowrap;">${system}</td>
+            <!-- 7. Cơ sở -->
+            <td style="padding:11px 8px; text-align:center; white-space:nowrap;">
+              <span style="display:inline-block; padding:2px 8px; font-size:11px; font-weight:700; color:#00736E; background:#F0FDFA; border:1px solid #CCFBF1; border-radius:5px;">
+                ${shortCampus}
+              </span>
+            </td>
+            <!-- 8. Kết quả khảo sát -->
+            <td style="padding:11px 10px; font-size:11.5px; color:#334155; line-height:1.45;">${scoreDetailHtml}</td>
+            <!-- 9. KQ đã xét duyệt -->
+            <td style="padding:11px 8px; text-align:center;">
+              <span style="display:inline-block; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; color:${resColor}; background:${resBg}; border:1px solid ${resBorder};">
+                ${resultText === "Đạt" ? "Đạt chuẩn" : resultText}
+              </span>
+            </td>
+            <!-- 10. Thao tác (Duyệt trên mail) -->
+            <td style="padding:10px 10px; text-align:right; white-space:nowrap;">
+              <div style="margin-bottom:4px;">
+                <a href="${quickUrls.approveDatUrl}" target="_blank" style="display:inline-block; padding:4px 9px; font-size:10.5px; font-weight:700; color:#FFFFFF; background:#059669; border-radius:5px; text-decoration:none; margin-right:3px;">
+                  ${quickUrls.primaryLabel}
+                </a>
+                <a href="${quickUrls.approveCamKetOrHocThuUrl}" target="_blank" style="display:inline-block; padding:4px 9px; font-size:10.5px; font-weight:700; color:#FFFFFF; background:#D97706; border-radius:5px; text-decoration:none;">
+                  ${quickUrls.secondaryLabel}
+                </a>
+              </div>
+              <div>
+                <a href="${quickUrls.approveKhongDatUrl}" target="_blank" style="display:inline-block; padding:3px 8px; font-size:10px; font-weight:700; color:#E11D48; background:#FFF1F2; border:1px solid #FECDD3; border-radius:5px; text-decoration:none; margin-right:3px;">
+                  ${quickUrls.rejectLabel}
+                </a>
+                <a href="${quickUrls.portalUrl}" target="_blank" style="display:inline-block; padding:3px 8px; font-size:10px; font-weight:700; color:#003B3A; background:#F8FAFC; border:1px solid #CBD5E1; border-radius:5px; text-decoration:none;">
+                  Chi tiết
+                </a>
+              </div>
+            </td>
           </tr>
         `;
       }).join("");
@@ -149,10 +285,10 @@ export async function POST(req: Request) {
 <title>Yêu cầu xét duyệt Đợt khảo sát</title>
 </head>
 <body style="margin:0; padding:0; background-color:#F1F5F9; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-<table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#F1F5F9" style="background-color:#F1F5F9; padding:24px 0;">
+<table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#F1F5F9" style="background-color:#F1F5F9; padding:24px 12px;">
   <tr>
     <td align="center">
-      <table width="760" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="max-width:760px; width:100%; background-color:#FFFFFF; border-radius:16px; overflow:hidden; box-shadow:0 4px 16px rgba(0,59,58,0.12); border:1px solid #CBD5E1;">
+      <table width="960" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="max-width:960px; width:100%; background-color:#FFFFFF; border-radius:16px; overflow:hidden; box-shadow:0 4px 16px rgba(0,59,58,0.12); border:1px solid #CBD5E1;">
 
         <!-- HEADER -->
         <tr>
@@ -178,7 +314,7 @@ export async function POST(req: Request) {
           <td style="padding:24px 32px 14px 32px; background-color:#FFFFFF;">
             <p style="margin:0; font-size:14px; font-weight:800; color:#0F172A;">👋 Kính gửi Thầy/Cô Giám đốc Cơ sở,</p>
             <p style="margin:8px 0 0 0; font-size:13.5px; color:#334155; line-height:1.6;">
-              Hội đồng Tuyển sinh kính gửi báo cáo kết quả khảo sát năng lực đầu vào và đề xuất Thầy/Cô thực hiện xem xét, phê duyệt cho các học sinh thuộc Đợt khảo sát sau:
+              Hội đồng Tuyển sinh kính gửi báo cáo kết quả khảo sát năng lực đầu vào và đề xuất Thầy/Cô thực hiện xem xét, phê duyệt trực tiếp ngay trên Email hoặc trên Cổng quản lý cho các học sinh thuộc Đợt khảo sát sau:
             </p>
           </td>
         </tr>
@@ -189,11 +325,11 @@ export async function POST(req: Request) {
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:16px 20px;">
               <tr>
                 <td width="50%" style="vertical-align:middle;">
-                  <div style="font-size:10px; font-weight:800; color:#64748B; text-transform:uppercase;">Kỳ Khảo Sát</div>
+                  <div style="font-size:10px; font-weight:800; color:#64748B; text-transform:uppercase;">Kỳ khảo sát</div>
                   <div style="font-size:15px; font-weight:800; color:#003B3A; margin-top:2px;">${periodName}</div>
                 </td>
                 <td width="50%" align="right" style="vertical-align:middle;">
-                  <div style="font-size:10px; font-weight:800; color:#64748B; text-transform:uppercase;">Đợt Khảo Sát</div>
+                  <div style="font-size:10px; font-weight:800; color:#64748B; text-transform:uppercase;">Đợt khảo sát</div>
                   <div style="font-size:15px; font-weight:800; color:#003B3A; margin-top:2px;">${batchName}</div>
                 </td>
               </tr>
@@ -207,7 +343,7 @@ export async function POST(req: Request) {
             <table width="100%" border="0" cellpadding="0" cellspacing="0">
               <tr>
                 <td width="${isPreschool ? "23.5%" : "18.5%"}" bgcolor="#F0FDFA" style="padding:12px 6px; background-color:#F0FDFA; border:1px solid #CCFBF1; border-radius:10px; text-align:center; vertical-align:top;">
-                  <div style="font-size:9.5px; font-weight:800; color:#0F766E; text-transform:uppercase;">Tổng Số HS</div>
+                  <div style="font-size:9.5px; font-weight:800; color:#0F766E; text-transform:uppercase;">Tổng số HS</div>
                   <div style="font-size:20px; font-weight:900; color:#003B3A; margin-top:3px;">${totalStudentsCount}</div>
                   <div style="font-size:9.5px; color:#14B8A6;">học sinh</div>
                 </td>
@@ -246,19 +382,22 @@ export async function POST(req: Request) {
         <tr>
           <td style="padding:0 32px 24px 32px; background-color:#FFFFFF;">
             <h2 style="font-size:14px; font-weight:800; color:#003B3A; border-left:4px solid #00A19A; padding-left:10px; margin:0 0 14px 0; text-transform:uppercase; letter-spacing:0.5px;">
-              Danh Sách Kết Quả Học Sinh (${totalStudentsCount} HS)
+              Danh sách kết quả khảo sát theo đợt (${totalStudentsCount} học sinh)
             </h2>
-            <div style="border:1px solid #CBD5E1; border-radius:8px; overflow:hidden;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+            <div style="overflow-x:auto; border:1px solid #CBD5E1; border-radius:10px;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; min-width:900px; font-size:12px;">
                 <thead>
-                  <tr bgcolor="#003B3A" style="background-color:#003B3A; color:#FFFFFF;">
-                    <th style="padding:10px 8px; text-align:center; font-size:11px; font-weight:800; color:#FFFFFF; text-transform:uppercase; width:7%; border-right:1px solid #065F46;">STT</th>
-                    <th style="padding:10px 10px; text-align:left; font-size:11px; font-weight:800; color:#FFFFFF; text-transform:uppercase; border-right:1px solid #065F46;">Họ và Tên</th>
-                    <th style="padding:10px 8px; text-align:center; font-size:11px; font-weight:800; color:#FFFFFF; text-transform:uppercase; width:15%; border-right:1px solid #065F46;">Mã HS</th>
-                    <th style="padding:10px 8px; text-align:center; font-size:11px; font-weight:800; color:#FFFFFF; text-transform:uppercase; width:10%; border-right:1px solid #065F46;">Khối</th>
-                    <th style="padding:10px 8px; text-align:center; font-size:11px; font-weight:800; color:#FFFFFF; text-transform:uppercase; width:15%; border-right:1px solid #065F46;">Ngày sinh</th>
-                    <th style="padding:10px 8px; text-align:center; font-size:11px; font-weight:800; color:#FFFFFF; text-transform:uppercase; width:20%; border-right:1px solid #065F46;">Đề xuất</th>
-                    <th style="padding:10px 10px; text-align:left; font-size:11px; font-weight:800; color:#FFFFFF; text-transform:uppercase; width:20%;">Ghi chú</th>
+                  <tr bgcolor="#003B3A" style="background-color:#003B3A; color:#FFFFFF; border-bottom:2px solid #00A19A;">
+                    <th style="padding:11px 8px; text-align:left; font-size:11px; font-weight:700; color:#CCFBF1; width:88px; white-space:nowrap;">Mã HS</th>
+                    <th style="padding:11px 10px; text-align:left; font-size:11px; font-weight:700; color:#FFFFFF; width:155px;">Học sinh</th>
+                    <th style="padding:11px 8px; text-align:center; font-size:11px; font-weight:700; color:#CCFBF1; width:78px; white-space:nowrap;">Ngày sinh</th>
+                    <th style="padding:11px 8px; text-align:center; font-size:11px; font-weight:700; color:#CCFBF1; width:62px; white-space:nowrap;">Giới tính</th>
+                    <th style="padding:11px 8px; text-align:center; font-size:11px; font-weight:700; color:#CCFBF1; width:64px; white-space:nowrap;">Khối</th>
+                    <th style="padding:11px 8px; text-align:center; font-size:11px; font-weight:700; color:#CCFBF1; width:72px; white-space:nowrap;">Hệ</th>
+                    <th style="padding:11px 8px; text-align:center; font-size:11px; font-weight:700; color:#CCFBF1; width:64px; white-space:nowrap;">Cơ sở</th>
+                    <th style="padding:11px 10px; text-align:left; font-size:11px; font-weight:700; color:#FFFFFF; width:165px;">Kết quả khảo sát</th>
+                    <th style="padding:11px 8px; text-align:center; font-size:11px; font-weight:700; color:#5EEAD4; width:120px;">KQ đã xét duyệt</th>
+                    <th style="padding:11px 10px; text-align:right; font-size:11px; font-weight:700; color:#FFFFFF; width:145px; white-space:nowrap;">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -266,45 +405,32 @@ export async function POST(req: Request) {
                 </tbody>
               </table>
             </div>
+            <div style="margin-top:8px; font-size:11.5px; color:#0F766E; font-weight:600;">
+              💡 <strong>Duyệt trực tiếp trên Email:</strong> Thầy/Cô có thể bấm trực tiếp vào các nút <strong>✓ Duyệt Đạt</strong>, <strong>⚠ Cam kết</strong> hoặc <strong>✕ Không đạt</strong> ở cột <em>Thao tác</em> trên từng học sinh để phê duyệt ngay trên Email.
+            </div>
           </td>
         </tr>
 
-        <!-- ACTION BUTTON & INSTRUCTION -->
+        <!-- ACTION BUTTONS -->
         <tr>
           <td style="padding:0 32px 28px 32px; background-color:#FFFFFF; text-align:center;">
-            <p style="margin:0 0 16px 0; font-size:13px; color:#64748B; font-style:italic;">
-              Vui lòng truy cập cổng thông tin quản lý để thực hiện phê duyệt chính thức kết quả khảo sát cho đợt tuyển sinh này.
-            </p>
-
-            <!-- Bulletproof Button -->
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 20px auto; border-collapse:separate;">
               <tr>
-                <td align="center" bgcolor="#00A19A" style="border-radius:10px; background-color:#00A19A;">
-                  <a href="${baseUrl}/admin/xet-duyet-ket-qua" target="_blank" style="display:inline-block; padding:13px 32px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size:13px; color:#FFFFFF; font-weight:800; text-decoration:none; border-radius:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #00A19A;">
-                    👉 PHÊ DUYỆT KẾT QUẢ KHẢO SÁT NGAY
+                ${pending > 0 ? `
+                <td align="center" bgcolor="#059669" style="border-radius:10px; background-color:#059669;">
+                  <a href="${batchQuickApproveUrl}" target="_blank" style="display:inline-block; padding:13px 24px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size:13px; color:#FFFFFF; font-weight:800; text-decoration:none; border-radius:10px;">
+                    ✓ Duyệt Đạt toàn bộ HS chờ duyệt (${pending} HS)
+                  </a>
+                </td>
+                <td width="12"></td>
+                ` : ""}
+                <td align="center" bgcolor="#003B3A" style="border-radius:10px; background-color:#003B3A;">
+                  <a href="${baseUrl}/admin/xet-duyet-ket-qua" target="_blank" style="display:inline-block; padding:13px 28px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size:13px; color:#FFFFFF; font-weight:800; text-decoration:none; border-radius:10px;">
+                    🔗 Mở Cổng xét duyệt kết quả &rarr;
                   </a>
                 </td>
               </tr>
             </table>
-
-            <!-- Instructions Box -->
-            <div style="background-color:#F0FDFA; border:1px dashed #00A19A; border-radius:10px; padding:14px 18px; text-align:left; max-width:580px; margin:0 auto;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="vertical-align:top; width:28px; padding-top:2px;">
-                    <div style="background-color:#00A19A; color:#FFFFFF; width:20px; height:20px; line-height:20px; border-radius:50%; text-align:center; font-size:11px; font-weight:bold;">i</div>
-                  </td>
-                  <td style="vertical-align:top;">
-                    <div style="font-size:12.5px; font-weight:700; color:#004D47; margin-bottom:4px;">Hướng dẫn đăng nhập hệ thống:</div>
-                    <div style="font-size:12px; color:#334155; line-height:1.5;">
-                      &bull; Đăng nhập bằng <strong>mã số SKL</strong> của Thầy/Cô.<br>
-                      &bull; <strong>Mật khẩu mặc định:</strong> Trùng với <strong>mã số SKL</strong> của Thầy/Cô.<br>
-                      <span style="color:#B91C1C; font-weight:600; display:block; margin-top:3px;">* Vui lòng đổi mật khẩu ngay sau khi đăng nhập để đảm bảo an toàn thông tin.</span>
-                    </div>
-                  </td>
-                </tr>
-              </table>
-            </div>
           </td>
         </tr>
 
@@ -335,8 +461,6 @@ export async function POST(req: Request) {
     };
 
     if (isOpenDay) {
-      // Group students by registeredCampus
-      // Load all campuses
       const campuses = await prisma.campus.findMany({
         include: {
           manager: {
@@ -351,7 +475,6 @@ export async function POST(req: Request) {
         }
       });
 
-      // Find batch's default campus as fallback
       let fallbackCampusId = null;
       if (!isPreschool) {
         if (batchId !== "all") {
@@ -368,7 +491,6 @@ export async function POST(req: Request) {
         }
       }
 
-      // Grouping dictionary
       const groupedStudents: Record<string, typeof students> = {};
       for (const s of students) {
         const cId = s.registeredCampus || fallbackCampusId || "DEFAULT";
@@ -391,17 +513,17 @@ export async function POST(req: Request) {
       for (const [campusId, group] of Object.entries(groupedStudents)) {
         let currentGdcsEmail = null;
         const campusObj = campuses.find(c => c.id === campusId);
-        
+
         if (campusObj) {
           const managerEmail = campusObj.manager?.teacher?.email || campusObj.manager?.email;
-          if (managerEmail && managerEmail.includes('@')) {
+          if (managerEmail && managerEmail.includes("@")) {
             currentGdcsEmail = managerEmail;
           } else {
             const code = campusObj.campusCode?.toUpperCase();
             currentGdcsEmail = staticEmails[code];
           }
         }
-        
+
         if (!currentGdcsEmail) {
           currentGdcsEmail = gdcsEmail || staticEmails.CS1;
         }
@@ -423,7 +545,7 @@ export async function POST(req: Request) {
           groupPending = totalGroup - groupPassed - groupFailed - groupCommitted;
         }
 
-        const currentHtml = getEmailHtml(group, totalGroup, groupPassed, groupFailed, groupCommitted, groupPending);
+        const currentHtml = getEmailHtml(group, totalGroup, groupPassed, groupFailed, groupCommitted, groupPending, currentGdcsEmail);
 
         await sendEmail({
           to: currentGdcsEmail,
@@ -438,7 +560,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, groupedSent: sentSummary });
     }
 
-    const emailHtml = getEmailHtml(students, totalStudents, passedCount, failedCount, committedCount, pendingCount);
+    const emailHtml = getEmailHtml(students, totalStudents, passedCount, failedCount, committedCount, pendingCount, gdcsEmail);
 
     await sendEmail({
       to: gdcsEmail,

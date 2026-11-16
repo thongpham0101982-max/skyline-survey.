@@ -19,6 +19,7 @@ const DDL_STATEMENTS: string[] = [
     "workspaceCardKey" TEXT,
     "coordinatorUserId" TEXT,
     "reviewerUserId" TEXT,
+    "collaboratorUserIdsJson" TEXT NOT NULL DEFAULT '[]',
     "requiresApproval" INTEGER NOT NULL DEFAULT 1,
     "reviewDueDate" DATETIME,
     "submittedForReviewAt" DATETIME,
@@ -99,6 +100,14 @@ export async function ensureQaWorkspaceSchema(): Promise<void> {
           console.warn("[ensureQaWorkspaceSchema] DDL warning:", err)
         }
       }
+      // Safe column migration for existing tables created before collaboratorUserIdsJson
+      try {
+        await pAny.$executeRawUnsafe(
+          `ALTER TABLE "qa_task_metadata" ADD COLUMN "collaboratorUserIdsJson" TEXT NOT NULL DEFAULT '[]'`
+        )
+      } catch {
+        // Column already exists — safe to ignore
+      }
     })().catch((err) => {
       initializedPromise = null
       console.error("[ensureQaWorkspaceSchema] Init failed:", err)
@@ -140,7 +149,15 @@ export function normalizeTaskMetadataRow(
     (fallbackTask ? deriveFallbackWorkflowStatus(fallbackTask) : "ASSIGNED")
 
   const parsedChecklist = safeParseJson(row?.checklistJson, [])
-  const parsedScopeMeta = safeParseJson(row?.scopeMetaJson, {})
+  const parsedScopeMeta = safeParseJson<any>(row?.scopeMetaJson, {})
+  const parsedCollaborators = safeParseJson<string[]>(
+    row?.collaboratorUserIdsJson,
+    Array.isArray(row?.collaboratorUserIds)
+      ? row.collaboratorUserIds
+      : Array.isArray(parsedScopeMeta?.collaboratorUserIds)
+      ? parsedScopeMeta.collaboratorUserIds
+      : []
+  )
 
   return {
     taskId,
@@ -149,6 +166,7 @@ export function normalizeTaskMetadataRow(
     workspaceCardKey: row?.workspaceCardKey || null,
     coordinatorUserId: row?.coordinatorUserId || null,
     reviewerUserId: row?.reviewerUserId || null,
+    collaboratorUserIds: parsedCollaborators,
     requiresApproval: row?.requiresApproval !== undefined ? Boolean(Number(row.requiresApproval)) : true,
     reviewDueDate: row?.reviewDueDate ? String(row.reviewDueDate) : null,
     submittedForReviewAt: row?.submittedForReviewAt ? String(row.submittedForReviewAt) : null,
@@ -166,10 +184,10 @@ export function normalizeTaskMetadataRow(
     nextStepLabel: row?.nextStepLabel || null,
     scopeMeta: parsedScopeMeta,
     scopeCampusId: parsedScopeMeta?.campusId || null,
-    scopeGradeLevel: parsedScopeMeta?.gradeLevel || null,
-    scopeClassId: parsedScopeMeta?.classCode || null,
-    scopeSubject: parsedScopeMeta?.subjectCode || null,
-    scopeSurveyPeriod: parsedScopeMeta?.periodCode || null,
+    scopeGradeLevel: parsedScopeMeta?.gradeLevel || parsedScopeMeta?.grade || null,
+    scopeClassId: parsedScopeMeta?.classCode || parsedScopeMeta?.classId || parsedScopeMeta?.className || null,
+    scopeSubject: parsedScopeMeta?.subjectCode || parsedScopeMeta?.subjectName || parsedScopeMeta?.subjectId || null,
+    scopeSurveyPeriod: parsedScopeMeta?.periodCode || parsedScopeMeta?.surveyPeriod || null,
     sourceModule: (row?.sourceModule as QaSourceModuleCode) || "MANUAL",
     sourceRecordId: row?.sourceRecordId || null,
     sourceUrl: row?.sourceUrl || null,
@@ -186,7 +204,7 @@ export function normalizeTaskMetadataRow(
 
 export const QA_META_SELECT_COLUMNS = `
   "taskId", "workflowStatus", "assignmentMode", "workspaceCardKey",
-  "coordinatorUserId", "reviewerUserId", "requiresApproval",
+  "coordinatorUserId", "reviewerUserId", "collaboratorUserIdsJson", "requiresApproval",
   CAST("reviewDueDate" AS TEXT) AS "reviewDueDate",
   CAST("submittedForReviewAt" AS TEXT) AS "submittedForReviewAt",
   CAST("reviewedAt" AS TEXT) AS "reviewedAt",
@@ -268,6 +286,10 @@ export async function upsertQaTaskMetadata(
     const merged = normalizeTaskMetadataRow({
       ...(existing || {}),
       ...meta,
+      collaboratorUserIdsJson:
+        meta.collaboratorUserIds !== undefined
+          ? JSON.stringify(meta.collaboratorUserIds)
+          : existing?.collaboratorUserIdsJson || "[]",
       evidenceLinksJson:
         meta.evidenceLinks !== undefined
           ? JSON.stringify(meta.evidenceLinks)
@@ -294,20 +316,21 @@ export async function upsertQaTaskMetadata(
     await pAny.$executeRawUnsafe(
       `INSERT INTO "qa_task_metadata" (
         "taskId", "workflowStatus", "assignmentMode", "workspaceCardKey",
-        "coordinatorUserId", "reviewerUserId", "requiresApproval", "reviewDueDate",
+        "coordinatorUserId", "reviewerUserId", "collaboratorUserIdsJson", "requiresApproval", "reviewDueDate",
         "submittedForReviewAt", "reviewedAt", "reviewComment", "reviewRating",
         "deliverables", "completionCriteria", "requiredEvidences", "resultSummary",
         "evidenceLinksJson", "checklistJson", "currentStepLabel", "nextStepLabel",
         "scopeMetaJson", "sourceModule", "sourceRecordId", "sourceUrl",
         "externalSyncKey", "batchCode", "recurrenceRuleJson", "recurrenceTemplateId",
         "recurrenceInstanceKey", "statusReason", "version", "updatedAt"
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT("taskId") DO UPDATE SET
         "workflowStatus" = excluded."workflowStatus",
         "assignmentMode" = excluded."assignmentMode",
         "workspaceCardKey" = excluded."workspaceCardKey",
         "coordinatorUserId" = excluded."coordinatorUserId",
         "reviewerUserId" = excluded."reviewerUserId",
+        "collaboratorUserIdsJson" = excluded."collaboratorUserIdsJson",
         "requiresApproval" = excluded."requiresApproval",
         "reviewDueDate" = excluded."reviewDueDate",
         "submittedForReviewAt" = excluded."submittedForReviewAt",
@@ -340,6 +363,7 @@ export async function upsertQaTaskMetadata(
       merged.workspaceCardKey,
       merged.coordinatorUserId,
       merged.reviewerUserId,
+      JSON.stringify(merged.collaboratorUserIds || []),
       merged.requiresApproval ? 1 : 0,
       merged.reviewDueDate,
       merged.submittedForReviewAt,

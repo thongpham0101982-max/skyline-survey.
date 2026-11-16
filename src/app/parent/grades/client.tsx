@@ -585,14 +585,14 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
     </div>
 
     <table>
-      <thead>
-        <tr>
+      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+        <tr className="text-[11px] font-semibold whitespace-nowrap">
           <th class="text-center" style="width: 40px;">STT</th>
           <th>Môn học</th>
           <th class="text-center" style="width: 90px;">Điểm KS</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
         ${rowsHtml}
       </tbody>
     </table>
@@ -900,11 +900,11 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
 
             <div className="overflow-x-auto rounded-2xl border border-teal-600/30 shadow-xs">
               <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-gradient-to-r from-[#005B58] to-[#008c82] text-white font-black">
-                    <th className="py-2.5 px-3 text-center w-12 border-r border-teal-700">STT</th>
-                    <th className="py-2.5 px-4 border-r border-teal-700">Môn học</th>
-                    <th className="py-2.5 px-4 text-center w-32">Điểm KS</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-white text-[11px] font-semibold">
+                    <th className="py-2.5 px-3 text-center w-12 border-r border-teal-700 font-semibold">STT</th>
+                    <th className="py-2.5 px-4 border-r border-teal-700 font-semibold">Môn học</th>
+                    <th className="py-2.5 px-4 text-center w-32 font-semibold">Điểm KS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-teal-100">

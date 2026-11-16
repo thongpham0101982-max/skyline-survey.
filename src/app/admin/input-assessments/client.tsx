@@ -1,7 +1,7 @@
 "use client"
 import { parseCommittedSubjects } from "@/lib/subject-mapping"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
-const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
+const DEFAULT_WATERMARK_SVG = "/images/skyline-doc-watermark.png";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
@@ -22,10 +22,23 @@ import { getDestinationSchoolsAction } from "@/app/admin/truong-lien-ket/actions
 import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
 import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal";
 import { AdmissionRegulationManager } from "@/components/admin/AdmissionRegulationManager";
+import TciResultReviewPanel from "@/components/tci/TciResultReviewPanel";
 import {
   parseAdmissionRegulationConfig,
   isStudentEligibleByRegulation,
-  exportEligibleStudentsRegulationExcel
+  exportEligibleStudentsRegulationExcel,
+  resolveStudentExamSubjects,
+  summarizeSystemSubjectsFromMappings,
+  StudentExamSubjectsResult,
+  isPreschoolSystem,
+  isIntlSystemCode,
+  getStudentK12Track,
+  K12TrackType,
+  STANDARD_INTAKE_MILESTONE_OPTIONS,
+  STUDENT_INTAKE_TIME_SELECT_OPTIONS,
+  getDefaultHocKyByGrade,
+  resolveStudentGradeConfigPeriodKey,
+  normalizeStudentHocKyDisplay
 } from "@/lib/admissionRegulationEngine";
 
 
@@ -135,6 +148,8 @@ interface Props {
   rolePermissions?: { module: string, canRead: boolean, canCreate: boolean, canUpdate: boolean, canDelete: boolean }[];
   mode?: "config" | "input";
   forcedTab?: string;
+  k12Track?: K12TrackType;
+  onK12TrackChange?: (track: K12TrackType) => void;
   viewMode?: "all" | "general" | "transfer";
   destinationSchools?: any[];
 }
@@ -255,13 +270,21 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
   )
 }
 
-const defaultThuChucMung = `Chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} học kì {{hocKy}} hệ {{surveyFormType}} năm học 2026-2027. Em đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường TH, THCS, THPT Sky-Line – một cột mốc quan trọng trong hành trình học tập của em.
+const defaultThuChucMung = `Về kết quả phỏng vấn định hướng và khảo sát đầu vào
 
-Thầy cô tại Sky-Line vui mừng chào đón em đến với ngôi trường hạnh phúc, nơi không chỉ giúp em trau dồi kiến thức mà còn phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, với sự nỗ lực và quyết tâm, em sẽ tiếp tục gặt hái nhiều thành công trong những năm học sắp tới.
+Chúc mừng em đã hoàn thành quá trình phỏng vấn định hướng và khảo sát đầu vào với kết quả tốt đẹp, đánh dấu bước khởi đầu ý nghĩa trên hành trình học tập và phát triển tại Sky-Line.
 
-Nhà trường hy vọng rằng, với tinh thần ham học hỏi, em sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, em và các bạn không chỉ học tập để phát triển bản thân, mà còn giúp đỡ nhau tiến bộ và đóng góp tích cực cho cộng đồng.
+Thông qua quá trình phỏng vấn định hướng và trao đổi với phụ huynh, Nhà trường ghi nhận những sở thích, thế mạnh, khả năng học tập của em cùng những chia sẻ và kỳ vọng từ gia đình. Đây là cơ sở để Nhà trường đồng hành, hỗ trợ em phát huy năng lực và phát triển bản thân trong môi trường học tập tại Sky-Line.
 
-Chúc em có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm đam mê học hỏi và khát khao khám phá tri thức em nhé!`;
+Sky-Line tin rằng mỗi học sinh đều có những tiềm năng và giá trị riêng. Với sự nỗ lực của bản thân cùng sự đồng hành của gia đình và thầy cô, em sẽ có nhiều cơ hội khám phá, trưởng thành và tự tin chinh phục những mục tiêu phía trước.
+
+Nhà trường vui mừng chào đón em đến với lớp {{grade}} - hệ {{surveyFormType}}, năm học {{academicYear}}, tại {{admissionCampus}} - nơi mỗi học sinh được tôn trọng sự khác biệt, khuyến khích phát huy thế mạnh và phát triển toàn diện.
+
+Chúc em luôn tự tin, giữ vững niềm vui học tập và có những trải nghiệm thật ý nghĩa tại Sky-Line!
+
+Để hoàn tất thủ tục nhập học chính thức, kính mời Quý Phụ huynh phối hợp với bộ phận Tuyển sinh thực hiện các bước tiếp theo theo hướng dẫn của Nhà trường.
+
+Trân trọng,`;
 
 const defaultCamKet = `Hệ thống Giáo dục Sky-Line chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} học kì {{hocKy}} hệ {{surveyFormType}} năm học 2026-2027. Để tạo điều kiện tốt nhất cho hành trình phát triển toàn diện của học sinh tại trường, Nhà trường và Gia đình cùng thống nhất ký kết Bản Cam kết học tập này.
 
@@ -401,6 +424,7 @@ const renderTemplate = (template, student) => {
     .replace(/\{\{fullName\}\}/g, student?.fullName || "Lê Trà My")
     .replace(/\{\{grade\}\}/g, numericGrade)
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
+    .replace(/\{\{academicYear\}\}/g, student?.academicYear || "2026-2027")
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Hội nhập S")
     .replace(/\{\{admissionCampus\}\}/g, actualCampusName || "")
     .replace(/\{\{directorNote\}\}/g, student?.directorNote || "")
@@ -534,7 +558,7 @@ const defaultDanangSchools = [
 
 // ========= MAIN =========
 export function InputAssessmentsClient({
- academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [], mode = "config", forcedTab, viewMode = "all", destinationSchools = [] }: Props) {
+ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [], mode = "config", forcedTab, k12Track, onK12TrackChange, viewMode = "all", destinationSchools = [] }: Props) {
   const [internalDestinationSchools, setInternalDestinationSchools] = useState<any[]>(destinationSchools || []);
 
   useEffect(() => {
@@ -1160,12 +1184,12 @@ export function InputAssessmentsClient({
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
   const [rcTargetGroup, setRcTargetGroup] = useState("all")
   const [rcTitle, setRcTitle] = useState("BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
-  const [rcLogo, setRcLogo] = useState("")
+  const [rcLogo, setRcLogo] = useState("/logo.png")
   const [rcSignature, setRcSignature] = useState("")
-  const [rcBackground, setRcBackground] = useState("")
+  const [rcBackground, setRcBackground] = useState("/images/skyline-doc-watermark.png")
   const [rcDirectorName, setRcDirectorName] = useState("")
   const [rcContent, setRcContent] = useState("")
-  const [rcFooter, setRcFooter] = useState("")
+  const [rcFooter, setRcFooter] = useState("/images/skyline-doc-footer.png")
 
   // USER MANDATE: Fetch and memoize document checklist for Live Preview stacking
   const previewDocList = useMemo(() => {
@@ -1227,9 +1251,9 @@ export function InputAssessmentsClient({
       if (finalBg === null) { finalBg = ""; localStorage.setItem('report_config_master_background', ""); }
       if (finalFooter === null) { finalFooter = ""; localStorage.setItem('report_config_master_footer', ""); }
 
-      if (finalLogo) setRcLogo(finalLogo);
-      if (finalBg) setRcBackground(finalBg);
-      if (finalFooter) setRcFooter(finalFooter);
+      setRcLogo(finalLogo || "/logo.png");
+      setRcBackground(finalBg || "/images/skyline-doc-watermark.png");
+      setRcFooter(finalFooter || "/images/skyline-doc-footer.png");
     }
   }, []);
 
@@ -1433,9 +1457,43 @@ export function InputAssessmentsClient({
     setActiveGrades(grades)
   }, [grades])
   
+  const [internalK12Track, setInternalK12Track] = useState<K12TrackType>(k12Track || "HE_S")
+  useEffect(() => {
+    if (k12Track && k12Track !== internalK12Track) {
+      setInternalK12Track(k12Track)
+    }
+  }, [k12Track])
+  const activeK12Track: K12TrackType = k12Track || internalK12Track
+
   const currentEduSystems = useMemo(() => {
-    return eduSystems.filter((es: any) => es.academicYearId === yearId)
+    const byYear = eduSystems.filter((es: any) => es.academicYearId === yearId && !isPreschoolSystem(es.code, es.name))
+    if (byYear.length > 0) return byYear
+    return [
+      { id: "fallback-hns", code: "HNS", name: "Hệ Hội nhập S" },
+      { id: "fallback-hng", code: "HNG", name: "Hệ Hội nhập Global" },
+      { id: "fallback-sb", code: "SB", name: "Hệ Song bằng" },
+      { id: "fallback-hnc", code: "HNC", name: "Hệ Hội nhập Compass" }
+    ]
   }, [eduSystems, yearId])
+
+  const trackEduSystems = useMemo(() => {
+    if (viewMode === "transfer") return currentEduSystems
+    if (activeK12Track === "HE_I") {
+      const intlList = currentEduSystems.filter((es: any) => isIntlSystemCode(es.code))
+      const existingCodes = new Set(intlList.map((es: any) => String(es.code || "").toUpperCase()))
+      const merged = [...intlList]
+      ;[
+        { id: "std-hng", code: "HNG", name: "Hệ Hội nhập Global" },
+        { id: "std-sb", code: "SB", name: "Hệ Song bằng" },
+        { id: "std-hnc", code: "HNC", name: "Hệ Hội nhập Compass" }
+      ].forEach(std => {
+        if (!existingCodes.has(std.code)) merged.push(std)
+      })
+      return merged
+    }
+    const hnsList = currentEduSystems.filter((es: any) => !isIntlSystemCode(es.code))
+    return hnsList.length > 0 ? hnsList : [{ id: "std-hns", code: "HNS", name: "Hệ Hội nhập S" }]
+  }, [currentEduSystems, viewMode, activeK12Track])
   const [toast, setToast] = useState<{msg:string;type:"ok"|"err"}|null>(null)
   const notify = (msg:string, type:"ok"|"err"="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3200) }
   const handleDownloadTemplate = () => {
@@ -1713,6 +1771,7 @@ export function InputAssessmentsClient({
   const [sLoading, setSLoading] = useState(false)
   const [sPeriodId, setSPeriodId] = useState("")
   const [sBatchId, setSBatchId] = useState("")
+  const selPeriod = useMemo(() => visiblePeriods.find(p => p.id === sPeriodId), [visiblePeriods, sPeriodId])
 
   // ───────── BÀN GIAO DANH SÁCH HỌC SINH TỚI GIÁO VỤ (PHÂN CÔNG KHẢO SÁT) ─────────
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
@@ -1961,6 +2020,7 @@ export function InputAssessmentsClient({
   };
   const [sGradeFilter, setSGradeFilter] = useState("")
   const [sEduFilter, setSEduFilter] = useState("")
+  const [sTimingFilter, setSTimingFilter] = useState("")
   const [sCampusFilter, setSCampusFilter] = useState("")
   const [sResultFilter, setSResultFilter] = useState("all")
   const [sRecordFilter, setSRecordFilter] = useState<"all" | "achievements" | "old_school" | "attachments" | "eligible_regulation">("all")
@@ -1970,6 +2030,7 @@ export function InputAssessmentsClient({
   const [savingRowIds, setSavingRowIds] = useState<string[]>([])
   const [isSavingAllInline, setIsSavingAllInline] = useState(false)
   const [showQuickAddRow, setShowQuickAddRow] = useState(true)
+  const [showInlineSchoolCols, setShowInlineSchoolCols] = useState(true)
   const [isSavingQuickAdd, setIsSavingQuickAdd] = useState(false)
   const [quickAddDraft, setQuickAddDraft] = useState({
     studentCode: "",
@@ -1979,7 +2040,8 @@ export function InputAssessmentsClient({
     batchId: "",
     registeredCampus: "",
     grade: "1",
-    surveyFormType: "HNS",
+    hocKy: "Đầu năm",
+    surveyFormType: (k12Track || "HE_S") === "HE_I" ? "HNG" : "HNS",
     surveySystem: "Offline",
     admissionCriteria: "Khảo sát",
     targetType: "Nội tỉnh",
@@ -1995,6 +2057,37 @@ export function InputAssessmentsClient({
     engScoreOld: "",
     achievements: ""
   })
+
+  const handleSwitchK12Track = useCallback((nextTrack: K12TrackType) => {
+    setInternalK12Track(nextTrack)
+    setSEduFilter("")
+    setSelectedIds([])
+    setStudentsCurrentPage(1)
+    setQuickAddDraft(prev => ({
+      ...prev,
+      surveyFormType: nextTrack === "HE_I" ? "HNG" : "HNS"
+    }))
+    onK12TrackChange?.(nextTrack)
+  }, [onK12TrackChange])
+
+  useEffect(() => {
+    if (viewMode === "transfer") return
+    setSEduFilter(prev => {
+      if (!prev) return ""
+      return (activeK12Track === "HE_I") === isIntlSystemCode(prev) ? prev : ""
+    })
+    setSelectedIds([])
+    setQuickAddDraft(prev => ({
+      ...prev,
+      surveyFormType:
+        (activeK12Track === "HE_I") === isIntlSystemCode(prev.surveyFormType)
+          ? prev.surveyFormType
+          : activeK12Track === "HE_I"
+          ? (trackEduSystems[0]?.code || "HNG")
+          : (trackEduSystems[0]?.code || "HNS")
+    }))
+  }, [activeK12Track, viewMode, trackEduSystems])
+
   const [quickViewStudent, setQuickViewStudent] = useState<Student | null>(null)
   const [latestBatchInfo, setLatestBatchInfo] = useState(null);
   const [sSearch, setSSearch] = useState("")
@@ -2003,7 +2096,7 @@ export function InputAssessmentsClient({
 
   useEffect(() => {
     setStudentsCurrentPage(1);
-  }, [sPeriodId, sBatchId, sSearch, sGradeFilter, sEduFilter, sCampusFilter, sResultFilter, sRecordFilter]);
+  }, [sPeriodId, sBatchId, sSearch, sGradeFilter, sEduFilter, sTimingFilter, sCampusFilter, sResultFilter, sRecordFilter, activeK12Track]);
   const [importing, setImporting] = useState(false)
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
@@ -2309,10 +2402,10 @@ export function InputAssessmentsClient({
       const mBg = localStorage.getItem('report_config_master_background');
       const mFooter = localStorage.getItem('report_config_master_footer');
 
-      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
-      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
+      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "/logo.png");
+      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "/images/skyline-doc-watermark.png");
       const mergedContent = globalData.content || campusData.content || "";
-      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
+      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "/images/skyline-doc-footer.png");
       
       const campusSig = localStorage.getItem('report_config_signature_' + targetCampus.id) || campusData.signature || "";
       const campusDir = localStorage.getItem('report_config_director_' + targetCampus.id) || campusData.directorName || targetCampus.manager?.fullName || "";
@@ -2424,22 +2517,48 @@ export function InputAssessmentsClient({
       .replace(/\{\{committedSubjects\}\}/g, comSubs)
       .replace(/\{\{signatureName\}\}/g, student?.signatureName || "");
 
-    const paragraphs = renderedContent.split("\n").filter(Boolean);
-    const bodyHtml = paragraphs.map((p: string) => '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + p + '</p>').join("");
+    const rawParagraphs = renderedContent.split("\n").map((p: string) => p.trim()).filter(Boolean);
+    const hasSubtitleLine = !isCommitmentFlag && !isInvitationFlag && rawParagraphs.length > 0 && /^về\s+kết\s+quả\b/i.test(rawParagraphs[0]);
+    const subtitleLineHtml = hasSubtitleLine
+      ? '<p style="text-align: center; font-style: italic; font-size: 11pt; color: #334155; margin: 3px 0 0 0; text-indent: 0;">' + rawParagraphs[0] + '</p>'
+      : '';
+    const paragraphs = hasSubtitleLine ? rawParagraphs.slice(1) : rawParagraphs;
+    const formatInlineHtml = (text: string) => {
+      return text
+        .replace(/(phỏng vấn định hướng và khảo sát đầu vào)/gi, "<strong>$1</strong>")
+        .replace(/(lớp\s+\S+(?:\s+\S+)?\s*-\s*hệ\s+[^,\n]+)/gi, "<strong>$1</strong>")
+        .replace(/(năm học\s+)(\d{4}\s*[-–]\s*\d{4})/gi, "$1<strong>$2</strong>")
+        .replace(/(tại\s+)(Sky-Line\s+[A-Za-zÀ-ỹ]+(?:\s+[A-Za-zÀ-ỹ]+)?)(?=\s*[-–,])/gi, "$1<strong>$2</strong>");
+    };
+    const bodyHtml = paragraphs.map((p: string) => {
+      const pClean = p.trim();
+      const isWishLine = /^chúc\s+(em|con)\s+luôn\s+tự\s+tin/i.test(pClean);
+      const isClosingLine = /^trân\s+trọng[,./]*$/i.test(pClean);
+      if (isClosingLine) {
+        return '<p style="font-weight: 700; font-style: italic; text-indent: 0; margin: 6px 0 2px 0;">' + pClean + '</p>';
+      }
+      if (isWishLine) {
+        return '<p style="font-weight: 700; text-indent: 0; margin: 0 0 7px 0;">' + pClean + '</p>';
+      }
+      return '<p style="text-indent: ' + (isCommitmentFlag ? '10mm' : '0') + '; margin: 0 0 7px 0;">' + formatInlineHtml(pClean) + '</p>';
+    }).join("");
     
-    const greetingHtml = 'Thân gửi em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
+    const greetingHtml = '<strong style="font-weight: 700; font-style: normal; color: #0f172a;">Thân gửi em ' + student.fullName + ',</strong>';
     const directorName = config.directorName || "Đỗ Quang Trung";
     const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
       if (!src) return "";
-      const cors = src.startsWith("data:") ? "" : ' crossorigin="anonymous"';
+      const resolvedSrc = (src.startsWith("/") && typeof window !== "undefined") ? `${window.location.origin}${src}` : src;
+      const cors = resolvedSrc.startsWith("data:") ? "" : ' crossorigin="anonymous"';
       const styleAttr = style ? ' style="' + style + '"' : "";
       const altAttr = alt ? ' alt="' + alt + '"' : "";
-      return '<img class="' + className + '"' + cors + ' src="' + src + '"' + styleAttr + altAttr + ' />';
+      return '<img class="' + className + '"' + cors + ' src="' + resolvedSrc + '"' + styleAttr + altAttr + ' />';
     };
 
-    const logoHtml = config.logo ? getImgTag(config.logo, "logo-img", "", "Logo") : "";
+    const effectiveLogo = config.logo || "/logo.png";
+    const effectiveFooter = config.footer || "/images/skyline-doc-footer.png";
+    const logoHtml = getImgTag(effectiveLogo, "logo-img", "max-height: 42px; object-fit: contain;", "Logo");
     const signatureHtml = config.signature ? getImgTag(config.signature, "signature-img", "", "Signature") : "";
-    const footerHtml = config.footer ? getImgTag(config.footer, "footer-img", "", "Footer") : "";
+    const footerHtml = getImgTag(effectiveFooter, "footer-img", "width: 100%; max-height: 68px; object-fit: contain;", "Footer");
     
     const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus && reportForm?.admissionCampus !== "all") ? reportForm.admissionCampus : student.admissionCampus;
     const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
@@ -2468,7 +2587,7 @@ export function InputAssessmentsClient({
       : `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffix}`;
     const signName = isInvitationFlag && !config.signature ? "Ban Tuyển sinh" : directorName;
 
-    const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
+    const customFooterHtml = effectiveFooter ? getImgTag(effectiveFooter, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
       '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
           '<span style="font-weight: bold; color: #00A19A; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
@@ -2534,7 +2653,7 @@ export function InputAssessmentsClient({
         }).join("");
 
         page2Html = '<div class="print-page">' +
-            getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
+            getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130mm; height: auto; opacity: 1; z-index: 0; pointer-events: none;", "Watermark") +
             '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
               '<div style="display: flex; align-items: center; justify-content: space-between;">' +
                 logoHtml +
@@ -2548,14 +2667,14 @@ export function InputAssessmentsClient({
             '</div>' +
             '<div style="margin-top: 30px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
               '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;" className="border border-slate-200 border-collapse">' +
-                '<thead>' +
+                '<thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">' +
                   '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
                     '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
                     '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
-                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="px-4 py-3 border-b border-slate-100">Số lượng</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="px-4 py-3 border-b border-white/15 font-semibold">Số lượng</th>' +
                   '</tr>' +
                 '</thead>' +
-                '<tbody>' +
+                '<tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">' +
                   rowsHtml +
                 '</tbody>' +
               '</table>' +
@@ -2588,10 +2707,10 @@ export function InputAssessmentsClient({
             'print-color-adjust: exact !important;' +
           '}' +
           '.print-page {' +
-            'font-family: "Times New Roman", Times, serif;' +
+            'font-family: "Open Sans", Arial, sans-serif;' +
             'width: 210mm;' +
             'height: 296.8mm;' +
-            'padding: 12.7mm 15mm 48mm 15mm;' +
+            'padding: 15mm 20mm 32mm 22mm;' +
             'box-sizing: border-box;' +
             'position: relative;' +
             'overflow: hidden;' +
@@ -2604,51 +2723,52 @@ export function InputAssessmentsClient({
           '.print-watermark {' +
             'display: block;' +
             'position: absolute;' +
-            'top: 22%;' +
-            'left: 10%;' +
-            'transform: none;' +
-            'width: 80%;' +
+            'top: 50%;' +
+            'left: 50%;' +
+            'transform: translate(-50%, -50%);' +
+            'width: 130mm;' +
             'height: auto;' +
-            'opacity: 0.08;' +
+            'opacity: 1;' +
             'z-index: 0;' +
             'pointer-events: none;' +
           '}' +
           '.logo-img {' +
-            'max-height: 48px;' +
+            'max-height: 42px;' +
             'object-fit: contain;' +
           '}' +
           '.letter-title {' +
             'text-align: center;' +
-            'margin: 20px 0;' +
+            'margin: 6px 0 12px 0;' +
             'position: relative;' +
             'z-index: 10;' +
           '}' +
           '.letter-title h2 {' +
-            'font-size: 22px;' +
-            'font-weight: 900;' +
-            'letter-spacing: 0.5px;' +
-            'color: #1e1b4b;' +
+            'font-size: 17pt;' +
+            'font-weight: 800;' +
+            'letter-spacing: 1px;' +
+            'color: #0f172a;' +
             'text-transform: uppercase;' +
             'margin: 0;' +
           '}' +
           '.greeting {' +
-            'font-size: 16px;' +
-            'font-style: italic;' +
-            'color: #1e293b;' +
-            'margin-bottom: 12px;' +
+            'font-size: 11.5pt;' +
+            'font-style: normal;' +
+            'font-weight: 700;' +
+            'color: #0f172a;' +
+            'margin-bottom: 8px;' +
             'position: relative;' +
             'z-index: 10;' +
           '}' +
           '.content-body {' +
-            'font-size: 14pt;' +
-            'line-height: 1.5;' +
+            'font-size: 11pt;' +
+            'line-height: 1.42;' +
             'text-align: justify;' +
             'color: #1e293b;' +
             'position: relative;' +
             'z-index: 10;' +
           '}' +
           '.signature-section {' +
-            'margin-top: 30px;' +
+            'margin-top: 8px;' +
             'display: flex;' +
             'justify-content: flex-end;' +
             'position: relative;' +
@@ -2656,67 +2776,66 @@ export function InputAssessmentsClient({
           '}' +
           '.signature-block {' +
             'text-align: center;' +
-            'width: 200px;' +
+            'width: 240px;' +
           '}' +
           '.signature-title {' +
-            'font-size: 14px;' +
-            'font-weight: bold;' +
-            'color: #1e293b;' +
-            'margin-bottom: 4px;' +
+            'font-size: 10.5pt;' +
+            'font-weight: 700;' +
+            'color: #0f172a;' +
+            'margin-bottom: 1px;' +
           '}' +
           '.signature-desc {' +
-            'font-size: 12px;' +
-            'color: #475569;' +
+            'font-size: 9.5pt;' +
+            'color: #334155;' +
             'font-style: italic;' +
-            'margin-bottom: 10px;' +
+            'margin-bottom: 4px;' +
           '}' +
           '.signature-img-container {' +
-            'height: 64px;' +
+            'height: 44px;' +
             'display: flex;' +
             'justify-content: center;' +
             'align-items: center;' +
-            'margin-bottom: 8px;' +
+            'margin-bottom: 4px;' +
           '}' +
           '.signature-img {' +
-            'max-height: 64px;' +
+            'max-height: 44px;' +
             'object-fit: contain;' +
           '}' +
           '.signature-name {' +
-            'font-size: 15px;' +
-            'font-weight: bold;' +
-            'color: #1e293b;' +
+            'font-size: 11pt;' +
+            'font-weight: 700;' +
+            'color: #0f172a;' +
           '}' +
           '.footer-container {' +
             'position: absolute;' +
             'bottom: 8mm;' +
-            'left: 0;' +
-            'right: 0;' +
-            'width: 100%;' +
-            'padding-left: 15mm;' +
-            'padding-right: 15mm;' +
+            'left: 20mm;' +
+            'right: 20mm;' +
+            'width: auto;' +
             'box-sizing: border-box;' +
             'z-index: 10;' +
           '}' +
           '.footer-img {' +
             'width: 100%;' +
-            'max-height: 100px;' +
+            'max-height: 68px;' +
             'object-fit: contain;' +
           '}' +
         '</style>' +
       '</head>' +
       '<body>' +
         '<div class="print-page">' +
-          getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
-          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+          getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130mm; height: auto; opacity: 1; z-index: 0; pointer-events: none;", "Watermark") +
+          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #00A19A; padding-bottom: 6px; margin-bottom: 12px; position: relative; z-index: 10;">' +
             '<div style="display: flex; align-items: center; justify-content: space-between;">' +
               logoHtml +
             '</div>' +
             '<div style="text-align: left; margin-top: 4px;">' +
-              '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + schoolName + '</h4>' +
+              '<h4 style="font-family: \'Open Sans\', Arial, sans-serif; font-size: 10.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; color: #0f172a; margin: 0;">' + schoolName + '</h4>' +
             '</div>' +
           '</div>' +
           '<div class="letter-title">' +
             '<h2>' + config.title + '</h2>' +
+            subtitleLineHtml +
           '</div>' +
           '<div class="greeting">' +
             greetingHtml +
@@ -2724,15 +2843,15 @@ export function InputAssessmentsClient({
           '<div class="content-body">' +
             bodyHtml +
           '</div>' +
-          '<div class="signature-section" style="margin-top: 30px; display: flex; justify-content: flex-end; position: relative; z-index: 10;">' +
+          '<div class="signature-section" style="margin-top: 8px; display: flex; justify-content: flex-end; position: relative; z-index: 10;">' +
             '<div class="signature-block" style="text-align: center; width: 240px;">' +
-              '<div style="font-size: 13px; font-style: italic; color: #4b5563; margin-bottom: 4px;">' + formattedLetterDate + '</div>' +
-              '<div class="signature-title" style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">' + titleText + '</div>' +
-              '<div style="font-size: 10px; font-weight: bold; color: #312e81; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">' + subTitleText + '</div>' +
-              '<div class="signature-img-container" style="height: 64px; display: flex; justify-content: center; align-items: center; margin-bottom: 8px;">' +
+              '<div style="font-size: 10.5pt; font-style: italic; color: #334155; margin-bottom: 2px;">' + formattedLetterDate + '</div>' +
+              '<div class="signature-title" style="font-size: 10.5pt; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1px;">' + titleText + '</div>' +
+              '<div style="font-size: 9.5pt; font-weight: 700; color: #334155; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.2px;">' + subTitleText + '</div>' +
+              '<div class="signature-img-container" style="height: 44px; display: flex; justify-content: center; align-items: center; margin-bottom: 4px;">' +
                 (config.signature ? signatureHtml : '') +
               '</div>' +
-              '<div class="signature-name" style="font-size: 14px; font-weight: bold; color: #1e293b;">' + signName + '</div>' +
+              '<div class="signature-name" style="font-size: 11pt; font-weight: 700; color: #0f172a;">' + signName + '</div>' +
             '</div>' +
           '</div>' +
           '<div class="footer-container">' +
@@ -2742,7 +2861,7 @@ export function InputAssessmentsClient({
         page2Html +
       '</body>' +
       '</html>';
-  };;
+  };
 
   const handleCheckboxChange = (group: 'tuvan' | 'giaovu' | 'gdcs' | 'cc', cs?: string) => {
     setCheckedEmails(prev => {
@@ -3354,10 +3473,10 @@ ${reportForm.directorNote}`;
     if (selectedReportStudent.id === "MOCK_PREVIEW_STUDENT") {
       return {
         title: rcTitle || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : rcReportType === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP"),
-        logo: rcLogo,
-        background: rcBackground,
+        logo: rcLogo || "/logo.png",
+        background: rcBackground || "/images/skyline-doc-watermark.png",
         content: rcContent,
-        footer: rcFooter,
+        footer: rcFooter || "/images/skyline-doc-footer.png",
         signature: rcSignature,
         directorName: rcDirectorName || (campuses.find(c => c.id === rcCampusId)?.manager?.fullName || "")
       };
@@ -3440,10 +3559,10 @@ ${reportForm.directorNote}`;
       const mBg = localStorage.getItem('report_config_master_background');
       const mFooter = localStorage.getItem('report_config_master_footer');
 
-      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "");
-      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "");
+      const mergedLogo = mLogo ? mLogo : (globalData.logo || campusData.logo || "/logo.png");
+      const mergedBackground = mBg ? mBg : (globalData.background || campusData.background || "/images/skyline-doc-watermark.png");
       const mergedContent = globalData.content || campusData.content || "";
-      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "");
+      const mergedFooter = mFooter ? mFooter : (globalData.footer || campusData.footer || "/images/skyline-doc-footer.png");
       
       return {
         title: mergedTitle,
@@ -4112,6 +4231,7 @@ ${reportForm.directorNote}`;
   const [editingMappingSubjectId, setEditingMappingSubjectId] = useState<string|null>(null);
   const [allMappings, setAllMappings] = useState<any[]>([]);
   const [allMappingsLoading, setAllMappingsLoading] = useState(false);
+  const [gradeConfigs, setGradeConfigs] = useState<any[]>([]);
   const fetchAllMappings = async () => {
     setAllMappingsLoading(true);
     try {
@@ -4120,7 +4240,117 @@ ${reportForm.directorNote}`;
     } catch (e) {}
     setAllMappingsLoading(false);
   };
+  const fetchGradeConfigs = useCallback(async (targetYearId?: string) => {
+    const yId = targetYearId || yearId;
+    if (!yId) return;
+    try {
+      const r = await fetch(`/api/admin/input-assessments/grade-configs?academicYearId=${encodeURIComponent(yId)}&_t=${Date.now()}`, { cache: "no-store" });
+      if (r.ok) {
+        const data = await r.json();
+        setGradeConfigs(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {}
+  }, [yearId]);
+  useEffect(() => {
+    fetchAllMappings();
+  }, []);
+  useEffect(() => {
+    if (yearId) fetchGradeConfigs(yearId);
+  }, [yearId, fetchGradeConfigs]);
   useEffect(() => { if (tab === "mapping") fetchAllMappings(); }, [tab]);
+  useEffect(() => { if (tab === "students" && yearId) fetchGradeConfigs(yearId); }, [tab, yearId, fetchGradeConfigs]);
+
+  const regulationConfig = useMemo(() => parseAdmissionRegulationConfig(configs), [configs]);
+  const systemSubjectsSummary = useMemo(() => summarizeSystemSubjectsFromMappings(allMappings), [allMappings]);
+
+  // Helper hiển thị tùy chọn "1. Mốc thời gian / Kỳ khảo sát" đồng bộ với Cấu hình file điểm khảo sát đầu vào
+  const renderIntakeMilestoneSelectOptions = (currentValue?: string, verboseStandard = false) => {
+    const standardValues = STANDARD_INTAKE_MILESTONE_OPTIONS.map(o => o.value);
+    const periodNames = visiblePeriods.map(p => p.name);
+    const hasCustom =
+      Boolean(currentValue) &&
+      !standardValues.includes(currentValue as string) &&
+      !periodNames.includes(currentValue as string);
+    return (
+      <>
+        <optgroup label="Mốc thời gian chuẩn">
+          {STANDARD_INTAKE_MILESTONE_OPTIONS.map(opt => (
+            <option key={opt.code} value={opt.value}>
+              {verboseStandard ? opt.label : opt.shortLabel}
+            </option>
+          ))}
+        </optgroup>
+        {visiblePeriods.length > 0 && (
+          <optgroup label="Kỳ khảo sát cụ thể">
+            {visiblePeriods.map(p => (
+              <option key={p.id} value={p.name}>
+                Kỳ: {p.name}
+              </option>
+            ))}
+          </optgroup>
+        )}
+        {hasCustom && <option value={currentValue}>{currentValue}</option>}
+      </>
+    );
+  };
+
+  // Helper hiển thị môn kiểm tra theo Quy chế tuyển sinh (Sky-Line Academic Ledger)
+  const renderExamSubjectsCell = (examResult: StudentExamSubjectsResult) => {
+    if (!examResult || (examResult.requiredSubjects.length === 0 && examResult.exemptSubjects.length === 0)) {
+      return <span className="text-[11px] text-slate-300 italic">—</span>;
+    }
+
+    if (examResult.requiredSubjects.length === 0 && examResult.exemptSubjects.length > 0) {
+      return (
+        <div className="flex flex-col gap-0.5 min-w-[155px] max-w-[245px] tabular-nums">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10.5px] font-semibold w-fit">
+            ✓ Miễn toàn bộ môn văn hóa
+          </span>
+          <span className="text-[9.5px] text-slate-500 truncate" title={examResult.ruleApplied}>
+            {examResult.ruleApplied}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-1 min-w-[165px] max-w-[265px] tabular-nums">
+        <div className="flex items-center gap-1 flex-wrap">
+          {examResult.requiredSubjects.map((sub, i) => {
+            const lowName = (sub.subjectName || "").toLowerCase();
+            const isSpeaking = lowName.includes("vấn đáp");
+            return (
+              <span
+                key={i}
+                className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10.5px] border whitespace-nowrap ${
+                  sub.isOrientation
+                    ? "bg-sky-50 text-sky-800 border-sky-200 font-medium"
+                    : isSpeaking
+                    ? "bg-[#F0FDFA] text-[#005854] border-[#00A19A]/40 font-semibold"
+                    : "bg-[#003B3A]/8 text-[#003B3A] border-[#003B3A]/20 font-semibold"
+                }`}
+                title={sub.note || (sub.isOrientation ? "Môn định hướng đầu vào, không dùng làm tiêu chí xét tuyển" : "Môn khảo sát bắt buộc theo Quy chế tuyển sinh")}
+              >
+                {sub.subjectName}
+                {sub.isOrientation && <span className="ml-1 text-[9.5px] text-sky-700 font-normal">(ĐH)</span>}
+              </span>
+            );
+          })}
+        </div>
+        {examResult.exemptSubjects.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap text-[10px] leading-tight text-emerald-700">
+            <span className="font-semibold text-emerald-800 shrink-0">✓ Miễn:</span>
+            <span className="font-medium text-emerald-700" title={examResult.exemptSubjects.map(e => `${e.subjectName}: ${e.reason || ""}`).join(" • ")}>
+              {examResult.exemptSubjects.map(sub => sub.subjectName).join(", ")}
+            </span>
+          </div>
+        )}
+        <span className="text-[9.5px] text-slate-400 truncate" title={examResult.reason || `${examResult.ruleApplied} • ${examResult.intakeTime}`}>
+          {examResult.ruleApplied}
+        </span>
+      </div>
+    );
+  };
 
   // ───────── ASSIGNMENT STATE ─────────
   const [assignments, setAssignments] = useState<Assignment[]>([])
@@ -4853,7 +5083,21 @@ ${reportForm.directorNote}`;
     const rawCampus = overrides?.registeredCampus || activeBatchObj?.campusId || effPeriod?.campusId || campuses[0]?.id || "";
     const resolvedCampusObj = campuses.find(c => c.id === rawCampus || c.campusName === rawCampus || c.campusCode === rawCampus);
     const initialCampus = resolvedCampusObj?.id || rawCampus;
-    const initialSystem = overrides?.surveyFormType || currentEduSystems[0]?.code || "CLC";
+    const initialGrade = overrides?.grade || ((sGradeFilter && sGradeFilter !== "all") ? sGradeFilter : (activeGrades[0] || "1"));
+    const initialSystem =
+      overrides?.surveyFormType ||
+      ((sEduFilter && sEduFilter !== "all")
+        ? sEduFilter
+        : viewMode !== "transfer"
+        ? (trackEduSystems[0]?.code || (activeK12Track === "HE_I" ? "HNG" : "HNS"))
+        : (currentEduSystems[0]?.code || "HNS"));
+    const resolvedFilterTiming = sTimingFilter?.startsWith("PERIOD:")
+      ? (visiblePeriods.find(p => p.id === sTimingFilter.slice("PERIOD:".length))?.name || "")
+      : sTimingFilter;
+    const initialHocKy =
+      overrides?.hocKy ||
+      resolvedFilterTiming ||
+      getDefaultHocKyByGrade(initialGrade, effPeriod?.name);
     
     // Calculate initial code locally for zero latency
     let nextNum = 1;
@@ -4872,10 +5116,10 @@ ${reportForm.directorNote}`;
       studentCode: tempCode,
       fullName: "",
       dateOfBirth: "",
-      grade: (sGradeFilter && sGradeFilter !== "all") ? sGradeFilter : (activeGrades[0] || "1"),
+      grade: initialGrade,
       admissionCriteria: configs.find(c => c.categoryType === "DIEN_KS")?.name || "",
       className: "",
-      hocKy: "",
+      hocKy: initialHocKy,
       kqgdTieuHoc: "",
       kqHocTap: "",
       kqRenLuyen: "",
@@ -4938,7 +5182,7 @@ ${reportForm.directorNote}`;
       grade: s.grade || "",
       admissionCriteria: s.admissionCriteria || "",
       className: s.className || "",
-      hocKy: s.hocKy || "",
+      hocKy: normalizeStudentHocKyDisplay(s, periods.find(p => p.id === s.periodId)?.name, visiblePeriods),
       kqgdTieuHoc: s.kqgdTieuHoc || "",
       kqHocTap: s.kqHocTap || "",
       kqRenLuyen: s.kqRenLuyen || "",
@@ -5135,13 +5379,25 @@ ${reportForm.directorNote}`;
   }, [students.length, refreshQuickAddCode, quickAddDraft.studentCode]);
 
   useEffect(() => {
-    setQuickAddDraft(prev => ({
-      ...prev,
-      batchId: (sBatchId && sBatchId !== "all" && sBatchId !== "none") ? sBatchId : prev.batchId,
-      grade: (sGradeFilter && sGradeFilter !== "all") ? sGradeFilter : prev.grade,
-      surveyFormType: (sEduFilter && sEduFilter !== "all") ? sEduFilter : prev.surveyFormType
-    }));
-  }, [sBatchId, sGradeFilter, sEduFilter]);
+    setQuickAddDraft(prev => {
+      const nextGrade = (sGradeFilter && sGradeFilter !== "all") ? sGradeFilter : prev.grade;
+      const filterTimingVal = sTimingFilter?.startsWith("PERIOD:")
+        ? (visiblePeriods.find(p => p.id === sTimingFilter.slice("PERIOD:".length))?.name || "")
+        : sTimingFilter;
+      const shouldUpdateHocKy = filterTimingVal
+        ? filterTimingVal
+        : nextGrade !== prev.grade && prev.hocKy === getDefaultHocKyByGrade(prev.grade, selPeriod?.name)
+        ? getDefaultHocKyByGrade(nextGrade, selPeriod?.name)
+        : prev.hocKy;
+      return {
+        ...prev,
+        batchId: (sBatchId && sBatchId !== "all" && sBatchId !== "none") ? sBatchId : prev.batchId,
+        grade: nextGrade,
+        hocKy: shouldUpdateHocKy,
+        surveyFormType: (sEduFilter && sEduFilter !== "all") ? sEduFilter : prev.surveyFormType
+      };
+    });
+  }, [sBatchId, sGradeFilter, sEduFilter, sTimingFilter, visiblePeriods, selPeriod?.name]);
 
   const getRowInitialDraft = useCallback((s: Student, parsedDefaults?: {
     oldSchoolName?: string;
@@ -5158,6 +5414,7 @@ ${reportForm.directorNote}`;
     achievements?: string;
     hinhThucKs?: string;
     dienKs?: string;
+    periodName?: string;
   }) => {
     const cleanScore = (v?: string) => (!v || v === "—" || v === "Không áp dụng" || v === "Yêu cầu bổ sung") ? "" : v;
     const cleanRating = (v?: string) => (!v || v === "—" || v === "Không áp dụng") ? "" : v;
@@ -5175,7 +5432,8 @@ ${reportForm.directorNote}`;
       batchId: s.batchId || "",
       registeredCampus: s.registeredCampus || s.admissionCampus || "",
       grade: s.grade || "1",
-      surveyFormType: s.surveyFormType || "HNS",
+      hocKy: normalizeStudentHocKyDisplay(s, parsedDefaults?.periodName, visiblePeriods),
+      surveyFormType: s.surveyFormType || (activeK12Track === "HE_I" ? "HNG" : "HNS"),
       surveySystem: parsedDefaults?.hinhThucKs || s.surveySystem || "Offline",
       admissionCriteria: parsedDefaults?.dienKs && parsedDefaults.dienKs !== "—" ? parsedDefaults.dienKs : (s.admissionCriteria || "Khảo sát"),
       targetType: locType,
@@ -5191,12 +5449,17 @@ ${reportForm.directorNote}`;
       engScoreOld: cleanScore(parsedDefaults?.english),
       achievements: parsedDefaults?.achievements || ""
     };
-  }, []);
+  }, [activeK12Track, visiblePeriods]);
 
   const updateInlineCell = (s: Student, parsedDefaults: any, field: string, value: any) => {
     setInlineEdits(prev => {
       const current = prev[s.id] || getRowInitialDraft(s, parsedDefaults);
       const next = { ...current, [field]: value };
+      if (field === "grade") {
+        if (!current.hocKy || current.hocKy === getDefaultHocKyByGrade(current.grade)) {
+          next.hocKy = getDefaultHocKyByGrade(value);
+        }
+      }
       if (field === "targetType") {
         if (value === "Nội tỉnh") next.cityName = "Thành phố Đà Nẵng";
         else if (value === "Ngoại tỉnh" && next.cityName === "Thành phố Đà Nẵng") next.cityName = "";
@@ -5223,7 +5486,10 @@ ${reportForm.directorNote}`;
     rec.overallRating = draft.overallRating || "";
     rec.achievements = draft.achievements || "";
 
-    const litName = parseInt(draft.grade || "1", 10) <= 5 ? "Tiếng Việt" : "Ngữ Văn";
+    const gradeNum = parseInt(draft.grade || "1", 10) || 1;
+    const hocKyLower = String(draft.hocKy || "").toLowerCase();
+    const isGrade6DauNam = gradeNum === 6 && !hocKyLower.includes("2");
+    const litName = gradeNum <= 5 || isGrade6DauNam ? "Tiếng Việt" : "Ngữ Văn";
     const coreSubs = [
       { id: "toan", name: "Toán", score: draft.mathScoreOld || "" },
       { id: "van", name: litName, score: draft.litScoreOld || "" },
@@ -5281,6 +5547,7 @@ ${reportForm.directorNote}`;
       batchId: draft.batchId || null,
       registeredCampus: draft.registeredCampus || null,
       grade: draft.grade || "1",
+      hocKy: draft.hocKy || null,
       surveyFormType: draft.surveyFormType || null,
       surveySystem: draft.surveySystem || null,
       admissionCriteria: draft.admissionCriteria || null,
@@ -5774,8 +6041,40 @@ ${reportForm.directorNote}`;
   }
 
   // ====================== UI HELPERS ======================
-  const selPeriod = visiblePeriods.find(p => p.id === sPeriodId)
   const asSelPeriod = visiblePeriods.find(p => p.id === asPeriodId)
+
+  const checkIsTransferStudent = useCallback((s: Student, StrictClassNameCheck = false) => {
+    const pObj = periods.find(p => p.id === s.periodId);
+    const pName = (pObj?.name || "").toLowerCase();
+    const bObj = pObj?.batches?.find((b: any) => b.id === s.batchId);
+    const bName = (bObj?.name || "").toLowerCase();
+    return (
+      pName.includes("chuyển hệ") ||
+      pName.includes("chuyen he") ||
+      bName.includes("chuyen_he") ||
+      bName.includes("chuyển hệ") ||
+      (s.admissionCriteria || "").toLowerCase().includes("chuyển hệ") ||
+      (s.targetType || "").toLowerCase().includes("chuyển hệ") ||
+      (StrictClassNameCheck && Boolean(s.className && s.surveySystem))
+    );
+  }, [periods]);
+
+  const generalTrackCounts = useMemo(() => {
+    const completedBatchIds = new Set(
+      periods.flatMap(p => p.batches || []).filter(b => b.status === "COMPLETED").map(b => b.id)
+    );
+    let heS = 0;
+    let heI = 0;
+    students.forEach(s => {
+      const isBatchCompleted = (s as any).batch?.status === "COMPLETED" || (s.batchId && completedBatchIds.has(s.batchId));
+      if (isBatchCompleted && !showCompletedBatches && sBatchId !== s.batchId) return;
+      if (viewMode === "general" && checkIsTransferStudent(s, false)) return;
+      if (getStudentK12Track(s) === "HE_I") heI++;
+      else heS++;
+    });
+    return { heS, heI };
+  }, [students, periods, showCompletedBatches, sBatchId, viewMode, checkIsTransferStudent]);
+
   const filtStu = useMemo(() => {
     const completedBatchIds = new Set(
       periods.flatMap(p => p.batches || []).filter(b => b.status === "COMPLETED").map(b => b.id)
@@ -5788,26 +6087,11 @@ ${reportForm.directorNote}`;
       }
       // Filter by viewMode (transfer vs general)
       if (viewMode === "transfer") {
-        const pObj = periods.find(p => p.id === s.periodId);
-        const pName = (pObj?.name || "").toLowerCase();
-        const bObj = pObj?.batches?.find((b: any) => b.id === s.batchId);
-        const bName = (bObj?.name || "").toLowerCase();
-        const isTr = pName.includes("chuyển hệ") || pName.includes("chuyen he") ||
-                     bName.includes("chuyen_he") || bName.includes("chuyển hệ") ||
-                     (s.admissionCriteria || "").toLowerCase().includes("chuyển hệ") ||
-                     (s.targetType || "").toLowerCase().includes("chuyển hệ") ||
-                     Boolean(s.className && s.surveySystem);
-        if (!isTr) return false;
-      } else if (viewMode === "general") {
-        const pObj = periods.find(p => p.id === s.periodId);
-        const pName = (pObj?.name || "").toLowerCase();
-        const bObj = pObj?.batches?.find((b: any) => b.id === s.batchId);
-        const bName = (bObj?.name || "").toLowerCase();
-        const isTr = pName.includes("chuyển hệ") || pName.includes("chuyen he") ||
-                     bName.includes("chuyen_he") || bName.includes("chuyển hệ") ||
-                     (s.admissionCriteria || "").toLowerCase().includes("chuyển hệ") ||
-                     (s.targetType || "").toLowerCase().includes("chuyển hệ");
-        if (isTr) return false;
+        if (!checkIsTransferStudent(s, true)) return false;
+      } else {
+        if (viewMode === "general" && checkIsTransferStudent(s, false)) return false;
+        // Tách độc lập hoàn toàn Danh sách Khảo sát Hệ S (HNS) và Danh sách Khảo sát Hệ I (HNG, SB, HNC)
+        if (getStudentK12Track(s) !== activeK12Track) return false;
       }
 
       if (sSearch) {
@@ -5820,6 +6104,21 @@ ${reportForm.directorNote}`;
       if (sEduFilter) {
         const sys = s.surveyFormType || s.surveySystem || "";
         if (sys !== sEduFilter) return false;
+      }
+      if (sTimingFilter) {
+        if (sTimingFilter.startsWith("PERIOD:")) {
+          const targetPId = sTimingFilter.slice("PERIOD:".length);
+          const targetPObj = visiblePeriods.find(p => p.id === targetPId) || periods.find(p => p.id === targetPId);
+          const matchPeriod =
+            s.periodId === targetPId ||
+            Boolean(targetPObj?.name && String(s.hocKy || "").trim().toLowerCase() === targetPObj.name.trim().toLowerCase());
+          if (!matchPeriod) return false;
+        } else {
+          const pObj = periods.find(p => p.id === s.periodId);
+          const pk = resolveStudentGradeConfigPeriodKey(s, visiblePeriods, pObj?.name || selPeriod?.name);
+          const expectedMilestone = sTimingFilter === "Học kỳ 2" ? "HK2" : sTimingFilter === "Học kỳ 1" ? "HK1" : "DAU_NAM";
+          if (pk.displayValue !== sTimingFilter && pk.milestoneCode !== expectedMilestone) return false;
+        }
       }
       if (sCampusFilter) {
         const matchedCampus = campuses.find(c => c.id === sCampusFilter);
@@ -5858,7 +6157,7 @@ ${reportForm.directorNote}`;
       }
       return true;
     });
-  }, [students, sSearch, sGradeFilter, sEduFilter, sCampusFilter, sResultFilter, sRecordFilter, campuses, selPeriod, visiblePeriods, periods, showCompletedBatches, sBatchId, configs]);
+  }, [students, sSearch, sGradeFilter, sEduFilter, sTimingFilter, sCampusFilter, sResultFilter, sRecordFilter, campuses, selPeriod, visiblePeriods, periods, showCompletedBatches, sBatchId, configs, viewMode, activeK12Track, checkIsTransferStudent]);
 
   const paginatedFiltStu = useMemo(() => {
     const startIndex = (studentsCurrentPage - 1) * studentsPageSize;
@@ -5942,8 +6241,19 @@ ${reportForm.directorNote}`;
     let withAttachments = 0;
     let eligibleByRegulation = 0;
     const regConfig = parseAdmissionRegulationConfig(configs);
+    const completedBatchIds = new Set(
+      periods.flatMap(p => p.batches || []).filter(b => b.status === "COMPLETED").map(b => b.id)
+    );
 
-    students.forEach((s) => {
+    const scopedStudents = students.filter(s => {
+      const isBatchCompleted = (s as any).batch?.status === "COMPLETED" || (s.batchId && completedBatchIds.has(s.batchId));
+      if (isBatchCompleted && !showCompletedBatches && sBatchId !== s.batchId) return false;
+      if (viewMode === "transfer") return checkIsTransferStudent(s, true);
+      if (viewMode === "general" && checkIsTransferStudent(s, false)) return false;
+      return getStudentK12Track(s) === activeK12Track;
+    });
+
+    scopedStudents.forEach((s) => {
       const entranceRec = parseEntranceRecord(s.kqHocTap, s.grade);
       const details = extractAcademicDetails(entranceRec, s.grade);
       if (details.achievements) withAchievements++;
@@ -5953,13 +6263,13 @@ ${reportForm.directorNote}`;
     });
 
     return {
-      total: students.length,
+      total: scopedStudents.length,
       withAchievements,
       withOldSchool,
       withAttachments,
       eligibleByRegulation
     };
-  }, [students, configs]);
+  }, [students, configs, periods, showCompletedBatches, sBatchId, viewMode, activeK12Track, checkIsTransferStudent]);
 
   const studentResultKPIs = useMemo(() => {
     let datCount = 0;
@@ -6105,26 +6415,44 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
         <div className="flex flex-wrap gap-0.5">
           {[
-            { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c Tuy\u1ec3n sinh & C\u00e2u h\u1ecfi \u0111\u1ecbnh h\u01b0\u1edbng",            icon:Settings },
-            { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
-            { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
-            { id:"regulation",           label:"Nh\u1eadp quy ch\u1ebf tuy\u1ec3n sinh", tip:"Nh\u1eadp & C\u1ea5u h\u00ecnh Quy ch\u1ebf Tuy\u1ec3n sinh", icon:ClipboardList },
-            { id:"periods",              label:"T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t",      tip:"K\u1ef3 & \u0110\u1ee3t kh\u1ea3o s\u00e1t",        icon:Clock },
-            { id:"students",             label:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
+            { id:"categories", permId:"categories", label:"Danh m\u1ee5c", tip:"Danh m\u1ee5c Tuy\u1ec3n sinh & C\u00e2u h\u1ecfi \u0111\u1ecbnh h\u01b0\u1edbng", icon:Settings },
+            { id:"subjects", permId:"subjects", label:"M\u00f4n KS", tip:"M\u00f4n kh\u1ea3o s\u00e1t", icon:BookOpen },
+            { id:"mapping", permId:"mapping", label:"C\u1ea5u h\u00ecnh", tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i", icon:Layers },
+            { id:"regulation", permId:"regulation", label:"Nh\u1eadp quy ch\u1ebf tuy\u1ec3n sinh", tip:"Nh\u1eadp & C\u1ea5u h\u00ecnh Quy ch\u1ebf Tuy\u1ec3n sinh", icon:ClipboardList },
+            { id:"periods", permId:"periods", label:"T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t", tip:"K\u1ef3 & \u0110\u1ee3t kh\u1ea3o s\u00e1t", icon:Clock },
+            { id:"students_s", permId:"students", label:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t H\u1ec7 S", tip:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t \u0111\u1ed9c l\u1eadp H\u1ec7 H\u1ed9i nh\u1eadp S (HNS)", icon:Users },
+            { id:"students_i", permId:"students", label:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t H\u1ec7 I", tip:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t \u0111\u1ed9c l\u1eadp H\u1ec7 Global, Song b\u1eb1ng, Compass (HNG, SB, HNC)", icon:GraduationCap },
 
-          ].filter(t => !(mode === "input" && ["categories", "subjects", "mapping", "regulation"].includes(t.id))).map(t => {
-            const p = getTabPermissions(t.id);
+          ].filter(t => !(mode === "input" && ["categories", "subjects", "mapping", "regulation"].includes(t.permId))).map(t => {
+            const p = getTabPermissions(t.permId);
             const canRead = p.canRead;
             const isTabReadOnly = canRead && !p.canCreate && !p.canUpdate && !p.canDelete;
+            const isTabActive =
+              t.id === "students_s"
+                ? tab === "students" && activeK12Track === "HE_S"
+                : t.id === "students_i"
+                ? tab === "students" && activeK12Track === "HE_I"
+                : tab === t.id;
             return (
               <button
                 key={t.id}
-                onClick={() => { if (canRead) setTab(t.id); }}
+                onClick={() => {
+                  if (!canRead) return;
+                  if (t.id === "students_s") {
+                    setTab("students");
+                    handleSwitchK12Track("HE_S");
+                  } else if (t.id === "students_i") {
+                    setTab("students");
+                    handleSwitchK12Track("HE_I");
+                  } else {
+                    setTab(t.id);
+                  }
+                }}
                 title={!canRead ? "Bạn không có quyền xem chức năng này" : isTabReadOnly ? `${t.tip} (Chỉ xem)` : t.tip}
                 className={"flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[11px] font-bold transition-all duration-200 min-w-[44px] sm:min-w-0 " + 
                   (!canRead 
                     ? "opacity-35 cursor-not-allowed select-none" 
-                    : (tab===t.id 
+                    : (isTabActive 
                         ? (isTabReadOnly ? "bg-amber-600 text-white shadow-sm" : "bg-[#003B3A] text-white shadow-sm") 
                         : (isTabReadOnly 
                             ? "text-slate-500 hover:bg-slate-50 hover:text-slate-700 border border-dashed border-amber-300/40" 
@@ -6135,7 +6463,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               >
                 {!canRead && <Lock className="w-3 h-3 text-slate-400 mr-0.5" />}
                 {isTabReadOnly && <Lock className="w-3.5 h-3.5 text-amber-500 mr-0.5 flex-shrink-0" />}
-                <t.icon className={"w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 " + (tab===t.id ? "text-white" : (isTabReadOnly ? "text-amber-500/80" : "text-slate-400"))}/>
+                <t.icon className={"w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 " + (isTabActive ? "text-white" : (isTabReadOnly ? "text-amber-500/80" : "text-slate-400"))}/>
                 <span className="leading-tight text-center whitespace-nowrap">{t.label}</span>
               </button>
             );
@@ -6371,18 +6699,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-50 border-b-2 border-slate-200">
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-8">#</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giáo viên</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Môn học</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khối</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ học</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Nhập học</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="border-b-2 text-[11px] font-semibold">
+                          <th className="px-3 py-2.5 text-[10px] w-8 font-semibold">#</th>
+                          <th className="px-3 py-2.5 text-[10px] font-semibold">Giáo viên</th>
+                          <th className="px-3 py-2.5 text-[10px] font-semibold">Môn học</th>
+                          <th className="px-3 py-2.5 text-[10px] font-semibold">Khối</th>
+                          <th className="px-3 py-2.5 text-[10px] font-semibold">Hệ học</th>
+                          <th className="px-3 py-2.5 text-[10px] text-center font-semibold">Nhập học</th>
+                          <th className="px-3 py-2.5 text-[10px] text-right font-semibold">Thao tác</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                         {groupedAssignments.map((a, idx) => (
                           <tr key={a.id} className="border-b border-slate-100 hover:bg-teal-50/30 transition-colors">
                             <td className="px-3 py-2 text-slate-400 font-bold">{idx + 1}</td>
@@ -6838,9 +7166,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
                     <div className="overflow-x-auto max-h-[620px] overflow-y-auto custom-scrollbar">
                       <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-10 bg-[#003B3A] text-white">
-                          <tr>
-                            <th className="px-3 py-3 text-center w-10 pl-4">
+                        <thead className="sticky top-0 z-10 bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="text-[11px] font-semibold whitespace-nowrap">
+                            <th className="px-3 py-3 text-center w-10 pl-4 font-semibold">
                               <input
                                 type="checkbox"
                                 checked={kslBatchesFiltered.length > 0 && kslBatchesFiltered.every(b => selectedBatchIds.includes(b.id))}
@@ -6856,17 +7184,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 title="Chọn tất cả đợt đang hiển thị"
                               />
                             </th>
-                            <th className="px-3 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Đợt #</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Học sinh / Nội dung Đợt Khảo sát lẻ</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Cơ sở</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Ngày KS</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-center whitespace-nowrap">Sĩ số &amp; Hồ sơ</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Phụ trách</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-right pr-5 whitespace-nowrap">Thao tác nhanh</th>
+                            <th className="px-3 py-3 text-[10px] whitespace-nowrap font-semibold">Đợt #</th>
+                            <th className="px-4 py-3 text-[10px] font-semibold">Học sinh / Nội dung Đợt Khảo sát lẻ</th>
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Cơ sở</th>
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Ngày KS</th>
+                            <th className="px-4 py-3 text-[10px] text-center whitespace-nowrap font-semibold">Sĩ số &amp; Hồ sơ</th>
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Trạng thái</th>
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Phụ trách</th>
+                            <th className="px-4 py-3 text-[10px] text-right pr-5 whitespace-nowrap font-semibold">Thao tác nhanh</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-xs">
+                        <tbody className="divide-y divide-[#E2E8F0] text-xs">
                           {kslBatchesFiltered.map(b => {
                             const selectedCampus = campuses.find(c => c.id === b.campusId) || campuses.find(c => (b.name || "").includes(c.campusCode) || (b.name || "").includes(c.campusName));
                             const campusLabel = selectedCampus ? (selectedCampus.campusCode || selectedCampus.campusName) : "Toàn trường";
@@ -7351,19 +7679,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
                     <div className="overflow-x-auto max-h-[620px] overflow-y-auto custom-scrollbar">
                       <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-10 bg-[#003B3A] text-white">
-                          <tr>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Mã Ca / Đợt</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Tên Phiên / Lịch Ca Thi</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Cơ sở &amp; Phòng</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Ngày &amp; Giờ thi</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Học sinh trong ca</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider">Cán bộ Khảo sát</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
-                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-wider text-right pr-5 whitespace-nowrap">Thao tác nhanh</th>
+                        <thead className="sticky top-0 z-10 bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="text-[11px] font-semibold whitespace-nowrap">
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Mã Ca / Đợt</th>
+                            <th className="px-4 py-3 text-[10px] font-semibold">Tên Phiên / Lịch Ca Thi</th>
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Cơ sở &amp; Phòng</th>
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Ngày &amp; Giờ thi</th>
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Học sinh trong ca</th>
+                            <th className="px-4 py-3 text-[10px] font-semibold">Cán bộ Khảo sát</th>
+                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Trạng thái</th>
+                            <th className="px-4 py-3 text-[10px] text-right pr-5 whitespace-nowrap font-semibold">Thao tác nhanh</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-xs">
+                        <tbody className="divide-y divide-[#E2E8F0] text-xs">
                           {filteredSessions.map(sessionItem => {
                             const stCount = sessionItem.studentSessions?.length || 0;
                             const combinedList = buildSessionTeachersList(sessionItem);
@@ -7883,9 +8211,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                        ) : (
                          <div className="overflow-x-auto bg-white border border-slate-150 rounded-2xl shadow-none">
                            <table className="w-full text-left border-collapse">
-                             <thead>
+                             <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                                <tr className="text-xs font-semibold">
-                                 <th className="px-3 py-3.5 border-b border-slate-200/80 text-center w-10 pl-4">
+                                 <th className="px-3 py-3.5 border-b border-white/15 text-center w-10 pl-4 font-semibold">
                                    <input
                                      type="checkbox"
                                      checked={(p.batches || []).length > 0 && (p.batches || []).every(b => selectedBatchIds.includes(b.id))}
@@ -7902,17 +8230,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                      title="Chọn tất cả đợt của kỳ này"
                                    />
                                  </th>
-                                 <th className="px-3 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Mã Đợt</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Nội dung khảo sát</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Cơ sở</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Thời gian</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Học sinh</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Trạng thái</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Người phụ trách</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right pr-6">Thao tác</th>
+                                 <th className="px-3 py-3.5 border-b border-white/15 text-[10px] font-semibold">Mã Đợt</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] font-semibold">Nội dung khảo sát & Môn theo hệ</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Cơ sở</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Thời gian</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] text-center font-semibold">Học sinh</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Trạng thái</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Người phụ trách</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] text-right pr-6 font-semibold">Thao tác</th>
                                </tr>
                              </thead>
-                             <tbody className="divide-y divide-slate-100">
+                             <tbody className="divide-y divide-[#E2E8F0]">
                                {p.batches?.filter(b => {
                                   if (batchCampusFilter && batchCampusFilter !== "all") {
                                     if (b.campusId) {
@@ -7974,6 +8302,27 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         {b.name.includes("|") && (
                                           <p className="text-[10px] font-medium text-slate-400 truncate max-w-xs" title={b.name}>{b.name}</p>
                                         )}
+                                        <div className="flex flex-col gap-1 mt-1.5 text-[10px]">
+                                          {systemSubjectsSummary.map((sysItem) => {
+                                            const isHns = sysItem.systemGroup === "HNS";
+                                            return (
+                                              <div
+                                                key={sysItem.systemGroup}
+                                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border w-fit ${
+                                                  isHns
+                                                    ? "bg-[#F0FDFA] border-[#CCFBF1] text-[#003B3A]"
+                                                    : "bg-slate-50 border-slate-200 text-slate-700"
+                                                }`}
+                                                title={`Môn khảo sát cấu hình cho Hệ ${sysItem.systemGroup}: ${sysItem.subjectsLabel}`}
+                                              >
+                                                <span className={`font-bold shrink-0 ${isHns ? "text-[#00736E]" : "text-[#003B3A]"}`}>
+                                                  Hệ {sysItem.systemGroup}:
+                                                </span>
+                                                <span className="font-medium">{sysItem.subjectsLabel}</span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
                                       </td>
                                       <td className="px-4 py-3 border-b border-slate-100">
                                         <span className="text-[11px] font-bold text-slate-600">
@@ -8453,21 +8802,21 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             ) : (
               <div className="overflow-x-auto border border-slate-200 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead className="bg-slate-100 text-slate-600">
-                    <tr>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] w-10 text-center">#</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Mã HS / SBD</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Họ và tên Học sinh</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] text-center">Ngày sinh</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] text-center">Giới tính</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] text-center">Khối ĐK</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px] text-center">Hệ KS</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Diện KS / Hình thức</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Trường học cũ</th>
-                      <th className="py-2.5 px-3 font-bold uppercase text-[10px]">Cơ sở ĐK</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-3 font-bold text-[10px] w-10 text-center">#</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px]">Mã HS / SBD</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px]">Họ và tên Học sinh</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px] text-center">Ngày sinh</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px] text-center">Giới tính</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px] text-center">Khối ĐK</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px] text-center">Hệ KS</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px]">Diện KS / Hình thức</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px]">Trường học cũ</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px]">Cơ sở ĐK</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {effectiveHandoverStudents.map((s, idx) => (
                       <tr key={s.id} className="hover:bg-slate-50/80">
                         <td className="py-2.5 px-3 text-center text-slate-500 font-semibold">{idx + 1}</td>
@@ -8504,423 +8853,481 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
       {/* ===== TAB: STUDENTS (SAAS REDESIGNED) ===== */}
       {tab==="students" && (
-        <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 " + (isReadOnly ? "select-none" : "")}>
+        <div className={"space-y-2.5 animate-in fade-in duration-300 " + (isReadOnly ? "select-none" : "")}>
           {isReadOnly && (
-            <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
+            <div className="no-print text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-center gap-2 text-xs font-semibold">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              Chế độ xem (đọc dữ liệu). Các chức năng thêm mới, chỉnh sửa và xóa bị khóa đối với tài khoản này.
             </div>
           )}
-          
-          {/* Header & Stats */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                  {viewMode === "transfer" ? (
-                    <>
-                      <span className="p-1 rounded-lg bg-amber-100 text-amber-700">
-                        <ArrowRightLeft className="w-4 h-4" />
+
+          {/* Unified Sky-Line Academic Ledger Workspace Header & Filter Strip */}
+          <div className="bg-white border border-[#E2E8F0] border-l-4 border-l-[#003B3A] rounded-2xl p-3 shadow-xs space-y-2.5 tabular-nums">
+            {/* Row 1: Track / Title + Regulation Summary + Primary Actions */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 pb-2.5 border-b border-[#F1F5F9]">
+              <div className="flex flex-wrap items-center gap-2 min-w-0">
+                {viewMode === "transfer" ? (
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                      <ArrowRightLeft className="w-3.5 h-3.5" />
+                    </span>
+                    <h2 className="text-sm font-bold text-[#003B3A]">Hồ sơ khảo sát học sinh chuyển hệ</h2>
+                    <span className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-[11px] font-semibold">
+                      {filtStu.length} hồ sơ
+                    </span>
+                  </div>
+                ) : !k12Track ? (
+                  <div className="flex flex-wrap items-center gap-1 bg-[#F8FAFC] p-1 rounded-xl border border-[#E2E8F0]">
+                    <button
+                      type="button"
+                      onClick={() => handleSwitchK12Track("HE_S")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        activeK12Track === "HE_S"
+                          ? "bg-[#003B3A] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                      }`}
+                    >
+                      <Users className="w-3.5 h-3.5 shrink-0" />
+                      <span>Danh sách khảo sát Hệ S</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                        activeK12Track === "HE_S" ? "bg-[#00A19A] text-white" : "bg-slate-200/80 text-slate-700"
+                      }`}>
+                        HNS • {generalTrackCounts.heS}
                       </span>
-                      <span>Quản lý Hồ sơ Khảo sát Học sinh Chuyển hệ</span>
-                    </>
-                  ) : (
-                    <span>Quản lý Hồ sơ Khảo sát Học sinh</span>
-                  )}
-                </h2>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 text-xs font-bold border border-teal-200/80">
-                  {filtStu.length} hồ sơ
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-normal mt-0.5">
-                {viewMode === "transfer"
-                  ? "Tìm kiếm, quản lý hồ sơ đăng ký chuyển hệ nội bộ và đánh giá năng lực xét duyệt chuẩn quy trình Sky-Line."
-                  : "Tìm kiếm, quản lý hồ sơ đăng ký và kết quả học tập đầu vào của học sinh tham gia khảo sát."}
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2 flex-wrap">
-              {selectedIds.length > 0 && (
-                <div className="flex items-center gap-1.5 pr-2 mr-1 border-r border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => setIsMoveBatchModalOpen(true)}
-                    className="h-9 px-3 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
-                  >
-                    <RefreshCcw className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Chuyển đợt ({selectedIds.length})</span>
-                  </button>
-                  {!cannotDelete && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirm({ msg: `Xóa ${selectedIds.length} hồ sơ học sinh đã chọn?`, fn: doDeleteSelected })}
-                      className="h-9 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                      <span>Xóa ({selectedIds.length})</span>
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Data Tools Dropdown (Công cụ nâng cao) */}
-              <div className="relative" ref={dataToolsRef}>
-                <button
-                  type="button"
-                  onClick={() => setIsDataToolsOpen(prev => !prev)}
-                  className="h-9 px-3 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl flex items-center gap-1.5 text-xs font-medium shadow-2xs transition-all cursor-pointer"
-                  title="Các công cụ đồng bộ dữ liệu"
-                >
-                  <Database className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Công cụ</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isDataToolsOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isDataToolsOpen && (
-                  <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
-                    <button
-                      type="button"
-                      onClick={() => { setIsDataToolsOpen(false); handleSyncMasterStudentInfo(); }}
-                      disabled={syncingMaster}
-                      className="w-full px-3.5 py-2 text-left text-xs font-normal text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 text-teal-600 ${syncingMaster ? 'animate-spin' : ''}`} />
-                      <span>Đồng bộ từ HS gốc</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsDataToolsOpen(false);
-                        const res = exportEligibleStudentsRegulationExcel({
-                          customConfig: parseAdmissionRegulationConfig(configs),
-                          templateOnly: true
-                        });
-                        notify(`Đã tải file mẫu "${res.fileName}"!`);
-                      }}
-                      className="w-full px-3.5 py-2 text-left text-xs font-normal text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      onClick={() => handleSwitchK12Track("HE_I")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        activeK12Track === "HE_I"
+                          ? "bg-[#003B3A] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                      }`}
                     >
-                      <Download className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Tải mẫu DS Đủ ĐK Quy chế (.xlsx)</span>
+                      <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+                      <span>Danh sách khảo sát Hệ I</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                        activeK12Track === "HE_I" ? "bg-[#00A19A] text-white" : "bg-slate-200/80 text-slate-700"
+                      }`}>
+                        HNG / SB • {generalTrackCounts.heI}
+                      </span>
                     </button>
                   </div>
-                )}
-              </div>
-
-              {/* Nút Xuất / Tải mẫu DS Học sinh đủ điều kiện khảo sát theo quy chế */}
-              <button
-                type="button"
-                onClick={() => {
-                  const regConfig = parseAdmissionRegulationConfig(configs);
-                  const res = exportEligibleStudentsRegulationExcel({
-                    students: filtStu,
-                    customConfig: regConfig,
-                    campuses,
-                    periods
-                  });
-                  if (res.isSample) {
-                    notify(`Đã tải Mẫu danh sách HS đủ điều kiện khảo sát theo quy chế (${res.fileName})!`);
-                  } else {
-                    notify(`Đã xuất ${res.exportedCount} HS đủ điều kiện Xét học bạ / Tuyển thẳng theo quy chế (${res.fileName})!`);
-                  }
-                }}
-                className="h-9 px-3 bg-teal-50/80 text-[#005854] border border-teal-200 hover:bg-teal-100/80 rounded-xl flex items-center gap-1.5 text-xs font-bold shadow-2xs transition-all cursor-pointer"
-                title="Xuất danh sách (hoặc tải mẫu) Học sinh đủ điều kiện Xét học bạ / Tuyển thẳng (được miễn môn văn hóa theo quy chế)"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-[#00736E]" />
-                <span>Xuất Mẫu / DS Đủ ĐK Quy chế</span>
-              </button>
-
-              {/* Nút Tải file mẫu trực tiếp */}
-              <button
-                type="button"
-                onClick={handleDownloadTemplate}
-                disabled={!sPeriodId}
-                className="h-9 px-3 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-xl flex items-center gap-1.5 text-xs font-medium shadow-2xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Tải file mẫu Excel"
-              >
-                <Download className="w-3.5 h-3.5 text-sky-600" />
-                <span>Tải mẫu</span>
-              </button>
-
-              {/* Nút Nhập Excel trực tiếp */}
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={!sPeriodId || sPeriodId === "all" || importing || cannotCreate}
-                className={"h-9 px-3.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-xl flex items-center gap-1.5 text-xs font-medium hover:bg-emerald-100/70 transition-all cursor-pointer shadow-2xs " + ((!sPeriodId || sPeriodId === "all" || importing || cannotCreate) ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
-                title={cannotCreate ? "Chế độ xem (Đọc dữ liệu)" : "Nhập danh sách học sinh từ file Excel"}
-              >
-                {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700" /> : <Upload className="w-3.5 h-3.5 text-emerald-600" />}
-                <span>{importing ? "Đang nhập..." : "Nhập Excel"}</span>
-              </button>
-
-              {/* Nút Tiếp nhận nhanh Khảo sát lẻ (30s) */}
-              {viewMode !== "transfer" && (
-                <button
-                  type="button"
-                  onClick={() => openQuickScheduleModal(kslPeriod?.id)}
-                  disabled={cannotCreate}
-                  className={"h-9 px-3.5 bg-gradient-to-r from-[#005854] to-[#00736E] hover:from-[#003B3A] hover:to-[#005854] text-white rounded-xl flex items-center gap-1.5 text-xs font-bold shadow-xs transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
-                  title="Tiếp nhận học sinh Khảo sát lẻ, tự động tạo Đợt KSL mới & xếp lịch ngay trong 30 giây"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>⚡ Khảo sát lẻ (30s)</span>
-                </button>
-              )}
-
-              {/* Nút Bàn giao Danh sách Học sinh theo đợt tới Giáo vụ để Phân công Khảo sát */}
-              <button
-                type="button"
-                onClick={() => openHandoverGiaoVuModal(sPeriodId && sPeriodId !== "all" ? sPeriodId : undefined, sBatchId && sBatchId !== "none" ? sBatchId : undefined)}
-                className="h-9 px-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl flex items-center gap-1.5 text-xs font-bold shadow-xs transition-all cursor-pointer"
-                title="Bàn giao tới Giáo vụ: Gửi thông tin Danh sách HS theo đợt Khảo sát đến Giáo vụ để Phân công Khảo sát"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Bàn giao tới Giáo vụ</span>
-              </button>
-
-              {/* Nút Thêm mới HS nổi bật */}
-              <button 
-                type="button"
-                onClick={() => openAddStudent()} 
-                disabled={cannotCreate} 
-                className={"h-9 px-4 bg-teal-700 hover:bg-teal-800 text-white rounded-xl flex items-center gap-1.5 text-xs font-semibold shadow-sm transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} 
-                title={cannotCreate ? "Chế độ xem (Đọc dữ liệu)" : "Thêm mới học sinh vào danh sách"}
-              >
-                <Plus className="w-4 h-4"/>
-                <span>Thêm mới</span>
-              </button>
-              <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
-            </div>
-          </div>
-
-          {/* Filter Card */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-            {/* Quick Period Switcher Pills */}
-            {visiblePeriods.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">Chuyển nhanh Kỳ KS:</span>
-                  <button
-                    type="button"
-                    onClick={() => { setSPeriodId("all"); setSBatchId(""); }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      sPeriodId === "all"
-                        ? "bg-[#003B3A] text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    <span>Tất cả các kỳ</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                      sPeriodId === "all" ? "bg-white/20 text-white" : "bg-white text-slate-700"
-                    }`}>
-                      {visiblePeriods.reduce((sum, p) => sum + ((p as any)._count?.students || 0), 0)} HS
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-[#003B3A]">
+                      {activeK12Track === "HE_I" ? "Danh sách khảo sát Hệ I (HNG • SB)" : "Danh sách khảo sát Hệ S (HNS)"}
                     </span>
-                  </button>
-                  {visiblePeriods.map(p => {
-                    const isKsl = (p.name || "").toLowerCase().normalize("NFC").includes("khảo sát lẻ") || (p.code || "").toUpperCase().includes("KSL");
-                    const isSelected = sPeriodId === p.id;
-                    const pStCount = (p as any)._count?.students || 0;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => { setSPeriodId(p.id); setSBatchId(""); }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
-                          isSelected
-                            ? "bg-[#00736E] text-white border-[#005854] shadow-xs"
-                            : isKsl
-                            ? "bg-teal-50/70 text-[#005854] border-teal-200 hover:bg-teal-100/80"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {isKsl && <Sparkles className={`w-3.5 h-3.5 ${isSelected ? "text-amber-300" : "text-[#00736E]"}`} />}
-                        <span>{p.name}</span>
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                          isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-[#005854]"
-                        }`}>
-                          {pStCount} HS
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                    <span className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-[11px] font-semibold">
+                      {filtStu.length} hồ sơ
+                    </span>
+                  </div>
+                )}
 
-                {sBatchId && (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {sBatchId !== "none" && (
+                {/* Concise Regulation Reference Strip */}
+                {viewMode !== "transfer" && (
+                  <div className="hidden 2xl:flex flex-wrap items-center gap-1 text-[10.5px] pl-2 border-l border-[#E2E8F0]">
+                    <span className="font-semibold text-slate-500 mr-0.5">Quy chế:</span>
+                    {activeK12Track === "HE_I" ? (
                       <>
-                        <button
-                          type="button"
-                          onClick={() => openHandoverGiaoVuModal(sPeriodId && sPeriodId !== "all" ? sPeriodId : undefined, sBatchId)}
-                          className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white border border-teal-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all"
-                          title="Bàn giao & Gửi danh sách học sinh của đợt đang lọc tới Giáo vụ để Phân công Khảo sát"
-                        >
-                          <Mail className="w-3 h-3" />
-                          <span>Bàn giao đợt này tới Giáo vụ ({filtStu.length} HS)</span>
-                        </button>
-                        <a
-                          href={`/admin/phan-cong-khao-sat?tab=k12&periodId=${sPeriodId && sPeriodId !== "all" ? sPeriodId : ""}&batchId=${sBatchId}`}
-                          className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-[#003B3A] text-teal-800 hover:text-white border border-teal-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all"
-                          title="Mở màn hình Phân công Khảo sát cho đợt này"
-                        >
-                          <UserCheck className="w-3 h-3" />
-                          <span>Phân công KS</span>
-                        </a>
+                        <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200">K1 ĐN: 16 tiêu chí, ESL vấn đáp (ĐH)</span>
+                        <span className="px-1.5 py-0.5 rounded bg-[#F0FDFA] text-[#005854] border border-teal-200">K1 HK2–K6 ĐN: TV (&lt;8.0), EPT, ESL vấn đáp</span>
+                        <span className="px-1.5 py-0.5 rounded bg-[#F0FDFA] text-[#005854] border border-teal-200">K6 HK2–K11 HK1: Văn (&lt;6.5), EPT, ESL vấn đáp</span>
+                        <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">K11 HK2–K12: Không miễn</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="px-1.5 py-0.5 rounded bg-[#F0FDFA] text-[#003B3A] border border-[#00A19A]/40 font-semibold">TA vấn đáp: Khảo sát K1–12</span>
+                        <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200">K1 ĐN: 16 tiêu chí</span>
+                        <span className="px-1.5 py-0.5 rounded bg-[#F0FDFA] text-[#005854] border border-teal-200">K1 HK2–K6 ĐN: TV, Toán, TA viết (&lt;8.0)</span>
+                        <span className="px-1.5 py-0.5 rounded bg-[#F0FDFA] text-[#005854] border border-teal-200">K6 HK2–K11 HK1: Văn, Toán, TA viết (&lt;6.5)</span>
+                        <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">K11 HK2–K12: Không miễn</span>
                       </>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => setSBatchId("")}
-                      className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all"
-                      title="Bỏ lọc theo đợt đơn lẻ để xem toàn bộ học sinh của kỳ"
-                    >
-                      <X className="w-3 h-3" />
-                      <span>Đang lọc 1 đợt • Xem tất cả đợt của kỳ</span>
-                    </button>
                   </div>
                 )}
               </div>
-            )}
 
-            <div className="grid grid-cols-12 gap-3">
-              <div className="col-span-12 sm:col-span-6 lg:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Kỳ khảo sát *</label>
-                <select value={sPeriodId} onChange={e=>{setSPeriodId(e.target.value); setSBatchId("")}} className={inp + " !h-10 text-xs font-medium"}>
-                   <option value="">-- Chọn Kỳ --</option>
-                   <option value="all">-- Tất cả các kỳ --</option>
-                   {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name} ({(p as any)._count?.students || 0} HS)</option>)}
-                </select>
+              {/* Action Toolbar (Single-row crisp ledger buttons) */}
+              <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                {selectedIds.length > 0 && (
+                  <div className="flex items-center gap-1.5 pr-1.5 mr-0.5 border-r border-[#E2E8F0]">
+                    <button
+                      type="button"
+                      onClick={() => setIsMoveBatchModalOpen(true)}
+                      className="h-8 px-2.5 bg-[#F0FDFA] hover:bg-teal-100 text-[#005854] border border-teal-200 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      <RefreshCcw className="w-3.5 h-3.5 text-[#008B85]" />
+                      <span>Chuyển đợt ({selectedIds.length})</span>
+                    </button>
+                    {!cannotDelete && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirm({ msg: `Xóa ${selectedIds.length} hồ sơ học sinh đã chọn?`, fn: doDeleteSelected })}
+                        className="h-8 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Xóa ({selectedIds.length})</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Consolidated Excel & Data Utilities Dropdown */}
+                <div className="relative" ref={dataToolsRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDataToolsOpen(prev => !prev)}
+                    className="h-8 px-2.5 bg-white text-slate-700 border border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-slate-300 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors cursor-pointer"
+                    title="Tải mẫu Excel, xuất danh sách đủ ĐK Quy chế & đồng bộ dữ liệu"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-[#00736E]" />
+                    <span>Mẫu & Xuất Excel</span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isDataToolsOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {isDataToolsOpen && (
+                    <div className="absolute right-0 mt-1.5 w-64 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                      <button
+                        type="button"
+                        onClick={() => { setIsDataToolsOpen(false); handleDownloadTemplate(); }}
+                        disabled={!sPeriodId}
+                        className="w-full px-3.5 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] flex items-center gap-2.5 transition-colors disabled:opacity-45 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                        <span>Tải file mẫu nhập danh sách (.xlsx)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDataToolsOpen(false);
+                          const regConfig = parseAdmissionRegulationConfig(configs);
+                          const res = exportEligibleStudentsRegulationExcel({
+                            students: filtStu,
+                            customConfig: regConfig,
+                            campuses,
+                            periods
+                          });
+                          if (res.isSample) {
+                            notify(`Đã tải mẫu danh sách HS đủ điều kiện quy chế (${res.fileName})!`);
+                          } else {
+                            notify(`Đã xuất ${res.exportedCount} HS đủ điều kiện miễn môn theo quy chế (${res.fileName})!`);
+                          }
+                        }}
+                        className="w-full px-3.5 py-2 text-left text-xs font-medium text-[#005854] hover:bg-[#F0FDFA] flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
+                        <span>Xuất danh sách đủ ĐK Quy chế</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDataToolsOpen(false);
+                          const res = exportEligibleStudentsRegulationExcel({
+                            customConfig: parseAdmissionRegulationConfig(configs),
+                            templateOnly: true
+                          });
+                          notify(`Đã tải file mẫu "${res.fileName}"!`);
+                        }}
+                        className="w-full px-3.5 py-2 text-left text-xs font-normal text-slate-600 hover:bg-[#F8FAFC] flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Tải mẫu trống DS đủ ĐK Quy chế</span>
+                      </button>
+                      <div className="my-1 border-t border-[#F1F5F9]" />
+                      <button
+                        type="button"
+                        onClick={() => { setIsDataToolsOpen(false); handleSyncMasterStudentInfo(); }}
+                        disabled={syncingMaster}
+                        className="w-full px-3.5 py-2 text-left text-xs font-normal text-slate-700 hover:bg-[#F8FAFC] flex items-center gap-2.5 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 text-teal-600 shrink-0 ${syncingMaster ? "animate-spin" : ""}`} />
+                        <span>Đồng bộ từ hồ sơ HS gốc</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={!sPeriodId || sPeriodId === "all" || importing || cannotCreate}
+                  className={"h-8 px-2.5 bg-white text-emerald-800 border border-emerald-200 rounded-lg flex items-center gap-1.5 text-xs font-semibold hover:bg-emerald-50 transition-colors cursor-pointer " + ((!sPeriodId || sPeriodId === "all" || importing || cannotCreate) ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
+                  title={cannotCreate ? "Chế độ xem" : "Nhập danh sách học sinh từ file Excel (chọn 1 Kỳ khảo sát cụ thể)"}
+                >
+                  {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700" /> : <Upload className="w-3.5 h-3.5 text-emerald-600" />}
+                  <span>{importing ? "Đang nhập..." : "Nhập Excel"}</span>
+                </button>
+
+                {viewMode !== "transfer" && (
+                  <button
+                    type="button"
+                    onClick={() => openQuickScheduleModal(kslPeriod?.id)}
+                    disabled={cannotCreate}
+                    className={"h-8 px-2.5 bg-[#F0FDFA] hover:bg-teal-100/80 text-[#005854] border border-[#00A19A]/40 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
+                    title="Tiếp nhận học sinh khảo sát lẻ, tự động tạo đợt KSL mới & xếp lịch nhanh"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-[#00736E]" />
+                    <span>Khảo sát lẻ (30s)</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => openHandoverGiaoVuModal(sPeriodId && sPeriodId !== "all" ? sPeriodId : undefined, sBatchId && sBatchId !== "none" ? sBatchId : undefined)}
+                  className="h-8 px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
+                  title="Bàn giao danh sách học sinh theo đợt tới Giáo vụ để phân công khảo sát"
+                >
+                  <Mail className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Bàn giao Giáo vụ</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => openAddStudent()}
+                  disabled={cannotCreate}
+                  className={"h-8 px-3 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg flex items-center gap-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
+                  title={cannotCreate ? "Chế độ xem" : "Mở biểu mẫu thêm mới học sinh chi tiết"}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm mới</span>
+                </button>
+                <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport} />
               </div>
+            </div>
 
-              <div className="col-span-12 sm:col-span-6 lg:col-span-3">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Đợt khảo sát</label>
-                <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp + " !h-10 text-xs font-medium"} disabled={!sPeriodId}>
-                   <option value="">-- Tất cả đợt &amp; Khảo sát lẻ --</option>
-                   <option value="none">-- Khảo sát lẻ (Chưa phân đợt) --</option>
-                   {[...((sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || [])]
-                     .filter((b: any) => showCompletedBatches || b.status !== "COMPLETED" || b.id === sBatchId)
-                     .sort((a: any, b: any) => (Number(b.batchNumber) || 0) - (Number(a.batchNumber) || 0))
-                     .map((b: any) => {
-                       const bStCount = b._count?.students ?? b.students?.length ?? 0;
-                       return (
-                         <option key={b.id} value={b.id}>
-                           [{bStCount} HS] {b.status === "COMPLETED" ? "✓ [Hoàn thành] " : ""}{b.name}
-                         </option>
-                       );
-                     })}
+            {/* Row 2: Compact 7-column Filter Grid */}
+            <div className="grid grid-cols-12 gap-2 items-end">
+              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Kỳ khảo sát *</label>
+                <select value={sPeriodId} onChange={e => { setSPeriodId(e.target.value); setSBatchId(""); }} className={inp + " !h-8.5 !py-0 text-xs font-medium"}>
+                  <option value="">-- Chọn kỳ --</option>
+                  <option value="all">Tất cả các kỳ ({visiblePeriods.reduce((sum, p) => sum + ((p as any)._count?.students || 0), 0)} HS)</option>
+                  {visiblePeriods.map(p => <option key={p.id} value={p.id}>{p.name} ({(p as any)._count?.students || 0} HS)</option>)}
                 </select>
               </div>
 
               <div className="col-span-6 sm:col-span-4 lg:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Cơ sở ĐK</label>
-                <select value={sCampusFilter} onChange={e=>setSCampusFilter(e.target.value)} className={inp + " !h-10 text-xs font-medium"}>
-                   <option value="">-- Tất cả Cơ sở --</option>
-                   {campuses.map(c=><option key={c.id} value={c.id}>{c.campusName}</option>)}
+                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Đợt khảo sát</label>
+                <select value={sBatchId} onChange={e => setSBatchId(e.target.value)} className={inp + " !h-8.5 !py-0 text-xs font-medium"} disabled={!sPeriodId}>
+                  <option value="">Tất cả đợt &amp; khảo sát lẻ</option>
+                  <option value="none">Khảo sát lẻ (chưa phân đợt)</option>
+                  {[...((sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || [])]
+                    .filter((b: any) => showCompletedBatches || b.status !== "COMPLETED" || b.id === sBatchId)
+                    .sort((a: any, b: any) => (Number(b.batchNumber) || 0) - (Number(a.batchNumber) || 0))
+                    .map((b: any) => {
+                      const bStCount = b._count?.students ?? b.students?.length ?? 0;
+                      return (
+                        <option key={b.id} value={b.id}>
+                          [{bStCount} HS] {b.status === "COMPLETED" ? "✓ " : ""}{b.name}
+                        </option>
+                      );
+                    })}
                 </select>
               </div>
 
-              <div className="col-span-3 sm:col-span-4 lg:col-span-1">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Khối</label>
-                <select value={sGradeFilter} onChange={e=>setSGradeFilter(e.target.value)} className={inp + " !h-10 !px-2.5 text-xs font-medium"}>
-                   <option value="">Tất cả</option>
-                   {activeGrades.map(g=><option key={g} value={g}>Khối {g}</option>)}
+              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Cơ sở đăng ký</label>
+                <select value={sCampusFilter} onChange={e => setSCampusFilter(e.target.value)} className={inp + " !h-8.5 !py-0 text-xs font-medium"}>
+                  <option value="">Tất cả cơ sở</option>
+                  {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                 </select>
               </div>
 
-              <div className="col-span-3 sm:col-span-4 lg:col-span-1">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Hệ KS</label>
-                <select value={sEduFilter} onChange={e=>setSEduFilter(e.target.value)} className={inp + " !h-10 !px-2.5 text-xs font-medium"}>
-                   <option value="">Tất cả</option>
-                   {currentEduSystems.map(es=><option key={es.code} value={es.code}>{es.code}</option>)}
+              <div className="col-span-3 sm:col-span-2 lg:col-span-1">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Khối</label>
+                <select value={sGradeFilter} onChange={e => setSGradeFilter(e.target.value)} className={inp + " !h-8.5 !py-0 !px-2 text-xs font-medium"}>
+                  <option value="">Tất cả</option>
+                  {activeGrades.map(g => <option key={g} value={g}>Khối {g}</option>)}
                 </select>
               </div>
 
-              <div className="col-span-12 sm:col-span-12 lg:col-span-3">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 ml-0.5">Tìm kiếm học sinh</label>
+              <div className="col-span-3 sm:col-span-2 lg:col-span-1">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Hệ KS</label>
+                <select value={sEduFilter} onChange={e => setSEduFilter(e.target.value)} className={inp + " !h-8.5 !py-0 !px-2 text-xs font-medium"}>
+                  <option value="">Tất cả</option>
+                  {trackEduSystems.map(es => <option key={es.code} value={es.code}>{es.code}</option>)}
+                </select>
+              </div>
+
+              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
+                <label className="block text-[11px] font-semibold text-[#003B3A] mb-0.5 truncate" title="1. Mốc thời gian / Kỳ khảo sát (đồng bộ Cấu hình quy chế tuyển sinh)">
+                  1. Mốc thời gian / Kỳ KS
+                </label>
+                <select value={sTimingFilter} onChange={e => setSTimingFilter(e.target.value)} className={inp + " !h-8.5 !py-0 !px-2 text-xs font-medium"}>
+                  <option value="">Tất cả mốc / Kỳ KS</option>
+                  <optgroup label="Mốc thời gian chuẩn">
+                    {STANDARD_INTAKE_MILESTONE_OPTIONS.map(opt => (
+                      <option key={opt.code} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </optgroup>
+                  {visiblePeriods.length > 0 && (
+                    <optgroup label="Kỳ khảo sát cụ thể">
+                      {visiblePeriods.map(p => (
+                        <option key={p.id} value={`PERIOD:${p.id}`}>Kỳ: {p.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+              </div>
+
+              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Tìm kiếm học sinh</label>
                 <div className="relative">
-                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"/>
-                   <input
-                     value={sSearch}
-                     onChange={e=>setSSearch(e.target.value)}
-                     placeholder="Nhập tên hoặc mã học sinh..."
-                     className={inp+" !h-10 pl-8.5 pr-7 text-xs font-normal"}
-                   />
-                   {sSearch && (
-                     <button type="button" onClick={()=>setSSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
-                       <X className="w-3.5 h-3.5" />
-                     </button>
-                   )}
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  <input
+                    value={sSearch}
+                    onChange={e => setSSearch(e.target.value)}
+                    placeholder="Tên hoặc mã HS..."
+                    className={inp + " !h-8.5 !py-0 pl-8 pr-6 text-xs font-normal"}
+                  />
+                  {sSearch && (
+                    <button type="button" onClick={() => setSSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* KPI Summary Banner & View Mode Switcher */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-100 text-xs">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-1">Lọc nhanh hồ sơ:</span>
+            {/* Row 3: Quick Ledger Filter Pills + Data-Entry Workspace Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#F1F5F9] text-xs">
+              <div className="flex flex-wrap items-center gap-1">
+                {visiblePeriods.length > 0 && (
+                  <div className="flex items-center gap-1 pr-2 mr-1 border-r border-[#E2E8F0]">
+                    <button
+                      type="button"
+                      onClick={() => { setSPeriodId("all"); setSBatchId(""); }}
+                      className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                        sPeriodId === "all"
+                          ? "bg-[#003B3A] text-white"
+                          : "bg-[#F8FAFC] text-slate-600 border border-[#E2E8F0] hover:bg-slate-100"
+                      }`}
+                    >
+                      Tất cả kỳ ({visiblePeriods.reduce((sum, p) => sum + ((p as any)._count?.students || 0), 0)})
+                    </button>
+                    {visiblePeriods.map(p => {
+                      const isSelected = sPeriodId === p.id;
+                      const pStCount = (p as any)._count?.students || 0;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => { setSPeriodId(p.id); setSBatchId(""); }}
+                          className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                            isSelected
+                              ? "bg-[#00736E] text-white border-[#00736E]"
+                              : "bg-white text-slate-600 border-[#E2E8F0] hover:border-[#00A19A]"
+                          }`}
+                        >
+                          {p.name} ({pStCount})
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setSRecordFilter("all")}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sRecordFilter === "all" ? "bg-slate-800 text-white shadow-xs" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                    sRecordFilter === "all"
+                      ? "bg-[#003B3A] text-white"
+                      : "bg-[#F8FAFC] text-slate-600 border border-[#E2E8F0] hover:bg-slate-100"
+                  }`}
                 >
-                  Tất cả: {studentIntakeKPIs.total}
+                  Tất cả ({studentIntakeKPIs.total})
                 </button>
                 <button
                   type="button"
                   onClick={() => setSRecordFilter("eligible_regulation")}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sRecordFilter === "eligible_regulation" ? "bg-[#00736E] text-white shadow-xs" : "bg-emerald-50 text-emerald-800 border border-emerald-200/80 hover:bg-emerald-100"}`}
-                  title="Chỉ lọc nhóm Học sinh đủ điều kiện Xét học bạ / Tuyển thẳng (được miễn môn văn hóa Toán - Tiếng Việt/Ngữ Văn theo Quy chế)"
+                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                    sRecordFilter === "eligible_regulation"
+                      ? "bg-[#059669] text-white border-[#059669]"
+                      : "bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-100/70"
+                  }`}
+                  title="Lọc học sinh đạt ngưỡng điểm miễn môn văn hóa hoặc diện Tuyển thẳng theo Quy chế"
                 >
-                  ✅ Đủ ĐK Xét học bạ / Tuyển thẳng (Quy chế): {studentIntakeKPIs.eligibleByRegulation}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSRecordFilter("achievements")}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sRecordFilter === "achievements" ? "bg-amber-600 text-white shadow-xs" : "bg-amber-50 text-amber-800 border border-amber-200/80 hover:bg-amber-100"}`}
-                >
-                  🏆 Có thành tích: {studentIntakeKPIs.withAchievements}
+                  Đủ ĐK miễn môn VH ({studentIntakeKPIs.eligibleByRegulation})
                 </button>
                 <button
                   type="button"
                   onClick={() => setSRecordFilter("old_school")}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sRecordFilter === "old_school" ? "bg-teal-600 text-white shadow-xs" : "bg-teal-50 text-teal-800 border border-teal-200/80 hover:bg-teal-100"}`}
+                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                    sRecordFilter === "old_school"
+                      ? "bg-[#00736E] text-white border-[#00736E]"
+                      : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                  }`}
                 >
-                  🏫 Có học bạ trường cũ: {studentIntakeKPIs.withOldSchool}
+                  Có học bạ ({studentIntakeKPIs.withOldSchool})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSRecordFilter("achievements")}
+                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                    sRecordFilter === "achievements"
+                      ? "bg-amber-600 text-white border-amber-600"
+                      : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                  }`}
+                >
+                  Thành tích ({studentIntakeKPIs.withAchievements})
                 </button>
                 <button
                   type="button"
                   onClick={() => setSRecordFilter("attachments")}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${sRecordFilter === "attachments" ? "bg-sky-600 text-white shadow-xs" : "bg-sky-50 text-sky-800 border border-sky-200/80 hover:bg-sky-100"}`}
+                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                    sRecordFilter === "attachments"
+                      ? "bg-sky-600 text-white border-sky-600"
+                      : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                  }`}
                 >
-                  📎 Có tệp đính kèm: {studentIntakeKPIs.withAttachments}
+                  Đính kèm ({studentIntakeKPIs.withAttachments})
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCompletedBatches(prev => !prev)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
                     showCompletedBatches
-                      ? "bg-[#003B3A] text-white border-teal-200 shadow-xs"
-                      : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                      ? "bg-[#003B3A] text-white border-[#003B3A]"
+                      : "bg-white text-slate-500 border-[#E2E8F0] hover:bg-[#F8FAFC]"
                   }`}
-                  title="Mặc định ẩn các học sinh thuộc Đợt đã Hoàn thành khỏi danh sách nhập thông tin khảo sát. Bấm để bật/tắt hiển thị lịch sử đợt đã hoàn thành."
+                  title="Bật/tắt hiển thị học sinh thuộc các đợt đã hoàn thành"
                 >
-                  {showCompletedBatches ? "👁️ Đang hiện đợt Hoàn thành" : "🙈 Đang ẩn đợt Hoàn thành"}
+                  {showCompletedBatches ? "Hiện đợt hoàn thành" : "Ẩn đợt hoàn thành"}
                 </button>
+
+                {(sGradeFilter || sEduFilter || sTimingFilter || sCampusFilter || sSearch || sRecordFilter !== "all" || sBatchId) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSGradeFilter("");
+                      setSEduFilter("");
+                      setSTimingFilter("");
+                      setSCampusFilter("");
+                      setSSearch("");
+                      setSBatchId("");
+                      setSRecordFilter("all");
+                      setSResultFilter("all");
+                    }}
+                    className="px-2 py-1 rounded-md text-[11px] font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  >
+                    Xóa lọc
+                  </button>
+                )}
               </div>
 
               {viewMode !== "transfer" && (
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {Object.keys(inlineEdits).length > 0 && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-300 rounded-xl shadow-2xs animate-in fade-in duration-150">
-                      <span className="text-[11px] font-bold text-amber-900">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-300 rounded-lg animate-in fade-in duration-150">
+                      <span className="text-[11px] font-semibold text-amber-900">
                         Đang sửa <strong>{Object.keys(inlineEdits).length}</strong> dòng
                       </span>
                       <button
                         type="button"
                         onClick={saveAllInlineRows}
                         disabled={isSavingAllInline}
-                        className="px-2.5 py-1 rounded-lg bg-[#00736E] hover:bg-[#005f5b] text-white text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs disabled:opacity-50"
+                        className="px-2 py-0.5 rounded bg-[#00736E] hover:bg-[#005854] text-white text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
                       >
                         {isSavingAllInline ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                         <span>Lưu tất cả</span>
@@ -8928,122 +9335,93 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <button
                         type="button"
                         onClick={() => setInlineEdits({})}
-                        className="px-2 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold transition-all cursor-pointer"
+                        className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-600 border border-[#E2E8F0] text-[11px] font-medium transition-colors cursor-pointer"
                       >
                         Hoàn tác
                       </button>
                     </div>
                   )}
 
+                  {tableViewMode === "inline" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowInlineSchoolCols(prev => !prev)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 border ${
+                        showInlineSchoolCols
+                          ? "bg-[#F8FAFC] text-[#003B3A] border-[#CBD5E1]"
+                          : "bg-white text-slate-500 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                      }`}
+                      title="Ẩn/hiện cột Trường cũ & Khu vực để thu gọn bảng nhập điểm trên màn hình nhỏ"
+                    >
+                      <Building className="w-3 h-3 text-slate-500" />
+                      <span>{showInlineSchoolCols ? "Trường cũ: Hiện" : "Trường cũ: Ẩn"}</span>
+                    </button>
+                  )}
+
                   {tableViewMode === "inline" && !cannotCreate && (
                     <button
                       type="button"
                       onClick={() => setShowQuickAddRow(prev => !prev)}
-                      className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 border ${
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 border ${
                         showQuickAddRow
-                          ? "bg-teal-50 text-teal-800 border-teal-300 shadow-2xs"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                          ? "bg-[#F0FDFA] text-[#005854] border-[#00A19A]/40"
+                          : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
                       }`}
                       title="Bật/tắt dòng thêm nhanh học sinh mới ngay đầu bảng"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      <Plus className="w-3 h-3" />
                       <span>Dòng nhập nhanh</span>
                     </button>
                   )}
 
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center gap-0.5 bg-[#F8FAFC] p-0.5 rounded-lg border border-[#E2E8F0]">
                     <button
                       type="button"
                       onClick={() => setTableViewMode("inline")}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                         tableViewMode === "inline"
-                          ? "bg-[#00736E] text-white shadow-2xs"
-                          : "text-slate-600 hover:text-slate-900"
+                          ? "bg-[#003B3A] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-[#003B3A]"
                       }`}
-                      title="Nhập và sửa trực tiếp trên từng ô như bảng tính Excel mà không cần mở Modal"
+                      title="Nhập và sửa trực tiếp theo cụm logic trên bảng"
                     >
                       <PenLine className="w-3 h-3" />
-                      <span>Nhập liệu trực tiếp (Excel)</span>
+                      <span>Nhập liệu nhanh</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setTableViewMode("compact")}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                         tableViewMode === "compact"
-                          ? "bg-white text-teal-700 shadow-2xs border border-slate-200/60"
-                          : "text-slate-600 hover:text-slate-900"
+                          ? "bg-[#003B3A] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-[#003B3A]"
                       }`}
-                      title="Gộp gọn các cột thông tin trường cũ và điểm học bạ để xem vừa màn hình"
+                      title="Chế độ xem bảng tóm tắt gọn"
                     >
                       <Layers className="w-3 h-3" />
-                      <span>Bảng Gọn</span>
+                      <span>Bảng gọn</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setTableViewMode("detailed")}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                         tableViewMode === "detailed"
-                          ? "bg-white text-teal-700 shadow-2xs border border-slate-200/60"
-                          : "text-slate-600 hover:text-slate-900"
+                          ? "bg-[#003B3A] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-[#003B3A]"
                       }`}
-                      title="Hiển thị tách rời toàn bộ 19 cột dữ liệu chi tiết"
+                      title="Xem đầy đủ toàn bộ các cột dữ liệu tách rời"
                     >
                       <FileSpreadsheet className="w-3 h-3" />
-                      <span>Chi tiết (19 cột)</span>
+                      <span>Chi tiết</span>
                     </button>
                   </div>
                 </div>
               )}
             </div>
-
-            {(sGradeFilter || sEduFilter || sCampusFilter || sSearch || sRecordFilter !== "all") && (
-              <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-normal text-slate-500">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] text-slate-400">Bộ lọc đang bật:</span>
-                  {sCampusFilter && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 text-[11px] font-medium">
-                      Cơ sở: {campuses.find(c => c.id === sCampusFilter)?.campusName || sCampusFilter}
-                      <button type="button" onClick={()=>setSCampusFilter("")} className="hover:text-teal-900 cursor-pointer">×</button>
-                    </span>
-                  )}
-                  {sGradeFilter && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium">
-                      Khối: {sGradeFilter}
-                      <button type="button" onClick={()=>setSGradeFilter("")} className="hover:text-slate-900 cursor-pointer">×</button>
-                    </span>
-                  )}
-                  {sEduFilter && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[11px] font-medium">
-                      Hệ: {sEduFilter}
-                      <button type="button" onClick={()=>setSEduFilter("")} className="hover:text-sky-900 cursor-pointer">×</button>
-                    </span>
-                  )}
-                  {sSearch && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 text-[11px] font-medium">
-                      Từ khóa: "{sSearch}"
-                      <button type="button" onClick={()=>setSSearch("")} className="hover:text-teal-900 cursor-pointer">×</button>
-                    </span>
-                  )}
-                  {sRecordFilter !== "all" && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[11px] font-medium">
-                      Học bạ/TT: {sRecordFilter === "eligible_regulation" ? "Đủ ĐK Xét học bạ / Tuyển thẳng (Miễn môn VH)" : sRecordFilter === "achievements" ? "Có thành tích" : sRecordFilter === "old_school" ? "Có học bạ trường cũ" : "Có tệp đính kèm"}
-                      <button type="button" onClick={()=>setSRecordFilter("all")} className="hover:text-amber-950 cursor-pointer">×</button>
-                    </span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setSGradeFilter(""); setSEduFilter(""); setSCampusFilter(""); setSSearch(""); setSRecordFilter("all"); setSResultFilter("all"); }}
-                  className="text-xs text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
-                >
-                  Xóa bộ lọc
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Data Table Area */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden flex flex-col min-h-[400px]">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xs overflow-hidden flex flex-col min-h-[420px]">
             {/* Shared Datalists for Inline Spreadsheet Autocomplete */}
             <datalist id="old-schools-datalist">
               {effectiveSchools.map((sc: any) => (
@@ -9073,401 +9451,538 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               <>
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto custom-scrollbar flex-1">
-                  <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider">
-                          <th className="px-2.5 py-3 w-9 text-center border-r border-slate-200/60">
-                            <input
-                              type="checkbox"
-                              className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
-                              checked={filtStu.length > 0 && selectedIds.length === filtStu.length}
-                              onChange={(e) => setSelectedIds(e.target.checked ? filtStu.map(st => st.id) : [])}
-                              title="Chọn tất cả học sinh trong danh sách lọc"
-                            />
-                          </th>
-                          <th className="px-2.5 py-3 w-9 text-center border-r border-slate-200/60">#</th>
-                          <th className="px-3 py-3 min-w-[105px] border-r border-slate-200/60">Mã HS / SBD</th>
-                          <th className="px-3.5 py-3 min-w-[180px] border-r border-slate-200/60">Thông tin Học sinh</th>
-                          <th className="px-3 py-3 min-w-[175px] border-r border-slate-200/60">Đợt & Cơ sở KS</th>
-                          {viewMode === "transfer" ? (
-                            <>
-                              <th className="px-2.5 py-3 text-center min-w-[70px] border-r border-slate-200/60">Khối ĐK</th>
-                              <th className="px-2.5 py-3 text-center min-w-[85px] border-r border-slate-200/60">Hệ Khảo sát</th>
-                              <th className="px-3.5 py-3 min-w-[150px] border-r border-slate-200/60 bg-amber-50/60 text-amber-950 text-center font-bold">Lớp & Cơ sở hiện tại</th>
-                              <th className="px-3.5 py-3 min-w-[160px] border-r border-slate-200/60 bg-amber-50/60 text-amber-950 text-center font-bold">Lộ trình chuyển hệ</th>
-                              <th className="px-3 py-3 min-w-[120px] border-r border-slate-200/60 bg-emerald-50/60 text-emerald-950 text-center font-bold">Trạng thái xét duyệt</th>
-                              <th className="px-3 py-3 text-center min-w-[120px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Bảng điểm/Học bạ</th>
-                              <th className="px-3 py-3 text-center min-w-[110px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">KQ Xếp loại</th>
-                              <th className="px-3 py-3 text-center min-w-[110px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">KQ Rèn luyện</th>
-                              <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Môn Toán</th>
-                              <th className="px-2.5 py-3 text-center min-w-[140px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Môn Ngữ Văn/Tiếng Việt</th>
-                              <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Tiếng Anh</th>
-                              <th className="px-3.5 py-3 min-w-[145px] border-r border-slate-200/60 bg-amber-50/40 text-amber-900">Thành tích & Khen thưởng</th>
-                            </>
-                          ) : tableViewMode === "compact" ? (
-                            <>
-                              <th className="px-3 py-3 text-center min-w-[130px] border-r border-slate-200/60">Nguyện vọng ĐK</th>
-                              <th className="px-3.5 py-3 min-w-[200px] border-r border-slate-200/60 bg-slate-100/70 text-slate-700">Trường học cũ & Khu vực</th>
-                              <th className="px-3.5 py-3 min-w-[240px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Tóm tắt Học bạ & Điểm đầu vào</th>
-                              <th className="px-3.5 py-3 min-w-[150px] border-r border-slate-200/60 bg-amber-50/40 text-amber-900">Thành tích & Khen thưởng</th>
-                            </>
-                          ) : tableViewMode === "inline" ? (
-                            <>
-                              <th className="px-2 py-3 text-center min-w-[85px] border-r border-slate-200/60">Khối ĐK</th>
-                              <th className="px-2 py-3 text-center min-w-[100px] border-r border-slate-200/60">Hệ Khảo sát</th>
-                              <th className="px-2 py-3 text-center min-w-[110px] border-r border-slate-200/60">Diện KS</th>
-                              <th className="px-2 py-3 text-center min-w-[100px] border-r border-slate-200/60">Hình thức KS</th>
-                              <th className="px-2.5 py-3 text-center min-w-[130px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Chương trình học</th>
-                              <th className="px-2.5 py-3 min-w-[190px] border-r border-slate-200/60 bg-slate-100/70 text-slate-700">Tên trường học cũ</th>
-                              <th className="px-2.5 py-3 text-center min-w-[180px] border-r border-slate-200/60 bg-slate-100/70 text-slate-700">Khu vực & Tỉnh/TP/QG</th>
-                              <th className="px-2 py-3 text-center min-w-[110px] border-r border-slate-200/60 bg-slate-100/70 text-slate-700">Hệ học trước</th>
-                              <th className="px-2 py-3 text-center min-w-[95px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Kỳ Học bạ</th>
-                              <th className="px-2.5 py-3 text-center min-w-[135px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">KQ Xếp loại</th>
-                              <th className="px-2 py-3 text-center min-w-[100px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">KQ Rèn luyện</th>
-                              <th className="px-2 py-3 text-center min-w-[80px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Toán</th>
-                              <th className="px-2 py-3 text-center min-w-[85px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Văn/TV</th>
-                              <th className="px-2 py-3 text-center min-w-[80px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Anh</th>
-                              <th className="px-2.5 py-3 min-w-[165px] border-r border-slate-200/60 bg-amber-50/40 text-amber-900">Thành tích & Khen thưởng</th>
-                            </>
-                          ) : (
-                            <>
-                              <th className="px-2.5 py-3 text-center min-w-[70px] border-r border-slate-200/60">Khối ĐK</th>
-                              <th className="px-2.5 py-3 text-center min-w-[85px] border-r border-slate-200/60">Hệ Khảo sát</th>
-                              <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-slate-200/60">Diện KS</th>
-                              <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-slate-200/60">Hình thức KS</th>
-                              <th className="px-3 py-3 text-center min-w-[125px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Chương trình học tập</th>
-                              <th className="px-3.5 py-3 min-w-[160px] border-r border-slate-200/60 bg-slate-100/70 text-slate-700">Tên trường học cũ</th>
-                              <th className="px-3 py-3 text-center min-w-[130px] border-r border-slate-200/60 bg-slate-100/70 text-slate-700">Tỉnh / Thành phố / Quốc gia</th>
-                              <th className="px-3 py-3 text-center min-w-[110px] border-r border-slate-200/60 bg-slate-100/70 text-slate-700">Hệ học trước</th>
-                              <th className="px-3 py-3 text-center min-w-[120px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Bảng điểm/Học bạ</th>
-                              <th className="px-3 py-3 text-center min-w-[110px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">KQ Xếp loại</th>
-                              <th className="px-3 py-3 text-center min-w-[110px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">KQ Rèn luyện</th>
-                              <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Môn Toán</th>
-                              <th className="px-2.5 py-3 text-center min-w-[140px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Môn Ngữ Văn/Tiếng Việt</th>
-                              <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Điểm Tiếng Anh</th>
-                              {dynamicOtherSubjectNames.length === 0 ? (
-                                <th className="px-3 py-3 min-w-[130px] text-center border-r border-slate-200/60 bg-teal-50/40 text-teal-900">Các môn khác</th>
-                              ) : (
-                                dynamicOtherSubjectNames.map(subName => (
-                                  <th key={subName} className="px-2.5 py-3 text-center min-w-[110px] border-r border-slate-200/60 bg-teal-50/40 text-teal-900">
-                                    {`Điểm Môn ${subName}`}
-                                  </th>
-                                ))
-                              )}
-                              <th className="px-3.5 py-3 min-w-[145px] border-r border-slate-200/60 bg-amber-50/40 text-amber-900">Thành tích & Khen thưởng</th>
-                            </>
-                          )}
-                          <th className="px-3.5 py-3 text-right pr-4 w-32 sticky right-0 z-20 bg-slate-50 border-l border-slate-200 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)]">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {/* QUICK-ADD SPREADSHEET ROW (DÒNG NHẬP NHANH HỌC SINH MỚI) */}
-                        {tableViewMode === "inline" && showQuickAddRow && viewMode !== "transfer" && !cannotCreate && (
-                          <tr className="bg-emerald-50/50 hover:bg-emerald-50/80 border-b-2 border-emerald-200/80 transition-colors">
-                            <td className="px-2 py-2 text-center border-r border-emerald-200/50">
-                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-emerald-600 text-white text-[10px] font-black" title="Dòng thêm nhanh học sinh mới">
-                                +
-                              </span>
-                            </td>
-                            <td className="px-2 py-2 text-center border-r border-emerald-200/50 text-[10px] font-black text-emerald-700">
-                              MỚI
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="text"
-                                  value={quickAddDraft.studentCode}
-                                  onChange={e => setQuickAddDraft(p => ({ ...p, studentCode: e.target.value }))}
-                                  placeholder="Mã HS..."
-                                  className="raw-input py-0 h-7 w-24 px-2 bg-white border border-emerald-300 rounded-md font-mono text-[11px] font-bold text-teal-800 outline-none focus:border-teal-600"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={refreshQuickAddCode}
-                                  className="p-1 text-teal-700 hover:bg-teal-100 rounded cursor-pointer"
-                                  title="Lấy mã tự động tiếp theo"
-                                >
-                                  <RefreshCw className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <div className="flex flex-col gap-1 min-w-[185px]">
-                                <input
-                                  type="text"
-                                  value={quickAddDraft.fullName}
-                                  onChange={e => setQuickAddDraft(p => ({ ...p, fullName: e.target.value }))}
-                                  onBlur={e => {
-                                    const raw = e.target.value.trim();
-                                    if (raw) {
-                                      const tc = raw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-                                      setQuickAddDraft(p => ({ ...p, fullName: tc }));
-                                    }
-                                  }}
-                                  onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                  placeholder="Nhập Họ và tên HS * (Enter để lưu)"
-                                  className="raw-input py-0 h-7 w-full px-2 bg-white border border-emerald-300 rounded-md text-xs font-bold text-slate-800 placeholder-slate-400 outline-none focus:border-teal-600"
-                                />
-                                <div className="flex items-center gap-1">
-                                  <select
-                                    value={quickAddDraft.gender}
-                                    onChange={e => setQuickAddDraft(p => ({ ...p, gender: e.target.value }))}
-                                    className="raw-select py-0 h-7 min-w-[62px] px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
-                                  >
-                                    <option value="Nam">Nam</option>
-                                    <option value="Nữ">Nữ</option>
-                                  </select>
-                                  <input
-                                    type="date"
-                                    value={quickAddDraft.dateOfBirth}
-                                    onChange={e => setQuickAddDraft(p => ({ ...p, dateOfBirth: e.target.value }))}
-                                    className="raw-input py-0 h-7 flex-1 px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none"
-                                  />
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <div className="flex flex-col gap-1 min-w-[175px]">
-                                <select
-                                  value={quickAddDraft.batchId}
-                                  onChange={e => setQuickAddDraft(p => ({ ...p, batchId: e.target.value }))}
-                                  className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
-                                >
-                                  <option value="">-- Khảo sát lẻ --</option>
-                                  {(selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || []))
-                                    .filter((b: any) => b.status !== "COMPLETED")
-                                    .map((b: any) => (
-                                    <option key={b.id} value={b.id}>{b.name}</option>
-                                  ))}
-                                </select>
-                                <select
-                                  value={quickAddDraft.registeredCampus}
-                                  onChange={e => setQuickAddDraft(p => ({ ...p, registeredCampus: e.target.value }))}
-                                  className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-700 outline-none cursor-pointer"
-                                >
-                                  <option value="">-- Chọn Cơ sở --</option>
-                                  {campuses.map(c => (
-                                    <option key={c.id} value={c.id}>{c.campusCode || c.campusName}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
-                              <select
-                                value={quickAddDraft.grade}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, grade: e.target.value }))}
-                                className="raw-select py-0 h-7 min-w-[60px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-xs font-bold text-slate-800 outline-none cursor-pointer"
-                              >
-                                {activeGrades.map(g => <option key={g} value={g}>K{g}</option>)}
-                              </select>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
-                              <select
-                                value={quickAddDraft.surveyFormType}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, surveyFormType: e.target.value }))}
-                                className="raw-select py-0 h-7 min-w-[68px] w-full px-1.5 bg-white border border-sky-200 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer"
-                              >
-                                <option value="">-- Hệ --</option>
-                                {currentEduSystems.map(es => <option key={es.code} value={es.code}>{es.code}</option>)}
-                              </select>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
-                              <select
-                                value={quickAddDraft.admissionCriteria}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, admissionCriteria: e.target.value }))}
-                                className="raw-select py-0 h-7 min-w-[92px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
-                              >
-                                <option value="">-- Diện KS --</option>
-                                {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                              </select>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
-                              <select
-                                value={quickAddDraft.surveySystem}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, surveySystem: e.target.value }))}
-                                className="raw-select py-0 h-7 min-w-[82px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
-                              >
-                                <option value="">-- Hình thức --</option>
-                                {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                              </select>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
-                              <select
-                                value={quickAddDraft.programType}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, programType: e.target.value as any }))}
-                                className="raw-select py-0 h-7 min-w-[112px] w-full px-1.5 bg-white border border-teal-200 rounded-md text-[11px] font-bold text-teal-800 outline-none cursor-pointer"
-                              >
-                                <option value="BO_GD_DT">Bộ GD&ĐT</option>
-                                <option value="SONG_NGU">Song ngữ</option>
-                                <option value="NUOC_NGOAI">CT Quốc tế</option>
-                                <option value="HOMESCHOOLING">Homeschooling</option>
-                              </select>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50">
+                  <table className="w-full text-left border-collapse text-xs tabular-nums">
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        {tableViewMode === "inline" && viewMode !== "transfer" ? (
+                          <tr className="border-b border-[#003B3A] whitespace-nowrap text-[11px] font-semibold">
+                            <th className="px-2 py-2.5 w-11 text-center border-r border-white/15 md:sticky md:left-0 z-20 bg-[#003B3A] font-semibold text-white">
                               <input
-                                type="text"
-                                list="old-schools-datalist"
-                                value={quickAddDraft.oldSchoolName}
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  const matched = findMatchedSchool(val);
-                                  const st = matched ? (matched.schoolType === "PUBLIC" ? "Công lập" : matched.schoolType === "PRIVATE" ? "Tư thục" : (matched.schoolType || "")) : quickAddDraft.oldSchoolType;
-                                  setQuickAddDraft(p => ({
-                                    ...p,
-                                    oldSchoolName: val,
-                                    oldSchoolType: st || p.oldSchoolType,
-                                    programType: val.toLowerCase().includes("homeschool") ? "HOMESCHOOLING" : p.programType
-                                  }));
-                                }}
-                                onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                placeholder="Chọn hoặc nhập tên trường..."
-                                className="raw-input py-0 h-7 min-w-[170px] w-full px-2 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-800 outline-none focus:border-teal-600"
+                                type="checkbox"
+                                className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
+                                checked={filtStu.length > 0 && selectedIds.length === filtStu.length}
+                                onChange={(e) => setSelectedIds(e.target.checked ? filtStu.map(st => st.id) : [])}
+                                title="Chọn tất cả học sinh trong danh sách lọc"
                               />
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <div className="flex flex-col gap-1 min-w-[165px]">
-                                <select
-                                  value={quickAddDraft.targetType}
-                                  onChange={e => {
-                                    const loc = e.target.value;
-                                    setQuickAddDraft(p => ({
-                                      ...p,
-                                      targetType: loc,
-                                      cityName: loc === "Nội tỉnh" ? "Thành phố Đà Nẵng" : loc === "Nước ngoài" ? "Hoa Kỳ (Mỹ)" : ""
-                                    }));
-                                  }}
-                                  className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
-                                >
-                                  <option value="Nội tỉnh">Nội tỉnh (Đà Nẵng)</option>
-                                  <option value="Ngoại tỉnh">Ngoại tỉnh</option>
-                                  <option value="Nước ngoài">Nước ngoài</option>
-                                </select>
-                                {quickAddDraft.targetType === "Nội tỉnh" ? (
-                                  <input readOnly value="Thành phố Đà Nẵng" className="raw-input py-0 h-7 w-full px-1.5 bg-slate-100 border border-slate-200 rounded-md text-[11px] text-slate-500 outline-none" />
-                                ) : quickAddDraft.targetType === "Ngoại tỉnh" ? (
-                                  <select
-                                    value={quickAddDraft.cityName}
-                                    onChange={e => setQuickAddDraft(p => ({ ...p, cityName: e.target.value }))}
-                                    className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] text-slate-700 outline-none cursor-pointer"
-                                  >
-                                    <option value="">-- Chọn Tỉnh/TP --</option>
-                                    {vietnamProvinces.map(pr => <option key={pr} value={pr}>{pr}</option>)}
-                                  </select>
+                            </th>
+                            <th className="px-3 py-2.5 min-w-[230px] border-r border-white/15 md:sticky md:left-11 z-20 bg-[#003B3A] md:shadow-[4px_0_8px_-4px_rgba(15,23,42,0.18)] font-semibold text-white">
+                              Hồ sơ học sinh
+                            </th>
+                            <th className="px-2.5 py-2.5 min-w-[160px] border-r border-white/15 font-semibold text-teal-100">
+                              Đợt &amp; Cơ sở ĐK
+                            </th>
+                            <th className="px-2.5 py-2.5 min-w-[185px] border-r border-white/15 font-semibold text-teal-100" title="Khối đăng ký, Hệ khảo sát, Diện khảo sát &amp; 1. Mốc thời gian / Kỳ khảo sát">
+                              Nguyện vọng &amp; Mốc TS
+                            </th>
+                            {showInlineSchoolCols && (
+                              <th className="px-2.5 py-2.5 min-w-[175px] border-r border-white/15 font-semibold text-teal-100">
+                                Trường cũ &amp; Khu vực
+                              </th>
+                            )}
+                            <th className="px-2.5 py-2.5 min-w-[170px] border-r border-white/15 font-semibold text-teal-100">
+                              Học bạ &amp; Xếp loại
+                            </th>
+                            <th className="px-2.5 py-2.5 min-w-[205px] border-r border-white/15 font-semibold text-[#5EEAD4]" title="Nhập Điểm Toán, Điểm Văn/TV, Điểm Anh và Thành tích/Chứng chỉ để xét miễn môn theo Quy chế">
+                              Điểm xét quy chế &amp; Thành tích
+                            </th>
+                            <th className="px-3 py-2.5 min-w-[200px] border-r border-white/15 font-semibold text-[#5EEAD4]" title="Tự động xác định môn kiểm tra bám sát Cấu hình quy chế tuyển sinh">
+                              Môn kiểm tra
+                            </th>
+                            <th className="px-3 py-2.5 text-right pr-3.5 w-28 sticky right-0 z-20 bg-[#003B3A] border-l border-white/15 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.12)] font-semibold text-white">
+                              Thao tác
+                            </th>
+                          </tr>
+                        ) : (
+                          <tr className="border-b whitespace-nowrap text-[11px] font-semibold">
+                            <th className="px-2.5 py-3 w-9 text-center border-r border-white/15 font-semibold">
+                              <input
+                                type="checkbox"
+                                className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
+                                checked={filtStu.length > 0 && selectedIds.length === filtStu.length}
+                                onChange={(e) => setSelectedIds(e.target.checked ? filtStu.map(st => st.id) : [])}
+                                title="Chọn tất cả học sinh trong danh sách lọc"
+                              />
+                            </th>
+                            <th className="px-2.5 py-3 w-9 text-center border-r border-white/15 font-semibold">#</th>
+                            <th className="px-3 py-3 min-w-[105px] border-r border-white/15 font-semibold">Mã HS / SBD</th>
+                            <th className="px-3.5 py-3 min-w-[180px] border-r border-white/15 font-semibold">Thông tin học sinh</th>
+                            <th className="px-3 py-3 min-w-[175px] border-r border-white/15 font-semibold text-teal-100">Đợt &amp; Cơ sở KS</th>
+                            {viewMode === "transfer" ? (
+                              <>
+                                <th className="px-2.5 py-3 text-center min-w-[70px] border-r border-white/15 font-semibold text-teal-100">Khối ĐK</th>
+                                <th className="px-2.5 py-3 text-center min-w-[85px] border-r border-white/15 font-semibold text-teal-100">Hệ khảo sát</th>
+                                <th className="px-2.5 py-3 text-center min-w-[165px] border-r border-white/15 text-[#CCFBF1] font-semibold">1. Mốc thời gian / Kỳ khảo sát</th>
+                                <th className="px-3.5 py-3 min-w-[150px] border-r border-white/15 bg-[#003B3A] text-center font-semibold text-teal-100">Lớp &amp; Cơ sở hiện tại</th>
+                                <th className="px-3.5 py-3 min-w-[160px] border-r border-white/15 bg-[#003B3A] text-center font-semibold text-teal-100">Lộ trình chuyển hệ</th>
+                                <th className="px-3 py-3 min-w-[120px] border-r border-white/15 bg-[#003B3A] text-center font-semibold text-[#5EEAD4]">Trạng thái xét duyệt</th>
+                                <th className="px-3 py-3 text-center min-w-[120px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Bảng điểm / Học bạ</th>
+                                <th className="px-3 py-3 text-center min-w-[110px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">KQ xếp loại</th>
+                                <th className="px-3 py-3 text-center min-w-[110px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">KQ rèn luyện</th>
+                                <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Toán</th>
+                                <th className="px-2.5 py-3 text-center min-w-[130px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Văn/TV</th>
+                                <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Anh</th>
+                                <th className="px-3.5 py-3 min-w-[145px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Thành tích &amp; Khen thưởng</th>
+                                <th className="px-3.5 py-3 min-w-[190px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] text-[11px] font-semibold">Môn kiểm tra</th>
+                              </>
+                            ) : tableViewMode === "compact" ? (
+                              <>
+                                <th className="px-3 py-3 text-center min-w-[130px] border-r border-white/15 font-semibold text-teal-100">Nguyện vọng ĐK</th>
+                                <th className="px-2.5 py-3 text-center min-w-[165px] border-r border-white/15 text-[#CCFBF1] font-semibold">1. Mốc thời gian / Kỳ khảo sát</th>
+                                <th className="px-3.5 py-3 min-w-[200px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Trường học cũ &amp; Khu vực</th>
+                                <th className="px-3.5 py-3 min-w-[240px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Tóm tắt học bạ &amp; Điểm đầu vào</th>
+                                <th className="px-3.5 py-3 min-w-[150px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Thành tích &amp; Khen thưởng</th>
+                                <th className="px-3.5 py-3 min-w-[190px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] text-[11px] font-semibold">Môn kiểm tra</th>
+                              </>
+                            ) : (
+                              <>
+                                <th className="px-2.5 py-3 text-center min-w-[70px] border-r border-white/15 font-semibold text-teal-100">Khối ĐK</th>
+                                <th className="px-2.5 py-3 text-center min-w-[85px] border-r border-white/15 font-semibold text-teal-100">Hệ khảo sát</th>
+                                <th className="px-2.5 py-3 text-center min-w-[165px] border-r border-white/15 text-[#CCFBF1] font-semibold">1. Mốc thời gian / Kỳ khảo sát</th>
+                                <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-white/15 font-semibold text-teal-100">Diện KS</th>
+                                <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-white/15 font-semibold text-teal-100">Hình thức KS</th>
+                                <th className="px-3 py-3 text-center min-w-[125px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Chương trình học</th>
+                                <th className="px-3.5 py-3 min-w-[160px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Tên trường học cũ</th>
+                                <th className="px-3 py-3 text-center min-w-[130px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Tỉnh / TP / Quốc gia</th>
+                                <th className="px-3 py-3 text-center min-w-[110px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Hệ học trước</th>
+                                <th className="px-3 py-3 text-center min-w-[120px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Bảng điểm / Học bạ</th>
+                                <th className="px-3 py-3 text-center min-w-[110px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">KQ xếp loại</th>
+                                <th className="px-3 py-3 text-center min-w-[110px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">KQ rèn luyện</th>
+                                <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Toán</th>
+                                <th className="px-2.5 py-3 text-center min-w-[130px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Văn/TV</th>
+                                <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Anh</th>
+                                {dynamicOtherSubjectNames.length === 0 ? (
+                                  <th className="px-3 py-3 min-w-[130px] text-center border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Các môn khác</th>
                                 ) : (
-                                  <select
-                                    value={quickAddDraft.cityName}
-                                    onChange={e => setQuickAddDraft(p => ({ ...p, cityName: e.target.value }))}
-                                    className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] text-slate-700 outline-none cursor-pointer"
-                                  >
-                                    <option value="">-- Chọn Quốc gia --</option>
-                                    {worldCountries.map(c => <option key={c} value={c}>{c}</option>)}
-                                  </select>
+                                  dynamicOtherSubjectNames.map(subName => (
+                                    <th key={subName} className="px-2.5 py-3 text-center min-w-[110px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">
+                                      {`Điểm môn ${subName}`}
+                                    </th>
+                                  ))
                                 )}
-                              </div>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
-                              <select
-                                value={quickAddDraft.oldSchoolType}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, oldSchoolType: e.target.value }))}
-                                className="raw-select py-0 h-7 min-w-[92px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
-                              >
-                                <option value="Công lập">Công lập</option>
-                                <option value="Tư thục">Tư thục</option>
-                                <option value="Song ngữ">Song ngữ</option>
-                                <option value="Quốc tế">Quốc tế</option>
-                              </select>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
-                              <select
-                                value={quickAddDraft.transcriptPeriod}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, transcriptPeriod: e.target.value }))}
-                                className="raw-select py-0 h-7 min-w-[78px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
-                              >
-                                <option value="Cả năm">Cả năm</option>
-                                <option value="HK1">HK1</option>
-                                <option value="HK2">HK2</option>
-                              </select>
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <input
-                                type="text"
-                                list="overall-ratings-datalist"
-                                value={quickAddDraft.overallRating}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, overallRating: e.target.value }))}
-                                placeholder="Xếp loại..."
-                                className="raw-input py-0 h-7 min-w-[115px] w-full px-2 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-emerald-800 outline-none focus:border-teal-600"
-                              />
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50 text-center">
-                              <select
-                                value={quickAddDraft.kqRenLuyen}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, kqRenLuyen: e.target.value }))}
-                                className="raw-select py-0 h-7 min-w-[82px] w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
-                              >
-                                <option value="Tốt">Tốt</option>
-                                <option value="Khá">Khá</option>
-                                <option value="Đạt">Đạt</option>
-                                <option value="Chưa đạt">Chưa đạt</option>
-                              </select>
-                            </td>
-                            <td className="px-1.5 py-2 border-r border-emerald-200/50 text-center">
-                              <input
-                                type="text"
-                                value={quickAddDraft.mathScoreOld}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, mathScoreOld: e.target.value }))}
-                                onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                placeholder="Điểm"
-                                className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-teal-200 rounded-md text-center text-xs font-bold text-teal-800 outline-none focus:border-teal-600"
-                              />
-                            </td>
-                            <td className="px-1.5 py-2 border-r border-emerald-200/50 text-center">
-                              <input
-                                type="text"
-                                value={quickAddDraft.litScoreOld}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, litScoreOld: e.target.value }))}
-                                onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                placeholder="Điểm"
-                                className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-teal-200 rounded-md text-center text-xs font-bold text-teal-800 outline-none focus:border-teal-200"
-                              />
-                            </td>
-                            <td className="px-1.5 py-2 border-r border-emerald-200/50 text-center">
-                              <input
-                                type="text"
-                                value={quickAddDraft.engScoreOld}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, engScoreOld: e.target.value }))}
-                                onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                placeholder="Điểm"
-                                className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-sky-200 rounded-md text-center text-xs font-bold text-sky-800 outline-none focus:border-sky-600"
-                              />
-                            </td>
-                            <td className="px-2 py-2 border-r border-emerald-200/50">
-                              <input
-                                type="text"
-                                value={quickAddDraft.achievements}
-                                onChange={e => setQuickAddDraft(p => ({ ...p, achievements: e.target.value }))}
-                                onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                placeholder="Giải thưởng, khen thưởng..."
-                                className="raw-input py-0 h-7 min-w-[140px] w-full px-2 bg-white border border-amber-200 rounded-md text-[11px] font-medium text-amber-900 outline-none focus:border-amber-500"
-                              />
-                            </td>
-                            <td className="px-2.5 py-2 whitespace-nowrap text-right pr-3 sticky right-0 z-10 bg-emerald-50 border-l border-emerald-200 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)]">
-                              <button
-                                type="button"
-                                onClick={saveQuickAddRow}
-                                disabled={isSavingQuickAdd}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#00736E] hover:bg-[#005f5b] text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                                title="Lưu học sinh mới vào danh sách (hoặc nhấn phím Enter)"
-                              >
-                                {isSavingQuickAdd ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                                <span>Lưu thêm</span>
-                              </button>
-                            </td>
+                                <th className="px-3.5 py-3 min-w-[145px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Thành tích &amp; Khen thưởng</th>
+                                <th className="px-3.5 py-3 min-w-[190px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] text-[11px] font-semibold">Môn kiểm tra</th>
+                              </>
+                            )}
+                            <th className="px-3.5 py-3 text-right pr-4 w-32 sticky right-0 z-20 bg-[#003B3A] border-l border-white/15 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)] font-semibold">Thao tác</th>
                           </tr>
                         )}
+                      </thead>
+                      <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
+                        {/* QUICK-ADD SPREADSHEET ROW (DÒNG NHẬP NHANH HỌC SINH MỚI — GỌP CỤM LOGIC) */}
+                        {tableViewMode === "inline" && showQuickAddRow && viewMode !== "transfer" && !cannotCreate && (() => {
+                          const effQuickPeriodId = (sPeriodId && sPeriodId !== "all") ? sPeriodId : undefined;
+                          const draftRes = resolveStudentExamSubjects({
+                            grade: quickAddDraft.grade,
+                            hocKy: quickAddDraft.hocKy,
+                            periodId: effQuickPeriodId,
+                            surveyFormType: quickAddDraft.surveyFormType,
+                            surveySystem: quickAddDraft.surveySystem,
+                            admissionCriteria: quickAddDraft.admissionCriteria,
+                            kqRenLuyen: quickAddDraft.kqRenLuyen,
+                            kqgdTieuHoc: quickAddDraft.overallRating,
+                            kqHocTap: JSON.stringify({
+                              programType: quickAddDraft.programType,
+                              transcriptPeriod: quickAddDraft.transcriptPeriod,
+                              overallRating: quickAddDraft.overallRating,
+                              achievements: quickAddDraft.achievements,
+                              math: quickAddDraft.mathScoreOld,
+                              literature: quickAddDraft.litScoreOld,
+                              english: quickAddDraft.engScoreOld
+                            })
+                          }, {
+                            gradeConfigs,
+                            mappings: allMappings,
+                            regulationConfig,
+                            periods: visiblePeriods,
+                            periodName: selPeriod?.name
+                          });
+                          const qAllRuleNames = [...draftRes.insight.recommendedSubjectNames, ...draftRes.insight.exemptedSubjectNames];
+                          const qLitLabel = qAllRuleNames.some(n => n.toLowerCase().includes("tiếng việt"))
+                            ? "TV"
+                            : qAllRuleNames.some(n => n.toLowerCase().includes("ngữ văn"))
+                            ? "Văn"
+                            : (parseInt(quickAddDraft.grade, 10) || 1) <= 5 ? "TV" : "Văn";
+                          const qNoTranscript = draftRes.insight.exemptionMode === "NO_TRANSCRIPT";
+                          const qMathExempt = draftRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("toán"));
+                          const qLitExempt = draftRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("tiếng việt") || (e.subjectName || "").toLowerCase().includes("ngữ văn"));
+                          const qEngExempt = draftRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("tiếng anh"));
+
+                          return (
+                            <tr className="bg-[#F0FDFA]/80 hover:bg-[#F0FDFA] border-b-2 border-[#00A19A]/30 transition-colors align-middle">
+                              {/* 1. STT / Mới (Sticky Left) */}
+                              <td className="px-1.5 py-2 text-center border-r border-teal-200/60 md:sticky md:left-0 z-10 bg-[#ECFEFF]">
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-[#00736E] text-white text-[11px] font-bold" title="Dòng thêm nhanh học sinh mới">
+                                    +
+                                  </span>
+                                  <span className="text-[9.5px] font-bold text-[#005854]">Mới</span>
+                                </div>
+                              </td>
+
+                              {/* 2. Hồ sơ học sinh (Sticky Left) */}
+                              <td className="px-2.5 py-2 border-r border-teal-200/60 md:sticky md:left-11 z-10 bg-[#ECFEFF] md:shadow-[4px_0_8px_-4px_rgba(15,23,42,0.08)]">
+                                <div className="flex flex-col gap-1 min-w-[215px]">
+                                  <input
+                                    type="text"
+                                    value={quickAddDraft.fullName}
+                                    onChange={e => setQuickAddDraft(p => ({ ...p, fullName: e.target.value }))}
+                                    onBlur={e => {
+                                      const raw = e.target.value.trim();
+                                      if (raw) {
+                                        const tc = raw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+                                        setQuickAddDraft(p => ({ ...p, fullName: tc }));
+                                      }
+                                    }}
+                                    onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
+                                    placeholder="Nhập họ và tên HS * (Enter lưu)"
+                                    className="raw-input py-0 h-7 w-full px-2 bg-white border border-[#00A19A]/60 rounded-md text-xs font-bold text-[#003B3A] placeholder-slate-400 outline-none focus:border-[#003B3A]"
+                                  />
+                                  <div className="flex items-center gap-1">
+                                    <div className="flex items-center bg-white border border-[#CBD5E1] rounded-md h-6.5 px-1 w-[92px] shrink-0">
+                                      <input
+                                        type="text"
+                                        value={quickAddDraft.studentCode}
+                                        onChange={e => setQuickAddDraft(p => ({ ...p, studentCode: e.target.value }))}
+                                        placeholder="Mã HS"
+                                        className="raw-input py-0 h-full w-full bg-transparent font-mono text-[10.5px] font-semibold text-[#005854] outline-none"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={refreshQuickAddCode}
+                                        className="p-0.5 text-slate-400 hover:text-[#00736E] cursor-pointer shrink-0"
+                                        title="Cấp mã tự động tiếp theo"
+                                      >
+                                        <RefreshCw className="w-2.5 h-2.5" />
+                                      </button>
+                                    </div>
+                                    <select
+                                      value={quickAddDraft.gender}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, gender: e.target.value }))}
+                                      className="raw-select py-0 h-6.5 w-[52px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
+                                    >
+                                      <option value="Nam">Nam</option>
+                                      <option value="Nữ">Nữ</option>
+                                    </select>
+                                    <input
+                                      type="date"
+                                      value={quickAddDraft.dateOfBirth}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, dateOfBirth: e.target.value }))}
+                                      className="raw-input py-0 h-6.5 flex-1 min-w-[96px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none"
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* 3. Đợt & Cơ sở ĐK + Hình thức KS */}
+                              <td className="px-2 py-2 border-r border-teal-200/60">
+                                <div className="flex flex-col gap-1 min-w-[150px]">
+                                  <select
+                                    value={quickAddDraft.batchId}
+                                    onChange={e => setQuickAddDraft(p => ({ ...p, batchId: e.target.value }))}
+                                    className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-[#CBD5E1] rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
+                                  >
+                                    <option value="">Khảo sát lẻ</option>
+                                    {(selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || []))
+                                      .filter((b: any) => b.status !== "COMPLETED")
+                                      .map((b: any) => (
+                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                      ))}
+                                  </select>
+                                  <div className="flex items-center gap-1">
+                                    <select
+                                      value={quickAddDraft.registeredCampus}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, registeredCampus: e.target.value }))}
+                                      className="raw-select py-0 h-6.5 flex-1 min-w-[74px] px-1.5 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-semibold text-[#005854] outline-none cursor-pointer"
+                                    >
+                                      <option value="">Cơ sở...</option>
+                                      {campuses.map(c => (
+                                        <option key={c.id} value={c.id}>{c.campusCode || c.campusName}</option>
+                                      ))}
+                                    </select>
+                                    <select
+                                      value={quickAddDraft.surveySystem}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, surveySystem: e.target.value }))}
+                                      className="raw-select py-0 h-6.5 w-[72px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
+                                      title="Hình thức khảo sát"
+                                    >
+                                      <option value="Offline">Offline</option>
+                                      {configs.filter(c => c.categoryType === "HINH_THUC_KS" && c.name !== "Offline").map(c => (
+                                        <option key={c.id} value={c.name}>{c.name}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* 4. Nguyện vọng & Mốc TS (Khối + Hệ + Diện KS + Mốc thời gian) */}
+                              <td className="px-2 py-2 border-r border-teal-200/60">
+                                <div className="flex flex-col gap-1 min-w-[175px]">
+                                  <div className="flex items-center gap-1">
+                                    <select
+                                      value={quickAddDraft.grade}
+                                      onChange={e => {
+                                        const nextGrade = e.target.value;
+                                        setQuickAddDraft(p => ({
+                                          ...p,
+                                          grade: nextGrade,
+                                          hocKy: p.hocKy === getDefaultHocKyByGrade(p.grade) ? getDefaultHocKyByGrade(nextGrade) : p.hocKy
+                                        }));
+                                      }}
+                                      className="raw-select py-0 h-7 w-[54px] px-1 bg-white border border-[#CBD5E1] rounded-md text-xs font-bold text-[#003B3A] outline-none cursor-pointer shrink-0"
+                                      title="Khối đăng ký"
+                                    >
+                                      {activeGrades.map(g => <option key={g} value={g}>K{g}</option>)}
+                                    </select>
+                                    <select
+                                      value={quickAddDraft.surveyFormType}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, surveyFormType: e.target.value }))}
+                                      className="raw-select py-0 h-7 w-[64px] px-1 bg-white border border-sky-200 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer shrink-0"
+                                      title="Hệ đào tạo khảo sát"
+                                    >
+                                      {trackEduSystems.map(es => <option key={es.code} value={es.code}>{es.code}</option>)}
+                                    </select>
+                                    <select
+                                      value={quickAddDraft.admissionCriteria}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, admissionCriteria: e.target.value }))}
+                                      className="raw-select py-0 h-7 flex-1 min-w-[68px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer"
+                                      title="Diện khảo sát / Tuyển thẳng"
+                                    >
+                                      {configs.filter(c => c.categoryType === "DIEN_KS").length > 0 ? (
+                                        configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+                                      ) : (
+                                        <>
+                                          <option value="Khảo sát">Khảo sát</option>
+                                          <option value="Tuyển thẳng">Tuyển thẳng</option>
+                                        </>
+                                      )}
+                                    </select>
+                                  </div>
+                                  <select
+                                    value={quickAddDraft.hocKy}
+                                    onChange={e => setQuickAddDraft(p => ({ ...p, hocKy: e.target.value }))}
+                                    className="raw-select py-0 h-6.5 w-full px-1.5 bg-white border border-[#00A19A]/50 rounded-md text-[11px] font-semibold text-[#003B3A] outline-none cursor-pointer"
+                                    title="1. Mốc thời gian / Kỳ khảo sát"
+                                  >
+                                    {renderIntakeMilestoneSelectOptions(quickAddDraft.hocKy)}
+                                  </select>
+                                </div>
+                              </td>
+
+                              {/* 5. Trường cũ & Khu vực (Ẩn/hiện linh hoạt) */}
+                              {showInlineSchoolCols && (
+                                <td className="px-2 py-2 border-r border-teal-200/60">
+                                  <div className="flex flex-col gap-1 min-w-[165px]">
+                                    <input
+                                      type="text"
+                                      list="old-schools-datalist"
+                                      value={quickAddDraft.oldSchoolName}
+                                      onChange={e => {
+                                        const val = e.target.value;
+                                        const matched = findMatchedSchool(val);
+                                        const st = matched ? (matched.schoolType === "PUBLIC" ? "Công lập" : matched.schoolType === "PRIVATE" ? "Tư thục" : (matched.schoolType || "")) : quickAddDraft.oldSchoolType;
+                                        setQuickAddDraft(p => ({
+                                          ...p,
+                                          oldSchoolName: val,
+                                          oldSchoolType: st || p.oldSchoolType,
+                                          programType: val.toLowerCase().includes("homeschool") ? "HOMESCHOOLING" : p.programType
+                                        }));
+                                      }}
+                                      onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
+                                      placeholder="Trường học cũ..."
+                                      className="raw-input py-0 h-7 w-full px-2 bg-white border border-[#CBD5E1] rounded-md text-[11px] font-medium text-slate-800 outline-none focus:border-[#00736E]"
+                                    />
+                                    <div className="flex items-center gap-1">
+                                      <select
+                                        value={quickAddDraft.oldSchoolType}
+                                        onChange={e => setQuickAddDraft(p => ({ ...p, oldSchoolType: e.target.value }))}
+                                        className="raw-select py-0 h-6.5 w-[74px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
+                                      >
+                                        <option value="Công lập">Công lập</option>
+                                        <option value="Tư thục">Tư thục</option>
+                                        <option value="Song ngữ">Song ngữ</option>
+                                        <option value="Quốc tế">Quốc tế</option>
+                                      </select>
+                                      <select
+                                        value={quickAddDraft.targetType}
+                                        onChange={e => {
+                                          const loc = e.target.value;
+                                          setQuickAddDraft(p => ({
+                                            ...p,
+                                            targetType: loc,
+                                            cityName: loc === "Nội tỉnh" ? "Thành phố Đà Nẵng" : loc === "Nước ngoài" ? "Hoa Kỳ (Mỹ)" : ""
+                                          }));
+                                        }}
+                                        className="raw-select py-0 h-6.5 flex-1 min-w-[82px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer"
+                                      >
+                                        <option value="Nội tỉnh">Đà Nẵng</option>
+                                        <option value="Ngoại tỉnh">Ngoại tỉnh</option>
+                                        <option value="Nước ngoài">Nước ngoài</option>
+                                      </select>
+                                    </div>
+                                    {quickAddDraft.targetType !== "Nội tỉnh" && (
+                                      <select
+                                        value={quickAddDraft.cityName}
+                                        onChange={e => setQuickAddDraft(p => ({ ...p, cityName: e.target.value }))}
+                                        className="raw-select py-0 h-6 w-full px-1 bg-white border border-[#CBD5E1] rounded-md text-[10px] text-slate-700 outline-none cursor-pointer"
+                                      >
+                                        <option value="">{quickAddDraft.targetType === "Ngoại tỉnh" ? "-- Chọn Tỉnh/TP --" : "-- Chọn Quốc gia --"}</option>
+                                        {(quickAddDraft.targetType === "Ngoại tỉnh" ? vietnamProvinces : worldCountries).map(loc => (
+                                          <option key={loc} value={loc}>{loc}</option>
+                                        ))}
+                                      </select>
+                                    )}
+                                  </div>
+                                </td>
+                              )}
+
+                              {/* 6. Học bạ & Xếp loại */}
+                              <td className="px-2 py-2 border-r border-teal-200/60">
+                                <div className="flex flex-col gap-1 min-w-[160px]">
+                                  <div className="flex items-center gap-1">
+                                    <select
+                                      value={quickAddDraft.programType}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, programType: e.target.value as any }))}
+                                      className="raw-select py-0 h-7 flex-1 min-w-[88px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-semibold text-[#005854] outline-none cursor-pointer"
+                                    >
+                                      <option value="BO_GD_DT">Bộ GD&amp;ĐT</option>
+                                      <option value="SONG_NGU">Song ngữ</option>
+                                      <option value="NUOC_NGOAI">CT Quốc tế</option>
+                                      <option value="HOMESCHOOLING">Homeschool</option>
+                                    </select>
+                                    <select
+                                      value={quickAddDraft.transcriptPeriod}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, transcriptPeriod: e.target.value }))}
+                                      className="raw-select py-0 h-7 w-[66px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
+                                      title="Kỳ học bạ căn cứ"
+                                    >
+                                      <option value="Cả năm">Cả năm</option>
+                                      <option value="HK1">HK1</option>
+                                      <option value="HK2">HK2</option>
+                                    </select>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="text"
+                                      list="overall-ratings-datalist"
+                                      value={quickAddDraft.overallRating}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, overallRating: e.target.value }))}
+                                      placeholder="Xếp loại..."
+                                      className="raw-input py-0 h-6.5 flex-1 min-w-[88px] px-1.5 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-semibold text-emerald-800 outline-none focus:border-[#00736E]"
+                                    />
+                                    <select
+                                      value={quickAddDraft.kqRenLuyen}
+                                      onChange={e => setQuickAddDraft(p => ({ ...p, kqRenLuyen: e.target.value }))}
+                                      className="raw-select py-0 h-6.5 w-[66px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
+                                      title="Kết quả rèn luyện"
+                                    >
+                                      <option value="Tốt">Tốt</option>
+                                      <option value="Khá">Khá</option>
+                                      <option value="Đạt">Đạt</option>
+                                      <option value="Chưa đạt">CĐ</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* 7. Điểm xét quy chế & Thành tích */}
+                              <td className="px-2 py-2 border-r border-teal-200/60">
+                                <div className="flex flex-col gap-1 min-w-[198px]">
+                                  <div className={`grid grid-cols-3 gap-1 ${qNoTranscript ? "opacity-55" : ""}`}>
+                                    <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
+                                      qMathExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#CBD5E1] focus-within:border-[#00736E]"
+                                    }`} title={qNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : "Điểm môn Toán"}>
+                                      <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">Toán</span>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={quickAddDraft.mathScoreOld}
+                                        onChange={e => setQuickAddDraft(p => ({ ...p, mathScoreOld: e.target.value }))}
+                                        onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
+                                        placeholder="—"
+                                        className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold outline-none ${
+                                          qMathExempt ? "text-emerald-700" : "text-[#003B3A]"
+                                        }`}
+                                      />
+                                    </label>
+                                    <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
+                                      qLitExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#CBD5E1] focus-within:border-[#00736E]"
+                                    }`} title={qNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : `Điểm môn ${qLitLabel === "TV" ? "Tiếng Việt" : "Ngữ Văn"}`}>
+                                      <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">{qLitLabel}</span>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={quickAddDraft.litScoreOld}
+                                        onChange={e => setQuickAddDraft(p => ({ ...p, litScoreOld: e.target.value }))}
+                                        onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
+                                        placeholder="—"
+                                        className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold outline-none ${
+                                          qLitExempt ? "text-emerald-700" : "text-[#003B3A]"
+                                        }`}
+                                      />
+                                    </label>
+                                    <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
+                                      qEngExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#CBD5E1] focus-within:border-[#00736E]"
+                                    }`} title={qNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : "Điểm môn Tiếng Anh (xét miễn Tiếng Anh viết cho Hệ S)"}>
+                                      <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">Anh</span>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={quickAddDraft.engScoreOld}
+                                        onChange={e => setQuickAddDraft(p => ({ ...p, engScoreOld: e.target.value }))}
+                                        onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
+                                        placeholder="—"
+                                        className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold outline-none ${
+                                          qEngExempt ? "text-emerald-700" : "text-[#003B3A]"
+                                        }`}
+                                      />
+                                    </label>
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={quickAddDraft.achievements}
+                                    onChange={e => setQuickAddDraft(p => ({ ...p, achievements: e.target.value }))}
+                                    onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
+                                    placeholder="Chứng chỉ QT, giải thưởng..."
+                                    className="raw-input py-0 h-6.5 w-full px-2 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-amber-900 placeholder-slate-400 outline-none focus:border-amber-500"
+                                  />
+                                </div>
+                              </td>
+
+                              {/* 8. Môn kiểm tra (Bám sát Cấu hình quy chế tuyển sinh) */}
+                              <td className="px-2.5 py-2 border-r border-teal-200/60">
+                                {renderExamSubjectsCell(draftRes)}
+                              </td>
+
+                              {/* 9. Thao tác (Sticky Right) */}
+                              <td className="px-2.5 py-2 whitespace-nowrap text-right pr-3 sticky right-0 z-10 bg-[#ECFEFF] border-l border-teal-200 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)]">
+                                <button
+                                  type="button"
+                                  onClick={saveQuickAddRow}
+                                  disabled={isSavingQuickAdd}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005854] text-white text-[11px] font-semibold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+                                  title="Lưu học sinh mới vào danh sách (hoặc nhấn phím Enter)"
+                                >
+                                  {isSavingQuickAdd ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                  <span>Lưu thêm</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })()}
 
                         {paginatedFiltStu.length === 0 ? (
                           <tr>
-                            <td colSpan={dynamicOtherSubjectNames.length + 18} className="py-12 text-center text-slate-400 font-medium">
+                            <td
+                              colSpan={
+                                tableViewMode === "inline" && viewMode !== "transfer"
+                                  ? (showInlineSchoolCols ? 9 : 8)
+                                  : tableViewMode === "compact" && viewMode !== "transfer"
+                                  ? 12
+                                  : viewMode === "transfer"
+                                  ? 20
+                                  : dynamicOtherSubjectNames.length + 21
+                              }
+                              className="py-12 text-center text-slate-400 font-medium"
+                            >
                               Không có dữ liệu học sinh phù hợp
                             </td>
                           </tr>
@@ -9687,160 +10202,526 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             english: details.english,
                             achievements: achievementsText,
                             hinhThucKs: hinhThucKsVal,
-                            dienKs: dienKsVal
+                            dienKs: dienKsVal,
+                            periodName: periodObj?.name || selPeriod?.name
                           };
                           const rowDraft = inlineEdits[s.id] || getRowInitialDraft(s, parsedRowDefaults);
+                          const displayIntakeTiming = normalizeStudentHocKyDisplay(s, periodObj?.name || selPeriod?.name, visiblePeriods);
                           const isRowDirty = Boolean(inlineEdits[s.id]);
                           const isRowSaving = savingRowIds.includes(s.id);
-                          const isInline = tableViewMode === "inline" && viewMode !== "transfer" && !cannotUpdate;
+                          const isInlineLayout = tableViewMode === "inline" && viewMode !== "transfer";
+                          const isInline = isInlineLayout && !cannotUpdate;
+                          const examSubjectsResult = resolveStudentExamSubjects(s, {
+                            gradeConfigs,
+                            mappings: allMappings,
+                            regulationConfig,
+                            periods: visiblePeriods,
+                            periodName: periodObj?.name || selPeriod?.name
+                          });
+
+                          const stickyCellBg = isRowDirty
+                            ? "bg-amber-50 group-hover:bg-amber-100/80"
+                            : isRowSelected
+                            ? "bg-[#F0FDFA] group-hover:bg-[#CCFBF1]/50"
+                            : "bg-white group-hover:bg-[#F8FAFC]";
 
                           return (
-                            <tr key={s.id} className={`transition-colors group ${
-                              isRowDirty ? "bg-amber-50/40 hover:bg-amber-50/70" : isRowSelected ? "bg-teal-50/50 hover:bg-teal-50/80" : "hover:bg-slate-50/70"
+                            <tr key={s.id} className={`transition-colors align-middle group ${
+                              isRowDirty ? "bg-amber-50/40 hover:bg-amber-50/70" : isRowSelected ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]" : "hover:bg-[#F8FAFC]"
                             }`}>
-                              {/* 0. Checkbox */}
-                              <td className="px-2.5 py-2.5 text-center whitespace-nowrap border-r border-slate-100" onClick={e => e.stopPropagation()}>
-                                <input
-                                  type="checkbox"
-                                  className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
-                                  checked={isRowSelected}
-                                  onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
-                                />
-                              </td>
+                              {isInlineLayout ? (
+                                (() => {
+                                  const inlineExamRes = resolveStudentExamSubjects({
+                                    ...s,
+                                    grade: rowDraft.grade,
+                                    hocKy: rowDraft.hocKy,
+                                    surveyFormType: rowDraft.surveyFormType,
+                                    surveySystem: rowDraft.surveySystem,
+                                    admissionCriteria: rowDraft.admissionCriteria,
+                                    kqRenLuyen: rowDraft.kqRenLuyen,
+                                    kqgdTieuHoc: rowDraft.overallRating,
+                                    kqHocTap: JSON.stringify({
+                                      programType: rowDraft.programType,
+                                      transcriptPeriod: rowDraft.transcriptPeriod,
+                                      overallRating: rowDraft.overallRating,
+                                      achievements: rowDraft.achievements,
+                                      math: rowDraft.mathScoreOld,
+                                      literature: rowDraft.litScoreOld,
+                                      english: rowDraft.engScoreOld
+                                    })
+                                  }, {
+                                    gradeConfigs,
+                                    mappings: allMappings,
+                                    regulationConfig,
+                                    periods: visiblePeriods,
+                                    periodName: periodObj?.name || selPeriod?.name
+                                  });
+                                  const rAllRuleNames = [
+                                    ...inlineExamRes.insight.recommendedSubjectNames,
+                                    ...inlineExamRes.insight.exemptedSubjectNames
+                                  ];
+                                  const rLitLabel = rAllRuleNames.some(n => n.toLowerCase().includes("tiếng việt"))
+                                    ? "TV"
+                                    : rAllRuleNames.some(n => n.toLowerCase().includes("ngữ văn"))
+                                    ? "Văn"
+                                    : (parseInt(String(rowDraft.grade || "1"), 10) || 1) <= 5
+                                    ? "TV"
+                                    : "Văn";
+                                  const rNoTranscript = inlineExamRes.insight.exemptionMode === "NO_TRANSCRIPT";
+                                  const rMathExempt = inlineExamRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("toán"));
+                                  const rLitExempt = inlineExamRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("tiếng việt") || (e.subjectName || "").toLowerCase().includes("ngữ văn"));
+                                  const rEngExempt = inlineExamRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("tiếng anh"));
 
-                              {/* 1. STT */}
-                              <td className="px-2.5 py-2.5 text-slate-400 font-normal text-center whitespace-nowrap border-r border-slate-100">
-                                {(studentsCurrentPage - 1) * studentsPageSize + idx + 1}
-                              </td>
-
-                              {/* 2. Mã HS & SBD */}
-                              <td className="px-3 py-2.5 whitespace-nowrap border-r border-slate-100">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="font-mono text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded w-fit">
-                                    {s.studentCode}
-                                  </span>
-                                  {firstSession?.seatNumber && (
-                                    <span className="text-[10px] font-semibold text-slate-500">
-                                      SBD: <strong className="text-slate-700">{firstSession.seatNumber}</strong>
-                                    </span>
-                                  )}
-                                  {firstSession?.session?.sessionCode && !firstSession?.seatNumber && (
-                                    <span className="text-[9px] font-mono text-slate-400 truncate max-w-[100px]" title={firstSession.session.sessionCode}>
-                                      {firstSession.session.sessionCode}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-
-                              {/* 3. Họ và tên + Ngày sinh & Giới tính */}
-                              <td className="px-2.5 py-2 whitespace-nowrap border-r border-slate-100">
-                                {isInline ? (
-                                  <div className="flex flex-col gap-1 min-w-[185px]">
-                                    <input
-                                      type="text"
-                                      value={rowDraft.fullName}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "fullName", e.target.value)}
-                                      onBlur={e => {
-                                        const raw = e.target.value.trim();
-                                        if (raw) {
-                                          const tc = raw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-                                          if (tc !== rowDraft.fullName) updateInlineCell(s, parsedRowDefaults, "fullName", tc);
-                                        }
-                                      }}
-                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      className="raw-input py-0 h-7 w-full px-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-xs font-bold text-slate-800 outline-none transition-colors"
-                                    />
-                                    <div className="flex items-center gap-1">
-                                      <select
-                                        value={rowDraft.gender}
-                                        onChange={e => updateInlineCell(s, parsedRowDefaults, "gender", e.target.value)}
-                                        className="raw-select py-0 h-7 min-w-[62px] px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
+                                  return (
+                                    <>
+                                      {/* 1. Checkbox + STT (Sticky Left) */}
+                                      <td
+                                        className={`px-1.5 py-2 text-center whitespace-nowrap border-r border-[#E2E8F0] md:sticky md:left-0 z-10 transition-colors ${stickyCellBg}`}
+                                        onClick={e => e.stopPropagation()}
                                       >
-                                        <option value="Nam">Nam</option>
-                                        <option value="Nữ">Nữ</option>
-                                      </select>
-                                      <input
-                                        type="date"
-                                        value={rowDraft.dateOfBirth}
-                                        onChange={e => updateInlineCell(s, parsedRowDefaults, "dateOfBirth", e.target.value)}
-                                        className="raw-input py-0 h-7 flex-1 px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-medium text-slate-700 outline-none"
-                                      />
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <button
-                                      type="button"
-                                      onClick={() => setQuickViewStudent(s)}
-                                      className="font-bold text-slate-800 text-xs hover:text-teal-800 transition-colors cursor-pointer text-left block"
-                                      title="Bấm để xem chi tiết kết quả khảo sát và học bạ"
-                                    >
-                                      <span>{s.fullName}</span>
-                                    </button>
-                                    <div className="text-[10px] text-slate-400 font-normal mt-0.5">
-                                      {s.gender || "—"} • {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "—"}
-                                    </div>
-                                    {details.attachments.length > 0 && (
-                                      <div className="mt-1">
-                                        <a
-                                          href={details.attachments[0].url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 text-[9px] font-medium hover:bg-teal-100 transition-colors"
-                                          title={`Xem ${details.attachments.length} tệp học bạ đính kèm`}
-                                        >
-                                          [{details.attachments.length} tệp học bạ]
-                                        </a>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </td>
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          <input
+                                            type="checkbox"
+                                            className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
+                                            checked={isRowSelected}
+                                            onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
+                                          />
+                                          <span className="text-[10px] font-medium text-slate-400">
+                                            {(studentsCurrentPage - 1) * studentsPageSize + idx + 1}
+                                          </span>
+                                        </div>
+                                      </td>
 
-                              {/* 4. Đợt & Cơ sở khảo sát */}
-                              <td className="px-2.5 py-2 border-r border-slate-100 whitespace-nowrap">
-                                {isInline ? (
-                                  <div className="flex flex-col gap-1 min-w-[175px]">
-                                    <select
-                                      value={rowDraft.batchId}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "batchId", e.target.value)}
-                                      className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
-                                    >
-                                      <option value="">-- Khảo sát lẻ --</option>
-                                      {(periodObj?.batches || selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || []))
-                                        .filter((b: any) => b.status !== "COMPLETED" || b.id === rowDraft.batchId)
-                                        .map((b: any) => (
-                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                      ))}
-                                    </select>
-                                    <select
-                                      value={registeredCampusObj?.id || rowDraft.registeredCampus}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "registeredCampus", e.target.value)}
-                                      className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-teal-700 outline-none cursor-pointer"
-                                    >
-                                      <option value="">-- Chọn Cơ sở --</option>
-                                      {campuses.map(c => (
-                                        <option key={c.id} value={c.id}>{c.campusCode || c.campusName}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-col gap-0.5 text-xs max-w-[175px]">
-                                    <span className="font-semibold text-slate-800 truncate" title={batchObj?.name || (periodObj?.name ? `${periodObj.name} - Khảo sát lẻ` : "Khảo sát lẻ")}>
-                                      {batchObj?.name || <span className="italic text-slate-400">Khảo sát lẻ</span>}
-                                    </span>
-                                    <div className="flex items-center gap-1.5">
-                                      {(registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus) && (
-                                        <span className="text-[10px] text-teal-700 font-semibold truncate" title={registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus}>
-                                          {registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus}
+                                      {/* 2. Hồ sơ học sinh (Sticky Left) */}
+                                      <td className={`px-2.5 py-2 whitespace-nowrap border-r border-[#E2E8F0] md:sticky md:left-11 z-10 md:shadow-[4px_0_8px_-4px_rgba(15,23,42,0.08)] transition-colors ${stickyCellBg}`}>
+                                        <div className="flex flex-col gap-1 min-w-[215px]">
+                                          <input
+                                            type="text"
+                                            disabled={!isInline}
+                                            value={rowDraft.fullName}
+                                            onChange={e => updateInlineCell(s, parsedRowDefaults, "fullName", e.target.value)}
+                                            onBlur={e => {
+                                              const raw = e.target.value.trim();
+                                              if (raw) {
+                                                const tc = raw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+                                                if (tc !== rowDraft.fullName) updateInlineCell(s, parsedRowDefaults, "fullName", tc);
+                                              }
+                                            }}
+                                            onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
+                                            className="raw-input py-0 h-7 w-full px-2 bg-white border border-[#E2E8F0] hover:border-slate-300 focus:border-[#00736E] rounded-md text-xs font-bold text-[#003B3A] outline-none transition-colors disabled:bg-slate-50"
+                                          />
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={() => setQuickViewStudent(s)}
+                                              className="font-mono text-[10px] font-semibold text-[#005854] bg-[#F0FDFA] hover:bg-teal-100/80 border border-teal-200/80 px-1.5 h-6.5 rounded-md inline-flex items-center shrink-0 cursor-pointer transition-colors"
+                                              title={firstSession?.seatNumber ? `Mã HS: ${s.studentCode} • SBD: ${firstSession.seatNumber} (Bấm xem nhanh)` : `Mã HS: ${s.studentCode} (Bấm xem nhanh)`}
+                                            >
+                                              {s.studentCode}
+                                            </button>
+                                            <select
+                                              disabled={!isInline}
+                                              value={rowDraft.gender}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "gender", e.target.value)}
+                                              className="raw-select py-0 h-6.5 w-[52px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
+                                            >
+                                              <option value="Nam">Nam</option>
+                                              <option value="Nữ">Nữ</option>
+                                            </select>
+                                            <input
+                                              type="date"
+                                              disabled={!isInline}
+                                              value={rowDraft.dateOfBirth}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "dateOfBirth", e.target.value)}
+                                              className="raw-input py-0 h-6.5 flex-1 min-w-[96px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none disabled:bg-slate-50"
+                                            />
+                                            {details.attachments.length > 0 && (
+                                              <a
+                                                href={details.attachments[0].url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center justify-center w-6 h-6.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 shrink-0"
+                                                title={`Xem ${details.attachments.length} tệp học bạ đính kèm`}
+                                              >
+                                                <Paperclip className="w-3 h-3" />
+                                              </a>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </td>
+
+                                      {/* 3. Đợt & Cơ sở ĐK + Hình thức KS */}
+                                      <td className="px-2 py-2 border-r border-[#E2E8F0] whitespace-nowrap">
+                                        <div className="flex flex-col gap-1 min-w-[150px]">
+                                          <select
+                                            disabled={!isInline}
+                                            value={rowDraft.batchId}
+                                            onChange={e => updateInlineCell(s, parsedRowDefaults, "batchId", e.target.value)}
+                                            className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-[#E2E8F0] rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer disabled:bg-slate-50"
+                                          >
+                                            <option value="">Khảo sát lẻ</option>
+                                            {(periodObj?.batches || selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || []))
+                                              .filter((b: any) => b.status !== "COMPLETED" || b.id === rowDraft.batchId)
+                                              .map((b: any) => (
+                                                <option key={b.id} value={b.id}>{b.name}</option>
+                                              ))}
+                                          </select>
+                                          <div className="flex items-center gap-1">
+                                            <select
+                                              disabled={!isInline}
+                                              value={registeredCampusObj?.id || rowDraft.registeredCampus}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "registeredCampus", e.target.value)}
+                                              className="raw-select py-0 h-6.5 flex-1 min-w-[74px] px-1.5 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-semibold text-[#005854] outline-none cursor-pointer disabled:bg-slate-50"
+                                            >
+                                              <option value="">Cơ sở...</option>
+                                              {campuses.map(c => (
+                                                <option key={c.id} value={c.id}>{c.campusCode || c.campusName}</option>
+                                              ))}
+                                            </select>
+                                            <select
+                                              disabled={!isInline}
+                                              value={rowDraft.surveySystem}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "surveySystem", e.target.value)}
+                                              className="raw-select py-0 h-6.5 w-[72px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
+                                              title="Hình thức khảo sát"
+                                            >
+                                              <option value="">Hình thức</option>
+                                              {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => (
+                                                <option key={c.id} value={c.name}>{c.name}</option>
+                                              ))}
+                                              {rowDraft.surveySystem && !configs.some(c => c.categoryType === "HINH_THUC_KS" && c.name === rowDraft.surveySystem) && (
+                                                <option value={rowDraft.surveySystem}>{rowDraft.surveySystem}</option>
+                                              )}
+                                            </select>
+                                          </div>
+                                        </div>
+                                      </td>
+
+                                      {/* 4. Nguyện vọng & Mốc TS (Khối + Hệ + Diện KS + Mốc thời gian) */}
+                                      <td className="px-2 py-2 border-r border-[#E2E8F0] whitespace-nowrap">
+                                        <div className="flex flex-col gap-1 min-w-[175px]">
+                                          <div className="flex items-center gap-1">
+                                            <select
+                                              disabled={!isInline}
+                                              value={rowDraft.grade}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "grade", e.target.value)}
+                                              className="raw-select py-0 h-7 w-[54px] px-1 bg-white border border-[#E2E8F0] hover:border-slate-300 focus:border-[#00736E] rounded-md text-xs font-bold text-[#003B3A] outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
+                                              title="Khối đăng ký"
+                                            >
+                                              {activeGrades.map(g => <option key={g} value={g}>K{g}</option>)}
+                                            </select>
+                                            <select
+                                              disabled={!isInline}
+                                              value={rowDraft.surveyFormType}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "surveyFormType", e.target.value)}
+                                              className="raw-select py-0 h-7 w-[64px] px-1 bg-sky-50/50 border border-sky-200 hover:border-sky-300 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
+                                              title="Hệ đào tạo khảo sát"
+                                            >
+                                              <option value="">Hệ</option>
+                                              {trackEduSystems.map(es => (
+                                                <option key={es.code} value={es.code}>{es.code}</option>
+                                              ))}
+                                              {rowDraft.surveyFormType && !trackEduSystems.some(es => es.code === rowDraft.surveyFormType) && (
+                                                <option value={rowDraft.surveyFormType}>{rowDraft.surveyFormType}</option>
+                                              )}
+                                            </select>
+                                            <select
+                                              disabled={!isInline}
+                                              value={rowDraft.admissionCriteria}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "admissionCriteria", e.target.value)}
+                                              className="raw-select py-0 h-7 flex-1 min-w-[68px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer disabled:bg-slate-50"
+                                              title="Diện khảo sát / Tuyển thẳng"
+                                            >
+                                              <option value="">Diện KS</option>
+                                              {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
+                                                <option key={c.id} value={c.name}>{c.name}</option>
+                                              ))}
+                                              {rowDraft.admissionCriteria && !configs.some(c => c.categoryType === "DIEN_KS" && c.name === rowDraft.admissionCriteria) && (
+                                                <option value={rowDraft.admissionCriteria}>{rowDraft.admissionCriteria}</option>
+                                              )}
+                                            </select>
+                                          </div>
+                                          <select
+                                            disabled={!isInline}
+                                            value={rowDraft.hocKy}
+                                            onChange={e => updateInlineCell(s, parsedRowDefaults, "hocKy", e.target.value)}
+                                            className="raw-select py-0 h-6.5 w-full px-1.5 bg-[#F0FDFA]/80 border border-teal-200 hover:border-[#00A19A] rounded-md text-[11px] font-semibold text-[#003B3A] outline-none cursor-pointer disabled:bg-slate-50"
+                                            title="1. Mốc thời gian / Kỳ khảo sát"
+                                          >
+                                            {renderIntakeMilestoneSelectOptions(rowDraft.hocKy)}
+                                          </select>
+                                        </div>
+                                      </td>
+
+                                      {/* 5. Trường cũ & Khu vực (Ẩn/hiện linh hoạt) */}
+                                      {showInlineSchoolCols && (
+                                        <td className="px-2 py-2 border-r border-[#E2E8F0]">
+                                          <div className="flex flex-col gap-1 min-w-[165px]">
+                                            <input
+                                              type="text"
+                                              disabled={!isInline}
+                                              list="old-schools-datalist"
+                                              value={rowDraft.oldSchoolName}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "oldSchoolName", e.target.value)}
+                                              onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
+                                              placeholder="Trường học cũ..."
+                                              className="raw-input py-0 h-7 w-full px-2 bg-white border border-[#E2E8F0] hover:border-slate-300 focus:border-[#00736E] rounded-md text-[11px] font-medium text-slate-800 placeholder-slate-300 outline-none disabled:bg-slate-50"
+                                            />
+                                            <div className="flex items-center gap-1">
+                                              <select
+                                                disabled={!isInline}
+                                                value={rowDraft.oldSchoolType}
+                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "oldSchoolType", e.target.value)}
+                                                className="raw-select py-0 h-6.5 w-[74px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
+                                              >
+                                                <option value="">Loại hình</option>
+                                                <option value="Công lập">Công lập</option>
+                                                <option value="Tư thục">Tư thục</option>
+                                                <option value="Song ngữ">Song ngữ</option>
+                                                <option value="Quốc tế">Quốc tế</option>
+                                              </select>
+                                              <select
+                                                disabled={!isInline}
+                                                value={rowDraft.targetType}
+                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "targetType", e.target.value)}
+                                                className="raw-select py-0 h-6.5 flex-1 min-w-[82px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer disabled:bg-slate-50"
+                                              >
+                                                <option value="Nội tỉnh">Đà Nẵng</option>
+                                                <option value="Ngoại tỉnh">Ngoại tỉnh</option>
+                                                <option value="Nước ngoài">Nước ngoài</option>
+                                              </select>
+                                            </div>
+                                            {rowDraft.targetType !== "Nội tỉnh" && (
+                                              <select
+                                                disabled={!isInline}
+                                                value={rowDraft.cityName}
+                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "cityName", e.target.value)}
+                                                className="raw-select py-0 h-6 w-full px-1 bg-white border border-[#E2E8F0] rounded-md text-[10px] text-slate-700 outline-none cursor-pointer disabled:bg-slate-50"
+                                              >
+                                                <option value="">{rowDraft.targetType === "Ngoại tỉnh" ? "-- Chọn Tỉnh/TP --" : "-- Chọn Quốc gia --"}</option>
+                                                {(rowDraft.targetType === "Ngoại tỉnh" ? vietnamProvinces : worldCountries).map(loc => (
+                                                  <option key={loc} value={loc}>{loc}</option>
+                                                ))}
+                                              </select>
+                                            )}
+                                          </div>
+                                        </td>
+                                      )}
+
+                                      {/* 6. Học bạ & Xếp loại */}
+                                      <td className="px-2 py-2 border-r border-[#E2E8F0] whitespace-nowrap">
+                                        <div className="flex flex-col gap-1 min-w-[160px]">
+                                          <div className="flex items-center gap-1">
+                                            <select
+                                              disabled={!isInline}
+                                              value={rowDraft.programType}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "programType", e.target.value)}
+                                              onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
+                                              className="raw-select py-0 h-7 flex-1 min-w-[88px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-semibold text-[#005854] outline-none cursor-pointer disabled:bg-slate-50"
+                                            >
+                                              <option value="BO_GD_DT">Bộ GD&amp;ĐT</option>
+                                              <option value="SONG_NGU">Song ngữ</option>
+                                              <option value="NUOC_NGOAI">CT Quốc tế</option>
+                                              <option value="HOMESCHOOLING">Homeschool</option>
+                                            </select>
+                                            <select
+                                              disabled={!isInline}
+                                              value={rowDraft.transcriptPeriod}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "transcriptPeriod", e.target.value)}
+                                              className="raw-select py-0 h-7 w-[66px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
+                                              title="Kỳ học bạ căn cứ"
+                                            >
+                                              <option value="Cả năm">Cả năm</option>
+                                              <option value="HK1">HK1</option>
+                                              <option value="HK2">HK2</option>
+                                            </select>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <input
+                                              type="text"
+                                              disabled={!isInline}
+                                              list="overall-ratings-datalist"
+                                              value={rowDraft.overallRating}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "overallRating", e.target.value)}
+                                              onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
+                                              placeholder="Xếp loại..."
+                                              className="raw-input py-0 h-6.5 flex-1 min-w-[88px] px-1.5 bg-white border border-[#E2E8F0] focus:border-[#00736E] rounded-md text-[10.5px] font-semibold text-emerald-800 placeholder-slate-300 outline-none disabled:bg-slate-50"
+                                            />
+                                            <select
+                                              disabled={!isInline}
+                                              value={rowDraft.kqRenLuyen}
+                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "kqRenLuyen", e.target.value)}
+                                              className="raw-select py-0 h-6.5 w-[66px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
+                                              title="Kết quả rèn luyện"
+                                            >
+                                              <option value="">RL...</option>
+                                              <option value="Tốt">Tốt</option>
+                                              <option value="Khá">Khá</option>
+                                              <option value="Đạt">Đạt</option>
+                                              <option value="Chưa đạt">CĐ</option>
+                                            </select>
+                                          </div>
+                                        </div>
+                                      </td>
+
+                                      {/* 7. Điểm xét quy chế & Thành tích */}
+                                      <td className="px-2 py-2 border-r border-[#E2E8F0]">
+                                        <div className="flex flex-col gap-1 min-w-[198px]">
+                                          <div className={`grid grid-cols-3 gap-1 ${rNoTranscript ? "opacity-55" : ""}`}>
+                                            <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
+                                              rMathExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#E2E8F0] focus-within:border-[#00736E]"
+                                            }`} title={rNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : "Điểm môn Toán"}>
+                                              <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">Toán</span>
+                                              <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                disabled={!isInline}
+                                                value={rowDraft.mathScoreOld}
+                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "mathScoreOld", e.target.value)}
+                                                onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
+                                                placeholder="—"
+                                                className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold placeholder-slate-300 outline-none ${
+                                                  rMathExempt ? "text-emerald-700" : "text-[#003B3A]"
+                                                }`}
+                                              />
+                                            </label>
+                                            <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
+                                              rLitExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#E2E8F0] focus-within:border-[#00736E]"
+                                            }`} title={rNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : `Điểm môn ${rLitLabel === "TV" ? "Tiếng Việt" : "Ngữ Văn"}`}>
+                                              <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">{rLitLabel}</span>
+                                              <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                disabled={!isInline}
+                                                value={rowDraft.litScoreOld}
+                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "litScoreOld", e.target.value)}
+                                                onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
+                                                placeholder="—"
+                                                className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold placeholder-slate-300 outline-none ${
+                                                  rLitExempt ? "text-emerald-700" : "text-[#003B3A]"
+                                                }`}
+                                              />
+                                            </label>
+                                            <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
+                                              rEngExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#E2E8F0] focus-within:border-[#00736E]"
+                                            }`} title={rNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : "Điểm môn Tiếng Anh (xét miễn Tiếng Anh viết cho Hệ S)"}>
+                                              <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">Anh</span>
+                                              <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                disabled={!isInline}
+                                                value={rowDraft.engScoreOld}
+                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "engScoreOld", e.target.value)}
+                                                onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
+                                                placeholder="—"
+                                                className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold placeholder-slate-300 outline-none ${
+                                                  rEngExempt ? "text-emerald-700" : "text-[#003B3A]"
+                                                }`}
+                                              />
+                                            </label>
+                                          </div>
+                                          <input
+                                            type="text"
+                                            disabled={!isInline}
+                                            value={rowDraft.achievements}
+                                            onChange={e => updateInlineCell(s, parsedRowDefaults, "achievements", e.target.value)}
+                                            onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
+                                            placeholder="Chứng chỉ QT, giải thưởng..."
+                                            className="raw-input py-0 h-6.5 w-full px-2 bg-white border border-[#E2E8F0] focus:border-amber-500 rounded-md text-[10.5px] font-medium text-amber-900 placeholder-slate-300 outline-none disabled:bg-slate-50"
+                                          />
+                                        </div>
+                                      </td>
+
+                                      {/* 8. Môn kiểm tra (Bám sát Cấu hình quy chế tuyển sinh) */}
+                                      <td className="px-2.5 py-2 border-r border-[#E2E8F0] bg-[#F8FAFC]/60">
+                                        {renderExamSubjectsCell(inlineExamRes)}
+                                      </td>
+                                    </>
+                                  );
+                                })()
+                              ) : (
+                                <>
+                                  {/* 0. Checkbox */}
+                                  <td className="px-2.5 py-2.5 text-center whitespace-nowrap border-r border-slate-100" onClick={e => e.stopPropagation()}>
+                                    <input
+                                      type="checkbox"
+                                      className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
+                                      checked={isRowSelected}
+                                      onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
+                                    />
+                                  </td>
+
+                                  {/* 1. STT */}
+                                  <td className="px-2.5 py-2.5 text-slate-400 font-normal text-center whitespace-nowrap border-r border-slate-100">
+                                    {(studentsCurrentPage - 1) * studentsPageSize + idx + 1}
+                                  </td>
+
+                                  {/* 2. Mã HS & SBD */}
+                                  <td className="px-3 py-2.5 whitespace-nowrap border-r border-slate-100">
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="font-mono text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded w-fit">
+                                        {s.studentCode}
+                                      </span>
+                                      {firstSession?.seatNumber && (
+                                        <span className="text-[10px] font-semibold text-slate-500">
+                                          SBD: <strong className="text-slate-700">{firstSession.seatNumber}</strong>
+                                        </span>
+                                      )}
+                                      {firstSession?.session?.sessionCode && !firstSession?.seatNumber && (
+                                        <span className="text-[9px] font-mono text-slate-400 truncate max-w-[100px]" title={firstSession.session.sessionCode}>
+                                          {firstSession.session.sessionCode}
                                         </span>
                                       )}
                                     </div>
-                                  </div>
-                                )}
-                              </td>
+                                  </td>
 
-                              {viewMode === "transfer" ? (
+                                  {/* 3. Họ và tên + Ngày sinh & Giới tính */}
+                                  <td className="px-2.5 py-2 whitespace-nowrap border-r border-slate-100">
+                                    <div>
+                                      <button
+                                        type="button"
+                                        onClick={() => setQuickViewStudent(s)}
+                                        className="font-bold text-slate-800 text-xs hover:text-teal-800 transition-colors cursor-pointer text-left block"
+                                        title="Bấm để xem chi tiết kết quả khảo sát và học bạ"
+                                      >
+                                        <span>{s.fullName}</span>
+                                      </button>
+                                      <div className="text-[10px] text-slate-400 font-normal mt-0.5">
+                                        {s.gender || "—"} • {s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "—"}
+                                      </div>
+                                      {details.attachments.length > 0 && (
+                                        <div className="mt-1">
+                                          <a
+                                            href={details.attachments[0].url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200 text-[9px] font-medium hover:bg-teal-100 transition-colors"
+                                            title={`Xem ${details.attachments.length} tệp học bạ đính kèm`}
+                                          >
+                                            [{details.attachments.length} tệp học bạ]
+                                          </a>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  {/* 4. Đợt & Cơ sở khảo sát */}
+                                  <td className="px-2.5 py-2 border-r border-slate-100 whitespace-nowrap">
+                                    <div className="flex flex-col gap-0.5 text-xs max-w-[175px]">
+                                      <span className="font-semibold text-slate-800 truncate" title={batchObj?.name || (periodObj?.name ? `${periodObj.name} - Khảo sát lẻ` : "Khảo sát lẻ")}>
+                                        {batchObj?.name || <span className="italic text-slate-400">Khảo sát lẻ</span>}
+                                      </span>
+                                      <div className="flex items-center gap-1.5">
+                                        {(registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus) && (
+                                          <span className="text-[10px] text-teal-700 font-semibold truncate" title={registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus}>
+                                            {registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  {viewMode === "transfer" ? (
                                 <>
                                   {/* 5. Khối đăng ký */}
                                   <td className="px-2.5 py-3 text-center border-r border-slate-100 whitespace-nowrap">
@@ -9854,6 +10735,20 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
                                       {s.surveyFormType || s.surveySystem || "—"}
                                     </span>
+                                  </td>
+
+                                  {/* 6b. 1. Mốc thời gian / Kỳ khảo sát */}
+                                  <td className="px-2.5 py-3 text-center border-r border-slate-100 whitespace-nowrap">
+                                    <div className="inline-flex flex-col items-center gap-0.5">
+                                      <span className="text-[10px] font-semibold text-[#005854] bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/80">
+                                        {displayIntakeTiming}
+                                      </span>
+                                      {periodObj?.name && periodObj.name !== displayIntakeTiming && (
+                                        <span className="text-[9.5px] text-slate-400 font-medium truncate max-w-[130px]" title={`Kỳ khảo sát: ${periodObj.name}`}>
+                                          {periodObj.name}
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
 
                                   {/* Lớp & Cơ sở hiện tại */}
@@ -9944,6 +10839,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       <span className="text-[11px] text-slate-300 italic">Chưa có ghi nhận</span>
                                     )}
                                   </td>
+                                  <td className="px-3.5 py-2.5 border-r border-slate-100 bg-teal-50/15">
+                                    {renderExamSubjectsCell(examSubjectsResult)}
+                                  </td>
                                 </>
                               ) : tableViewMode === "compact" ? (
                                 <>
@@ -9963,6 +10861,20 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         <span>•</span>
                                         <span className="truncate max-w-[85px]" title={dienKsVal}>{dienKsVal}</span>
                                       </div>
+                                    </div>
+                                  </td>
+
+                                  {/* COMPACT COL 1b: 1. Mốc thời gian / Kỳ khảo sát */}
+                                  <td className="px-2.5 py-2.5 text-center border-r border-slate-100 whitespace-nowrap">
+                                    <div className="inline-flex flex-col items-center gap-0.5">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#F0FDFA] text-[#003B3A] border border-teal-200/80">
+                                        {displayIntakeTiming}
+                                      </span>
+                                      {periodObj?.name && periodObj.name !== displayIntakeTiming && (
+                                        <span className="text-[9.5px] text-slate-400 font-medium truncate max-w-[135px]" title={`Kỳ khảo sát: ${periodObj.name}`}>
+                                          {periodObj.name}
+                                        </span>
+                                      )}
                                     </div>
                                   </td>
 
@@ -10041,229 +10953,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     {achievementsText ? (
                                       <div className="text-xs max-w-[160px]">
                                         <span className="font-semibold text-amber-900 text-[11px] line-clamp-2" title={achievementsText}>
-                                          🏆 {achievementsText}
+                                          {achievementsText}
                                         </span>
                                       </div>
                                     ) : (
                                       <span className="text-[11px] text-slate-300 italic">Chưa có ghi nhận</span>
                                     )}
                                   </td>
-                                </>
-                              ) : tableViewMode === "inline" ? (
-                                <>
-                                  {/* INLINE 5: Khối ĐK */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 whitespace-nowrap">
-                                    <select
-                                      value={rowDraft.grade}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "grade", e.target.value)}
-                                      className="raw-select py-0 h-7 min-w-[60px] w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-xs font-bold text-slate-800 outline-none cursor-pointer"
-                                    >
-                                      {activeGrades.map(g => <option key={g} value={g}>K{g}</option>)}
-                                    </select>
-                                  </td>
-
-                                  {/* INLINE 6: Hệ Khảo sát */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 whitespace-nowrap">
-                                    <select
-                                      value={rowDraft.surveyFormType}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "surveyFormType", e.target.value)}
-                                      className="raw-select py-0 h-7 min-w-[68px] w-full px-1.5 bg-sky-50/60 border border-sky-200 hover:border-sky-300 focus:border-sky-500 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer"
-                                    >
-                                      <option value="">-- Hệ --</option>
-                                      {currentEduSystems.map(es => <option key={es.code} value={es.code}>{es.code}</option>)}
-                                    </select>
-                                  </td>
-
-                                  {/* INLINE 7: Diện KS */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 whitespace-nowrap">
-                                    <select
-                                      value={rowDraft.admissionCriteria}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "admissionCriteria", e.target.value)}
-                                      className="raw-select py-0 h-7 min-w-[92px] w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
-                                    >
-                                      <option value="">-- Chọn --</option>
-                                      {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                                    </select>
-                                  </td>
-
-                                  {/* INLINE 8: Hình thức KS */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 whitespace-nowrap">
-                                    <select
-                                      value={rowDraft.surveySystem}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "surveySystem", e.target.value)}
-                                      className="raw-select py-0 h-7 min-w-[82px] w-full px-1.5 bg-teal-50/40 border border-teal-200/80 hover:border-teal-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
-                                    >
-                                      <option value="">-- Chọn --</option>
-                                      {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                                    </select>
-                                  </td>
-
-                                  {/* INLINE 9: Chương trình học tập */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 whitespace-nowrap bg-teal-50/10">
-                                    <select
-                                      value={rowDraft.programType}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "programType", e.target.value)}
-                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      className="raw-select py-0 h-7 min-w-[112px] w-full px-1.5 bg-white border border-teal-200 hover:border-teal-300 focus:border-teal-600 rounded-md text-[11px] font-bold text-teal-800 outline-none cursor-pointer"
-                                    >
-                                      <option value="BO_GD_DT">Bộ GD&ĐT</option>
-                                      <option value="SONG_NGU">Song ngữ</option>
-                                      <option value="NUOC_NGOAI">CT Quốc tế</option>
-                                      <option value="HOMESCHOOLING">Homeschooling</option>
-                                    </select>
-                                  </td>
-
-                                  {/* INLINE 10: Tên trường học cũ */}
-                                  <td className="px-2 py-2 border-r border-slate-100">
-                                    <input
-                                      type="text"
-                                      list="old-schools-datalist"
-                                      value={rowDraft.oldSchoolName}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "oldSchoolName", e.target.value)}
-                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      placeholder="Nhập hoặc chọn trường cũ..."
-                                      className="raw-input py-0 h-7 w-full min-w-[175px] px-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-slate-800 placeholder-slate-300 outline-none"
-                                    />
-                                  </td>
-
-                                  {/* INLINE 11: Khu vực & Tỉnh/TP/Quốc gia */}
-                                  <td className="px-2 py-2 border-r border-slate-100">
-                                    <div className="flex flex-col gap-1 min-w-[165px]">
-                                      <select
-                                        value={rowDraft.targetType}
-                                        onChange={e => updateInlineCell(s, parsedRowDefaults, "targetType", e.target.value)}
-                                        className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] font-semibold text-slate-700 outline-none cursor-pointer"
-                                      >
-                                        <option value="Nội tỉnh">Nội tỉnh (Đà Nẵng)</option>
-                                        <option value="Ngoại tỉnh">Ngoại tỉnh</option>
-                                        <option value="Nước ngoài">Nước ngoài</option>
-                                      </select>
-                                      {rowDraft.targetType === "Nội tỉnh" ? (
-                                        <input readOnly value="Thành phố Đà Nẵng" className="raw-input py-0 h-7 w-full px-1.5 bg-slate-100 border border-slate-200 rounded-md text-[11px] text-slate-500 outline-none" />
-                                      ) : rowDraft.targetType === "Ngoại tỉnh" ? (
-                                        <select
-                                          value={rowDraft.cityName}
-                                          onChange={e => updateInlineCell(s, parsedRowDefaults, "cityName", e.target.value)}
-                                          className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] text-slate-700 outline-none cursor-pointer"
-                                        >
-                                          <option value="">-- Chọn Tỉnh/TP --</option>
-                                          {vietnamProvinces.map(pr => <option key={pr} value={pr}>{pr}</option>)}
-                                        </select>
-                                      ) : (
-                                        <select
-                                          value={rowDraft.cityName}
-                                          onChange={e => updateInlineCell(s, parsedRowDefaults, "cityName", e.target.value)}
-                                          className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-slate-200 rounded-md text-[11px] text-slate-700 outline-none cursor-pointer"
-                                        >
-                                          <option value="">-- Chọn Quốc gia --</option>
-                                          {worldCountries.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                      )}
-                                    </div>
-                                  </td>
-
-                                  {/* INLINE 12: Hệ học trước (Loại hình trường cũ) */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 whitespace-nowrap">
-                                    <select
-                                      value={rowDraft.oldSchoolType}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "oldSchoolType", e.target.value)}
-                                      className="raw-select py-0 h-7 min-w-[92px] w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
-                                    >
-                                      <option value="">-- Loại hình --</option>
-                                      <option value="Công lập">Công lập</option>
-                                      <option value="Tư thục">Tư thục</option>
-                                      <option value="Song ngữ">Song ngữ</option>
-                                      <option value="Quốc tế">Quốc tế</option>
-                                    </select>
-                                  </td>
-
-                                  {/* INLINE 13: Kỳ Học bạ */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 bg-teal-50/10 whitespace-nowrap">
-                                    <select
-                                      value={rowDraft.transcriptPeriod}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "transcriptPeriod", e.target.value)}
-                                      className="raw-select py-0 h-7 min-w-[78px] w-full px-1.5 bg-white border border-slate-200 hover:border-slate-300 focus:border-teal-600 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
-                                    >
-                                      <option value="Cả năm">Cả năm</option>
-                                      <option value="HK1">HK1</option>
-                                      <option value="HK2">HK2</option>
-                                    </select>
-                                  </td>
-
-                                  {/* INLINE 14: KQ Xếp loại */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 bg-teal-50/10">
-                                    <input
-                                      type="text"
-                                      list="overall-ratings-datalist"
-                                      value={rowDraft.overallRating}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "overallRating", e.target.value)}
-                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      placeholder="Xếp loại..."
-                                      className="raw-input py-0 h-7 w-full min-w-[120px] px-2 bg-white border border-emerald-200 hover:border-emerald-300 focus:border-emerald-600 rounded-md text-[11px] font-semibold text-emerald-800 placeholder-slate-300 outline-none"
-                                    />
-                                  </td>
-
-                                  {/* INLINE 15: KQ Rèn luyện */}
-                                  <td className="px-2 py-2 text-center border-r border-slate-100 bg-teal-50/10 whitespace-nowrap">
-                                    <select
-                                      value={rowDraft.kqRenLuyen}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "kqRenLuyen", e.target.value)}
-                                      className="raw-select py-0 h-7 min-w-[82px] w-full px-1.5 bg-white border border-teal-200 hover:border-teal-200 focus:border-teal-200 rounded-md text-[11px] font-semibold text-teal-800 outline-none cursor-pointer"
-                                    >
-                                      <option value="">-- Chọn --</option>
-                                      <option value="Tốt">Tốt</option>
-                                      <option value="Khá">Khá</option>
-                                      <option value="Đạt">Đạt</option>
-                                      <option value="Chưa đạt">Chưa đạt</option>
-                                    </select>
-                                  </td>
-
-                                  {/* INLINE 16: Điểm Toán */}
-                                  <td className="px-1.5 py-2 text-center border-r border-slate-100 bg-teal-50/10">
-                                    <input
-                                      type="text"
-                                      value={rowDraft.mathScoreOld}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "mathScoreOld", e.target.value)}
-                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      placeholder="—"
-                                      className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-teal-200 hover:border-teal-300 focus:border-teal-600 rounded-md text-center text-xs font-bold text-teal-800 placeholder-slate-300 outline-none"
-                                    />
-                                  </td>
-
-                                  {/* INLINE 17: Điểm Văn/TV */}
-                                  <td className="px-1.5 py-2 text-center border-r border-slate-100 bg-teal-50/10">
-                                    <input
-                                      type="text"
-                                      value={rowDraft.litScoreOld}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "litScoreOld", e.target.value)}
-                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      placeholder="—"
-                                      className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-teal-200 hover:border-teal-200 focus:border-teal-200 rounded-md text-center text-xs font-bold text-teal-800 placeholder-slate-300 outline-none"
-                                    />
-                                  </td>
-
-                                  {/* INLINE 18: Điểm Tiếng Anh */}
-                                  <td className="px-1.5 py-2 text-center border-r border-slate-100 bg-teal-50/10">
-                                    <input
-                                      type="text"
-                                      value={rowDraft.engScoreOld}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "engScoreOld", e.target.value)}
-                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      placeholder="—"
-                                      className="raw-input py-0 h-7 w-14 px-1.5 bg-white border border-sky-200 hover:border-sky-300 focus:border-sky-600 rounded-md text-center text-xs font-bold text-sky-800 placeholder-slate-300 outline-none"
-                                    />
-                                  </td>
-
-                                  {/* INLINE 19: Thành tích & Khen thưởng */}
-                                  <td className="px-2 py-2 border-r border-slate-100 bg-amber-50/10">
-                                    <input
-                                      type="text"
-                                      value={rowDraft.achievements}
-                                      onChange={e => updateInlineCell(s, parsedRowDefaults, "achievements", e.target.value)}
-                                      onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                      placeholder="Giải thưởng, khen thưởng..."
-                                      className="raw-input py-0 h-7 w-full min-w-[150px] px-2 bg-white border border-amber-200 hover:border-amber-300 focus:border-amber-500 rounded-md text-[11px] font-medium text-amber-900 placeholder-slate-300 outline-none"
-                                    />
+                                  <td className="px-3.5 py-2.5 border-r border-slate-100 bg-teal-50/15">
+                                    {renderExamSubjectsCell(examSubjectsResult)}
                                   </td>
                                 </>
                               ) : (
@@ -10280,6 +10978,20 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
                                       {s.surveyFormType || s.surveySystem || "—"}
                                     </span>
+                                  </td>
+
+                                  {/* 6b. 1. Mốc thời gian / Kỳ khảo sát */}
+                                  <td className="px-2.5 py-3 text-center border-r border-slate-100 whitespace-nowrap">
+                                    <div className="inline-flex flex-col items-center gap-0.5">
+                                      <span className="text-[10px] font-semibold text-[#005854] bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/80">
+                                        {displayIntakeTiming}
+                                      </span>
+                                      {periodObj?.name && periodObj.name !== displayIntakeTiming && (
+                                        <span className="text-[9.5px] text-slate-400 font-medium truncate max-w-[130px]" title={`Kỳ khảo sát: ${periodObj.name}`}>
+                                          {periodObj.name}
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
 
                                   {/* 7. Diện KS */}
@@ -10467,21 +11179,24 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       <span className="text-[11px] text-slate-300 italic">Chưa có ghi nhận</span>
                                     )}
                                   </td>
+                                  <td className="px-3.5 py-2.5 border-r border-slate-100 bg-teal-50/15">
+                                    {renderExamSubjectsCell(examSubjectsResult)}
+                                  </td>
+                                </>
+                              )}
                                 </>
                               )}
 
                               {/* Cột Thao tác (Sticky Right - Nền đặc 100% chống xuyên thấu) */}
-                              <td className={`px-2.5 py-2.5 whitespace-nowrap text-right pr-3 sticky right-0 z-10 border-l border-slate-200 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)] transition-colors ${
-                                isRowDirty ? "bg-amber-50 group-hover:bg-amber-100/80" : isRowSelected ? "bg-teal-50 group-hover:bg-teal-100/80" : "bg-white group-hover:bg-slate-50"
-                              }`}>
-                                <div className="flex items-center justify-end gap-1">
+                              <td className={`px-2 py-2 whitespace-nowrap text-right sticky right-0 z-10 border-l border-[#E2E8F0] shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)] transition-colors ${stickyCellBg}`}>
+                                <div className="flex flex-col items-end gap-1">
                                   {isRowDirty && (
-                                    <>
+                                    <div className="flex items-center justify-end gap-1">
                                       <button
                                         type="button"
                                         onClick={() => saveInlineRow(s)}
                                         disabled={isRowSaving}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#00736E] hover:bg-[#005f5b] text-white text-[10px] font-bold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#003B3A] hover:bg-[#005854] text-white text-[10px] font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
                                         title="Lưu thay đổi dòng này (hoặc nhấn Enter)"
                                       >
                                         {isRowSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
@@ -10490,58 +11205,60 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       <button
                                         type="button"
                                         onClick={() => setInlineEdits(prev => { const n = { ...prev }; delete n[s.id]; return n; })}
-                                        className="p-1 text-slate-500 hover:text-slate-800 hover:bg-white rounded-md transition-all cursor-pointer"
+                                        className="p-1 text-slate-500 hover:text-slate-800 hover:bg-white border border-[#E2E8F0] rounded-md transition-all cursor-pointer"
                                         title="Hoàn tác dòng này"
                                       >
                                         <X className="w-3 h-3" />
                                       </button>
-                                    </>
+                                    </div>
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={() => setOrientationTargetStudent(s)}
-                                    className="p-1.5 text-teal-800 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
-                                    title="Phiếu Định Hướng Đầu Vào (3 Tab: Tab 1: 17 Cột, Tab 2: Phỏng vấn HS, Tab 3: Trao đổi PHHS)"
-                                  >
-                                    <HeartHandshake className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setReportTargetStudent(s);
-                                      setActiveReportOrientationData(null);
-                                    }}
-                                    className="p-1.5 text-teal-600 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
-                                    title="Xem & In Báo Cáo Nhận Diện và Định Hướng Đầu Vào (A4)"
-                                  >
-                                    <Printer className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setQuickViewStudent(s)}
-                                    className="p-1.5 text-teal-700 hover:text-teal-800 hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
-                                    title="Xem chi tiết bảng điểm và hồ sơ"
-                                  >
-                                    <Eye className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => openEditStudent(s)}
-                                    className={"p-1.5 text-slate-400 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-all cursor-pointer " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
-                                    disabled={cannotUpdate}
-                                    title="Mở cửa sổ chi tiết (Đính kèm tệp học bạ / Thêm môn học khác)"
-                                  >
-                                    <Paperclip className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setConfirm({ msg: `Xóa hồ sơ học sinh ${s.fullName}?`, fn: () => doDeleteStudent(s.id) })}
-                                    className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
-                                    disabled={cannotDelete}
-                                    title="Xóa hồ sơ"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  <div className="flex items-center justify-end gap-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setOrientationTargetStudent(s)}
+                                      className="p-1.5 text-teal-800 hover:text-[#003B3A] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
+                                      title="Phiếu định hướng đầu vào (3 Tab)"
+                                    >
+                                      <HeartHandshake className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setReportTargetStudent(s);
+                                        setActiveReportOrientationData(null);
+                                      }}
+                                      className="p-1.5 text-teal-600 hover:text-[#003B3A] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
+                                      title="Xem & in báo cáo nhận diện và định hướng đầu vào (A4)"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setQuickViewStudent(s)}
+                                      className="p-1.5 text-teal-700 hover:text-[#003B3A] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
+                                      title="Xem chi tiết bảng điểm và hồ sơ"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditStudent(s)}
+                                      className={"p-1.5 text-slate-400 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-all cursor-pointer " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
+                                      disabled={cannotUpdate}
+                                      title="Mở cửa sổ chi tiết (Đính kèm tệp học bạ / Thêm môn học khác)"
+                                    >
+                                      <Paperclip className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setConfirm({ msg: `Xóa hồ sơ học sinh ${s.fullName}?`, fn: () => doDeleteStudent(s.id) })}
+                                      className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
+                                      disabled={cannotDelete}
+                                      title="Xóa hồ sơ"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
                                 </div>
                               </td>
                             </tr>
@@ -10579,16 +11296,37 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-2.5">
+                        <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-2.5 tabular-nums">
                           <div>
-                            <span className="text-slate-400 block text-[10px] uppercase font-medium">Khối & Hệ KS</span>
-                            <span className="font-medium text-slate-700">K{s.grade || "—"} • {s.surveyFormType || s.surveySystem || "—"}</span>
+                            <span className="text-slate-400 block text-[11px] font-medium">Khối, Hệ &amp; 1. Mốc thời gian / Kỳ KS</span>
+                            <span className="font-semibold text-slate-700">
+                              K{s.grade || "—"} • {s.surveyFormType || s.surveySystem || "—"} •{" "}
+                              <span className="text-[#00736E]">
+                                {normalizeStudentHocKyDisplay(s, visiblePeriods.find(p => p.id === s.periodId)?.name || selPeriod?.name, visiblePeriods)}
+                              </span>
+                            </span>
                           </div>
                           <div>
-                            <span className="text-slate-400 block text-[10px] uppercase font-medium">Cơ sở & Đợt</span>
+                            <span className="text-slate-400 block text-[11px] font-medium">Cơ sở &amp; Đợt</span>
                             <span className="font-medium text-slate-700 truncate block">
                               {registeredCampusObj?.campusName || s.admissionCampus || s.registeredCampus || "—"}
                             </span>
+                          </div>
+
+                          {/* Môn kiểm tra (Cấu hình file điểm KSĐV & Quy chế) trên Mobile */}
+                          <div className="col-span-2 pt-2 border-t border-slate-100">
+                            <span className="text-slate-500 block text-[11px] font-semibold mb-1">Môn kiểm tra (Cấu hình KSĐV &amp; Quy chế)</span>
+                            {(() => {
+                              const mobilePeriodObj = visiblePeriods.find(p => p.id === s.periodId);
+                              const mobileExamRes = resolveStudentExamSubjects(s, {
+                                gradeConfigs,
+                                mappings: allMappings,
+                                regulationConfig,
+                                periods: visiblePeriods,
+                                periodName: mobilePeriodObj?.name || selPeriod?.name
+                              });
+                              return renderExamSubjectsCell(mobileExamRes);
+                            })()}
                           </div>
 
                           {/* Chi tiết Kết quả học tập trên Mobile */}
@@ -10976,18 +11714,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left whitespace-nowrap border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                          <th className="px-4 py-3.5 w-14 text-center">STT</th>
-                          <th className="px-4 py-3.5 w-32">Khối áp dụng</th>
-                          <th className="px-4 py-3.5 w-44">Chủ đề</th>
-                          <th className="px-4 py-3.5 min-w-[280px]">Nội dung Câu hỏi Phỏng vấn gợi ý</th>
-                          <th className="px-4 py-3.5 min-w-[260px]">Gợi ý quan sát / Tiêu chí nhận diện cho GV</th>
-                          <th className="px-4 py-3.5 w-24 text-center">Trạng thái</th>
-                          <th className="px-4 py-3.5 w-24 text-right">Thao tác</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="border-b text-[11px] font-semibold">
+                          <th className="px-4 py-3.5 w-14 text-center font-semibold">STT</th>
+                          <th className="px-4 py-3.5 w-32 font-semibold">Khối áp dụng</th>
+                          <th className="px-4 py-3.5 w-44 font-semibold">Chủ đề</th>
+                          <th className="px-4 py-3.5 min-w-[280px] font-semibold">Nội dung Câu hỏi Phỏng vấn gợi ý</th>
+                          <th className="px-4 py-3.5 min-w-[260px] font-semibold">Gợi ý quan sát / Tiêu chí nhận diện cho GV</th>
+                          <th className="px-4 py-3.5 w-24 text-center font-semibold">Trạng thái</th>
+                          <th className="px-4 py-3.5 w-24 text-right font-semibold">Thao tác</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 text-xs font-semibold">
+                      <tbody className="divide-y divide-[#E2E8F0] text-xs font-semibold">
                         {filteredOrientationQuestions.map((q, idx) => {
                           const catObj = ORIENTATION_CATEGORIES.find(c => c.code === q.category)
                           const gradeObj = ORIENTATION_GRADE_GROUPS.find(g => g.code === q.gradeGroup)
@@ -11224,16 +11962,16 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left whitespace-nowrap border-collapse">
-                  <thead className="text-xs font-semibold">
-                    <tr>
-                      <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Mã Môn</th>
-                      <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Tên Môn</th>
+                  <thead className="bg-[#003B3A] text-xs font-semibold text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Mã Môn</th>
+                      <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Tên Môn</th>
                       
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Cột Điểm</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Cột NX</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Trạng thái</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Miễn giảm</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao tác</th>
+                      <th className="p-2 text-[10px] text-center border border-white/15 font-semibold">Cột Điểm</th>
+                      <th className="p-2 text-[10px] text-center border border-white/15 font-semibold">Cột NX</th>
+                      <th className="p-2 text-[10px] text-center border border-white/15 font-semibold">Trạng thái</th>
+                      <th className="p-2 text-[10px] text-center border border-white/15 font-semibold">Miễn giảm</th>
+                      <th className="p-2 text-[10px] text-right border border-white/15 font-semibold">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -11243,9 +11981,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       return (
                         <tr key={sub.id} className="group hover:bg-slate-50/70 transition-colors text-xs font-semibold">
                           <td className="px-4 py-3 border-b border-slate-100"><span className="font-mono text-xs font-black text-teal-800 text-xs font-semibold">{sub.code}</span></td>
-                          <td className="px-4 py-3 border-b border-slate-100"><span className="text-sm font-black text-slate-700">{sub.name}</span></td>
+                          <td className="px-4 py-3 border-b border-slate-100">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-black text-slate-700">{sub.code === "TCI" ? "Bộ chuẩn phát triển trẻ em 5–6 tuổi" : sub.name}</span>
+                              {sub.code === "TCI" && (
+                                <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-50 text-[#00736E] border border-teal-200">
+                                  Đánh giá theo tiêu chí (16 tiêu chí • Dự tuyển Lớp 1)
+                                </span>
+                              )}
+                            </div>
+                          </td>
                           
-                          <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-teal-800 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.scoreColumns ?? 0}</span></td>
+                          <td className="p-2 text-center border border-slate-200"><span className="text-teal-800 font-black text-xs inline-flex items-center justify-center px-2 py-0.5 tabular-nums">{sub.code === "TCI" ? "16 tiêu chí" : (sub.scoreColumns ?? 0)}</span></td>
                           <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-emerald-700 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.commentColumns ?? 0}</span></td>
                           <td className="p-2 text-center border border-slate-200"><Badge s={sub.status || "ACTIVE"}/></td>
                           <td className="p-2 text-center border border-slate-200">
@@ -11389,16 +12136,16 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
-                  <thead className="text-xs font-semibold">
-                    <tr>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest w-16 border border-slate-200">STT</th>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Môn Khảo Sát</th>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Khối Áp Dụng</th>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Hệ Áp Dụng</th>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24 border border-slate-200">Thao tác</th>
+                  <thead className="bg-[#003B3A] text-xs font-semibold text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="p-2 text-xs w-16 border border-white/15 font-semibold">STT</th>
+                      <th className="p-2 text-xs border border-white/15 font-semibold">Môn Khảo Sát</th>
+                      <th className="p-2 text-xs border border-white/15 font-semibold">Khối Áp Dụng</th>
+                      <th className="p-2 text-xs border border-white/15 font-semibold">Hệ Áp Dụng</th>
+                      <th className="p-2 text-xs text-center w-24 border border-white/15 font-semibold">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {(() => {
                       // Group mappings by subject
                       const groups = new Map();
@@ -11768,15 +12515,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 ) : (
                   <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
                     <table className="w-full border-collapse text-left text-xs">
-                      <thead>
-                        <tr className="bg-slate-100/90 text-slate-700 font-black text-[11px] uppercase tracking-wider border-b border-slate-200">
-                          <th className="py-2.5 px-3 text-center w-12 border-r border-slate-200">TT</th>
-                          <th className="py-2.5 px-3 border-r border-slate-200">Tên Hồ sơ</th>
-                          <th className="py-2.5 px-3 text-center w-16 border-r border-slate-200">SL</th>
-                          <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-[11px] border-b font-semibold">
+                          <th className="py-2.5 px-3 text-center w-12 border-r border-white/15 font-semibold">TT</th>
+                          <th className="py-2.5 px-3 border-r border-white/15 font-semibold">Tên Hồ sơ</th>
+                          <th className="py-2.5 px-3 text-center w-16 border-r border-white/15 font-semibold">SL</th>
+                          <th className="py-2.5 px-3 text-center w-20 font-semibold">Thao tác</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
+                      <tbody className="divide-y divide-[#E2E8F0] bg-white">
                         {filteredDocList.map((item, idx) => (
                           <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                             <td className="py-2.5 px-3 text-center font-bold text-slate-400 border-r border-slate-100">{idx + 1}</td>
@@ -11855,7 +12602,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     backgroundSize: 'contain',
-                    opacity: rcBackground ? 0.45 : 0.05,
+                    opacity: 1,
                     top: '50%',
                     left: '50%',
                     width: '80%',
@@ -11869,11 +12616,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <div>
                     {/* School Brand Header */}
                     <div className="pb-3 border-b-2 border-teal-700 flex flex-col items-start gap-1">
-                      {rcLogo ? (
-                        <img src={rcLogo} alt="Logo" className="h-9 object-contain mb-1" />
-                      ) : (
-                        <span className="text-xs font-black tracking-tight text-teal-700 uppercase">SKY-LINE</span>
-                      )}
+                      <img src={rcLogo || "/logo.png"} alt="Logo" className="h-9 object-contain mb-1" />
                       <h4 className="font-extrabold text-[10px] sm:text-xs uppercase tracking-wider text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         TRƯỜNG TH, THCS, THPT SKY-LINE
                       </h4>
@@ -11890,14 +12633,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     {/* Modern Styled Table */}
                     <div className="mt-4 overflow-hidden rounded-lg border border-slate-300 shadow-xs">
                       <table className="w-full border-collapse text-left text-[10px] sm:text-xs text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        <thead>
-                          <tr className="bg-[#0f766e] text-white font-bold uppercase tracking-wider">
-                            <th className="px-3 py-2.5 border-r border-teal-800 text-center w-12">STT</th>
-                            <th className="px-4 py-2.5 border-r border-teal-800 text-left">Tên hồ sơ giấy tờ</th>
-                            <th className="px-3 py-2.5 text-center w-20">Số lượng</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="bg-[#003B3A] text-white text-[11px] font-semibold">
+                            <th className="px-3 py-2.5 border-r border-teal-800 text-center w-12 font-semibold">STT</th>
+                            <th className="px-4 py-2.5 border-r border-teal-800 text-left font-semibold">Tên hồ sơ giấy tờ</th>
+                            <th className="px-3 py-2.5 text-center w-20 font-semibold">Số lượng</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200 bg-white">
+                        <tbody className="divide-y divide-[#E2E8F0] bg-white">
                           {filteredDocList.map((item, idx) => (
                             <tr key={item.id || idx} className="hover:bg-slate-50/80 even:bg-slate-50/40 transition-colors">
                               <td className="px-3 py-2 border-r border-slate-200 text-center font-bold text-slate-600">{idx + 1}</td>
@@ -11921,15 +12664,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </div>
 
                   {/* Footer / Signature Anchor */}
-                  {rcFooter ? (
-                    <div className="pt-2 border-t border-slate-200 mt-2">
-                      <img src={rcFooter} alt="Footer" className="w-full h-auto" />
-                    </div>
-                  ) : (
-                    <div className="border-t border-teal-600/30 pt-2 text-[8px] text-slate-400 text-center font-medium">
-                      <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
-                    </div>
-                  )}
+                  <div className="pt-2 border-t border-slate-200 mt-2">
+                    <img src={rcFooter || "/images/skyline-doc-footer.png"} alt="Footer" className="w-full h-auto" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -12249,15 +12986,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               
               <div className="overflow-x-auto">
                 <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-100/50">
-                      <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 p-2 border border-slate-200">Cơ sở</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Tổng HS</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-emerald-500 uppercase tracking-widest p-2 border border-slate-200">Đạt</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-amber-500 uppercase tracking-widest p-2 border border-slate-200">Cam kết</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest p-2 border border-slate-200">Không Đạt</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Chưa Duyệt</th>
-                      <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">Tỷ lệ duyệt</th>
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="border-b text-[11px] font-semibold">
+                      <th className="pb-3.5 text-[9px] pl-2 p-2 border border-white/15 font-semibold">Cơ sở</th>
+                      <th className="pb-3.5 text-center text-[9px] p-2 border border-white/15 font-semibold">Tổng HS</th>
+                      <th className="pb-3.5 text-center text-[9px] p-2 border border-white/15 text-[#5EEAD4] font-semibold">Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] text-amber-500 p-2 border border-white/15 font-semibold">Cam kết</th>
+                      <th className="pb-3.5 text-center text-[9px] text-rose-500 p-2 border border-white/15 font-semibold">Không Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] p-2 border border-white/15 font-semibold">Chưa Duyệt</th>
+                      <th className="pb-3.5 text-right text-[9px] pr-2 p-2 border border-white/15 font-semibold">Tỷ lệ duyệt</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -12766,7 +13503,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
                                               vStr = pctVal !== undefined && pctVal !== null && pctVal !== "" ? pctVal + "%" : "—";
                                           } else if (subCode.includes("tci") || subCode.includes("cpt")) {
-                                            vStr = Array.isArray(vArr) ? vArr.filter(x => x === "3").length + " Đạt" : "—";
+                                            vStr = Array.isArray(vArr) ? vArr.filter(x => ["3", "Đạt", "DAT"].includes(String(x ?? "").trim())).length + " Đạt" : "—";
                                           } else {
                                             vStr = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
                                           }
@@ -12824,6 +13561,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     <div>
                       <p className="font-black text-slate-700 text-sm">Chưa có kết quả khảo sát</p>
                       <p className="text-xs text-slate-400 font-semibold mt-1">Học sinh này chưa có kết quả đánh giá môn học nào từ giáo viên.</p>
+                    </div>
+                    <div className="w-full mt-4 text-left">
+                      <TciResultReviewPanel studentId={selectedReportStudent.id} batchId={selectedReportStudent.batchId} />
                     </div>
                   </div>
                 ) : (
@@ -12936,7 +13676,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     }
                                     val = lvl;
                                   } else if (sCode.includes("tci") || sCode.includes("cpt")) {
-                                    const passedCount = vArr.filter(x => x === "3").length;
+                                    const passedCount = vArr.filter(x => ["3", "Đạt", "DAT"].includes(String(x ?? "").trim())).length;
                                     val = passedCount + "/" + vArr.length + " Đạt";
                                     badgeStyle = passedCount >= vArr.length * 0.7 ? "bg-emerald-50 text-emerald-700 border-emerald-200/50" : "bg-amber-50 text-amber-700 border-amber-200/50";
                                   } else if (sCode.includes("nltd")) {
@@ -13244,29 +13984,30 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       </div>
                                     ) : isChildDev ? (
                                       <div className="space-y-5">
+                                        <TciResultReviewPanel studentId={selectedReportStudent.id} batchId={selectedReportStudent.batchId} />
                                         {/* Segmented Metrics Row */}
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-3 gap-3 tabular-nums">
                                           <div className="p-3.5 text-center shadow-inner text-xs font-semibold">
                                             <div className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5"/> Đạt</div>
-                                            <div className="text-2xl font-black text-emerald-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "3").length}</div>
+                                            <div className="text-2xl font-black text-emerald-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => ["3", "Đạt", "DAT"].includes(String(v ?? "").trim())).length}</div>
                                           </div>
                                           <div className="p-3.5 text-center shadow-inner text-xs font-semibold">
                                             <div className="text-[10px] font-black uppercase tracking-wider text-rose-600 flex items-center justify-center gap-1"><AlertCircle className="w-3.5 h-3.5"/> Không đạt</div>
-                                            <div className="text-2xl font-black text-rose-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "2").length}</div>
+                                            <div className="text-2xl font-black text-rose-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => ["2", "Không đạt", "KHONG_DAT"].includes(String(v ?? "").trim())).length}</div>
                                           </div>
                                           <div className="p-3.5 text-center shadow-inner text-xs font-semibold">
                                             <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-center gap-1"><Info className="w-3.5 h-3.5"/> Không làm</div>
-                                            <div className="text-2xl font-black text-slate-600 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
+                                            <div className="text-2xl font-black text-slate-600 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => ["1", "Không làm", "KHONG_LAM"].includes(String(v ?? "").trim())).length}</div>
                                           </div>
                                         </div>
 
                                         {/* Chi tiết tiêu chí không đạt hoặc không làm */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                          {scoreVals.some(v => v === "2") ? (
+                                          {scoreVals.some(v => ["2", "Không đạt", "KHONG_DAT"].includes(String(v ?? "").trim())) ? (
                                             <div className="p-4 text-xs font-semibold">
                                               <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-3 block flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-rose-500"/> Chi tiết tiêu chí Không đạt</span>
                                               <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
-                                                {scoreVals.map((v, idx) => v === "2" ? (
+                                                {scoreVals.map((v, idx) => ["2", "Không đạt", "KHONG_DAT"].includes(String(v ?? "").trim()) ? (
                                                   <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2.5 rounded-xl shadow-sm">
                                                     <span className="mt-1.5 w-1.5 h-1.5 shrink-0 text-xs font-semibold"></span>
                                                     <span className="font-medium text-slate-700">
@@ -13301,11 +14042,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                             </div>
                                           )}
 
-                                          {scoreVals.some(v => v === "1") && (
+                                          {scoreVals.some(v => ["1", "Không làm", "KHONG_LAM"].includes(String(v ?? "").trim())) && (
                                             <div className="bg-slate-55 border border-slate-200 rounded-2xl p-4">
                                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 block flex items-center gap-1.5"><Info className="w-4 h-4 text-slate-400"/> Chi tiết tiêu chí Không làm</span>
                                               <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
-                                                {scoreVals.map((v, idx) => v === "1" ? (
+                                                {scoreVals.map((v, idx) => ["1", "Không làm", "KHONG_LAM"].includes(String(v ?? "").trim()) ? (
                                                   <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-slate-750 leading-normal bg-white border border-slate-200/65 p-2.5 rounded-xl shadow-sm">
                                                     <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
                                                     <span className="font-medium text-slate-555">
@@ -13335,12 +14076,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                           )}
                                         </div>
 
-                                        {commentVals[0] && (
-                                          <div className="p-4 relative text-left text-xs font-semibold">
-                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét tổng quan từ giáo viên</span>
-                                            <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
-                                          </div>
-                                        )}
+                                        {(() => {
+                                          const cleanText = (Array.isArray(commentVals) ? commentVals : []).find(
+                                            (c: any) => c && typeof c === "string" && c.trim() !== "" && !c.includes('"_tciMeta"')
+                                          );
+                                          return cleanText ? (
+                                            <div className="p-4 relative text-left text-xs font-semibold">
+                                              <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét tổng quan từ giáo viên</span>
+                                              <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{cleanText}"</p>
+                                            </div>
+                                          ) : null;
+                                        })()}
                                       </div>
                                     ) : isThinkingSkills ? (
                                       <div className="space-y-5">
@@ -14401,13 +15147,20 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       </select>
                     </div>
 
-                    <div className="sm:col-span-3">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Khối đăng ký <span className="text-rose-500">*</span>
                       </label>
                       <select
                         value={sForm.grade}
-                        onChange={e => setSForm(f => ({ ...f, grade: e.target.value }))}
+                        onChange={e => {
+                          const nextGrade = e.target.value;
+                          setSForm(f => ({
+                            ...f,
+                            grade: nextGrade,
+                            hocKy: !editS ? getDefaultHocKyByGrade(nextGrade) : (f.hocKy || getDefaultHocKyByGrade(nextGrade))
+                          }));
+                        }}
                         className={inp}
                       >
                         <option value="">-- Chọn Khối --</option>
@@ -14416,7 +15169,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     </div>
 
                     <div className="sm:col-span-3">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Hệ khảo sát (Mục tiêu)
                       </label>
                       <select
@@ -14425,12 +15178,31 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         className={inp}
                       >
                         <option value="">-- Chọn Hệ đào tạo --</option>
-                        {currentEduSystems.map(es => <option key={es.code} value={es.code}>{es.code} - {es.name}</option>)}
+                        {(viewMode !== "transfer" ? trackEduSystems : currentEduSystems).map(es => (
+                          <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
+                        ))}
+                        {sForm.surveyFormType &&
+                          !(viewMode !== "transfer" ? trackEduSystems : currentEduSystems).some(es => es.code === sForm.surveyFormType) && (
+                            <option value={sForm.surveyFormType}>{sForm.surveyFormType}</option>
+                          )}
                       </select>
                     </div>
 
                     <div className="sm:col-span-3">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-semibold text-[#003B3A] mb-1.5">
+                        1. Mốc thời gian / Kỳ khảo sát <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={sForm.hocKy || getDefaultHocKyByGrade(sForm.grade)}
+                        onChange={e => setSForm(f => ({ ...f, hocKy: e.target.value }))}
+                        className={`${inp} bg-[#F0FDFA]/60 border-teal-200 font-semibold text-[#003B3A]`}
+                      >
+                        {renderIntakeMilestoneSelectOptions(sForm.hocKy || getDefaultHocKyByGrade(sForm.grade), true)}
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Hình thức khảo sát
                       </label>
                       <select
@@ -14443,8 +15215,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       </select>
                     </div>
 
-                    <div className="sm:col-span-3">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Diện khảo sát
                       </label>
                       <select
@@ -14456,6 +15228,32 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                       </select>
                     </div>
+
+                    {sForm.grade && sForm.surveyFormType && (
+                      <div className="sm:col-span-12 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-[#F8FAFC] px-3 py-2.5 rounded-lg border border-[#E2E8F0]">
+                        <div className="text-[11px] font-semibold text-[#003B3A]">
+                          Môn kiểm tra dự kiến theo Cấu hình KSĐV &amp; Quy chế ({sForm.surveyFormType} • K{sForm.grade} • {sForm.hocKy || getDefaultHocKyByGrade(sForm.grade)}):
+                        </div>
+                        <div>
+                          {renderExamSubjectsCell(
+                            resolveStudentExamSubjects(
+                              {
+                                ...sForm,
+                                periodId: sForm.periodId || ((sPeriodId && sPeriodId !== "all") ? sPeriodId : undefined),
+                                hocKy: sForm.hocKy || getDefaultHocKyByGrade(sForm.grade),
+                              },
+                              {
+                                gradeConfigs,
+                                mappings: allMappings,
+                                regulationConfig,
+                                periods: visiblePeriods,
+                                periodName: periods.find(p => p.id === (sForm.periodId || sPeriodId))?.name,
+                              }
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -14739,12 +15537,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               .print-watermark {
                     display: block !important;
                     position: absolute !important;
-                    top: 22% !important;
-                    left: 10% !important;
-                    transform: none !important;
-                    width: 80% !important;
+                    top: 50% !important;
+                    left: 50% !important;
+                    transform: translate(-50%, -50%) !important;
+                    width: 130mm !important;
                     height: auto !important;
-                    opacity: 0.08 !important;
+                    opacity: 1 !important;
                     z-index: 0 !important;
                     pointer-events: none !important;
               }
@@ -14753,22 +15551,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             @page { 
               size: A4 portrait; 
               margin: 0mm; 
-            }
-            
-            .print-page::before {
-              content: "";
-              position: absolute;
-              pointer-events: none;
-              background-image: url('${studentCampusConfig?.background || "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" fill=\"%23007A87\"><path d=\"M10,80 Q50,40 90,20 Q60,50 10,80 Z\"/><path d=\"M30,80 Q60,55 90,35 Q65,60 30,80 Z\"/></svg>"}');
-              background-repeat: no-repeat;
-              background-position: center;
-              background-size: contain;
-              opacity: ${studentCampusConfig?.background ? '0.45' : '0.2'};
-              top: 50%;
-              left: 50%;
-              width: 80%;
-              height: 80%;
-              transform: translate(-50%, -50%) ${studentCampusConfig?.background ? '' : 'rotate(-15deg)'};
             }
 
             /* SCREEN SIMULATION ONLY */
@@ -15248,74 +16030,81 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <div 
                   id="print-letter-area" 
                   className="bg-white shadow-lg border border-slate-200 relative text-slate-800 text-sm leading-relaxed print-page"
-                  style={{ fontFamily: "'Times New Roman', Times, serif", width: "210mm", height: "auto", padding: "20mm 20mm 42mm 20mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
+                  style={{ fontFamily: '"Open Sans", Arial, sans-serif', width: "210mm", height: "auto", minHeight: "297mm", padding: "15mm 20mm 32mm 22mm", margin: "0 auto 20px auto", boxSizing: "border-box", display: "block", overflow: "hidden" }}
               >
                 {/* Print Watermark */}
-                <img crossOrigin={(rcBackground || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"}  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                <img crossOrigin={(rcBackground || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "130mm", height: "auto", opacity: 1, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header */}
                 <div className="flex flex-col relative z-10 w-full">
-                  <div className="flex flex-col gap-1 border-b pb-2 mb-3">
+                  <div className="flex flex-col gap-1 border-b-[1.5px] border-[#00A19A] pb-1.5 mb-3">
                     <div className="flex items-center justify-between">
-                      {studentCampusConfig?.logo ? (
-                        <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
-                          <svg className="w-6 h-6 text-teal-500" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                          </svg>
-                        </div>
-                      )}
+                      <img crossOrigin={(studentCampusConfig?.logo || "/logo.png").startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.logo || "/logo.png"} alt="Logo" className="h-10 object-contain" />
                     </div>
                     <div className="text-left">
-                      <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
+                      <h4 className="font-extrabold text-[10.5pt] uppercase tracking-wide text-slate-900" style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>{studentSchoolName}</h4>
                     </div>
                   </div>
 
                   {/* Letter Title */}
-                  <div className="text-center my-4">
-                    <h2 className="text-2xl font-black tracking-widest text-teal-800 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                      {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
-                    </h2>
-                  </div>
+                  {(() => {
+                    const rawThuContent = renderTemplate(
+                      studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
+                      {
+                        ...selectedReportStudent,
+                        signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+                      }
+                    );
+                    const rawLines = rawThuContent.split('\n').map(s => s.trim()).filter(Boolean);
+                    const hasSub = !isInvitation && !isCommitment && rawLines.length > 0 && /^về\s+kết\s+quả\b/i.test(rawLines[0]);
+                    return (
+                      <div className="text-center my-2.5">
+                        <h2 className="text-[17pt] font-extrabold tracking-wide text-slate-900 uppercase mb-0.5" style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>
+                          {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
+                        </h2>
+                        {hasSub && (
+                          <p className="text-[11pt] italic text-slate-700 mt-0.5">{rawLines[0]}</p>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Greeting */}
-                  <p className="text-[16px] italic mb-3 text-slate-800">
+                  <p className="text-[11.5pt] font-bold mb-2 text-slate-900">
                     {isInvitation ? (
-                      <>Kính gửi Quý Phụ huynh và em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
+                      <>Kính gửi Quý Phụ huynh và em <strong className="font-bold not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     ) : (
-                      <>Thân gửi em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
+                      <>Thân gửi em <strong className="font-bold not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     )}
                   </p>
 
                   {/* Body Paragraphs */}
                   {isInvitation ? (
                     studentCampusConfig?.content ? (
-                      <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
+                      <div className="space-y-2 text-justify text-slate-800" style={{ fontFamily: '"Open Sans", Arial, sans-serif', fontSize: "11pt", lineHeight: "1.42", textAlign: "justify" }}>
                         {renderTemplate(studentCampusConfig.content, {
                           ...(mergedStudent || selectedReportStudent),
                           signatureName: studentCampusConfig?.directorName || (mergedStudent || selectedReportStudent)?.signatureName || ""
                         }).split('\n').filter(Boolean).map((para, idx) => (
-                          <p key={idx} className="" style={{ textIndent: "1cm" }}>{para}</p>
+                          <p key={idx} className="" style={{ textIndent: 0 }}>{para}</p>
                         ))}
                       </div>
                     ) : (
-                      <div className="space-y-6 text-justify text-[15px] leading-relaxed">
-                        <p className="" style={{ textIndent: "1cm" }}>
+                      <div className="space-y-4 text-justify text-[11pt] leading-[1.42]">
+                        <p className="" style={{ textIndent: 0 }}>
                           Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
                         </p>
                         
-                        <p className="" style={{ textIndent: "1cm" }}>
+                        <p className="" style={{ textIndent: 0 }}>
                           Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
                         </p>
                         
-                        <div className="p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner text-xs font-semibold">
+                        <div className="p-4 space-y-1.5 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner text-xs font-semibold">
                           <p><strong>• Thời gian khảo sát:</strong> Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.</p>
                           
                           <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
                         </div>
                         
-                        <p className="" style={{ textIndent: "1cm" }}>
+                        <p className="" style={{ textIndent: 0 }}>
                           Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
                         </p>
                         
@@ -15325,7 +16114,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       </div>
                     )
                   ) : isCommitment ? (
-                    <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
+                    <div className="space-y-2 text-justify text-slate-800" style={{ fontFamily: '"Open Sans", Arial, sans-serif', fontSize: "11pt", lineHeight: "1.42", textAlign: "justify" }}>
                       {renderTemplate(
                         studentCampusConfig?.content || getDefaultContent("cam_ket_hoc_tap"),
                         {
@@ -15342,64 +16131,76 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       })}
                     </div>
                   ) : (
-                    <div className="space-y-3 text-justify text-slate-800 font-serif" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: "13.5pt", lineHeight: "1.45", textAlign: "justify" }}>
-                      {renderTemplate(
-                        studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
-                        {
-                          ...selectedReportStudent,
-                          signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
-                        }
-                      ).split('\n').filter(Boolean).map((para, idx) => (
-                        <p key={idx} className="" style={{ textIndent: "1cm" }}>
-                          {para}
-                        </p>
-                      ))}
+                    <div className="space-y-2 text-justify text-slate-800" style={{ fontFamily: '"Open Sans", Arial, sans-serif', fontSize: "11pt", lineHeight: "1.42", textAlign: "justify" }}>
+                      {(() => {
+                        const rawLines = renderTemplate(
+                          studentCampusConfig?.content || getDefaultContent("thu_chuc_mung"),
+                          {
+                            ...selectedReportStudent,
+                            signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
+                          }
+                        ).split('\n').map(s => s.trim()).filter(Boolean);
+                        const bodyLines = rawLines.length > 0 && /^về\s+kết\s+quả\b/i.test(rawLines[0]) ? rawLines.slice(1) : rawLines;
+                        return bodyLines.map((para, idx) => {
+                          const isWish = /^chúc\s+(em|con)\s+luôn\s+tự\s+tin/i.test(para);
+                          const isClosing = /^trân\s+trọng[,./]*$/i.test(para);
+                          return (
+                            <p
+                              key={idx}
+                              className={isClosing ? "font-bold italic text-slate-900 pt-1" : isWish ? "font-bold text-slate-900" : ""}
+                              style={{ textIndent: 0 }}
+                            >
+                              {para}
+                            </p>
+                          );
+                        });
+                      })()}
                     </div>
                   )}
 
 
                 {/* Bottom Signature Area with dynamic spacer */}
-                <div style={{ flex: "1 1 auto", minHeight: "16px", maxHeight: "60px" }} />
+                <div style={{ flex: "0 1 auto", minHeight: "8px", maxHeight: "20px" }} />
                 {isCommitment ? (
-                  <div className="grid grid-cols-2 gap-8 mt-4 text-center">
+                  <div className="grid grid-cols-2 gap-8 mt-2 text-center">
                     <div className="flex flex-col items-center">
                       <p className="font-bold uppercase text-slate-700 text-xs tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
                       <p className="italic text-[10px] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
-                      <div className="h-16 flex items-end justify-center">
+                      <div className="h-12 flex items-end justify-center">
                         <span className="text-slate-300 italic text-xs">Ký tên</span>
                       </div>
                     </div>
                     
                     <div className="flex flex-col items-center">
-                      <p className="italic text-slate-500 mb-1 text-xs">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-teal-800 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-teal-800/80 text-[10px] tracking-wider mb-4">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                      <p className="italic text-slate-600 mb-0.5 text-xs">{formattedLetterDate}</p>
+                      <p className="font-bold uppercase text-slate-900 text-xs tracking-wide">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-slate-700 text-[10px] tracking-wide mb-2">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       
-                      <div className="h-16 flex items-center justify-center">
+                      <div className="h-12 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
                           <img crossOrigin={studentCampusConfig.signature?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
                         ) : null}
                       </div>
                       
-                      <p className="font-bold text-slate-700 mt-2 text-sm">
+                      <p className="font-bold text-slate-900 mt-1 text-sm">
                         {studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-end mt-4 pr-4">
+                  <div className="flex flex-col items-end mt-2 pr-2">
                     <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
-                      <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-teal-800 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
-                      <p className="font-bold uppercase text-teal-800/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                      <p className="italic text-slate-600 text-[10.5pt] mb-0.5">{formattedLetterDate}</p>
+                      <p className="font-bold uppercase text-slate-900 text-[10.5pt] tracking-wide">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-slate-700 text-[9.5pt] tracking-wide mb-2">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       
-                      <div className="h-16 flex items-center justify-center">
+                      <div className="h-11 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
                           <img crossOrigin="anonymous"  src={studentCampusConfig.signature} alt="Signature" className="max-h-full object-contain" />
                         ) : null}
                       </div>
                       
-                      <p className="font-bold text-slate-700 mt-2 text-sm">
+                      <p className="font-bold text-slate-900 mt-1 text-[11pt]">
                         {studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                       </p>
                     </div>
@@ -15410,75 +16211,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 
                 
                 {/* Footer Contact */}
-                {studentCampusConfig?.footer ? (
-                  <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                    <img crossOrigin={studentCampusConfig.footer?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
-                  </div>
-                ) : (
-                  <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
-                    {/* High-fidelity Header Title & Line */}
-                    <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#00A19A] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div className="flex-grow border-t border-[#00A19A]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A19A] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
-                    </div>
-                    
-                    {/* Information Grid */}
-                    <div className="flex flex-row justify-between w-full relative text-[9px]">
-                      {/* Left Column (3 branches) */}
-                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Central</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Global</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
-                        </div>
-                      </div>
-
-                      {/* Middle Column (3 branches) */}
-                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Beach</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Hill</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                        </div>
-                      </div>
-
-                      {/* Right Column (Contacts) */}
-                      <div className="w-[30%] flex items-center justify-end gap-2 text-right self-center">
-                        <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
-                          <Phone className="w-full h-full text-slate-800" fill="currentColor" />
-                        </div>
-                        <div className="flex flex-col text-[8.5px] font-semibold text-slate-800 tracking-tight leading-tight">
-                          <p>(+84.236) 378 7777</p>
-                          <p>(+84.236) 356 8777</p>
-                          <p>(+84.236) 378 7779</p>
-                          <p>(+84.235) 375 1777</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
-                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A19A]">
-                      <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
-                        <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
+                <div className="pt-2 z-10 w-full print-footer" style={{ position: "absolute", bottom: "8mm", left: "20mm", right: "20mm", width: "auto", boxSizing: "border-box" }}>
+                  <img crossOrigin={(studentCampusConfig?.footer || "/images/skyline-doc-footer.png").startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.footer || "/images/skyline-doc-footer.png"} alt="Footer Print" className="w-full" style={{ maxHeight: "68px", objectFit: "contain" }} />
+                </div>
               
 
                 </div>
@@ -15489,20 +16224,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   >
                     <div className="flex flex-col relative z-10 w-full">
                 {/* Print Watermark */}
-                <img crossOrigin="anonymous"  className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                <img crossOrigin="anonymous" className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "130mm", height: "auto", opacity: 1, zIndex: 0, pointerEvents: "none" }} />
                 {/* Top Logo and Header (Synchronized perfectly with Page 1) */}
                       <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                         <div className="flex items-center justify-between">
-                          {studentCampusConfig?.logo ? (
-                            <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
-                          ) : (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
-                              <svg className="w-6 h-6 text-teal-500" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                              </svg>
-                            </div>
-                          )}
+                          <img crossOrigin={(studentCampusConfig?.logo || "/logo.png").startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.logo || "/logo.png"} alt="Logo" className="h-12 object-contain" />
                         </div>
                         <div className="text-left">
                           <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
@@ -15526,7 +16252,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <th className="p-2 p-2 font-bold text-center uppercase text-slate-950 w-32 border border-slate-200">Số lượng</th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
                             {modalDocList.map((item, idx) => (
                               <tr key={item.id} className="border-b border-slate-950 last:border-b-0">
                                 <td className="px-3 py-2.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
@@ -15546,75 +16272,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     
                     
                     {/* Footer Contact */}
-                    {studentCampusConfig?.footer ? (
-                      <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                        <img crossOrigin={studentCampusConfig.footer?.startsWith("data:") ? undefined : "anonymous"}  src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
-                      </div>
-                    ) : (
-                      <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
-                    {/* High-fidelity Header Title & Line */}
-                    <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#00A19A] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div className="flex-grow border-t border-[#00A19A]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A19A] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
+                    <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                      <img crossOrigin={(studentCampusConfig?.footer || "/images/skyline-doc-footer.png").startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.footer || "/images/skyline-doc-footer.png"} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
                     </div>
-                    
-                    {/* Information Grid */}
-                    <div className="flex flex-row justify-between w-full relative text-[9px]">
-                      {/* Left Column (3 branches) */}
-                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Central</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Global</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
-                        </div>
-                      </div>
-
-                      {/* Middle Column (3 branches) */}
-                      <div className="w-[30%] flex flex-col gap-1.5 text-left">
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Beach</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">SKY-LINE Hill</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#00A19A] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
-                        </div>
-                      </div>
-
-                      {/* Right Column (Contacts) */}
-                      <div className="w-[30%] flex items-center justify-end gap-2 text-right self-center">
-                        <div className="w-4.5 h-4.5 rounded-full border border-slate-800 flex items-center justify-center flex-shrink-0 p-[3.5px] scale-[0.85]">
-                          <Phone className="w-full h-full text-slate-800" fill="currentColor" />
-                        </div>
-                        <div className="flex flex-col text-[8.5px] font-semibold text-slate-800 tracking-tight leading-tight">
-                          <p>(+84.236) 378 7777</p>
-                          <p>(+84.236) 356 8777</p>
-                          <p>(+84.236) 378 7779</p>
-                          <p>(+84.235) 375 1777</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
-                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A19A]">
-                      <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
-                        <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
 
                 {/* PAGE 3+: ASSESSMENT DETAILS (Specific for Child Development Standard) */}
                 {selectedReportStudent.scores && selectedReportStudent.scores.map((sc) => {
@@ -15631,7 +16291,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   let parsedCols = { scores: [] };
                   try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [] }; } } catch {}
 
-                  const failedCriteria = scoreVals.map((v, idx) => v === "2" ? (parsedCols.scores[idx] || (isChildDev ? [
+                  const failedCriteria = scoreVals.map((v, idx) => ["2", "Không đạt", "KHONG_DAT"].includes(String(v ?? "").trim()) ? (parsedCols.scores[idx] || (isChildDev ? [
     "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
     "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
     "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
@@ -15649,7 +16309,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
     "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
     "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
 ][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
-                  const skippedCriteria = scoreVals.map((v, idx) => v === "1" ? (parsedCols.scores[idx] || (isChildDev ? [
+                  const skippedCriteria = scoreVals.map((v, idx) => ["1", "Không làm", "KHONG_LAM"].includes(String(v ?? "").trim()) ? (parsedCols.scores[idx] || (isChildDev ? [
     "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
     "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
     "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
@@ -15678,16 +16338,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     >
                       <div className="flex flex-col relative z-10 w-full">
                         {/* Print Watermark */}
-                        <img crossOrigin={(rcBackground || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "22%", left: "10%", transform: "none", width: "80%", height: "auto", opacity: 0.08, zIndex: 0, pointerEvents: "none" }} />
+                        <img crossOrigin={(rcBackground || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={rcBackground || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "130mm", height: "auto", opacity: 1, zIndex: 0, pointerEvents: "none" }} />
                         
                         {/* Top Logo and Header */}
                         <div className="flex flex-col gap-1 border-b pb-2 mb-3">
                           <div className="flex items-center justify-between">
-                            {studentCampusConfig?.logo ? (
-                              <img crossOrigin={studentCampusConfig.logo?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig.logo} alt="Logo" className="h-12 object-contain" />
-                            ) : (
-                              <span className="text-2xl font-black tracking-tight text-teal-600" style={{ fontFamily: "Arial, sans-serif" }}>SKY-LINE</span>
-                            )}
+                            <img crossOrigin={(studentCampusConfig?.logo || "/logo.png").startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.logo || "/logo.png"} alt="Logo" className="h-12 object-contain" />
                           </div>
                           <div className="text-left">
                             <h4 className="font-extrabold text-sm uppercase tracking-wider text-slate-800" style={{ fontFamily: "Arial, sans-serif" }}>{studentSchoolName}</h4>
@@ -15731,23 +16387,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       </div>
 
                       {/* Footer Contact */}
-                      {studentCampusConfig?.footer ? (
-                        <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
-                          <img crossOrigin={studentCampusConfig.footer?.startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig.footer} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
-                        </div>
-                      ) : (
-                        <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
-                          <div className="flex items-center gap-2 mb-2.5 w-full">
-                            <span className="font-bold text-[#00A19A] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                            <div className="flex-grow border-t border-[#00A19A]/70 h-0 mt-0.5"></div>
-                          </div>
-                          <div className="flex flex-row justify-between w-full relative text-[9px]">
-                            <div className="w-full text-center">
-                              <p className="text-[#555555] text-[8.5px]">www.skylineschool.edu.vn | Hotline: (+84.236) 378 7777</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                      <div className="border-t border-slate-200 pt-3 z-10 w-full print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box" }}>
+                        <img crossOrigin={(studentCampusConfig?.footer || "/images/skyline-doc-footer.png").startsWith("data:") ? undefined : "anonymous"} src={studentCampusConfig?.footer || "/images/skyline-doc-footer.png"} alt="Footer Print" className="w-full" style={{ maxHeight: "100px", objectFit: "contain" }} />
+                      </div>
                     </div>
                   );
                 })}
@@ -15978,24 +16620,24 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 {/* Table Preview */}
                 <div className="overflow-x-auto max-h-[300px] custom-scrollbar">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-[#f8fafc] sticky top-0 border-b border-slate-100 z-10">
-                      <tr>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">STT</th>
-                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỌ VÀ TÊN</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KHỐI</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">PHÁI</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">NGÀY SINH</th>
-                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỆ KHẢO SÁT</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ HỌC TẬP</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ RÈN LUYỆN</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ</th>
-                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">CƠ SỞ NHẬN</th>
+                    <thead className="bg-[#003B3A] sticky top-0 border-b z-10 text-white border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="p-2 text-center text-[10px] bg-[#003B3A] border border-white/15 font-semibold">STT</th>
+                        <th className="p-2 text-left text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Họ và tên</th>
+                        <th className="p-2 text-center text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Khối</th>
+                        <th className="p-2 text-center text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Phái</th>
+                        <th className="p-2 text-center text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Ngày sinh</th>
+                        <th className="p-2 text-left text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Hệ khảo sát</th>
+                        <th className="p-2 text-center text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Kết quả học tập</th>
+                        <th className="p-2 text-center text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Kết quả rèn luyện</th>
+                        <th className="p-2 text-center text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Kết quả</th>
+                        <th className="p-2 text-left text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Cơ sở nhận</th>
                         {attachLetters && (
-                          <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỒ SƠ ĐÍNH KÈM</th>
+                          <th className="p-2 text-center text-[10px] bg-[#003B3A] border border-white/15 font-semibold">Hồ sơ đính kèm</th>
                         )}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
+                    <tbody className="divide-y divide-[#E2E8F0] bg-white">
                       {emailStudents.map((s, idx) => (
                         <tr key={s.id} className="hover:bg-slate-50/50 transition-colors text-xs font-semibold">
                           <td className="p-2 text-center text-slate-400 font-semibold border border-slate-200">{idx + 1}</td>
@@ -17376,9 +18018,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       </div>
                     ) : (
                       <table className="w-full text-left border-collapse text-xs">
-                        <thead className="sticky top-0 z-10 bg-slate-100/95 backdrop-blur-xs border-b border-slate-200">
-                          <tr>
-                            <th className="p-2.5 pl-3 w-8 text-center">
+                        <thead className="bg-[#003B3A] sticky top-0 z-10 backdrop-blur-xs border-b text-white border-[#003B3A]">
+                          <tr className="text-[11px] font-semibold whitespace-nowrap">
+                            <th className="p-2.5 pl-3 w-8 text-center font-semibold">
                               <input
                                 type="checkbox"
                                 checked={
@@ -17396,15 +18038,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 className="w-4 h-4 rounded text-teal-800 focus:ring-indigo-500 cursor-pointer"
                               />
                             </th>
-                            <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase">Mã HS</th>
-                            <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase">Họ và tên</th>
-                            <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase">Khối &amp; Hệ</th>
-                            <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase">Cơ sở ĐK</th>
-                            <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase">Trạng thái ca</th>
-                            <th className="p-2.5 text-[10px] font-black text-slate-500 uppercase text-right pr-3">Thao tác</th>
+                            <th className="p-2.5 text-[10px] font-semibold">Mã HS</th>
+                            <th className="p-2.5 text-[10px] font-semibold">Họ và tên</th>
+                            <th className="p-2.5 text-[10px] font-semibold">Khối &amp; Hệ</th>
+                            <th className="p-2.5 text-[10px] font-semibold">Cơ sở ĐK</th>
+                            <th className="p-2.5 text-[10px] font-semibold">Trạng thái ca</th>
+                            <th className="p-2.5 text-[10px] text-right pr-3 font-semibold">Thao tác</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#E2E8F0]">
                           {sessionCandidateStudents.map((st) => {
                             const isAlreadyInThisSession = enrolledStudentIds.has(st.id);
                             const otherSession = st.studentSessions?.find((ss: any) => ss.sessionId !== selectedSessionForDetail.id)?.session;
@@ -17533,18 +18175,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   ) : (
                     <div className="overflow-x-auto bg-white border border-slate-200 rounded-2xl shadow-xs">
                       <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider pl-4">#</th>
-                            <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Mã HS</th>
-                            <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Họ và tên</th>
-                            <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Khối &amp; Hệ</th>
-                            <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Điểm đã nhập</th>
-                            <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider">Kết quả</th>
-                            <th className="px-3 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-wider text-right pr-4">Thao tác</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="border-b text-[11px] font-semibold">
+                            <th className="px-3 py-2.5 text-[10px] pl-4 font-semibold">#</th>
+                            <th className="px-3 py-2.5 text-[10px] font-semibold">Mã HS</th>
+                            <th className="px-3 py-2.5 text-[10px] font-semibold">Họ và tên</th>
+                            <th className="px-3 py-2.5 text-[10px] font-semibold">Khối &amp; Hệ</th>
+                            <th className="px-3 py-2.5 text-[10px] font-semibold">Điểm đã nhập</th>
+                            <th className="px-3 py-2.5 text-[10px] font-semibold">Kết quả</th>
+                            <th className="px-3 py-2.5 text-[10px] text-right pr-4 font-semibold">Thao tác</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#E2E8F0]">
                           {selectedSessionForDetail.studentSessions.map((ss, idx) => {
                             const st = ss.student;
                             const hasScores = (st?.scores && st.scores.length > 0);
@@ -17800,14 +18442,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 {s.scores && s.scores.length > 0 && (
                   <div className="mt-3 overflow-x-auto">
                     <table className="w-full text-xs text-left border border-slate-100 rounded-xl overflow-hidden">
-                      <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
-                        <tr>
-                          <th className="px-3 py-2">Môn khảo sát</th>
-                          <th className="px-3 py-2 text-center w-20">Điểm số</th>
-                          <th className="px-3 py-2">Nhận xét của GV chấm</th>
+                      <thead className="bg-[#003B3A] text-[10px] text-white border-b border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="px-3 py-2 font-semibold">Môn khảo sát</th>
+                          <th className="px-3 py-2 text-center w-20 font-semibold">Điểm số</th>
+                          <th className="px-3 py-2 font-semibold">Nhận xét của GV chấm</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
+                      <tbody className="divide-y divide-[#E2E8F0] font-medium">
                         {s.scores.map((sc: any, sIdx: number) => (
                           <tr key={sc.id || sIdx} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2 font-semibold text-slate-700">{sc.subject?.name || sc.subjectName || "Môn khảo sát"}</td>
@@ -18287,19 +18929,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             ) : (
               <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead className="bg-slate-100 text-slate-600 sticky top-0 z-10">
-                    <tr>
-                      <th className="py-2 px-3 font-bold uppercase text-[10px] w-10 text-center">#</th>
-                      <th className="py-2 px-3 font-bold uppercase text-[10px]">Mã HS</th>
-                      <th className="py-2 px-3 font-bold uppercase text-[10px]">Họ và tên Học sinh</th>
-                      <th className="py-2 px-3 font-bold uppercase text-[10px] text-center">Ngày sinh</th>
-                      <th className="py-2 px-3 font-bold uppercase text-[10px] text-center">Khối ĐK</th>
-                      <th className="py-2 px-3 font-bold uppercase text-[10px] text-center">Hệ KS</th>
-                      <th className="py-2 px-3 font-bold uppercase text-[10px]">Diện KS / Hình thức</th>
-                      <th className="py-2 px-3 font-bold uppercase text-[10px]">Cơ sở ĐK</th>
+                  <thead className="bg-[#003B3A] sticky top-0 z-10 text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2 px-3 font-bold text-[10px] w-10 text-center">#</th>
+                      <th className="py-2 px-3 font-bold text-[10px]">Mã HS</th>
+                      <th className="py-2 px-3 font-bold text-[10px]">Họ và tên Học sinh</th>
+                      <th className="py-2 px-3 font-bold text-[10px] text-center">Ngày sinh</th>
+                      <th className="py-2 px-3 font-bold text-[10px] text-center">Khối ĐK</th>
+                      <th className="py-2 px-3 font-bold text-[10px] text-center">Hệ KS</th>
+                      <th className="py-2 px-3 font-bold text-[10px]">Diện KS / Hình thức</th>
+                      <th className="py-2 px-3 font-bold text-[10px]">Cơ sở ĐK</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {effectiveHandoverStudents.map((s, idx) => (
                       <tr key={s.id} className="hover:bg-slate-50/80">
                         <td className="py-2 px-3 text-center text-slate-500 font-semibold">{idx + 1}</td>

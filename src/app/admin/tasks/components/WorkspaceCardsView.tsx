@@ -123,7 +123,7 @@ function CardIllustration({
       {/* Badge / AI Sparkle if AI_ASSISTANT */}
       {type === "AI_ASSISTANT" && (
         <g>
-          <circle cx="182" cy="22" r="9" fill="#6D28D9" />
+          <circle cx="182" cy="22" r="9" fill="#00A19A" />
           <path
             d="M182 16L183.6 20.4L188 22L183.6 23.6L182 28L180.4 23.6L176 22L180.4 20.4L182 16Z"
             fill="#FFFFFF"

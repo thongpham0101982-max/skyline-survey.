@@ -99,7 +99,7 @@ export async function fetchStudentInfoPageData() {
           select: { id: true, fullName: true }
         }).catch(() => []) : Promise.resolve([]),
         pAny.user ? pAny.user.findMany({
-          where: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } },
+          where: { OR: [{ role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } }, { teacher: { position: { in: ["GĐCS", "GDCS", "GĐ_CS", "GD_CS"] } } }, { teacher: { positions: { contains: "GĐCS" } } }, { teacher: { positions: { contains: "GDCS" } } }] },
           select: { id: true, fullName: true, email: true }
         }).catch(() => []) : Promise.resolve([]),
         pAny.assessmentSubject ? pAny.assessmentSubject.findMany({
@@ -122,12 +122,12 @@ export async function fetchStudentInfoPageData() {
         import("@/lib/permissions").then(m => m.getRolePermissions(roleCode)).catch(() => []),
         pAny.inputAssessmentPeriod ? pAny.inputAssessmentPeriod.findMany({
           where: activeYearId ? { academicYearId: activeYearId } : {},
-          include: { batches: { select: { id: true, name: true, status: true } } },
+          include: { batches: { select: { id: true, name: true, status: true, campusId: true, startDate: true } } },
           orderBy: { name: 'asc' }
         }).catch(() => []) : Promise.resolve([]),
         pAny.preschoolInputAssessmentPeriod ? pAny.preschoolInputAssessmentPeriod.findMany({
           where: activeYearId ? { academicYearId: activeYearId } : {},
-          include: { batches: { select: { id: true, name: true, status: true } } },
+          include: { batches: { select: { id: true, name: true, status: true, campusId: true, startDate: true } } },
           orderBy: { name: 'asc' }
         }).catch(() => []) : Promise.resolve([])
       ]);
@@ -158,8 +158,8 @@ export async function fetchStudentInfoPageData() {
               period: { academicYearId: activeYearId }
             },
             include: {
-              period: { select: { id: true, name: true, academicYearId: true } },
-              batch: { select: { id: true, name: true, startDate: true } },
+              period: { select: { id: true, name: true, academicYearId: true, campusId: true } },
+              batch: { select: { id: true, name: true, startDate: true, campusId: true } },
               enrollmentClass: { select: { className: true } },
               scores: {
                 include: {
@@ -174,8 +174,8 @@ export async function fetchStudentInfoPageData() {
               period: { academicYearId: activeYearId }
             },
             include: {
-              period: { select: { id: true, name: true, academicYearId: true } },
-              batch: { select: { id: true, name: true, startDate: true } },
+              period: { select: { id: true, name: true, academicYearId: true, campusId: true } },
+              batch: { select: { id: true, name: true, startDate: true, campusId: true } },
               enrollmentClass: { select: { className: true } }
             },
             orderBy: { createdAt: 'desc' }

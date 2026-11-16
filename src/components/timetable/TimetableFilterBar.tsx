@@ -9,6 +9,7 @@ const SCOPE_FILTER_MEMORY_KEY = "ssm_tkb_scope_filter_memory_v1"
 interface RememberedScopeFilter {
   campusId?: string
   levelCode?: LevelFilterCode
+  studyProgram?: string
   grade?: string
   classId?: string
   versionId?: string
@@ -59,6 +60,8 @@ export interface SerializedFilterContext {
   selectedCampusId: string
   levelOptions: Array<{ code: LevelFilterCode; label: string }>
   selectedLevelCode: LevelFilterCode
+  availableStudyPrograms?: Array<{ code: "Hệ S" | "Hệ I"; count: number }>
+  selectedStudyProgram?: "ALL" | "Hệ S" | "Hệ I"
   availableGrades: string[]
   selectedGrade: string
   classes: Array<{
@@ -67,6 +70,7 @@ export interface SerializedFilterContext {
     grade: string
     level: string
     educationSystem: string
+    studyProgram?: "Hệ S" | "Hệ I"
     homeroomTeacherId: string
     campusId: string
   }>
@@ -98,6 +102,7 @@ interface TimetableFilterBarProps {
     scopeGroup?: ScopeGroup
     campusId?: string
     levelCode?: LevelFilterCode
+    studyProgram?: string
     grade?: string
     classId?: string
     versionId?: string
@@ -128,6 +133,7 @@ export function TimetableFilterBar({
     writeScopeMemory(context.selectedYearId, context.semester, context.selectedScopeGroup, {
       campusId: context.selectedCampusId,
       levelCode: context.selectedLevelCode,
+      studyProgram: context.selectedStudyProgram || "ALL",
       grade: context.selectedGrade,
       classId: context.selectedClassId,
       versionId: context.selectedVersionId,
@@ -138,6 +144,7 @@ export function TimetableFilterBar({
     context.selectedScopeGroup,
     context.selectedCampusId,
     context.selectedLevelCode,
+    context.selectedStudyProgram,
     context.selectedGrade,
     context.selectedClassId,
     context.selectedVersionId,
@@ -332,6 +339,38 @@ export function TimetableFilterBar({
           <div className="flex flex-wrap items-end gap-3">
             {showGradeAndClass && (
               <>
+                <div className="min-w-[140px]">
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                    Hệ chương trình
+                  </label>
+                  <select
+                    value={context.selectedStudyProgram || "ALL"}
+                    disabled={loading}
+                    onChange={(e) =>
+                      onChange({
+                        studyProgram: e.target.value,
+                        grade: "ALL",
+                        classId: "ALL",
+                      })
+                    }
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
+                  >
+                    <option value="ALL">
+                      Tất cả hệ (
+                      {(context.availableStudyPrograms || []).reduce(
+                        (s, p) => s + p.count,
+                        0
+                      ) || context.classes.length}{" "}
+                      lớp)
+                    </option>
+                    {(context.availableStudyPrograms || []).map((p) => (
+                      <option key={p.code} value={p.code}>
+                        {p.code} ({p.count} lớp)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="min-w-[130px]">
                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                     Khối lớp
@@ -351,7 +390,7 @@ export function TimetableFilterBar({
                   </select>
                 </div>
 
-                <div className="min-w-[150px]">
+                <div className="min-w-[175px]">
                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                     Lớp học
                   </label>
@@ -362,11 +401,44 @@ export function TimetableFilterBar({
                     className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none tabular-nums"
                   >
                     <option value="ALL">Tất cả lớp ({context.classes.length})</option>
-                    {context.classes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        Lớp {c.className}
-                      </option>
-                    ))}
+                    {(() => {
+                      const inferSys = (c: (typeof context.classes)[0]) =>
+                        c.studyProgram ||
+                        (/INT|UK|COMPASS|HNG|SB/i.test(
+                          `${c.educationSystem || ""} ${c.className}`
+                        )
+                          ? "Hệ I"
+                          : "Hệ S")
+                      const heSList = context.classes.filter((c) => inferSys(c) === "Hệ S")
+                      const heIList = context.classes.filter((c) => inferSys(c) === "Hệ I")
+
+                      if (heSList.length > 0 && heIList.length > 0) {
+                        return (
+                          <>
+                            <optgroup label={`Hệ S (${heSList.length} lớp)`}>
+                              {heSList.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  Lớp {c.className} (Hệ S)
+                                </option>
+                              ))}
+                            </optgroup>
+                            <optgroup label={`Hệ I (${heIList.length} lớp)`}>
+                              {heIList.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  Lớp {c.className} (Hệ I)
+                                </option>
+                              ))}
+                            </optgroup>
+                          </>
+                        )
+                      }
+
+                      return context.classes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          Lớp {c.className} ({inferSys(c)})
+                        </option>
+                      ))
+                    })()}
                   </select>
                 </div>
               </>

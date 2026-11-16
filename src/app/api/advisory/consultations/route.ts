@@ -112,6 +112,9 @@ export async function GET(req: Request) {
     const policyMap = await getPoliciesByStudentIds(allLogStudentIds, "CONSULTATION")
 
     const metaMap = new Map<string, any>()
+    const feedbackByConsultIdMap = new Map<string, any>()
+    const unlinkedFeedbackByStudentMap = new Map<string, any[]>()
+
     if (allLogStudentIds.length > 0) {
       try {
         const placeholders = allLogStudentIds.map(() => "?").join(",")
@@ -129,8 +132,26 @@ export async function GET(req: Request) {
             linkedGoalIds
           })
         }
+
+        const fbRows: any[] = await prisma.$queryRawUnsafe(
+          `SELECT * FROM "StudentAdvisoryFeedback"
+           WHERE "studentId" IN (${placeholders}) AND "feedbackType" = 'POST_CONSULTATION'
+           ORDER BY "createdAt" DESC`,
+          ...allLogStudentIds
+        )
+        for (const fb of fbRows || []) {
+          if (fb.consultationId && !feedbackByConsultIdMap.has(fb.consultationId)) {
+            feedbackByConsultIdMap.set(fb.consultationId, fb)
+          } else if (!fb.consultationId && fb.studentId) {
+            const arr = unlinkedFeedbackByStudentMap.get(fb.studentId) || []
+            arr.push(fb)
+            unlinkedFeedbackByStudentMap.set(fb.studentId, arr)
+          }
+        }
       } catch {}
     }
+
+    const usedStudentFallback = new Set<string>()
 
     const formattedLogs = logs
       .map(l => {
@@ -138,17 +159,52 @@ export async function GET(req: Request) {
         const sanitized = sanitizeConsultationForViewer(l, policy, caller.actorRole)
         if (!sanitized) return null
         const meta = metaMap.get(l.id) || null
+        let postFb = feedbackByConsultIdMap.get(l.id) || null
+        if (!postFb && !usedStudentFallback.has(l.studentId)) {
+          const fallbackList = unlinkedFeedbackByStudentMap.get(l.studentId)
+          if (fallbackList && fallbackList.length > 0) {
+            postFb = fallbackList[0]
+            usedStudentFallback.add(l.studentId)
+          }
+        }
+        const effectiveReflection =
+          sanitized.studentReflection ||
+          postFb?.postConsultFeeling ||
+          postFb?.supportRequestText ||
+          null
+        const hasStudentFeedback = Boolean(
+          effectiveReflection ||
+            meta?.studentFeedbackStatus === "SUBMITTED" ||
+            postFb
+        )
         return {
           ...sanitized,
+          studentReflection: effectiveReflection,
+          hasStudentFeedback,
+          postConsultationFeedback: postFb
+            ? {
+                id: postFb.id,
+                postConsultFeeling: postFb.postConsultFeeling || "",
+                listenedAndRespectedScore: Number(postFb.listenedAndRespectedScore || 5),
+                understoodNextSteps: Boolean(Number(postFb.understoodNextSteps ?? 1)),
+                goalAndActionSuitability: postFb.goalAndActionSuitability || "PHU_HOP",
+                supportRequestText: postFb.supportRequestText || "",
+                wantsMoreDiscussion: Boolean(Number(postFb.wantsMoreDiscussion ?? 0)),
+                advisorProcessStatus: postFb.advisorProcessStatus || "PENDING",
+                advisorReplyText: postFb.advisorReplyText || "",
+                createdAt: postFb.createdAt
+              }
+            : null,
           evaluatorName: l.teacher?.teacherName || "Giáo Viên Cố Vấn",
           linkedGoalIds: meta?.linkedGoalIds || [],
           actionAssignee: meta?.actionAssignee || "Học sinh & GVCN",
           nextFollowUpDate: meta?.nextFollowUpDate || "",
           consultationStatus: meta?.consultationStatus || (l.status === "PENDING" ? "SCHEDULED" : "COMPLETED"),
-          studentFeedbackStatus:
-            meta?.studentFeedbackStatus ||
-            (l.studentReflection ? "SUBMITTED" : "NOT_REQUESTED"),
-          advisorProcessStatus: meta?.advisorProcessStatus || "NONE"
+          studentFeedbackStatus: hasStudentFeedback
+            ? "SUBMITTED"
+            : meta?.studentFeedbackStatus || "REQUESTED",
+          advisorProcessStatus:
+            postFb?.advisorProcessStatus || meta?.advisorProcessStatus || "NONE"
         }
       })
       .filter(Boolean)

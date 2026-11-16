@@ -358,9 +358,9 @@ export default function SsmStudentRosterManager({
       {/* Table */}
       <div className="overflow-x-auto border border-slate-200 rounded-xl">
         <table className="w-full text-xs">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-left">
-            <tr>
-              <th className="py-3 px-3 w-9">
+          <thead className="bg-[#003B3A] border-b text-left text-white border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="py-3 px-3 w-9 font-semibold">
                 <input
                   type="checkbox"
                   checked={allOnPageSelected}
@@ -377,7 +377,7 @@ export default function SsmStudentRosterManager({
               <th className="py-3 px-3 font-bold text-right">Thao tác (Chọn • Sửa • Xóa)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#E2E8F0]">
             {pageItems.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-10 text-center text-slate-400 italic">

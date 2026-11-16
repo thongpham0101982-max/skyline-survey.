@@ -1,6 +1,9 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { getEntranceProgressDashboardData } from "@/lib/entrance-progress/entranceProgressEngine";
+import { getRolePermissions } from "@/lib/permissions";
+import {
+  getEntranceProgressDashboardData,
+  resolveEntranceViewerScope,
+} from "@/lib/entrance-progress/entranceProgressEngine";
 import { EntranceOperationsDashboardClient } from "./client";
 
 export const metadata = {
@@ -21,17 +24,21 @@ export default async function EntranceOperationsDashboardPage() {
   let rolePermissions: any[] = [];
   try {
     if (user?.role) {
-      rolePermissions = await prisma.permission.findMany({
-        where: { roleCode: user.role },
-      });
+      rolePermissions = await getRolePermissions(user.role);
     }
   } catch {
     rolePermissions = [];
   }
 
+  const viewerScope = await resolveEntranceViewerScope(user);
+
   let initialData: any = null;
   try {
-    initialData = await getEntranceProgressDashboardData({});
+    initialData = await getEntranceProgressDashboardData({
+      viewerRole: viewerScope.viewerRole,
+      isSuperAdmin: viewerScope.isSuperAdmin,
+      allowedCampusCodes: viewerScope.allowedCampusCodes,
+    });
   } catch (err) {
     console.error("Initial dashboard data fetch error:", err);
   }
@@ -44,10 +51,8 @@ export default async function EntranceOperationsDashboardPage() {
         fullName: user?.fullName || user?.name || "Cán bộ điều hành",
         role: user?.role || "ADMIN",
         email: user?.email || "",
-        isSuperAdmin: Boolean(
-          user?.isSuperAdmin || (user?.role || "").toUpperCase() === "ADMIN"
-        ),
-        campusIds: user?.campusIds || [],
+        isSuperAdmin: viewerScope.isSuperAdmin,
+        campusIds: viewerScope.liveCampusIds,
       }}
       rolePermissions={rolePermissions}
     />

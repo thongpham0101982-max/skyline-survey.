@@ -1050,6 +1050,28 @@ export default function TeacherTasksPage() {
   // ============================================================================
   // XỬ LÝ THAO TÁC TRÊN NHIỆM VỤ & KÉO THẢ KANBAN (MỤC 3.F.2 & NGUYÊN TẮC 9)
   // ============================================================================
+  const handleConfirmWorkTask = async (taskId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    try {
+      const res = await fetch("/api/pwa/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, action: "CONFIRM_ACCEPTANCE" }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setKanbanToast(json.message || "Đã xác nhận tiếp nhận nhiệm vụ và bắt đầu thực hiện.")
+        setTimeout(() => setKanbanToast(null), 3500)
+        await fetchWorkspaceData(true)
+      }
+    } catch (err) {
+      console.error("Error confirming task:", err)
+    }
+  }
+
   const handleMarkWorkTaskComplete = async (taskId: string, e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault()
@@ -1061,7 +1083,10 @@ export default function TeacherTasksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ taskId, action: "COMPLETE" }),
       })
+      const json = await res.json().catch(() => ({}))
       if (res.ok) {
+        setKanbanToast(json.message || "Đã cập nhật hoàn thành tiến độ nhiệm vụ.")
+        setTimeout(() => setKanbanToast(null), 3500)
         await fetchWorkspaceData(true)
       }
     } catch (err) {
@@ -1259,16 +1284,46 @@ export default function TeacherTasksPage() {
 
             {/* Nút thao tác chính riêng biệt theo màu sắc Cơ sở GV */}
             <div className="flex items-center gap-2 shrink-0">
-              {task.sourceModule === "CONG_TAC" && task.status !== "COMPLETED" && (
-                <button
-                  type="button"
-                  onClick={(e) => handleMarkWorkTaskComplete(task.taskId, e)}
-                  className="px-2.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200 cursor-pointer"
-                  title="Đánh dấu hoàn thành công việc được giao"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                </button>
-              )}
+              {task.sourceModule === "CONG_TAC" &&
+                task.taskType === "WORK_TASK" &&
+                task.status !== "COMPLETED" &&
+                task.status !== "WAITING" && (
+                  <>
+                    {(task.metadata as any)?.acceptanceStatus === "WAITING_CONFIRMATION" ? (
+                      <button
+                        type="button"
+                        onClick={(e) => handleConfirmWorkTask(task.taskId, e)}
+                        className="px-3 py-2 rounded-lg bg-[#003B3A] hover:bg-[#004D47] text-white text-xs font-bold cursor-pointer"
+                        title="Xác nhận tiếp nhận công việc và bắt đầu thực hiện"
+                      >
+                        Xác nhận nhận việc
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => handleMarkWorkTaskComplete(task.taskId, e)}
+                        className="px-2.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200 inline-flex items-center gap-1 cursor-pointer"
+                        title="Xác nhận hoàn thành tiến độ / Gửi duyệt kết quả"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Hoàn thành</span>
+                      </button>
+                    )}
+                  </>
+                )}
+
+              {task.sourceModule === "CONG_TAC" &&
+                task.taskType !== "WORK_TASK" &&
+                task.status !== "COMPLETED" && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleMarkWorkTaskComplete(task.taskId, e)}
+                    className="px-2.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200 cursor-pointer"
+                    title="Đánh dấu hoàn thành công việc được giao"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                )}
 
               <Link
                 href={task.deepLink}

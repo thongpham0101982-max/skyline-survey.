@@ -244,39 +244,39 @@ export default function ReportExportDrawer({
 
             <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
               <table className="w-full text-xs text-left">
-                <thead className="bg-slate-100/90 text-slate-700 font-bold border-b border-slate-200">
+                <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
                   {selectedTemplate === "MOET_TT22" && (
-                    <tr>
-                      <th className="py-2.5 px-3 w-10 text-center">STT</th>
-                      <th className="py-2.5 px-3">Mã HS</th>
-                      <th className="py-2.5 px-3">Họ và Tên</th>
-                      <th className="py-2.5 px-3 text-center">ĐGtx</th>
-                      <th className="py-2.5 px-3 text-center">ĐGgk</th>
-                      <th className="py-2.5 px-3 text-center">ĐTB</th>
-                      <th className="py-2.5 px-3 text-center">Xếp loại</th>
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-3 w-10 text-center font-semibold">STT</th>
+                      <th className="py-2.5 px-3 font-semibold">Mã HS</th>
+                      <th className="py-2.5 px-3 font-semibold">Họ và Tên</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">ĐGtx</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">ĐGgk</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">ĐTB</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Xếp loại</th>
                     </tr>
                   )}
                   {selectedTemplate === "MOET_TT27" && (
-                    <tr>
-                      <th className="py-2.5 px-3 w-10 text-center">STT</th>
-                      <th className="py-2.5 px-3">Mã HS</th>
-                      <th className="py-2.5 px-3">Họ và Tên</th>
-                      <th className="py-2.5 px-3 text-center">Mức Đạt</th>
-                      <th className="py-2.5 px-3">Nhận xét phẩm chất</th>
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-3 w-10 text-center font-semibold">STT</th>
+                      <th className="py-2.5 px-3 font-semibold">Mã HS</th>
+                      <th className="py-2.5 px-3 font-semibold">Họ và Tên</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Mức Đạt</th>
+                      <th className="py-2.5 px-3 font-semibold">Nhận xét phẩm chất</th>
                     </tr>
                   )}
                   {selectedTemplate === "CAMBRIDGE" && (
-                    <tr>
-                      <th className="py-2.5 px-3 w-10 text-center">No.</th>
-                      <th className="py-2.5 px-3">Student ID</th>
-                      <th className="py-2.5 px-3">Full Name</th>
-                      <th className="py-2.5 px-3 text-center">Score</th>
-                      <th className="py-2.5 px-3 text-center">Grade</th>
-                      <th className="py-2.5 px-3">Descriptor</th>
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-3 w-10 text-center font-semibold">No.</th>
+                      <th className="py-2.5 px-3 font-semibold">Student ID</th>
+                      <th className="py-2.5 px-3 font-semibold">Full Name</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Score</th>
+                      <th className="py-2.5 px-3 text-center font-semibold">Grade</th>
+                      <th className="py-2.5 px-3 font-semibold">Descriptor</th>
                     </tr>
                   )}
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-[#E2E8F0] bg-white">
                   {studentsWithScores.slice(0, 5).map((st, idx) => {
                     const score = typeof st.score === "number" ? st.score : (parseFloat(st.score) || 0);
                     return (

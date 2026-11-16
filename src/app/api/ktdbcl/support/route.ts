@@ -39,114 +39,168 @@ export async function GET(req: Request) {
         ? await prisma.teacher.findUnique({ where: { userId: session.user.id } })
         : null
 
-      let teacherClassIds: string[] = []
-      if (callerTeacher) {
-        const [assignments, homeroomClasses] = await Promise.all([
-          prisma.teachingAssignment.findMany({
-            where: { teacherId: callerTeacher.id, academicYearId },
-            select: { classId: true }
-          }),
-          prisma.class.findMany({
-            where: {
-              academicYearId,
-              OR: [
-                { homeroomTeacherId: callerTeacher.id },
-                { homeroomTeacherId: { contains: callerTeacher.id } }
-              ]
-            },
-            select: { id: true }
-          })
-        ])
-        teacherClassIds = Array.from(new Set([
-          ...assignments.map((a: any) => a.classId),
-          ...homeroomClasses.map((c: any) => c.id)
-        ]))
-      }
-
-      const whereClause: any = { academicYearId }
-      if (callerTeacher) {
-        const orConditions: any[] = [
-          { createdById: callerTeacher.id },
-          { assignments: { some: { teacherId: callerTeacher.id } } }
-        ]
-        if (teacherClassIds.length > 0) {
-          orConditions.push({ student: { classId: { in: teacherClassIds } } })
-        }
-        whereClause.OR = orConditions
-      }
-
-      const targets = await prisma.learningSupportTarget.findMany({
-        where: whereClause,
-        include: {
-          student: {
-            select: {
-              id: true,
-              studentCode: true,
-              studentName: true,
-              gender: true,
-              classId: true,
-              class: {
-                select: {
-                  className: true,
-                  classCode: true,
-                  campusId: true,
-                  campus: { select: { campusName: true } }
+      const [
+        periods,
+        allClasses,
+        allTeachers,
+        allTeachingAssignments,
+        rawTargets
+      ] = await Promise.all([
+        prisma.inputAssessmentPeriod.findMany({
+          where: { academicYearId },
+          select: { id: true }
+        }),
+        prisma.class.findMany({
+          where: { academicYearId, status: "ACTIVE" },
+          include: {
+            campus: { select: { id: true, campusName: true } },
+            teachers: { include: { teacher: { select: { id: true, teacherName: true } } } }
+          }
+        }),
+        prisma.teacher.findMany({
+          select: { id: true, teacherName: true }
+        }),
+        prisma.teachingAssignment.findMany({
+          where: { academicYearId },
+          include: {
+            teacher: { select: { id: true, teacherName: true } },
+            subject: { select: { id: true, subjectName: true } }
+          }
+        }),
+        prisma.learningSupportTarget.findMany({
+          where: { academicYearId },
+          include: {
+            student: {
+              select: {
+                id: true,
+                studentCode: true,
+                studentName: true,
+                gender: true,
+                classId: true,
+                class: {
+                  select: {
+                    id: true,
+                    className: true,
+                    classCode: true,
+                    grade: true,
+                    homeroomTeacherId: true,
+                    campusId: true,
+                    campus: { select: { campusName: true } }
+                  }
                 }
+              }
+            },
+            assignments: {
+              include: {
+                teacher: { select: { id: true, teacherName: true } },
+                subject: { select: { id: true, subjectName: true } }
+              }
+            },
+            evaluations: true,
+            createdBy: {
+              select: {
+                id: true,
+                teacherName: true
               }
             }
           },
-          assignments: {
-            include: {
-              teacher: { select: { id: true, teacherName: true } },
-              subject: { select: { id: true, subjectName: true } }
-            }
+          orderBy: { createdAt: "desc" }
+        })
+      ])
+
+      const teacherByIdMap = new Map(allTeachers.map(t => [t.id, t]))
+      const classByIdMap = new Map(allClasses.map(c => [c.id, c]))
+      const periodIds = periods.map(p => p.id)
+
+      const [inputStudents, preschoolStudents, systemStudents] = await Promise.all([
+        prisma.inputAssessmentStudent.findMany({
+          where: {
+            periodId: periodIds.length > 0 ? { in: periodIds } : undefined,
+            OR: [
+              { admissionResult: { contains: "cam kết" } },
+              { admissionResult: { contains: "Cam kết" } },
+              { directorNote: { contains: "Môn cam kết" } },
+              { directorNote: { contains: "Mon cam ket" } },
+              { directorNote: { contains: "cam kết" } },
+              { directorNote: { contains: "Cam kết" } }
+            ]
           },
-          evaluations: true,
-          createdBy: {
-            select: {
-              id: true,
-              teacherName: true
+          include: {
+            enrollmentClass: { include: { campus: true } }
+          }
+        }),
+        prisma.preschoolInputAssessmentStudent.findMany({
+          where: {
+            periodId: periodIds.length > 0 ? { in: periodIds } : undefined,
+            OR: [
+              { admissionResult: { contains: "cam kết" } },
+              { admissionResult: { contains: "Cam kết" } },
+              { directorNote: { contains: "Môn cam kết" } },
+              { directorNote: { contains: "Mon cam ket" } },
+              { directorNote: { contains: "cam kết" } },
+              { directorNote: { contains: "Cam kết" } }
+            ]
+          },
+          include: {
+            enrollmentClass: { include: { campus: true } }
+          }
+        }),
+        prisma.student.findMany({
+          where: {
+            academicYearId,
+            status: { not: "TRANSFERRED_OUT" }
+          },
+          select: {
+            id: true,
+            studentCode: true,
+            studentName: true,
+            gender: true,
+            classId: true,
+            class: {
+              select: {
+                id: true,
+                className: true,
+                classCode: true,
+                grade: true,
+                homeroomTeacherId: true,
+                campusId: true,
+                campus: { select: { campusName: true } }
+              }
             }
           }
-        },
-        orderBy: { createdAt: "desc" }
-      })
+        })
+      ])
 
-      // Fetch student commitments from input assessment student records
-      const studentCodes = targets.map((t) => t.student?.studentCode).filter(Boolean);
-      const studentNames = targets.map((t) => t.student?.studentName).filter(Boolean);
+      const cleanString = (str: any) => {
+        if (!str) return ""
+        return String(str).toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
 
-      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
-        where: {
-          OR: [
-            { studentCode: { in: studentCodes } },
-            { enrollmentCode: { in: studentCodes } },
-            { fullName: { in: studentNames } }
-          ]
-        },
-        select: {
-          studentCode: true,
-          enrollmentCode: true,
-          fullName: true,
-          directorNote: true
-        }
-      });
+      const parseCommittedSubjects = (note: any, resultStr?: any, className?: string, gradeStr?: string) => {
+        const text = `${note || ""} ${resultStr || ""}`.trim()
+        if (!text) return []
 
-            const parseCommittedSubjects = (note: any) => {
-        if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        const isPrimary = Boolean(
+          (className && /^[1-5][._\s]|lớp\s*[1-5]/i.test(className)) ||
+          (gradeStr && /^(khối\s*)?[1-5]$/i.test(gradeStr))
+        )
+
+        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i)
         let rawSubs: string[] = []
         if (match && match[1]) {
           rawSubs = match[1].split(/[,;]/).map((s: any) => s.trim()).filter(Boolean)
         } else {
-          if (/Anh|English/i.test(note)) rawSubs.push("Tiếng Anh")
-          if (/Toán|Math/i.test(note)) rawSubs.push("Toán")
-          if (/Tiếng Việt/i.test(note)) rawSubs.push("Tiếng Việt")
-          if (/Ngữ văn|Văn/i.test(note)) rawSubs.push("Ngữ Văn")
-          if (/Tâm lý|Psychology/i.test(note)) rawSubs.push("Tâm lý")
+          if (/Anh|English|ESL/i.test(text)) rawSubs.push("Tiếng Anh")
+          if (/Toán|Math/i.test(text)) rawSubs.push("Toán")
+          if (/Tiếng Việt|TN-XH|Tự nhiên/i.test(text)) rawSubs.push("Tiếng Việt")
+          else if (/Ngữ văn|Literature|Văn/i.test(text)) rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
+          if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý")
         }
-        // Bổ sung: Nhận diện cam kết / lưu ý tâm lý kể cả khi nằm ngoài cấu trúc ngoặc vuông
-        const lowerNote = String(note).toLowerCase()
+
+        const lowerNote = String(text).toLowerCase()
         if (lowerNote.includes("tâm lý") || lowerNote.includes("tam ly") || lowerNote.includes("tâm lí") || lowerNote.includes("psychology")) {
           if (lowerNote.includes("cam kết") || lowerNote.includes("theo dõi") || lowerNote.includes("tư vấn") || lowerNote.includes("lưu ý") || lowerNote.includes("hỗ trợ")) {
             if (!rawSubs.some(s => /tâm lý|tam ly|psychology/i.test(s))) {
@@ -159,14 +213,15 @@ export async function GET(req: Request) {
         rawSubs.forEach((s) => {
           const clean = s.trim().replace(/^môn\s+/i, "")
           const lower = clean.toLowerCase()
-          if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
+          if (lower.includes("anh") || lower.includes("english") || lower.includes("esl") || lower.includes("ept")) {
             if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh")
           } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
             if (!finalSubs.includes("Toán")) finalSubs.push("Toán")
-          } else if (lower.includes("tiếng việt") || lower.includes("tieng viet")) {
+          } else if (lower.includes("tiếng việt") || lower.includes("tieng viet") || lower === "tv") {
             if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
-          } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn") {
-            if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
+          } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn" || lower.includes("văn")) {
+            const correctSub = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
+            if (!finalSubs.includes(correctSub)) finalSubs.push(correctSub)
           } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
             if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
           } else {
@@ -176,41 +231,310 @@ export async function GET(req: Request) {
         return finalSubs
       }
 
-      const cleanString = (str: any) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
+      const isNonAcademicSubject = (subName: string) => {
+        const lower = (subName || "").toLowerCase()
+        return lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("tâm lí") || lower.includes("psychology") ||
+               lower.includes("hướng nghiệp") || lower.includes("huong nghiep")
       }
 
-      const targetsWithCommitment = targets.map((t) => {
-        const assessment = inputAssessments.find((a) => {
-          if (a.studentCode === t.student?.studentCode || a.enrollmentCode === t.student?.studentCode) {
-            return true;
-          }
-          return cleanString(a.fullName) === cleanString(t.student?.studentName);
-        });
+      const matchTeachingSubject = (committedSub: string, assignSubName: string) => {
+        const cLower = committedSub.toLowerCase()
+        const aLower = (assignSubName || "").toLowerCase()
+        if (cLower === "toán" && (aLower.includes("toán") || aLower.includes("toan") || aLower.includes("math"))) return true
+        if (cLower === "tiếng việt" && (aLower.includes("tiếng việt") || aLower.includes("tieng viet") || aLower === "tv")) return true
+        if (cLower === "ngữ văn" && (aLower.includes("ngữ văn") || aLower.includes("ngu van") || aLower === "văn" || aLower.includes("literature"))) return true
+        if (cLower === "tiếng anh" && (aLower.includes("tiếng anh") || aLower.includes("tieng anh") || aLower === "anh" || aLower.includes("english") || aLower.includes("esl") || aLower.includes("ept"))) return true
+        return aLower === cLower
+      }
 
-        const committedSubjects = assessment ? parseCommittedSubjects(assessment.directorNote || "") : [];
+      const resolveClassTeachersAndAssignments = (classId: string | null | undefined, academicSubjects: string[]) => {
+        if (!classId) return { gvcnTeachers: [], gvbmTeachers: [], assignments: [] }
+        const cls = classByIdMap.get(classId)
+        const gvcnMap = new Map<string, { id: string; teacherName: string; role: string }>()
+
+        if (cls?.homeroomTeacherId) {
+          const ids = cls.homeroomTeacherId.split(",").map(s => s.trim()).filter(Boolean)
+          ids.forEach(tid => {
+            const t = teacherByIdMap.get(tid)
+            if (t) gvcnMap.set(t.id, { id: t.id, teacherName: t.teacherName, role: "GVCN" })
+          })
+        }
+        if (cls?.teachers && cls.teachers.length > 0) {
+          cls.teachers.forEach((ta: any) => {
+            if (ta.teacher) {
+              gvcnMap.set(ta.teacher.id, { id: ta.teacher.id, teacherName: ta.teacher.teacherName, role: "GVCN" })
+            }
+          })
+        }
+
+        const classTeaching = allTeachingAssignments.filter(ta => ta.classId === classId)
+        const gvbmList: Array<{ id: string; teacherName: string; subjectId: string; subjectName: string; committedSubject: string; role: string }> = []
+
+        academicSubjects.forEach(committedSub => {
+          const matched = classTeaching.filter(ta => matchTeachingSubject(committedSub, ta.subject?.subjectName || ""))
+          matched.forEach(ta => {
+            if (ta.teacher) {
+              const exists = gvbmList.some(g => g.id === ta.teacher.id && g.committedSubject === committedSub)
+              if (!exists) {
+                gvbmList.push({
+                  id: ta.teacher.id,
+                  teacherName: ta.teacher.teacherName,
+                  subjectId: ta.subject?.id || "",
+                  subjectName: ta.subject?.subjectName || committedSub,
+                  committedSubject: committedSub,
+                  role: "GVBM"
+                })
+              }
+            }
+          })
+        })
+
+        const gvcnTeachers = Array.from(gvcnMap.values())
+        const combinedAssignments: any[] = []
+
+        gvbmList.forEach(g => {
+          combinedAssignments.push({
+            id: `auto_gvbm_${classId}_${g.id}_${g.committedSubject}`,
+            teacherId: g.id,
+            role: "GVBM",
+            committedSubject: g.committedSubject,
+            teacher: { id: g.id, teacherName: g.teacherName },
+            subject: { id: g.subjectId || g.committedSubject, subjectName: g.committedSubject }
+          })
+        })
+
+        gvcnTeachers.forEach(gvcn => {
+          combinedAssignments.push({
+            id: `auto_gvcn_${classId}_${gvcn.id}`,
+            teacherId: gvcn.id,
+            role: "GVCN",
+            committedSubject: academicSubjects.join(", "),
+            teacher: { id: gvcn.id, teacherName: gvcn.teacherName },
+            subject: { id: "GVCN", subjectName: academicSubjects.length > 0 ? `GVCN (${academicSubjects.join(", ")})` : "GVCN" }
+          })
+        })
+
+        return {
+          gvcnTeachers,
+          gvbmTeachers: gvbmList,
+          assignments: combinedAssignments
+        }
+      }
+
+      // Build map of studentId -> entrance commitment record
+      const entranceByStudentId = new Map<string, {
+        student: any;
+        assessment: any;
+        allCommittedSubjects: string[];
+        academicCommittedSubjects: string[];
+        hasPsychCommitment: boolean;
+      }>()
+
+      const allEntranceRaw = [...inputStudents, ...preschoolStudents]
+      allEntranceRaw.forEach((is: any) => {
+        let matchingStudent = systemStudents.find(ss =>
+          (ss.studentCode && is.studentCode && ss.studentCode.trim().toLowerCase() === is.studentCode.trim().toLowerCase()) ||
+          (ss.studentCode && is.enrollmentCode && ss.studentCode.trim().toLowerCase() === is.enrollmentCode.trim().toLowerCase())
+        )
+        if (!matchingStudent) {
+          matchingStudent = systemStudents.find(ss => {
+            if (cleanString(ss.studentName) === cleanString(is.fullName)) {
+              if (!is.grade) return true
+              const ssGrade = ss.class?.grade || ss.class?.className?.match(/^(\d+)/)?.[1]
+              const isCleanGrade = String(is.grade).replace(/\D/g, "")
+              if (!ssGrade || !isCleanGrade) return true
+              return ssGrade.toString() === isCleanGrade.toString()
+            }
+            return false
+          })
+        }
+
+        if (!matchingStudent || !matchingStudent.classId) return
+        const className = matchingStudent.class?.className || ""
+        if (!className || className.toLowerCase().includes("chưa xếp")) return
+
+        const allSubs = parseCommittedSubjects(is.directorNote, is.admissionResult, className, matchingStudent.class?.grade || "")
+        const academicSubs = allSubs.filter(sub => !isNonAcademicSubject(sub))
+        const hasPsych = allSubs.includes("Tâm lý") ||
+          Boolean(is.directorNote && /tâm lý|tam ly|tâm lí|psychology/i.test(is.directorNote) && /cam kết|cam ket|theo dõi|lưu ý|yêu cầu/i.test(is.directorNote))
+
+        if (!entranceByStudentId.has(matchingStudent.id)) {
+          entranceByStudentId.set(matchingStudent.id, {
+            student: matchingStudent,
+            assessment: is,
+            allCommittedSubjects: allSubs,
+            academicCommittedSubjects: academicSubs,
+            hasPsychCommitment: hasPsych
+          })
+        } else {
+          const existing = entranceByStudentId.get(matchingStudent.id)!
+          allSubs.forEach(s => {
+            if (!existing.allCommittedSubjects.includes(s)) existing.allCommittedSubjects.push(s)
+          })
+          academicSubs.forEach(s => {
+            if (!existing.academicCommittedSubjects.includes(s)) existing.academicCommittedSubjects.push(s)
+          })
+          if (hasPsych) existing.hasPsychCommitment = true
+        }
+      })
+
+      // Process existing DB targets:
+      // 1. Reclassify any target marked ACADEMIC whose reason is purely "Tâm lý" into PSYCHOLOGICAL;
+      //    exclude any target whose reason is purely "Hướng nghiệp" from ACADEMIC support.
+      // 2. Strip "Tâm lý" / "Hướng nghiệp" from multi-subject ACADEMIC target reasons.
+      const normalizedDbTargets: any[] = []
+      const existingAcademicByStudentId = new Set<string>()
+
+      for (const t of rawTargets) {
+        const entranceInfo = t.student?.id ? entranceByStudentId.get(t.student.id) : undefined
+        const assessment = entranceInfo?.assessment || allEntranceRaw.find((a: any) => {
+          if (a.studentCode && t.student?.studentCode && (a.studentCode === t.student.studentCode || a.enrollmentCode === t.student.studentCode)) {
+            return true
+          }
+          return cleanString(a.fullName) === cleanString(t.student?.studentName)
+        })
+
+        const committedSubjects = entranceInfo?.allCommittedSubjects || (
+          assessment ? parseCommittedSubjects(assessment.directorNote, assessment.admissionResult, t.student?.class?.className, t.student?.class?.grade || "") : []
+        )
+        const academicCommittedSubjects = committedSubjects.filter((s: string) => !isNonAcademicSubject(s))
 
         const hasPsychCommitment = committedSubjects.includes("Tâm lý") ||
           Boolean(t.notes && /cam kết/i.test(t.notes) && /tâm lý/i.test(t.notes)) ||
           Boolean(t.reason && /cam kết/i.test(t.reason) && /tâm lý/i.test(t.reason)) ||
-          Boolean(assessment?.directorNote && /tâm lý|tam ly|tâm lí|psychology/i.test(assessment.directorNote) && /cam kết|cam ket|theo dõi|lưu ý|yêu cầu/i.test(assessment.directorNote));
+          Boolean(assessment?.directorNote && /tâm lý|tam ly|tâm lí|psychology/i.test(assessment.directorNote) && /cam kết|cam ket|theo dõi|lưu ý|yêu cầu/i.test(assessment.directorNote))
 
-        return {
+        let effectiveSupportType = t.supportType
+        let effectiveReason = t.reason || ""
+        let effectiveSourceType = t.sourceType
+
+        if (effectiveSupportType === "ACADEMIC") {
+          const reasonParts = effectiveReason
+            .split(/[,;]/)
+            .map((s: string) => s.trim())
+            .filter(Boolean)
+
+          const academicReasonParts = reasonParts.filter((p: string) => !isNonAcademicSubject(p))
+          const hasPsychReason = reasonParts.some((p: string) => /tâm lý|tam ly|tâm lí|psychology/i.test(p))
+          const hasCareerReason = reasonParts.some((p: string) => /hướng nghiệp|huong nghiep/i.test(p))
+
+          if (academicReasonParts.length === 0) {
+            if (hasPsychReason) {
+              effectiveSupportType = "PSYCHOLOGICAL"
+              if (effectiveSourceType === "TEACHER") effectiveSourceType = "TAM_LY"
+            } else if (hasCareerReason) {
+              // Exclude "Hướng nghiệp" from Hỗ trợ Học tập Khảo sát đầu vào / Văn hóa
+              continue
+            }
+          } else {
+            effectiveReason = academicReasonParts.join(", ")
+          }
+        }
+
+        if (effectiveSupportType === "ACADEMIC" && t.student?.id) {
+          existingAcademicByStudentId.add(t.student.id)
+        }
+
+        const subjectsForRouting = effectiveSupportType === "ACADEMIC"
+          ? (academicCommittedSubjects.length > 0
+              ? academicCommittedSubjects
+              : effectiveReason.split(/[,;]/).map((s: string) => s.trim()).filter((s: string) => s && !isNonAcademicSubject(s)))
+          : []
+
+        const routed = resolveClassTeachersAndAssignments(t.student?.classId, subjectsForRouting)
+
+        // Merge DB assignments with auto-resolved GVCN & GVBM assignments
+        const mergedAssignments = [...(t.assignments || [])]
+        if (effectiveSupportType === "ACADEMIC") {
+          routed.assignments.forEach((autoAssign: any) => {
+            const alreadyIn = mergedAssignments.some((ma: any) =>
+              ma.teacher?.id === autoAssign.teacher.id &&
+              (ma.role === autoAssign.role || ma.subject?.subjectName === autoAssign.subject?.subjectName)
+            )
+            if (!alreadyIn) {
+              mergedAssignments.push(autoAssign)
+            }
+          })
+        }
+
+        normalizedDbTargets.push({
           ...t,
-          commitmentSubjects: committedSubjects,
-          commitmentNote: committedSubjects.length > 0 
-            ? committedSubjects.join(", ") 
-            : "",
+          supportType: effectiveSupportType,
+          sourceType: effectiveSourceType,
+          reason: effectiveReason,
+          assignments: mergedAssignments,
+          gvcnTeachers: routed.gvcnTeachers,
+          gvbmTeachers: routed.gvbmTeachers,
+          commitmentSubjects: effectiveSupportType === "ACADEMIC" ? academicCommittedSubjects : committedSubjects,
+          allCommitmentSubjects: committedSubjects,
+          commitmentNote: (effectiveSupportType === "ACADEMIC" ? academicCommittedSubjects : committedSubjects).join(", "),
           assessmentDirectorNote: assessment?.directorNote || null,
           hasPsychCommitment
-        };
-      });
+        })
+      }
 
-      return NextResponse.json(targetsWithCommitment)
+      // 3. Auto-generate ACADEMIC targets for all Entrance Commitment students (excluding Tâm lý)
+      //    who do not yet have an ACADEMIC target in LearningSupportTarget, and route to GVCN & GVBM
+      for (const [studentId, info] of Array.from(entranceByStudentId.entries())) {
+        if (info.academicCommittedSubjects.length === 0) continue
+        if (existingAcademicByStudentId.has(studentId)) continue
+
+        const st = info.student
+        const routed = resolveClassTeachersAndAssignments(st.classId, info.academicCommittedSubjects)
+        const primaryCreator = routed.gvbmTeachers[0]
+          ? { id: routed.gvbmTeachers[0].id, teacherName: routed.gvbmTeachers[0].teacherName }
+          : (routed.gvcnTeachers[0] ? { id: routed.gvcnTeachers[0].id, teacherName: routed.gvcnTeachers[0].teacherName } : null)
+
+        normalizedDbTargets.push({
+          id: `admission_acad_${studentId}`,
+          studentId: st.id,
+          academicYearId,
+          supportType: "ACADEMIC",
+          sourceType: "ADMISSION",
+          status: "ĐANG BỒI DƯỠNG",
+          terminationStatus: "ACTIVE",
+          reason: info.academicCommittedSubjects.join(", "),
+          notes: info.assessment?.directorNote || info.assessment?.admissionResult || `Học sinh có Cam kết đầu vào: ${info.academicCommittedSubjects.join(", ")}`,
+          startDate: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          createdById: primaryCreator?.id || null,
+          createdBy: primaryCreator,
+          student: st,
+          assignments: routed.assignments,
+          gvcnTeachers: routed.gvcnTeachers,
+          gvbmTeachers: routed.gvbmTeachers,
+          evaluations: [],
+          commitmentSubjects: info.academicCommittedSubjects,
+          allCommitmentSubjects: info.allCommittedSubjects,
+          commitmentNote: info.academicCommittedSubjects.join(", "),
+          assessmentDirectorNote: info.assessment?.directorNote || null,
+          hasPsychCommitment: info.hasPsychCommitment,
+          isAutoSyncedAdmission: true
+        })
+      }
+
+      // 4. Filter for callerTeacher if request is from a Teacher
+      let finalTargets = normalizedDbTargets
+      if (callerTeacher) {
+        const myHomeroomClassIds = new Set(
+          allClasses
+            .filter(c =>
+              c.homeroomTeacherId === callerTeacher.id ||
+              (c.homeroomTeacherId && c.homeroomTeacherId.split(",").map(s => s.trim()).includes(callerTeacher.id)) ||
+              (c.teachers && c.teachers.some((ta: any) => ta.teacherId === callerTeacher.id))
+            )
+            .map(c => c.id)
+        )
+
+        finalTargets = normalizedDbTargets.filter((t: any) => {
+          if (t.createdById === callerTeacher.id) return true
+          if (t.assignments?.some((a: any) => a.teacherId === callerTeacher.id || a.teacher?.id === callerTeacher.id)) return true
+          if (t.student?.classId && myHomeroomClassIds.has(t.student.classId)) return true
+          return false
+        })
+      }
+
+      return NextResponse.json(finalTargets)
     }
 
     // 3. Action: getAssignments
@@ -285,10 +609,75 @@ export async function GET(req: Request) {
       const periodIds = periods.map(p => p.id)
 
       // Query all active classes for this academic year to strictly resolve class & grade
-      const allClasses = await prisma.class.findMany({
-        where: { academicYearId, status: "ACTIVE" },
-        include: { campus: true }
-      })
+      const [allClasses, allTeachers, allTeachingAssignments] = await Promise.all([
+        prisma.class.findMany({
+          where: { academicYearId, status: "ACTIVE" },
+          include: {
+            campus: true,
+            teachers: { include: { teacher: { select: { id: true, teacherName: true } } } }
+          }
+        }),
+        prisma.teacher.findMany({
+          select: { id: true, teacherName: true }
+        }),
+        prisma.teachingAssignment.findMany({
+          where: { academicYearId },
+          include: {
+            teacher: { select: { id: true, teacherName: true } },
+            subject: { select: { id: true, subjectName: true } }
+          }
+        })
+      ])
+      const teacherByIdMap = new Map(allTeachers.map(t => [t.id, t]))
+
+      const resolveClassSupportTeachers = (cls: any, committedSubjects: string[]) => {
+        if (!cls) return { gvcnName: "", gvcnTeachers: [], gvbmTeachers: [] }
+        const gvcnMap = new Map<string, string>()
+        if (cls.homeroomTeacherId) {
+          cls.homeroomTeacherId.split(",").map((s: string) => s.trim()).filter(Boolean).forEach((tid: string) => {
+            const t = teacherByIdMap.get(tid)
+            if (t) gvcnMap.set(t.id, t.teacherName)
+          })
+        }
+        if (cls.teachers && cls.teachers.length > 0) {
+          cls.teachers.forEach((ta: any) => {
+            if (ta.teacher) gvcnMap.set(ta.teacher.id, ta.teacher.teacherName)
+          })
+        }
+
+        const classTeaching = allTeachingAssignments.filter(ta => ta.classId === cls.id)
+        const gvbmTeachers: Array<{ id: string; teacherName: string; committedSubject: string; subjectName: string }> = []
+
+        committedSubjects.forEach(cSub => {
+          const cLower = cSub.toLowerCase()
+          if (cLower.includes("tâm lý") || cLower.includes("tam ly") || cLower.includes("hướng nghiệp")) return
+          const matched = classTeaching.filter(ta => {
+            const aLower = (ta.subject?.subjectName || "").toLowerCase()
+            if (cLower === "toán" && (aLower.includes("toán") || aLower.includes("toan") || aLower.includes("math"))) return true
+            if (cLower === "tiếng việt" && (aLower.includes("tiếng việt") || aLower.includes("tieng viet") || aLower === "tv")) return true
+            if (cLower === "ngữ văn" && (aLower.includes("ngữ văn") || aLower.includes("ngu van") || aLower === "văn" || aLower.includes("literature"))) return true
+            if (cLower === "tiếng anh" && (aLower.includes("tiếng anh") || aLower.includes("tieng anh") || aLower === "anh" || aLower.includes("english") || aLower.includes("esl") || aLower.includes("ept"))) return true
+            return aLower === cLower
+          })
+          matched.forEach(ta => {
+            if (ta.teacher && !gvbmTeachers.some(g => g.id === ta.teacher.id && g.committedSubject === cSub)) {
+              gvbmTeachers.push({
+                id: ta.teacher.id,
+                teacherName: ta.teacher.teacherName,
+                committedSubject: cSub,
+                subjectName: ta.subject?.subjectName || cSub
+              })
+            }
+          })
+        })
+
+        const gvcnList = Array.from(gvcnMap.entries()).map(([id, teacherName]) => ({ id, teacherName }))
+        return {
+          gvcnName: gvcnList.map(g => g.teacherName).join(", "),
+          gvcnTeachers: gvcnList,
+          gvbmTeachers
+        }
+      }
 
       const inputStudents = await prisma.inputAssessmentStudent.findMany({
         where: {
@@ -495,6 +884,8 @@ export async function GET(req: Request) {
           const resolvedStudentCode = matchingStudent?.studentCode || is.enrollmentCode || is.studentCode || "-"
 
           const committedSubjects = parseCommittedSubjects(is.directorNote, is.admissionResult, resolvedClassName, resolvedGrade)
+          const classFull = resolvedClass ? (allClasses.find(c => c.id === resolvedClass.id) || resolvedClass) : null
+          const teacherInfo = resolveClassSupportTeachers(classFull, committedSubjects)
 
           return {
             id: is.id,
@@ -515,6 +906,9 @@ export async function GET(req: Request) {
             })(),
             campusName: resolvedCampus,
             committedSubjects,
+            gvcnName: teacherInfo.gvcnName,
+            gvcnTeachers: teacherInfo.gvcnTeachers,
+            gvbmTeachers: teacherInfo.gvbmTeachers,
             mathScore: is.mathScore,
             literatureScore: is.literatureScore,
             writtenEnglishScore: is.writtenEnglishScore,
@@ -563,6 +957,8 @@ export async function GET(req: Request) {
           const resolvedStudentCode = matchingStudent?.studentCode || ps.enrollmentCode || ps.studentCode || "-"
 
           const committedSubjects = parseCommittedSubjects(ps.directorNote, ps.admissionResult, resolvedClassName, resolvedGrade)
+          const classFull = resolvedClass ? (allClasses.find(c => c.id === resolvedClass.id) || resolvedClass) : null
+          const teacherInfo = resolveClassSupportTeachers(classFull, committedSubjects)
 
           return {
             id: ps.id,
@@ -577,6 +973,9 @@ export async function GET(req: Request) {
             level: "Mầm non",
             campusName: resolvedCampus,
             committedSubjects,
+            gvcnName: teacherInfo.gvcnName,
+            gvcnTeachers: teacherInfo.gvcnTeachers,
+            gvbmTeachers: teacherInfo.gvbmTeachers,
             mathScore: null,
             literatureScore: null,
             writtenEnglishScore: null,
@@ -703,6 +1102,43 @@ export async function POST(req: Request) {
     const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)
     const isKTDBCL = ["ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole)
 
+    const ensureRealTargetId = async (rawId: string, yearId?: string) => {
+      if (!rawId || !rawId.startsWith("admission_acad_")) return rawId
+      const studentId = rawId.replace("admission_acad_", "")
+      let resolvedYearId = yearId
+      if (!resolvedYearId) {
+        const st = await prisma.student.findUnique({ where: { id: studentId }, select: { academicYearId: true } })
+        resolvedYearId = st?.academicYearId
+      }
+      if (!resolvedYearId) return rawId
+
+      const existing = await prisma.learningSupportTarget.findUnique({
+        where: {
+          studentId_supportType_academicYearId: {
+            studentId,
+            supportType: "ACADEMIC",
+            academicYearId: resolvedYearId
+          }
+        }
+      })
+      if (existing) return existing.id
+
+      const created = await prisma.learningSupportTarget.create({
+        data: {
+          studentId,
+          supportType: "ACADEMIC",
+          sourceType: "ADMISSION",
+          status: "ĐANG BỒI DƯỠNG",
+          terminationStatus: "ACTIVE",
+          reason: body.reason || "Môn cam kết Khảo sát đầu vào",
+          notes: body.notes || "Đồng bộ tự động từ Cam kết Khảo sát đầu vào",
+          academicYearId: resolvedYearId,
+          startDate: new Date()
+        }
+      })
+      return created.id
+    }
+
     // 1. Action: saveConfig
     if (action === "saveConfig") {
       const { id, supportType, code, outcomeLabel, description } = body
@@ -739,9 +1175,10 @@ export async function POST(req: Request) {
     if (action === "terminateShortTermTarget") {
       const { id, outcome, notes } = body
       if (!id) return NextResponse.json({ error: "Thiếu ID học sinh cần kết thúc" }, { status: 400 })
+      const realId = await ensureRealTargetId(id, academicYearId)
 
       const updated = await prisma.learningSupportTarget.update({
-        where: { id },
+        where: { id: realId },
         data: {
           terminationStatus: "TERMINATED",
           status: "ĐÃ HOÀN THÀNH",
@@ -1635,9 +2072,10 @@ export async function POST(req: Request) {
     if (action === "requestTermination") {
       const { id, outcome, notes } = body
       if (!id) return NextResponse.json({ error: "Missing target ID" }, { status: 400 })
+      const realId = await ensureRealTargetId(id, academicYearId)
       
       const updated = await prisma.learningSupportTarget.update({
-        where: { id },
+        where: { id: realId },
         data: {
           terminationStatus: "TERMINATED",
           status: "KẾT THÚC BỒI DƯỠNG",
@@ -1659,10 +2097,11 @@ export async function POST(req: Request) {
 
       const { id, approve, outcome } = body
       if (!id) return NextResponse.json({ error: "Missing target ID" }, { status: 400 })
+      const realId = await ensureRealTargetId(id, academicYearId)
 
       if (approve) {
         const updated = await prisma.learningSupportTarget.update({
-          where: { id },
+          where: { id: realId },
           data: {
             terminationStatus: "TERMINATED",
             status: "KẾT THÚC BỒI DƯỠNG",
@@ -1676,7 +2115,7 @@ export async function POST(req: Request) {
       } else {
         // Reject termination request, return to ACTIVE status
         const updated = await prisma.learningSupportTarget.update({
-          where: { id },
+          where: { id: realId },
           data: {
             terminationStatus: "ACTIVE",
             outcome: null
@@ -1995,10 +2434,11 @@ export async function POST(req: Request) {
 
     // 10. Action: saveEvaluation (Teacher adds weekly/monthly evaluations)
     if (action === "saveEvaluation") {
-      const { id, targetId, periodType, periodName, trackingLevel, comment, updatedStatus } = body
-      if (!targetId || !periodType || !periodName || !trackingLevel || !comment) {
+      const { id, targetId: rawTargetId, periodType, periodName, trackingLevel, comment, updatedStatus } = body
+      if (!rawTargetId || !periodType || !periodName || !trackingLevel || !comment) {
         return NextResponse.json({ error: "Missing evaluation fields" }, { status: 400 })
       }
+      const targetId = await ensureRealTargetId(rawTargetId, academicYearId)
 
       if (id) {
         const updated = await prisma.learningSupportEvaluation.update({

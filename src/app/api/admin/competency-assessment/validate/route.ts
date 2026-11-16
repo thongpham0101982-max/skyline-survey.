@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import {
   resolveSubjectMatch,
+  resolveCompetencySubject,
   resolveCompetencyMatch,
   calculateCompetencyScore,
 } from "@/lib/competency-service";
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const [students, subjects, subjectAliases, competencies, compAliases, existingAssessments] =
+    const [students, subjects, subjectAliases, catalogItems, competencies, compAliases, existingAssessments] =
       await Promise.all([
         prisma.student.findMany({
           select: { id: true, studentCode: true, studentName: true, academicYearId: true },
@@ -61,6 +62,11 @@ export async function POST(req: NextRequest) {
         prisma.subjectAlias.findMany({
           select: { id: true, subjectId: true, normalizedKey: true },
         }),
+        prisma.competencySubjectCatalog
+          .findMany({
+            select: { dgnlCode: true, dgnlName: true, subjectId: true, isActive: true },
+          })
+          .catch(() => []),
         prisma.subjectCompetency.findMany({
           select: { id: true, subjectId: true, code: true, name: true, displayOrder: true, weight: true },
         }),
@@ -100,7 +106,12 @@ export async function POST(req: NextRequest) {
       const rawCode = getColVal(r, "studentCode");
       const rawName = getColVal(r, "studentName");
       const rawClass = getColVal(r, "className");
-      const rawSub = getColVal(r, "subjectName");
+      const rawSubCode = getColVal(r, "subjectCode");
+      const rawSubName = getColVal(r, "subjectName");
+      const rawSub =
+        rawSubCode && rawSubName && rawSubCode.toLowerCase() !== rawSubName.toLowerCase()
+          ? `${rawSubCode} - ${rawSubName}`
+          : rawSubCode || rawSubName;
       const rawComp = getColVal(r, "competencyName");
       const rawAchieved = getColVal(r, "achievedScore");
       const rawMax = getColVal(r, "maxScore");
@@ -122,12 +133,12 @@ export async function POST(req: NextRequest) {
       }
 
       let subjectId: string | null = null;
-      if (!rawSub) {
-        errors.push("Thiếu tên môn học");
+      if (!rawSubCode && !rawSubName) {
+        errors.push("Thiếu mã môn ĐGNL hoặc tên môn học");
       } else {
-        subjectId = resolveSubjectMatch(rawSub, subjects, subjectAliases);
+        subjectId = resolveCompetencySubject(rawSubCode, rawSubName, subjects, subjectAliases, catalogItems);
         if (!subjectId) {
-          errors.push('Môn học "' + rawSub + '" chưa được cấu hình hoặc chưa có alias');
+          errors.push('Môn học "' + rawSub + '" chưa được cấu hình mã ĐGNL hoặc chưa có alias');
         }
       }
 

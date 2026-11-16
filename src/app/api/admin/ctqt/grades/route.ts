@@ -102,6 +102,20 @@ export async function GET(req: Request) {
   }
 }
 
+function toNullableFloat(val: any): number | null {
+  if (val === undefined || val === null || String(val).trim() === "") return null;
+  const num = Number(val);
+  return Number.isFinite(num) ? num : null;
+}
+
+function normalizeReviewStatus(raw?: string | null): string | undefined {
+  if (!raw) return undefined;
+  const upper = String(raw).trim().toUpperCase();
+  if (upper === "SUBMITTED") return "PENDING_REVIEW";
+  if (upper === "REVISION_REQUESTED") return "CHANGES_REQUESTED";
+  return upper;
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -116,52 +130,74 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Thiếu thông tin bắt buộc" }, { status: 400 });
     }
 
+    const semInt = parseInt(String(semester), 10);
+
     // Save grades
     if (Array.isArray(grades) && grades.length > 0) {
-      await prisma.$transaction(
-        grades.map((g: any) =>
-          prisma.ctqtGradeEntry.upsert({
-            where: {
-              academicYearId_semester_classId_studentId_subjectCode: {
+      const englishNameUpdates = grades
+        .filter((g: any) => g.studentId && g.englishName !== undefined)
+        .map((g: any) =>
+          prisma.student.update({
+            where: { id: g.studentId },
+            data: {
+              englishName: g.englishName && String(g.englishName).trim() !== "" ? String(g.englishName).trim() : null,
+            },
+          })
+        );
+
+      await prisma.$transaction([
+        ...englishNameUpdates,
+        ...grades
+          .filter((g: any) => Boolean(g.studentId && g.subjectCode))
+          .map((g: any) => {
+            const resolvedStatus = normalizeReviewStatus(g.reviewStatus || g.status);
+            const midTermScore = toNullableFloat(g.midTermScore);
+            const endTermScore = toNullableFloat(g.endTermScore);
+            const gpaScore = toNullableFloat(g.gpaScore);
+            const ieltsScore = toNullableFloat(g.ieltsScore);
+
+            return prisma.ctqtGradeEntry.upsert({
+              where: {
+                academicYearId_semester_classId_studentId_subjectCode: {
+                  academicYearId,
+                  semester: semInt,
+                  classId,
+                  studentId: g.studentId,
+                  subjectCode: g.subjectCode,
+                },
+              },
+              update: {
+                progressScores: g.progressScores || null,
+                midTermScore,
+                endTermScore,
+                gpaScore,
+                assessmentContentEn: g.assessmentContentEn || null,
+                assessmentContentVi: g.assessmentContentVi || null,
+                ieltsScore,
+                commentEn: g.commentEn || null,
+                commentVi: g.commentVi || null,
+                ...(resolvedStatus ? { reviewStatus: resolvedStatus } : {}),
+              },
+              create: {
                 academicYearId,
-                semester: parseInt(semester, 10),
+                semester: semInt,
                 classId,
                 studentId: g.studentId,
                 subjectCode: g.subjectCode,
+                progressScores: g.progressScores || null,
+                midTermScore,
+                endTermScore,
+                gpaScore,
+                assessmentContentEn: g.assessmentContentEn || null,
+                assessmentContentVi: g.assessmentContentVi || null,
+                ieltsScore,
+                commentEn: g.commentEn || null,
+                commentVi: g.commentVi || null,
+                reviewStatus: resolvedStatus || "DRAFT",
               },
-            },
-            update: {
-              progressScores: g.progressScores || null,
-              midTermScore: g.midTermScore !== undefined && g.midTermScore !== null ? parseFloat(g.midTermScore) : null,
-              endTermScore: g.endTermScore !== undefined && g.endTermScore !== null ? parseFloat(g.endTermScore) : null,
-              gpaScore: g.gpaScore !== undefined && g.gpaScore !== null ? parseFloat(g.gpaScore) : null,
-              assessmentContentEn: g.assessmentContentEn || null,
-              assessmentContentVi: g.assessmentContentVi || null,
-              ieltsScore: g.ieltsScore !== undefined && g.ieltsScore !== null ? parseFloat(g.ieltsScore) : null,
-              commentEn: g.commentEn || null,
-              commentVi: g.commentVi || null,
-              ...(g.reviewStatus ? { reviewStatus: g.reviewStatus } : {}),
-            },
-            create: {
-              academicYearId,
-              semester: parseInt(semester, 10),
-              classId,
-              studentId: g.studentId,
-              subjectCode: g.subjectCode,
-              progressScores: g.progressScores || null,
-              midTermScore: g.midTermScore !== undefined && g.midTermScore !== null ? parseFloat(g.midTermScore) : null,
-              endTermScore: g.endTermScore !== undefined && g.endTermScore !== null ? parseFloat(g.endTermScore) : null,
-              gpaScore: g.gpaScore !== undefined && g.gpaScore !== null ? parseFloat(g.gpaScore) : null,
-              assessmentContentEn: g.assessmentContentEn || null,
-              assessmentContentVi: g.assessmentContentVi || null,
-              ieltsScore: g.ieltsScore !== undefined && g.ieltsScore !== null ? parseFloat(g.ieltsScore) : null,
-              commentEn: g.commentEn || null,
-              commentVi: g.commentVi || null,
-              reviewStatus: g.reviewStatus || "DRAFT",
-            },
-          })
-        )
-      );
+            });
+          }),
+      ]);
     }
 
     // Save competencies

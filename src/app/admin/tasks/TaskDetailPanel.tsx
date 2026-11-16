@@ -32,6 +32,7 @@ import {
   RotateCcw,
   Plus,
   ExternalLink,
+  Mail,
 } from "lucide-react"
 import {
   getTaskDetails,
@@ -41,11 +42,13 @@ import {
   deleteTaskAttachment,
   updateCommentActionStatus,
 } from "./collab_actions"
-import { confirmTaskAssignment, rejectTaskAssignment } from "./actions"
 import {
   getTaskFullGovernanceDetails,
   transitionTaskWorkflow,
   toggleTaskChecklistStep,
+  confirmAndAcceptQaTask,
+  rejectOrFeedbackQaTask,
+  resendQaTaskAssignmentEmail,
 } from "./qa_workspace_actions"
 import {
   WORKFLOW_STATUS_LABELS,
@@ -126,6 +129,8 @@ interface TaskDetailPanelProps {
   currentUserId: string
   isAdmin: boolean
   allStaffUsers?: any[]
+  initialTab?: string | null
+  initialAction?: string | null
   onClose: () => void
   onTaskUpdated?: () => void
 }
@@ -135,12 +140,22 @@ export function TaskDetailPanel({
   currentUserId,
   isAdmin,
   allStaffUsers = [],
+  initialTab = null,
+  initialAction = null,
   onClose,
   onTaskUpdated,
 }: TaskDetailPanelProps) {
   const [tab, setTab] = useState<
     "roadmap" | "review" | "comments" | "attachments" | "history"
-  >("roadmap")
+  >(() => {
+    if (
+      initialTab &&
+      ["roadmap", "review", "comments", "attachments", "history"].includes(initialTab)
+    ) {
+      return initialTab as any
+    }
+    return "roadmap"
+  })
 
   // Governance state loaded from server
   const [qaMeta, setQaMeta] = useState<any>(task.qaMeta || null)
@@ -198,15 +213,21 @@ export function TaskDetailPanel({
   const [uploading, setUploading] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [rejecting, setRejecting] = useState(false)
+  const [resendingEmail, setResendingEmail] = useState(false)
   const [rejectReasonInput, setRejectReasonInput] = useState("")
   const [showRejectForm, setShowRejectForm] = useState(false)
+  const [acceptanceState, setAcceptanceState] = useState<string>(
+    task.acceptanceStatus || "WAITING_CONFIRMATION"
+  )
 
   const commentsEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const acceptanceStatus = task.acceptanceStatus || "WAITING_CONFIRMATION"
-  const isAssignee = task.assignedToUserId === currentUserId
+  const isAssignee =
+    task.assignedToUserId === currentUserId ||
+    (Array.isArray(qaMeta?.collaboratorUserIds) &&
+      qaMeta.collaboratorUserIds.includes(currentUserId))
   const isReviewerOrManager =
     isAdmin ||
     task.assignedById === currentUserId ||
@@ -215,8 +236,15 @@ export function TaskDetailPanel({
     task.taskGroup?.leaderUserId === currentUserId
 
   useEffect(() => {
+    setAcceptanceState(task.acceptanceStatus || "WAITING_CONFIRMATION")
+    if (
+      initialTab &&
+      ["roadmap", "review", "comments", "attachments", "history"].includes(initialTab)
+    ) {
+      setTab(initialTab as any)
+    }
     loadAllDetails()
-  }, [task.id])
+  }, [task.id, initialTab])
 
   const loadAllDetails = async () => {
     setLoading(true)
@@ -255,11 +283,11 @@ export function TaskDetailPanel({
     setWorkflowMsg(null)
     setTransitioning(true)
     try {
-      const res = await transitionTaskWorkflow(task.id, {
+      const res: any = await transitionTaskWorkflow(task.id, {
         toStatus,
         reason: extraReason || undefined,
         resultSummary: resultSummaryInput,
-        evidenceLinks: evidenceLinksInput,
+        evidenceLinks: evidenceLinksInput as any,
         reviewComment: reviewCommentInput || extraReason,
         reviewRating:
           toStatus === "COMPLETED"
@@ -275,9 +303,20 @@ export function TaskDetailPanel({
           text: res.error || "Không thể chuyển trạng thái nhiệm vụ.",
         })
       } else {
+        if (
+          toStatus === "IN_PROGRESS" ||
+          toStatus === "PENDING_REVIEW" ||
+          toStatus === "COMPLETED"
+        ) {
+          setAcceptanceState("ACCEPTED")
+        }
+        const emailNote =
+          res.emailsSentCount && res.emailsSentCount > 0
+            ? ` (Đã gửi ${res.emailsSentCount} email thông báo)`
+            : ""
         setWorkflowMsg({
           type: "success",
-          text: `Đã cập nhật trạng thái sang "${WORKFLOW_STATUS_LABELS[toStatus]}"!`,
+          text: `Đã cập nhật trạng thái sang "${WORKFLOW_STATUS_LABELS[toStatus]}"${emailNote}.`,
         })
         setReasonModal(null)
         setReasonText("")
@@ -315,30 +354,84 @@ export function TaskDetailPanel({
   }
 
   const handleConfirmTask = async () => {
+    setWorkflowMsg(null)
     setConfirming(true)
-    const res = await confirmTaskAssignment(task.id)
-    setConfirming(false)
-    if (res.success) {
-      await handleTransition("IN_PROGRESS", "Đã xác nhận nhận việc và bắt đầu thực hiện")
-    } else {
-      alert(res.error)
+    try {
+      const res: any = await confirmAndAcceptQaTask(task.id)
+      if (res.success) {
+        setAcceptanceState("ACCEPTED")
+        setWorkflowMsg({
+          type: "success",
+          text: `Đã xác nhận tiếp nhận nhiệm vụ và chuyển sang Đang thực hiện${
+            res.emailsSentCount ? ` (Đã báo email cho người giao việc)` : ""
+          }.`,
+        })
+        await loadAllDetails()
+        if (onTaskUpdated) onTaskUpdated()
+      } else {
+        setWorkflowMsg({
+          type: "error",
+          text: res.error || "Không thể xác nhận tiếp nhận công việc.",
+        })
+      }
+    } finally {
+      setConfirming(false)
     }
   }
 
   const handleRejectTask = async () => {
     if (!rejectReasonInput.trim()) {
-      alert("Vui lòng nhập lý do hoặc ý kiến phản hồi")
+      setWorkflowMsg({
+        type: "error",
+        text: "Vui lòng nhập lý do hoặc ý kiến đề xuất điều chỉnh.",
+      })
       return
     }
     setRejecting(true)
-    const res = await rejectTaskAssignment(task.id, rejectReasonInput)
-    setRejecting(false)
-    if (res.success) {
-      setShowRejectForm(false)
-      if (onTaskUpdated) onTaskUpdated()
-      onClose()
-    } else {
-      alert(res.error)
+    try {
+      const res: any = await rejectOrFeedbackQaTask(task.id, rejectReasonInput)
+      if (res.success) {
+        setAcceptanceState("REJECTED")
+        setShowRejectForm(false)
+        setWorkflowMsg({
+          type: "success",
+          text: "Đã gửi phản hồi nhận việc và thông báo qua email đến người giao việc.",
+        })
+        await loadAllDetails()
+        if (onTaskUpdated) onTaskUpdated()
+      } else {
+        setWorkflowMsg({
+          type: "error",
+          text: res.error || "Không thể gửi phản hồi.",
+        })
+      }
+    } finally {
+      setRejecting(false)
+    }
+  }
+
+  const handleResendEmail = async () => {
+    setWorkflowMsg(null)
+    setResendingEmail(true)
+    try {
+      const res: any = await resendQaTaskAssignmentEmail(task.id)
+      if (res.success) {
+        setWorkflowMsg({
+          type: "success",
+          text:
+            res.sentCount > 0
+              ? `Đã gửi email thông báo & yêu cầu xác nhận đến ${res.sentCount} thành viên liên quan.`
+              : "Không tìm thấy địa chỉ email hợp lệ của thành viên để gửi.",
+        })
+        await loadAllDetails()
+      } else {
+        setWorkflowMsg({
+          type: "error",
+          text: res.error || "Lỗi gửi lại email thông báo.",
+        })
+      }
+    } finally {
+      setResendingEmail(false)
     }
   }
 
@@ -374,7 +467,7 @@ export function TaskDetailPanel({
     commentId: string,
     currentStatus: string | null
   ) => {
-    const nextStatus = currentStatus === "RESOLVED" ? "OPEN" : "RESOLVED"
+    const nextStatus = currentStatus === "RESOLVED" ? "PENDING" : "RESOLVED"
     const res = await updateCommentActionStatus(commentId, nextStatus)
     if (res.success) {
       setComments(prev =>
@@ -405,12 +498,13 @@ export function TaskDetailPanel({
     const reader = new FileReader()
     reader.onload = async event => {
       const base64 = event.target?.result as string
-      const res = await addTaskAttachment(task.id, {
-        fileName: file.name,
-        fileSize: file.size,
-        contentType: file.type || "application/octet-stream",
-        fileData: base64,
-      })
+      const res = await addTaskAttachment(
+        task.id,
+        file.name,
+        base64,
+        file.size,
+        file.type || "application/octet-stream"
+      )
       if (res.success && res.attachment) {
         setAttachments(prev => [res.attachment, ...prev])
       } else {
@@ -443,28 +537,33 @@ export function TaskDetailPanel({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-xs">
       <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col z-10 border-l border-slate-200 animate-in slide-in-from-right duration-200">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 bg-slate-900 text-white">
+        {/* Header — Sky-Line Deep Pine (#003B3A) */}
+        <div className="px-6 py-4 border-b border-[#003B3A] bg-[#003B3A] text-white">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-teal-500/30 text-teal-700 border border-teal-400/30">
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-white/12 text-[#CCFBF1] border border-white/20">
                   {task.category}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-slate-200">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white/10 text-teal-100 tabular-nums">
                   Phiên bản v{qaMeta?.version || 1}
                 </span>
+                {acceptanceState === "ACCEPTED" && (
+                  <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-[#059669]/30 text-[#A7F3D0] border border-[#059669]/50">
+                    Đã xác nhận nhận việc
+                  </span>
+                )}
                 {deadlineInfo?.isOverdue && (
                   <span
-                    className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                    className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
                       deadlineInfo.code === "OVERDUE_REVIEW"
-                        ? "bg-amber-500 text-slate-950"
-                        : "bg-rose-600 text-white"
+                        ? "bg-[#D97706] text-white"
+                        : "bg-[#E11D48] text-white"
                     }`}
                   >
                     {deadlineInfo.code === "OVERDUE_REVIEW"
-                      ? `CHẬM DUYỆT: ${deadlineInfo.label}`
-                      : `CHẬM THỰC HIỆN: ${deadlineInfo.label}`}
+                      ? `Chậm duyệt: ${deadlineInfo.label}`
+                      : `Chậm thực hiện: ${deadlineInfo.label}`}
                   </span>
                 )}
               </div>
@@ -472,17 +571,31 @@ export function TaskDetailPanel({
                 {task.title}
               </h3>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 text-slate-300 hover:text-white rounded-xl bg-white/10 hover:bg-white/20 cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isReviewerOrManager && currentWfStatus !== "DRAFT" && (
+                <button
+                  type="button"
+                  disabled={resendingEmail}
+                  onClick={handleResendEmail}
+                  title="Gửi email thông báo & yêu cầu xác nhận đến các thành viên liên quan"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white/12 hover:bg-white/20 text-[#CCFBF1] text-[11px] font-semibold border border-white/15 cursor-pointer disabled:opacity-50"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>{resendingEmail ? "Đang gửi..." : "Báo mail"}</span>
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 text-teal-100 hover:text-white rounded-xl bg-white/10 hover:bg-white/20 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Thanh trạng thái Luồng chính: Nháp → Đã giao → Đang thực hiện → Chờ duyệt → Hoàn thành */}
-          <div className="mt-3 pt-3 border-t border-slate-800">
-            <div className="flex items-center justify-between gap-1 text-[10px] font-bold">
+          <div className="mt-3 pt-3 border-t border-white/15">
+            <div className="flex items-center justify-between gap-1 text-[11px] font-semibold tabular-nums">
               {WORKFLOW_PIPELINE.map((st, idx) => {
                 const isActive = currentWfStatus === st
                 const currentIdx = WORKFLOW_PIPELINE.indexOf(currentWfStatus)
@@ -492,17 +605,17 @@ export function TaskDetailPanel({
                     <div
                       className={`px-2 py-1 rounded-lg flex items-center gap-1 ${
                         isActive
-                          ? "bg-teal-500 text-white ring-2 ring-violet-400"
+                          ? "bg-[#00A19A] text-white ring-2 ring-[#5EEAD4]"
                           : isPassed
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : "bg-slate-800 text-slate-400"
+                          ? "bg-[#059669]/30 text-[#A7F3D0]"
+                          : "bg-white/10 text-teal-100/75"
                       }`}
                     >
                       <span>{idx + 1}.</span>
                       <span>{WORKFLOW_STATUS_LABELS[st]}</span>
                     </div>
                     {idx < WORKFLOW_PIPELINE.length - 1 && (
-                      <ArrowRight className="w-3 h-3 text-slate-600 shrink-0" />
+                      <ArrowRight className="w-3 h-3 text-teal-200/50 shrink-0" />
                     )}
                   </React.Fragment>
                 )
@@ -511,7 +624,7 @@ export function TaskDetailPanel({
             {(currentWfStatus === "NEEDS_REVISION" ||
               currentWfStatus === "PAUSED" ||
               currentWfStatus === "CANCELLED") && (
-              <div className="mt-2 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-200 text-xs font-bold flex items-center justify-between">
+              <div className="mt-2 px-3 py-1.5 rounded-lg bg-[#D97706]/25 border border-[#FBBF24]/40 text-amber-100 text-xs font-semibold flex items-center justify-between">
                 <span>
                   Trạng thái đặc biệt: {WORKFLOW_STATUS_LABELS[currentWfStatus]}
                 </span>
@@ -525,7 +638,7 @@ export function TaskDetailPanel({
           </div>
         </div>
 
-        {/* Thông báo kết quả chuyển trạng thái / xung đột phiên bản */}
+        {/* Thông báo kết quả chuyển trạng thái / gửi email / xung đột phiên bản */}
         {workflowMsg && (
           <div
             className={`px-6 py-2.5 text-xs font-bold flex items-center justify-between ${
@@ -545,17 +658,130 @@ export function TaskDetailPanel({
           </div>
         )}
 
-        {/* Thanh hành động điều khiển luồng nhanh */}
-        <div className="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        {/* BANNER XÁC NHẬN TIẾP NHẬN CÔNG VIỆC (KHI MỚI GIAO HOẶC BẤM TỪ EMAIL) */}
+        {acceptanceState === "WAITING_CONFIRMATION" &&
+          currentWfStatus !== "DRAFT" &&
+          currentWfStatus !== "COMPLETED" &&
+          currentWfStatus !== "CANCELLED" && (
+            <div
+              className={`px-6 py-3.5 border-b space-y-2.5 ${
+                initialAction === "confirm"
+                  ? "bg-[#F0FDFA] border-[#00A19A]/40"
+                  : "bg-[#F0FDFA]/80 border-[#CCFBF1]"
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs text-[#003B3A]">
+                  <div className="font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#00A19A] shrink-0" />
+                    <span>Yêu cầu xác nhận tiếp nhận nhiệm vụ</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    Vui lòng xác nhận nhận việc để bắt đầu thực hiện, hoặc gửi ý kiến phản hồi nếu cần điều chỉnh phạm vi / thời hạn.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    disabled={confirming}
+                    onClick={handleConfirmTask}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#004D47] text-white text-xs font-bold shadow-2xs cursor-pointer disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                    <span>
+                      {confirming ? "Đang xác nhận..." : "Xác nhận nhận việc & Thực hiện"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowRejectForm(prev => !prev)}
+                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-[#CBD5E1] bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer"
+                  >
+                    <span>Phản hồi / Đề xuất</span>
+                  </button>
+                </div>
+              </div>
+
+              {showRejectForm && (
+                <div className="pt-2 border-t border-[#CCFBF1] space-y-2">
+                  <textarea
+                    rows={2}
+                    value={rejectReasonInput}
+                    onChange={e => setRejectReasonInput(e.target.value)}
+                    placeholder="Nhập lý do chưa thể nhận việc hoặc nội dung đề xuất điều chỉnh để gửi email báo lại người giao..."
+                    className="w-full p-2.5 rounded-xl border border-slate-300 bg-white text-xs focus:border-[#00A19A] focus:outline-none"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowRejectForm(false)}
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-600 cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      disabled={rejecting || !rejectReasonInput.trim()}
+                      onClick={handleRejectTask}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#E11D48] hover:bg-rose-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+                    >
+                      {rejecting ? "Đang gửi..." : "Gửi phản hồi qua email"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        {/* BANNER KHI THÀNH VIÊN ĐÃ GỬI PHẢN HỒI / ĐỀ XUẤT ĐIỀU CHỈNH */}
+        {acceptanceState === "REJECTED" && currentWfStatus !== "COMPLETED" && (
+          <div className="px-6 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="text-amber-900">
+              <span className="font-bold">Phản hồi nhận việc từ thành viên: </span>
+              <span>{task.rejectionReason || qaMeta?.statusReason || "Cần trao đổi lại"}</span>
+            </div>
+            <button
+              type="button"
+              disabled={confirming}
+              onClick={handleConfirmTask}
+              className="px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#004D47] text-white font-bold cursor-pointer"
+            >
+              Xác nhận nhận việc ngay
+            </button>
+          </div>
+        )}
+
+        {/* Thanh hành động điều khiển luồng thực hiện & xác nhận hoàn thành tiến độ */}
+        <div className="px-6 py-2.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
-            {(currentWfStatus === "DRAFT" || currentWfStatus === "ASSIGNED") && (
+            {currentWfStatus === "DRAFT" && isReviewerOrManager && (
               <button
                 type="button"
                 disabled={transitioning}
-                onClick={() => handleTransition("IN_PROGRESS")}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold cursor-pointer"
+                onClick={() => handleTransition("ASSIGNED")}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#004D47] text-white text-xs font-bold cursor-pointer"
               >
-                <Play className="w-3.5 h-3.5" /> Bắt đầu thực hiện
+                <Send className="w-3.5 h-3.5" /> Phát hành & Báo mail giao việc
+              </button>
+            )}
+
+            {currentWfStatus === "ASSIGNED" && (
+              <button
+                type="button"
+                disabled={transitioning || confirming}
+                onClick={
+                  acceptanceState === "WAITING_CONFIRMATION"
+                    ? handleConfirmTask
+                    : () => handleTransition("IN_PROGRESS")
+                }
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-bold cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5" />
+                <span>
+                  {acceptanceState === "WAITING_CONFIRMATION"
+                    ? "Xác nhận & Bắt đầu thực hiện"
+                    : "Bắt đầu thực hiện"}
+                </span>
               </button>
             )}
 
@@ -569,18 +795,18 @@ export function TaskDetailPanel({
                     setTab("review")
                     handleTransition("PENDING_REVIEW")
                   }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-500 text-white text-xs font-bold cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-bold cursor-pointer"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5" /> Gửi duyệt kết quả
+                  <ShieldCheck className="w-3.5 h-3.5" /> Báo cáo hoàn thành & Gửi duyệt
                 </button>
                 {qaMeta?.requiresApproval === false && (
                   <button
                     type="button"
                     disabled={transitioning}
                     onClick={() => handleTransition("COMPLETED")}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#059669] hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Hoàn thành (Không cần duyệt)
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Xác nhận hoàn thành tiến độ
                   </button>
                 )}
               </>
@@ -592,9 +818,9 @@ export function TaskDetailPanel({
                   type="button"
                   disabled={transitioning}
                   onClick={() => handleTransition("COMPLETED")}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#059669] hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Duyệt hoàn thành
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Xác nhận hoàn thành (Nghiệm thu)
                 </button>
                 <button
                   type="button"
@@ -605,9 +831,9 @@ export function TaskDetailPanel({
                       title: "Yêu cầu bổ sung / chỉnh sửa kết quả",
                     })
                   }
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#D97706] hover:bg-amber-700 text-white text-xs font-bold cursor-pointer"
                 >
-                  <AlertTriangle className="w-3.5 h-3.5" /> Cần bổ sung
+                  <AlertTriangle className="w-3.5 h-3.5" /> Yêu cầu bổ sung
                 </button>
               </>
             )}
@@ -643,7 +869,7 @@ export function TaskDetailPanel({
                     title: "Mở lại nhiệm vụ (Bắt buộc nhập lý do)",
                   })
                 }
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-teal-200 bg-teal-50 hover:bg-teal-50 text-teal-800 text-xs font-bold cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-teal-200 bg-[#F0FDFA] hover:bg-[#CCFBF1]/60 text-[#00736E] text-xs font-bold cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" /> Mở lại nhiệm vụ
               </button>
@@ -658,7 +884,7 @@ export function TaskDetailPanel({
                     title: "Hủy nhiệm vụ (Bắt buộc nhập lý do)",
                   })
                 }
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-[#E11D48] text-xs font-semibold cursor-pointer"
               >
                 <XCircle className="w-3.5 h-3.5" /> Hủy
               </button>
@@ -988,14 +1214,36 @@ export function TaskDetailPanel({
                   )}
                 </div>
 
-                <div className="flex justify-end pt-2">
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+                  {qaMeta?.requiresApproval === false && (
+                    <button
+                      type="button"
+                      disabled={transitioning}
+                      onClick={() => {
+                        if (newEvidenceUrl.trim()) {
+                          setEvidenceLinksInput(prev => [...prev, newEvidenceUrl.trim()])
+                          setNewEvidenceUrl("")
+                        }
+                        handleTransition("COMPLETED")
+                      }}
+                      className="px-4 py-2 rounded-xl bg-[#059669] hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer disabled:opacity-50"
+                    >
+                      Lưu kết quả & Xác nhận hoàn thành tiến độ
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={transitioning}
-                    onClick={() => handleTransition("PENDING_REVIEW")}
-                    className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-500 text-white text-xs font-extrabold cursor-pointer"
+                    onClick={() => {
+                      if (newEvidenceUrl.trim()) {
+                        setEvidenceLinksInput(prev => [...prev, newEvidenceUrl.trim()])
+                        setNewEvidenceUrl("")
+                      }
+                      handleTransition("PENDING_REVIEW")
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#004D47] text-white text-xs font-bold cursor-pointer disabled:opacity-50"
                   >
-                    Lưu kết quả & Gửi Chờ duyệt
+                    Lưu kết quả & Gửi duyệt hoàn thành (Báo mail)
                   </button>
                 </div>
               </div>

@@ -3,10 +3,13 @@ import { ensureTimetableSchema } from "./schemaInit"
 import {
   buildDefaultPeriodTimes,
   doesClassBelongToScope,
+  extractGradeNumber,
   formatCampusDisplayName,
   getAllowedLevelOptionsForScope,
   getValidScopesAndCampuses,
   normalizeGradeCode,
+  resolveClassStudyProgram,
+  sortClassesByGradeAndSystem,
   WORKING_DAYS_DEFAULT,
 } from "./scopeResolver"
 import { resolvePeriodWindow, type ExternalActiveSlot, type RoomInput, type TravelRuleInput, type BusySlotInput } from "./validator"
@@ -445,10 +448,12 @@ export async function loadScopedWorkspaceContext(
   }
 
   const campusAllScopeClasses = selectedCampusObj
-    ? allYearClasses.filter(
-        (c) =>
-          c.campusId === selectedCampusId &&
-          doesClassBelongToScope(c, selectedCampusObj, selectedScopeGroup, "ALL")
+    ? sortClassesByGradeAndSystem(
+        allYearClasses.filter(
+          (c) =>
+            c.campusId === selectedCampusId &&
+            doesClassBelongToScope(c, selectedCampusObj, selectedScopeGroup, "ALL")
+        )
       )
     : []
 
@@ -460,14 +465,45 @@ export async function loadScopedWorkspaceContext(
 
   // Strict scope class filtering — ZERO fallback to out-of-scope classes!
   const levelFilteredClasses = selectedCampusObj
-    ? campusAllScopeClasses.filter((c) =>
-        doesClassBelongToScope(c, selectedCampusObj, selectedScopeGroup, selectedLevelCode)
+    ? sortClassesByGradeAndSystem(
+        campusAllScopeClasses.filter((c) =>
+          doesClassBelongToScope(c, selectedCampusObj, selectedScopeGroup, selectedLevelCode)
+        )
       )
     : []
 
+  const programCounts = new Map<"Hệ S" | "Hệ I", number>()
+  for (const c of levelFilteredClasses) {
+    const sp = resolveClassStudyProgram(c)
+    programCounts.set(sp, (programCounts.get(sp) || 0) + 1)
+  }
+  const availableStudyPrograms: Array<{ code: "Hệ S" | "Hệ I"; count: number }> = []
+  if ((programCounts.get("Hệ S") || 0) > 0) {
+    availableStudyPrograms.push({ code: "Hệ S", count: programCounts.get("Hệ S")! })
+  }
+  if ((programCounts.get("Hệ I") || 0) > 0) {
+    availableStudyPrograms.push({ code: "Hệ I", count: programCounts.get("Hệ I")! })
+  }
+
+  const selectedStudyProgram: "ALL" | "Hệ S" | "Hệ I" =
+    (filters.studyProgram === "Hệ S" || filters.studyProgram === "Hệ I") &&
+    availableStudyPrograms.some((p) => p.code === filters.studyProgram)
+      ? filters.studyProgram
+      : "ALL"
+
+  const programFilteredClasses =
+    selectedStudyProgram === "ALL"
+      ? levelFilteredClasses
+      : levelFilteredClasses.filter((c) => resolveClassStudyProgram(c) === selectedStudyProgram)
+
   const availableGrades = Array.from(
-    new Set(levelFilteredClasses.map((c) => c.grade).filter(Boolean))
-  )
+    new Set(programFilteredClasses.map((c) => c.grade).filter(Boolean))
+  ).sort((a, b) => {
+    const na = extractGradeNumber(a) ?? 999
+    const nb = extractGradeNumber(b) ?? 999
+    if (na !== nb) return na - nb
+    return String(a).localeCompare(String(b), "vi", { numeric: true })
+  })
 
   const selectedGrade =
     filters.grade && filters.grade !== "ALL" && availableGrades.includes(filters.grade)
@@ -476,8 +512,8 @@ export async function loadScopedWorkspaceContext(
 
   const gradeFilteredClasses =
     selectedGrade === "ALL"
-      ? levelFilteredClasses
-      : levelFilteredClasses.filter((c) => c.grade === selectedGrade)
+      ? programFilteredClasses
+      : programFilteredClasses.filter((c) => c.grade === selectedGrade)
 
   const selectedClassId =
     filters.classId &&
@@ -654,6 +690,8 @@ export async function loadScopedWorkspaceContext(
     selectedCampusId,
     levelOptions,
     selectedLevelCode,
+    availableStudyPrograms,
+    selectedStudyProgram,
     availableGrades,
     selectedGrade,
     selectedClassId,

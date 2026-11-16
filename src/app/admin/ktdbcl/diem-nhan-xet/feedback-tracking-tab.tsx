@@ -575,20 +575,20 @@ export function FeedbackTrackingTab({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-100/75 text-slate-600 border-b border-slate-200 font-bold uppercase text-[11px]">
-                  <th className="py-3 px-4">Cơ sở</th>
-                  <th className="py-3 px-3 text-center">Số Lớp</th>
-                  <th className="py-3 px-3 text-center">Tổng Học Sinh</th>
-                  <th className="py-3 px-4 text-center">PHHS Phản Hồi</th>
-                  <th className="py-3 px-4 text-center">GVCN Đã Nhận Xét</th>
-                  <th className="py-3 px-4 text-center">Chuyển Tiếp GVBM</th>
-                  <th className="py-3 px-4 text-center">GVBM Đã Phản Hồi</th>
-                  <th className="py-3 px-4 text-center">Tỷ Lệ Xử Lý</th>
-                  <th className="py-3 px-4 text-right">Thao Tác</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3 px-4 font-semibold">Cơ sở</th>
+                  <th className="py-3 px-3 text-center font-semibold">Số Lớp</th>
+                  <th className="py-3 px-3 text-center font-semibold">Tổng Học Sinh</th>
+                  <th className="py-3 px-4 text-center font-semibold">PHHS Phản Hồi</th>
+                  <th className="py-3 px-4 text-center font-semibold">GVCN Đã Nhận Xét</th>
+                  <th className="py-3 px-4 text-center font-semibold">Chuyển Tiếp GVBM</th>
+                  <th className="py-3 px-4 text-center font-semibold">GVBM Đã Phản Hồi</th>
+                  <th className="py-3 px-4 text-center font-semibold">Tỷ Lệ Xử Lý</th>
+                  <th className="py-3 px-4 text-right font-semibold">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {data.byCampus.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-8 text-center text-slate-400">
@@ -680,20 +680,20 @@ export function FeedbackTrackingTab({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-100/75 text-slate-600 border-b border-slate-200 font-bold uppercase text-[11px]">
-                  <th className="py-3 px-4">Lớp Học</th>
-                  <th className="py-3 px-3">Cơ sở</th>
-                  <th className="py-3 px-4">Giáo viên chủ nhiệm</th>
-                  <th className="py-3 px-3 text-center">Sĩ Số</th>
-                  <th className="py-3 px-4 text-center">PHHS Phản Hồi</th>
-                  <th className="py-3 px-4 text-center">GVCN Nhận Xét</th>
-                  <th className="py-3 px-4 text-center">Chuyển GVBM</th>
-                  <th className="py-3 px-4 text-center">GVBM Phản Hồi</th>
-                  <th className="py-3 px-4 text-right">Hành Động</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3 px-4 font-semibold">Lớp Học</th>
+                  <th className="py-3 px-3 font-semibold">Cơ sở</th>
+                  <th className="py-3 px-4 font-semibold">Giáo viên chủ nhiệm</th>
+                  <th className="py-3 px-3 text-center font-semibold">Sĩ Số</th>
+                  <th className="py-3 px-4 text-center font-semibold">PHHS Phản Hồi</th>
+                  <th className="py-3 px-4 text-center font-semibold">GVCN Nhận Xét</th>
+                  <th className="py-3 px-4 text-center font-semibold">Chuyển GVBM</th>
+                  <th className="py-3 px-4 text-center font-semibold">GVBM Phản Hồi</th>
+                  <th className="py-3 px-4 text-right font-semibold">Hành Động</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {data.byClass.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-8 text-center text-slate-400">
@@ -772,39 +772,39 @@ export function FeedbackTrackingTab({
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-100/75 text-slate-600 border-b border-slate-200 font-bold uppercase text-[11px]">
-                  <th className="py-3.5 px-3 text-center w-12">STT</th>
-                  <th className="py-3.5 px-4 w-44">Học Sinh</th>
-                  <th className="py-3.5 px-3 w-32">Lớp & GVCN</th>
-                  <th className="py-3.5 px-4 min-w-[220px]">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[11px] font-semibold">
+                  <th className="py-3.5 px-3 text-center w-12 font-semibold">STT</th>
+                  <th className="py-3.5 px-4 w-44 font-semibold">Học Sinh</th>
+                  <th className="py-3.5 px-3 w-32 font-semibold">Lớp & GVCN</th>
+                  <th className="py-3.5 px-4 min-w-[220px] font-semibold">
                     <div className="flex items-center gap-1 text-blue-700">
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>1. Ý kiến Phản hồi PHHS</span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-4 min-w-[220px]">
+                  <th className="py-3.5 px-4 min-w-[220px] font-semibold">
                     <div className="flex items-center gap-1 text-teal-700">
                       <UserCheck className="w-3.5 h-3.5" />
                       <span>2. Nhận xét & Trao đổi GVCN</span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-4 min-w-[200px]">
+                  <th className="py-3.5 px-4 min-w-[200px] font-semibold">
                     <div className="flex items-center gap-1 text-teal-800">
                       <Send className="w-3.5 h-3.5" />
                       <span>3. Chuyển tiếp GVBM</span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-4 min-w-[220px]">
+                  <th className="py-3.5 px-4 min-w-[220px] font-semibold">
                     <div className="flex items-center gap-1 text-emerald-700">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>4. Phản hồi Kết quả GVBM</span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-3 text-center w-24">Thao Tác</th>
+                  <th className="py-3.5 px-3 text-center w-24 font-semibold">Thao Tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {data.items.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400">

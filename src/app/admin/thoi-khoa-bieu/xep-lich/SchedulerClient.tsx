@@ -27,7 +27,11 @@ import { TimetableFilterBar } from "@/components/timetable/TimetableFilterBar"
 import { ValidationSummaryPanel } from "@/components/timetable/ValidationSummaryPanel"
 import { GradeWeeklyStatsTable } from "@/components/timetable/GradeWeeklyStatsTable"
 import { useTimetableFilterNavigation } from "@/components/timetable/useTimetableFilterNavigation"
-import { DAY_LABELS, SHORT_DAY_LABELS } from "@/lib/timetable/scopeResolver"
+import {
+  DAY_LABELS,
+  resolveClassStudyProgram,
+  SHORT_DAY_LABELS,
+} from "@/lib/timetable/scopeResolver"
 import {
   computeClassSlotSummary,
   WEEKLY_STANDARD_PERIODS,
@@ -132,6 +136,9 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
 
   const [slots, setSlots] = useState<SlotRecord[]>(data.slots)
   const [baseQuotaItems, setBaseQuotaItems] = useState<QuotaReconcileItem[]>(data.quotaItems)
+  const [subjectQuotasState, setSubjectQuotasState] = useState(
+    () => data.subjectQuotas || []
+  )
   const [fixedSlotsConfig, setFixedSlotsConfig] = useState<FixedSlotRule[]>(
     data.config.fixedSlots || []
   )
@@ -263,6 +270,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     setSlots(data.slots)
     latestSlotsRef.current = data.slots
     setBaseQuotaItems(data.quotaItems)
+    setSubjectQuotasState(data.subjectQuotas || [])
     setFixedSlotsConfig(data.config.fixedSlots || [])
     const nextRev = data.selectedVersion?.revision || 1
     setRevision(nextRev)
@@ -1454,13 +1462,18 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
               quotaItems={liveQuotaItems}
               slots={slots}
               subjects={data.subjects}
+              subjectQuotas={subjectQuotasState}
               defaultGrade={data.filterContext.selectedGrade}
+              selectedStudyProgram={data.filterContext.selectedStudyProgram || "ALL"}
               cycleWeeks={effectiveConfig.cycleWeeks}
               targetWeeklyPeriods={WEEKLY_STANDARD_PERIODS}
               onClose={() => setShowGradeStatsPanel(false)}
               onSelectClass={(classId) => {
                 setFocusedClassId(classId)
                 setViewMode("SINGLE_CLASS")
+              }}
+              onSelectStudyProgram={(sp) => {
+                void reloadWithPatch({ studyProgram: sp, classId: "ALL" })
               }}
               onUpdateQuota={
                 isEditableDraft
@@ -1476,6 +1489,49 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                       if (!res.success) {
                         toast.error(res.error)
                         return
+                      }
+                      const gradeNumMatch = String(grade).match(/\d+/)
+                      const gradeKey = gradeNumMatch ? `quotaG${gradeNumMatch[0]}` : ""
+                      if (gradeKey) {
+                        setSubjectQuotasState((prev) => {
+                          const exists = prev.some(
+                            (sq: any) =>
+                              sq.subjectId === subjectId && sq.studyProgram === studyProgram
+                          )
+                          if (exists) {
+                            return prev.map((sq: any) =>
+                              sq.subjectId === subjectId && sq.studyProgram === studyProgram
+                                ? { ...sq, [gradeKey]: weeklyQuota }
+                                : sq
+                            )
+                          }
+                          return [
+                            ...prev,
+                            {
+                              id: `local_${subjectId}_${studyProgram}`,
+                              subjectId,
+                              academicYearId: data.filterContext.selectedYearId,
+                              studyProgram,
+                              quota: 0,
+                              quotaPrimary: 0,
+                              quotaMiddle: 0,
+                              quotaHigh: 0,
+                              quotaG1: 0,
+                              quotaG2: 0,
+                              quotaG3: 0,
+                              quotaG4: 0,
+                              quotaG5: 0,
+                              quotaG6: 0,
+                              quotaG7: 0,
+                              quotaG8: 0,
+                              quotaG9: 0,
+                              quotaG10: 0,
+                              quotaG11: 0,
+                              quotaG12: 0,
+                              [gradeKey]: weeklyQuota,
+                            } as any,
+                          ]
+                        })
                       }
                       setBaseQuotaItems((prev) =>
                         prev.map((q) =>
@@ -1494,7 +1550,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                         )
                       )
                       toast.success(
-                        `Đã cập nhật định mức khối ${grade} (${studyProgram}): ${weeklyQuota} tiết/tuần.`
+                        `Đã cập nhật định mức ${studyProgram} khối ${grade}: ${weeklyQuota} tiết/tuần.`
                       )
                     }
                   : undefined
@@ -2352,11 +2408,39 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                       onChange={(e) => setFocusedClassId(e.target.value)}
                       className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-bold text-[#003B3A] focus:border-[#00A19A] focus:outline-none"
                     >
-                      {displayedClasses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          Lớp {c.className} • Khối {c.grade} ({c.educationSystem || "Chuẩn"})
-                        </option>
-                      ))}
+                      {(() => {
+                        const sList = displayedClasses.filter(
+                          (c) => resolveClassStudyProgram(c) === "Hệ S"
+                        )
+                        const iList = displayedClasses.filter(
+                          (c) => resolveClassStudyProgram(c) === "Hệ I"
+                        )
+                        if (sList.length > 0 && iList.length > 0) {
+                          return (
+                            <>
+                              <optgroup label={`Hệ S (${sList.length} lớp)`}>
+                                {sList.map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    Lớp {c.className} • Khối {c.grade} (Hệ S)
+                                  </option>
+                                ))}
+                              </optgroup>
+                              <optgroup label={`Hệ I (${iList.length} lớp)`}>
+                                {iList.map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    Lớp {c.className} • Khối {c.grade} (Hệ I)
+                                  </option>
+                                ))}
+                              </optgroup>
+                            </>
+                          )
+                        }
+                        return displayedClasses.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            Lớp {c.className} • Khối {c.grade} ({resolveClassStudyProgram(c)})
+                          </option>
+                        ))
+                      })()}
                     </select>
 
                     <button
@@ -2739,9 +2823,16 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                       <th className="sticky left-0 z-30 bg-[#003B3A] py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap border-r border-white/10 min-w-[125px]">
                         Thứ / Buổi / Tiết
                       </th>
-                      {displayedClasses.map((cls) => {
+                      {displayedClasses.map((cls, colIdx) => {
                         const isTargetCol = dragFocusClassId === cls.id
                         const isSelectedCol = focusedClassId === cls.id
+                        const clsSys = resolveClassStudyProgram(cls)
+                        const prevSys =
+                          colIdx > 0
+                            ? resolveClassStudyProgram(displayedClasses[colIdx - 1])
+                            : clsSys
+                        const isSystemBoundary = colIdx > 0 && prevSys !== clsSys
+
                         return (
                           <th
                             key={cls.id}
@@ -2752,10 +2843,14 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                               }
                             }}
                             className={`py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap border-r border-white/10 min-w-[162px] transition-colors cursor-pointer ${
+                              isSystemBoundary ? "border-l-2 border-l-[#5EEAD4]/60" : ""
+                            } ${
                               isTargetCol
                                 ? "bg-[#00736E]"
                                 : isSelectedCol
                                 ? "bg-[#005250]"
+                                : clsSys === "Hệ I"
+                                ? "bg-[#004A48] hover:bg-[#005957]"
                                 : "hover:bg-[#004A48]"
                             } ${
                               dragFocusClassId && !isTargetCol ? "opacity-55" : ""
@@ -2770,8 +2865,14 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                               )}
                             </div>
                             <div className="flex items-center justify-between gap-1 mt-0.5 text-[10px] font-normal text-teal-100">
-                              <span>
-                                Khối {cls.grade} • {cls.educationSystem || "Chuẩn"}
+                              <span
+                                className={
+                                  clsSys === "Hệ I"
+                                    ? "text-[#5EEAD4] font-semibold"
+                                    : "text-teal-100"
+                                }
+                              >
+                                Khối {cls.grade} • {clsSys}
                               </span>
                               {(() => {
                                 const clsSch =

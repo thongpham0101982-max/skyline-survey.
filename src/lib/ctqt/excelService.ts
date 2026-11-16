@@ -76,7 +76,8 @@ export function generateCtqtTemplate(
   const gradeMap = new Map<string, any>();
   if (existingData?.grades) {
     for (const g of existingData.grades) {
-      gradeMap.set(`${g.studentId}_${g.subjectCode}`, g);
+      const normCode = g.subjectCode === "MATH" ? "MAT" : g.subjectCode;
+      gradeMap.set(`${g.studentId}_${normCode}`, g);
     }
   }
 
@@ -95,16 +96,16 @@ export function generateCtqtTemplate(
   for (const sub of subjectsToGenerate) {
     const headers: string[] = [
       "STT",
+      "Student ID\nMã học sinh",
       "Student name\nHọ tên",
       "English name",
       "Birthday\nNgày sinh",
       "Gender\nGiới tính",
-      "Student ID\nMã học sinh",
     ];
 
     if (ctqtLevel === "HIGH") {
       headers.push("Class\nLớp");
-      if (sub.code === "AE" || sub.code === "SCI" || sub.code === "MATH") {
+      if (sub.code === "AE" || sub.code === "SCI" || sub.code === "MAT" || sub.code === "MATH") {
         headers.push("Content", "Nội dung", "Mark\nĐiểm");
       } else if (sub.code === "IELTS") {
         headers.push("Content", "Nội dung", "Mark\nĐiểm");
@@ -123,16 +124,16 @@ export function generateCtqtTemplate(
       const g = gradeMap.get(`${st.id}_${sub.code}`) || {};
       const row: any[] = [
         idx + 1,
+        st.studentCode,
         st.studentName,
         st.englishName || "",
         formatDate(st.dateOfBirth),
         st.gender === "Nu" || st.gender === "Nữ" ? "F" : "M",
-        st.studentCode,
       ];
 
       if (ctqtLevel === "HIGH") {
         row.push(className);
-        if (sub.code === "AE" || sub.code === "SCI" || sub.code === "MATH") {
+        if (sub.code === "AE" || sub.code === "SCI" || sub.code === "MAT" || sub.code === "MATH") {
           row.push(
             g.assessmentContentEn || "",
             g.assessmentContentVi || "",
@@ -173,17 +174,18 @@ export function generateCtqtTemplate(
     });
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, sub.sheetName);
   }
 
   // 2. Generate Core Competencies Sheet (only for full workbook)
   if (!filterSubjectCode) {
     const compHeaders = [
     "STT",
+    "Student ID\nMã học sinh",
     "Student name\nHọ tên",
-    ...(ctqtLevel === "PRIMARY" ? ["English name"] : []),
+    "English name",
     "Birthday\nNgày sinh",
     "Gender\nGiới tính",
-    "Student ID\nMã học sinh",
     ...(ctqtLevel === "HIGH" ? ["Class\nLớp"] : []),
     "Communication\nGiao tiếp",
     "Collaboration\nHợp tác",
@@ -198,11 +200,11 @@ export function generateCtqtTemplate(
     const c = compMap.get(st.id) || {};
     const r: any[] = [
       idx + 1,
+      st.studentCode,
       st.studentName,
-      ...(ctqtLevel === "PRIMARY" ? [st.englishName || ""] : []),
+      st.englishName || "",
       formatDate(st.dateOfBirth),
       st.gender === "Nu" || st.gender === "Nữ" ? "F" : "M",
-      st.studentCode,
       ...(ctqtLevel === "HIGH" ? [className] : []),
       c.communication || "E",
       c.collaboration || "E",
@@ -228,11 +230,11 @@ export function generateCtqtTemplate(
   const tongHopHeaders: string[] = [
     "STT",
     "Lớp",
+    "Mã học sinh",
     "Họ và tên",
-    ...(ctqtLevel === "PRIMARY" ? ["English Name"] : []),
+    "English Name",
     "Ngày sinh",
     "Giới tính",
-    "Mã học sinh",
   ];
 
   for (const sub of config.subjects) {
@@ -249,7 +251,7 @@ export function generateCtqtTemplate(
     } else if (ctqtLevel === "HIGH") {
       if (sub.code === "AE") {
         tongHopHeaders.push("A1 (Content)", "A2 (Nội dung)", "A3 (Điểm)", "CMT A", "NX A");
-      } else if (sub.code === "MATH") {
+      } else if (sub.code === "MAT" || sub.code === "MATH") {
         tongHopHeaders.push("M1 (Content)", "M2 (Nội dung)", "M3 (Điểm)", "CMT M", "NX M");
       } else if (sub.code === "SCI") {
         tongHopHeaders.push("S1 (Content)", "S2 (Nội dung)", "S3 (Điểm)", "CMT S", "NX S");
@@ -272,11 +274,11 @@ export function generateCtqtTemplate(
     const r: any[] = [
       idx + 1,
       className,
+      st.studentCode,
       st.studentName,
-      ...(ctqtLevel === "PRIMARY" ? [st.englishName || ""] : []),
+      st.englishName || "",
       formatDate(st.dateOfBirth),
       st.gender === "Nu" || st.gender === "Nữ" ? "F" : "M",
-      st.studentCode,
     ];
 
     for (const sub of config.subjects) {
@@ -325,7 +327,7 @@ export function generateCtqtTemplate(
             g.commentEn || "",
             g.commentVi || ""
           );
-        } else if (sub.code === "MATH") {
+        } else if (sub.code === "MAT" || sub.code === "MATH") {
           r.push(
             g.assessmentContentEn || "Assessment Event: Project",
             g.assessmentContentVi || "Báo cáo Dự án",
@@ -420,8 +422,9 @@ export function parseCtqtExcel(buffer: Buffer): {
     english: "ENG",
     science: "SCI",
     sci: "SCI",
-    maths: "MATH",
-    math: "MATH",
+    maths: "MAT",
+    math: "MAT",
+    mat: "MAT",
     "global studies": "GLOBAL_STUDIES",
     globalstudies: "GLOBAL_STUDIES",
     "a.e": "AE",

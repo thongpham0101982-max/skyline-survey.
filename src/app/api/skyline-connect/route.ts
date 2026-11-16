@@ -17,6 +17,7 @@ import {
   markCommentFeedbackStatus,
   releaseProductVersionWithCredit,
   toggleContributorPublicCreditOptOut,
+  handleSlcHelpRequestAction,
   recordProductTrialLinkOpen,
   submitOrUpdateSlcRating,
   submitProductApplication,
@@ -34,6 +35,8 @@ import {
   handleSlcAdminAction,
   getSlcUserNotifications,
   markSlcNotificationRead,
+  softDeleteOrRestoreSlcPost,
+  confirmSlcItemApplied,
   safeJsonParse,
 } from "@/lib/skyline-connect/service";
 import {
@@ -44,6 +47,24 @@ import {
   getSlcTeacherOverviewWidget,
   getSlcAdminOverviewData,
 } from "@/lib/skyline-connect/queries";
+import { validateAttachmentMetadata } from "@/lib/skyline-connect/security";
+import {
+  getSsmDataMappingReport,
+  getTeacherAuthorizedScopeCatalog,
+  reviewScopeDataAndBuildEvidenceBrief,
+  generateDraftSkillFromConfirmedBrief,
+} from "@/lib/skyline-connect/ssm-skill-data-engine";
+import {
+  querySlcSkillsCatalog,
+  getSlcSkillDetail,
+  generateAiAssistedSkillDraft,
+  createOrUpdateSlcSkill,
+  submitDepartmentSessionSkillUpdate,
+  reviewAndManageSlcSkill,
+  executeSlcSkillRun,
+  getSkillGovernanceAndAiUsageStats,
+  upsertSkillWorkCategory,
+} from "@/lib/skyline-connect/skills-service";
 
 export async function GET(req: NextRequest) {
   try {
@@ -156,6 +177,8 @@ export async function GET(req: NextRequest) {
         followingOnly: searchParams.get("followingOnly") === "true",
         search: searchParams.get("search") || undefined,
         campusId: searchParams.get("campusId") || undefined,
+        departmentId: searchParams.get("departmentId") || undefined,
+        visibility: searchParams.get("visibility") || undefined,
         subjectCode: searchParams.get("subjectCode") || undefined,
         gradeLevel: searchParams.get("gradeLevel") || undefined,
         postType: searchParams.get("postType") || undefined,
@@ -188,6 +211,8 @@ export async function GET(req: NextRequest) {
           fullName: ctx.fullName,
           campusId: ctx.campusId,
           campusName: ctx.campusName,
+          departmentId: ctx.departmentId || null,
+          departmentName: ctx.departmentName || null,
           mainSubjectCode: ctx.mainSubjectCode,
           mainSubjectName: ctx.mainSubjectName,
           systemRole: ctx.systemRole,
@@ -234,10 +259,24 @@ export async function GET(req: NextRequest) {
     if (action === "comments") {
       const postId = searchParams.get("postId") || "";
       const sort = (searchParams.get("sort") as "NEWEST" | "OLDEST") || "NEWEST";
+      const filterType = (searchParams.get("filterType") as any) || "ALL";
       const page = Number(searchParams.get("page") || 1);
       const pageSize = Number(searchParams.get("pageSize") || 10);
-      const data = await querySlcPostComments(ctx, { postId, sort, page, pageSize });
+      const data = await querySlcPostComments(ctx, { postId, sort, filterType, page, pageSize });
       return NextResponse.json(data);
+    }
+
+    if (action === "checkFeedUpdates") {
+      const feed = await querySlcWallFeed(ctx, {
+        tab: (searchParams.get("tab") as any) || "ALL",
+        sort: (searchParams.get("sort") as any) || "NEWEST",
+        page: 1,
+        pageSize: 1,
+      });
+      return NextResponse.json({
+        latestBumpTimestamp: feed.latestBumpTimestamp || 0,
+        total: feed.pagination?.total || 0,
+      });
     }
 
     if (action === "hallOfFame") {
@@ -361,6 +400,92 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(data);
     }
 
+    if (action === "skillsCatalog") {
+      const [skillsData, catalogs] = await Promise.all([
+        querySlcSkillsCatalog(ctx, {
+          search: searchParams.get("search") || undefined,
+          subjectCode: searchParams.get("subjectCode") || undefined,
+          gradeLevel: searchParams.get("gradeLevel") || undefined,
+          workCategory: searchParams.get("workCategory") || undefined,
+          authorId: searchParams.get("authorId") || undefined,
+          visibility: searchParams.get("visibility") || undefined,
+          status: searchParams.get("status") || undefined,
+          viewMode: (searchParams.get("viewMode") as any) || "CATALOG",
+          sort: (searchParams.get("sort") as any) || "NEWEST",
+          page: Number(searchParams.get("page") || 1),
+          pageSize: Number(searchParams.get("pageSize") || 12),
+        }),
+        getSlcCatalogs(ctx),
+      ]);
+      return NextResponse.json({
+        ...skillsData,
+        catalogs,
+        currentUser: {
+          userId: ctx.userId,
+          fullName: ctx.fullName,
+          campusId: ctx.campusId,
+          campusName: ctx.campusName,
+          departmentId: ctx.departmentId || null,
+          departmentName: ctx.departmentName || null,
+          mainSubjectCode: ctx.mainSubjectCode,
+          mainSubjectName: ctx.mainSubjectName,
+          systemRole: ctx.systemRole,
+          permissions: catalogs.userPermissions,
+        },
+      });
+    }
+
+    if (action === "skillDetail") {
+      const skillId = searchParams.get("skillId") || "";
+      if (!skillId) {
+        return NextResponse.json({ error: "MISSING_SKILL_ID", message: "Thiếu mã Skill môn học." }, { status: 400 });
+      }
+      const res = await getSlcSkillDetail(ctx, skillId);
+      return NextResponse.json(res);
+    }
+
+    if (action === "ssmDataScope") {
+      const academicYearId = searchParams.get("academicYearId") || undefined;
+      const [scopeCatalog, skillsData, catalogs] = await Promise.all([
+        getTeacherAuthorizedScopeCatalog(ctx, academicYearId),
+        querySlcSkillsCatalog(ctx, { includeMyDrafts: true, pageSize: 50 }).catch(() => ({ items: [] })),
+        getSlcCatalogs(ctx).catch(() => ({ teachers: [] })),
+      ]);
+      const departmentEditableSkills = (skillsData.items || [])
+        .filter((sk: any) => sk.canContributeSessionUpdate || sk.canEdit)
+        .map((sk: any) => ({
+          id: sk.id,
+          code: sk.code,
+          name: sk.name || sk.title,
+          currentVersion: sk.currentVersion || "1.0",
+          subjectCode: sk.subjectCode,
+          subjectName: sk.subjectName,
+          gradeLevels: sk.gradeLevels || [],
+          topicOrLesson: sk.topicOrLesson || sk.topicName || "",
+          workCategory: sk.workCategory,
+          authorName: sk.authorName,
+          collaboratorNames: sk.collaboratorNames || [],
+          aiSystemPrompt: sk.aiSystemPrompt || sk.aiInstruction || "",
+          outputStructure: sk.outputStructure || "",
+        }));
+      return NextResponse.json({
+        ...scopeCatalog,
+        departmentEditableSkills,
+        departmentTeachers: (catalogs as any)?.teachers || [],
+      });
+    }
+
+    if (action === "dataMappingReport") {
+      return NextResponse.json({
+        mapping: getSsmDataMappingReport(),
+      });
+    }
+
+    if (action === "skillGovernanceStats") {
+      const stats = await getSkillGovernanceAndAiUsageStats(ctx);
+      return NextResponse.json(stats);
+    }
+
     return NextResponse.json({ error: "INVALID_ACTION", message: "Action không hợp lệ." }, { status: 400 });
   } catch (err: any) {
     const msg = String(err?.message || "Đã xảy ra lỗi khi tải dữ liệu Sky-Line Connect.");
@@ -428,6 +553,7 @@ export async function POST(req: NextRequest) {
         commentId: body.commentId,
         action: action === "deleteComment" ? "DELETE" : "EDIT",
         content: body.content,
+        contributionType: body.contributionType,
       });
       return NextResponse.json({ ok: true, ...result });
     }
@@ -448,8 +574,43 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "toggleContributorOptOut") {
-      const updated = await toggleContributorPublicCreditOptOut(ctx, body.versionId, Boolean(body.optOut));
+      const updated = await toggleContributorPublicCreditOptOut(
+        ctx,
+        body.versionId || body.commentId,
+        Boolean(body.optOut)
+      );
       return NextResponse.json({ ok: true, version: updated });
+    }
+
+    if (action === "helpRequestAction") {
+      const helpRequest = await handleSlcHelpRequestAction(ctx, {
+        ...body,
+        action: body.subAction || body.helpAction || body.action,
+      });
+      return NextResponse.json({ ok: true, helpRequest });
+    }
+
+    if (action === "validateAttachment") {
+      const cfg = await getSlcFeatureConfig();
+      const validation = validateAttachmentMetadata({
+        fileName: String(body.fileName || ""),
+        mimeType: String(body.mimeType || ""),
+        fileSizeBytes: Number(body.fileSize || 0),
+        maxImageMb: cfg.maxImageSizeMb,
+        maxDocMb: cfg.maxDocSizeMb,
+      });
+      if (!validation.valid) {
+        return NextResponse.json(
+          {
+            ok: false,
+            field: "attachment",
+            error: "FIELD_ERROR_ATTACHMENT",
+            message: validation.error || "Tệp đính kèm không hợp lệ.",
+          },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({ ok: true, safeFileName: validation.safeFileName });
     }
 
     if (action === "openProductLink") {
@@ -536,6 +697,129 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, ...data });
     }
 
+    if (action === "softDeleteOrRestorePost") {
+      const result = await softDeleteOrRestoreSlcPost(ctx, {
+        postId: body.postId,
+        action: (body.mode || body.subAction) === "RESTORE" ? "RESTORE" : "DELETE",
+      });
+      return NextResponse.json({ ok: true, ...result });
+    }
+
+    if (action === "confirmApplied") {
+      const targetType = body.skillId ? "SKILL" : (body.targetType || "POST");
+      const targetId = body.targetId || body.skillId || body.postId;
+      const result = await confirmSlcItemApplied(ctx, {
+        targetType,
+        targetId,
+        postId: body.postId || null,
+        skillId: body.skillId || null,
+        classOrGrade: body.classOrGrade || body.classLabel || body.gradeLevel,
+        subjectCode: body.subjectCode,
+        feedbackText: body.feedbackText || body.feedback,
+        evidenceUrl: body.evidenceUrl,
+      });
+      return NextResponse.json({ ok: true, ...result });
+    }
+
+    if (action === "reviewScopeData") {
+      const evaluationPeriod =
+        body.evaluationPeriod ||
+        (body.periodType === "MONTH" && body.month
+          ? `THANG_${body.month}`
+          : body.semester
+            ? `HK${body.semester}`
+            : "ALL");
+      const brief = await reviewScopeDataAndBuildEvidenceBrief(ctx, {
+        academicYearId: body.academicYearId,
+        evaluationPeriod,
+        classId: body.classId,
+        subjectId: body.subjectId || null,
+        subjectCode: body.subjectCode,
+        subjectName: body.subjectName,
+        topicOrLesson: body.topicOrLesson || body.topicName,
+        selectedSources: Array.isArray(body.selectedSources) ? body.selectedSources : undefined,
+        teacherProactiveNotes: body.teacherProactiveNotes || body.customNeedsNote || "",
+        targetObjective: body.targetObjective || "",
+        lessonPlanReference: body.lessonPlanReference || "",
+      });
+      return NextResponse.json({ ok: true, brief });
+    }
+
+    if (action === "confirmBriefAndGenerateSkill") {
+      const result = await generateDraftSkillFromConfirmedBrief(ctx, {
+        briefId: body.briefId,
+        selectedNeedIds: body.selectedNeedIds || body.selectedSourceIds || [],
+        selectedMetricIds: body.selectedMetricIds || [],
+        editedPedagogicalNeeds: body.editedPedagogicalNeeds || body.customNeedsNote || "",
+        lessonTopic: body.lessonTopic || body.topicName || "",
+        curriculumObjectives: body.curriculumObjectives || body.targetObjective || "",
+        supplementaryMaterialText: body.supplementaryMaterialText || body.lessonPlanReference || "",
+        workCategory: body.workCategory || "TASK_DIFFERENTIATION",
+        durationMinutes: Number(body.durationMinutes || 20),
+        desiredOutputFormat: body.desiredOutputFormat || body.desiredOutputStructure || "",
+      });
+      return NextResponse.json({ ok: true, ...result });
+    }
+
+    if (action === "aiAssistDraftSkill") {
+      const subjectCode =
+        body.subjectCode ||
+        (Array.isArray(body.subjectCodes) && body.subjectCodes[0]) ||
+        ctx.mainSubjectCode ||
+        "TOAN";
+      const gradeLevel =
+        body.gradeLevel ||
+        (Array.isArray(body.gradeLevels) && body.gradeLevels[0]) ||
+        "K10";
+      const draftRes = await generateAiAssistedSkillDraft(ctx, {
+        teacherDescription: body.teacherDescription || body.teacherHowToDescription || body.title || "",
+        subjectCode,
+        subjectName: body.subjectName || ctx.mainSubjectName || subjectCode,
+        gradeLevel,
+        workCategory: body.workCategory || "ACTIVITY_DESIGN",
+        topicOrLesson: body.topicOrLesson || body.topicName,
+      });
+      return NextResponse.json({ ok: true, ...draftRes, draft: draftRes.draftSkill });
+    }
+
+    if (action === "createOrUpdateSkill") {
+      const skillRes = await createOrUpdateSlcSkill(ctx, body);
+      return NextResponse.json({ ok: true, ...skillRes });
+    }
+
+    if (action === "departmentSessionSkillUpdate") {
+      const updateRes = await submitDepartmentSessionSkillUpdate(ctx, body);
+      return NextResponse.json({ ok: true, ...updateRes });
+    }
+
+    if (action === "reviewSkillDecision") {
+      const skill = await reviewAndManageSlcSkill(ctx, {
+        skillId: body.skillId,
+        action: body.decision || body.subAction || "APPROVE",
+        reviewNote: body.reviewNote || body.feedback,
+        targetVersionId: body.targetVersionId,
+        assignedReviewerId: body.assignedReviewerId,
+        assignedReviewerName: body.assignedReviewerName,
+      });
+      return NextResponse.json({ ok: true, skill });
+    }
+
+    if (action === "runSkill") {
+      const runResult = await executeSlcSkillRun(ctx, {
+        skillId: body.skillId,
+        clientRequestId: body.clientRequestId,
+        inputValues: body.inputValues || body.inputParams || {},
+        customPromptOverride: body.customPromptOverride || body.customInstructionOverride,
+        bindClassScope: body.bindClassScope || null,
+      });
+      return NextResponse.json({ ok: true, ...runResult });
+    }
+
+    if (action === "upsertSkillWorkCategory") {
+      const category = await upsertSkillWorkCategory(ctx, body);
+      return NextResponse.json({ ok: true, category });
+    }
+
     return NextResponse.json(
       { error: "INVALID_ACTION", message: "Thao tác không hợp lệ." },
       { status: 400 }
@@ -543,10 +827,17 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     const msg = String(err?.message || "Không thể thực hiện thao tác.");
     const isPerm = msg.includes("PERMISSION_DENIED") || msg.includes("không có quyền");
+    const isLinkFieldErr = msg.startsWith("FIELD_ERROR_LINK:");
+    const isAttFieldErr = msg.startsWith("FIELD_ERROR_ATTACHMENT:");
+    const cleanMsg = msg
+      .replace("PERMISSION_DENIED: ", "")
+      .replace("FIELD_ERROR_LINK: ", "")
+      .replace("FIELD_ERROR_ATTACHMENT: ", "");
     return NextResponse.json(
       {
         error: isPerm ? "PERMISSION_DENIED" : "VALIDATION_ERROR",
-        message: msg.replace("PERMISSION_DENIED: ", ""),
+        field: isLinkFieldErr ? "link" : isAttFieldErr ? "attachment" : undefined,
+        message: cleanMsg,
       },
       { status: isPerm ? 403 : 400 }
     );

@@ -10,31 +10,33 @@ export function AssessmentTable({ columns, data, isLoading }: AssessmentTablePro
   if (isLoading) return <div className="p-8 text-center text-slate-500">Đang tải dữ liệu...</div>;
   
   return (
-    <div className="table-container custom-scrollbar">
-      <table className="w-full text-sm text-left">
-        <thead className="bg-slate-50 text-slate-700">
-          <tr>
-            {columns.map((col, idx) => (
-              <th key={idx} className="px-4 py-3 font-semibold border-b border-slate-200">{col.header}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-8 text-center text-slate-500">Không có dữ liệu</td>
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="w-full text-left table-auto border-collapse tabular-nums">
+          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              {columns.map((col, idx) => (
+                <th key={idx} className="py-3 px-3.5 font-semibold text-teal-100 first:text-white last:text-white whitespace-nowrap">{col.header}</th>
+              ))}
             </tr>
-          ) : (
-            data.map((row, idx) => (
-              <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                {columns.map((col, colIdx) => (
-                  <td key={colIdx} className="px-4 py-3">{col.cell ? col.cell(row) : row[col.accessorKey]}</td>
-                ))}
+          </thead>
+          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-10 text-center text-slate-500">Không có dữ liệu</td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              data.map((row, idx) => (
+                <tr key={idx} className="hover:bg-[#F8FAFC] transition-colors align-middle">
+                  {columns.map((col, colIdx) => (
+                    <td key={colIdx} className="py-3 px-3.5 align-middle">{col.cell ? col.cell(row) : row[col.accessorKey]}</td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

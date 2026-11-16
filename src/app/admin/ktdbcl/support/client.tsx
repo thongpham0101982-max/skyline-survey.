@@ -113,7 +113,7 @@ export function SupportClient({
 
   // Filtering states for targets tab
   const [targetTypeFilter, setTargetTypeFilter] = useState("ALL")
-  const [targetSourceFilter, setTargetSourceFilter] = useState("TEACHER_ALL")
+  const [targetSourceFilter, setTargetSourceFilter] = useState("ALL")
   const [targetStatusFilter, setTargetStatusFilter] = useState("ALL")
   const [targetSearch, setTargetSearch] = useState("")
 
@@ -1010,73 +1010,240 @@ export function SupportClient({
   // Filtering targets lists
   const filteredTargets = targets.filter(t => {
     const matchesType = targetTypeFilter === "ALL" || t.supportType === targetTypeFilter
+    const hasAdmissionCommitment = t.sourceType === "ADMISSION" || (Array.isArray(t.commitmentSubjects) && t.commitmentSubjects.length > 0)
+    const hasGvcnAssignment = (t.assignments || []).some((a: any) => a.role === "GVCN") || (t.gvcnTeachers && t.gvcnTeachers.length > 0)
+    const hasGvbmAssignment = (t.assignments || []).some((a: any) => a.role === "GVBM") || (t.gvbmTeachers && t.gvbmTeachers.length > 0)
+
     const matchesSource = targetSourceFilter === "ALL" || 
-      (targetSourceFilter === "TEACHER_ALL" && (t.sourceType === "GVCN" || t.sourceType === "GVBM" || t.sourceType === "TAM_LY")) ||
-      (targetSourceFilter === "GVCN" && (t.sourceType === "GVCN" || t.sourceType === "TAM_LY")) ||
+      (targetSourceFilter === "ADMISSION" && hasAdmissionCommitment) ||
+      (targetSourceFilter === "TEACHER_ALL" && t.sourceType !== "ADMISSION") ||
+      (targetSourceFilter === "GVCN" && (t.sourceType === "GVCN" || t.sourceType === "TAM_LY" || (activeTab === "academic" && hasGvcnAssignment))) ||
+      (targetSourceFilter === "GVBM" && (t.sourceType === "GVBM" || (activeTab === "academic" && hasGvbmAssignment))) ||
       t.sourceType === targetSourceFilter
+
     const matchesStatus = targetStatusFilter === "ALL" || 
       (targetStatusFilter === "TERMINATED" && t.terminationStatus === "TERMINATED") ||
-      (targetStatusFilter === "ACTIVE" && t.terminationStatus === "ACTIVE" && t.assignments && t.assignments.length > 0) ||
+      (targetStatusFilter === "ACTIVE" && t.terminationStatus === "ACTIVE" && ((t.assignments && t.assignments.length > 0) || t.sourceType === "ADMISSION")) ||
       (targetStatusFilter === "PENDING" && t.terminationStatus === "PENDING_TERMINATION") ||
-      (targetStatusFilter === "UNAPPROVED" && t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0))
+      (targetStatusFilter === "UNAPPROVED" && t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.sourceType !== "ADMISSION")
 
     const name = t.student?.studentName || ""
     const code = t.student?.studentCode || ""
-    const matchesSearch = targetSearch === "" || 
-      name.toLowerCase().includes(targetSearch.toLowerCase()) ||
-      code.toLowerCase().includes(targetSearch.toLowerCase())
+    const className = t.student?.class?.className || ""
+    const teacherNames = [
+      t.createdBy?.teacherName || "",
+      ...((t.assignments || []).map((a: any) => a.teacher?.teacherName || ""))
+    ].join(" ")
+    const q = targetSearch.trim().toLowerCase()
+    const matchesSearch = q === "" || 
+      name.toLowerCase().includes(q) ||
+      code.toLowerCase().includes(q) ||
+      className.toLowerCase().includes(q) ||
+      teacherNames.toLowerCase().includes(q)
 
     return matchesType && matchesSource && matchesStatus && matchesSearch
   })
 
-  // Group targets by teacher (createdBy) and filter by activeTab if applicable
-  const groupedTargets = filteredTargets
-    .filter((t: any) => {
-      if (activeTab === "academic") return t.supportType === "ACADEMIC"
+  // Helper: check if a subject string is non-academic (Tâm lý / Hướng nghiệp)
+  const isNonAcademicSub = (sub: string) => {
+    const l = (sub || "").toLowerCase()
+    return l.includes("tâm lý") || l.includes("tam ly") || l.includes("tâm lí") || l.includes("psychology") ||
+           l.includes("hướng nghiệp") || l.includes("huong nghiep")
+  }
+
+  // Group targets by responsible teacher (GVCN & GVBM theo phân công for Academic, or createdBy/assigned for Psychology)
+  const groupedTargets = useMemo(() => {
+    const tabTargets = filteredTargets.filter((t: any) => {
+      if (activeTab === "academic") {
+        if (t.supportType !== "ACADEMIC") return false
+        const reasonParts = (t.reason || "").split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
+        const academicParts = reasonParts.filter((p: string) => !isNonAcademicSub(p))
+        const committedAcad = (t.commitmentSubjects || []).filter((p: string) => !isNonAcademicSub(p))
+        return academicParts.length > 0 || committedAcad.length > 0
+      }
       if (activeTab === "psychology") return t.supportType === "PSYCHOLOGICAL"
       return true
     })
-    .reduce((acc: any[], target: any) => {
-      const teacherId = target.createdBy?.id || "SYSTEM"
-      const teacherName = target.createdBy?.teacherName || "Hệ thống"
-      
-      let group = acc.find(g => g.teacherId === teacherId)
-      if (!group) {
-        group = {
+
+    const groupMap = new Map<string, any>()
+
+    const addTargetToTeacherGroup = (
+      teacherId: string,
+      teacherName: string,
+      roleLabel: string,
+      subjectLabel: string,
+      target: any
+    ) => {
+      if (!groupMap.has(teacherId)) {
+        groupMap.set(teacherId, {
           teacherId,
           teacherName,
-          targets: [],
+          teacherRoles: [] as string[],
+          teacherClasses: [] as string[],
+          teacherSubjects: [] as string[],
+          targets: [] as any[],
           academicCount: 0,
           psychologyCount: 0,
           pendingCount: 0,
           approvedCount: 0,
           terminatedCount: 0,
           pendingTerminationCount: 0,
+          admissionCount: 0,
+          teacherProposedCount: 0,
+        })
+      }
+
+      const group = groupMap.get(teacherId)!
+      if (roleLabel && !group.teacherRoles.includes(roleLabel)) {
+        group.teacherRoles.push(roleLabel)
+      }
+
+      const clsName = target.student?.class?.className
+      if (clsName && !group.teacherClasses.includes(clsName)) {
+        group.teacherClasses.push(clsName)
+      }
+
+      if (subjectLabel) {
+        subjectLabel
+          .split(/[,;]/)
+          .map((s: string) => s.trim())
+          .filter((s: string) => s && (activeTab !== "academic" || !isNonAcademicSub(s)))
+          .forEach((cleanSub: string) => {
+            if (!group.teacherSubjects.some((existing: string) => existing.toLowerCase() === cleanSub.toLowerCase())) {
+              group.teacherSubjects.push(cleanSub)
+            }
+          })
+      }
+
+      const studentKey = target.studentId || target.student?.id || target.id
+      const existingTargetEntry = group.targets.find((et: any) => (et.studentId || et.student?.id || et.id) === studentKey)
+      if (!existingTargetEntry) {
+        const cleanReason = activeTab === "academic"
+          ? (subjectLabel || target.reason || "")
+              .split(/[,;]/)
+              .map((s: string) => s.trim())
+              .filter((s: string) => s && !isNonAcademicSub(s))
+              .join(", ")
+          : target.reason
+
+        group.targets.push({
+          ...target,
+          reason: cleanReason || target.reason,
+          teacherRoleInTarget: roleLabel,
+          teacherSpecificSubject: cleanReason || subjectLabel
+        })
+
+        if (target.supportType === "ACADEMIC") {
+          group.academicCount++
+        } else {
+          group.psychologyCount++
         }
-        acc.push(group)
-      }
-      
-      group.targets.push(target)
-      
-      if (target.supportType === "ACADEMIC") {
-        group.academicCount++
+
+        if (target.sourceType === "ADMISSION" || (target.commitmentSubjects && target.commitmentSubjects.length > 0)) {
+          group.admissionCount++
+        } else {
+          group.teacherProposedCount++
+        }
+
+        const isUnapproved = (!target.assignments || target.assignments.length === 0) && target.status !== "ĐÃ DUYỆT" && target.sourceType !== "ADMISSION"
+        if (target.terminationStatus === "TERMINATED") {
+          group.terminatedCount++
+        } else if (target.terminationStatus === "PENDING_TERMINATION") {
+          group.pendingTerminationCount++
+        } else if (isUnapproved) {
+          group.pendingCount++
+        } else {
+          group.approvedCount++
+        }
       } else {
-        group.psychologyCount++
+        // Merge role & subject if teacher is both GVCN and GVBM for the same student
+        if (roleLabel && existingTargetEntry.teacherRoleInTarget && !existingTargetEntry.teacherRoleInTarget.includes(roleLabel)) {
+          existingTargetEntry.teacherRoleInTarget = `${existingTargetEntry.teacherRoleInTarget} & ${roleLabel}`
+        }
+        if (subjectLabel && existingTargetEntry.teacherSpecificSubject && !existingTargetEntry.teacherSpecificSubject.includes(subjectLabel)) {
+          const mergedSubs = Array.from(new Set(
+            `${existingTargetEntry.teacherSpecificSubject}, ${subjectLabel}`
+              .split(/[,;]/)
+              .map((s: string) => s.trim())
+              .filter((s: string) => s && (activeTab !== "academic" || !isNonAcademicSub(s)))
+          )).join(", ")
+          existingTargetEntry.teacherSpecificSubject = mergedSubs
+          if (activeTab === "academic" && mergedSubs) {
+            existingTargetEntry.reason = mergedSubs
+          }
+        }
       }
-      
-      const isUnapproved = (!target.assignments || target.assignments.length === 0) && target.status !== "ĐÃ DUYỆT"
-      if (target.terminationStatus === "TERMINATED") {
-        group.terminatedCount++
-      } else if (target.terminationStatus === "PENDING_TERMINATION") {
-        group.pendingTerminationCount++
-      } else if (isUnapproved) {
-        group.pendingCount++
+    }
+
+    tabTargets.forEach((target: any) => {
+      if (activeTab === "academic") {
+        const defaultAcademicSubs = (
+          (target.commitmentSubjects && target.commitmentSubjects.length > 0)
+            ? target.commitmentSubjects
+            : (target.reason || "").split(/[,;]/).map((s: string) => s.trim())
+        ).filter((s: string) => s && !isNonAcademicSub(s)).join(", ")
+
+        let addedAny = false
+
+        // 1. Route to GVBM & GVCN from assignments
+        if (Array.isArray(target.assignments) && target.assignments.length > 0) {
+          target.assignments.forEach((a: any) => {
+            const tid = a.teacher?.id || a.teacherId
+            const tName = a.teacher?.teacherName
+            if (!tid || !tName) return
+
+            const role = a.role || (a.subject?.id === "GVCN" ? "GVCN" : "GVBM")
+            if (targetSourceFilter === "GVCN" && role !== "GVCN") return
+            if (targetSourceFilter === "GVBM" && role !== "GVBM") return
+
+            const subForTeacher = a.committedSubject ||
+              (a.subject?.subjectName && !a.subject.subjectName.startsWith("GVCN") ? a.subject.subjectName : defaultAcademicSubs)
+
+            if (subForTeacher && isNonAcademicSub(subForTeacher) && !subForTeacher.includes(",")) return
+
+            addTargetToTeacherGroup(tid, tName, role, subForTeacher || defaultAcademicSubs, target)
+            addedAny = true
+          })
+        }
+
+        // 2. Also include proposing teacher (createdBy) if not already added and matches filter
+        if (target.createdBy?.id && target.createdBy?.teacherName) {
+          const creatorRole = target.sourceType === "GVCN" ? "GVCN" : target.sourceType === "GVBM" ? "GVBM" : "GV phụ trách"
+          const allowCreator =
+            targetSourceFilter === "ALL" ||
+            targetSourceFilter === "TEACHER_ALL" ||
+            (targetSourceFilter === "GVCN" && creatorRole === "GVCN") ||
+            (targetSourceFilter === "GVBM" && creatorRole === "GVBM") ||
+            (!addedAny && targetSourceFilter === "ADMISSION")
+
+          if (allowCreator) {
+            addTargetToTeacherGroup(
+              target.createdBy.id,
+              target.createdBy.teacherName,
+              creatorRole,
+              defaultAcademicSubs || target.reason || "",
+              target
+            )
+            addedAny = true
+          }
+        }
+
+        if (!addedAny && targetSourceFilter !== "GVCN" && targetSourceFilter !== "GVBM") {
+          addTargetToTeacherGroup("SYSTEM", "Chưa phân công GV", "Hệ thống", defaultAcademicSubs, target)
+        }
       } else {
-        group.approvedCount++
+        // Psychology tab grouping
+        const teacherId = target.createdBy?.id || target.assignments?.[0]?.teacher?.id || "SYSTEM"
+        const teacherName = target.createdBy?.teacherName || target.assignments?.[0]?.teacher?.teacherName || "Hệ thống"
+        addTargetToTeacherGroup(teacherId, teacherName, "Tâm lý", "Tâm lý", target)
       }
-      
-      return acc
-    }, [])
+    })
+
+    return Array.from(groupMap.values()).sort((a, b) => {
+      if (b.targets.length !== a.targets.length) return b.targets.length - a.targets.length
+      return a.teacherName.localeCompare(b.teacherName, "vi")
+    })
+  }, [filteredTargets, activeTab, targetSourceFilter])
 
   // Grouping classes by grade for Grade Report
   const gradeStats = classes.reduce((acc: any[], c: any) => {
@@ -2075,22 +2242,22 @@ export function SupportClient({
               <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-xxs flex flex-col justify-between min-h-[300px]">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-100 text-xs">
-                    <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
-                      <tr>
-                        <th className="px-4 py-3.5 text-center w-12">STT</th>
-                        <th className="px-4 py-3.5 text-left">Họ tên</th>
-                        <th className="px-4 py-3.5 text-left">Mã HS</th>
-                        <th className="px-4 py-3.5 text-left">Bậc học</th>
-                        <th className="px-4 py-3.5 text-left">Khối</th>
-                        <th className="px-4 py-3.5 text-left">Lớp</th>
-                        <th className="px-4 py-3.5 text-left">Cơ sở</th>
-                        <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
-                        <th className="px-4 py-3.5 text-left">Tình trạng</th>
-                        <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
-                        <th className="px-4 py-3.5 text-center w-24">Thao tác</th>
+                    <thead className="bg-[#003B3A] text-[10px] text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="px-4 py-3.5 text-center w-12 font-semibold">STT</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Họ tên</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Mã HS</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Bậc học</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Khối</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Lớp</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Cơ sở</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Môn Cam kết</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Tình trạng</th>
+                        <th className="px-4 py-3.5 text-left font-semibold">Kết quả Khảo sát & Ghi chú</th>
+                        <th className="px-4 py-3.5 text-center w-24 font-semibold">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
+                    <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-600 bg-white">
                                             {paginatedCommitments.map((row, idx) => {
                         const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
                         const isPrimary = /^[1-5][._\s]|lớp\s*[1-5]/i.test(row.className || "")
@@ -2301,26 +2468,26 @@ export function SupportClient({
             
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nguồn:</span>
+                <span className="text-xs font-semibold text-slate-500">Nguồn / Phân công:</span>
                 <select
                   value={targetSourceFilter}
                   onChange={e => setTargetSourceFilter(e.target.value)}
-                  className="rounded-lg border border-slate-300 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium bg-white"
+                  className="rounded-lg border border-slate-300 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-teal-600 text-xs font-medium bg-white"
                 >
-                  <option value="ALL">Tất cả nguồn</option>
-                  <option value="TEACHER_ALL">Đề xuất Giáo viên</option>
-                  <option value="ADMISSION">Khảo sát đầu vào (KSĐV)</option>
-                  <option value="GVCN">Giáo viên Chủ nhiệm</option>
-                  <option value="GVBM">Giáo viên Bộ môn</option>
+                  <option value="ALL">Tất cả (KSĐV & GVCN / GVBM)</option>
+                  <option value="ADMISSION">Cam kết Khảo sát đầu vào (KSĐV)</option>
+                  <option value="GVBM">Phân công Giáo viên Bộ môn (GVBM)</option>
+                  <option value="GVCN">Phân công Giáo viên Chủ nhiệm (GVCN)</option>
+                  <option value="TEACHER_ALL">Đề xuất bổ sung từ Giáo viên</option>
                 </select>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng thái:</span>
+                <span className="text-xs font-semibold text-slate-500">Trạng thái:</span>
                 <select
                   value={targetStatusFilter}
                   onChange={e => setTargetStatusFilter(e.target.value)}
-                  className="rounded-lg border border-slate-300 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium bg-white"
+                  className="rounded-lg border border-slate-300 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-teal-600 text-xs font-medium bg-white"
                 >
                   <option value="ALL">Tất cả trạng thái</option>
                   <option value="UNAPPROVED">Cần can thiệp</option>
@@ -2341,10 +2508,10 @@ export function SupportClient({
 
               <button
                 onClick={handleExportTrackingBookAdmin}
-                className="px-3.5 py-1.5 bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                className="px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#005250] text-white text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
                 title="Xuất Sổ Theo Dõi - Theo dõi tiến độ đánh giá theo Học sinh, theo Tuần & Tháng của từng Học sinh GV phụ trách"
               >
-                <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-200" />
+                <FileSpreadsheet className="h-3.5 w-3.5 text-teal-200" />
                 <span>Xuất Sổ Theo Dõi</span>
               </button>
 
@@ -2362,67 +2529,109 @@ export function SupportClient({
           </div>
 
           {/* Grouped Teacher Table */}
-          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Giáo viên đề xuất</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Số lượng HS đề xuất</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    {activeTab === "academic" ? "Môn học hỗ trợ" : "Lĩnh vực tâm lý"}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <table className="min-w-full divide-y divide-slate-200 tabular-nums">
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="px-6 py-3.5 text-left text-xs font-bold">
+                    {activeTab === "academic" ? "Giáo viên phụ trách (GVCN / GVBM)" : "Giáo viên phụ trách"}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái tổng quan</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
+                  <th className="px-6 py-3.5 text-left text-xs font-bold">
+                    {activeTab === "academic" ? "Số lượng HS phụ trách" : "Số lượng HS đề xuất"}
+                  </th>
+                  <th className="px-6 py-3.5 text-left text-xs font-bold">
+                    {activeTab === "academic" ? "Môn khảo sát / học tập hỗ trợ" : "Lĩnh vực tâm lý"}
+                  </th>
+                  <th className="px-6 py-3.5 text-left text-xs font-bold">Trạng thái tổng quan</th>
+                  <th className="px-6 py-3.5 text-center text-xs font-bold">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-slate-200 text-sm">
+              <tbody className="bg-white divide-y divide-[#E2E8F0] text-sm">
                 {groupedTargets.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="text-center py-10 text-slate-400">
                       {activeTab === "academic"
-                        ? "Không tìm thấy đề xuất hỗ trợ học tập nào"
+                        ? "Không tìm thấy học sinh hoặc giáo viên phụ trách hỗ trợ học tập nào"
                         : "Không tìm thấy đề xuất hỗ trợ tâm lý nào"}
                     </td>
                   </tr>
                 ) : (
                   groupedTargets.map((group: any) => {
-                    const subjectsList = Array.from(
-                      new Set(
-                        group.targets.map((t: any) => {
-                          if (t.supportType === "PSYCHOLOGICAL") return "Tâm lý"
-                          return t.reason?.split(" (")?.[0] || t.reason || "Môn học"
-                        })
-                      )
-                    ).filter(Boolean)
+                    const subjectsList: string[] =
+                      group.teacherSubjects && group.teacherSubjects.length > 0
+                        ? group.teacherSubjects
+                        : Array.from(
+                            new Set(
+                              group.targets.map((t: any) => {
+                                if (t.supportType === "PSYCHOLOGICAL") return "Tâm lý"
+                                return t.reason?.split(" (")?.[0] || t.reason || "Môn học"
+                              })
+                            )
+                          ).filter(Boolean) as string[]
+
+                    const roleBadges: string[] = group.teacherRoles || []
+                    const classBadges: string[] = group.teacherClasses || []
 
                     return (
-                      <tr key={group.teacherId} className="hover:bg-slate-50 transition-colors">
+                      <tr key={group.teacherId} className="hover:bg-slate-50/80 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-teal-600 to-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs border border-white">
+                            <div className="h-9 w-9 rounded-full bg-[#003B3A] text-white flex items-center justify-center font-bold text-sm shadow-xs border border-teal-800/20 shrink-0">
                               {group.teacherName.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <div className="font-bold text-slate-800">{group.teacherName}</div>
-                              <div className="text-xs text-slate-500">
-                                {group.teacherId === "SYSTEM" ? "Khảo sát tự động" : "Đề xuất hỗ trợ"}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-slate-800">{group.teacherName}</span>
+                                {activeTab === "academic" && roleBadges.map((r: string, rIdx: number) => (
+                                  <span
+                                    key={rIdx}
+                                    className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                                      r === "GVBM"
+                                        ? "bg-teal-50 text-[#00736E] border-teal-200"
+                                        : r === "GVCN"
+                                        ? "bg-amber-50 text-amber-800 border-amber-200"
+                                        : "bg-slate-100 text-slate-700 border-slate-200"
+                                    }`}
+                                  >
+                                    {r}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                {classBadges.length > 0 ? (
+                                  <span>
+                                    Lớp: <strong className="font-semibold text-slate-700">{classBadges.slice(0, 5).join(", ")}{classBadges.length > 5 ? ` (+${classBadges.length - 5})` : ""}</strong>
+                                  </span>
+                                ) : (
+                                  <span>{group.teacherId === "SYSTEM" ? "Khảo sát đầu vào" : "Phân công bồi dưỡng"}</span>
+                                )}
+                                {activeTab === "academic" && group.admissionCount > 0 && (
+                                  <span className="text-[11px] text-teal-700 font-medium">
+                                    • {group.admissionCount} HS Cam kết đầu vào
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-semibold text-slate-700">
+                          <div className="font-bold text-[#003B3A] tabular-nums">
                             {group.targets.length} học sinh
                           </div>
+                          {activeTab === "academic" && group.teacherProposedCount > 0 && (
+                            <div className="text-[11px] text-slate-500 tabular-nums">
+                              +{group.teacherProposedCount} đề xuất bổ sung
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-1.5 max-w-md">
                             {subjectsList.map((sub: any, idx: number) => (
                               <span
                                 key={idx}
-                                className={`px-2 py-0.5 rounded-md text-xs font-semibold border ${
+                                className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border ${
                                   activeTab === "academic"
-                                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                                    ? "bg-teal-50/70 text-[#003B3A] border-teal-200"
                                     : "bg-teal-50 text-teal-800 border-teal-200"
                                 }`}
                               >
@@ -2433,10 +2642,10 @@ export function SupportClient({
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-1.5 tabular-nums">
                             {group.pendingCount > 0 && (
                               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
-                                <Bell className="h-3 w-3 text-amber-700 animate-bounce fill-orange-600" />
+                                <Bell className="h-3 w-3 text-amber-700 fill-amber-600" />
                                 {group.pendingCount} Chờ duyệt
                               </span>
                             )}
@@ -2446,8 +2655,8 @@ export function SupportClient({
                               </span>
                             )}
                             {group.pendingTerminationCount > 0 && (
-                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse inline-flex items-center gap-1">
-                                <Bell className="h-3 w-3 text-amber-600 animate-bounce fill-amber-600" />
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                                <Bell className="h-3 w-3 text-amber-600 fill-amber-600" />
                                 {group.pendingTerminationCount} Chờ kết thúc
                               </span>
                             )}
@@ -2462,14 +2671,14 @@ export function SupportClient({
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => setSelectedTeacherForDetail(group)}
-                              className="bg-teal-50 hover:bg-teal-50 text-teal-800 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors border border-teal-200/50 shadow-xs"
+                              className="bg-teal-50 hover:bg-teal-100/80 text-[#003B3A] font-bold py-1.5 px-3 rounded-lg text-xs transition-colors border border-teal-200 shadow-xs cursor-pointer"
                             >
                               Chi tiết
                             </button>
                             <button
                               type="button"
                               onClick={() => handleOpenPdfModal(group.teacherId, activeTab === "psychology" ? "PSYCHOLOGICAL" : "ACADEMIC")}
-                              className="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-1.5 px-2.5 rounded-lg text-xs transition-colors border border-rose-200/60 shadow-xs flex items-center gap-1"
+                              className="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-1.5 px-2.5 rounded-lg text-xs transition-colors border border-rose-200/60 shadow-xs flex items-center gap-1 cursor-pointer"
                               title={`Xem & Tải File PDF của ${group.teacherName}`}
                             >
                               <Printer className="h-3.5 w-3.5" />
@@ -2508,17 +2717,17 @@ export function SupportClient({
 
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh được hỗ trợ</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Loại bồi dưỡng</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn bồi dưỡng</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Giáo viên phụ đạo (GVPT)</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ghi chú</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="px-6 py-3 text-left text-xs font-bold">Học sinh được hỗ trợ</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold">Loại bồi dưỡng</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold">Môn bồi dưỡng</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold">Giáo viên phụ đạo (GVPT)</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold">Ghi chú</th>
+                  <th className="px-6 py-3 text-center text-xs font-bold">Hành động</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-slate-200 text-sm">
+              <tbody className="bg-white divide-y divide-[#E2E8F0] text-sm">
                 {assignments.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-10 text-slate-400">
@@ -2647,18 +2856,18 @@ export function SupportClient({
                 <h3 className="font-bold text-slate-800">Lược sử theo dõi bồi dưỡng chi tiết</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Mã HS</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Họ và tên</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Lớp</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Chương trình / Môn</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Thời gian bắt đầu</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Thời gian kết thúc</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Mức tiến bộ / Kết quả</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-6 py-3 text-left font-bold">Mã HS</th>
+                    <th className="px-6 py-3 text-left font-bold">Họ và tên</th>
+                    <th className="px-6 py-3 text-left font-bold">Lớp</th>
+                    <th className="px-6 py-3 text-left font-bold">Chương trình / Môn</th>
+                    <th className="px-6 py-3 text-left font-bold">Thời gian bắt đầu</th>
+                    <th className="px-6 py-3 text-left font-bold">Thời gian kết thúc</th>
+                    <th className="px-6 py-3 text-left font-bold">Mức tiến bộ / Kết quả</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {targets.map((t: any) => (
                     <tr key={t.id} className="hover:bg-slate-50">
                       <td className="px-6 py-4 font-mono font-bold text-slate-700">{t.student?.studentCode}</td>
@@ -2689,16 +2898,16 @@ export function SupportClient({
                 <span className="text-xs font-medium text-slate-500">Khảo sát & Đề xuất bồi dưỡng</span>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tên Khối</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS bồi dưỡng</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Học tập (Môn học)</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tên Khối</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Tổng số HS bồi dưỡng</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Học tập (Môn học)</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {gradeStats.map((item: any, idx: number) => {
                     if (item.totalCount === 0) return null
                     return (
@@ -2730,16 +2939,16 @@ export function SupportClient({
                 <h3 className="font-bold text-slate-800">Thống kê số lượng học sinh bồi dưỡng theo lớp</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tên lớp</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Văn hóa (Môn)</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tên lớp</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Tổng số HS</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Hỗ trợ Văn hóa (Môn)</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {classes.map((c: any) => {
                     const classTargets = targets.filter(t => t.student?.classId === c.id)
                     const acadCount = classTargets.filter(t => t.supportType === "ACADEMIC").length
@@ -2779,16 +2988,16 @@ export function SupportClient({
                 <h3 className="font-bold text-slate-800">Thống kê theo dõi theo Môn học</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tên môn học / Lý do</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Học tập (Môn học)</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tên môn học / Lý do</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Tổng số HS</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Học tập (Môn học)</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {subjects.map((sub: any) => {
                     const subTargets = targets.filter(t => 
                       t.supportType === "ACADEMIC" && 
@@ -2830,16 +3039,16 @@ export function SupportClient({
                 <h3 className="font-bold text-slate-800">Thống kê phân công bồi dưỡng theo Giáo viên</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Họ tên Giáo viên phụ trách</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Văn hóa (Môn)</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-6 py-3 text-left font-bold text-xs">Họ tên Giáo viên phụ trách</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Tổng số HS</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Hỗ trợ Văn hóa (Môn)</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {teachers.map((t: any) => {
                     const teacherAssignments = assignments.filter(a => a.teacherId === t.id)
                     const teacherTargets = targets.filter(target => teacherAssignments.some(a => a.targetId === target.id))
@@ -2882,16 +3091,16 @@ export function SupportClient({
                 <h3 className="font-bold text-slate-800">Thống kê số lượng học sinh bồi dưỡng theo Cơ sở</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tên cơ sở</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Văn hóa (Môn)</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tên cơ sở</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Tổng số HS</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Hỗ trợ Văn hóa (Môn)</th>
+                    <th className="px-6 py-3 text-center font-bold text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {campuses.map((c: any) => {
                     const campusTargets = targets.filter(t => t.student?.class?.campusId === c.id)
                     const acadCount = campusTargets.filter(t => t.supportType === "ACADEMIC").length
@@ -3132,9 +3341,9 @@ export function SupportClient({
               ) : syncClassId && (
                 <div className="border rounded-lg overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left">
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="px-4 py-2 text-left font-semibold">
                           <input
                             type="checkbox"
                             checked={selectedCandidateIds.length === syncCandidates.length}
@@ -3144,15 +3353,15 @@ export function SupportClient({
                             }}
                           />
                         </th>
-                        <th className="px-4 py-2 text-left">Học sinh</th>
-                        <th className="px-4 py-2 text-center">Toán</th>
-                        <th className="px-4 py-2 text-center">Văn</th>
-                        <th className="px-4 py-2 text-center">Anh</th>
-                        <th className="px-4 py-2 text-center">Tâm lý</th>
-                        <th className="px-4 py-2 text-left">Ghi chú</th>
+                        <th className="px-4 py-2 text-left font-semibold">Học sinh</th>
+                        <th className="px-4 py-2 text-center font-semibold">Toán</th>
+                        <th className="px-4 py-2 text-center font-semibold">Văn</th>
+                        <th className="px-4 py-2 text-center font-semibold">Anh</th>
+                        <th className="px-4 py-2 text-center font-semibold">Tâm lý</th>
+                        <th className="px-4 py-2 text-left font-semibold">Ghi chú</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {syncCandidates.map(cand => (
                         <tr key={cand.id} className="hover:bg-slate-50">
                           <td className="px-4 py-2">
@@ -3696,14 +3905,30 @@ export function SupportClient({
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
             <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[85vh] animate-scale-in">
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50/50">
+              <div className="px-6 py-4 border-b flex justify-between items-center bg-teal-50/50 border-l-4 border-l-[#003B3A]">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-[#003B3A] flex items-center gap-2 flex-wrap">
                     <Users className="h-5 w-5 text-teal-800" />
-                    Đề xuất hỗ trợ {activeTab === "academic" ? "Học tập" : "Tâm lý"} từ Giáo viên: {selectedTeacherForDetail.teacherName}
+                    <span>
+                      Danh sách học sinh hỗ trợ {activeTab === "academic" ? "Học tập" : "Tâm lý"} • Giáo viên: {selectedTeacherForDetail.teacherName}
+                    </span>
+                    {selectedTeacherForDetail.teacherRoles?.map((r: string, idx: number) => (
+                      <span
+                        key={idx}
+                        className={`px-2 py-0.5 rounded text-xs font-semibold border ${
+                          r === "GVBM"
+                            ? "bg-teal-50 text-[#00736E] border-teal-200"
+                            : r === "GVCN"
+                            ? "bg-amber-50 text-amber-800 border-amber-200"
+                            : "bg-slate-100 text-slate-700 border-slate-200"
+                        }`}
+                      >
+                        {r}
+                      </span>
+                    ))}
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Tổng số {modalTargets.length} học sinh cần hỗ trợ {activeTab === "academic" ? "học tập" : "tâm lý"}
+                  <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
+                    Tổng số {modalTargets.length} học sinh cần hỗ trợ {activeTab === "academic" ? "học tập (theo Cam kết đầu vào & đề xuất)" : "tâm lý"}
                   </p>
                 </div>
                 <button onClick={() => setSelectedTeacherForDetail(null)}>
@@ -3713,8 +3938,8 @@ export function SupportClient({
 
               {/* Quick action bar */}
               <div className="px-6 py-3 bg-slate-50 border-b flex justify-between items-center gap-4 flex-wrap">
-                <div className="text-sm text-slate-600 font-medium">
-                  Tìm thấy {modalTargets.length} đề xuất.
+                <div className="text-sm text-slate-600 font-medium tabular-nums">
+                  Đang hiển thị {modalTargets.length} học sinh phụ trách.
                 </div>
                 <div className="flex items-center gap-2">
                   {pendingModalTargets.length > 0 && (isGDCS || isKTDBCL) && (
@@ -3780,10 +4005,10 @@ export function SupportClient({
                         toast.error(err?.message || "Lỗi khi xuất sổ")
                       }
                     }}
-                    className="bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs inline-flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                    className="bg-[#003B3A] hover:bg-[#005250] text-white font-bold py-1.5 px-3 rounded-lg text-xs inline-flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
                     title="Xuất Sổ Theo Dõi của giáo viên này ra file Excel"
                   >
-                    <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-200" />
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-teal-200" />
                     <span>Xuất Sổ Theo Dõi GV</span>
                   </button>
 
@@ -3806,28 +4031,29 @@ export function SupportClient({
 
               {/* Modal Body: Proposals list table */}
               <div className="p-6 overflow-y-auto flex-1">
-                <div className="border rounded-xl overflow-hidden shadow-xs">
-                  <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nguồn đề xuất</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cam kết đầu vào</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Chương trình / Môn</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">GV Phân công</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                  <table className="min-w-full divide-y divide-slate-200 tabular-nums">
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="px-4 py-3 text-left text-xs font-bold">Học sinh</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold">Nguồn & Vai trò</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold">Cam kết đầu vào</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold">Môn hỗ trợ</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold">Phối hợp GVCN & GVBM</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold">Trạng thái</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-slate-200 text-xs">
+                    <tbody className="bg-white divide-y divide-[#E2E8F0] text-xs">
                       {modalTargets.map((t: any) => {
-                        const isUnapproved = (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT"
+                        const isUnapproved = (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT" && t.sourceType !== "ADMISSION"
                         const progressBadge = t.terminationStatus === "TERMINATED" 
                           ? "bg-emerald-100 text-emerald-800"
                           : t.terminationStatus === "PENDING_TERMINATION"
-                          ? "bg-amber-100 text-amber-800 animate-pulse"
+                          ? "bg-amber-100 text-amber-800"
                           : isUnapproved
-                          ? "bg-blue-50 text-blue-600 border border-blue-200"
-                          : "bg-teal-50 text-teal-800"
+                          ? "bg-amber-50 text-amber-800 border border-amber-200"
+                          : "bg-teal-50 text-teal-800 border border-teal-200"
 
                         const statusText = t.terminationStatus === "TERMINATED"
                           ? "Đã kết thúc"
@@ -3835,79 +4061,97 @@ export function SupportClient({
                           ? "Hoàn thành"
                           : isUnapproved
                           ? "Đang đề xuất"
-                          : "Đang hỗ trợ"
+                          : "Đang bồi dưỡng"
 
-                        const assignedTeachers = t.assignments?.map((a: any) => a.teacher?.teacherName).filter(Boolean) || []
+                        const gvbmList = (t.gvbmTeachers || []).map((g: any) => `${g.teacherName} (${g.committedSubject})`)
+                        const gvcnList = (t.gvcnTeachers || []).map((g: any) => g.teacherName)
+                        const fallbackAssigned = t.assignments?.map((a: any) => a.teacher?.teacherName).filter(Boolean) || []
 
                         return (
-                          <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                          <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
                             {/* 1. Học sinh */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="font-bold text-slate-800">{t.student?.studentName}</div>
-                              <div className="text-[10px] text-slate-500 mt-0.5">
-                                {t.student?.studentCode} • Lớp {t.student?.class?.className}
+                              <div className="text-[11px] text-slate-500 mt-0.5 tabular-nums">
+                                {t.student?.studentCode} • Lớp <strong className="text-slate-700">{t.student?.class?.className}</strong>
                               </div>
-                              <div className="text-[9px] text-slate-400 font-medium">
+                              <div className="text-[10px] text-slate-400 font-medium">
                                 Cơ sở: {t.student?.class?.campus?.campusName || "-"} • Khối {t.student?.class?.className?.match(/^\d+/)?.[0] || t.student?.class?.className || "-"}
                               </div>
                             </td>
 
-                            {/* 2. Nguồn đề xuất */}
+                            {/* 2. Nguồn & Vai trò */}
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                t.sourceType === "GVCN" || t.sourceType === "TAM_LY"
-                                  ? "bg-teal-50 text-teal-700 border border-teal-200"
-                                  : t.sourceType === "GVBM"
-                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                  : "bg-slate-50 text-slate-700 border border-slate-200"
-                              }`}>
-                                {t.sourceType === "GVCN" || t.sourceType === "TAM_LY" ? "GV Chủ nhiệm" : t.sourceType === "GVBM" ? "GV Bộ môn" : "Khảo sát đầu vào"}
-                              </span>
+                              <div className="flex flex-col gap-1">
+                                <span className={`px-2 py-0.5 rounded text-[11px] font-bold w-fit ${
+                                  t.sourceType === "ADMISSION"
+                                    ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                    : t.sourceType === "GVCN" || t.sourceType === "TAM_LY"
+                                    ? "bg-teal-50 text-teal-700 border border-teal-200"
+                                    : "bg-slate-100 text-slate-700 border border-slate-200"
+                                }`}>
+                                  {t.sourceType === "ADMISSION" ? "Cam kết đầu vào (KSĐV)" : t.sourceType === "GVCN" || t.sourceType === "TAM_LY" ? "GV Chủ nhiệm" : "GV Bộ môn"}
+                                </span>
+                                {t.teacherRoleInTarget && (
+                                  <span className="text-[10px] font-semibold text-[#00736E]">
+                                    Vai trò: {t.teacherRoleInTarget}
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                             {/* 3. Cam kết đầu vào */}
                             <td className="px-4 py-3">
                               {t.commitmentNote ? (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
-                                  ⭐ {t.commitmentNote}
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
+                                  {t.commitmentNote}
                                 </span>
                               ) : (
-                                <span className="text-slate-400 italic text-[10px]">Không có</span>
+                                <span className="text-slate-400 italic text-[11px]">Đề xuất trong năm</span>
                               )}
                             </td>
 
                             {/* 4. Chương trình / Môn */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex flex-col gap-1">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold w-fit ${
-                                  t.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-teal-50 text-teal-800"
-                                }`}>
-                                  {t.supportType === "ACADEMIC" ? "Bồi dưỡng học tập" : "Hỗ trợ Tâm lý"}
-                                </span>
-                                <span className="font-semibold text-slate-700 text-[10px] max-w-[150px] truncate" title={t.reason}>
-                                  {t.reason || "-"}
+                                <span className="px-2 py-0.5 rounded text-[11px] font-bold w-fit bg-teal-50 text-[#003B3A] border border-teal-200">
+                                  {t.teacherSpecificSubject || t.reason || (t.supportType === "ACADEMIC" ? "Môn văn hóa" : "Tâm lý")}
                                 </span>
                               </div>
                             </td>
 
-                            {/* 5. GV Phân công */}
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {assignedTeachers.length > 0 ? (
-                                <div className="flex flex-wrap gap-1 max-w-[150px]">
-                                  {assignedTeachers.map((name, index) => (
-                                    <span key={index} className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
-                                      {name}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
-                              )}
+                            {/* 5. Phối hợp GVCN & GVBM */}
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col gap-1 max-w-[230px]">
+                                {gvbmList.length > 0 && (
+                                  <div className="text-[11px] text-slate-700">
+                                    <span className="font-bold text-[#00736E]">GVBM:</span> {gvbmList.join(", ")}
+                                  </div>
+                                )}
+                                {gvcnList.length > 0 && (
+                                  <div className="text-[11px] text-slate-600">
+                                    <span className="font-bold text-amber-800">GVCN:</span> {gvcnList.join(", ")}
+                                  </div>
+                                )}
+                                {gvbmList.length === 0 && gvcnList.length === 0 && (
+                                  fallbackAssigned.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {fallbackAssigned.map((name: string, index: number) => (
+                                        <span key={index} className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                                          {name}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
+                                  )
+                                )}
+                              </div>
                             </td>
 
                             {/* 6. Trạng thái */}
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${progressBadge}`}>
+                              <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${progressBadge}`}>
                                 {statusText}
                               </span>
                             </td>

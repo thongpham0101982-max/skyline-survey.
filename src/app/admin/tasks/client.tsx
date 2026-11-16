@@ -72,7 +72,10 @@ import {
   setTaskGroupLeader,
   saveDepartmentSettings,
 } from "./actions"
-import { createQaWorkspaceTask } from "./qa_workspace_actions"
+import {
+  createQaWorkspaceTask,
+  confirmAndAcceptQaTask,
+} from "./qa_workspace_actions"
 import { TaskDetailPanel } from "./TaskDetailPanel"
 import { WorkspaceCardsView } from "./components/WorkspaceCardsView"
 import { CommandRoomView } from "./components/CommandRoomView"
@@ -121,7 +124,7 @@ const PRIORITY_OPTIONS = [
   {
     value: "URGENT",
     label: "Khẩn cấp",
-    color: "text-red-700 bg-red-100 animate-pulse",
+    color: "text-rose-700 bg-rose-100",
   },
 ]
 
@@ -667,7 +670,7 @@ export function TasksClient({
 
   const handleConfirmTaskAction = async (taskId: string) => {
     setActionLoading(true)
-    const res = await confirmTaskAssignment(taskId)
+    const res: any = await confirmAndAcceptQaTask(taskId)
     setActionLoading(false)
     if (res.success) {
       setTasks(
@@ -678,15 +681,19 @@ export function TasksClient({
                 acceptanceStatus: "ACCEPTED",
                 acceptedAt: new Date().toISOString(),
                 progress: t.progress === "PENDING" ? "IN_PROGRESS" : t.progress,
+                qaMeta: {
+                  ...(t.qaMeta || {}),
+                  workflowStatus: res.workflowStatus || "IN_PROGRESS",
+                },
               }
             : t
         )
       )
       setTaskToast({
-        msg: "✅ Đã xác nhận tiếp nhận công việc thành công!",
+        msg: "Đã xác nhận tiếp nhận công việc, chuyển sang Đang thực hiện và báo email cho người giao!",
         type: "success",
       })
-      setTimeout(() => setTaskToast(null), 3000)
+      setTimeout(() => setTaskToast(null), 3500)
     } else {
       alert("Lỗi: " + res.error)
     }
@@ -1369,33 +1376,33 @@ export function TasksClient({
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-xs overflow-hidden">
-            <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-700">
-                Danh sách Nhiệm vụ ({displayedTasks.length})
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xs overflow-hidden">
+            <div className="px-5 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
+              <span className="text-xs font-extrabold text-[#003B3A] tabular-nums">
+                Danh sách nhiệm vụ ({displayedTasks.length})
               </span>
               <button
                 type="button"
                 onClick={handleExportExcel}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E2E8F0] text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5 text-emerald-600" /> Xuất Excel
+                <Download className="w-3.5 h-3.5 text-[#059669]" /> Xuất Excel
               </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider">
-                    <th className="p-3 text-center w-12">STT</th>
-                    <th className="p-3 w-44">Nhóm & Danh mục</th>
-                    <th className="p-3 min-w-[280px]">Nhiệm vụ & Sản phẩm</th>
-                    <th className="p-3 w-48">Chịu trách nhiệm chính</th>
-                    <th className="p-3 w-36">Hạn & Nhãn bước</th>
-                    <th className="p-3 w-40">Trạng thái Luồng</th>
-                    <th className="p-3 text-center w-28">Thao tác</th>
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-center w-12 font-semibold text-teal-100">STT</th>
+                    <th className="py-3 px-3 w-44 font-semibold text-teal-100">Nhóm & danh mục</th>
+                    <th className="py-3 px-3 min-w-[280px] font-semibold text-white">Nhiệm vụ & sản phẩm</th>
+                    <th className="py-3 px-3 w-48 font-semibold text-teal-100">Chịu trách nhiệm chính</th>
+                    <th className="py-3 px-3 w-36 font-semibold text-teal-100">Hạn & nhãn bước</th>
+                    <th className="py-3 px-3 w-44 font-semibold text-[#5EEAD4]">Xác nhận & trạng thái</th>
+                    <th className="py-3 px-3 text-center w-32 font-semibold text-white">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                   {displayedTasks.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="p-12 text-center text-slate-400">
@@ -1524,13 +1531,13 @@ export function TasksClient({
                               </span>
                             )}
                           </td>
-                          <td className="p-3">
+                          <td className="py-3 px-3 align-middle space-y-1">
                             <span
-                              className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold inline-block ${
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-block ${
                                 wfStatus === "COMPLETED"
                                   ? "bg-emerald-100 text-emerald-800"
                                   : wfStatus === "PENDING_REVIEW"
-                                  ? "bg-teal-50 text-teal-800"
+                                  ? "bg-teal-50 text-[#00736E] border border-teal-200"
                                   : wfStatus === "NEEDS_REVISION"
                                   ? "bg-amber-100 text-amber-800"
                                   : wfStatus === "IN_PROGRESS"
@@ -1540,14 +1547,46 @@ export function TasksClient({
                             >
                               {WORKFLOW_STATUS_LABELS[wfStatus] || wfStatus}
                             </span>
+                            {wfStatus !== "DRAFT" && wfStatus !== "CANCELLED" && (
+                              <div className="text-[10px] font-semibold">
+                                {(t.acceptanceStatus || "WAITING_CONFIRMATION") ===
+                                  "WAITING_CONFIRMATION" && wfStatus === "ASSIGNED" ? (
+                                  <span className="text-[#D97706]">
+                                    • Chờ xác nhận nhận việc
+                                  </span>
+                                ) : t.acceptanceStatus === "REJECTED" ? (
+                                  <span className="text-[#E11D48]">
+                                    • Có phản hồi nhận việc
+                                  </span>
+                                ) : (
+                                  <span className="text-[#059669]">
+                                    • Đã xác nhận nhận việc
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </td>
-                          <td className="p-3 text-center">
+                          <td className="py-3 px-3 text-center align-middle">
                             <div className="flex items-center justify-center gap-1">
+                              {(t.acceptanceStatus || "WAITING_CONFIRMATION") ===
+                                "WAITING_CONFIRMATION" &&
+                                wfStatus === "ASSIGNED" &&
+                                (t.assignedToUserId === currentUserId || isAdmin) && (
+                                  <button
+                                    type="button"
+                                    disabled={actionLoading}
+                                    onClick={() => handleConfirmTaskAction(t.id)}
+                                    className="px-2 py-1 rounded-lg bg-[#003B3A] hover:bg-[#004D47] text-white text-[11px] font-bold cursor-pointer"
+                                    title="Xác nhận tiếp nhận nhiệm vụ ngay"
+                                  >
+                                    Xác nhận
+                                  </button>
+                                )}
                               <button
                                 type="button"
                                 onClick={() => setDetailTask(t)}
-                                className="p-1.5 text-teal-800 hover:bg-teal-50 rounded-lg font-bold cursor-pointer"
-                                title="Mở chi tiết & nghiệm thu"
+                                className="p-1.5 text-[#00736E] hover:bg-teal-50 rounded-lg font-bold cursor-pointer"
+                                title="Mở chi tiết, xác nhận & nghiệm thu"
                               >
                                 <MessageSquare className="w-4 h-4" />
                               </button>
@@ -1556,8 +1595,8 @@ export function TasksClient({
                                   <button
                                     type="button"
                                     onClick={() => handleRemind(t.id)}
-                                    className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg cursor-pointer"
-                                    title="Gửi nhắc việc"
+                                    className="p-1.5 text-[#D97706] hover:bg-amber-50 rounded-lg cursor-pointer"
+                                    title="Gửi email & thông báo nhắc việc"
                                   >
                                     <Bell className="w-4 h-4" />
                                   </button>
@@ -1572,7 +1611,7 @@ export function TasksClient({
                                   <button
                                     type="button"
                                     onClick={() => handleDelete(t.id)}
-                                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer"
+                                    className="p-1.5 text-[#E11D48] hover:bg-rose-50 rounded-lg cursor-pointer"
                                     title="Xóa"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -1839,6 +1878,8 @@ export function TasksClient({
           currentUserId={currentUserId}
           isAdmin={isAdmin}
           allStaffUsers={allStaffUsers}
+          initialTab={searchParams?.get("tab")}
+          initialAction={searchParams?.get("action")}
           onClose={() => setDetailTask(null)}
           onTaskUpdated={() => window.location.reload()}
         />
@@ -1866,7 +1907,24 @@ export function TasksClient({
       <TaskAssignmentModal
         isOpen={showAssignmentModal}
         onClose={() => setShowAssignmentModal(false)}
-        onSuccess={() => window.location.reload()}
+        onSuccess={res => {
+          if (res?.isDraft) {
+            setTaskToast({
+              msg: "Đã lưu phiếu giao việc ở trạng thái Nháp (chưa gửi email).",
+              type: "success",
+            })
+          } else {
+            const mailNote =
+              res?.emailsSentCount && res.emailsSentCount > 0
+                ? ` và gửi ${res.emailsSentCount} email thông báo đến các thành viên liên quan`
+                : ""
+            setTaskToast({
+              msg: `Đã phát hành phiếu giao việc thành công${mailNote}!`,
+              type: "success",
+            })
+          }
+          setTimeout(() => window.location.reload(), 900)
+        }}
         editingTask={editingTaskForModal}
         presetDraft={presetAssignmentDraft}
         taskGroups={taskGroupsList}

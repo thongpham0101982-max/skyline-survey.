@@ -454,19 +454,19 @@ export default function StudentConsultationDiaryPage() {
             /* TABLE VIEW */
             <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
               <table className="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3.5 border-r border-slate-200 w-12 text-center">STT</th>
-                    <th className="p-3.5 border-r border-slate-200 w-32">1. Ngày gặp</th>
-                    <th className="p-3.5 border-r border-slate-200 min-w-[180px]">2. Nội dung trao đổi</th>
-                    <th className="p-3.5 border-r border-slate-200 min-w-[160px]">3. Khó khăn ghi nhận</th>
-                    <th className="p-3.5 border-r border-slate-200 min-w-[180px]">4. Hành động tiếp theo</th>
-                    <th className="p-3.5 border-r border-slate-200 w-28">5. Thời hạn</th>
-                    <th className="p-3.5 border-r border-slate-200 min-w-[140px]">6. Ghi chú</th>
-                    <th className="p-3.5 min-w-[200px] bg-amber-50/60 text-amber-950">7. Tự đánh giá sau buổi cố vấn</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-[11px] font-semibold">
+                    <th className="p-3.5 border-r border-white/15 w-12 text-center font-semibold">STT</th>
+                    <th className="p-3.5 border-r border-white/15 w-32 font-semibold">1. Ngày gặp</th>
+                    <th className="p-3.5 border-r border-white/15 min-w-[180px] font-semibold">2. Nội dung trao đổi</th>
+                    <th className="p-3.5 border-r border-white/15 min-w-[160px] font-semibold">3. Khó khăn ghi nhận</th>
+                    <th className="p-3.5 border-r border-white/15 min-w-[180px] font-semibold">4. Hành động tiếp theo</th>
+                    <th className="p-3.5 border-r border-white/15 w-28 font-semibold">5. Thời hạn</th>
+                    <th className="p-3.5 border-r border-white/15 min-w-[140px] font-semibold">6. Ghi chú</th>
+                    <th className="p-3.5 min-w-[200px] bg-[#003B3A] text-amber-200 font-semibold">7. Tự đánh giá sau buổi cố vấn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-800">
                   {consultations.map((item, idx) => (
                     <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-3.5 border-r border-slate-200 text-center font-black text-slate-500 align-top">

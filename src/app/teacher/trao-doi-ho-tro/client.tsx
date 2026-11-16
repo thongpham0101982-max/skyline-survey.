@@ -790,17 +790,17 @@ export default function SubjectTeacherSupportClient({ user }: Props) {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Mã HS / Học sinh</th>
-                    <th className="px-4 py-3">Lớp / Môn</th>
-                    <th className="px-4 py-3">Biện pháp & Tiến độ Hỗ trợ</th>
-                    <th className="px-4 py-3">Đề xuất</th>
-                    <th className="px-4 py-3">Trạng thái</th>
-                    <th className="px-4 py-3 text-right">Cập nhật</th>
+                <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="px-4 py-3 font-semibold">Mã HS / Học sinh</th>
+                    <th className="px-4 py-3 font-semibold">Lớp / Môn</th>
+                    <th className="px-4 py-3 font-semibold">Biện pháp & Tiến độ Hỗ trợ</th>
+                    <th className="px-4 py-3 font-semibold">Đề xuất</th>
+                    <th className="px-4 py-3 font-semibold">Trạng thái</th>
+                    <th className="px-4 py-3 text-right font-semibold">Cập nhật</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {cases.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-slate-400">

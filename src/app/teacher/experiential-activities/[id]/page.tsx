@@ -841,9 +841,9 @@ export default function ActivityResultInput() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="overflow-x-auto max-h-[calc(100vh-280px)] overflow-y-auto">
             <table className="w-full border-collapse text-left text-xs">
-              <thead className="sticky top-0 z-20 bg-slate-50 shadow-xs border-b border-slate-200">
-                <tr className="text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-3 text-center w-10">
+              <thead className="bg-[#003B3A] sticky top-0 z-20 shadow-xs border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold">
+                  <th className="py-3.5 px-3 text-center w-10 font-semibold">
                     <input
                       type="checkbox"
                       checked={filteredStudents.length > 0 && filteredStudents.every(s => selectedIds.has(s.id))}
@@ -851,20 +851,20 @@ export default function ActivityResultInput() {
                       className="rounded text-[#00A19A] focus:ring-0"
                     />
                   </th>
-                  <th className="py-3.5 px-2 text-center w-10">#</th>
-                  <th className="py-3.5 px-3 min-w-[90px]">Mã HS</th>
+                  <th className="py-3.5 px-2 text-center w-10 font-semibold">#</th>
+                  <th className="py-3.5 px-3 min-w-[90px] font-semibold">Mã HS</th>
                   
                   {/* STICKY STUDENT NAME COLUMN */}
-                  <th className="py-3.5 px-4 min-w-[190px] sticky left-0 z-20 bg-slate-50 border-r border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.04)]">
+                  <th className="py-3.5 px-4 min-w-[190px] sticky left-0 z-20 bg-[#003B3A] border-r border-white/15 shadow-[2px_0_5px_rgba(0,0,0,0.04)] font-semibold">
                     Họ và Tên
                   </th>
 
-                  <th className="py-3.5 px-3 min-w-[130px]">Điểm danh</th>
-                  <th className="py-3.5 px-3 min-w-[130px]">Vai trò</th>
+                  <th className="py-3.5 px-3 min-w-[130px] font-semibold">Điểm danh</th>
+                  <th className="py-3.5 px-3 min-w-[130px] font-semibold">Vai trò</th>
 
                   {/* CHẾ ĐỘ 3: CRITERIA HEADERS */}
                   {isModeRubric && (activity?.criteria || []).map((crit, idx) => (
-                    <th key={crit.id} className="py-3.5 px-3 min-w-[180px] text-center border-l border-slate-100 bg-slate-50/90" title={crit.description || crit.name}>
+                    <th key={crit.id} className="py-3.5 px-3 min-w-[180px] text-center border-l border-white/15 bg-[#003B3A] font-semibold" title={crit.description || crit.name}>
                       <div className="font-black text-slate-800 line-clamp-1">{crit.name}</div>
                       <div className="text-[10px] text-slate-400 font-bold">
                         {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : `Tiêu chí ${idx + 1}`} {crit.isRequired ? '(Bắt buộc)' : ''}
@@ -874,7 +874,7 @@ export default function ActivityResultInput() {
 
                   {/* PRESCHOOL HEADER - Mầm non */}
                   {isPreschool && (
-                    <th className="py-3.5 px-4 min-w-[280px] text-center border-l border-slate-100 bg-amber-50/50">
+                    <th className="py-3.5 px-4 min-w-[280px] text-center border-l border-white/15 bg-[#003B3A] font-semibold">
                       <div className="font-black text-amber-900">Quan sát Tiến bộ của Trẻ (Mầm non)</div>
                       <div className="text-[10px] text-amber-600 font-bold">
                         🌟 Tốt (Hào hứng) • ✅ Đạt (Hoàn thành) • 🤝 Cần hỗ trợ (Động viên)
@@ -884,7 +884,7 @@ export default function ActivityResultInput() {
 
                   {/* CHẾ ĐỘ 2: MỨC HOÀN THÀNH HEADER */}
                   {isModeCompletion && !isPreschool && (
-                    <th className="py-3.5 px-4 min-w-[280px] text-center border-l border-slate-100 bg-amber-50/50">
+                    <th className="py-3.5 px-4 min-w-[280px] text-center border-l border-white/15 bg-[#003B3A] font-semibold">
                       <div className="font-black text-amber-900">Mức Hoàn Thành (Chế độ 2)</div>
                       <div className="text-[10px] text-amber-700 font-bold">
                         🌟 Hoàn thành tốt • ✅ Hoàn thành • ⚠️ Chưa hoàn thành
@@ -895,18 +895,18 @@ export default function ActivityResultInput() {
                   {/* SUMMARY & REMARK */}
                   {isModeRubric && (
                     <>
-                      <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">Điểm %</th>
-                      <th className="py-3.5 px-3 min-w-[130px] text-center">Xếp loại</th>
+                      <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-white/15 font-semibold">Điểm %</th>
+                      <th className="py-3.5 px-3 min-w-[130px] text-center font-semibold">Xếp loại</th>
                     </>
                   )}
                   {isPreschool && (
-                    <th className="py-3.5 px-3 min-w-[130px] text-center border-l border-slate-200">Kết quả</th>
+                    <th className="py-3.5 px-3 min-w-[130px] text-center border-l border-white/15 font-semibold">Kết quả</th>
                   )}
-                  <th className="py-3.5 px-4 min-w-[220px]">Nhận xét & Phiếu cá nhân</th>
+                  <th className="py-3.5 px-4 min-w-[220px] font-semibold">Nhận xét & Phiếu cá nhân</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                 {filteredStudents.length === 0 ? (
                   <tr>
                     <td colSpan={(isPreschool ? 6 : isModeParticipation ? 5 : isModeCompletion ? 6 : 7) + (isModeRubric ? (activity?.criteria?.length || 0) : 0)} className="py-12 text-center text-slate-400 font-bold">
@@ -1484,16 +1484,16 @@ export default function ActivityResultInput() {
                         Kết quả Đánh giá theo Tiêu chí Chuẩn:
                       </div>
                       <table className="w-full border-collapse text-xs border border-slate-200">
-                        <thead>
-                          <tr className="bg-teal-50/80 text-teal-900 font-black border-b border-slate-200 text-[11px]">
-                            <th className="py-2 px-2 text-center w-8 border-r border-slate-200">#</th>
-                            <th className="py-2 px-3 text-left border-r border-slate-200">Tiêu chí đánh giá</th>
-                            <th className="py-2 px-2 text-center w-20 border-r border-slate-200">Trọng số</th>
-                            <th className="py-2 px-2 text-center w-24 border-r border-slate-200">Mức đạt</th>
-                            <th className="py-2 px-3 text-left">Đánh giá / Năng lực thể hiện</th>
+                        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                          <tr className="border-b text-[11px] font-semibold">
+                            <th className="py-2 px-2 text-center w-8 border-r border-white/15 font-semibold">#</th>
+                            <th className="py-2 px-3 text-left border-r border-white/15 font-semibold">Tiêu chí đánh giá</th>
+                            <th className="py-2 px-2 text-center w-20 border-r border-white/15 font-semibold">Trọng số</th>
+                            <th className="py-2 px-2 text-center w-24 border-r border-white/15 font-semibold">Mức đạt</th>
+                            <th className="py-2 px-3 text-left font-semibold">Đánh giá / Năng lực thể hiện</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
                           {(activity?.criteria || []).map((crit, idx) => {
                             const level = st.criteriaScores?.[crit.id];
                             const lvlInfo = EVAL_LEVELS.find(l => l.level === level);

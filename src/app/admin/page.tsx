@@ -1922,19 +1922,19 @@ export default function AdminDashboard() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50/90 text-slate-500 font-medium border-b border-slate-200/70">
-                <tr>
-                  <th className="py-3 px-4">STT</th>
-                  <th className="py-3 px-4">Mã HS</th>
-                  <th className="py-3 px-4">Họ và Tên</th>
-                  <th className="py-3 px-4">Khối</th>
-                  <th className="py-3 px-4">Lớp học</th>
-                  <th className="py-3 px-4">Cơ sở</th>
-                  <th className="py-3 px-4">Nguồn nhập học</th>
-                  <th className="py-3 px-4 text-center">Trạng thái</th>
+              <thead className="bg-[#003B3A] font-medium border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-4 font-semibold">STT</th>
+                  <th className="py-3 px-4 font-semibold">Mã HS</th>
+                  <th className="py-3 px-4 font-semibold">Họ và Tên</th>
+                  <th className="py-3 px-4 font-semibold">Khối</th>
+                  <th className="py-3 px-4 font-semibold">Lớp học</th>
+                  <th className="py-3 px-4 font-semibold">Cơ sở</th>
+                  <th className="py-3 px-4 font-semibold">Nguồn nhập học</th>
+                  <th className="py-3 px-4 text-center font-semibold">Trạng thái</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-[#E2E8F0] bg-white">
                 {filteredEntryStudents.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-slate-400">

@@ -678,11 +678,16 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
 
       {showGradeStats && (
         <GradeWeeklyStatsTable
-          classes={data.scopedClasses || []}
+          classes={data.allScopeClasses || data.scopedClasses || []}
           quotaItems={data.items}
           slots={data.slots || []}
           subjects={data.subjects}
+          subjectQuotas={data.subjectQuotas || []}
           defaultGrade={data.filterContext.selectedGrade}
+          selectedStudyProgram={data.filterContext.selectedStudyProgram || "ALL"}
+          onSelectStudyProgram={(sp) => {
+            void reloadWithPatch({ studyProgram: sp, classId: "ALL" })
+          }}
           cycleWeeks={data.cycleWeeks}
           targetWeeklyPeriods={WEEKLY_STANDARD_PERIODS}
           onClose={() => setShowGradeStats(false)}

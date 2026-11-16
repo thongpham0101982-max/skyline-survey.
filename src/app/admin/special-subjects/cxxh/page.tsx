@@ -318,22 +318,22 @@ export default function AdminCxxhMonitoringPage() {
           {/* Readonly Matrix Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-700">
-                <tr>
-                  <th className="py-2.5 px-3 w-12 text-center">STT</th>
-                  <th className="py-2.5 px-3 w-28">Mã HS</th>
-                  <th className="py-2.5 px-4 w-44">Họ và tên</th>
+              <thead className="bg-[#003B3A] border-b text-[11px] text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-2.5 px-3 w-12 text-center font-semibold">STT</th>
+                  <th className="py-2.5 px-3 w-28 font-semibold">Mã HS</th>
+                  <th className="py-2.5 px-4 w-44 font-semibold">Họ và tên</th>
                   {currentLesson.criteria.map((c: any, i: number) => (
-                    <th key={c.id} className="py-2.5 px-3 min-w-[150px] border-r border-slate-200 bg-teal-50/40">
+                    <th key={c.id} className="py-2.5 px-3 min-w-[150px] border-r border-white/15 bg-[#003B3A] font-semibold">
                       <div className="font-bold text-teal-950">TC {i + 1}</div>
                       <div className="text-[10px] text-teal-700">{c.competencyGroup} {c.programLevel ? `• ${c.programLevel}` : ""}</div>
                     </th>
                   ))}
-                  <th className="py-2.5 px-3 w-32 text-center bg-slate-100">Kết quả bài</th>
-                  <th className="py-2.5 px-4 min-w-[200px]">Nhận xét GV</th>
+                  <th className="py-2.5 px-3 w-32 text-center bg-[#003B3A] font-semibold">Kết quả bài</th>
+                  <th className="py-2.5 px-4 min-w-[200px] font-semibold">Nhận xét GV</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {gradebookData.students?.map((s: any, idx: number) => (
                   <tr key={s.studentId} className="hover:bg-slate-50">
                     <td className="py-2.5 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>

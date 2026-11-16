@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
+import { buildStudentQuickApproveUrls } from "@/lib/k12-approval-service"
 
 function parseSmartDate(d: any): Date | null {
   if (!d) return null;
@@ -104,7 +105,8 @@ export async function GET(req) {
     const students = await (prisma as any).inputAssessmentStudent.findMany({
       where,
       include: { 
-        batch: { select: { name: true, status: true } },
+        period: { select: { id: true, name: true, code: true } },
+        batch: { select: { id: true, name: true, status: true, startDate: true, endDate: true } },
         scores: {
           include: {
             subject: true
@@ -422,7 +424,10 @@ export async function POST(req) {
                else if (scNum > 63) lvl = "Nguy cơ rất cao";
                val = `${lvl} (${scNum} đ)`;
             }
-            else if (sCode.includes("tci") || sCode.includes("cpt")) val = vArr.filter(x => x === "3").length + " Đ";
+            else if (sCode.includes("tci") || sCode.includes("cpt")) {
+              const pCount = vArr.filter(x => ["3", "Đạt", "DAT"].includes(String(x ?? "").trim())).length;
+              val = `${pCount}/${vArr.length || 16} Đạt`;
+            }
             else if (sCode.includes("nltd")) {
               const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
               val = pctVal !== undefined && pctVal !== null && pctVal !== "" ? pctVal + "%" : "—";
@@ -433,11 +438,19 @@ export async function POST(req) {
         return { name: sName, val };
       });
 
-      const host = req.headers.get("host") || "skyline-survey.vercel.app";
+      const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
       const protocol = req.headers.get("x-forwarded-proto") || "https";
       const baseUrl = `${protocol}://${host}`;
 
       const campusName = student.admissionCampus || student.batch?.name?.split("|")[1]?.trim() || "Cơ sở Sky-Line";
+      const quickUrls = buildStudentQuickApproveUrls({
+        studentId: String(student.id),
+        isPreschool: false,
+        baseUrl,
+        recipientEmail: gdcsEmail,
+        periodId: student.periodId,
+        batchId: student.batchId
+      });
 
       // Prepare email html body
       const scoresRowsHtml = scoresList.map(s => `
@@ -461,7 +474,7 @@ export async function POST(req) {
           <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
             <tr>
               <td align="center">
-                <table role="presentation" width="620" border="0" cellspacing="0" cellpadding="0" style="max-width: 620px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                <table role="presentation" width="640" border="0" cellspacing="0" cellpadding="0" style="max-width: 640px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
                   <!-- Header -->
                   <tr>
                     <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
@@ -482,7 +495,7 @@ export async function POST(req) {
                     <td style="padding: 28px 30px 16px 30px;">
                       <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Kính gửi Thầy/Cô Giám đốc Cơ sở,</p>
                       <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
-                        Hội đồng Tuyển sinh kính chuyển hồ sơ và kết quả khảo sát năng lực đầu vào của học sinh dưới đây để Thầy/Cô xem xét và phê duyệt kết quả tuyển sinh:
+                        Hội đồng Tuyển sinh kính chuyển hồ sơ và kết quả khảo sát năng lực đầu vào của học sinh dưới đây để Thầy/Cô xem xét và phê duyệt trực tiếp ngay trên Email hoặc trên Cổng quản lý:
                       </p>
                     </td>
                   </tr>
@@ -500,12 +513,12 @@ export async function POST(req) {
                           <td style="padding-bottom: 10px; font-size: 14px; font-weight: 700; color: #1E293B;">${student.studentCode}</td>
                         </tr>
                         <tr>
-                          <td style="padding-bottom: 10px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Ngày sinh:</td>
-                          <td style="padding-bottom: 10px; font-size: 14px; font-weight: 600; color: #334155;">${dateOfBirthStr}</td>
+                          <td style="padding-bottom: 10px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Ngày sinh / Giới tính:</td>
+                          <td style="padding-bottom: 10px; font-size: 14px; font-weight: 600; color: #334155;">${dateOfBirthStr} • ${student.gender === "FEMALE" || student.gender === "Nữ" || student.gender === "F" ? "Nữ" : "Nam"}</td>
                         </tr>
                         <tr>
                           <td style="padding-bottom: 10px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Khối lớp / Hệ học:</td>
-                          <td style="padding-bottom: 10px; font-size: 14px; font-weight: 600; color: #334155;">Khối ${student.grade || "—"} / Hệ ${student.surveyFormType || "—"}</td>
+                          <td style="padding-bottom: 10px; font-size: 14px; font-weight: 600; color: #334155;">Khối ${student.grade || "—"} / Hệ ${student.surveyFormType || student.surveySystem || "—"}</td>
                         </tr>
                         <tr>
                           <td style="font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Cơ sở tiếp nhận:</td>
@@ -537,27 +550,56 @@ export async function POST(req) {
                   </tr>
                   ` : ""}
 
-                  <!-- Callout Note -->
+                  <!-- DIRECT EMAIL APPROVAL BUTTONS FOR GDCS -->
                   <tr>
-                    <td style="padding: 0 30px 24px 30px;">
-                      <div style="background-color: #FEF9C3; border-left: 4px solid #CA8A04; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #854D0E; line-height: 1.5;">
-                        📌 <strong>Lưu ý:</strong> Thầy/Cô vui lòng đăng nhập Cổng quản lý để xem đầy đủ nhận xét chuyên môn của hội đồng giáo viên khảo sát và quyết định kết quả tuyển sinh.
+                    <td align="center" style="padding: 14px 30px 28px 30px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0;">
+                      <div style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+                        ⚡ THAO TÁC XÉT DUYỆT TRỰC TIẾP TRÊN EMAIL DÀNH CHO GĐCS
                       </div>
-                    </td>
-                  </tr>
 
-                  <!-- Bulletproof CTA Button -->
-                  <tr>
-                    <td align="center" style="padding: 0 30px 32px 30px;">
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 10px auto; width: 100%; max-width: 480px;">
                         <tr>
-                          <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
-                            <a href="${baseUrl}/admin/input-assessments" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
-                              Truy cập Portal Phê duyệt &rarr;
+                          <td align="center" bgcolor="#059669" style="background-color: #059669; border-radius: 10px;">
+                            <a href="${quickUrls.approveDatUrl}" target="_blank" style="display: block; padding: 13px 24px; font-size: 13.5px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                              ✓ PHÊ DUYỆT NGAY: ĐẠT CHUẨN &rarr;
                             </a>
                           </td>
                         </tr>
                       </table>
+
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 10px auto; width: 100%; max-width: 480px;">
+                        <tr>
+                          <td align="center" bgcolor="#D97706" style="background-color: #D97706; border-radius: 10px;">
+                            <a href="${quickUrls.approveCamKetOrHocThuUrl}" target="_blank" style="display: block; padding: 12px 24px; font-size: 13px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                              ⚠ PHÊ DUYỆT: ĐẠT CAM KẾT (CHỌN MÔN) &rarr;
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 10px auto; width: 100%; max-width: 480px;">
+                        <tr>
+                          <td align="center" bgcolor="#E11D48" style="background-color: #E11D48; border-radius: 10px;">
+                            <a href="${quickUrls.approveKhongDatUrl}" target="_blank" style="display: block; padding: 11px 24px; font-size: 12.5px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                              ✕ PHÊ DUYỆT: KHÔNG ĐẠT / KHẢO SÁT LẠI
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; width: 100%; max-width: 480px;">
+                        <tr>
+                          <td align="center" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border-radius: 10px; border: 2px solid #003B3A;">
+                            <a href="${quickUrls.portalUrl}" target="_blank" style="display: block; padding: 11px 24px; font-size: 13px; font-weight: 700; color: #003B3A; text-decoration: none; border-radius: 10px;">
+                              🔍 Mở hồ sơ đầy đủ trên Cổng SSM &rarr;
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748B;">
+                        * Thầy/Cô có thể bấm duyệt trực tiếp ngay trên email bằng các nút phía trên mà không cần đăng nhập lại.
+                      </p>
                     </td>
                   </tr>
 

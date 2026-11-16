@@ -139,6 +139,53 @@ export async function POST(req: NextRequest) {
         await (prisma as any).$transaction(transactionOperations);
       }
 
+      // Tạo thông báo trên hệ thống (NotificationBell) cho Giáo viên Mầm non được phân công hiển thị rõ Kỳ, Đợt, Số lượng HS khảo sát
+      try {
+        if (totalCreated > 0 && finalUserIds.length > 0 && periodId) {
+          const [periodObj, batchObj, preschoolStudents] = await Promise.all([
+            prisma.inputAssessmentPeriod.findUnique({ where: { id: periodId }, select: { name: true } }),
+            normalizedBatchId ? prisma.inputAssessmentBatch.findUnique({ where: { id: normalizedBatchId }, select: { name: true } }) : Promise.resolve(null),
+            (prisma as any).preschoolInputAssessmentStudent.findMany({
+              where: {
+                periodId,
+                ...(normalizedBatchId ? { batchId: normalizedBatchId } : {})
+              },
+              select: { id: true, grade: true, admissionResult: true }
+            })
+          ]);
+          const periodName = periodObj?.name || "Kỳ khảo sát đầu vào";
+          const batchName = batchObj?.name || "Tất cả các đợt";
+          const gradeSummary = grades.join(", ");
+          const studentCount = preschoolStudents.filter((st: any) => {
+            return grades.some((g: string) => {
+              const gNorm = String(g || "").toLowerCase().trim();
+              if (!gNorm || gNorm === "tất cả") return true;
+              if (gNorm.includes("học thử")) return st.admissionResult === "Học thử";
+              const stGrade = String(st.grade || "").toLowerCase().trim();
+              return stGrade === gNorm || stGrade.includes(gNorm) || gNorm.includes(stGrade);
+            });
+          }).length || preschoolStudents.length;
+
+          for (const targetUserId of finalUserIds) {
+            await prisma.notification.create({
+              data: {
+                userId: targetUserId,
+                title: `[Phân công Phỏng vấn định hướng Mầm non] ${batchName} - ${periodName}`,
+                message: `Thầy/Cô được phân công Phỏng vấn định hướng Mầm non • Kỳ: ${periodName} • Đợt: ${batchName} • Nhóm tuổi: ${gradeSummary} • Số lượng: ${studentCount} HS khảo sát.`,
+                link: `/teacher/input-assessments?type=preschool&periodId=${periodId}&batchId=${normalizedBatchId || "all"}`,
+                type: "TASK_ASSIGNED",
+                category: "INPUT_ASSESSMENT",
+                priority: "HIGH",
+                sourceModule: "PHAN_CONG_KHAO_SAT",
+                sourceId: normalizedBatchId || periodId
+              }
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.error("Create preschool assignment notification error:", notifErr);
+      }
+
       return NextResponse.json({ success: true, createdCount: totalCreated, deletedCount: totalDeleted });
     }
 
@@ -326,7 +373,7 @@ export async function POST(req: NextRequest) {
                         <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto; border-collapse: separate;">
                           <tr>
                             <td align="center" bgcolor="#00A19A" style="border-radius: 10px; background-color: #00A19A;">
-                              <a href="${baseUrl}/admin/preschool-input-assessments" target="_blank" style="display: inline-block; padding: 14px 34px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
+                              <a href="${baseUrl}/teacher/input-assessments?type=preschool&periodId=${assign.periodId}&batchId=${assign.batchId || "all"}" target="_blank" style="display: inline-block; padding: 14px 34px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
                                 TRUY CẬP CỔNG KHẢO SÁT &rarr;
                               </a>
                             </td>
@@ -362,6 +409,41 @@ export async function POST(req: NextRequest) {
         `;
 
         try {
+        try {
+          const preschoolStudents = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+            where: {
+              periodId: assign.periodId,
+              ...(assign.batchId ? { batchId: assign.batchId } : {})
+            },
+            select: { id: true, grade: true, admissionResult: true }
+          });
+          const gNorm = String(gradeLabel || "").toLowerCase().trim();
+          const matchedCount = preschoolStudents.filter((st: any) => {
+            if (!gNorm || gNorm === "tất cả") return true;
+            if (gNorm.includes("học thử")) return st.admissionResult === "Học thử";
+            const stGrade = String(st.grade || "").toLowerCase().trim();
+            return stGrade === gNorm || stGrade.includes(gNorm) || gNorm.includes(stGrade);
+          }).length || preschoolStudents.length;
+
+          if (assign.userId) {
+            await prisma.notification.create({
+              data: {
+                userId: assign.userId,
+                title: `[Phân công Phỏng vấn định hướng Mầm non] ${batchName} - ${periodName}`,
+                message: `Thầy/Cô được phân công Phỏng vấn định hướng Mầm non • Kỳ: ${periodName} • Đợt: ${batchName} • Nhóm tuổi: ${gradeLabel} • Số lượng: ${matchedCount} HS khảo sát.`,
+                link: `/teacher/input-assessments?type=preschool&periodId=${assign.periodId}&batchId=${assign.batchId || "all"}`,
+                type: "TASK_ASSIGNED",
+                category: "INPUT_ASSESSMENT",
+                priority: "HIGH",
+                sourceModule: "PHAN_CONG_KHAO_SAT",
+                sourceId: assign.batchId || assign.periodId
+              }
+            });
+          }
+        } catch (inAppErr) {
+          console.error("Create preschool in-app notification on NOTIFY error:", inAppErr);
+        }
+
           const mailRes = await sendEmail({
             to: targetEmail,
             cc: ["ktdbcl@skylineschool.edu.vn", getCampusGiaovuEmail(gradeLabel)].filter(Boolean),

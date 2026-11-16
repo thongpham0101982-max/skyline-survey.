@@ -30,7 +30,7 @@ export interface QaSourceModuleStatus {
 export async function inspectConnectedSourceModules(params: {
   academicYearId?: string
   existingSyncKeys?: Set<string>
-}): Promise<QaSourceModuleStatus[]> {
+} = {}): Promise<QaSourceModuleStatus[]> {
   const { academicYearId, existingSyncKeys = new Set() } = params
   await ensureCoordinationTables().catch(() => {})
 
@@ -59,7 +59,7 @@ export async function inspectConnectedSourceModules(params: {
     prisma.importBatch
       .findMany({
         where: academicYearId ? { academicYearId } : {},
-        orderBy: { importedAt: "desc" },
+        orderBy: { createdAt: "desc" },
         take: 10,
       })
       .catch(() => []),

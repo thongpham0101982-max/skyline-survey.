@@ -9,7 +9,7 @@ import {
   WEEKLY_STANDARD_PERIODS,
   type ClassForGradeStats,
 } from "@/lib/timetable/gradeStatsHelper"
-import type { SubjectRef } from "@/lib/timetable/quotaReconciler"
+import type { SubjectQuotaRow, SubjectRef } from "@/lib/timetable/quotaReconciler"
 import type { QuotaReconcileItem, SlotRecord } from "@/lib/timetable/types"
 
 interface GradeWeeklyStatsTableProps {
@@ -17,11 +17,14 @@ interface GradeWeeklyStatsTableProps {
   quotaItems: QuotaReconcileItem[]
   slots: SlotRecord[]
   subjects: SubjectRef[]
+  subjectQuotas?: SubjectQuotaRow[]
   defaultGrade?: string // e.g. "6" or "ALL"
+  selectedStudyProgram?: "ALL" | "Hệ S" | "Hệ I"
   cycleWeeks?: number
   targetWeeklyPeriods?: number
   onClose?: () => void
   onSelectClass?: (classId: string) => void
+  onSelectStudyProgram?: (program: "ALL" | "Hệ S" | "Hệ I") => void
   onUpdateQuota?: (params: {
     subjectId: string
     studyProgram: string
@@ -35,11 +38,14 @@ export function GradeWeeklyStatsTable({
   quotaItems,
   slots,
   subjects,
+  subjectQuotas,
   defaultGrade = "ALL",
+  selectedStudyProgram,
   cycleWeeks = 2,
   targetWeeklyPeriods = WEEKLY_STANDARD_PERIODS,
   onClose,
   onSelectClass,
+  onSelectStudyProgram,
   onUpdateQuota,
 }: GradeWeeklyStatsTableProps) {
   const availableGrades = useMemo(
@@ -50,18 +56,24 @@ export function GradeWeeklyStatsTable({
     [classes]
   )
 
-  const [mode, setMode] = useState<"SINGLE_GRADE" | "ALL_GRADES">(() =>
-    defaultGrade && defaultGrade !== "ALL" ? "SINGLE_GRADE" : "SINGLE_GRADE"
-  )
+  const [mode, setMode] = useState<"SINGLE_GRADE" | "ALL_GRADES">("SINGLE_GRADE")
   const [selectedGrade, setSelectedGrade] = useState<string>(() => {
     if (defaultGrade && defaultGrade !== "ALL" && availableGrades.includes(defaultGrade)) {
       return defaultGrade
     }
     return availableGrades[0] || ""
   })
-  const [selectedProgram, setSelectedProgram] = useState<string>("ALL")
+  const [selectedProgram, setSelectedProgram] = useState<string>(
+    selectedStudyProgram || "ALL"
+  )
   const [onlyOverFilter, setOnlyOverFilter] = useState<boolean>(false)
   const [savingCellKey, setSavingCellKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (selectedStudyProgram) {
+      setSelectedProgram(selectedStudyProgram)
+    }
+  }, [selectedStudyProgram])
 
   useEffect(() => {
     if (defaultGrade && defaultGrade !== "ALL" && availableGrades.includes(defaultGrade)) {
@@ -79,6 +91,7 @@ export function GradeWeeklyStatsTable({
       quotaItems,
       slots,
       subjects,
+      subjectQuotas,
       studyProgramFilter: selectedProgram,
       cycleWeeks,
       targetWeeklyPeriods,
@@ -90,6 +103,7 @@ export function GradeWeeklyStatsTable({
     quotaItems,
     slots,
     subjects,
+    subjectQuotas,
     selectedProgram,
     cycleWeeks,
     targetWeeklyPeriods,
@@ -101,15 +115,31 @@ export function GradeWeeklyStatsTable({
       quotaItems,
       slots,
       subjects,
-      studyProgramFilter:
-        selectedProgram === "ALL" ? undefined : selectedProgram,
+      subjectQuotas,
+      studyProgramFilter: selectedProgram,
       targetWeeklyPeriods,
     })
-  }, [classes, quotaItems, slots, subjects, selectedProgram, targetWeeklyPeriods])
+  }, [
+    classes,
+    quotaItems,
+    slots,
+    subjects,
+    subjectQuotas,
+    selectedProgram,
+    targetWeeklyPeriods,
+  ])
 
-  // Quick badge summary per grade pill
+  // Quick badge summary per grade pill (both Hệ S & Hệ I)
   const gradeQuickTotals = useMemo(() => {
-    const map = new Map<string, { quota: number; avgSched: number; overSubjectCount: number }>()
+    const map = new Map<
+      string,
+      {
+        quotaHeS: number
+        quotaHeI: number
+        avgSched: number
+        overSubjectCount: number
+      }
+    >()
     for (const g of availableGrades) {
       const rep = buildSingleGradeStats({
         grade: g,
@@ -117,12 +147,14 @@ export function GradeWeeklyStatsTable({
         quotaItems,
         slots,
         subjects,
-        studyProgramFilter: selectedProgram,
+        subjectQuotas,
+        studyProgramFilter: "ALL",
         cycleWeeks,
         targetWeeklyPeriods,
       })
       map.set(g, {
-        quota: rep.totalGradeQuota,
+        quotaHeS: rep.totalQuotaHeS,
+        quotaHeI: rep.totalQuotaHeI,
         avgSched: rep.averageScheduledPeriods,
         overSubjectCount: rep.subjectRows.filter((r) => r.rowStatus === "OVER").length,
       })
@@ -134,7 +166,7 @@ export function GradeWeeklyStatsTable({
     quotaItems,
     slots,
     subjects,
-    selectedProgram,
+    subjectQuotas,
     cycleWeeks,
     targetWeeklyPeriods,
   ])
@@ -154,7 +186,7 @@ export function GradeWeeklyStatsTable({
 
   const handleCommitQuota = async (
     subjectId: string,
-    studyProgram: string,
+    studyProgram: "Hệ S" | "Hệ I",
     grade: string,
     currentQuota: number,
     rawNext: string
@@ -201,14 +233,22 @@ export function GradeWeeklyStatsTable({
     )
   }
 
+  const getMiniPillColor = (val: number, isSelected: boolean) => {
+    const exact = Math.abs(val - targetWeeklyPeriods) < 0.001
+    const over = val > targetWeeklyPeriods + 0.001
+    if (isSelected) {
+      if (exact) return "bg-[#5EEAD4]/20 text-[#5EEAD4]"
+      if (over) return "bg-rose-500/25 text-rose-200"
+      return "bg-amber-400/25 text-amber-200"
+    }
+    if (exact) return "bg-emerald-50 text-[#059669]"
+    if (over) return "bg-rose-50 text-[#E11D48]"
+    return "bg-amber-50 text-[#D97706]"
+  }
+
   if (availableGrades.length === 0) {
     return null
   }
-
-  const activePrograms =
-    mode === "SINGLE_GRADE"
-      ? singleReport.availablePrograms
-      : matrixReport.availablePrograms
 
   return (
     <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden tabular-nums">
@@ -217,14 +257,14 @@ export function GradeWeeklyStatsTable({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-bold text-[#003B3A]">
-              Bảng thống kê các môn theo khối — Chuẩn tuần {targetWeeklyPeriods} tiết
+              Bảng thống kê các môn theo khối (Hệ S & Hệ I) — Chuẩn tuần {targetWeeklyPeriods} tiết
             </h3>
             <span className="px-2 py-0.5 rounded-lg bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-[11px] font-semibold">
               5 ngày × 8 tiết = {targetWeeklyPeriods} tiết/tuần
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Tổng hợp định mức môn học theo khối và số tiết thực xếp trên từng lớp (tính đủ 0.5 tiết cho mỗi môn luân phiên Chẵn/Lẻ)
+            Đối chiếu song song định mức tuần của <strong>Hệ S</strong> và <strong>Hệ I</strong> với số tiết thực xếp trên từng lớp (tính đủ 0.5 tiết cho mỗi môn luân phiên Chẵn/Lẻ)
           </p>
         </div>
 
@@ -255,43 +295,35 @@ export function GradeWeeklyStatsTable({
             </button>
           </div>
 
-          {activePrograms.length > 1 && (
-            <div className="inline-flex items-center rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-0.5">
-              {mode === "SINGLE_GRADE" && (
+          {/* Filter Classes by Program */}
+          <div className="inline-flex items-center rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-0.5">
+            {(
+              [
+                { code: "ALL", label: "Cả Hệ S & Hệ I" },
+                { code: "Hệ S", label: "Lớp Hệ S" },
+                { code: "Hệ I", label: "Lớp Hệ I" },
+              ] as const
+            ).map((p) => {
+              const isSelected = selectedProgram === p.code
+              return (
                 <button
+                  key={p.code}
                   type="button"
-                  onClick={() => setSelectedProgram("ALL")}
+                  onClick={() => {
+                    setSelectedProgram(p.code)
+                    onSelectStudyProgram?.(p.code)
+                  }}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                    singleReport.selectedProgram === "ALL"
+                    isSelected
                       ? "bg-[#00736E] text-white"
                       : "text-slate-600 hover:text-[#003B3A]"
                   }`}
                 >
-                  Tất cả hệ
+                  {p.label}
                 </button>
-              )}
-              {activePrograms.map((prog) => {
-                const isSelected =
-                  mode === "SINGLE_GRADE"
-                    ? singleReport.selectedProgram === prog
-                    : matrixReport.selectedProgram === prog
-                return (
-                  <button
-                    key={prog}
-                    type="button"
-                    onClick={() => setSelectedProgram(prog)}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                      isSelected
-                        ? "bg-[#00736E] text-white"
-                        : "text-slate-600 hover:text-[#003B3A]"
-                    }`}
-                  >
-                    {prog}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+              )
+            })}
+          </div>
 
           {onClose && (
             <button
@@ -314,10 +346,9 @@ export function GradeWeeklyStatsTable({
             {availableGrades.map((g) => {
               const isSelected = singleReport.grade === g
               const qt = gradeQuickTotals.get(g)
-              const qTotal = qt?.quota ?? 0
+              const qS = qt?.quotaHeS ?? 0
+              const qI = qt?.quotaHeI ?? 0
               const overSubCnt = qt?.overSubjectCount ?? 0
-              const isExact40 = Math.abs(qTotal - targetWeeklyPeriods) < 0.001
-              const isOver40 = qTotal > targetWeeklyPeriods + 0.001
 
               return (
                 <button
@@ -337,22 +368,25 @@ export function GradeWeeklyStatsTable({
                 >
                   <span>Khối {g}</span>
                   <span
-                    className={`px-1.5 py-0.2 rounded text-[10.5px] font-semibold ${
+                    title={`Tổng định mức Hệ S Khối ${g}: ${qS}/${targetWeeklyPeriods} tiết`}
+                    className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${getMiniPillColor(
+                      qS,
                       isSelected
-                        ? isExact40
-                          ? "bg-[#5EEAD4]/20 text-[#5EEAD4]"
-                          : isOver40
-                          ? "bg-rose-500/25 text-rose-200"
-                          : "bg-amber-400/25 text-amber-200"
-                        : isExact40
-                        ? "bg-emerald-50 text-[#059669]"
-                        : isOver40
-                        ? "bg-rose-50 text-[#E11D48]"
-                        : "bg-amber-50 text-[#D97706]"
-                    }`}
+                    )}`}
                   >
-                    {qTotal}/{targetWeeklyPeriods}
+                    S:{qS}/{targetWeeklyPeriods}
                   </span>
+                  {qI > 0 && (
+                    <span
+                      title={`Tổng định mức Hệ I Khối ${g}: ${qI}/${targetWeeklyPeriods} tiết`}
+                      className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${getMiniPillColor(
+                        qI,
+                        isSelected
+                      )}`}
+                    >
+                      I:{qI}/{targetWeeklyPeriods}
+                    </span>
+                  )}
                   {overSubCnt > 0 && (
                     <span
                       title={`${overSubCnt} môn đang xếp vượt Định mức / tuần`}
@@ -389,72 +423,143 @@ export function GradeWeeklyStatsTable({
               </button>
             )}
             <span className="text-slate-600">
-              Số môn học:{" "}
-              <strong className="text-slate-900">{singleReport.subjectRows.length} môn</strong>
+              Số môn:{" "}
+              <strong className="text-slate-900">{singleReport.subjectRows.length}</strong>
             </span>
             <span className="text-slate-300">|</span>
             <span className="text-slate-600">
-              Tổng định mức {singleReport.gradeLabel}:{" "}
+              Hệ S:{" "}
               <strong
                 className={
-                  Math.abs(singleReport.quotaDiffFromStandard) < 0.001
+                  Math.abs(singleReport.diffHeSFromStandard) < 0.001
                     ? "text-[#059669]"
-                    : singleReport.quotaDiffFromStandard > 0
+                    : singleReport.diffHeSFromStandard > 0
                     ? "text-[#E11D48]"
                     : "text-[#D97706]"
                 }
               >
-                {singleReport.totalGradeQuota}/{targetWeeklyPeriods} tiết
+                {singleReport.totalQuotaHeS}/{targetWeeklyPeriods} tiết
               </strong>
             </span>
-            {renderStandardDiffBadge(singleReport.totalGradeQuota, targetWeeklyPeriods)}
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-600">
+              Hệ I:{" "}
+              <strong
+                className={
+                  Math.abs(singleReport.diffHeIFromStandard) < 0.001
+                    ? "text-[#059669]"
+                    : singleReport.diffHeIFromStandard > 0
+                    ? "text-[#E11D48]"
+                    : "text-[#D97706]"
+                }
+              >
+                {singleReport.totalQuotaHeI}/{targetWeeklyPeriods} tiết
+              </strong>
+            </span>
           </div>
         </div>
       )}
 
-      {/* MODE 1: SINGLE GRADE SUBJECT BREAKDOWN TABLE */}
+      {/* MODE 1: SINGLE GRADE SUBJECT BREAKDOWN TABLE WITH EXPLICIT HỆ S & HỆ I COLUMNS AND GROUPED CLASS HEADERS */}
       {mode === "SINGLE_GRADE" ? (
         <div className="overflow-x-auto max-h-[60vh]">
-          <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-[#003B3A] border-b border-[#003B3A]">
-                <th className="py-2.5 px-3 text-[11px] font-semibold text-teal-100 whitespace-nowrap w-12 text-center">
-                  STT
-                </th>
-                <th className="py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap min-w-[200px]">
-                  Môn học ({singleReport.gradeLabel})
-                </th>
-                <th className="py-2.5 px-3 text-[11px] font-semibold text-[#5EEAD4] whitespace-nowrap text-right">
-                  Định mức / tuần
-                </th>
-                <th className="py-2.5 px-3 text-[11px] font-semibold text-teal-100 whitespace-nowrap text-right">
-                  Chu kỳ ({singleReport.cycleWeeks} tuần)
-                </th>
-                {singleReport.classes.map((cls) => (
-                  <th
-                    key={cls.classId}
-                    onClick={() => onSelectClass?.(cls.classId)}
-                    className={`py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap text-right ${
-                      onSelectClass ? "cursor-pointer hover:bg-[#005250]" : ""
-                    }`}
-                  >
-                    <div>Lớp {cls.className}</div>
-                    <div className="text-[10px] font-normal text-teal-100">
-                      {cls.studyProgram} · Đã xếp {cls.scheduledTotal}/{targetWeeklyPeriods}
-                    </div>
-                  </th>
-                ))}
-                <th className="py-2.5 px-3 text-[11px] font-semibold text-[#5EEAD4] whitespace-nowrap text-right">
-                  Trạng thái khối
-                </th>
-              </tr>
-            </thead>
+          {(() => {
+            const heSCols = singleReport.classes.filter((c) => c.studyProgram === "Hệ S")
+            const heICols = singleReport.classes.filter((c) => c.studyProgram === "Hệ I")
+            const firstHeIClassId = heICols[0]?.classId
+
+            return (
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-[#003B3A] border-b border-white/15">
+                    <th
+                      rowSpan={2}
+                      className="py-2.5 px-3 text-[11px] font-semibold text-teal-100 whitespace-nowrap w-12 text-center border-r border-white/10"
+                    >
+                      STT
+                    </th>
+                    <th
+                      rowSpan={2}
+                      className="py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap min-w-[200px]"
+                    >
+                      Môn học ({singleReport.gradeLabel})
+                    </th>
+                    <th
+                      colSpan={2}
+                      className="py-1.5 px-3 text-[11px] font-semibold text-[#5EEAD4] whitespace-nowrap text-center border-l border-r border-white/15"
+                    >
+                      Định mức / tuần
+                    </th>
+                    <th
+                      rowSpan={2}
+                      className="py-2.5 px-3 text-[11px] font-semibold text-teal-100 whitespace-nowrap text-right border-r border-white/15"
+                    >
+                      Chu kỳ ({singleReport.cycleWeeks} tuần)
+                    </th>
+                    {heSCols.length > 0 && (
+                      <th
+                        colSpan={heSCols.length}
+                        className="py-1.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap text-center border-r border-white/20 bg-[#003B3A]"
+                      >
+                        Các lớp Hệ S ({heSCols.length} lớp)
+                      </th>
+                    )}
+                    {heICols.length > 0 && (
+                      <th
+                        colSpan={heICols.length}
+                        className="py-1.5 px-3 text-[11px] font-semibold text-[#5EEAD4] whitespace-nowrap text-center border-r border-white/20 bg-[#004A48]"
+                      >
+                        Các lớp Hệ I ({heICols.length} lớp)
+                      </th>
+                    )}
+                    <th
+                      rowSpan={2}
+                      className="py-2.5 px-3 text-[11px] font-semibold text-[#5EEAD4] whitespace-nowrap text-right"
+                    >
+                      Trạng thái khối
+                    </th>
+                  </tr>
+
+                  <tr className="bg-[#004543] border-b border-[#003B3A]">
+                    <th className="py-2 px-3 text-[11px] font-semibold text-[#5EEAD4] whitespace-nowrap text-right border-l border-white/15">
+                      Hệ S
+                    </th>
+                    <th className="py-2 px-3 text-[11px] font-semibold text-teal-100 whitespace-nowrap text-right border-r border-white/15">
+                      Hệ I
+                    </th>
+                    {singleReport.classes.map((cls) => {
+                      const isHeI = cls.studyProgram === "Hệ I"
+                      const isGroupBoundary =
+                        heSCols.length > 0 && cls.classId === firstHeIClassId
+                      return (
+                        <th
+                          key={cls.classId}
+                          onClick={() => onSelectClass?.(cls.classId)}
+                          className={`py-2 px-3 text-[11px] font-semibold text-white whitespace-nowrap text-right border-r border-white/10 ${
+                            isHeI ? "bg-[#005250]" : "bg-[#003B3A]"
+                          } ${isGroupBoundary ? "border-l-2 border-l-[#5EEAD4]/50" : ""} ${
+                            onSelectClass ? "cursor-pointer hover:bg-[#006360]" : ""
+                          }`}
+                        >
+                          <div>Lớp {cls.className}</div>
+                          <div
+                            className={`text-[10px] font-normal ${
+                              isHeI ? "text-[#5EEAD4]" : "text-teal-100"
+                            }`}
+                          >
+                            {cls.studyProgram} · {cls.scheduledTotal}/{targetWeeklyPeriods} tiết
+                          </div>
+                        </th>
+                      )
+                    })}
+                  </tr>
+                </thead>
 
             <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
               {displayedSingleRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5 + singleReport.classes.length}
+                    colSpan={6 + singleReport.classes.length}
                     className="py-8 px-4 text-center text-slate-500"
                   >
                     {onlyOverFilter
@@ -464,20 +569,16 @@ export function GradeWeeklyStatsTable({
                 </tr>
               ) : (
                 displayedSingleRows.map((row, idx) => {
-                  const savingThis =
-                    savingCellKey ===
-                    `${singleReport.grade}_${row.representativeStudyProgram}_${row.subjectId}`
+                  const savingHeS =
+                    savingCellKey === `${singleReport.grade}_Hệ S_${row.subjectId}`
+                  const savingHeI =
+                    savingCellKey === `${singleReport.grade}_Hệ I_${row.subjectId}`
+                  const savingThis = savingHeS || savingHeI
                   const isRowOver = row.rowStatus === "OVER"
                   const maxOverDiff = isRowOver
                     ? Math.max(
                         0,
                         ...row.perClass.map((c) => Math.round(c.diff * 100) / 100)
-                      )
-                    : 0
-                  const maxScheduled = isRowOver
-                    ? Math.max(
-                        0,
-                        ...row.perClass.map((c) => Math.round(c.scheduled * 100) / 100)
                       )
                     : 0
                   const overClassCount = row.perClass.filter((c) => c.diff > 0.001).length
@@ -536,26 +637,27 @@ export function GradeWeeklyStatsTable({
                         </div>
                       </td>
 
+                      {/* CỘT HỆ S */}
                       <td
-                        className={`py-2.5 px-3 align-middle text-right ${
-                          isRowOver ? "bg-rose-100/50" : ""
+                        className={`py-2.5 px-3 align-middle text-right border-l border-[#F1F5F9] ${
+                          row.isOverHeS ? "bg-rose-100/55" : "bg-[#F8FAFC]/40"
                         }`}
                       >
                         <div className="inline-flex flex-col items-end gap-0.5">
-                          {onUpdateQuota && !row.hasMixedProgramQuotas ? (
+                          {onUpdateQuota ? (
                             <input
-                              key={`${singleReport.grade}_${row.representativeStudyProgram}_${row.subjectId}_${row.weeklyQuota}`}
+                              key={`${singleReport.grade}_Hệ S_${row.subjectId}_${row.quotaHeS}`}
                               type="number"
                               step="0.5"
                               min={0}
                               max={20}
-                              defaultValue={row.weeklyQuota}
+                              defaultValue={row.quotaHeS}
                               onBlur={(e) =>
                                 handleCommitQuota(
                                   row.subjectId,
-                                  row.representativeStudyProgram,
+                                  "Hệ S",
                                   singleReport.grade,
-                                  row.weeklyQuota,
+                                  row.quotaHeS,
                                   e.target.value
                                 )
                               }
@@ -564,39 +666,114 @@ export function GradeWeeklyStatsTable({
                                   ;(e.currentTarget as HTMLInputElement).blur()
                                 }
                               }}
-                              title={`Sửa nhanh định mức môn ${row.subjectName} cho ${singleReport.gradeLabel} (${row.representativeStudyProgram})`}
+                              title={`Sửa định mức Hệ S môn ${row.subjectName} cho ${singleReport.gradeLabel}`}
                               className={`w-16 text-right rounded-lg border px-2 py-1 text-xs font-bold focus:outline-none ${
-                                isRowOver
+                                row.isOverHeS
                                   ? "border-rose-400 bg-rose-50 text-[#E11D48] ring-2 ring-rose-200 focus:border-[#E11D48]"
-                                  : "border-[#E2E8F0] bg-white text-[#003B3A] focus:border-[#00A19A]"
+                                  : row.quotaHeS > 0
+                                  ? "border-[#E2E8F0] bg-white text-[#003B3A] focus:border-[#00A19A]"
+                                  : "border-[#E2E8F0] bg-slate-50 text-slate-400 focus:border-[#00A19A]"
                               }`}
                             />
                           ) : (
                             <span
                               className={`inline-block px-2 py-0.5 rounded-lg font-bold ${
-                                isRowOver
+                                row.isOverHeS
                                   ? "bg-rose-100 text-[#E11D48] border border-rose-300"
-                                  : "text-[#003B3A]"
+                                  : row.quotaHeS > 0
+                                  ? "text-[#003B3A]"
+                                  : "text-slate-300"
                               }`}
                             >
-                              {row.weeklyQuota}
-                              {row.hasMixedProgramQuotas ? "*" : ""}
+                              {row.quotaHeS > 0 || row.isOverHeS ? row.quotaHeS : "—"}
                             </span>
                           )}
-                          {isRowOver && (
+                          {row.isOverHeS && (
                             <span className="text-[10px] font-semibold text-[#E11D48] whitespace-nowrap">
-                              Thực xếp: {maxScheduled} (+{maxOverDiff})
+                              Thực xếp: {row.maxScheduledHeS} (+{row.maxOverDiffHeS})
                             </span>
                           )}
                         </div>
                       </td>
 
+                      {/* CỘT HỆ I */}
                       <td
-                        className={`py-2.5 px-3 align-middle text-right ${
+                        className={`py-2.5 px-3 align-middle text-right border-r border-[#F1F5F9] ${
+                          row.isOverHeI ? "bg-rose-100/55" : "bg-emerald-50/20"
+                        }`}
+                      >
+                        <div className="inline-flex flex-col items-end gap-0.5">
+                          {onUpdateQuota ? (
+                            <input
+                              key={`${singleReport.grade}_Hệ I_${row.subjectId}_${row.quotaHeI}`}
+                              type="number"
+                              step="0.5"
+                              min={0}
+                              max={20}
+                              defaultValue={row.quotaHeI}
+                              onBlur={(e) =>
+                                handleCommitQuota(
+                                  row.subjectId,
+                                  "Hệ I",
+                                  singleReport.grade,
+                                  row.quotaHeI,
+                                  e.target.value
+                                )
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  ;(e.currentTarget as HTMLInputElement).blur()
+                                }
+                              }}
+                              title={`Sửa định mức Hệ I môn ${row.subjectName} cho ${singleReport.gradeLabel}`}
+                              className={`w-16 text-right rounded-lg border px-2 py-1 text-xs font-bold focus:outline-none ${
+                                row.isOverHeI
+                                  ? "border-rose-400 bg-rose-50 text-[#E11D48] ring-2 ring-rose-200 focus:border-[#E11D48]"
+                                  : row.quotaHeI > 0
+                                  ? "border-emerald-200 bg-white text-[#059669] focus:border-[#00A19A]"
+                                  : "border-[#E2E8F0] bg-slate-50 text-slate-400 focus:border-[#00A19A]"
+                              }`}
+                            />
+                          ) : (
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded-lg font-bold ${
+                                row.isOverHeI
+                                  ? "bg-rose-100 text-[#E11D48] border border-rose-300"
+                                  : row.quotaHeI > 0
+                                  ? "text-[#059669]"
+                                  : "text-slate-300"
+                              }`}
+                            >
+                              {row.quotaHeI > 0 || row.isOverHeI ? row.quotaHeI : "—"}
+                            </span>
+                          )}
+                          {row.isOverHeI && (
+                            <span className="text-[10px] font-semibold text-[#E11D48] whitespace-nowrap">
+                              Thực xếp: {row.maxScheduledHeI} (+{row.maxOverDiffHeI})
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* CHU KỲ 2 TUẦN */}
+                      <td
+                        className={`py-2.5 px-3 align-middle text-right whitespace-nowrap ${
                           isRowOver ? "text-[#E11D48] font-semibold" : "text-slate-600"
                         }`}
                       >
-                        {row.cycleQuota} tiết
+                        {Math.abs(row.cycleQuotaHeS - row.cycleQuotaHeI) < 0.001 ? (
+                          <span>{row.cycleQuotaHeS} tiết</span>
+                        ) : (
+                          <span className="text-[11px]">
+                            <span className="font-semibold text-[#003B3A]">
+                              S: {row.cycleQuotaHeS}
+                            </span>
+                            {" · "}
+                            <span className="font-semibold text-[#059669]">
+                              I: {row.cycleQuotaHeI}
+                            </span>
+                          </span>
+                        )}
                       </td>
 
                       {row.perClass.map((cell) => {
@@ -604,13 +781,27 @@ export function GradeWeeklyStatsTable({
                           cell.quota > 0 && Math.abs(cell.diff) < 0.001
                         const isOver = cell.diff > 0.001
                         const isUnder = cell.diff < -0.001
+                        const isHeI = cell.studyProgram === "Hệ I"
+                        const isGroupBoundary =
+                          heSCols.length > 0 && cell.classId === firstHeIClassId
 
                         return (
                           <td
                             key={cell.classId}
-                            className="py-2.5 px-3 align-middle text-right whitespace-nowrap"
+                            className={`py-2.5 px-3 align-middle text-right whitespace-nowrap ${
+                              isHeI ? "bg-emerald-50/15" : ""
+                            } ${
+                              isGroupBoundary ? "border-l-2 border-l-teal-200" : ""
+                            }`}
                           >
-                            {isOver ? (
+                            {cell.notApplicable ? (
+                              <span
+                                title={`Môn này không có định mức ở ${cell.studyProgram}`}
+                                className="text-slate-300"
+                              >
+                                —
+                              </span>
+                            ) : isOver ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-rose-100/90 border border-rose-200 text-[#E11D48] font-bold">
                                 {cell.scheduled}/{cell.quota} (+{cell.diff})
                               </span>
@@ -666,26 +857,47 @@ export function GradeWeeklyStatsTable({
               )}
             </tbody>
 
-            {/* ACADEMIC LEDGER FOOTER: 40-PERIOD WEEKLY RECONCILIATION */}
+            {/* ACADEMIC LEDGER FOOTER: 40-PERIOD WEEKLY RECONCILIATION FOR BOTH HỆ S & HỆ I */}
             <tfoot className="sticky bottom-0 z-10 bg-[#F8FAFC] border-t-2 border-[#003B3A] text-xs tabular-nums">
               <tr className="bg-[#F0FDFA]/90">
                 <td colSpan={2} className="py-3 px-3 font-bold text-[#003B3A]">
                   Tổng số tiết các môn / Tuần chuẩn {targetWeeklyPeriods} tiết
                 </td>
-                <td className="py-3 px-3 text-right font-bold text-[#003B3A] whitespace-nowrap">
+                <td className="py-3 px-3 text-right font-bold text-[#003B3A] whitespace-nowrap border-l border-[#E2E8F0]">
                   <div>
-                    {singleReport.totalGradeQuota} / {targetWeeklyPeriods} tiết
+                    Hệ S: {singleReport.totalQuotaHeS} / {targetWeeklyPeriods} tiết
                   </div>
                   <div className="mt-0.5">
                     {renderStandardDiffBadge(
-                      singleReport.totalGradeQuota,
+                      singleReport.totalQuotaHeS,
                       targetWeeklyPeriods
                     )}
                   </div>
                 </td>
-                <td className="py-3 px-3 text-right font-semibold text-slate-700 whitespace-nowrap">
-                  {Math.round(singleReport.totalGradeQuota * singleReport.cycleWeeks * 100) / 100}{" "}
-                  / {targetWeeklyPeriods * singleReport.cycleWeeks} tiết
+                <td className="py-3 px-3 text-right font-bold text-[#059669] whitespace-nowrap border-r border-[#E2E8F0]">
+                  <div>
+                    Hệ I: {singleReport.totalQuotaHeI} / {targetWeeklyPeriods} tiết
+                  </div>
+                  <div className="mt-0.5">
+                    {renderStandardDiffBadge(
+                      singleReport.totalQuotaHeI,
+                      targetWeeklyPeriods
+                    )}
+                  </div>
+                </td>
+                <td className="py-3 px-3 text-right font-semibold text-slate-700 whitespace-nowrap text-[11px]">
+                  <div>
+                    S:{" "}
+                    {Math.round(singleReport.totalQuotaHeS * singleReport.cycleWeeks * 100) /
+                      100}
+                    /{targetWeeklyPeriods * singleReport.cycleWeeks}
+                  </div>
+                  <div className="text-[#059669]">
+                    I:{" "}
+                    {Math.round(singleReport.totalQuotaHeI * singleReport.cycleWeeks * 100) /
+                      100}
+                    /{targetWeeklyPeriods * singleReport.cycleWeeks}
+                  </div>
                 </td>
                 {singleReport.classes.map((cls) => (
                   <td
@@ -700,34 +912,43 @@ export function GradeWeeklyStatsTable({
                     </div>
                   </td>
                 ))}
-                <td className="py-3 px-3 text-right font-semibold text-slate-700 whitespace-nowrap">
-                  TB xếp: {singleReport.averageScheduledPeriods}/{targetWeeklyPeriods} tiết
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+                  <td className="py-3 px-3 text-right font-semibold text-slate-700 whitespace-nowrap">
+                    TB xếp: {singleReport.averageScheduledPeriods}/{targetWeeklyPeriods} tiết
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+            )
+          })()}
         </div>
       ) : (
-        /* MODE 2: MULTI-GRADE OVERVIEW MATRIX (ALL GRADES IN SCOPE vs 40 PERIODS) */
+        /* MODE 2: MULTI-GRADE OVERVIEW MATRIX WITH SIDE-BY-SIDE HỆ S & HỆ I SUB-COLUMNS */
         <div className="overflow-x-auto max-h-[62vh]">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-[#003B3A] border-b border-[#003B3A]">
-                <th className="py-2.5 px-3 text-[11px] font-semibold text-teal-100 whitespace-nowrap w-12 text-center">
+              <tr className="bg-[#003B3A] border-b border-white/15">
+                <th
+                  rowSpan={2}
+                  className="py-2.5 px-3 text-[11px] font-semibold text-teal-100 whitespace-nowrap w-12 text-center border-r border-white/10"
+                >
                   STT
                 </th>
-                <th className="py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap min-w-[210px]">
-                  Môn học ({matrixReport.selectedProgram})
+                <th
+                  rowSpan={2}
+                  className="py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap min-w-[200px] border-r border-white/15"
+                >
+                  Môn học
                 </th>
                 {matrixReport.gradeColumns.map((gCol) => (
                   <th
                     key={gCol.grade}
+                    colSpan={2}
                     onClick={() => {
                       setSelectedGrade(gCol.grade)
                       setMode("SINGLE_GRADE")
                     }}
                     title={`Nhấn để xem chi tiết từng lớp của ${gCol.gradeLabel}`}
-                    className="py-2.5 px-3 text-[11px] font-semibold text-white whitespace-nowrap text-right cursor-pointer hover:bg-[#005250]"
+                    className="py-2 px-3 text-[11px] font-semibold text-white whitespace-nowrap text-center border-r border-white/15 cursor-pointer hover:bg-[#005250]"
                   >
                     <div>{gCol.gradeLabel}</div>
                     <div className="text-[10px] font-normal text-teal-100">
@@ -736,13 +957,25 @@ export function GradeWeeklyStatsTable({
                   </th>
                 ))}
               </tr>
+              <tr className="bg-[#004A48] border-b border-[#003B3A]">
+                {matrixReport.gradeColumns.map((gCol) => (
+                  <React.Fragment key={`sub_${gCol.grade}`}>
+                    <th className="py-1.5 px-2.5 text-[10.5px] font-semibold text-[#5EEAD4] text-right whitespace-nowrap border-r border-white/10">
+                      Hệ S
+                    </th>
+                    <th className="py-1.5 px-2.5 text-[10.5px] font-semibold text-teal-100 text-right whitespace-nowrap border-r border-white/15">
+                      Hệ I
+                    </th>
+                  </React.Fragment>
+                ))}
+              </tr>
             </thead>
 
             <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
               {matrixReport.rows.map((row, idx) => {
                 const rowHasOver = matrixReport.gradeColumns.some((gCol) => {
                   const c = row.byGrade[gCol.grade]
-                  return c ? c.avgScheduled > c.quota + 0.001 : false
+                  return c ? c.isOverHeS || c.isOverHeI : false
                 })
 
                 return (
@@ -755,13 +988,13 @@ export function GradeWeeklyStatsTable({
                     }`}
                   >
                     <td
-                      className={`py-2.5 px-3 align-middle text-center ${
+                      className={`py-2.5 px-3 align-middle text-center border-r border-[#F1F5F9] ${
                         rowHasOver ? "font-bold text-[#E11D48]" : "text-slate-500"
                       }`}
                     >
                       {idx + 1}
                     </td>
-                    <td className="py-2.5 px-3 align-middle">
+                    <td className="py-2.5 px-3 align-middle border-r border-[#E2E8F0]">
                       <span
                         className={
                           rowHasOver
@@ -789,49 +1022,85 @@ export function GradeWeeklyStatsTable({
                     {matrixReport.gradeColumns.map((gCol) => {
                       const cell = row.byGrade[gCol.grade] || {
                         quota: 0,
+                        quotaHeS: 0,
+                        quotaHeI: 0,
                         avgScheduled: 0,
+                        avgScheduledHeS: 0,
+                        avgScheduledHeI: 0,
+                        isOverHeS: false,
+                        isOverHeI: false,
                       }
-                      const hasQuota = cell.quota > 0
-                      const isOver = cell.avgScheduled > cell.quota + 0.001
-                      const overDiff =
-                        Math.round((cell.avgScheduled - cell.quota) * 100) / 100
-                      const isMatched =
-                        hasQuota && Math.abs(cell.avgScheduled - cell.quota) < 0.001
 
                       return (
-                        <td
-                          key={`${row.subjectId}_${gCol.grade}`}
-                          className={`py-2.5 px-3 align-middle text-right whitespace-nowrap ${
-                            isOver ? "bg-rose-100/55" : ""
-                          }`}
-                        >
-                          {hasQuota || cell.avgScheduled > 0 ? (
-                            isOver ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-rose-100 border border-rose-300 text-[#E11D48] font-bold">
-                                {cell.quota} (xếp {cell.avgScheduled} · +{overDiff})
+                        <React.Fragment key={`${row.subjectId}_${gCol.grade}`}>
+                          <td
+                            className={`py-2 px-2.5 align-middle text-right whitespace-nowrap border-r border-[#F1F5F9] ${
+                              cell.isOverHeS ? "bg-rose-100/60" : ""
+                            }`}
+                          >
+                            {cell.quotaHeS > 0 || cell.avgScheduledHeS > 0 ? (
+                              <span
+                                className={
+                                  cell.isOverHeS
+                                    ? "font-bold text-[#E11D48]"
+                                    : "font-bold text-[#003B3A]"
+                                }
+                              >
+                                {cell.quotaHeS}
+                                {gCol.classCountHeS > 0 && (
+                                  <span
+                                    className={`ml-1 text-[10.5px] font-normal ${
+                                      cell.isOverHeS
+                                        ? "text-[#E11D48] font-semibold"
+                                        : Math.abs(cell.avgScheduledHeS - cell.quotaHeS) <
+                                          0.001
+                                        ? "text-[#059669]"
+                                        : "text-slate-400"
+                                    }`}
+                                  >
+                                    ({cell.avgScheduledHeS})
+                                  </span>
+                                )}
                               </span>
                             ) : (
-                              <div>
-                                <span className="font-bold text-slate-900">
-                                  {cell.quota}
-                                </span>
-                                <span
-                                  className={`ml-1.5 text-[11px] ${
-                                    isMatched
-                                      ? "text-[#059669]"
-                                      : cell.avgScheduled > 0
-                                      ? "text-[#D97706]"
-                                      : "text-slate-400"
-                                  }`}
-                                >
-                                  (xếp {cell.avgScheduled})
-                                </span>
-                              </div>
-                            )
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
-                        </td>
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+
+                          <td
+                            className={`py-2 px-2.5 align-middle text-right whitespace-nowrap border-r border-[#E2E8F0] ${
+                              cell.isOverHeI ? "bg-rose-100/60" : "bg-emerald-50/15"
+                            }`}
+                          >
+                            {cell.quotaHeI > 0 || cell.avgScheduledHeI > 0 ? (
+                              <span
+                                className={
+                                  cell.isOverHeI
+                                    ? "font-bold text-[#E11D48]"
+                                    : "font-bold text-[#059669]"
+                                }
+                              >
+                                {cell.quotaHeI}
+                                {gCol.classCountHeI > 0 && (
+                                  <span
+                                    className={`ml-1 text-[10.5px] font-normal ${
+                                      cell.isOverHeI
+                                        ? "text-[#E11D48] font-semibold"
+                                        : Math.abs(cell.avgScheduledHeI - cell.quotaHeI) <
+                                          0.001
+                                        ? "text-[#059669]"
+                                        : "text-slate-400"
+                                    }`}
+                                  >
+                                    ({cell.avgScheduledHeI})
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                        </React.Fragment>
                       )
                     })}
                   </tr>
@@ -840,35 +1109,32 @@ export function GradeWeeklyStatsTable({
             </tbody>
 
             <tfoot className="sticky bottom-0 z-10 bg-[#F8FAFC] border-t-2 border-[#003B3A] text-xs tabular-nums">
-              <tr className="bg-[#F0FDFA]/90 border-b border-[#E2E8F0]">
-                <td colSpan={2} className="py-3 px-3 font-bold text-[#003B3A]">
-                  Tổng định mức các môn / Tuần chuẩn {targetWeeklyPeriods} tiết
+              <tr className="bg-[#F0FDFA]/90">
+                <td
+                  colSpan={2}
+                  className="py-3 px-3 font-bold text-[#003B3A] border-r border-[#E2E8F0]"
+                >
+                  Tổng định mức (Hệ S | Hệ I) / Tuần chuẩn {targetWeeklyPeriods} tiết
                 </td>
                 {matrixReport.gradeColumns.map((gCol) => (
-                  <td
-                    key={`qtot_${gCol.grade}`}
-                    className="py-3 px-3 text-right whitespace-nowrap"
-                  >
-                    <div className="font-bold text-[#003B3A]">
-                      {gCol.totalQuota} / {targetWeeklyPeriods} tiết
-                    </div>
-                    <div className="mt-0.5">
-                      {renderStandardDiffBadge(gCol.totalQuota, targetWeeklyPeriods)}
-                    </div>
-                  </td>
-                ))}
-              </tr>
-              <tr className="bg-white">
-                <td colSpan={2} className="py-2.5 px-3 font-semibold text-slate-700">
-                  Trung bình số tiết đã xếp trên TKB / {targetWeeklyPeriods} tiết
-                </td>
-                {matrixReport.gradeColumns.map((gCol) => (
-                  <td
-                    key={`stot_${gCol.grade}`}
-                    className="py-2.5 px-3 text-right font-semibold text-slate-800 whitespace-nowrap"
-                  >
-                    {gCol.avgScheduled} / {targetWeeklyPeriods} tiết
-                  </td>
+                  <React.Fragment key={`qtot_${gCol.grade}`}>
+                    <td className="py-2.5 px-2.5 text-right whitespace-nowrap border-r border-[#E2E8F0]">
+                      <div className="font-bold text-[#003B3A]">
+                        {gCol.totalQuotaHeS}/{targetWeeklyPeriods}
+                      </div>
+                      <div className="mt-0.5">
+                        {renderStandardDiffBadge(gCol.totalQuotaHeS, targetWeeklyPeriods)}
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-2.5 text-right whitespace-nowrap border-r border-[#E2E8F0] bg-emerald-50/30">
+                      <div className="font-bold text-[#059669]">
+                        {gCol.totalQuotaHeI}/{targetWeeklyPeriods}
+                      </div>
+                      <div className="mt-0.5">
+                        {renderStandardDiffBadge(gCol.totalQuotaHeI, targetWeeklyPeriods)}
+                      </div>
+                    </td>
+                  </React.Fragment>
                 ))}
               </tr>
             </tfoot>

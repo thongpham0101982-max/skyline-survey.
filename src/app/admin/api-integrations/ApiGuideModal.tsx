@@ -38,6 +38,14 @@ export function ApiGuideModal({
     setTimeout(() => setCopiedSnippet(null), 2500)
   }
 
+  const sampleUnifiedTeachersCurl = `curl -X GET "https://ssm.skylineschool.edu.vn/api/v1/unified/teachers?limit=50&page=1" \\
+  -H "Authorization: Bearer sky_live_9f8a3b2c1e4d5f6a7b8c9d0e1f2a3b4c" \\
+  -H "Content-Type: application/json"`
+
+  const sampleUnifiedStudentsCurl = `curl -X GET "https://ssm.skylineschool.edu.vn/api/v1/unified/students?limit=50&page=1" \\
+  -H "Authorization: Bearer sky_live_9f8a3b2c1e4d5f6a7b8c9d0e1f2a3b4c" \\
+  -H "Content-Type: application/json"`
+
   const sampleCurl = `curl -X GET "https://ssm.skylineschool.edu.vn/api/v1/students?page=1&limit=20" \\
   -H "Authorization: Bearer sky_live_9f8a3b2c1e4d5f6a7b8c9d0e1f2a3b4c" \\
   -H "Content-Type: application/json"`
@@ -310,12 +318,77 @@ export function ApiGuideModal({
           {/* TAB 2: CURL & N8N */}
           {activeTab === "curl_n8n" && (
             <div className="space-y-5">
-              {/* cURL Snippet 1 */}
+              {/* Highlighted Banner: Unified Snapshot Gateway */}
+              <div className="p-4 rounded-xl bg-teal-50/80 border border-teal-200 text-xs space-y-2">
+                <div className="flex items-center gap-2 font-bold text-[#003B3A]">
+                  <Layers className="h-4 w-4 text-[#00A19A]" />
+                  <span>Cổng Dữ liệu Bảng Tổng hợp Độc lập (Unified Snapshot Gateway - Độ trễ &lt; 15ms)</span>
+                </div>
+                <p className="text-slate-600 text-[11px]">
+                  Hai bảng phẳng độc lập đã gom và chuẩn hóa từ 116 bảng cơ sở dữ liệu SSM. Dữ liệu đọc trực tiếp với tốc độ tối ưu, tự động lọc theo phân quyền cơ sở và che giấu PII liên hệ (SĐT, Email) theo Nghị định 13/2023.
+                </p>
+              </div>
+
+              {/* cURL Snippet: Unified Teachers Snapshot */}
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
                 <div className="bg-slate-800 px-4 py-2.5 flex items-center justify-between text-white text-xs">
                   <div className="flex items-center gap-2">
                     <Terminal className="h-4 w-4 text-teal-400" />
-                    <span className="font-semibold font-mono">Ví dụ 1: Đọc danh sách học sinh (cURL)</span>
+                    <span className="font-semibold font-mono">Bảng Tổng hợp Giáo viên (Unified Teachers - 308 hồ sơ)</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(sampleUnifiedTeachersCurl, "curl_uteachers")}
+                    className="flex items-center gap-1 text-[11px] bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded transition-colors text-slate-200"
+                  >
+                    {copiedSnippet === "curl_uteachers" ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" /> Đã sao chép
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" /> Sao chép
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="p-4 bg-slate-900 text-slate-200 font-mono text-xs overflow-x-auto">
+                  <pre>{sampleUnifiedTeachersCurl}</pre>
+                </div>
+              </div>
+
+              {/* cURL Snippet: Unified Students Snapshot */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                <div className="bg-slate-800 px-4 py-2.5 flex items-center justify-between text-white text-xs">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="h-4 w-4 text-emerald-400" />
+                    <span className="font-semibold font-mono">Bảng Tổng hợp Học sinh (Unified Students - 1.863 hồ sơ)</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(sampleUnifiedStudentsCurl, "curl_ustudents")}
+                    className="flex items-center gap-1 text-[11px] bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded transition-colors text-slate-200"
+                  >
+                    {copiedSnippet === "curl_ustudents" ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" /> Đã sao chép
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" /> Sao chép
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="p-4 bg-slate-900 text-slate-200 font-mono text-xs overflow-x-auto">
+                  <pre>{sampleUnifiedStudentsCurl}</pre>
+                </div>
+              </div>
+
+              {/* cURL Snippet 1 */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                <div className="bg-slate-800 px-4 py-2.5 flex items-center justify-between text-white text-xs">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="h-4 w-4 text-blue-400" />
+                    <span className="font-semibold font-mono">Ví dụ 1: Đọc danh sách học sinh chuẩn v1 (cURL)</span>
                   </div>
                   <button
                     onClick={() => handleCopy(sampleCurl, "curl1")}
@@ -430,15 +503,15 @@ export function ApiGuideModal({
 
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
-                    <tr>
-                      <th className="px-4 py-3">Phân nhóm</th>
-                      <th className="px-4 py-3">Mã quyền (Scope)</th>
-                      <th className="px-4 py-3">Ý nghĩa nghiệp vụ & Bảo mật</th>
-                      <th className="px-4 py-3">Hành động được phép</th>
+                  <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3 font-semibold">Phân nhóm</th>
+                      <th className="px-4 py-3 font-semibold">Mã quyền (Scope)</th>
+                      <th className="px-4 py-3 font-semibold">Ý nghĩa nghiệp vụ & Bảo mật</th>
+                      <th className="px-4 py-3 font-semibold">Hành động được phép</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-normal text-slate-700">
+                  <tbody className="divide-y divide-[#E2E8F0] font-normal text-slate-700">
                     {/* Học sinh */}
                     <tr className="bg-slate-50/30">
                       <td rowSpan={4} className="px-4 py-3 font-bold text-slate-800 align-top border-r border-slate-100">

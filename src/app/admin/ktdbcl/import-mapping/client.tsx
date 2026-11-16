@@ -463,20 +463,20 @@ export function ImportMappingClient({
             </div>
             <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
               <table className="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100 sticky top-0 z-10">
-                    <th className="p-3 w-12 text-center">STT</th>
-                    <th className="p-3">Họ và tên</th>
-                    <th className="p-3 w-32">Mã HS</th>
-                    <th className="p-3 w-32">Mã vnEdu</th>
-                    <th className="p-3 w-20">Lớp</th>
-                    <th className="p-3 w-20">Cơ sở</th>
-                    <th className="p-3 w-24">Ngày sinh</th>
-                    <th className="p-3 w-20">Giới tính</th>
-                    <th className="p-3 w-24 text-center">Trạng thái</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b sticky top-0 z-10 text-[11px] font-semibold">
+                    <th className="p-3 w-12 text-center font-semibold">STT</th>
+                    <th className="p-3 font-semibold">Họ và tên</th>
+                    <th className="p-3 w-32 font-semibold">Mã HS</th>
+                    <th className="p-3 w-32 font-semibold">Mã vnEdu</th>
+                    <th className="p-3 w-20 font-semibold">Lớp</th>
+                    <th className="p-3 w-20 font-semibold">Cơ sở</th>
+                    <th className="p-3 w-24 font-semibold">Ngày sinh</th>
+                    <th className="p-3 w-20 font-semibold">Giới tính</th>
+                    <th className="p-3 w-24 text-center font-semibold">Trạng thái</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {parsedRows.map((r, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
                       <td className="p-3 text-center text-slate-400 font-medium">{r.stt}</td>
@@ -572,20 +572,20 @@ export function ImportMappingClient({
           <div className="border border-slate-100 rounded-2xl overflow-hidden">
             <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
               <table className="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-505 font-bold border-b border-slate-100 sticky top-0 z-10">
-                    <th className="p-3 w-12 text-center">STT</th>
-                    <th className="p-3 w-40">Họ và tên</th>
-                    <th className="p-3">Mã HS</th>
-                    <th className="p-3">Mã vnEdu</th>
-                    <th className="p-3 w-20">Lớp</th>
-                    <th className="p-3 w-24">Cơ sở</th>
-                    <th className="p-3 w-24">Ngày sinh</th>
-                    <th className="p-3 w-20">Giới tính</th>
-                    <th className="p-3 w-28 text-center">Ngày tạo</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b sticky top-0 z-10 text-[11px] font-semibold">
+                    <th className="p-3 w-12 text-center font-semibold">STT</th>
+                    <th className="p-3 w-40 font-semibold">Họ và tên</th>
+                    <th className="p-3 font-semibold">Mã HS</th>
+                    <th className="p-3 font-semibold">Mã vnEdu</th>
+                    <th className="p-3 w-20 font-semibold">Lớp</th>
+                    <th className="p-3 w-24 font-semibold">Cơ sở</th>
+                    <th className="p-3 w-24 font-semibold">Ngày sinh</th>
+                    <th className="p-3 w-20 font-semibold">Giới tính</th>
+                    <th className="p-3 w-28 text-center font-semibold">Ngày tạo</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
                   {filteredExisting.map((m, idx) => {
                     let dobStr = "—"
                     if (m.dateOfBirth) {

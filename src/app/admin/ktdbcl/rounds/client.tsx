@@ -1,47 +1,41 @@
 "use client"
-import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Check, X, Flag, Hash, FileText, School, MapPin, Building2, Award, Globe } from "lucide-react"
-import { createExamRoundAction, updateExamRoundAction, deleteExamRoundAction } from "./actions"
+
+import { useState, useEffect, useMemo } from "react"
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  Check,
+  X,
+  Flag,
+  Search,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react"
+import {
+  createExamRoundAction,
+  updateExamRoundAction,
+  deleteExamRoundAction,
+} from "./actions"
 
 interface ExamRoundClientProps {
   initialRounds: any[]
   academicYears: any[]
 }
 
-const getRoundIconAndColor = (code: string, name: string) => {
-  const cleanCode = (code || "").toUpperCase()
-  const cleanName = (name || "").toLowerCase()
-  
-  if (cleanCode.includes("TRUONG") || cleanName.includes("trường") || cleanCode.includes("VONG_1") || cleanName.includes("vòng 1")) {
-    return { Icon: School, bg: "bg-blue-50 text-blue-600 border-blue-100/50" }
-  }
-  if (cleanCode.includes("QUAN") || cleanCode.includes("HUYEN") || cleanName.includes("quận") || cleanName.includes("huyện")) {
-    return { Icon: MapPin, bg: "bg-amber-50 text-amber-600 border-amber-100/50" }
-  }
-  if (cleanCode.includes("THANH_PHO") || cleanCode.includes("TINH") || cleanName.includes("thành phố") || cleanName.includes("tỉnh")) {
-    return { Icon: Building2, bg: "bg-emerald-50 text-emerald-600 border-emerald-100/50" }
-  }
-  if (cleanCode.includes("QUOC_GIA") || cleanName.includes("quốc gia")) {
-    return { Icon: Award, bg: "bg-rose-50 text-rose-600 border-rose-100/50" }
-  }
-  if (cleanCode.includes("QUOC_TE") || cleanName.includes("quốc tế")) {
-    return { Icon: Globe, bg: "bg-teal-50 text-teal-800 border-teal-100/50" }
-  }
-  return { Icon: Flag, bg: "bg-teal-50 text-[#48BFE3] border-teal-100/50" }
-}
-
 export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientProps) {
   const [rounds, setRounds] = useState(initialRounds)
+  const [searchQuery, setSearchQuery] = useState("")
   const [yearId, setYearId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("selectedAcademicYear")
       if (stored) return stored
     }
     const active = academicYears.find((y: any) => y.status === "ACTIVE")
-    return active ? active.id : (academicYears[0]?.id || "")
+    return active ? active.id : academicYears[0]?.id || ""
   })
 
-  // Listen to year change event
   useEffect(() => {
     const handleYearChange = () => {
       const stored = localStorage.getItem("selectedAcademicYear")
@@ -53,160 +47,369 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
     return () => window.removeEventListener("academicYearChanged", handleYearChange)
   }, [yearId])
 
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", code: "", description: "" })
   const [creating, setCreating] = useState(false)
   const [newForm, setNewForm] = useState({ name: "", code: "", description: "" })
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ name: "", code: "", description: "" })
   const [saving, setSaving] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
+  const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const openCreate = () => {
-    setNewForm({ name: "", code: "", description: "" })
-    setCreating(true)
-    setErrorMsg("")
+  const showToast = (type: "success" | "error", text: string) => {
+    setToast({ type, text })
+    setTimeout(() => {
+      setToast((prev) => (prev?.text === text ? null : prev))
+    }, 3200)
   }
 
   const handleCreate = async () => {
     if (!newForm.name.trim() || !newForm.code.trim()) {
-      setErrorMsg("Vui lòng nhập Tên vòng thi và Mã vòng thi!")
+      showToast("error", "Vui lòng nhập Tên vòng thi và Mã vòng thi.")
       return
     }
     setSaving(true)
-    setErrorMsg("")
     try {
-      await createExamRoundAction({ ...newForm, academicYearId: null })
-      setRounds([...rounds, { ...newForm, id: `temp_${Date.now()}`, academicYearId: null, exams: [] }])
+      const created = await createExamRoundAction({ ...newForm, academicYearId: null })
+      setRounds((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "vi"))
+      )
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
-      window.location.reload()
+      showToast("success", `Đã thêm vòng thi "${created.name}".`)
     } catch (e: any) {
-      setErrorMsg(e?.message || "Mã vòng thi đã tồn tại hoặc có lỗi xảy ra. Vui lòng thử lại!")
+      showToast("error", e?.message || "Mã vòng thi đã tồn tại hoặc xảy ra lỗi.")
     } finally {
       setSaving(false)
     }
   }
 
-  const handleEdit = (round: any) => {
+  const startEdit = (round: any) => {
     setEditingId(round.id)
-    setEditForm({ name: round.name, code: round.code, description: round.description || "" })
-    setErrorMsg("")
+    setEditForm({
+      name: round.name,
+      code: round.code,
+      description: round.description || "",
+    })
   }
 
   const handleSaveEdit = async (id: string) => {
     if (!editForm.name.trim() || !editForm.code.trim()) {
-      setErrorMsg("Vui lòng nhập đầy đủ thông tin!")
+      showToast("error", "Tên vòng thi và Mã không được để trống.")
       return
     }
     setSaving(true)
     try {
-      await updateExamRoundAction({ id, ...editForm, academicYearId: null })
-      setRounds(rounds.map((r) => r.id === id ? { ...r, ...editForm } : r))
+      const updated = await updateExamRoundAction({ id, ...editForm, academicYearId: null })
+      setRounds((prev) => prev.map((r) => (r.id === id ? updated : r)))
       setEditingId(null)
+      showToast("success", "Đã cập nhật vòng thi.")
     } catch (e: any) {
-      setErrorMsg(e?.message || "Mã vòng thi đã tồn tại hoặc xảy ra lỗi.")
+      showToast("error", e?.message || "Không thể cập nhật vòng thi.")
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Xóa vòng thi "${name}"?\n\nLưu ý: Tất cả kỳ thi thuộc vòng thi này sẽ bị ảnh hưởng.`)) return
+    if (!confirm(`Xóa vòng thi "${name}"?`)) return
     try {
       await deleteExamRoundAction(id)
-      setRounds(rounds.filter((r) => r.id !== id))
-    } catch (e) {
-      alert("Có lỗi xảy ra khi xóa vòng thi.")
+      setRounds((prev) => prev.filter((r) => r.id !== id))
+      showToast("success", `Đã xóa vòng thi "${name}".`)
+    } catch (e: any) {
+      showToast("error", e?.message || "Có lỗi xảy ra khi xóa vòng thi.")
     }
   }
 
-  const displayRounds = rounds.filter(
-    (r: any) => r.academicYearId === null || r.academicYearId === yearId
-  )
+  const displayRounds = useMemo(() => {
+    return rounds
+      .filter((r: any) => r.academicYearId === null || r.academicYearId === yearId)
+      .filter((r: any) => {
+        if (!searchQuery.trim()) return true
+        const q = searchQuery.toLowerCase().trim()
+        return (
+          (r.name || "").toLowerCase().includes(q) ||
+          (r.code || "").toLowerCase().includes(q) ||
+          (r.description || "").toLowerCase().includes(q)
+        )
+      })
+  }, [rounds, yearId, searchQuery])
 
   return (
-    <div className="space-y-6">
-      {/* Header and Add Button aligned cleanly */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/60 shadow-2xs">
-        <div className="space-y-1">
-          <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
-            <Flag className="w-4 h-4 text-[#48BFE3]" />
-            Danh Sách Vòng Thi ({displayRounds.length})
-          </h3>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-            Quản lý danh sách các vòng thi của học sinh
-          </p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center justify-center gap-2 bg-[#48BFE3] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#48BFE3]/15 transition-all text-xs cursor-pointer shrink-0"
+    <div className="space-y-3">
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg border text-xs font-semibold ${
+            toast.type === "success"
+              ? "bg-[#003B3A] text-white border-[#008B85]"
+              : "bg-rose-600 text-white border-rose-700"
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          Tạo Vòng Thi Mới
-        </button>
+          {toast.type === "success" ? (
+            <CheckCircle2 className="w-4 h-4 text-[#5EEAD4] shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-white shrink-0" />
+          )}
+          <span>{toast.text}</span>
+        </div>
+      )}
+
+      {/* 1. Compact Toolbar & Inline Create */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-3.5 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs tabular-nums">
+            <span className="font-semibold text-[#003B3A]">Từ điển vòng thi &amp; cấp độ thi</span>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-500">
+              Tổng số vòng thi: <strong className="text-slate-900">{displayRounds.length}</strong>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-56">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm theo tên hoặc mã vòng..."
+                className="w-full pl-8.5 pr-7 py-1.5 rounded-xl text-xs border border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none text-slate-800"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCreating((v) => !v)
+                setEditingId(null)
+              }}
+              className="inline-flex items-center gap-1.5 bg-[#003B3A] hover:bg-[#002928] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#5EEAD4]" />
+              <span>Thêm vòng thi</span>
+            </button>
+          </div>
+        </div>
+
+        {creating && (
+          <div className="pt-3 border-t border-[#F1F5F9] grid grid-cols-1 md:grid-cols-12 gap-2.5 items-end">
+            <div className="md:col-span-4 space-y-1">
+              <label className="block text-xs font-medium text-slate-600">
+                Tên vòng thi <span className="text-[#E11D48]">*</span>
+              </label>
+              <input
+                type="text"
+                value={newForm.name}
+                onChange={(e) => setNewForm({ ...newForm, name: e.target.value })}
+                placeholder="Ví dụ: Cấp Trường, Cấp Thành phố, Quốc gia..."
+                className="w-full border border-[#E2E8F0] rounded-xl px-3 py-1.5 text-xs bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none"
+              />
+            </div>
+            <div className="md:col-span-3 space-y-1">
+              <label className="block text-xs font-medium text-slate-600">
+                Mã vòng thi <span className="text-[#E11D48]">*</span>
+              </label>
+              <input
+                type="text"
+                value={newForm.code}
+                onChange={(e) =>
+                  setNewForm({
+                    ...newForm,
+                    code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                  })
+                }
+                placeholder="CAP_TRUONG"
+                className="w-full border border-[#E2E8F0] rounded-xl px-3 py-1.5 text-xs font-mono bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none"
+              />
+            </div>
+            <div className="md:col-span-3 space-y-1">
+              <label className="block text-xs font-medium text-slate-600">Mô tả</label>
+              <input
+                type="text"
+                value={newForm.description}
+                onChange={(e) => setNewForm({ ...newForm, description: e.target.value })}
+                placeholder="Ghi chú phạm vi vòng thi..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreate()
+                }}
+                className="w-full border border-[#E2E8F0] rounded-xl px-3 py-1.5 text-xs bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none"
+              />
+            </div>
+            <div className="md:col-span-2 flex items-center justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={handleCreate}
+                disabled={saving}
+                className="inline-flex items-center gap-1 bg-[#008B85] hover:bg-[#00736E] text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                <span>Lưu</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreating(false)}
+                className="px-2.5 py-1.5 bg-white border border-[#E2E8F0] hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Table of Redesigned Round Rows */}
-      {displayRounds.length === 0 ? (
-        <div className="bg-white border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center py-20 text-slate-400 shadow-2xs">
-          <Flag className="w-16 h-16 mb-4 opacity-20 text-[#48BFE3]" />
-          <p className="font-bold text-slate-700 text-base mb-1">Chưa có vòng thi nào</p>
-          <p className="text-xs text-slate-400 font-medium">Nhấn "Tạo Vòng Thi Mới" để bắt đầu thiết lập.</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+      {/* 2. Sky-Line Academic Ledger Table */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        {displayRounds.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400 px-4 text-center">
+            <Flag className="w-9 h-9 mb-2 text-slate-300" />
+            <p className="font-semibold text-slate-700 text-sm">Chưa có vòng thi nào phù hợp</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Nhấn &ldquo;Thêm vòng thi&rdquo; để khởi tạo danh mục cấp độ thi.
+            </p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200/60 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-5">Tên Vòng thi</th>
-                  <th className="py-3.5 px-4">Mã (Code)</th>
-                  <th className="py-3.5 px-4">Mô tả</th>
-                  <th className="py-3.5 px-4 text-center">Số lượng Kỳ thi</th>
-                  <th className="py-3.5 px-5 text-right">Thao tác</th>
+              <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-3 text-white">Tên vòng thi</th>
+                  <th className="py-3 px-3 text-teal-100">Mã vòng thi</th>
+                  <th className="py-3 px-3 text-teal-100">Mô tả</th>
+                  <th className="py-3 px-3 text-center text-[#5EEAD4]">Số kỳ thi</th>
+                  <th className="py-3 px-3 text-right text-white">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                 {displayRounds.map((round: any) => {
-                  const examCount = round.exams ? round.exams.filter((e: any) => e.academicYearId === yearId).length : 0;
-                  const { Icon, bg } = getRoundIconAndColor(round.code, round.name);
+                  const isEditing = editingId === round.id
+                  const examCount = round.exams
+                    ? round.exams.filter((e: any) => !yearId || e.academicYearId === yearId).length
+                    : 0
+
                   return (
-                    <tr key={round.id} className="hover:bg-slate-50/40 transition-colors text-xs font-semibold">
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border ${bg}`}>
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <span className="font-bold text-slate-800">{round.name}</span>
-                        </div>
+                    <tr
+                      key={round.id}
+                      className={`transition-colors align-middle ${
+                        isEditing ? "bg-[#F0FDFA]/60" : "hover:bg-[#F8FAFC]"
+                      }`}
+                    >
+                      <td className="py-3 px-3 align-middle">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            className="w-full border border-[#00A19A] rounded-lg px-2.5 py-1 text-xs font-semibold bg-white outline-none"
+                          />
+                        ) : (
+                          <span className="font-semibold text-slate-900">{round.name}</span>
+                        )}
                       </td>
-                      <td className="py-4 px-4 font-mono text-slate-500 font-bold">
-                        {round.code}
+
+                      <td className="py-3 px-3 align-middle whitespace-nowrap">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editForm.code}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
+                              })
+                            }
+                            className="w-36 border border-[#00A19A] rounded-lg px-2.5 py-1 text-xs font-mono bg-white outline-none"
+                          />
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-[#F8FAFC] border border-[#E2E8F0] font-mono text-[11px] text-slate-700">
+                            {round.code}
+                          </span>
+                        )}
                       </td>
-                      <td className="py-4 px-4 text-slate-500 max-w-xs truncate" title={round.description || ''}>
-                        {round.description || <span className="text-slate-300 italic font-normal">Chưa có mô tả</span>}
+
+                      <td className="py-3 px-3 align-middle max-w-md text-slate-600">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editForm.description}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, description: e.target.value })
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveEdit(round.id)
+                            }}
+                            className="w-full border border-[#00A19A] rounded-lg px-2.5 py-1 text-xs bg-white outline-none"
+                          />
+                        ) : round.description ? (
+                          <span className="line-clamp-2" title={round.description}>
+                            {round.description}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
                       </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="bg-teal-50 text-[#48BFE3] border border-teal-100/50 text-[10px] px-2.5 py-0.5 rounded-full font-black">
+
+                      <td className="py-3 px-3 align-middle text-center whitespace-nowrap">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                            examCount > 0
+                              ? "bg-[#F0FDFA] text-[#00736E] border-[#CCFBF1]"
+                              : "bg-[#F8FAFC] text-slate-400 border-[#E2E8F0]"
+                          }`}
+                        >
                           {examCount} kỳ thi
                         </span>
                       </td>
-                      <td className="py-4 px-5 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleEdit(round)}
-                            className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-lg transition-all cursor-pointer"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(round.id, round.name)}
-                            className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-all cursor-pointer"
-                            title="Xóa"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+
+                      <td className="py-3 px-3 align-middle text-right whitespace-nowrap">
+                        {isEditing ? (
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEdit(round.id)}
+                              disabled={saving}
+                              className="p-1.5 rounded-lg bg-[#003B3A] text-white hover:bg-[#00736E] transition-colors cursor-pointer"
+                              title="Lưu thay đổi"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="p-1.5 rounded-lg bg-white border border-[#E2E8F0] text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Hủy"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => startEdit(round)}
+                              className="p-1.5 text-slate-500 hover:text-[#003B3A] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              title="Chỉnh sửa"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(round.id, round.name)}
+                              className="p-1.5 text-slate-400 hover:text-[#E11D48] hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )
@@ -214,171 +417,8 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {/* CREATE MODAL OVERLAY */}
-      {creating && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white px-6 py-4 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <Flag className="w-5 h-5 text-teal-300" />
-                <h3 className="font-black text-sm">Tạo Vòng Thi Mới</h3>
-              </div>
-              <button
-                onClick={() => setCreating(false)}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 text-xs font-semibold">
-              {errorMsg && (
-                <div className="text-red-700 bg-red-50 p-3.5 rounded-xl border border-red-100 font-bold flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider">
-                  Tên Vòng Thi <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newForm.name}
-                  onChange={e => setNewForm({ ...newForm, name: e.target.value })}
-                  placeholder="Ví dụ: Vòng trường, Vòng Quận, Vòng Thành phố..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider">
-                  Mã (Code) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newForm.code}
-                  onChange={e => setNewForm({ ...newForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                  placeholder="Ví dụ: VONG_CS_TRUONG"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider">Mô tả vòng thi</label>
-                <textarea
-                  value={newForm.description}
-                  onChange={e => setNewForm({ ...newForm, description: e.target.value })}
-                  placeholder="Nhập mô tả chi tiết..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] outline-none font-semibold text-slate-700 bg-slate-50/50"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setCreating(false)}
-                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-xs transition-all shadow-2xs cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#48BFE3]/15 transition-all disabled:opacity-60 cursor-pointer"
-              >
-                {saving ? "Đang lưu..." : "Lưu Vòng Thi"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT MODAL OVERLAY */}
-      {editingId && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white px-6 py-4 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <Flag className="w-5 h-5 text-teal-300" />
-                <h3 className="font-black text-sm">Chỉnh Sửa Vòng Thi</h3>
-              </div>
-              <button
-                onClick={() => setEditingId(null)}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4 text-xs font-semibold">
-              {errorMsg && (
-                <div className="text-red-700 bg-red-50 p-3.5 rounded-xl border border-red-100 font-bold flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider">Tên Vòng Thi</label>
-                <input
-                  type="text"
-                  value={editForm.name}
-                  onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider">Mã (Code)</label>
-                <input
-                  type="text"
-                  value={editForm.code}
-                  onChange={e => setEditForm({ ...editForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-slate-600 uppercase tracking-wider">Mô tả</label>
-                <textarea
-                  value={editForm.description}
-                  onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#48BFE3] outline-none font-semibold text-slate-700 bg-slate-50/50"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3 shrink-0">
-              <button
-                onClick={() => setEditingId(null)}
-                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-xs transition-all shadow-2xs cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={() => handleSaveEdit(editingId)}
-                disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#48BFE3]/15 transition-all disabled:opacity-60 cursor-pointer"
-              >
-                {saving ? "Đang lưu..." : "Lưu Thay Đổi"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

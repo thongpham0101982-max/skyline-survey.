@@ -18,6 +18,7 @@ export default async function TimetableSchedulerPage(props: {
     scopeGroup: sp.scopeGroup as any,
     campusId: sp.campusId,
     levelCode: sp.levelCode as any,
+    studyProgram: sp.studyProgram,
     grade: sp.grade,
     classId: sp.classId,
     versionId: sp.versionId,

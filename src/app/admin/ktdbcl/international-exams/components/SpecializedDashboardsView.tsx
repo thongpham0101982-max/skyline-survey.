@@ -316,8 +316,8 @@ export default function SpecializedDashboardsView({
                 </h4>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-500 text-left">
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="border-b text-left text-[11px] font-semibold">
                         <th className="py-2 font-bold">Cấp độ thi</th>
                         <th className="py-2 font-bold text-center">Lượt thi</th>
                         <th className="py-2 font-bold text-center">TB Khiên</th>
@@ -328,7 +328,7 @@ export default function SpecializedDashboardsView({
                         <th className="py-2 font-bold text-center">TB RW / L / S</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {yleAnalytics.byLevel.map((row: any) => (
                         <tr key={row.examType} className="hover:bg-slate-50">
                           <td className="py-2.5 font-extrabold text-slate-900">{row.examType}</td>
@@ -665,8 +665,8 @@ export default function SpecializedDashboardsView({
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-500 text-left">
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="border-b text-left text-[11px] font-semibold">
                         <th className="py-2 font-bold">Năm học</th>
                         <th className="py-2 font-bold text-center">Số lượng</th>
                         <th className="py-2 font-bold text-center">Band TB</th>
@@ -675,7 +675,7 @@ export default function SpecializedDashboardsView({
                         <th className="py-2 font-bold text-center">Tỷ lệ ≥ 8.0</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {ieltsAnalytics.byAcademicYear.map((yr: any) => (
                         <tr key={yr.academicYear} className="hover:bg-slate-50">
                           <td className="py-2.5 font-extrabold text-slate-900">{yr.academicYear}</td>
@@ -825,8 +825,8 @@ export default function SpecializedDashboardsView({
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 text-left">
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-left text-[11px] font-semibold">
                     <th className="py-2 font-bold">Năm học</th>
                     <th className="py-2 font-bold text-center">Tổng HS dự thi</th>
                     <th className="py-2 font-bold text-center">Số bài thi Mathematics</th>
@@ -835,7 +835,7 @@ export default function SpecializedDashboardsView({
                     <th className="py-2 font-bold text-center">Điểm TB Science</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {pearsonAnalytics.byAcademicYear.map((yr: any) => (
                     <tr key={yr.academicYear} className="hover:bg-slate-50">
                       <td className="py-2.5 font-extrabold text-slate-900">{yr.academicYear}</td>
@@ -1001,8 +1001,8 @@ export default function SpecializedDashboardsView({
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 text-left">
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-left text-[11px] font-semibold">
                     <th className="py-2.5 font-bold">Cơ sở</th>
                     <th className="py-2.5 font-bold text-center">Tổng lượt thi</th>
                     <th className="py-2.5 font-bold text-center">YLE (S/M/F)</th>
@@ -1014,7 +1014,7 @@ export default function SpecializedDashboardsView({
                     <th className="py-2.5 font-bold text-center">Checkpoint</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {comparativeReports.campusMatrix.map((row: any) => (
                     <tr key={row.campusCode} className="hover:bg-slate-50">
                       <td className="py-3 font-extrabold text-slate-900">{row.campusCode}</td>
@@ -1050,8 +1050,8 @@ export default function SpecializedDashboardsView({
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 text-left">
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="border-b text-left text-[11px] font-semibold">
                     <th className="py-2.5 font-bold">Năm học</th>
                     <th className="py-2.5 font-bold text-center">Tổng cộng</th>
                     <th className="py-2.5 font-bold text-center">Starters</th>
@@ -1064,7 +1064,7 @@ export default function SpecializedDashboardsView({
                     <th className="py-2.5 font-bold text-center">Checkpoint</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {comparativeReports.yearlyMatrix.map((yr: any) => (
                     <tr key={yr.academicYear} className="hover:bg-slate-50">
                       <td className="py-3 font-extrabold text-slate-900">{yr.academicYear}</td>

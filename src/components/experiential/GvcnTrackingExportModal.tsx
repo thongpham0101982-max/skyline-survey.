@@ -295,21 +295,21 @@ export default function GvcnTrackingExportModal({
           ) : (
             <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
               <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-100 text-slate-700 font-bold text-[11px] uppercase tracking-wider border-b border-slate-200">
-                    <th className="p-2.5 text-center w-12">STT</th>
-                    <th className="p-2.5">Cơ sở / Khối</th>
-                    <th className="p-2.5">Lớp chủ nhiệm</th>
-                    <th className="p-2.5">Giáo viên Chủ nhiệm</th>
-                    <th className="p-2.5 text-center">Số Kế hoạch</th>
-                    <th className="p-2.5 text-center">Đã ĐG / Tổng lượt</th>
-                    <th className="p-2.5 text-center w-36">Tiến độ (%)</th>
-                    <th className="p-2.5 text-center">HS chưa ĐG</th>
-                    <th className="p-2.5">Tình trạng</th>
-                    <th className="p-2.5 text-center w-24">In / PDF</th>
+                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] border-b font-semibold">
+                    <th className="p-2.5 text-center w-12 font-semibold">STT</th>
+                    <th className="p-2.5 font-semibold">Cơ sở / Khối</th>
+                    <th className="p-2.5 font-semibold">Lớp chủ nhiệm</th>
+                    <th className="p-2.5 font-semibold">Giáo viên Chủ nhiệm</th>
+                    <th className="p-2.5 text-center font-semibold">Số Kế hoạch</th>
+                    <th className="p-2.5 text-center font-semibold">Đã ĐG / Tổng lượt</th>
+                    <th className="p-2.5 text-center w-36 font-semibold">Tiến độ (%)</th>
+                    <th className="p-2.5 text-center font-semibold">HS chưa ĐG</th>
+                    <th className="p-2.5 font-semibold">Tình trạng</th>
+                    <th className="p-2.5 text-center w-24 font-semibold">In / PDF</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {filteredSummary.map((item: any, idx: number) => {
                     const isExpanded = expandedClassKey === item.className;
                     const percentNum = Number(item.progressPercent.replace('%', '')) || 0;

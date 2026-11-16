@@ -149,14 +149,14 @@ export function AdminSurveysClient({ initialSurveys, years, campuses, createActi
       {viewMode === "list" ? (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
               <tr className="text-xs font-semibold">
-                <th className="pl-6 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-200">Đợt khảo sát</th>
-                <th className="p-2 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-200">Đối tượng</th>
-                <th className="p-2 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center border border-slate-200">Năm học</th>
-                <th className="p-2 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center border border-slate-200">Thời gian</th>
-                <th className="p-2 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center border border-slate-200">Trạng thái</th>
-                <th className="pr-6 p-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao tác</th>
+                <th className="pl-6 p-2 text-[10px] font-bold border border-white/15">Đợt khảo sát</th>
+                <th className="p-2 text-[10px] font-bold border border-white/15">Đối tượng</th>
+                <th className="p-2 text-[10px] font-bold text-center border border-white/15">Năm học</th>
+                <th className="p-2 text-[10px] font-bold text-center border border-white/15">Thời gian</th>
+                <th className="p-2 text-[10px] font-bold text-center border border-white/15">Trạng thái</th>
+                <th className="pr-6 p-2 text-[10px] font-bold text-right border border-white/15">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

@@ -24,6 +24,7 @@ import {
   Unlock,
   Loader2,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -64,6 +65,7 @@ interface StudentProfile {
   allergies?: string | null;
   specialGradeEntries?: any[];
 }
+
 export default function HoSoClient() {
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -136,7 +138,7 @@ export default function HoSoClient() {
           setClasses(data.classes || []);
         }
       } catch (err) {
-        console.error("Loi tai bo loc:", err);
+        console.error("Lỗi tải bộ lọc:", err);
       }
     }
     fetchFilters();
@@ -177,7 +179,7 @@ export default function HoSoClient() {
         setTotalStudents(data.total || 0);
       }
     } catch (err) {
-      console.error("Loi tai ho so:", err);
+      console.error("Lỗi tải hồ sơ:", err);
     } finally {
       setLoading(false);
     }
@@ -195,34 +197,41 @@ export default function HoSoClient() {
 
   const handleExportExcel = () => {
     if (students.length === 0) {
-      alert("KhÃ´ng cÃ³ dá»¯ liá»‡u Ä‘á»ƒ xuáº¥t Excel");
+      alert("Không có dữ liệu để xuất Excel");
       return;
     }
     const dataToExport = students.map((s, idx) => ({
       "STT": idx + 1,
-      "MÃ£ há»c sinh": s.studentId,
-      "MÃ£ VnEdu (phá»¥)": s.vneduCode || "",
-      "Há» vÃ  tÃªn": s.fullName,
-      "NgÃ y sinh": s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "",
-      "Giá»›i tÃ­nh": s.gender || "",
-      "Lá»›p": s.className,
-      "Khá»‘i": s.grade ? `Khá»‘i ${s.grade}` : "Máº§m non",
-      "CÆ¡ sá»Ÿ": s.campusName,
-      "Phá»¥ huynh": s.parentName || "",
-      "Sá»‘ Ä‘iá»‡n thoáº¡i": s.parentPhone || "",
+      "Mã học sinh": s.studentId,
+      "Mã VnEdu (phụ)": s.vneduCode || "",
+      "Họ và tên": s.fullName,
+      "Ngày sinh": s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "",
+      "Giới tính": s.gender || "",
+      "Lớp": s.className,
+      "Khối": s.grade ? `Khối ${s.grade}` : "Mầm non",
+      "Cơ sở": s.campusName,
+      "Phụ huynh": s.parentName || "",
+      "Số điện thoại": s.parentPhone || "",
       "Email": s.parentEmail || "",
-      "Äá»‹a chá»‰": s.address || "",
-      "Tráº¡ng thÃ¡i": s.status === "ACTIVE" ? "Äang há»c" : "KhÃ¡c",
+      "Địa chỉ": s.address || "",
+      "Trạng thái": s.status === "ACTIVE" ? "Đang học" : "Khác",
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Danh sÃ¡ch há»c sinh");
+    XLSX.utils.book_append_sheet(wb, ws, "Danh sách học sinh");
     XLSX.writeFile(wb, `Ho_So_Hoc_Sinh_SkyLine_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const maleCount = useMemo(() => students.filter((s) => s.gender === "Nam" || s.gender === "MALE").length, [students]);
-  const femaleCount = useMemo(() => students.filter((s) => s.gender === "Ná»¯" || s.gender === "FEMALE").length, [students]);
+  const maleCount = useMemo(
+    () => students.filter((s) => s.gender === "Nam" || s.gender === "MALE").length,
+    [students]
+  );
+  const femaleCount = useMemo(
+    () => students.filter((s) => s.gender === "Nữ" || s.gender === "FEMALE").length,
+    [students]
+  );
+
   return (
     <div className="space-y-6">
       {/* BANNER MỞ / KHÓA HỒ SƠ HỌC SINH ĐỐI VỚI PHỤ HUYNH */}
@@ -230,7 +239,7 @@ export default function HoSoClient() {
         className={`rounded-2xl p-4 border-2 shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
           parentPortalUnlocked
             ? "bg-gradient-to-r from-emerald-50/90 via-white to-teal-50/70 border-emerald-300"
-            : "bg-gradient-to-r from-amber-50/90 via-white to-amber-600/60 border-amber-300"
+            : "bg-gradient-to-r from-amber-50/90 via-white to-amber-50/60 border-amber-300"
         }`}
       >
         <div className="flex items-start sm:items-center gap-3">
@@ -243,11 +252,11 @@ export default function HoSoClient() {
           </div>
           <div className="space-y-0.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wide">
-                QUYỀN TRUY CẬP HỒ SƠ HỌC SINH CỦA PHỤ HUYNH
+              <span className="text-xs sm:text-sm font-bold text-[#003B3A]">
+                Quyền truy cập hồ sơ học sinh của phụ huynh
               </span>
               <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
                   parentPortalUnlocked
                     ? "bg-emerald-100 text-emerald-900 border-emerald-300"
                     : "bg-amber-100 text-amber-900 border-amber-300"
@@ -255,18 +264,18 @@ export default function HoSoClient() {
               >
                 {parentPortalUnlocked ? (
                   <>
-                    <ShieldCheck className="w-3 h-3 text-emerald-700" />
-                    <span>ĐANG MỞ KHÓA CHO PHỤ HUYNH</span>
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Đang mở khóa cho phụ huynh</span>
                   </>
                 ) : (
                   <>
-                    <ShieldAlert className="w-3 h-3 text-amber-700" />
-                    <span>ĐANG KHÓA ĐỐI VỚI PHỤ HUYNH</span>
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Đang khóa đối với phụ huynh</span>
                   </>
                 )}
               </span>
             </div>
-            <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
               {parentPortalUnlocked
                 ? "Phụ huynh hiện có thể xem đầy đủ Hồ sơ Năng lực Học sinh 360° (A4) trên cổng Phụ huynh."
                 : 'Khi khóa, giao diện Phụ huynh hiển thị: "Hồ sơ đang cập nhật, Hệ thống sẽ mở định kỳ giữa Kỳ 1, Cuối Kỳ 1, Giữa kỳ 2, Cuối kỳ 2 để phụ huynh truy cập".'}
@@ -278,10 +287,10 @@ export default function HoSoClient() {
           type="button"
           onClick={handleToggleParentPortal}
           disabled={savingPortalLock}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-60 shrink-0 self-end md:self-center ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-60 shrink-0 self-end md:self-center ${
             parentPortalUnlocked
               ? "bg-amber-600 hover:bg-amber-700 text-white"
-              : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:brightness-110 text-white"
+              : "bg-[#003B3A] hover:bg-[#005B58] text-white"
           }`}
         >
           {savingPortalLock ? (
@@ -293,125 +302,144 @@ export default function HoSoClient() {
           )}
           <span>
             {parentPortalUnlocked
-              ? "Khóa Hồ sơ HS (Đóng cổng Phụ huynh)"
-              : "Mở Khóa Hồ sơ HS (Cho Phụ huynh xem)"}
+              ? "Khóa hồ sơ HS (Đóng cổng Phụ huynh)"
+              : "Mở khóa hồ sơ HS (Cho Phụ huynh xem)"}
           </span>
         </button>
       </div>
 
       {/* FILTER BAR CARD */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
+      <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-xs">
         <form onSubmit={handleSearchSubmit} className="space-y-4">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="TÃ¬m theo MÃ£ há»c sinh, Há» tÃªn, SÄT phá»¥ huynh..."
+                placeholder="Tìm theo mã học sinh, họ tên, SĐT phụ huynh..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A19A] text-slate-800"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-300 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A19A] text-slate-800"
               />
             </div>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#00A19A] hover:bg-[#008B85] text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-sm shrink-0"
+              className="px-5 py-2.5 bg-[#00A19A] hover:bg-[#008B85] text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-sm shrink-0 cursor-pointer"
             >
               <Search className="w-4 h-4" />
-              <span>TÃ¬m kiáº¿m</span>
+              <span>Tìm kiếm</span>
             </button>
             <button
               type="button"
               onClick={handleExportExcel}
-              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shrink-0"
+              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              <span>Xuáº¥t Excel</span>
+              <span>Xuất Excel</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-100">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2 border-t border-[#F1F5F9]">
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                CÆ¡ sá»Ÿ
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Cơ sở
               </label>
               <select
                 value={selectedCampus}
-                onChange={(e) => { setSelectedCampus(e.target.value); setPage(1); }}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
+                onChange={(e) => {
+                  setSelectedCampus(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
               >
-                <option value="all">Táº¥t cáº£ cÆ¡ sá»Ÿ</option>
+                <option value="all">Tất cả cơ sở</option>
                 {campuses.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Cáº¥p há»c
-              </label>
-              <select
-                value={selectedBlock}
-                onChange={(e) => { setSelectedBlock(e.target.value); setPage(1); }}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
-              >
-                <option value="all">Táº¥t cáº£ cáº¥p há»c</option>
-                <option value="MAM_NON">Máº§m non (Preschool)</option>
-                <option value="TIEU_HOC">Tiá»ƒu há»c (Lá»›p 1-5)</option>
-                <option value="THCS">THCS (Lá»›p 6-9)</option>
-                <option value="THPT">THPT (Lá»›p 10-12)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Khá»‘i lá»›p
-              </label>
-              <select
-                value={selectedGrade}
-                onChange={(e) => { setSelectedGrade(e.target.value); setPage(1); }}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
-              >
-                <option value="all">Táº¥t cáº£ cÃ¡c khá»‘i</option>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
-                  <option key={g} value={g.toString()}>Khá»‘i {g}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Lá»›p há»c
-              </label>
-              <select
-                value={selectedClass}
-                onChange={(e) => { setSelectedClass(e.target.value); setPage(1); }}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
-              >
-                <option value="all">Táº¥t cáº£ cÃ¡c lá»›p</option>
-                {classesToShow.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.className} ({cls.grade ? `K${cls.grade}` : "Máº§m non"})
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                Tráº¡ng thÃ¡i
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Cấp học
+              </label>
+              <select
+                value={selectedBlock}
+                onChange={(e) => {
+                  setSelectedBlock(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
+              >
+                <option value="all">Tất cả cấp học</option>
+                <option value="MAM_NON">Mầm non (Preschool)</option>
+                <option value="TIEU_HOC">Tiểu học (Lớp 1–5)</option>
+                <option value="THCS">THCS (Lớp 6–9)</option>
+                <option value="THPT">THPT (Lớp 10–12)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Khối lớp
+              </label>
+              <select
+                value={selectedGrade}
+                onChange={(e) => {
+                  setSelectedGrade(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
+              >
+                <option value="all">Tất cả các khối</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((g) => (
+                  <option key={g} value={g.toString()}>
+                    Khối {g}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Lớp học
+              </label>
+              <select
+                value={selectedClass}
+                onChange={(e) => {
+                  setSelectedClass(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
+              >
+                <option value="all">Tất cả các lớp</option>
+                {classesToShow.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.className} ({cls.grade ? `K${cls.grade}` : "Mầm non"})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Trạng thái
               </label>
               <select
                 value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
               >
-                <option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</option>
-                <option value="ACTIVE">Äang há»c</option>
-                <option value="INACTIVE">Táº¡m nghá»‰ / Báº£o lÆ°u</option>
-                <option value="TRANSFERRED">Chuyá»ƒn trÆ°á»ng</option>
-                <option value="GRADUATED">ÄÃ£ tá»‘t nghiá»‡p</option>
+                <option value="all">Tất cả trạng thái</option>
+                <option value="ACTIVE">Đang học</option>
+                <option value="INACTIVE">Tạm nghỉ / Bảo lưu</option>
+                <option value="TRANSFERRED">Chuyển trường</option>
+                <option value="GRADUATED">Đã tốt nghiệp</option>
               </select>
             </div>
           </div>
@@ -419,38 +447,38 @@ export default function HoSoClient() {
       </div>
 
       {/* QUICK STATS CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 tabular-nums">
+        <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-[#00A19A]">
             <Users className="w-5 h-5" />
           </div>
           <div>
             <div className="text-xl font-bold text-slate-800">{totalStudents}</div>
-            <div className="text-xs text-slate-500 font-medium">Há»c sinh trong bá»™ lá»c</div>
+            <div className="text-xs text-slate-500 font-medium">Học sinh trong bộ lọc</div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+        <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-[#00736E]">
             <User className="w-5 h-5" />
           </div>
           <div>
             <div className="text-xl font-bold text-slate-800">{maleCount}</div>
-            <div className="text-xs text-slate-500 font-medium">Nam (trÃªn trang)</div>
+            <div className="text-xs text-slate-500 font-medium">Nam (trên trang)</div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center text-pink-600">
+        <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
             <User className="w-5 h-5" />
           </div>
           <div>
             <div className="text-xl font-bold text-slate-800">{femaleCount}</div>
-            <div className="text-xs text-slate-500 font-medium">Ná»¯ (trÃªn trang)</div>
+            <div className="text-xs text-slate-500 font-medium">Nữ (trên trang)</div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
+        <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
             <BadgeCheck className="w-5 h-5" />
           </div>
@@ -458,16 +486,17 @@ export default function HoSoClient() {
             <div className="text-xl font-bold text-slate-800">
               {students.filter((s) => s.status === "ACTIVE").length}
             </div>
-            <div className="text-xs text-slate-500 font-medium">Äang theo há»c</div>
+            <div className="text-xs text-slate-500 font-medium">Đang theo học</div>
           </div>
         </div>
       </div>
-      {/* STUDENT TABLE */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+
+      {/* STUDENT TABLE — Sky-Line Academic Ledger Table */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-[#F1F5F9] flex items-center justify-between tabular-nums">
           <h2 className="text-base font-bold text-[#003B3A] flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-[#00A19A]" />
-            Danh sÃ¡ch há»“ sÆ¡ há»c sinh ({totalStudents})
+            Danh sách hồ sơ học sinh ({totalStudents})
           </h2>
           <div className="text-xs text-slate-500">
             Trang {page} / {totalPages || 1}
@@ -475,81 +504,99 @@ export default function HoSoClient() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
-              <tr>
-                <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                <th className="py-3.5 px-4">MÃ£ HS</th>
-                <th className="py-3.5 px-4">Há» vÃ  tÃªn</th>
-                <th className="py-3.5 px-4">NgÃ y sinh & Giá»›i tÃ­nh</th>
-                <th className="py-3.5 px-4">Lá»›p & CÆ¡ sá»Ÿ</th>
-                <th className="py-3.5 px-4">Phá»¥ huynh & LiÃªn há»‡</th>
-                <th className="py-3.5 px-4 text-center">Tráº¡ng thÃ¡i</th>
-                <th className="py-3.5 px-4 text-center">Thao tÃ¡c</th>
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-3.5 px-3 w-12 text-center text-teal-100">STT</th>
+                <th className="py-3.5 px-3 text-white">Mã HS</th>
+                <th className="py-3.5 px-3 text-white">Họ và tên</th>
+                <th className="py-3.5 px-3 text-teal-100">Ngày sinh & giới tính</th>
+                <th className="py-3.5 px-3 text-teal-100">Lớp & cơ sở</th>
+                <th className="py-3.5 px-3 text-teal-100">Phụ huynh & liên hệ</th>
+                <th className="py-3.5 px-3 text-center text-[#5EEAD4]">Trạng thái</th>
+                <th className="py-3.5 px-3 text-center text-white">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-500">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
-                    Äang táº£i dá»¯ liá»‡u há»“ sÆ¡ há»c sinh...
+                    Đang tải dữ liệu hồ sơ học sinh...
                   </td>
                 </tr>
               ) : students.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-500">
                     <User className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    KhÃ´ng tÃ¬m tháº¥y há»c sinh nÃ o phÃ¹ há»£p vá»›i bá»™ lá»c.
+                    Không tìm thấy học sinh nào phù hợp với bộ lọc.
                   </td>
                 </tr>
               ) : (
                 students.map((stu, index) => {
                   const isMale = stu.gender === "Nam" || stu.gender === "MALE";
                   return (
-                    <tr key={stu.id} className="hover:bg-teal-50/30 transition-colors">
-                      <td className="py-3 px-4 text-center text-xs text-slate-400 font-mono">
+                    <tr key={stu.id} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                      <td className="py-3 px-3 text-center text-xs text-slate-400 font-mono align-middle">
                         {(page - 1) * pageSize + index + 1}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-3 align-middle">
                         <div className="font-mono font-bold text-xs text-[#003B3A]">
                           {stu.studentId}
                         </div>
                         {stu.vneduCode && (
                           <div className="text-[11px] font-mono text-slate-500 font-medium mt-1 flex items-center gap-1">
-                            <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-700 font-semibold tracking-wider">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-700 font-semibold">
                               VnEdu
                             </span>
                             <span className="text-slate-600">{stu.vneduCode}</span>
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-3 align-middle">
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isMale ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}>
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                              isMale ? "bg-teal-50 text-[#00736E]" : "bg-rose-50 text-rose-700"
+                            }`}
+                          >
                             {stu.fullName.split(" ").slice(-1)[0]?.charAt(0) || "S"}
                           </div>
                           <div>
-                            <span className="font-semibold text-slate-800 hover:text-[#00A19A] transition cursor-pointer" onClick={() => { setSelectedStudent(stu); setIsModalOpen(true); }}>
+                            <span
+                              className="font-semibold text-slate-800 hover:text-[#00A19A] transition cursor-pointer"
+                              onClick={() => {
+                                setSelectedStudent(stu);
+                                setIsModalOpen(true);
+                              }}
+                            >
                               {stu.fullName}
                             </span>
                             <div className="text-[11px] text-slate-400">
-                              {stu.schoolBlock === "MAM_NON" ? "Máº§m non" : stu.grade ? `Khá»‘i ${stu.grade}` : ""}
+                              {stu.schoolBlock === "MAM_NON"
+                                ? "Mầm non"
+                                : stu.grade
+                                ? `Khối ${stu.grade}`
+                                : ""}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-xs text-slate-600">
+                      <td className="py-3 px-3 text-xs text-slate-600 align-middle">
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{stu.dateOfBirth ? new Date(stu.dateOfBirth).toLocaleDateString("vi-VN") : "---"}</span>
+                          <span>
+                            {stu.dateOfBirth
+                              ? new Date(stu.dateOfBirth).toLocaleDateString("vi-VN")
+                              : "---"}
+                          </span>
                         </div>
                         <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
                           {stu.gender || "---"}
                         </div>
                       </td>
-                      <td className="py-3 px-4">
-                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-[#00A19A] border border-teal-200">
+                      <td className="py-3 px-3 align-middle">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-[#008B85] border border-teal-200">
                           {stu.className}
                         </span>
                         <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
@@ -559,7 +606,7 @@ export default function HoSoClient() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-xs">
+                      <td className="py-3 px-3 text-xs align-middle">
                         <div className="font-medium text-slate-700">{stu.parentName || "---"}</div>
                         {stu.parentPhone ? (
                           <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
@@ -568,7 +615,7 @@ export default function HoSoClient() {
                           </div>
                         ) : null}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-3 text-center align-middle">
                         <span
                           className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold ${
                             stu.status === "ACTIVE"
@@ -578,10 +625,14 @@ export default function HoSoClient() {
                               : "bg-amber-50 text-amber-700 border border-amber-200"
                           }`}
                         >
-                          {stu.status === "ACTIVE" ? "Äang há»c" : stu.status === "GRADUATED" ? "Tá»‘t nghiá»‡p" : "KhÃ¡c"}
+                          {stu.status === "ACTIVE"
+                            ? "Đang học"
+                            : stu.status === "GRADUATED"
+                            ? "Tốt nghiệp"
+                            : "Khác"}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-3 text-center align-middle">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
@@ -589,28 +640,34 @@ export default function HoSoClient() {
                               setSelectedStudent(stu);
                               setIsModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg bg-teal-50 text-[#00A19A] hover:bg-[#00A19A] hover:text-white transition"
-                            title="Xem há»“ sÆ¡ chi tiáº¿t 360Â°"
+                            className="p-1.5 rounded-lg bg-teal-50 text-[#00A19A] hover:bg-[#00A19A] hover:text-white transition cursor-pointer"
+                            title="Xem hồ sơ chi tiết 360°"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
                             type="button"
                             onClick={() => {
-                              window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${stu.id}&mode=cover&autoprint=1`, "_blank");
+                              window.open(
+                                `/teacher/ho-so-hoc-sinh/print?type=student&studentId=${stu.id}&mode=cover&autoprint=1`,
+                                "_blank"
+                              );
                             }}
                             className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white transition cursor-pointer"
-                            title="In riÃªng BÃ¬a Há»“ sÆ¡ A4 (tá»± Ä‘á»™ng gÃ¡n MÃ£ HS & MÃ£ QR)"
+                            title="In riêng Bìa Hồ sơ A4 (tự động gán Mã HS & Mã QR)"
                           >
                             <BookMarked className="w-4 h-4" />
                           </button>
                           <button
                             type="button"
                             onClick={() => {
-                              window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${stu.id}&mode=all&autoprint=1`, "_blank");
+                              window.open(
+                                `/teacher/ho-so-hoc-sinh/print?type=student&studentId=${stu.id}&mode=all&autoprint=1`,
+                                "_blank"
+                              );
                             }}
                             className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer"
-                            title="In trá»n bá»™ Há»“ sÆ¡ kÃ¨m BÃ¬a A4"
+                            title="In trọn bộ Hồ sơ kèm Bìa A4"
                           >
                             <Printer className="w-4 h-4" />
                           </button>
@@ -625,10 +682,10 @@ export default function HoSoClient() {
         </div>
 
         {/* PAGINATION */}
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+        <div className="p-4 border-t border-[#F1F5F9] flex items-center justify-between tabular-nums">
           <div className="text-xs text-slate-500">
-            Hiá»ƒn thá»‹ {students.length > 0 ? (page - 1) * pageSize + 1 : 0} Ä‘áº¿n{" "}
-            {Math.min(page * pageSize, totalStudents)} trong tá»•ng sá»‘ {totalStudents} há»c sinh
+            Hiển thị {students.length > 0 ? (page - 1) * pageSize + 1 : 0} đến{" "}
+            {Math.min(page * pageSize, totalStudents)} trong tổng số {totalStudents} học sinh
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -651,6 +708,7 @@ export default function HoSoClient() {
           </div>
         </div>
       </div>
+
       {/* MODAL 360 PROFILE & PRINT PORTFOLIO */}
       {isModalOpen && selectedStudent && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -662,18 +720,20 @@ export default function HoSoClient() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold">{selectedStudent.fullName}</h3>
-                  <p className="text-xs text-teal-100 flex flex-wrap items-center gap-2">
-                    <span>MÃ£ HS: <strong className="font-mono text-white">{selectedStudent.studentId}</strong></span>
+                  <p className="text-xs text-teal-100 flex flex-wrap items-center gap-2 tabular-nums">
+                    <span>
+                      Mã HS: <strong className="font-mono text-white">{selectedStudent.studentId}</strong>
+                    </span>
                     {selectedStudent.vneduCode && (
                       <>
-                        <span>â€¢</span>
+                        <span>•</span>
                         <span className="bg-amber-400/20 text-amber-200 border border-amber-300/30 px-1.5 py-0.5 rounded text-[11px] font-mono">
-                          MÃ£ VnEdu: {selectedStudent.vneduCode}
+                          Mã VnEdu: {selectedStudent.vneduCode}
                         </span>
                       </>
                     )}
-                    <span>â€¢</span>
-                    <span>Lá»›p: {selectedStudent.className}</span>
+                    <span>•</span>
+                    <span>Lớp: {selectedStudent.className}</span>
                   </p>
                 </div>
               </div>
@@ -682,27 +742,33 @@ export default function HoSoClient() {
                   type="button"
                   onClick={() => {
                     if (selectedStudent) {
-                      window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudent.id}&mode=cover&autoprint=1`, "_blank");
+                      window.open(
+                        `/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudent.id}&mode=cover&autoprint=1`,
+                        "_blank"
+                      );
                     }
                   }}
                   className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
-                  title="In riÃªng BÃ¬a Há»“ sÆ¡ A4 (tá»± Ä‘á»™ng gÃ¡n MÃ£ HS & MÃ£ QR)"
+                  title="In riêng Bìa Hồ sơ A4 (tự động gán Mã HS & Mã QR)"
                 >
                   <BookMarked className="w-3.5 h-3.5" />
-                  <span>In BÃ¬a A4</span>
+                  <span>In Bìa A4</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     if (selectedStudent) {
-                      window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudent.id}&mode=all&autoprint=1`, "_blank");
+                      window.open(
+                        `/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudent.id}&mode=all&autoprint=1`,
+                        "_blank"
+                      );
                     }
                   }}
                   className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-                  title="In trá»n bá»™ BÃ¬a vÃ  Há»“ sÆ¡ A4"
+                  title="In trọn bộ Bìa và Hồ sơ A4"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>In Trá»n Bá»™ A4</span>
+                  <span>In Trọn Bộ A4</span>
                 </button>
                 <button
                   type="button"
@@ -714,98 +780,100 @@ export default function HoSoClient() {
               </div>
             </div>
 
-            <div ref={printRef} className="p-6 space-y-6 text-slate-700 text-sm">
+            <div ref={printRef} className="p-6 space-y-6 text-slate-700 text-sm tabular-nums">
               <div>
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-[#003B3A] mb-3 flex items-center gap-1.5">
                   <User className="w-4 h-4 text-[#00A19A]" />
-                  ThÃ´ng tin cÃ¡ nhÃ¢n há»c sinh
+                  Thông tin cá nhân học sinh
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Há» vÃ  tÃªn</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Họ và tên</span>
                     <span className="font-semibold text-slate-800">{selectedStudent.fullName}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">MÃ£ há»c sinh (MÃ£ chÃ­nh)</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Mã học sinh (Mã chính)</span>
                     <span className="font-mono font-bold text-[#003B3A]">{selectedStudent.studentId}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">MÃ£ VnEdu (MÃ£ phá»¥)</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Mã VnEdu (Mã phụ)</span>
                     <span className="font-mono font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 inline-block">
-                      {selectedStudent.vneduCode || "ChÆ°a cÃ³"}
+                      {selectedStudent.vneduCode || "Chưa có"}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">NgÃ y sinh</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Ngày sinh</span>
                     <span className="font-medium text-slate-700">
                       {selectedStudent.dateOfBirth
                         ? new Date(selectedStudent.dateOfBirth).toLocaleDateString("vi-VN")
-                        : "ChÆ°a cáº­p nháº­t"}
+                        : "Chưa cập nhật"}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Giá»›i tÃ­nh</span>
-                    <span className="font-medium text-slate-700">{selectedStudent.gender || "ChÆ°a cáº­p nháº­t"}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Giới tính</span>
+                    <span className="font-medium text-slate-700">{selectedStudent.gender || "Chưa cập nhật"}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Lá»›p há»c hiá»‡n táº¡i</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Lớp học hiện tại</span>
                     <span className="font-bold text-[#00A19A]">{selectedStudent.className}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">CÆ¡ sá»Ÿ Sky-Line</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Cơ sở Sky-Line</span>
                     <span className="font-medium text-slate-700">{selectedStudent.campusName}</span>
                   </div>
                   <div className="sm:col-span-3">
-                    <span className="block text-[11px] text-slate-400 font-medium">Äá»‹a chá»‰ thÆ°á»ng trÃº</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Địa chỉ thường trú</span>
                     <span className="font-medium text-slate-700 flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      {selectedStudent.address || "ChÆ°a cáº­p nháº­t"}
+                      {selectedStudent.address || "Chưa cập nhật"}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-[#003B3A] mb-3 flex items-center gap-1.5">
                   <Phone className="w-4 h-4 text-[#00A19A]" />
-                  ThÃ´ng tin phá»¥ huynh & LiÃªn há»‡ kháº©n cáº¥p
+                  Thông tin phụ huynh & liên hệ khẩn cấp
                 </h4>
-                <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="grid grid-cols-2 gap-4 bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Phá»¥ huynh / NgÆ°á»i giÃ¡m há»™</span>
-                    <span className="font-semibold text-slate-800">{selectedStudent.parentName || "ChÆ°a cáº­p nháº­t"}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Phụ huynh / Người giám hộ</span>
+                    <span className="font-semibold text-slate-800">{selectedStudent.parentName || "Chưa cập nhật"}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Sá»‘ Ä‘iá»‡n thoáº¡i liÃªn láº¡c</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Số điện thoại liên lạc</span>
                     <span className="font-mono font-semibold text-[#003B3A]">
-                      {selectedStudent.parentPhone || "ChÆ°a cáº­p nháº­t"}
+                      {selectedStudent.parentPhone || "Chưa cập nhật"}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Email phá»¥ huynh</span>
-                    <span className="text-slate-700">{selectedStudent.parentEmail || "ChÆ°a cáº­p nháº­t"}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Email phụ huynh</span>
+                    <span className="text-slate-700">{selectedStudent.parentEmail || "Chưa cập nhật"}</span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">LiÃªn há»‡ kháº©n cáº¥p</span>
-                    <span className="text-slate-700">{selectedStudent.emergencyContact || "Theo sá»‘ Ä‘iá»‡n thoáº¡i phá»¥ huynh"}</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Liên hệ khẩn cấp</span>
+                    <span className="text-slate-700">
+                      {selectedStudent.emergencyContact || "Theo số điện thoại phụ huynh"}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-[#003B3A] mb-3 flex items-center gap-1.5">
                   <ShieldAlert className="w-4 h-4 text-[#00A19A]" />
-                  TÃ¬nh tráº¡ng há»c táº­p & Y táº¿
+                  Tình trạng học tập & y tế
                 </h4>
-                <div className="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+                <div className="grid grid-cols-3 gap-4 bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0] text-xs">
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Tráº¡ng thÃ¡i há»“ sÆ¡</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Trạng thái hồ sơ</span>
                     <span className="font-bold text-emerald-700">
-                      {selectedStudent.status === "ACTIVE" ? "Äang theo há»c" : selectedStudent.status}
+                      {selectedStudent.status === "ACTIVE" ? "Đang theo học" : selectedStudent.status}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">NgÃ y nháº­p há»c</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Ngày nhập học</span>
                     <span className="font-medium text-slate-700">
                       {selectedStudent.enrollmentDate
                         ? new Date(selectedStudent.enrollmentDate).toLocaleDateString("vi-VN")
@@ -813,81 +881,88 @@ export default function HoSoClient() {
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[11px] text-slate-400 font-medium">Dá»‹ á»©ng / LÆ°u Ã½ y táº¿</span>
+                    <span className="block text-[11px] text-slate-400 font-medium">Dị ứng / Lưu ý y tế</span>
                     <span className="font-medium text-amber-700">
-                      {selectedStudent.allergies || "KhÃ´ng cÃ³"}
+                      {selectedStudent.allergies || "Không có"}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* MÃ”N Há»ŒC Äáº¶C THÃ™ SKY-LINE */}
+              {/* MÔN HỌC ĐẶC THÙ SKY-LINE */}
               <div>
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-teal-800">
+                <h4 className="text-xs font-bold text-[#003B3A] mb-3 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-[#00A19A]" />
-                    MÃ´n há»c Ä‘áº·c thÃ¹ Sky-Line
+                    Môn học đặc thù Sky-Line
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                    {selectedStudent.specialGradeEntries?.length || 0} bÃ i Ä‘Ã£ Ä‘Ã¡nh giÃ¡
+                  <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                    {selectedStudent.specialGradeEntries?.length || 0} bài đã đánh giá
                   </span>
                 </h4>
                 {selectedStudent.specialGradeEntries && selectedStudent.specialGradeEntries.length > 0 ? (
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     {selectedStudent.specialGradeEntries.map((ge: any) => (
-                      <div key={ge.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs">
+                      <div
+                        key={ge.id}
+                        className="p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] flex items-center justify-between text-xs"
+                      >
                         <div>
                           <div className="font-bold text-slate-900">
-                            Tiáº¿t {ge.lesson?.periodIndex || 1}: {ge.lesson?.lessonName || "BÃ i há»c"}
+                            Tiết {ge.lesson?.periodIndex || 1}: {ge.lesson?.lessonName || "Bài học"}
                           </div>
                           <div className="text-[11px] text-slate-500">
-                            {ge.assignment?.subject?.name} â€¢ GV: {ge.assignment?.teacher?.teacherName}
+                            {ge.assignment?.subject?.name} • GV: {ge.assignment?.teacher?.teacherName}
                           </div>
                           {ge.teacherFeedback && (
                             <div className="text-[11px] text-slate-600 mt-1 italic">
-                              "{ge.teacherFeedback}"
+                              &ldquo;{ge.teacherFeedback}&rdquo;
                             </div>
                           )}
                         </div>
                         <div className="text-right shrink-0 ml-3">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            ge.evalResult === "TOT"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                              : ge.evalResult === "HOAN_THANH" || ge.evalResult === "PASS" || ge.evalResult === "DAT"
-                              ? "bg-teal-100 text-teal-800 border border-teal-300"
-                              : ge.evalResult === "VANG"
-                              ? "bg-slate-200 text-slate-700"
-                              : "bg-amber-100 text-amber-800 border border-amber-300"
-                          }`}>
-                            {ge.evalResult === "TOT" 
-                              ? "Tá»‘t" 
-                              : ge.evalResult === "HOAN_THANH" 
-                              ? "HoÃ n thÃ nh"
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                              ge.evalResult === "TOT"
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                : ge.evalResult === "HOAN_THANH" ||
+                                  ge.evalResult === "PASS" ||
+                                  ge.evalResult === "DAT"
+                                ? "bg-teal-100 text-teal-800 border border-teal-300"
+                                : ge.evalResult === "VANG"
+                                ? "bg-slate-200 text-slate-700"
+                                : "bg-amber-100 text-amber-800 border border-amber-300"
+                            }`}
+                          >
+                            {ge.evalResult === "TOT"
+                              ? "Tốt"
+                              : ge.evalResult === "HOAN_THANH"
+                              ? "Hoàn thành"
                               : ge.evalResult === "PASS" || ge.evalResult === "DAT"
-                              ? "Äáº¡t"
+                              ? "Đạt"
                               : ge.evalResult === "VANG"
-                              ? "Váº¯ng"
-                              : "Cáº§n cá»‘ gáº¯ng"}
+                              ? "Vắng"
+                              : "Cần cố gắng"}
                           </span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-400">
-                    ChÆ°a cÃ³ dá»¯ liá»‡u Ä‘Ã¡nh giÃ¡ mÃ´n há»c Ä‘áº·c thÃ¹ cho há»c sinh nÃ y
+                  <div className="p-4 rounded-xl bg-[#F8FAFC] border border-dashed border-[#E2E8F0] text-center text-xs text-slate-400">
+                    Chưa có dữ liệu đánh giá môn học đặc thù cho học sinh này
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+            <div className="p-4 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
                 className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition"
               >
-                ÄÃ³ng
+                Đóng
               </button>
               <button
                 type="button"
@@ -895,7 +970,7 @@ export default function HoSoClient() {
                 className="px-4 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
               >
                 <Printer className="w-4 h-4" />
-                <span>In phiáº¿u há»“ sÆ¡ A4</span>
+                <span>In phiếu hồ sơ A4</span>
               </button>
             </div>
           </div>

@@ -745,18 +745,18 @@ export function TeacherQuestDashboard({
           {/* Tracking Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold uppercase text-[10px]">
-                  <th className="py-3 px-3">Giáo viên & Đơn vị</th>
-                  <th className="py-3 px-3">Tiết dạy & Môn</th>
-                  <th className="py-3 px-3">Thử thách đổi mới</th>
-                  <th className="py-3 px-3 text-center">Ghi nhận người dự</th>
-                  <th className="py-3 px-3 text-center">Khoảnh khắc WOW</th>
-                  <th className="py-3 px-3 text-center">Điểm Cảm Hứng</th>
-                  <th className="py-3 px-3 text-center">Dấu ấn AI</th>
+              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                <tr className="border-b text-[10px] font-semibold">
+                  <th className="py-3 px-3 font-semibold">Giáo viên & Đơn vị</th>
+                  <th className="py-3 px-3 font-semibold">Tiết dạy & Môn</th>
+                  <th className="py-3 px-3 font-semibold">Thử thách đổi mới</th>
+                  <th className="py-3 px-3 text-center font-semibold">Ghi nhận người dự</th>
+                  <th className="py-3 px-3 text-center font-semibold">Khoảnh khắc WOW</th>
+                  <th className="py-3 px-3 text-center font-semibold">Điểm Cảm Hứng</th>
+                  <th className="py-3 px-3 text-center font-semibold">Dấu ấn AI</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0]">
                 {filteredTracking.length > 0 ? (
                   filteredTracking.map((rec: any) => {
                     const isDone = rec.status === "COMPLETED" || rec.status === "RECOGNIZED"

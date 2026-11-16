@@ -7,30 +7,23 @@ import {
   Award,
   Crown,
   Search,
-  Filter,
   Download,
   Printer,
-  Sparkles,
-  Building,
-  GraduationCap,
-  Calendar,
   Grid,
   List,
   ChevronLeft,
   ChevronRight,
   RefreshCw,
-  ExternalLink,
   Flame,
   Globe,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
-interface AchievementStudent {
+interface ExamFilterOption {
   id: string;
-  studentCode: string;
-  studentName: string;
-  className: string;
-  campusName: string;
+  name: string;
+  code: string;
+  academicYearId: string | null;
 }
 
 interface AchievementItem {
@@ -39,6 +32,8 @@ interface AchievementItem {
   type: string;
   category: string;
   level: string;
+  examId?: string | null;
+  exam?: { id: string; name: string; code?: string } | null;
   academicYear: { id: string; name: string };
   students: {
     student: {
@@ -63,7 +58,9 @@ interface SummaryCounts {
 export default function ThanhTichClient() {
   const [displayView, setDisplayView] = useState<"hall_of_fame" | "table">("hall_of_fame");
   const [academicYears, setAcademicYears] = useState<{ id: string; name: string }[]>([]);
+  const [exams, setExams] = useState<ExamFilterOption[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedExam, setSelectedExam] = useState<string>("all");
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -92,6 +89,7 @@ export default function ThanhTichClient() {
           const json = await res.json();
           const d = json.data || json;
           setAcademicYears(d.academicYears || []);
+          setExams(d.exams || []);
         }
       } catch (err) {
         console.error("Loi tai bo loc thanh tich:", err);
@@ -100,12 +98,28 @@ export default function ThanhTichClient() {
     loadFilters();
   }, []);
 
+  const availableExams = useMemo(() => {
+    if (selectedYear === "all") return exams;
+    return exams.filter((ex) => ex.academicYearId === selectedYear);
+  }, [exams, selectedYear]);
+
+  useEffect(() => {
+    if (
+      selectedExam !== "all" &&
+      selectedExam !== "__EXTERNAL__" &&
+      !availableExams.some((ex) => ex.id === selectedExam)
+    ) {
+      setSelectedExam("all");
+    }
+  }, [availableExams, selectedExam]);
+
   // Fetch achievements
   const fetchAchievements = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (selectedYear !== "all") params.append("academicYearId", selectedYear);
+      if (selectedExam !== "all") params.append("examId", selectedExam);
       if (selectedLevel !== "all") params.append("level", selectedLevel);
       if (selectedCategory !== "all") params.append("category", selectedCategory);
       if (searchQuery.trim()) params.append("search", searchQuery.trim());
@@ -126,13 +140,14 @@ export default function ThanhTichClient() {
 
   useEffect(() => {
     fetchAchievements();
-  }, [selectedYear, selectedLevel, selectedCategory]);
+  }, [selectedYear, selectedExam, selectedLevel, selectedCategory]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
     fetchAchievements();
   };
+
   const totalPages = Math.ceil(achievements.length / pageSize) || 1;
   const paginatedAchievements = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -147,18 +162,25 @@ export default function ThanhTichClient() {
     const dataToExport = achievements.map((ach, idx) => {
       const studentNames = ach.students.map((s) => s.student.studentName).join(", ");
       const studentCodes = ach.students.map((s) => s.student.studentCode).join(", ");
-      const classNames = ach.students.map((s) => s.student.class?.className || "").filter(Boolean).join(", ");
-      const campusNames = ach.students.map((s) => s.student.campus?.campusName || "").filter(Boolean).join(", ");
+      const classNames = ach.students
+        .map((s) => s.student.class?.className || "")
+        .filter(Boolean)
+        .join(", ");
+      const campusNames = ach.students
+        .map((s) => s.student.campus?.campusName || "")
+        .filter(Boolean)
+        .join(", ");
 
       return {
-        "STT": idx + 1,
+        STT: idx + 1,
+        "Kỳ thi / Cuộc thi": ach.exam?.name || "Ngoài hệ thống",
         "Tên giải thưởng / Thành tích": ach.name,
         "Cấp thi": ach.level,
         "Loại giải": ach.category,
         "Hình thức": ach.type === "CA_NHAN" ? "Cá nhân" : "Đồng đội",
         "Học sinh đạt giải": studentNames,
         "Mã học sinh": studentCodes,
-        "Lớp": classNames,
+        Lớp: classNames,
         "Cơ sở": campusNames,
         "Năm học": ach.academicYear?.name || "---",
       };
@@ -208,11 +230,14 @@ export default function ThanhTichClient() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 tabular-nums">
       {/* KPI MEDAL COUNT CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div
-          onClick={() => { setSelectedLevel(selectedLevel === "QUOC_TE" ? "all" : "QUOC_TE"); setPage(1); }}
+          onClick={() => {
+            setSelectedLevel(selectedLevel === "QUOC_TE" ? "all" : "QUOC_TE");
+            setPage(1);
+          }}
           className={`p-4 rounded-2xl border transition cursor-pointer shadow-xs ${
             selectedLevel === "QUOC_TE"
               ? "bg-amber-500/10 border-amber-400 ring-2 ring-amber-400/30"
@@ -220,15 +245,18 @@ export default function ThanhTichClient() {
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-extrabold text-amber-700 uppercase tracking-wider">Cấp Quốc tế</span>
+            <span className="text-xs font-bold text-amber-700">Cấp Quốc tế</span>
             <Globe className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-2xl font-extrabold text-slate-800">{summary.quocTe}</div>
-          <div className="text-[11px] text-slate-400 mt-1 font-medium">Huy chương & Giải thưởng</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-medium">Huy chương &amp; Giải thưởng</div>
         </div>
 
         <div
-          onClick={() => { setSelectedLevel(selectedLevel === "QUOC_GIA" ? "all" : "QUOC_GIA"); setPage(1); }}
+          onClick={() => {
+            setSelectedLevel(selectedLevel === "QUOC_GIA" ? "all" : "QUOC_GIA");
+            setPage(1);
+          }}
           className={`p-4 rounded-2xl border transition cursor-pointer shadow-xs ${
             selectedLevel === "QUOC_GIA"
               ? "bg-rose-500/10 border-rose-400 ring-2 ring-rose-400/30"
@@ -236,23 +264,26 @@ export default function ThanhTichClient() {
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-extrabold text-rose-700 uppercase tracking-wider">Cấp Quốc gia</span>
+            <span className="text-xs font-bold text-rose-700">Cấp Quốc gia</span>
             <Flame className="w-4 h-4 text-rose-500" />
           </div>
           <div className="text-2xl font-extrabold text-slate-800">{summary.quocGia}</div>
-          <div className="text-[11px] text-slate-400 mt-1 font-medium">Huy chương & Giải thưởng</div>
+          <div className="text-[11px] text-slate-400 mt-1 font-medium">Huy chương &amp; Giải thưởng</div>
         </div>
 
         <div
-          onClick={() => { setSelectedLevel(selectedLevel === "THANH_PHO" ? "all" : "THANH_PHO"); setPage(1); }}
+          onClick={() => {
+            setSelectedLevel(selectedLevel === "THANH_PHO" ? "all" : "THANH_PHO");
+            setPage(1);
+          }}
           className={`p-4 rounded-2xl border transition cursor-pointer shadow-xs ${
             selectedLevel === "THANH_PHO"
-              ? "bg-teal-500/10 border-teal-400 ring-2 ring-purple-400/30"
+              ? "bg-teal-500/10 border-teal-400 ring-2 ring-teal-400/30"
               : "bg-white border-slate-200/80 hover:border-teal-400"
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-extrabold text-teal-800 uppercase tracking-wider">Cấp Tỉnh / TP</span>
+            <span className="text-xs font-bold text-teal-800">Cấp Tỉnh / TP</span>
             <Trophy className="w-4 h-4 text-teal-700" />
           </div>
           <div className="text-2xl font-extrabold text-slate-800">{summary.thanhPho}</div>
@@ -260,7 +291,10 @@ export default function ThanhTichClient() {
         </div>
 
         <div
-          onClick={() => { setSelectedLevel(selectedLevel === "QUAN" ? "all" : "QUAN"); setPage(1); }}
+          onClick={() => {
+            setSelectedLevel(selectedLevel === "QUAN" ? "all" : "QUAN");
+            setPage(1);
+          }}
           className={`p-4 rounded-2xl border transition cursor-pointer shadow-xs ${
             selectedLevel === "QUAN"
               ? "bg-blue-500/10 border-blue-400 ring-2 ring-blue-400/30"
@@ -268,7 +302,7 @@ export default function ThanhTichClient() {
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-extrabold text-blue-700 uppercase tracking-wider">Cấp Quận / Huyện</span>
+            <span className="text-xs font-bold text-blue-700">Cấp Quận / Huyện</span>
             <Medal className="w-4 h-4 text-blue-500" />
           </div>
           <div className="text-2xl font-extrabold text-slate-800">{summary.quan}</div>
@@ -276,7 +310,10 @@ export default function ThanhTichClient() {
         </div>
 
         <div
-          onClick={() => { setSelectedLevel(selectedLevel === "TRUONG" ? "all" : "TRUONG"); setPage(1); }}
+          onClick={() => {
+            setSelectedLevel(selectedLevel === "TRUONG" ? "all" : "TRUONG");
+            setPage(1);
+          }}
           className={`p-4 rounded-2xl border transition cursor-pointer shadow-xs ${
             selectedLevel === "TRUONG"
               ? "bg-teal-500/10 border-[#00A19A] ring-2 ring-[#00A19A]/30"
@@ -284,7 +321,7 @@ export default function ThanhTichClient() {
           }`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-extrabold text-[#003B3A] uppercase tracking-wider">Cấp Trường</span>
+            <span className="text-xs font-bold text-[#003B3A]">Cấp Trường</span>
             <Award className="w-4 h-4 text-[#00A19A]" />
           </div>
           <div className="text-2xl font-extrabold text-slate-800">{summary.truong}</div>
@@ -293,7 +330,7 @@ export default function ThanhTichClient() {
       </div>
 
       {/* FILTER BAR CARD & VIEW SWITCHER */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <button
@@ -306,7 +343,7 @@ export default function ThanhTichClient() {
               }`}
             >
               <Grid className="w-3.5 h-3.5" />
-              <span>Bảng vàng Vinh danh</span>
+              <span>Bảng vàng vinh danh</span>
             </button>
             <button
               type="button"
@@ -337,7 +374,7 @@ export default function ThanhTichClient() {
               className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
             >
               <Printer className="w-4 h-4" />
-              <span>In Bảng vàng</span>
+              <span>In bảng vàng</span>
             </button>
           </div>
         </div>
@@ -351,43 +388,78 @@ export default function ThanhTichClient() {
                 placeholder="Tìm theo tên học sinh, mã HS, tên cuộc thi/kỳ thi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A19A] text-slate-800"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm focus:outline-hidden focus:border-[#00A19A] text-slate-800"
               />
             </div>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#00A19A] hover:bg-[#008B85] text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-sm shrink-0"
+              className="px-5 py-2.5 bg-[#003B3A] hover:bg-[#002928] text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-xs shrink-0"
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-4 h-4 text-[#5EEAD4]" />
               <span>Tìm kiếm</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
                 Năm học
               </label>
               <select
                 value={selectedYear}
-                onChange={(e) => { setSelectedYear(e.target.value); setPage(1); }}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-[#00A19A]"
               >
                 <option value="all">Tất cả các năm học</option>
                 {academicYears.map((y) => (
-                  <option key={y.id} value={y.id}>{y.name}</option>
+                  <option key={y.id} value={y.id}>
+                    {y.name}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Kỳ thi / Cuộc thi
+              </label>
+              <select
+                value={selectedExam}
+                onChange={(e) => {
+                  setSelectedExam(e.target.value);
+                  setPage(1);
+                }}
+                title={
+                  selectedExam === "__EXTERNAL__"
+                    ? "Ngoài hệ thống"
+                    : availableExams.find((ex) => ex.id === selectedExam)?.name || "Tất cả kỳ thi"
+                }
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-[#00A19A] truncate"
+              >
+                <option value="all">Tất cả kỳ thi ({availableExams.length})</option>
+                <option value="__EXTERNAL__">Ngoài hệ thống</option>
+                {availableExams.map((ex) => (
+                  <option key={ex.id} value={ex.id}>
+                    {ex.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
                 Cấp độ cuộc thi
               </label>
               <select
                 value={selectedLevel}
-                onChange={(e) => { setSelectedLevel(e.target.value); setPage(1); }}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
+                onChange={(e) => {
+                  setSelectedLevel(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-[#00A19A]"
               >
                 <option value="all">Tất cả các cấp</option>
                 <option value="QUOC_TE">Cấp Quốc tế</option>
@@ -399,13 +471,16 @@ export default function ThanhTichClient() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
                 Lĩnh vực / Loại giải
               </label>
               <select
                 value={selectedCategory}
-                onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-[#00A19A]"
               >
                 <option value="all">Tất cả lĩnh vực</option>
                 <option value="OLYMPIC">Olympic Toán / Tiếng Anh / Tin học</option>
@@ -418,16 +493,17 @@ export default function ThanhTichClient() {
           </div>
         </form>
       </div>
+
       {/* VIEW 1: HALL OF FAME CARD GRID */}
       {displayView === "hall_of_fame" && (
         <div>
           {loading ? (
-            <div className="bg-white rounded-2xl p-12 text-center text-slate-500 border border-slate-200">
+            <div className="bg-white rounded-2xl p-12 text-center text-slate-500 border border-[#E2E8F0]">
               <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-[#00A19A]" />
               Đang tải bảng vàng thành tích học sinh...
             </div>
           ) : paginatedAchievements.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 text-center text-slate-400 border border-slate-200">
+            <div className="bg-white rounded-2xl p-12 text-center text-slate-400 border border-[#E2E8F0]">
               <Trophy className="w-10 h-10 mx-auto mb-2 text-slate-300" />
               Không tìm thấy thành tích nào phù hợp với bộ lọc hiện tại.
             </div>
@@ -441,10 +517,9 @@ export default function ThanhTichClient() {
                 return (
                   <div
                     key={ach.id}
-                    className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#00A19A] transition-all flex flex-col justify-between"
+                    className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-xs hover:shadow-md hover:border-[#00A19A] transition-all flex flex-col justify-between"
                   >
                     <div>
-                      {/* Card Header: Level badge & year */}
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${badge.color}`}
@@ -457,16 +532,17 @@ export default function ThanhTichClient() {
                         </span>
                       </div>
 
-                      {/* Achievement Title */}
                       <h4 className="text-base font-extrabold text-[#003B3A] line-clamp-2">
                         {ach.name}
                       </h4>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                      <p className="text-xs text-[#00736E] font-medium mt-1 line-clamp-1">
+                        {ach.exam?.name || "Ngoài hệ thống"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
                         Hình thức: {ach.type === "CA_NHAN" ? "Cá nhân" : "Đồng đội"} • {ach.category}
                       </p>
                     </div>
 
-                    {/* Student Info Footer */}
                     <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
                       {student ? (
                         <div className="flex items-center gap-2.5">
@@ -500,8 +576,8 @@ export default function ThanhTichClient() {
 
       {/* VIEW 2: SEARCH TABLE */}
       {displayView === "table" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between">
             <h3 className="text-base font-bold text-[#003B3A] flex items-center gap-2">
               <Trophy className="w-5 h-5 text-[#00A19A]" />
               Bảng tra cứu danh sách thành tích học sinh ({achievements.length})
@@ -512,28 +588,29 @@ export default function ThanhTichClient() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50/75 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                  <th className="py-3.5 px-4 min-w-[200px]">Tên giải thưởng / Kỳ thi</th>
-                  <th className="py-3.5 px-4 text-center">Cấp độ</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Học sinh đạt giải</th>
-                  <th className="py-3.5 px-4">Lớp & Cơ sở</th>
-                  <th className="py-3.5 px-4 text-center">Năm học</th>
+            <table className="w-full text-left border-collapse tabular-nums">
+              <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-3 w-12 text-center text-teal-100 font-semibold">STT</th>
+                  <th className="py-3 px-3 text-teal-100 font-semibold">Kỳ thi / Cuộc thi</th>
+                  <th className="py-3 px-3 text-white font-semibold">Thành tích đạt được</th>
+                  <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">Cấp độ</th>
+                  <th className="py-3 px-3 text-white font-semibold">Học sinh đạt giải</th>
+                  <th className="py-3 px-3 text-teal-100 font-semibold">Lớp &amp; Cơ sở</th>
+                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">Năm học</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
                       <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
                       Đang tải danh sách thành tích...
                     </td>
                   </tr>
                 ) : paginatedAchievements.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
                       Không tìm thấy thành tích nào.
                     </td>
                   </tr>
@@ -542,37 +619,45 @@ export default function ThanhTichClient() {
                     const badge = getLevelBadge(ach.level);
                     const studentNames = ach.students.map((s) => s.student.studentName).join(", ");
                     const studentCodes = ach.students.map((s) => s.student.studentCode).join(", ");
-                    const classesStr = ach.students.map((s) => s.student.class?.className || "").filter(Boolean).join(", ");
+                    const classesStr = ach.students
+                      .map((s) => s.student.class?.className || "")
+                      .filter(Boolean)
+                      .join(", ");
                     const campusStr = ach.students[0]?.student.campus?.campusName || "Sky-Line";
 
                     return (
-                      <tr key={ach.id} className="hover:bg-teal-50/30 transition-colors">
-                        <td className="py-3 px-4 text-center text-xs text-slate-400 font-mono">
+                      <tr key={ach.id} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                        <td className="py-3 px-3 text-center text-slate-400 font-mono">
                           {(page - 1) * pageSize + idx + 1}
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="font-bold text-slate-800">{ach.name}</div>
+                        <td className="py-3 px-3 text-slate-700 max-w-[240px]">
+                          <span className="line-clamp-2">{ach.exam?.name || "Ngoài hệ thống"}</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-semibold text-slate-900">{ach.name}</div>
                           <div className="text-[11px] text-slate-400 mt-0.5">
-                            {ach.category} • {ach.type === "CA_NHAN" ? "Cá nhân" : "Đồng đội"}
+                            {ach.category} · {ach.type === "CA_NHAN" ? "Cá nhân" : "Đồng đội"}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${badge.color}`}>
+                        <td className="py-3 px-3 text-center">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${badge.color}`}
+                          >
                             {badge.label}
                           </span>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-3">
                           <div className="font-semibold text-[#003B3A]">{studentNames || "Đang cập nhật"}</div>
                           {studentCodes ? (
                             <div className="text-[11px] font-mono text-slate-400">{studentCodes}</div>
                           ) : null}
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="font-medium text-slate-700">{classesStr || "---"}</div>
+                        <td className="py-3 px-3">
+                          <div className="font-semibold text-[#003B3A]">{classesStr || "—"}</div>
                           <div className="text-[11px] text-slate-400">{campusStr}</div>
                         </td>
-                        <td className="py-3 px-4 text-center text-xs text-slate-600 font-medium">
-                          {ach.academicYear?.name || "---"}
+                        <td className="py-3 px-3 text-center text-slate-600 font-medium">
+                          {ach.academicYear?.name || "—"}
                         </td>
                       </tr>
                     );
@@ -585,7 +670,7 @@ export default function ThanhTichClient() {
       )}
 
       {/* PAGINATION */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
+      <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] shadow-xs flex items-center justify-between">
         <div className="text-xs text-slate-500">
           Hiển thị {paginatedAchievements.length} trong tổng số {achievements.length} thành tích
         </div>
@@ -593,7 +678,7 @@ export default function ThanhTichClient() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            className="p-1.5 rounded-lg border border-[#E2E8F0] text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -603,7 +688,7 @@ export default function ThanhTichClient() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            className="p-1.5 rounded-lg border border-[#E2E8F0] text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

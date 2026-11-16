@@ -322,21 +322,21 @@ export function GradeUnlockRequestsTab({
         {/* Table View */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-3 text-center w-12">#</th>
-                <th className="py-3 px-3">Thời gian</th>
-                <th className="py-3 px-3">Giáo viên yêu cầu</th>
-                <th className="py-3 px-3">Lớp học</th>
-                <th className="py-3 px-3">Môn học</th>
-                <th className="py-3 px-3">Kỳ đánh giá</th>
-                <th className="py-3 px-4 min-w-[200px]">Lý do yêu cầu mở sổ</th>
-                <th className="py-3 px-3 text-center">Trạng thái</th>
-                <th className="py-3 px-3">Người duyệt & Ghi chú</th>
-                <th className="py-3 px-3 text-right">Thao tác</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-3 px-3 text-center w-12 font-semibold">#</th>
+                <th className="py-3 px-3 font-semibold">Thời gian</th>
+                <th className="py-3 px-3 font-semibold">Giáo viên yêu cầu</th>
+                <th className="py-3 px-3 font-semibold">Lớp học</th>
+                <th className="py-3 px-3 font-semibold">Môn học</th>
+                <th className="py-3 px-3 font-semibold">Kỳ đánh giá</th>
+                <th className="py-3 px-4 min-w-[200px] font-semibold">Lý do yêu cầu mở sổ</th>
+                <th className="py-3 px-3 text-center font-semibold">Trạng thái</th>
+                <th className="py-3 px-3 font-semibold">Người duyệt & Ghi chú</th>
+                <th className="py-3 px-3 text-right font-semibold">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#E2E8F0]">
               {loading ? (
                 <tr>
                   <td colSpan={10} className="text-center py-12 text-slate-400 font-semibold animate-pulse">

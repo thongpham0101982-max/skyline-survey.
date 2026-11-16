@@ -392,18 +392,18 @@ export function CatalogThemeManagementView({
       {/* Bảng Danh mục Chủ đề Giáo dục */}
       <div className="bg-white border border-slate-200 rounded-3xl shadow-2xs overflow-hidden">
         <table className="w-full text-xs text-left border-collapse">
-          <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-            <tr>
-              <th className="py-3 px-3 text-center w-12">STT</th>
-              <th className="py-3 px-4 min-w-[200px]">Tên Trục Chủ Đề Giáo Dục</th>
-              <th className="py-3 px-3 min-w-[160px]">Nhãn Badge Hiển Thị</th>
-              <th className="py-3 px-3 min-w-[180px]">Mã Định Danh (Code)</th>
-              <th className="py-3 px-4 min-w-[280px]">Mục Tiêu & Định Hướng Giáo Dục</th>
-              <th className="py-3 px-3 text-center min-w-[100px]">Số Hoạt Động</th>
-              <th className="py-3 px-3 text-center w-28">Thao Tác</th>
+          <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="py-3 px-3 text-center w-12 font-semibold">STT</th>
+              <th className="py-3 px-4 min-w-[200px] font-semibold">Tên Trục Chủ Đề Giáo Dục</th>
+              <th className="py-3 px-3 min-w-[160px] font-semibold">Nhãn Badge Hiển Thị</th>
+              <th className="py-3 px-3 min-w-[180px] font-semibold">Mã Định Danh (Code)</th>
+              <th className="py-3 px-4 min-w-[280px] font-semibold">Mục Tiêu & Định Hướng Giáo Dục</th>
+              <th className="py-3 px-3 text-center min-w-[100px] font-semibold">Số Hoạt Động</th>
+              <th className="py-3 px-3 text-center w-28 font-semibold">Thao Tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+          <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
             {loading ? (
               <tr>
                 <td colSpan={7} className="py-12 text-center text-slate-400">

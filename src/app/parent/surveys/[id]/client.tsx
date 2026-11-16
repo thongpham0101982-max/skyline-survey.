@@ -225,9 +225,9 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
       {(q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && (
         <div className="w-full overflow-x-auto -mx-1 px-1 custom-scrollbar pb-6 animate-in fade-in duration-700">
           <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-xs font-semibold">Tiêu chí</th>
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="p-4 text-left text-[10px] tracking-[0.2em] text-xs font-semibold">Tiêu chí</th>
                 {opts.columns?.map((col: string, i: number) => (
                   <th key={i} className={`p-4 text-center bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b-2 border-white ${i === opts.columns.length - 1 ? "rounded-r-[1.5rem]" : ""}`}>
                     {col}

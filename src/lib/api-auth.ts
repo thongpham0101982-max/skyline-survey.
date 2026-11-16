@@ -139,6 +139,103 @@ export async function ensureApiIntegrationTables() {
         "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `)
+
+    await pAny.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "api_snapshot_teachers" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "teacherId" TEXT NOT NULL UNIQUE,
+        "teacherCode" TEXT NOT NULL UNIQUE,
+        "teacherName" TEXT NOT NULL,
+        "email" TEXT,
+        "phone" TEXT,
+        "campusId" TEXT NOT NULL,
+        "campusCode" TEXT,
+        "campusName" TEXT,
+        "departmentId" TEXT,
+        "departmentCode" TEXT,
+        "departmentName" TEXT,
+        "position" TEXT DEFAULT 'GV',
+        "positionsJson" TEXT DEFAULT '[]',
+        "mainSubjectId" TEXT,
+        "mainSubjectCode" TEXT,
+        "mainSubjectName" TEXT,
+        "homeroomClass" TEXT,
+        "status" TEXT DEFAULT 'ACTIVE',
+        "assignmentsSummaryJson" TEXT DEFAULT '[]',
+        "totalPeriodsPerWeek" INTEGER DEFAULT 0,
+        "classesTeachingList" TEXT,
+        "digitalSignatureStatus" TEXT DEFAULT 'NOT_CONFIGURED',
+        "signatureProfileJson" TEXT DEFAULT '{}',
+        "qaObservedSummaryJson" TEXT DEFAULT '{}',
+        "snapshotVersion" INTEGER DEFAULT 1,
+        "lastSyncedAt" DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `)
+
+    // Safe migration for empty api_snapshot_students if created with old studentId UNIQUE constraint
+    try {
+      const stuCount: any[] = await pAny.$queryRawUnsafe(`SELECT COUNT(*) as count FROM "api_snapshot_students"`)
+      if (Number(stuCount[0]?.count || 0) === 0) {
+        await pAny.$executeRawUnsafe(`DROP TABLE IF EXISTS "api_snapshot_students"`)
+      }
+    } catch {}
+
+    await pAny.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "api_snapshot_students" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "studentId" TEXT NOT NULL,
+        "studentCode" TEXT NOT NULL UNIQUE,
+        "studentName" TEXT NOT NULL,
+        "englishName" TEXT,
+        "gender" TEXT,
+        "dateOfBirth" DATETIME,
+        "status" TEXT DEFAULT 'ACTIVE',
+        "studentType" TEXT DEFAULT 'CHINH_KHOA',
+        "campusId" TEXT NOT NULL,
+        "campusCode" TEXT,
+        "campusName" TEXT,
+        "classId" TEXT NOT NULL,
+        "className" TEXT NOT NULL,
+        "grade" TEXT,
+        "academicYearId" TEXT NOT NULL,
+        "academicYearName" TEXT,
+        "homeroomTeacherName" TEXT,
+        "homeroomTeacherEmail" TEXT,
+        "parentsContactJson" TEXT DEFAULT '[]',
+        "termGradesSummaryJson" TEXT DEFAULT '{}',
+        "achievementsJson" TEXT DEFAULT '[]',
+        "hollandOrientationJson" TEXT DEFAULT '{}',
+        "snapshotVersion" INTEGER DEFAULT 1,
+        "lastSyncedAt" DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `)
+
+    await pAny.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "api_handovers" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "token" TEXT NOT NULL UNIQUE,
+        "applicationId" TEXT NOT NULL,
+        "appName" TEXT,
+        "recipientEmail" TEXT,
+        "keyId" TEXT NOT NULL,
+        "keyPrefix" TEXT NOT NULL,
+        "encryptedKey" TEXT NOT NULL,
+        "salt" TEXT NOT NULL,
+        "iv" TEXT NOT NULL,
+        "authTag" TEXT NOT NULL,
+        "passcodeHash" TEXT NOT NULL,
+        "expiresAt" DATETIME NOT NULL,
+        "claimedAt" DATETIME,
+        "attempts" INTEGER NOT NULL DEFAULT 0,
+        "maxAttempts" INTEGER NOT NULL DEFAULT 5,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `)
+
+    await pAny.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "idx_api_handovers_token" ON "api_handovers"("token");
+    `)
+
     tablesEnsured = true
   } catch (err) {
     // If running in mocked test environment, ignore table creation error
@@ -186,24 +283,37 @@ export function apiSuccess<T>(
   meta?: Record<string, any>,
   status = 200
 ) {
-  return NextResponse.json(
-    {
-      success: true,
-      data,
-      meta: {
-        requestId,
-        timestamp: new Date().toISOString(),
-        ...(meta || {}),
-      },
+  const isPretty = Boolean(meta?.pretty)
+  const metaClean = { ...(meta || {}) }
+  delete metaClean.pretty
+
+  const payload = {
+    success: true,
+    data,
+    meta: {
+      requestId,
+      timestamp: new Date().toISOString(),
+      ...metaClean,
     },
-    {
+  }
+
+  if (isPretty) {
+    return new Response(JSON.stringify(payload, null, 2), {
       status,
       headers: {
         "X-Request-Id": requestId,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json; charset=utf-8",
       },
-    }
-  )
+    })
+  }
+
+  return NextResponse.json(payload, {
+    status,
+    headers: {
+      "X-Request-Id": requestId,
+      "Content-Type": "application/json",
+    },
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -238,27 +348,57 @@ export async function validateApiRequest(
     }
   }
 
-  // 1. Extract Bearer token
+  // 1. Extract Bearer token or x-api-key header
+  let rawToken = ""
   const authHeader = request.headers.get("authorization") || request.headers.get("Authorization") || ""
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  const xApiKey = request.headers.get("x-api-key") || request.headers.get("X-API-Key") || ""
+
+  if (authHeader.startsWith("Bearer ")) {
+    rawToken = authHeader.slice(7).trim()
+  } else if (xApiKey) {
+    rawToken = xApiKey.trim()
+  }
+
+  // 1b. Fallback: Authenticated Admin Session in Browser (cho phép Quản trị viên mở trực tiếp xem JSON trên trình duyệt)
+  if (!rawToken) {
+    try {
+      const { auth } = await import("@/lib/auth")
+      const session = await auth()
+      const role = ((session?.user as any)?.role || "").toUpperCase().trim()
+      if (session?.user && ["ADMIN", "SUPER_ADMIN", "SUPERADMIN"].includes(role)) {
+        return {
+          ok: true,
+          requestId,
+          context: {
+            application: {
+              id: "app_admin_browser_session",
+              name: `Admin Session (${session.user.name || session.user.email || "Quản trị viên"})`,
+              permissions: ["*"],
+              allowedCampusIds: ["*"],
+              allowedClassIds: ["*"],
+              allowedDataScope: "ALL",
+              allowedDepartmentIds: ["*"],
+              rateLimitRpm: 300,
+            },
+            key: {
+              id: "key_admin_browser_session",
+              keyId: "admin_browser_session",
+              keyPrefix: "admin_session",
+            },
+          },
+        }
+      }
+    } catch (_) {}
+
     return {
       ok: false,
       requestId,
       errorResponse: apiError(
         "UNAUTHORIZED",
-        "Thiếu thông tin xác thực hoặc sai định dạng. Vui lòng cung cấp header: Authorization: Bearer <API_KEY>",
+        "Thiếu thông tin xác thực. Vui lòng cung cấp header: Authorization: Bearer <API_KEY> hoặc x-api-key: <API_KEY>",
         401,
         requestId
       ),
-    }
-  }
-
-  const rawToken = authHeader.slice(7).trim()
-  if (!rawToken) {
-    return {
-      ok: false,
-      requestId,
-      errorResponse: apiError("UNAUTHORIZED", "API Key không được để trống", 401, requestId),
     }
   }
 

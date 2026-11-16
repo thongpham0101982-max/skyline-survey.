@@ -1035,19 +1035,19 @@ export default function HomeroomCoordinationClient({ user }: Props) {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-[11px] font-bold uppercase text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3">Mã YC</th>
-                      <th className="px-4 py-3">Học sinh / Lớp</th>
-                      <th className="px-4 py-3">Môn / Bộ phận</th>
-                      <th className="px-4 py-3">Nội dung & Biện pháp hỗ trợ</th>
-                      <th className="px-4 py-3">Người phụ trách</th>
-                      <th className="px-4 py-3">Hạn SLA</th>
-                      <th className="px-4 py-3">Trạng thái</th>
-                      <th className="px-4 py-3 text-right">Thao tác</th>
+                  <thead className="bg-[#003B3A] text-[11px] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3 font-semibold">Mã YC</th>
+                      <th className="px-4 py-3 font-semibold">Học sinh / Lớp</th>
+                      <th className="px-4 py-3 font-semibold">Môn / Bộ phận</th>
+                      <th className="px-4 py-3 font-semibold">Nội dung & Biện pháp hỗ trợ</th>
+                      <th className="px-4 py-3 font-semibold">Người phụ trách</th>
+                      <th className="px-4 py-3 font-semibold">Hạn SLA</th>
+                      <th className="px-4 py-3 font-semibold">Trạng thái</th>
+                      <th className="px-4 py-3 text-right font-semibold">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {cases.length === 0 ? (
                       <tr>
                         <td colSpan={8} className="px-4 py-8 text-center text-slate-400">

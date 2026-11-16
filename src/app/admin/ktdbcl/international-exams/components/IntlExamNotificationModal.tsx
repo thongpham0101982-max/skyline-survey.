@@ -434,16 +434,16 @@ export default function IntlExamNotificationModal({
                   ) : (
                     <div className="max-h-64 overflow-y-auto border border-slate-100 rounded-xl">
                       <table className="w-full text-xs">
-                        <thead className="bg-slate-50 text-slate-500 text-left sticky top-0">
-                          <tr>
-                            <th className="p-2.5 w-8"></th>
+                        <thead className="bg-[#003B3A] text-left sticky top-0 text-white border-b border-[#003B3A]">
+                          <tr className="text-[11px] font-semibold whitespace-nowrap">
+                            <th className="p-2.5 w-8 font-semibold"></th>
                             <th className="p-2.5 font-bold">Học sinh & Lớp</th>
                             <th className="p-2.5 font-bold">Kỳ thi & Kết quả</th>
                             <th className="p-2.5 font-bold">GVCN Lớp nhận TB</th>
                             <th className="p-2.5 font-bold">Phụ huynh nhận TB</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-[#E2E8F0]">
                           {recipients.map((item) => {
                             const checked = selectedIds.includes(item.resultId);
                             return (
@@ -535,8 +535,8 @@ export default function IntlExamNotificationModal({
               ) : (
                 <div className="overflow-x-auto border border-slate-200 rounded-2xl">
                   <table className="w-full text-xs">
-                    <thead className="bg-slate-50 text-slate-500 text-left">
-                      <tr>
+                    <thead className="bg-[#003B3A] text-left text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
                         <th className="p-3 font-bold">Thời gian</th>
                         <th className="p-3 font-bold">Người nhận</th>
                         <th className="p-3 font-bold">Vai trò</th>
@@ -544,7 +544,7 @@ export default function IntlExamNotificationModal({
                         <th className="p-3 font-bold">Trạng thái</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {recentNotifications.map((n) => (
                         <tr key={n.id} className="hover:bg-slate-50">
                           <td className="p-3 whitespace-nowrap text-slate-500">

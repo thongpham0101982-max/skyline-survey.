@@ -2090,9 +2090,9 @@ export function StudentTransfersClient() {
             ) : outTransfers.length > 0 ? (
               <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-left text-sm border-collapse bg-white">
-                  <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                    <tr>
-                      <th className="px-4 py-3 text-center w-10">
+                  <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3 text-center w-10 font-semibold">
                         <input
                           type="checkbox"
                           className="w-4 h-4 text-[#00A19A] border-slate-355 rounded focus:ring-[#00A19A] cursor-pointer"
@@ -2106,15 +2106,15 @@ export function StudentTransfersClient() {
                           }}
                         />
                       </th>
-                      <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
-                      <th className="px-4 py-3 font-extrabold">Học sinh</th>
-                      <th className="px-4 py-3 font-extrabold">Lớp / Cơ sở cũ</th>
-                      <th className="px-4 py-3 font-extrabold">Diện chuyển</th>
-                      <th className="px-4 py-3 font-extrabold">Nơi đến</th>
-                      <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
+                      <th className="px-4 py-3 font-semibold">Ngày chuyển</th>
+                      <th className="px-4 py-3 font-semibold">Học sinh</th>
+                      <th className="px-4 py-3 font-semibold">Lớp / Cơ sở cũ</th>
+                      <th className="px-4 py-3 font-semibold">Diện chuyển</th>
+                      <th className="px-4 py-3 font-semibold">Nơi đến</th>
+                      <th className="px-4 py-3 text-right font-semibold">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {outTransfers.map(t => (
                       <tr key={t.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedOutTransferIds.includes(t.id) ? 'bg-[#00A19A]/5 hover:bg-[#00A19A]/10' : ''}`}>
                         <td className="px-4 py-3.5 text-center">
@@ -2206,15 +2206,15 @@ export function StudentTransfersClient() {
             ) : changeTransfers.length > 0 ? (
               <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-left text-sm border-collapse bg-white">
-                  <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                    <tr>
-                      <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
-                      <th className="px-4 py-3 font-extrabold">Học sinh</th>
-                      <th className="px-4 py-3 font-extrabold">Lớp chuyển đến</th>
-                      <th className="px-4 py-3 font-extrabold">Lý do</th>
+                  <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3 font-semibold">Ngày chuyển</th>
+                      <th className="px-4 py-3 font-semibold">Học sinh</th>
+                      <th className="px-4 py-3 font-semibold">Lớp chuyển đến</th>
+                      <th className="px-4 py-3 font-semibold">Lý do</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {changeTransfers.map(t => (
                       <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
                         <td className="px-4 py-3.5 font-medium text-slate-700">
@@ -2336,9 +2336,9 @@ export function StudentTransfersClient() {
                       <div className="space-y-4">
                         <div className="border border-slate-200/80 bg-white rounded-2xl overflow-hidden shadow-sm">
                           <table className="w-full text-left text-sm border-collapse">
-                            <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                              <tr>
-                                <th className="px-4 py-3 w-12 text-center">
+                            <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                <th className="px-4 py-3 w-12 text-center font-semibold">
                                   <input
                                     type="checkbox"
                                     checked={paginatedPendingRequests.length > 0 && paginatedPendingRequests.every(r => selectedRequestIds.includes(r.id))}
@@ -2358,15 +2358,15 @@ export function StudentTransfersClient() {
                                     className="rounded border-slate-350 text-[#00A19A] focus:ring-[#00A19A] h-4 w-4 cursor-pointer"
                                   />
                                 </th>
-                                <th className="px-4 py-3 font-extrabold">Ngày yêu cầu</th>
-                                <th className="px-4 py-3 font-extrabold">Học sinh</th>
-                                <th className="px-4 py-3 font-extrabold">Cơ sở dự tuyển</th>
-                                <th className="px-4 py-3 font-extrabold">Phân hệ / Khối</th>
-                                <th className="px-4 py-3 font-extrabold">Trạng thái</th>
-                                <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
+                                <th className="px-4 py-3 font-semibold">Ngày yêu cầu</th>
+                                <th className="px-4 py-3 font-semibold">Học sinh</th>
+                                <th className="px-4 py-3 font-semibold">Cơ sở dự tuyển</th>
+                                <th className="px-4 py-3 font-semibold">Phân hệ / Khối</th>
+                                <th className="px-4 py-3 font-semibold">Trạng thái</th>
+                                <th className="px-4 py-3 text-right font-semibold">Thao tác</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-[#E2E8F0]">
                               {paginatedPendingRequests.map(req => (
                                 <tr key={req.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedRequestIds.includes(req.id) ? 'bg-[#00A19A]/5 hover:bg-[#00A19A]/10' : ''}`}>
                                   <td className="px-4 py-3.5 text-center">
@@ -2512,16 +2512,16 @@ export function StudentTransfersClient() {
                     <div className="space-y-4">
                       <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm">
                         <table className="w-full text-left text-sm border-collapse">
-                          <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                            <tr>
-                              <th className="px-4 py-3 font-extrabold">Ngày nhập học</th>
-                              <th className="px-4 py-3 font-extrabold">Học sinh</th>
-                              <th className="px-4 py-3 font-extrabold">Lớp chuyển đến</th>
-                              <th className="px-4 py-3 font-extrabold">Lý do</th>
-                              <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
+                          <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="px-4 py-3 font-semibold">Ngày nhập học</th>
+                              <th className="px-4 py-3 font-semibold">Học sinh</th>
+                              <th className="px-4 py-3 font-semibold">Lớp chuyển đến</th>
+                              <th className="px-4 py-3 font-semibold">Lý do</th>
+                              <th className="px-4 py-3 text-right font-semibold">Thao tác</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100">
+                          <tbody className="divide-y divide-[#E2E8F0]">
                             {paginatedHistory.map(t => (
                               <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
                                 <td className="px-4 py-3.5 font-medium text-slate-700">

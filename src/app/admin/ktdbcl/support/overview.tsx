@@ -1681,17 +1681,17 @@ export function OverviewDashboard({
                 ) : (
                   <div className="overflow-x-auto border border-slate-100 rounded-xl">
                     <table className="min-w-full text-xs text-slate-600">
-                      <thead className="bg-slate-50 text-slate-500 font-extrabold border-b border-slate-100 text-[10px] uppercase tracking-wider">
-                        <tr>
-                          <th className="py-2.5 px-3 text-left">Tháng</th>
-                          <th className="py-2.5 px-3 text-center">Mới (+)</th>
-                          <th className="py-2.5 px-3 text-center bg-emerald-50/50 text-emerald-800">Chấm dứt (-)</th>
-                          <th className="py-2.5 px-3 text-center bg-teal-50/40 text-[#00736E]">Đang TD</th>
-                          <th className="py-2.5 px-3 text-center bg-sky-50/60 text-sky-900">Cam kết</th>
-                          <th className="py-2.5 px-3 text-left">Nhận định Điều hành</th>
+                      <thead className="bg-[#003B3A] border-b text-[10px] text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="py-2.5 px-3 text-left font-semibold">Tháng</th>
+                          <th className="py-2.5 px-3 text-center font-semibold">Mới (+)</th>
+                          <th className="py-2.5 px-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Chấm dứt (-)</th>
+                          <th className="py-2.5 px-3 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">Đang TD</th>
+                          <th className="py-2.5 px-3 text-center bg-[#003B3A] text-sky-900 font-semibold">Cam kết</th>
+                          <th className="py-2.5 px-3 text-left font-semibold">Nhận định Điều hành</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-xs">
+                      <tbody className="divide-y divide-[#E2E8F0] font-medium text-xs">
                         {actualDataMonthlyTimeline.map((row, idx) => {
                           const isHighActivity = row.newCases > 0 || row.terminatedInMonth > 0
                           return (
@@ -2728,19 +2728,19 @@ export function OverviewDashboard({
             ) : (
               <div className="overflow-x-auto border border-slate-100 rounded-2xl shadow-xxs">
                 <table className="min-w-full divide-y divide-slate-100 text-xs">
-                  <thead className="bg-slate-50/90 font-extrabold text-slate-500 uppercase tracking-wider text-[10px]">
-                    <tr>
-                      <th className="px-3 py-2.5 text-center w-12">STT</th>
-                      <th className="px-3 py-2.5 text-left">Học sinh</th>
-                      <th className="px-3 py-2.5 text-left">Lớp & Cơ sở</th>
-                      <th className="px-3 py-2.5 text-left">Diện can thiệp</th>
-                      <th className="px-3 py-2.5 text-left">GV / Chuyên viên</th>
-                      <th className="px-3 py-2.5 text-center">Mốc thời gian</th>
-                      <th className="px-3 py-2.5 text-left">Vấn đề / Lý do</th>
-                      <th className="px-3 py-2.5 text-center">Trạng thái & Kết quả</th>
+                  <thead className="bg-[#003B3A] text-[10px] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-3 py-2.5 text-center w-12 font-semibold">STT</th>
+                      <th className="px-3 py-2.5 text-left font-semibold">Học sinh</th>
+                      <th className="px-3 py-2.5 text-left font-semibold">Lớp & Cơ sở</th>
+                      <th className="px-3 py-2.5 text-left font-semibold">Diện can thiệp</th>
+                      <th className="px-3 py-2.5 text-left font-semibold">GV / Chuyên viên</th>
+                      <th className="px-3 py-2.5 text-center font-semibold">Mốc thời gian</th>
+                      <th className="px-3 py-2.5 text-left font-semibold">Vấn đề / Lý do</th>
+                      <th className="px-3 py-2.5 text-center font-semibold">Trạng thái & Kết quả</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700 bg-white">
+                  <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700 bg-white">
                     {paginatedPsychStudents.map((t, idx) => {
                       const globalIdx = (psychPage - 1) * (psychPageSize === -1 ? filteredPsychStudents.length : psychPageSize) + idx + 1
                       const sName = t.student?.studentName || "Không rõ"
@@ -3137,14 +3137,14 @@ export function OverviewDashboard({
             ) : (
               <div className="overflow-x-auto border border-slate-100 rounded-xl">
                 <table className="min-w-full text-xs text-slate-600">
-                  <thead className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100 text-[10px]">
-                    <tr>
-                      <th className="py-2.5 px-4 text-left">Tháng</th>
-                      <th className="py-2.5 px-4 text-center">Tổng số đánh giá</th>
-                      <th className="py-2.5 px-4 text-center">Đạt & tiến bộ</th>
+                  <thead className="bg-[#003B3A] border-b text-[10px] text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-4 text-left font-semibold">Tháng</th>
+                      <th className="py-2.5 px-4 text-center font-semibold">Tổng số đánh giá</th>
+                      <th className="py-2.5 px-4 text-center font-semibold">Đạt & tiến bộ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-[#E2E8F0] font-medium">
                     {academicMonthlyStats.map((d, i) => (
                       <tr key={i} className="hover:bg-slate-50/50">
                         <td className="py-2.5 px-4 font-bold text-slate-800">{d.month}</td>
@@ -3300,17 +3300,17 @@ export function OverviewDashboard({
 
             <div className="overflow-x-auto border border-slate-100 rounded-2xl shadow-xxs">
               <table className="min-w-full divide-y divide-slate-100 text-xs">
-                <thead className="bg-slate-50 text-slate-400 font-extrabold text-[10px] uppercase">
-                  <tr>
-                    <th className="py-3 px-4 text-center w-12">STT</th>
-                    <th className="py-3 px-4 text-left">Học sinh</th>
-                    <th className="py-3 px-4 text-left">Lớp & Cơ sở</th>
-                    <th className="py-3 px-4 text-left">Giáo viên phụ đạo</th>
-                    <th className="py-3 px-4 text-left">Nội dung phụ đạo</th>
-                    <th className="py-3 px-4 text-center">Trạng thái</th>
+                <thead className="bg-[#003B3A] text-[10px] text-white border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-4 text-center w-12 font-semibold">STT</th>
+                    <th className="py-3 px-4 text-left font-semibold">Học sinh</th>
+                    <th className="py-3 px-4 text-left font-semibold">Lớp & Cơ sở</th>
+                    <th className="py-3 px-4 text-left font-semibold">Giáo viên phụ đạo</th>
+                    <th className="py-3 px-4 text-left font-semibold">Nội dung phụ đạo</th>
+                    <th className="py-3 px-4 text-center font-semibold">Trạng thái</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
+                <tbody className="divide-y divide-[#E2E8F0] font-medium">
                   {filteredAcadStudents.map((t, idx) => (
                     <tr key={idx} className="hover:bg-blue-50/30">
                       <td className="py-3 px-4 text-center text-slate-400 font-bold">{idx + 1}</td>
@@ -3542,17 +3542,17 @@ export function OverviewDashboard({
             ) : (
               <div className="overflow-x-auto border border-slate-100 rounded-xl">
                 <table className="min-w-full divide-y divide-slate-100 text-xs">
-                  <thead className="bg-slate-50 text-slate-400 font-extrabold text-[10px] uppercase">
-                    <tr>
-                      <th className="px-4 py-3 text-left">Học sinh</th>
-                      <th className="px-4 py-3 text-left">Lớp & Cơ sở</th>
-                      <th className="px-4 py-3 text-center">Phân hệ</th>
-                      <th className="px-4 py-3 text-left">Người đề xuất</th>
-                      <th className="px-4 py-3 text-center">Ngày đề xuất</th>
-                      <th className="px-4 py-3 text-center">Trạng thái</th>
+                  <thead className="bg-[#003B3A] text-[10px] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="px-4 py-3 text-left font-semibold">Học sinh</th>
+                      <th className="px-4 py-3 text-left font-semibold">Lớp & Cơ sở</th>
+                      <th className="px-4 py-3 text-center font-semibold">Phân hệ</th>
+                      <th className="px-4 py-3 text-left font-semibold">Người đề xuất</th>
+                      <th className="px-4 py-3 text-center font-semibold">Ngày đề xuất</th>
+                      <th className="px-4 py-3 text-center font-semibold">Trạng thái</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
+                  <tbody className="divide-y divide-[#E2E8F0] font-medium">
                     {filteredProposals.map((row, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/50">
                         <td className="px-4 py-3 font-bold text-slate-900">{row.student?.studentName}</td>

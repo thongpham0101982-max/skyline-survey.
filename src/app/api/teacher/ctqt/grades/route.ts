@@ -3,6 +3,12 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { CTQT_LEVEL_CONFIGS, detectCtqtLevel } from "@/lib/ctqt/config";
 
+function toNullableFloat(val: any): number | null {
+  if (val === undefined || val === null || String(val).trim() === "") return null;
+  const num = Number(val);
+  return Number.isFinite(num) ? num : null;
+}
+
 export async function GET(req: Request) {
   try {
     const session = await auth();
@@ -11,12 +17,20 @@ export async function GET(req: Request) {
     }
 
     const userId = (session?.user as any)?.id;
+    const userEmail = session?.user?.email || "";
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
     const isSuperAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
 
     let teacher = null;
     if (userId) {
       teacher = await prisma.teacher.findUnique({ where: { userId } });
+    }
+    if (!teacher && userEmail) {
+      teacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [{ email: userEmail }, { teacherCode: userEmail.split("@")[0] }],
+        },
+      });
     }
 
     const { searchParams } = new URL(req.url);
@@ -156,17 +170,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Thiếu thông tin bắt buộc" }, { status: 400 });
     }
 
+    const semInt = parseInt(String(semester), 10);
     const isSubmitReview = action === "submitReview";
     const nextStatus = isSubmitReview ? "PENDING_REVIEW" : undefined;
 
     if (Array.isArray(entries) && entries.length > 0) {
-      await prisma.$transaction(
-        entries.map((e: any) =>
-          prisma.ctqtGradeEntry.upsert({
+      const englishNameUpdates = entries
+        .filter((e: any) => e.studentId && e.englishName !== undefined)
+        .map((e: any) =>
+          prisma.student.update({
+            where: { id: e.studentId },
+            data: {
+              englishName: e.englishName && String(e.englishName).trim() !== "" ? String(e.englishName).trim() : null,
+            },
+          })
+        );
+
+      const gradeUpserts = entries
+        .filter((e: any) => Boolean(e.studentId))
+        .map((e: any) => {
+          const midTermScore = toNullableFloat(e.midTermScore);
+          const endTermScore = toNullableFloat(e.endTermScore);
+          const gpaScore = toNullableFloat(e.gpaScore);
+          const ieltsScore = toNullableFloat(e.ieltsScore);
+
+          return prisma.ctqtGradeEntry.upsert({
             where: {
               academicYearId_semester_classId_studentId_subjectCode: {
                 academicYearId,
-                semester: parseInt(semester, 10),
+                semester: semInt,
                 classId,
                 studentId: e.studentId,
                 subjectCode,
@@ -174,41 +206,62 @@ export async function POST(req: Request) {
             },
             update: {
               progressScores: e.progressScores || null,
-              midTermScore: e.midTermScore !== undefined && e.midTermScore !== null ? parseFloat(e.midTermScore) : null,
-              endTermScore: e.endTermScore !== undefined && e.endTermScore !== null ? parseFloat(e.endTermScore) : null,
-              gpaScore: e.gpaScore !== undefined && e.gpaScore !== null ? parseFloat(e.gpaScore) : null,
+              midTermScore,
+              endTermScore,
+              gpaScore,
               assessmentContentEn: e.assessmentContentEn || null,
               assessmentContentVi: e.assessmentContentVi || null,
-              ieltsScore: e.ieltsScore !== undefined && e.ieltsScore !== null ? parseFloat(e.ieltsScore) : null,
+              ieltsScore,
               commentEn: e.commentEn || null,
               commentVi: e.commentVi || null,
               ...(nextStatus ? { reviewStatus: nextStatus } : {}),
             },
             create: {
               academicYearId,
-              semester: parseInt(semester, 10),
+              semester: semInt,
               classId,
               studentId: e.studentId,
               subjectCode,
               progressScores: e.progressScores || null,
-              midTermScore: e.midTermScore !== undefined && e.midTermScore !== null ? parseFloat(e.midTermScore) : null,
-              endTermScore: e.endTermScore !== undefined && e.endTermScore !== null ? parseFloat(e.endTermScore) : null,
-              gpaScore: e.gpaScore !== undefined && e.gpaScore !== null ? parseFloat(e.gpaScore) : null,
+              midTermScore,
+              endTermScore,
+              gpaScore,
               assessmentContentEn: e.assessmentContentEn || null,
               assessmentContentVi: e.assessmentContentVi || null,
-              ieltsScore: e.ieltsScore !== undefined && e.ieltsScore !== null ? parseFloat(e.ieltsScore) : null,
+              ieltsScore,
               commentEn: e.commentEn || null,
               commentVi: e.commentVi || null,
               reviewStatus: nextStatus || "DRAFT",
             },
-          })
-        )
-      );
+          });
+        });
+
+      const assignmentStatusOps = isSubmitReview
+        ? [
+            prisma.ctqtTeachingAssignment.updateMany({
+              where: {
+                academicYearId,
+                semester: semInt,
+                classId,
+                subjectCode,
+              },
+              data: {
+                status: "SUBMITTED",
+              },
+            }),
+          ]
+        : [];
+
+      await prisma.$transaction([
+        ...englishNameUpdates,
+        ...gradeUpserts,
+        ...assignmentStatusOps,
+      ]);
     }
 
     return NextResponse.json({
       success: true,
-      message: isSubmitReview ? "Đã gửi sổ điểm thành công cho GVTA rà soát" : "Đã lưu nháp sổ điểm thành công",
+      message: isSubmitReview ? "Đã hoàn tất gửi duyệt sổ điểm môn học" : "Đã lưu sổ điểm môn học thành công",
     });
   } catch (error: any) {
     console.error("Error in teacher CTQT grades POST:", error);

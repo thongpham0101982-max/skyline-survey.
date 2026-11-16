@@ -23,17 +23,17 @@ export function SubjectGapTable({ items, showTrend = true, className = "" }: Sub
   return (
     <div className={`overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs ${className}`}>
       <table className="w-full text-left text-xs border-collapse">
-        <thead>
-          <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-            <th className="py-2.5 px-3">Môn học</th>
-            <th className="py-2.5 px-3 text-right">Điểm hiện tại</th>
-            <th className="py-2.5 px-3 text-right">Mục tiêu</th>
-            <th className="py-2.5 px-3 text-right">GAP</th>
-            <th className="py-2.5 px-3 text-center">Trạng thái</th>
-            {showTrend && <th className="py-2.5 px-3">Diễn biến (Trend)</th>}
+        <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+          <tr className="border-b text-[11px] font-semibold">
+            <th className="py-2.5 px-3 font-semibold">Môn học</th>
+            <th className="py-2.5 px-3 text-right font-semibold">Điểm hiện tại</th>
+            <th className="py-2.5 px-3 text-right font-semibold">Mục tiêu</th>
+            <th className="py-2.5 px-3 text-right font-semibold">GAP</th>
+            <th className="py-2.5 px-3 text-center font-semibold">Trạng thái</th>
+            {showTrend && <th className="py-2.5 px-3 font-semibold">Diễn biến (Trend)</th>}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+        <tbody className="divide-y divide-[#E2E8F0] font-medium text-slate-700">
           {items.map((row, idx) => {
             let statusVariant: "status-neutral" | "status-info" | "status-warning" | "status-success" | "status-error" = "status-info"
             if (row.status === "DAT_VUOT_MUC_TIEU") statusVariant = "status-success"

@@ -22,7 +22,7 @@ export default async function AdminStudentProfilesPage() {
   }
 
   const user = session.user as any
-  const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
+  const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KHAO_THI", "KT_DBCL", "KTDBCL", "TB_DHCM", "GDCS", "GĐCS", "BGH", "BGH_MN", "GIAO_VU_CS", "GIAO_VU"]
   const { hasModulePermission } = await import("@/lib/permissions")
   const hasProfilePerm = await hasModulePermission(user?.role, [
     "ADMIN_STUDENT_PROFILES",

@@ -748,19 +748,19 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 text-slate-600 uppercase border-b border-slate-200">
-                    <tr>
-                      <th className="py-3 px-4">Môn học & Khối</th>
-                      <th className="py-3 px-4">Hình thức</th>
-                      <th className="py-3 px-4">Ma trận đề</th>
-                      <th className="py-3 px-4">Hồ sơ đề / LMS Quiz</th>
-                      <th className="py-3 px-4">Ca thi & Biên bản</th>
-                      <th className="py-3 px-4">Chấm OMR / Tự luận</th>
-                      <th className="py-3 px-4">Trạng thái Sổ điểm</th>
-                      <th className="py-3 px-4 text-right">Thao tác</th>
+                  <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-3 px-4 font-semibold">Môn học & Khối</th>
+                      <th className="py-3 px-4 font-semibold">Hình thức</th>
+                      <th className="py-3 px-4 font-semibold">Ma trận đề</th>
+                      <th className="py-3 px-4 font-semibold">Hồ sơ đề / LMS Quiz</th>
+                      <th className="py-3 px-4 font-semibold">Ca thi & Biên bản</th>
+                      <th className="py-3 px-4 font-semibold">Chấm OMR / Tự luận</th>
+                      <th className="py-3 px-4 font-semibold">Trạng thái Sổ điểm</th>
+                      <th className="py-3 px-4 text-right font-semibold">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {subjectExams.length === 0 && (
                       <tr>
                         <td colSpan={8} className="py-10 px-4 text-center text-slate-500">
@@ -1686,17 +1686,17 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
               {/* Task Table */}
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 text-slate-600 uppercase border-b border-slate-200">
-                    <tr>
-                      <th className="py-2.5 px-4">Nhiệm vụ</th>
-                      <th className="py-2.5 px-4">Giáo viên được giao</th>
-                      <th className="py-2.5 px-4">Thời hạn</th>
-                      <th className="py-2.5 px-4">Trạng thái</th>
-                      <th className="py-2.5 px-4">Ghi chú thẩm định</th>
-                      <th className="py-2.5 px-4 text-right">Nhắc việc Sổ GV</th>
+                  <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-4 font-semibold">Nhiệm vụ</th>
+                      <th className="py-2.5 px-4 font-semibold">Giáo viên được giao</th>
+                      <th className="py-2.5 px-4 font-semibold">Thời hạn</th>
+                      <th className="py-2.5 px-4 font-semibold">Trạng thái</th>
+                      <th className="py-2.5 px-4 font-semibold">Ghi chú thẩm định</th>
+                      <th className="py-2.5 px-4 text-right font-semibold">Nhắc việc Sổ GV</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {selectedExam.tasks?.map((t: any) => {
                       const roleMeta = ROLE_LABELS[t.role] || {
                         label: t.role,
@@ -2373,18 +2373,18 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
                   {/* Roster Attendance Table */}
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
-                      <thead className="bg-slate-50 text-slate-600 uppercase">
-                        <tr>
-                          <th className="py-2 px-3">Số báo danh (SBD)</th>
-                          <th className="py-2 px-3">Học sinh</th>
-                          <th className="py-2 px-3">Chỗ ngồi</th>
-                          <th className="py-2 px-3">Mã đề</th>
-                          <th className="py-2 px-3">Điểm danh</th>
-                          <th className="py-2 px-3">Thu bài</th>
-                          <th className="py-2 px-3">Diện thi bù</th>
+                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="py-2 px-3 font-semibold">Số báo danh (SBD)</th>
+                          <th className="py-2 px-3 font-semibold">Học sinh</th>
+                          <th className="py-2 px-3 font-semibold">Chỗ ngồi</th>
+                          <th className="py-2 px-3 font-semibold">Mã đề</th>
+                          <th className="py-2 px-3 font-semibold">Điểm danh</th>
+                          <th className="py-2 px-3 font-semibold">Thu bài</th>
+                          <th className="py-2 px-3 font-semibold">Diện thi bù</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {sess.roster?.map((r: any) => (
                           <tr key={r.id}>
                             <td className="py-2 px-3 font-mono font-bold text-teal-800">
@@ -2505,19 +2505,19 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
-                      <thead className="bg-slate-50 text-slate-600 uppercase border-b border-slate-200">
-                        <tr>
-                          <th className="py-2.5 px-3">SBD nhận diện</th>
-                          <th className="py-2.5 px-3">Học sinh khớp</th>
-                          <th className="py-2.5 px-3">Mã đề</th>
-                          <th className="py-2.5 px-3">Độ tin cậy OMR</th>
-                          <th className="py-2.5 px-3">Số câu đúng</th>
-                          <th className="py-2.5 px-3">Điểm TN (Máy chấm)</th>
-                          <th className="py-2.5 px-3">Cảnh báo bất thường</th>
-                          <th className="py-2.5 px-3 text-right">Rà soát & Xác nhận</th>
+                      <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="py-2.5 px-3 font-semibold">SBD nhận diện</th>
+                          <th className="py-2.5 px-3 font-semibold">Học sinh khớp</th>
+                          <th className="py-2.5 px-3 font-semibold">Mã đề</th>
+                          <th className="py-2.5 px-3 font-semibold">Độ tin cậy OMR</th>
+                          <th className="py-2.5 px-3 font-semibold">Số câu đúng</th>
+                          <th className="py-2.5 px-3 font-semibold">Điểm TN (Máy chấm)</th>
+                          <th className="py-2.5 px-3 font-semibold">Cảnh báo bất thường</th>
+                          <th className="py-2.5 px-3 text-right font-semibold">Rà soát & Xác nhận</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-[#E2E8F0]">
                         {batch.sheets?.map((sh: any) => {
                           let flags: string[] = [];
                           try {
@@ -2617,19 +2617,19 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 text-slate-600 uppercase border-b border-slate-200">
-                    <tr>
-                      <th className="py-2.5 px-3">SBD</th>
-                      <th className="py-2.5 px-3">Học sinh</th>
-                      <th className="py-2.5 px-3">Mã đề</th>
-                      <th className="py-2.5 px-3">Điểm TN (OMR/LMS)</th>
-                      <th className="py-2.5 px-3">Điểm Tự luận</th>
-                      <th className="py-2.5 px-3">Tổng điểm</th>
-                      <th className="py-2.5 px-3">Nhận xét bài làm tự luận</th>
-                      <th className="py-2.5 px-3 text-right">Lưu điểm TL</th>
+                  <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-3 font-semibold">SBD</th>
+                      <th className="py-2.5 px-3 font-semibold">Học sinh</th>
+                      <th className="py-2.5 px-3 font-semibold">Mã đề</th>
+                      <th className="py-2.5 px-3 font-semibold">Điểm TN (OMR/LMS)</th>
+                      <th className="py-2.5 px-3 font-semibold">Điểm Tự luận</th>
+                      <th className="py-2.5 px-3 font-semibold">Tổng điểm</th>
+                      <th className="py-2.5 px-3 font-semibold">Nhận xét bài làm tự luận</th>
+                      <th className="py-2.5 px-3 text-right font-semibold">Lưu điểm TL</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {selectedExam.results?.map((r: any) => {
                       const draft = editingEssayScores[r.id] ?? {
                         score: String(r.essayScore ?? 0),
@@ -2806,20 +2806,20 @@ export default function KhaoThiSoAdminClient({ mode }: KhaoThiSoClientProps) {
               {/* Detailed Candidate Reconciliation Table */}
               <div className="overflow-x-auto pt-2">
                 <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 text-slate-600 uppercase border-b border-slate-200">
-                    <tr>
-                      <th className="py-2.5 px-3">SBD</th>
-                      <th className="py-2.5 px-3">Học sinh</th>
-                      <th className="py-2.5 px-3">Lớp</th>
-                      <th className="py-2.5 px-3">Nguồn dữ liệu</th>
-                      <th className="py-2.5 px-3">Điểm TN</th>
-                      <th className="py-2.5 px-3">Điểm TL</th>
-                      <th className="py-2.5 px-3">Tổng điểm</th>
-                      <th className="py-2.5 px-3">Đối soát 3 chiều</th>
-                      <th className="py-2.5 px-3">Trạng thái Sổ điểm</th>
+                  <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2.5 px-3 font-semibold">SBD</th>
+                      <th className="py-2.5 px-3 font-semibold">Học sinh</th>
+                      <th className="py-2.5 px-3 font-semibold">Lớp</th>
+                      <th className="py-2.5 px-3 font-semibold">Nguồn dữ liệu</th>
+                      <th className="py-2.5 px-3 font-semibold">Điểm TN</th>
+                      <th className="py-2.5 px-3 font-semibold">Điểm TL</th>
+                      <th className="py-2.5 px-3 font-semibold">Tổng điểm</th>
+                      <th className="py-2.5 px-3 font-semibold">Đối soát 3 chiều</th>
+                      <th className="py-2.5 px-3 font-semibold">Trạng thái Sổ điểm</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {selectedExam.results?.map((r: any) => (
                       <tr key={r.id} className="hover:bg-slate-50">
                         <td className="py-2.5 px-3 font-mono font-bold text-teal-800">

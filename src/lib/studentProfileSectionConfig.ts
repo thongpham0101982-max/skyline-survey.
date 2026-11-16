@@ -10,6 +10,7 @@ export interface ProfileSectionVisibility {
   experientialActivities: boolean; // HOẠT ĐỘNG TRẢI NGHIỆM
   homeroomTeacherComment: boolean; // VIII. NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM
   subjectCompetencyRadar: boolean; // BIỂU ĐỒ RADAR NĂNG LỰC MÔN HỌC
+  entranceOrientationReport: boolean; // BÁO CÁO PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH & TRAO ĐỔI PHHS (A4) - XÉT DUYỆT KẾT QUẢ ĐẦU VÀO K-12
   careerOrientation?: boolean;     // Luôn false / đã bỏ
 }
 
@@ -25,6 +26,7 @@ export const DEFAULT_PROFILE_SECTIONS: ProfileSectionVisibility = {
   experientialActivities: true,
   homeroomTeacherComment: true,
   subjectCompetencyRadar: true,
+  entranceOrientationReport: true,
   careerOrientation: false,
 };
 
@@ -66,8 +68,8 @@ export const SECTION_DEFINITIONS: Array<{
   {
     key: "bilingualGrades",
     label: "IV. KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ",
-    shortLabel: "Chương trình Song ngữ (ESL, CAM...)",
-    description: "Bảng điểm các môn tiếng Anh quốc tế, Cambridge, Toán/Khoa học tiếng Anh",
+    shortLabel: "Chương trình Song ngữ (CTQT & Report Card)",
+    description: "Điểm các môn Quản lý Điểm CTQT & Report Card theo từng học sinh và khối lớp (Khối 1–5, 6–9, 10–12)",
     category: "Quốc tế & Song ngữ",
   },
   {
@@ -104,6 +106,13 @@ export const SECTION_DEFINITIONS: Array<{
     shortLabel: "Biểu đồ radar năng lực môn học",
     description: "Phụ lục đánh giá năng lực toàn diện 360° & Biểu đồ radar năng lực theo từng môn học",
     category: "Đánh giá Năng lực",
+  },
+  {
+    key: "entranceOrientationReport",
+    label: "BÁO CÁO PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH & TRAO ĐỔI PHHS",
+    shortLabel: "Báo cáo Phỏng vấn Định hướng Học sinh & Trao đổi PHHS",
+    description: "Hồ sơ khảo sát, phỏng vấn định hướng học sinh & trao đổi PHHS, kết quả các môn và quyết định xét duyệt đầu vào",
+    category: "Khảo sát & Định hướng Đầu vào",
   },
 ];
 

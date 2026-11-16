@@ -2394,18 +2394,18 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left border-collapse">
-                    <thead>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                       {/* DÒNG TIÊU ĐỀ CẤP 1 */}
-                      <tr className="bg-slate-100/90 text-slate-700 border-b border-slate-300 font-bold">
-                        <th rowSpan={2} className="py-3 px-3 text-center border-r border-slate-300 w-12 bg-slate-200/80">STT</th>
-                        <th rowSpan={2} className="py-3 px-3 border-r border-slate-300 min-w-[100px] bg-slate-200/80">Mã HS</th>
-                        <th rowSpan={2} className="py-3 px-4 border-r border-slate-300 min-w-[180px] bg-slate-200/80">Họ và tên</th>
-                        <th rowSpan={2} className="py-3 px-3 text-center border-r border-slate-300 min-w-[95px] bg-slate-200/80">Ngày sinh</th>
+                      <tr className="border-b text-[11px] font-semibold">
+                        <th rowSpan={2} className="py-3 px-3 text-center border-r border-white/15 w-12 bg-[#003B3A] font-semibold">STT</th>
+                        <th rowSpan={2} className="py-3 px-3 border-r border-white/15 min-w-[100px] bg-[#003B3A] font-semibold">Mã HS</th>
+                        <th rowSpan={2} className="py-3 px-4 border-r border-white/15 min-w-[180px] bg-[#003B3A] font-semibold">Họ và tên</th>
+                        <th rowSpan={2} className="py-3 px-3 text-center border-r border-white/15 min-w-[95px] bg-[#003B3A] font-semibold">Ngày sinh</th>
 
                         {/* Cụm cột Đánh giá thường xuyên */}
                         <th
                           colSpan={activeColNames.length}
-                          className="py-2 px-3 text-center border-r border-slate-300 bg-teal-50 text-[#005B58] font-black uppercase tracking-wide text-[11px]"
+                          className="py-2 px-3 text-center border-r border-white/15 bg-[#003B3A] text-[#005B58] tracking-wide text-[11px] font-semibold"
                         >
                           ĐDGtx (Đánh giá thường xuyên)
                         </th>
@@ -2414,7 +2414,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                         {gradeSheetData.config?.hasCompositeColumn !== false && (
                           <th
                             rowSpan={2}
-                            className="py-3 px-3 text-center border-r border-slate-300 bg-teal-100/80 text-[#005B58] font-black min-w-[95px]"
+                            className="py-3 px-3 text-center border-r border-white/15 bg-[#003B3A] text-[#005B58] min-w-[95px] font-semibold"
                           >
                             {gradeSheetData.config?.compositeColumnName || "DTBmhk"}
                           </th>
@@ -2422,14 +2422,14 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
 
                         {/* Cột Nhận xét */}
                         {gradeSheetData.config?.hasRemarkColumn !== false && (
-                          <th rowSpan={2} className="py-3 px-4 border-slate-300 bg-slate-100 min-w-[220px]">
+                          <th rowSpan={2} className="py-3 px-4 border-white/15 bg-[#003B3A] min-w-[220px] font-semibold">
                             Nhận xét
                           </th>
                         )}
                       </tr>
 
                       {/* DÒNG TIÊU ĐỀ CẤP 2 (CÁC CỘT THÀNH PHẦN) */}
-                      <tr className="bg-slate-50 text-slate-700 border-b border-slate-300 font-bold text-[11px]">
+                      <tr className="border-b text-[11px] font-semibold">
                         {activeColNames.map((colName: string, cIdx: number) => {
                           const colType = activeColTypes[cIdx] || "SCORE_10"
                           const colMax = getColumnMaxScore(colType, gradeSheetData.config?.columnMaxScores, cIdx)
@@ -2438,7 +2438,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                           return (
                             <th
                               key={cIdx}
-                              className="py-2 px-2 text-center border-r border-slate-300 bg-teal-50/40 min-w-[75px]"
+                              className="py-2 px-2 text-center border-r border-white/15 bg-[#003B3A] min-w-[75px] font-semibold"
                               title={`${colName} (Tối đa ${colMax}đ)`}
                             >
                               <div>{label}</div>
@@ -2451,7 +2451,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {gradeSheetData.students.map((st, sIdx) => {
                         const entry = gradeSheetData.entries[st.id] || { componentScores: {}, compositeScore: "", remark: "" }
 

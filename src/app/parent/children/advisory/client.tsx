@@ -818,16 +818,16 @@ export default function ParentAdvisoryClient({
               ) : (
                 <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-2xs">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-50/90 text-slate-500 text-[11px] font-semibold border-b border-slate-200/80">
-                        <th className="py-2.5 px-3">Nhóm Mục Tiêu</th>
-                        <th className="py-2.5 px-3">Mục Tiêu Cụ Thể</th>
-                        <th className="py-2.5 px-3">Hành Động Cụ Thể</th>
-                        <th className="py-2.5 px-3">Đề Nghị Hỗ Trợ</th>
-                        <th className="py-2.5 px-3 w-32 text-center">Tiến Độ</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold border-b">
+                        <th className="py-2.5 px-3 font-semibold">Nhóm Mục Tiêu</th>
+                        <th className="py-2.5 px-3 font-semibold">Mục Tiêu Cụ Thể</th>
+                        <th className="py-2.5 px-3 font-semibold">Hành Động Cụ Thể</th>
+                        <th className="py-2.5 px-3 font-semibold">Đề Nghị Hỗ Trợ</th>
+                        <th className="py-2.5 px-3 w-32 text-center font-semibold">Tiến Độ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {currentCategories.map((catDef, catIdx) => {
                         const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
 
@@ -1119,18 +1119,18 @@ export default function ParentAdvisoryClient({
                 {/* Slim 8-Column Rubric Table */}
                 <div className="overflow-x-auto border border-slate-200/80 rounded-xl">
                   <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-50/90 text-slate-500 text-[11px] font-semibold border-b border-slate-200/80">
-                        <th className="py-2.5 px-3">1. Nhóm Mục Tiêu</th>
-                        <th className="py-2.5 px-3">2. Nội Dung Mục Tiêu</th>
-                        <th className="py-2.5 px-3 text-center">3. Kết Quả</th>
-                        <th className="py-2.5 px-3 text-center">4. Hoàn Thành</th>
-                        <th className="py-2.5 px-3 text-center">5. Chủ Động</th>
-                        <th className="py-2.5 px-3 text-center">6. Thái Độ</th>
-                        <th className="py-2.5 px-3">7. Khuyến Nghị Của GVCN</th>
+                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold border-b">
+                        <th className="py-2.5 px-3 font-semibold">1. Nhóm Mục Tiêu</th>
+                        <th className="py-2.5 px-3 font-semibold">2. Nội Dung Mục Tiêu</th>
+                        <th className="py-2.5 px-3 text-center font-semibold">3. Kết Quả</th>
+                        <th className="py-2.5 px-3 text-center font-semibold">4. Hoàn Thành</th>
+                        <th className="py-2.5 px-3 text-center font-semibold">5. Chủ Động</th>
+                        <th className="py-2.5 px-3 text-center font-semibold">6. Thái Độ</th>
+                        <th className="py-2.5 px-3 font-semibold">7. Khuyến Nghị Của GVCN</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-[#E2E8F0]">
                       {currentCategories.map((catDef, catIdx) => {
                         const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
                         const firstGoal = catGoalsList[0] || {}
