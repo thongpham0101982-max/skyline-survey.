@@ -576,7 +576,7 @@ export function XuatBangDiemAdminClient({
           <div className="p-3.5">
             <div className="text-xs text-[#64748B]">Chữ ký số GVCN</div>
             <div className="mt-1">
-              {homeroomSignatureProfile?.signatureImageUrl ? (
+              {homeroomSignatureProfile?.visualAppearanceUrl || homeroomSignatureProfile?.signatureImageUrl ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-[#059669] border border-emerald-200">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Đã cấu hình chữ ký số

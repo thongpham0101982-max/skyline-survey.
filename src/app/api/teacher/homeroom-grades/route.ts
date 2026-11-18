@@ -333,7 +333,7 @@ export async function GET(request: Request) {
       const allActiveSubjects = await prisma.subject
         .findMany({
           where: { status: "ACTIVE" },
-          orderBy: { orderIndex: "asc" },
+          orderBy: { subjectName: "asc" },
         })
         .catch(() => [])
       const primaryCodes =
