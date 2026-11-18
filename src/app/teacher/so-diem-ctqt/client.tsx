@@ -3003,116 +3003,399 @@ export function SoDiemCtqtTeacherClient({
               Chưa có dữ liệu lớp này.
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
-              <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-2">
-                <div className="text-xs font-bold text-[#003B3A]">
-                  Đánh giá 6 tiêu chí Năng lực cốt lõi (Core Competencies) • Thang E – S – N – U
-                </div>
-                <div className="text-[11px] font-medium text-slate-600">
-                  E: Tốt • S: Đạt yêu cầu • N: Cần cải thiện • U: Chưa đạt
-                </div>
-              </div>
+            <div className="space-y-5">
+              {/* 1. Bảng điểm Tổng hợp các môn CTQT (Đồng bộ tên cột với Sổ điểm theo Môn) */}
+              {consolidatedData.config?.subjects?.length > 0 && (
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs font-bold text-[#003B3A]">
+                      1. Sổ điểm Tổng hợp các môn CTQT • Lớp {consolidatedData.class?.className} (Đồng bộ tên cột với Sổ điểm theo Môn)
+                    </div>
+                    <div className="text-[11px] font-medium text-slate-500">
+                      Nhấp nút &quot;Sổ môn ↗&quot; để chuyển sang nhập điểm chi tiết từng môn
+                    </div>
+                  </div>
 
-              <div className="overflow-x-auto max-h-[620px] overflow-y-auto">
-                <table className="w-full text-xs text-left border-collapse">
-                  <thead className="bg-[#003B3A] sticky top-0 z-10 border-b border-[#003B3A] shadow-xs">
-                    <tr className="text-[11px] font-semibold whitespace-nowrap">
-                      <th className="py-3 px-3 border-r border-white/10 text-center w-12 text-white">STT</th>
-                      <th className="py-3 px-3 border-r border-white/10 text-center w-28 text-white">Mã HS</th>
-                      <th className="py-3 px-3 border-r border-white/10 min-w-[160px] text-white">Họ và tên</th>
-                      <th className="py-3 px-3 border-r border-white/10 min-w-[140px] text-[#5EEAD4]">English Name</th>
+                  <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
+                    <table className="w-full text-xs text-left border-collapse tabular-nums">
+                      <thead className="bg-[#003B3A] sticky top-0 z-10 border-b border-[#003B3A] shadow-xs text-white">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th rowSpan={2} className="py-3 px-2.5 border border-white/15 text-center w-12 align-middle text-white">
+                            STT
+                          </th>
+                          <th rowSpan={2} className="py-3 px-2.5 border border-white/15 text-center w-28 align-middle text-white">
+                            Mã HS
+                          </th>
+                          <th rowSpan={2} className="py-3 px-3 border border-white/15 min-w-[155px] align-middle text-white">
+                            Họ và tên
+                          </th>
+                          <th rowSpan={2} className="py-3 px-3 border border-white/15 min-w-[120px] align-middle text-[#5EEAD4]">
+                            English Name
+                          </th>
 
-                      {CORE_COMPETENCIES_DEF.map(cc => (
-                        <th
-                          key={cc.key}
-                          className="py-3 px-3 border-r border-white/10 text-center min-w-[120px] text-teal-100"
-                        >
-                          <div>{cc.labelVi}</div>
-                          <div className="text-[10px] font-normal text-teal-200/80">{cc.labelEn}</div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
-                    {consolidatedData.students.map((st: any, idx: number) => {
-                      const comp =
-                        consolidatedData.competencies?.find((c: any) => c.studentId === st.id) || {};
-
-                      return (
-                        <tr key={st.id} className="transition-colors align-middle hover:bg-[#F8FAFC]">
-                          <td className="py-3 px-3 text-center font-bold text-slate-500 align-middle">
-                            {idx + 1}
-                          </td>
-                          <td className="py-3 px-3 text-center font-mono text-slate-600 align-middle">
-                            {st.studentCode}
-                          </td>
-                          <td className="py-3 px-3 font-bold text-slate-800 whitespace-nowrap align-middle">
-                            {st.studentName}
-                          </td>
-                          <td className="py-3 px-3 align-middle">
-                            <input
-                              type="text"
-                              value={st.englishName || ""}
-                              placeholder="Nhập English Name..."
-                              onChange={e => {
-                                const nextVal = e.target.value;
-                                const updatedStudents = consolidatedData.students.map((s: any) =>
-                                  s.id === st.id ? { ...s, englishName: nextVal } : s
-                                );
-                                setConsolidatedData({
-                                  ...consolidatedData,
-                                  students: updatedStudents,
-                                });
-                              }}
-                              className="w-full min-w-[130px] text-xs font-semibold text-[#00736E] px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#008B85] focus:border-[#008B85] focus:outline-hidden placeholder:font-normal placeholder:text-slate-400"
-                            />
-                          </td>
-
-                          {CORE_COMPETENCIES_DEF.map(cc => {
-                            const val = comp[cc.key] || "E";
+                          {consolidatedData.config.subjects.map((sub: any) => {
+                            const consLevel = consolidatedData.level || "PRIMARY";
+                            const scoreColCount =
+                              consLevel === "HIGH"
+                                ? sub.code === "IELTS"
+                                  ? 2
+                                  : sub.isQualitative
+                                  ? 1
+                                  : 2
+                                : sub.scoreColumns.length;
                             return (
-                              <td key={cc.key} className="py-3 px-3 text-center align-middle">
-                                <select
-                                  value={val}
-                                  onChange={e => {
-                                    const nextVal = e.target.value;
-                                    const updated = [...(consolidatedData.competencies || [])];
-                                    let found = updated.find(x => x.studentId === st.id);
-                                    if (!found) {
-                                      found = { studentId: st.id };
-                                      updated.push(found);
+                              <th
+                                key={sub.code}
+                                colSpan={scoreColCount + 2}
+                                className={`py-2.5 px-3 border border-slate-300 text-center font-black ${sub.color.bg} ${sub.color.text}`}
+                              >
+                                <div className="flex items-center justify-center gap-2">
+                                  <span>
+                                    [{sub.code}] {sub.nameVi} ({sub.nameEn})
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleSelectSlotForEntry(consolidatedClassId, sub.code)
                                     }
-                                    found[cc.key] = nextVal;
-                                    setConsolidatedData({
-                                      ...consolidatedData,
-                                      competencies: updated,
-                                    });
-                                  }}
-                                  className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border focus:outline-hidden cursor-pointer ${
-                                    val === "E"
-                                      ? "bg-emerald-50 text-[#059669] border-emerald-200"
-                                      : val === "S"
-                                      ? "bg-teal-50 text-[#00736E] border-teal-200"
-                                      : val === "N"
-                                      ? "bg-amber-50 text-[#D97706] border-amber-200"
-                                      : "bg-rose-50 text-[#E11D48] border-rose-200"
-                                  }`}
-                                >
-                                  {CORE_COMPETENCY_RATINGS.map(r => (
-                                    <option key={r.code} value={r.code}>
-                                      {r.code} – {r.labelVi}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
+                                    className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/95 hover:bg-white text-[#003B3A] border border-slate-300/80 shadow-2xs transition-all cursor-pointer"
+                                  >
+                                    Sổ môn ↗
+                                  </button>
+                                </div>
+                              </th>
                             );
                           })}
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          {consolidatedData.config.subjects.map((sub: any) => {
+                            const consLevel = consolidatedData.level || "PRIMARY";
+                            return (
+                              <React.Fragment key={sub.code}>
+                                {consLevel === "HIGH" ? (
+                                  sub.code === "IELTS" ? (
+                                    <>
+                                      <th className="py-2.5 px-2.5 border border-white/15 text-center text-teal-100 min-w-[110px]">
+                                        <div>Nội dung</div>
+                                        <div className="text-[10px] font-normal text-teal-200/80">Content</div>
+                                      </th>
+                                      <th className="py-2.5 px-2.5 border border-white/15 text-center bg-[#004D4B] text-[#5EEAD4] min-w-[100px]">
+                                        <div>IELTS Band (0-9)</div>
+                                        <div className="text-[10px] font-normal text-teal-200/80">IELTS Band</div>
+                                      </th>
+                                    </>
+                                  ) : sub.isQualitative ? (
+                                    <th className="py-2.5 px-2.5 border border-white/15 text-center text-teal-100 min-w-[130px]">
+                                      <div>Nghiên cứu học thuật</div>
+                                      <div className="text-[10px] font-normal text-teal-200/80">Academic Research</div>
+                                    </th>
+                                  ) : (
+                                    <>
+                                      <th className="py-2.5 px-2.5 border border-white/15 text-center text-teal-100 min-w-[140px]">
+                                        <div>Nội dung kiểm tra</div>
+                                        <div className="text-[10px] font-normal text-teal-200/80">Content</div>
+                                      </th>
+                                      <th className="py-2.5 px-2.5 border border-white/15 text-center bg-[#004D4B] text-[#5EEAD4] min-w-[90px]">
+                                        <div>Điểm số</div>
+                                        <div className="text-[10px] font-normal text-teal-200/80">Mark</div>
+                                      </th>
+                                    </>
+                                  )
+                                ) : (
+                                  sub.scoreColumns.map((col: any) => (
+                                    <th
+                                      key={col.key}
+                                      className={`py-2.5 px-2.5 border border-white/15 text-center ${
+                                        col.key === "gpaScore"
+                                          ? "bg-[#004D4B] text-[#5EEAD4] min-w-[90px]"
+                                          : "text-teal-100 min-w-[82px]"
+                                      }`}
+                                    >
+                                      <div>{col.labelVi}</div>
+                                      <div className="text-[10px] font-normal text-teal-200/80">
+                                        {col.labelEn}
+                                      </div>
+                                    </th>
+                                  ))
+                                )}
+                                <th className="py-2.5 px-3 border border-white/15 text-left text-teal-100 min-w-[180px]">
+                                  <div>Nhận xét tiếng Anh</div>
+                                  <div className="text-[10px] font-normal text-teal-200/80">
+                                    Comment EN
+                                  </div>
+                                </th>
+                                <th className="py-2.5 px-3 border border-white/15 text-left text-teal-100 min-w-[180px]">
+                                  <div>Nhận xét tiếng Việt</div>
+                                  <div className="text-[10px] font-normal text-teal-200/80">
+                                    Nhận xét VI
+                                  </div>
+                                </th>
+                              </React.Fragment>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+
+                      <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
+                        {consolidatedData.students.map((st: any, idx: number) => {
+                          const gradeMap = new Map<string, any>();
+                          consolidatedData.grades
+                            ?.filter((g: any) => g.studentId === st.id)
+                            .forEach((g: any) => gradeMap.set(g.subjectCode, g));
+                          const consLevel = consolidatedData.level || "PRIMARY";
+
+                          return (
+                            <tr key={st.id} className="hover:bg-[#F8FAFC] transition-colors align-middle">
+                              <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center font-bold text-slate-500">
+                                {idx + 1}
+                              </td>
+                              <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center font-mono text-slate-600">
+                                {st.studentCode}
+                              </td>
+                              <td className="py-2.5 px-3 border border-[#E2E8F0] font-bold text-slate-800 whitespace-nowrap">
+                                {st.studentName}
+                              </td>
+                              <td className="py-2.5 px-3 border border-[#E2E8F0] font-semibold text-[#00736E] whitespace-nowrap">
+                                {st.englishName || "-"}
+                              </td>
+
+                              {consolidatedData.config.subjects.map((sub: any) => {
+                                const g = gradeMap.get(sub.code) || {};
+                                let progArr: any[] = [];
+                                try {
+                                  progArr = JSON.parse(g.progressScores || "[]");
+                                  if (!Array.isArray(progArr)) progArr = [];
+                                } catch {
+                                  progArr = [];
+                                }
+
+                                return (
+                                  <React.Fragment key={sub.code}>
+                                    {consLevel === "HIGH" ? (
+                                      sub.code === "IELTS" ? (
+                                        <>
+                                          <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center text-slate-500 italic">
+                                            Điểm thi HK{selectedSemester}
+                                          </td>
+                                          <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center bg-[#F0FDFA]/60 font-black text-[#00736E]">
+                                            {g.ieltsScore !== null && g.ieltsScore !== undefined
+                                              ? g.ieltsScore
+                                              : "-"}
+                                          </td>
+                                        </>
+                                      ) : sub.isQualitative ? (
+                                        <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center text-slate-500 italic">
+                                          Đánh giá định tính
+                                        </td>
+                                      ) : (
+                                        <>
+                                          <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-slate-700">
+                                            {g.assessmentContentVi || g.assessmentContentEn || "-"}
+                                          </td>
+                                          <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center bg-[#F0FDFA]/60 font-black text-[#00736E]">
+                                            {g.midTermScore !== null && g.midTermScore !== undefined
+                                              ? g.midTermScore
+                                              : "-"}
+                                          </td>
+                                        </>
+                                      )
+                                    ) : (
+                                      sub.scoreColumns.map((col: any) => {
+                                        let val: any = "-";
+                                        if (col.key.startsWith("progressScores_")) {
+                                          const pIdx = parseInt(
+                                            col.key.replace("progressScores_", ""),
+                                            10
+                                          );
+                                          val =
+                                            progArr[pIdx] !== undefined &&
+                                            progArr[pIdx] !== null &&
+                                            progArr[pIdx] !== ""
+                                              ? progArr[pIdx]
+                                              : "-";
+                                        } else if (col.key === "midTermScore") {
+                                          val =
+                                            g.midTermScore !== null && g.midTermScore !== undefined
+                                              ? g.midTermScore
+                                              : "-";
+                                        } else if (col.key === "endTermScore") {
+                                          val =
+                                            g.endTermScore !== null && g.endTermScore !== undefined
+                                              ? g.endTermScore
+                                              : "-";
+                                        } else if (col.key === "gpaScore") {
+                                          val =
+                                            g.gpaScore !== null && g.gpaScore !== undefined
+                                              ? g.gpaScore
+                                              : "-";
+                                        } else if (col.key === "ieltsScore") {
+                                          val =
+                                            g.ieltsScore !== null && g.ieltsScore !== undefined
+                                              ? g.ieltsScore
+                                              : "-";
+                                        }
+
+                                        if (col.key === "gpaScore") {
+                                          return (
+                                            <td
+                                              key={col.key}
+                                              className="py-2.5 px-2.5 border border-[#E2E8F0] text-center bg-[#F0FDFA]/60"
+                                            >
+                                              <span className="font-black text-[#00736E] text-xs px-2 py-0.5 rounded-lg bg-teal-50 border border-teal-200 inline-block">
+                                                {val}
+                                              </span>
+                                            </td>
+                                          );
+                                        }
+
+                                        return (
+                                          <td
+                                            key={col.key}
+                                            className="py-2.5 px-2.5 border border-[#E2E8F0] text-center font-semibold text-slate-800"
+                                          >
+                                            {val}
+                                          </td>
+                                        );
+                                      })
+                                    )}
+
+                                    <td
+                                      className="py-2.5 px-3 border border-[#E2E8F0] text-[11px] text-slate-700 max-w-[200px] truncate"
+                                      title={g.commentEn || ""}
+                                    >
+                                      {g.commentEn || "-"}
+                                    </td>
+                                    <td
+                                      className="py-2.5 px-3 border border-[#E2E8F0] text-[11px] text-slate-600 italic max-w-[200px] truncate"
+                                      title={g.commentVi || ""}
+                                    >
+                                      {g.commentVi || "-"}
+                                    </td>
+                                  </React.Fragment>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Đánh giá 6 tiêu chí Năng lực cốt lõi (Core Competencies) */}
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs font-bold text-[#003B3A]">
+                    2. Đánh giá 6 tiêu chí Năng lực cốt lõi (Core Competencies) • Thang E – S – N – U
+                  </div>
+                  <div className="text-[11px] font-medium text-slate-600">
+                    E: Tốt • S: Đạt yêu cầu • N: Cần cải thiện • U: Chưa đạt
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto max-h-[620px] overflow-y-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead className="bg-[#003B3A] sticky top-0 z-10 border-b border-[#003B3A] shadow-xs">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="py-3 px-3 border-r border-white/10 text-center w-12 text-white">STT</th>
+                        <th className="py-3 px-3 border-r border-white/10 text-center w-28 text-white">Mã HS</th>
+                        <th className="py-3 px-3 border-r border-white/10 min-w-[160px] text-white">Họ và tên</th>
+                        <th className="py-3 px-3 border-r border-white/10 min-w-[140px] text-[#5EEAD4]">English Name</th>
+
+                        {CORE_COMPETENCIES_DEF.map(cc => (
+                          <th
+                            key={cc.key}
+                            className="py-3 px-3 border-r border-white/10 text-center min-w-[120px] text-teal-100"
+                          >
+                            <div>{cc.labelVi}</div>
+                            <div className="text-[10px] font-normal text-teal-200/80">{cc.labelEn}</div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                      {consolidatedData.students.map((st: any, idx: number) => {
+                        const comp =
+                          consolidatedData.competencies?.find((c: any) => c.studentId === st.id) || {};
+
+                        return (
+                          <tr key={st.id} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                            <td className="py-3 px-3 text-center font-bold text-slate-500 align-middle">
+                              {idx + 1}
+                            </td>
+                            <td className="py-3 px-3 text-center font-mono text-slate-600 align-middle">
+                              {st.studentCode}
+                            </td>
+                            <td className="py-3 px-3 font-bold text-slate-800 whitespace-nowrap align-middle">
+                              {st.studentName}
+                            </td>
+                            <td className="py-3 px-3 align-middle">
+                              <input
+                                type="text"
+                                value={st.englishName || ""}
+                                placeholder="Nhập English Name..."
+                                onChange={e => {
+                                  const nextVal = e.target.value;
+                                  const updatedStudents = consolidatedData.students.map((s: any) =>
+                                    s.id === st.id ? { ...s, englishName: nextVal } : s
+                                  );
+                                  setConsolidatedData({
+                                    ...consolidatedData,
+                                    students: updatedStudents,
+                                  });
+                                }}
+                                className="w-full min-w-[130px] text-xs font-semibold text-[#00736E] px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-[#008B85] focus:border-[#008B85] focus:outline-hidden placeholder:font-normal placeholder:text-slate-400"
+                              />
+                            </td>
+
+                            {CORE_COMPETENCIES_DEF.map(cc => {
+                              const val = comp[cc.key] || "E";
+                              return (
+                                <td key={cc.key} className="py-3 px-3 text-center align-middle">
+                                  <select
+                                    value={val}
+                                    onChange={e => {
+                                      const nextVal = e.target.value;
+                                      const updated = [...(consolidatedData.competencies || [])];
+                                      let found = updated.find(x => x.studentId === st.id);
+                                      if (!found) {
+                                        found = { studentId: st.id };
+                                        updated.push(found);
+                                      }
+                                      found[cc.key] = nextVal;
+                                      setConsolidatedData({
+                                        ...consolidatedData,
+                                        competencies: updated,
+                                      });
+                                    }}
+                                    className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border focus:outline-hidden cursor-pointer ${
+                                      val === "E"
+                                        ? "bg-emerald-50 text-[#059669] border-emerald-200"
+                                        : val === "S"
+                                        ? "bg-teal-50 text-[#00736E] border-teal-200"
+                                        : val === "N"
+                                        ? "bg-amber-50 text-[#D97706] border-amber-200"
+                                        : "bg-rose-50 text-[#E11D48] border-rose-200"
+                                    }`}
+                                  >
+                                    {CORE_COMPETENCY_RATINGS.map(r => (
+                                      <option key={r.code} value={r.code}>
+                                        {r.code} – {r.labelVi}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

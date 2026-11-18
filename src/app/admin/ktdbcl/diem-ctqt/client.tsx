@@ -156,7 +156,8 @@ export function DiemCtqtAdminClient({
   const [savingAssignments, setSavingAssignments] = useState(false);
 
   // Multi-class & Bulk Assignment Builder state
-  const [assignmentViewMode, setAssignmentViewMode] = useState<"matrix" | "by_teacher">("matrix");
+  const [assignmentViewMode, setAssignmentViewMode] = useState<"by_subject" | "matrix" | "by_teacher">("by_subject");
+  const [assignSubjectFilter, setAssignSubjectFilter] = useState<string>("ALL");
   const [assignRoleMode, setAssignRoleMode] = useState<"BOTH" | "PRIMARY_ONLY" | "DELEGATED_ONLY">("PRIMARY_ONLY");
   const [bulkPrimaryTeacherId, setBulkPrimaryTeacherId] = useState<string>("");
   const [bulkDelegatedTeacherId, setBulkDelegatedTeacherId] = useState<string>("");
@@ -164,6 +165,7 @@ export function DiemCtqtAdminClient({
   const [selectedBulkClassIds, setSelectedBulkClassIds] = useState<string[]>([]);
   const [applyingBulk, setApplyingBulk] = useState(false);
   const [isMultiClassDropdownOpen, setIsMultiClassDropdownOpen] = useState<boolean>(false);
+  const [savingSlotKey, setSavingSlotKey] = useState<string | null>(null);
 
   // Filters for Assignment Tab & BP Tiếng Anh Department Scope
   const [assignLevelFilter, setAssignLevelFilter] = useState<string>("ALL");
@@ -644,18 +646,25 @@ export function DiemCtqtAdminClient({
     return campusFilteredAssignmentClasses.filter(cls => cls.level === assignLevelFilter);
   }, [campusFilteredAssignmentClasses, assignLevelFilter]);
 
-  // Filtered assignment classes in Tab 3 (Campus + Specific Class + Level + Status + Search)
+  // Filtered assignment classes in Tab 3 (Campus + Specific Class + Level + Subject + Status + Search)
   const visibleAssignmentClasses = useMemo(() => {
     const q = assignClassSearch.trim().toLowerCase();
     return campusFilteredAssignmentClasses.filter(cls => {
       if (assignClassFilterId && cls.classId !== assignClassFilterId) return false;
       if (assignLevelFilter !== "ALL" && cls.level !== assignLevelFilter) return false;
 
-      const totalSubs = cls.subjects.length;
-      const primaryCount = cls.subjects.filter((s: any) => Boolean(s.primaryTeacherId)).length;
-
-      if (assignStatusFilter === "COMPLETE" && primaryCount < totalSubs) return false;
-      if (assignStatusFilter === "MISSING_PRIMARY" && primaryCount === totalSubs) return false;
+      if (assignSubjectFilter !== "ALL") {
+        const hasSub = cls.subjects.some((s: any) => s.code === assignSubjectFilter);
+        if (!hasSub) return false;
+        const targetSub = cls.subjects.find((s: any) => s.code === assignSubjectFilter);
+        if (assignStatusFilter === "COMPLETE" && !targetSub?.primaryTeacherId) return false;
+        if (assignStatusFilter === "MISSING_PRIMARY" && targetSub?.primaryTeacherId) return false;
+      } else {
+        const totalSubs = cls.subjects.length;
+        const primaryCount = cls.subjects.filter((s: any) => Boolean(s.primaryTeacherId)).length;
+        if (assignStatusFilter === "COMPLETE" && primaryCount < totalSubs) return false;
+        if (assignStatusFilter === "MISSING_PRIMARY" && primaryCount === totalSubs) return false;
+      }
 
       if (q) {
         const matchClass = (cls.className || "").toLowerCase().includes(q);
@@ -669,6 +678,7 @@ export function DiemCtqtAdminClient({
             `${cls.grade}uk` === q);
         const matchCampus = (cls.campusName || "").toLowerCase().includes(q);
         const matchTeacher = cls.subjects.some((s: any) => {
+          if (assignSubjectFilter !== "ALL" && s.code !== assignSubjectFilter) return false;
           const pT = teachers.find(t => t.id === s.primaryTeacherId);
           return (
             (pT?.teacherName || "").toLowerCase().includes(q) ||
@@ -680,7 +690,163 @@ export function DiemCtqtAdminClient({
 
       return true;
     });
-  }, [campusFilteredAssignmentClasses, assignClassFilterId, assignLevelFilter, assignStatusFilter, assignClassSearch, teachers]);
+  }, [
+    campusFilteredAssignmentClasses,
+    assignClassFilterId,
+    assignLevelFilter,
+    assignSubjectFilter,
+    assignStatusFilter,
+    assignClassSearch,
+    teachers,
+  ]);
+
+  // Subject-centric assignment summaries for "Hiển thị danh sách phân công giáo viên theo môn học"
+  const subjectAssignmentSummaries = useMemo(() => {
+    const teacherLookup = new Map<string, any>();
+    enrichedTeachers.forEach(t => teacherLookup.set(t.id, t));
+
+    return allCtqtSubjectOptions.map(subOpt => {
+      let totalClasses = 0;
+      let assignedClasses = 0;
+      const unassignedClassIds: string[] = [];
+      const unassignedClassNames: string[] = [];
+      const slots: {
+        classId: string;
+        className: string;
+        campusName: string;
+        level: string;
+        grade: string;
+        primaryTeacherId: string | null;
+        primaryTeacher: any | null;
+        status: string;
+      }[] = [];
+
+      const teacherGroupMap = new Map<
+        string,
+        {
+          teacher: any;
+          classes: { classId: string; className: string; campusName: string }[];
+        }
+      >();
+
+      levelFilteredAssignmentClasses.forEach(cls => {
+        const subSlot = cls.subjects.find((s: any) => s.code === subOpt.code);
+        if (!subSlot) return;
+        totalClasses++;
+        const pTeacher = subSlot.primaryTeacherId
+          ? teacherLookup.get(subSlot.primaryTeacherId) || null
+          : null;
+
+        if (subSlot.primaryTeacherId) {
+          assignedClasses++;
+          if (pTeacher) {
+            if (!teacherGroupMap.has(pTeacher.id)) {
+              teacherGroupMap.set(pTeacher.id, {
+                teacher: pTeacher,
+                classes: [],
+              });
+            }
+            teacherGroupMap.get(pTeacher.id)!.classes.push({
+              classId: cls.classId,
+              className: cls.className,
+              campusName: cls.campusName,
+            });
+          }
+        } else {
+          unassignedClassIds.push(cls.classId);
+          unassignedClassNames.push(cls.className);
+        }
+
+        slots.push({
+          classId: cls.classId,
+          className: cls.className,
+          campusName: cls.campusName,
+          level: cls.level,
+          grade: cls.grade,
+          primaryTeacherId: subSlot.primaryTeacherId || null,
+          primaryTeacher: pTeacher,
+          status: subSlot.status || "DRAFT",
+        });
+      });
+
+      const assignedTeachers = Array.from(teacherGroupMap.values()).sort((a, b) => {
+        if (b.classes.length !== a.classes.length) return b.classes.length - a.classes.length;
+        return (a.teacher.teacherName || "").localeCompare(b.teacher.teacherName || "", "vi");
+      });
+
+      return {
+        ...subOpt,
+        totalClasses,
+        assignedClasses,
+        unassignedClasses: Math.max(0, totalClasses - assignedClasses),
+        unassignedClassIds,
+        unassignedClassNames,
+        rate: totalClasses > 0 ? Math.round((assignedClasses / totalClasses) * 100) : 0,
+        assignedTeachers,
+        slots,
+      };
+    });
+  }, [allCtqtSubjectOptions, levelFilteredAssignmentClasses, enrichedTeachers]);
+
+  // Instant inline auto-save when changing a single (classId, subjectCode) teacher in Tab 3
+  const handleInlineAssignSingleSlot = async (
+    targetClassId: string,
+    targetSubjectCode: string,
+    nextTeacherId: string | null
+  ) => {
+    // 1. Optimistic UI update
+    setAssignmentClasses(prev =>
+      prev.map(item =>
+        item.classId !== targetClassId
+          ? item
+          : {
+              ...item,
+              subjects: item.subjects.map((s: any) =>
+                s.code === targetSubjectCode ? { ...s, primaryTeacherId: nextTeacherId } : s
+              ),
+            }
+      )
+    );
+
+    // 2. Persist immediately to DB
+    const slotKey = `${targetClassId}::${targetSubjectCode}`;
+    setSavingSlotKey(slotKey);
+    try {
+      const targetCls = assignmentClasses.find(c => c.classId === targetClassId);
+      const targetSub = targetCls?.subjects?.find((s: any) => s.code === targetSubjectCode);
+      const res = await fetch("/api/admin/ctqt/assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          academicYearId: selectedYearId,
+          semester: selectedSemester,
+          assignments: [
+            {
+              classId: targetClassId,
+              subjectCode: targetSubjectCode,
+              primaryTeacherId: nextTeacherId,
+              delegatedTeacherId: targetSub?.delegatedTeacherId || null,
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const tObj = nextTeacherId ? enrichedTeachers.find(t => t.id === nextTeacherId) : null;
+        toast.success(
+          nextTeacherId
+            ? `Đã gán ${tObj?.teacherName || "GVBM"} dạy môn ${targetSubjectCode} lớp ${targetCls?.className || ""}`
+            : `Đã gỡ phân công môn ${targetSubjectCode} lớp ${targetCls?.className || ""}`
+        );
+      } else {
+        toast.error(data.error || "Không thể lưu phân công");
+      }
+    } catch {
+      toast.error("Lỗi kết nối khi lưu phân công");
+    } finally {
+      setSavingSlotKey(null);
+    }
+  };
 
   // Overall assignment statistics for the Ledger Strip
   const assignmentLedgerStats = useMemo(() => {
@@ -896,8 +1062,10 @@ export function DiemCtqtAdminClient({
     roleMode?: "BOTH" | "PRIMARY_ONLY" | "DELEGATED_ONLY";
   }) => {
     if (opts.subjectCode) {
+      setAssignSubjectFilter(opts.subjectCode);
       setBulkSubjectCodes([opts.subjectCode]);
     } else {
+      setAssignSubjectFilter("ALL");
       setBulkSubjectCodes(["ALL"]);
     }
     setAssignRoleMode("PRIMARY_ONLY");
@@ -907,10 +1075,9 @@ export function DiemCtqtAdminClient({
     if (opts.classIds && opts.classIds.length > 0) {
       setSelectedBulkClassIds(opts.classIds);
     }
-    setIsMultiClassDropdownOpen(true);
     setActiveTab("assignments");
-    setAssignmentViewMode("matrix");
-    toast.success("Đã nạp Giáo viên & Môn học vào Bảng gán nhiều lớp. Hãy tích chọn các lớp cần gán và nhấn Áp dụng!");
+    setAssignmentViewMode("by_subject");
+    toast.success("Đã chọn Môn học & Giáo viên. Tích chọn các lớp cần gán và nhấn Gán phân công!");
   };
 
   // List of teachers who currently have assignments in the selected scope for Email Notification Modal
@@ -2468,86 +2635,150 @@ export function DiemCtqtAdminClient({
               Chưa có học sinh nào trong lớp này hoặc lớp chưa có dữ liệu.
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                <div className="text-xs font-bold text-slate-700">
-                  Danh sách {consolidatedData.students.length} học sinh • Bảng ma trận tổng hợp khớp chính xác cấu trúc Sheet TỔNG HỢP
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs font-bold text-[#003B3A]">
+                  Danh sách {consolidatedData.students.length} học sinh • Sổ điểm Tổng hợp đồng bộ tên cột với Sổ điểm theo Môn (GVBM)
                 </div>
                 <div className="text-[11px] font-semibold text-slate-500">
-                  * Nhấp đúp vào ô nhận xét để xem/chỉnh sửa chi tiết song ngữ
+                  * Nhấp vào nút &quot;Sổ môn ↗&quot; trên tiêu đề môn để chuyển nhanh đến bảng nhập điểm chi tiết của môn đó
                 </div>
               </div>
 
-              <div className="overflow-x-auto max-h-[600px] border-b border-slate-200">
-                <table className="w-full text-xs text-left border-collapse">
+              <div className="overflow-x-auto max-h-[620px] border-b border-[#E2E8F0]">
+                <table className="w-full text-xs text-left border-collapse tabular-nums">
                   <thead className="bg-[#003B3A] sticky top-0 shadow-xs z-10 text-white border-b border-[#003B3A]">
                     <tr className="text-[11px] font-semibold whitespace-nowrap">
-                      <th className="p-2.5 border border-white/15 text-center font-bold w-10">STT</th>
-                      <th className="p-2.5 border border-white/15 text-center font-bold w-24">Mã HS</th>
-                      <th className="p-2.5 border border-white/15 font-bold min-w-[140px] text-teal-100">Họ và tên</th>
-                      <th className="p-2.5 border border-white/15 font-bold min-w-[90px] text-[#5EEAD4]">English Name</th>
+                      <th rowSpan={2} className="py-3 px-2.5 border border-white/15 text-center font-semibold w-12 align-middle text-white">
+                        STT
+                      </th>
+                      <th rowSpan={2} className="py-3 px-2.5 border border-white/15 text-center font-semibold w-28 align-middle text-white">
+                        Mã HS
+                      </th>
+                      <th rowSpan={2} className="py-3 px-3 border border-white/15 font-semibold min-w-[155px] align-middle text-white">
+                        Họ và tên
+                      </th>
+                      <th rowSpan={2} className="py-3 px-3 border border-white/15 font-semibold min-w-[120px] align-middle text-[#5EEAD4]">
+                        English Name
+                      </th>
 
-                      {/* Subject Groups */}
-                      {consolidatedData.config?.subjects?.map((sub: any) => (
-                        <th
-                          key={sub.code}
-                          colSpan={sub.scoreColumns.length + 2}
-                          className={`p-2 border border-slate-300 text-center font-black ${sub.color.bg} ${sub.color.text}`}
-                        >
-                          <div className="flex items-center justify-center gap-1.5">
-                            <span>{sub.nameEn} ({sub.nameVi})</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedSubjectCode(sub.code);
-                                setActiveTab("subject_gradebook");
-                              }}
-                              className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/90 hover:bg-white text-slate-800 border border-slate-300/80 shadow-2xs transition-all hover:scale-105 cursor-pointer"
-                              title={`Chuyển đến Sổ điểm môn ${sub.nameVi} để nhập điểm & phân quyền GVBM`}
-                            >
-                              Sổ môn ↗
-                            </button>
-                          </div>
-                        </th>
-                      ))}
+                      {/* Subject Groups — Unified Name Format: {nameVi} ({nameEn}) */}
+                      {consolidatedData.config?.subjects?.map((sub: any) => {
+                        const scoreColCount =
+                          currentLevel === "HIGH"
+                            ? sub.code === "IELTS"
+                              ? 2
+                              : sub.isQualitative
+                              ? 1
+                              : 2
+                            : sub.scoreColumns.length;
+                        return (
+                          <th
+                            key={sub.code}
+                            colSpan={scoreColCount + 2}
+                            className={`py-2.5 px-3 border border-slate-300 text-center font-black ${sub.color.bg} ${sub.color.text}`}
+                          >
+                            <div className="flex items-center justify-center gap-2">
+                              <span>
+                                [{sub.code}] {sub.nameVi} ({sub.nameEn})
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSubjectCode(sub.code);
+                                  setActiveTab("subject_gradebook");
+                                }}
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/95 hover:bg-white text-[#003B3A] border border-slate-300/80 shadow-2xs transition-all cursor-pointer"
+                                title={`Chuyển đến Sổ điểm môn ${sub.nameVi} (${sub.nameEn})`}
+                              >
+                                Sổ môn ↗
+                              </button>
+                            </div>
+                          </th>
+                        );
+                      })}
 
                       {/* Core Competencies Header */}
                       <th
-                        colSpan={6}
-                        className="p-2 border border-white/15 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold"
+                        colSpan={CORE_COMPETENCIES_DEF.length}
+                        className="py-2.5 px-3 border border-white/15 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold"
                       >
-                        Năng lực Cốt lõi (Core Competencies)
+                        Năng lực cốt lõi (Core Competencies)
                       </th>
                     </tr>
 
-                    {/* Sub-header row */}
-                    <tr className="text-[11px] font-semibold">
-                      <th className="border border-white/15 font-semibold"></th>
-                      <th className="border border-white/15 font-semibold"></th>
-                      <th className="border border-white/15 font-semibold"></th>
-                      <th className="border border-white/15 font-semibold"></th>
-
+                    {/* Sub-header row — 100% Unified with Tab 1 (Sổ điểm theo Môn) */}
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
                       {consolidatedData.config?.subjects?.map((sub: any) => (
                         <React.Fragment key={sub.code}>
-                          {sub.scoreColumns.map((col: any) => (
-                            <th key={col.key} className="p-1.5 border border-white/15 text-center font-bold w-12">
-                              {col.shortLabel}
-                            </th>
-                          ))}
-                          <th className="p-1.5 border border-white/15 text-center font-semibold min-w-[120px]">CMT (EN)</th>
-                          <th className="p-1.5 border border-white/15 text-center font-semibold min-w-[120px]">NX (VI)</th>
+                          {currentLevel === "HIGH" ? (
+                            sub.code === "IELTS" ? (
+                              <>
+                                <th className="py-2.5 px-2.5 border border-white/15 text-center text-teal-100 min-w-[110px]">
+                                  <div>Nội dung</div>
+                                  <div className="text-[10px] font-normal text-teal-200/80">Content</div>
+                                </th>
+                                <th className="py-2.5 px-2.5 border border-white/15 text-center bg-[#004D4B] text-[#5EEAD4] min-w-[100px]">
+                                  <div>IELTS Band (0-9)</div>
+                                  <div className="text-[10px] font-normal text-teal-200/80">IELTS Band</div>
+                                </th>
+                              </>
+                            ) : sub.isQualitative ? (
+                              <th className="py-2.5 px-2.5 border border-white/15 text-center text-teal-100 min-w-[130px]">
+                                <div>Nghiên cứu học thuật</div>
+                                <div className="text-[10px] font-normal text-teal-200/80">Academic Research</div>
+                              </th>
+                            ) : (
+                              <>
+                                <th className="py-2.5 px-2.5 border border-white/15 text-center text-teal-100 min-w-[140px]">
+                                  <div>Nội dung kiểm tra</div>
+                                  <div className="text-[10px] font-normal text-teal-200/80">Content</div>
+                                </th>
+                                <th className="py-2.5 px-2.5 border border-white/15 text-center bg-[#004D4B] text-[#5EEAD4] min-w-[90px]">
+                                  <div>Điểm số</div>
+                                  <div className="text-[10px] font-normal text-teal-200/80">Mark</div>
+                                </th>
+                              </>
+                            )
+                          ) : (
+                            sub.scoreColumns.map((col: any) => (
+                              <th
+                                key={col.key}
+                                className={`py-2.5 px-2.5 border border-white/15 text-center ${
+                                  col.key === "gpaScore"
+                                    ? "bg-[#004D4B] text-[#5EEAD4] min-w-[90px]"
+                                    : "text-teal-100 min-w-[82px]"
+                                }`}
+                              >
+                                <div>{col.labelVi}</div>
+                                <div className="text-[10px] font-normal text-teal-200/80">{col.labelEn}</div>
+                              </th>
+                            ))
+                          )}
+                          <th className="py-2.5 px-3 border border-white/15 text-left text-teal-100 min-w-[180px]">
+                            <div>Nhận xét tiếng Anh</div>
+                            <div className="text-[10px] font-normal text-teal-200/80">Comment EN</div>
+                          </th>
+                          <th className="py-2.5 px-3 border border-white/15 text-left text-teal-100 min-w-[180px]">
+                            <div>Nhận xét tiếng Việt</div>
+                            <div className="text-[10px] font-normal text-teal-200/80">Nhận xét VI</div>
+                          </th>
                         </React.Fragment>
                       ))}
 
                       {CORE_COMPETENCIES_DEF.map(cc => (
-                        <th key={cc.key} className="p-1.5 border border-white/15 text-center font-bold w-12">
-                          {cc.labelVi}
+                        <th
+                          key={cc.key}
+                          className="py-2.5 px-2.5 border border-white/15 text-center text-teal-100 min-w-[105px]"
+                        >
+                          <div>{cc.labelVi}</div>
+                          <div className="text-[10px] font-normal text-teal-200/80">{cc.labelEn}</div>
                         </th>
                       ))}
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-[#E2E8F0]">
+                  <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
                     {consolidatedData.students.map((st: any, idx: number) => {
                       const gradeMap = new Map<string, any>();
                       consolidatedData.grades
@@ -2557,11 +2788,19 @@ export function DiemCtqtAdminClient({
                       const comp = consolidatedData.competencies?.find((c: any) => c.studentId === st.id) || {};
 
                       return (
-                        <tr key={st.id} className="hover:bg-teal-50/40 transition-colors">
-                          <td className="p-2 border border-slate-200 text-center font-bold text-slate-600 tabular-nums">{idx + 1}</td>
-                          <td className="p-2 border border-slate-200 text-center font-mono text-slate-600 tabular-nums">{st.studentCode}</td>
-                          <td className="p-2 border border-slate-200 font-bold text-slate-800">{st.studentName}</td>
-                          <td className="p-2 border border-slate-200 font-semibold text-teal-700">{st.englishName || "-"}</td>
+                        <tr key={st.id} className="hover:bg-[#F8FAFC] transition-colors align-middle">
+                          <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center font-bold text-slate-500">
+                            {idx + 1}
+                          </td>
+                          <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center font-mono text-slate-600">
+                            {st.studentCode}
+                          </td>
+                          <td className="py-2.5 px-3 border border-[#E2E8F0] font-bold text-slate-800 whitespace-nowrap">
+                            {st.studentName}
+                          </td>
+                          <td className="py-2.5 px-3 border border-[#E2E8F0] font-semibold text-[#00736E] whitespace-nowrap">
+                            {st.englishName || "-"}
+                          </td>
 
                           {/* Subjects scores & comments */}
                           {consolidatedData.config?.subjects?.map((sub: any) => {
@@ -2569,38 +2808,87 @@ export function DiemCtqtAdminClient({
                             let progArr: any[] = [];
                             try {
                               progArr = JSON.parse(g.progressScores || "[]");
+                              if (!Array.isArray(progArr)) progArr = [];
                             } catch {
                               progArr = [];
                             }
 
                             return (
                               <React.Fragment key={sub.code}>
-                                {sub.scoreColumns.map((col: any) => {
-                                  let val: any = "-";
-                                  if (col.key.startsWith("progressScores_")) {
-                                    const pIdx = parseInt(col.key.replace("progressScores_", ""), 10);
-                                    val = progArr[pIdx] !== undefined ? progArr[pIdx] : "-";
-                                  } else if (col.key === "midTermScore") {
-                                    val = g.midTermScore !== null && g.midTermScore !== undefined ? g.midTermScore : "-";
-                                  } else if (col.key === "endTermScore") {
-                                    val = g.endTermScore !== null && g.endTermScore !== undefined ? g.endTermScore : "-";
-                                  } else if (col.key === "gpaScore") {
-                                    val = g.gpaScore !== null && g.gpaScore !== undefined ? g.gpaScore : "-";
-                                  } else if (col.key === "ieltsScore") {
-                                    val = g.ieltsScore !== null && g.ieltsScore !== undefined ? g.ieltsScore : "-";
-                                  }
-
-                                  return (
-                                    <td key={col.key} className="p-1.5 border border-slate-200 text-center font-semibold text-slate-800">
-                                      {val}
+                                {currentLevel === "HIGH" ? (
+                                  sub.code === "IELTS" ? (
+                                    <>
+                                      <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center text-slate-500 italic">
+                                        Điểm thi HK{selectedSemester}
+                                      </td>
+                                      <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center bg-[#F0FDFA]/60 font-black text-[#00736E]">
+                                        {g.ieltsScore !== null && g.ieltsScore !== undefined ? g.ieltsScore : "-"}
+                                      </td>
+                                    </>
+                                  ) : sub.isQualitative ? (
+                                    <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center text-slate-500 italic">
+                                      Đánh giá định tính
                                     </td>
-                                  );
-                                })}
+                                  ) : (
+                                    <>
+                                      <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-slate-700">
+                                        {g.assessmentContentVi || g.assessmentContentEn || "-"}
+                                      </td>
+                                      <td className="py-2.5 px-2.5 border border-[#E2E8F0] text-center bg-[#F0FDFA]/60 font-black text-[#00736E]">
+                                        {g.midTermScore !== null && g.midTermScore !== undefined ? g.midTermScore : "-"}
+                                      </td>
+                                    </>
+                                  )
+                                ) : (
+                                  sub.scoreColumns.map((col: any) => {
+                                    let val: any = "-";
+                                    if (col.key.startsWith("progressScores_")) {
+                                      const pIdx = parseInt(col.key.replace("progressScores_", ""), 10);
+                                      val = progArr[pIdx] !== undefined && progArr[pIdx] !== null && progArr[pIdx] !== "" ? progArr[pIdx] : "-";
+                                    } else if (col.key === "midTermScore") {
+                                      val = g.midTermScore !== null && g.midTermScore !== undefined ? g.midTermScore : "-";
+                                    } else if (col.key === "endTermScore") {
+                                      val = g.endTermScore !== null && g.endTermScore !== undefined ? g.endTermScore : "-";
+                                    } else if (col.key === "gpaScore") {
+                                      val = g.gpaScore !== null && g.gpaScore !== undefined ? g.gpaScore : "-";
+                                    } else if (col.key === "ieltsScore") {
+                                      val = g.ieltsScore !== null && g.ieltsScore !== undefined ? g.ieltsScore : "-";
+                                    }
 
-                                <td className="p-1.5 border border-slate-200 text-[11px] text-slate-700 truncate max-w-[140px]" title={g.commentEn}>
+                                    if (col.key === "gpaScore") {
+                                      return (
+                                        <td
+                                          key={col.key}
+                                          className="py-2.5 px-2.5 border border-[#E2E8F0] text-center bg-[#F0FDFA]/60"
+                                        >
+                                          <span className="font-black text-[#00736E] text-xs px-2 py-0.5 rounded-lg bg-teal-50 border border-teal-200 inline-block">
+                                            {val}
+                                          </span>
+                                        </td>
+                                      );
+                                    }
+
+                                    return (
+                                      <td
+                                        key={col.key}
+                                        className="py-2.5 px-2.5 border border-[#E2E8F0] text-center font-semibold text-slate-800"
+                                      >
+                                        {val}
+                                      </td>
+                                    );
+                                  })
+                                )}
+
+                                <td
+                                  className="py-2.5 px-3 border border-[#E2E8F0] text-[11px] text-slate-700 max-w-[200px] truncate"
+                                  title={g.commentEn || ""}
+                                >
                                   {g.commentEn || "-"}
                                 </td>
-                                <td className="p-1.5 border border-slate-200 text-[11px] text-slate-600 italic truncate max-w-[140px]" title={g.commentVi}>
+                                <td
+                                  className="py-2.5 px-3 border border-[#E2E8F0] text-[11px] text-slate-600 italic max-w-[200px] truncate"
+                                  title={g.commentVi || ""}
+                                >
                                   {g.commentVi || "-"}
                                 </td>
                               </React.Fragment>
@@ -2611,16 +2899,16 @@ export function DiemCtqtAdminClient({
                           {CORE_COMPETENCIES_DEF.map(cc => {
                             const val = comp[cc.key] || "E";
                             return (
-                              <td key={cc.key} className="p-1.5 border border-slate-200 text-center font-black">
+                              <td key={cc.key} className="py-2.5 px-2.5 border border-[#E2E8F0] text-center font-black">
                                 <span
-                                  className={`inline-block px-1.5 py-0.5 rounded text-[11px] ${
+                                  className={`inline-block px-2 py-0.5 rounded-lg text-[11px] border ${
                                     val === "E"
-                                      ? "bg-emerald-100 text-emerald-800"
+                                      ? "bg-emerald-50 text-[#059669] border-emerald-200"
                                       : val === "S"
-                                      ? "bg-blue-100 text-blue-800"
+                                      ? "bg-teal-50 text-[#00736E] border-teal-200"
                                       : val === "N"
-                                      ? "bg-amber-100 text-amber-800"
-                                      : "bg-rose-100 text-rose-800"
+                                      ? "bg-amber-50 text-[#D97706] border-amber-200"
+                                      : "bg-rose-50 text-[#E11D48] border-rose-200"
                                   }`}
                                 >
                                   {val}
@@ -2640,98 +2928,109 @@ export function DiemCtqtAdminClient({
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: PHÂN CÔNG GIÁO VIÊN BỘ MÔN (CHỌN 1 HOẶC NHIỀU LỚP CHO 1 GV)        */}
+      {/* TAB 3: PHÂN CÔNG GIÁO VIÊN BỘ MÔN — SỔ CÁI HỌC THUẬT TRỰC QUAN            */}
       {/* ========================================================================= */}
       {activeTab === "assignments" && (
         <div className="space-y-4">
-          {/* Unified Academic Ledger Strip */}
-          <div className="bg-white border border-slate-200 border-l-4 border-l-[#003B3A] rounded-2xl p-4 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          {/* 1. UNIFIED ACADEMIC LEDGER HEADER STRIP */}
+          <div className="bg-white border border-[#E2E8F0] border-l-4 border-l-[#003B3A] rounded-2xl p-4 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-6 tabular-nums">
               <div>
                 <div className="text-xs font-semibold text-slate-500">Tổng số lớp CTQT</div>
                 <div className="text-lg font-black text-[#003B3A] mt-0.5">
-                  {assignmentLedgerStats.totalClassCount} <span className="text-xs font-semibold text-slate-500">lớp</span>
+                  {assignmentLedgerStats.totalClassCount}{" "}
+                  <span className="text-xs font-semibold text-slate-500">lớp</span>
                 </div>
               </div>
 
-              <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+              <div className="h-8 w-px bg-[#E2E8F0] hidden sm:block" />
 
               <div>
                 <div className="text-xs font-semibold text-slate-500">Đã phân công GVBM</div>
-                <div className="text-lg font-black text-emerald-700 mt-0.5 flex items-baseline gap-1.5">
+                <div className="text-lg font-black text-[#059669] mt-0.5 flex items-baseline gap-1.5">
                   <span>
                     {assignmentLedgerStats.assignedPrimary} / {assignmentLedgerStats.totalSlots}
                   </span>
                   <span className="text-xs font-semibold text-slate-500">
-                    ({assignmentLedgerStats.totalSlots > 0 ? Math.round((assignmentLedgerStats.assignedPrimary / assignmentLedgerStats.totalSlots) * 100) : 0}%)
+                    (
+                    {assignmentLedgerStats.totalSlots > 0
+                      ? Math.round(
+                          (assignmentLedgerStats.assignedPrimary /
+                            assignmentLedgerStats.totalSlots) *
+                            100
+                        )
+                      : 0}
+                    %)
                   </span>
                 </div>
               </div>
 
-              <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+              <div className="h-8 w-px bg-[#E2E8F0] hidden sm:block" />
 
               <div>
                 <div className="text-xs font-semibold text-slate-500">Còn thiếu GVBM</div>
-                <div className="text-lg font-black text-rose-600 mt-0.5">
-                  {assignmentLedgerStats.unassignedPrimary} <span className="text-xs font-semibold text-slate-500">môn</span>
+                <div className="text-lg font-black text-[#E11D48] mt-0.5">
+                  {assignmentLedgerStats.unassignedPrimary}{" "}
+                  <span className="text-xs font-semibold text-slate-500">lớp – môn</span>
                 </div>
               </div>
 
-              <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+              <div className="h-8 w-px bg-[#E2E8F0] hidden sm:block" />
 
               <div>
                 <div className="text-xs font-semibold text-slate-500">Lớp đang tích chọn</div>
-                <div className="text-lg font-black text-amber-700 mt-0.5">
-                  {selectedBulkClassIds.length} <span className="text-xs font-semibold text-slate-500">lớp</span>
+                <div className="text-lg font-black text-[#D97706] mt-0.5">
+                  {selectedBulkClassIds.length}{" "}
+                  <span className="text-xs font-semibold text-slate-500">lớp</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Controls: View Switcher, Clone Semester, Save Inline */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+            {/* Right Controls: View Switcher + Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex p-1 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                <button
+                  type="button"
+                  onClick={() => setAssignmentViewMode("by_subject")}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                    assignmentViewMode === "by_subject"
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Theo Môn học
+                </button>
                 <button
                   type="button"
                   onClick={() => setAssignmentViewMode("matrix")}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
                     assignmentViewMode === "matrix"
                       ? "bg-[#003B3A] text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  Ma trận theo lớp
+                  Ma trận Lớp – Môn
                 </button>
                 <button
                   type="button"
                   onClick={() => setAssignmentViewMode("by_teacher")}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
                     assignmentViewMode === "by_teacher"
                       ? "bg-[#003B3A] text-white shadow-xs"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   <UserCheck className="w-3.5 h-3.5" />
-                  Tổng hợp theo giáo viên
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProgressPresetSearch("");
-                    setActiveTab("grade_progress");
-                  }}
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-[#00736E] hover:bg-teal-50 hover:text-[#003B3A] transition-all cursor-pointer"
-                  title="Mở tab Thống kê nhập điểm theo GV phân công"
-                >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  Thống kê nhập điểm
+                  Theo Giáo viên
                 </button>
               </div>
 
               <button
                 type="button"
                 onClick={() => handleOpenEmailModal()}
-                className="text-xs font-bold px-3.5 py-2 bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-300 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+                className="text-xs font-bold px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-300 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
                 title="Gửi email thông báo phân công giảng dạy đến các giáo viên"
               >
                 <Mail className="w-3.5 h-3.5 text-[#008B85]" />
@@ -2741,7 +3040,7 @@ export function DiemCtqtAdminClient({
               <button
                 type="button"
                 onClick={handleCloneAssignments}
-                className="text-xs font-bold px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl flex items-center gap-1.5 transition-all"
+                className="text-xs font-bold px-3 py-2 bg-[#F8FAFC] hover:bg-slate-100 text-slate-700 border border-[#E2E8F0] rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <Copy className="w-3.5 h-3.5" />
                 Sao chép HK1 sang HK2
@@ -2751,649 +3050,508 @@ export function DiemCtqtAdminClient({
                 type="button"
                 onClick={handleSaveAssignments}
                 disabled={savingAssignments}
-                className="text-xs font-bold px-4 py-2 bg-[#008B85] hover:bg-[#00736E] text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50"
-                title="Lưu toàn bộ chỉnh sửa trực tiếp trên ma trận lớp"
+                className="text-xs font-bold px-3.5 py-2 bg-[#008B85] hover:bg-[#00736E] text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
-                {savingAssignments ? "Đang lưu..." : "Lưu chỉnh sửa trên bảng"}
+                {savingAssignments ? "Đang lưu..." : "Lưu toàn bộ"}
               </button>
             </div>
           </div>
 
-          {/* Two-Column Split Workspace: Left Sticky Bulk Builder + Right Interactive Matrix/Teacher View */}
-          <div className="flex flex-col lg:flex-row gap-5 items-start">
-            {/* ================================================================= */}
-            {/* LEFT PANEL: CÔNG CỤ GÁN NHANH NHIỀU LỚP CHO 1 GIÁO VIÊN (GVBM)    */}
-            {/* ================================================================= */}
-            <div className="w-full lg:w-[410px] shrink-0 bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] flex flex-col">
-              <div className="p-3.5 bg-[#003B3A] text-white shrink-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black flex items-center gap-2">
-                    <CheckSquare className="w-4 h-4 text-[#00A19A]" />
-                    Gán nhanh nhiều lớp cho 1 GV
-                  </h3>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/15 text-teal-100 tabular-nums">
-                    Đã chọn {selectedBulkClassIds.length} lớp
+          {/* 2. DẢI CHỌN MÔN HỌC TRỰC QUAN & DANH SÁCH GIÁO VIÊN PHỤ TRÁCH THEO MÔN */}
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs space-y-3.5 tabular-nums">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs md:text-sm font-black text-[#003B3A] flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#008B85]" />
+                <span>Chọn môn học để xem danh sách giáo viên phụ trách và gán phân công:</span>
+              </div>
+              <span className="text-[11px] font-medium text-slate-500">
+                * Đổi giáo viên trực tiếp trên bảng sẽ tự động lưu ngay lập tức
+              </span>
+            </div>
+
+            {/* Subject Filter Pills */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAssignSubjectFilter("ALL");
+                  setBulkSubjectCodes(["ALL"]);
+                }}
+                className={`flex flex-col justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  assignSubjectFilter === "ALL"
+                    ? "bg-[#003B3A] text-white border-[#003B3A] shadow-xs ring-2 ring-[#00A19A]/30"
+                    : "bg-[#F8FAFC] hover:bg-teal-50/50 text-slate-800 border-[#E2E8F0]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span
+                    className={`text-[11px] font-black px-2 py-0.5 rounded-md ${
+                      assignSubjectFilter === "ALL"
+                        ? "bg-white/15 text-[#5EEAD4]"
+                        : "bg-white border border-[#E2E8F0] text-[#003B3A]"
+                    }`}
+                  >
+                    TẤT CẢ
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      assignSubjectFilter === "ALL"
+                        ? "bg-white/15 text-white"
+                        : "bg-teal-50 text-[#00736E]"
+                    }`}
+                  >
+                    {assignmentLedgerStats.totalSlots > 0
+                      ? Math.round(
+                          (assignmentLedgerStats.assignedPrimary /
+                            assignmentLedgerStats.totalSlots) *
+                            100
+                        )
+                      : 0}
+                    %
                   </span>
                 </div>
-                <p className="text-xs text-teal-100/90 mt-1">
-                  Chọn 1 giáo viên (GVBM), chọn môn học và tích chọn 1 hoặc nhiều lớp để phân công đồng loạt.
-                </p>
-              </div>
-
-              <div className="p-4 space-y-3.5 overflow-y-auto flex-1">
-                {/* Step 1: Teacher Selection (GVBM only) */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-[#003B3A]">
-                      Bước 1. Chọn Giáo viên bộ môn (GVBM)
-                    </span>
-                  </div>
-
-                  {/* BP Tiếng Anh Department Selector & Quick Chips */}
-                  <div className="p-2.5 bg-teal-50/40 border border-teal-200/80 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-[#003B3A] flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-[#008B85]" />
-                        Tổ chuyên môn thuộc BP Tiếng Anh
-                      </span>
-                      <span className="text-[11px] font-bold text-[#00736E] tabular-nums">
-                        {filteredTeachersForAssign.length} GV
-                      </span>
-                    </div>
-
-                    <select
-                      value={teacherDeptScope}
-                      onChange={e => setTeacherDeptScope(e.target.value)}
-                      className="w-full text-xs font-bold p-2 bg-white border border-teal-300 rounded-lg text-[#003B3A] focus:outline-[#008B85] tabular-nums"
-                    >
-                      <option value="ALL_BP_TA">
-                        ★ Tất cả Tổ thuộc BP Tiếng Anh ({deptTeacherCounts.totalEnglishDivCount} GV)
-                      </option>
-                      {englishDepartments.length > 0 && (
-                        <optgroup label="Chọn riêng từng Tổ thuộc BP Tiếng Anh">
-                          {englishDepartments.map(d => (
-                            <option key={d.id} value={d.id}>
-                              • {d.name} ({deptTeacherCounts.byDeptId.get(d.id) || 0} GV)
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <optgroup label="Mở rộng ngoài BP Tiếng Anh">
-                        <option value="ALL_SCHOOL">Toàn trường ({enrichedTeachers.length} GV)</option>
-                        {otherDepartments.map(d => (
-                          <option key={d.id} value={d.id}>
-                            • {d.name} ({deptTeacherCounts.byDeptId.get(d.id) || 0} GV)
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
-
-                    {englishDepartments.length > 0 && (
-                      <div className="flex flex-wrap gap-1 tabular-nums">
-                        <button
-                          type="button"
-                          onClick={() => setTeacherDeptScope("ALL_BP_TA")}
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded-md border transition-all ${
-                            teacherDeptScope === "ALL_BP_TA"
-                              ? "bg-[#003B3A] text-white border-[#003B3A]"
-                              : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
-                          }`}
-                        >
-                          Tất cả BP TA ({deptTeacherCounts.totalEnglishDivCount})
-                        </button>
-                        {englishDepartments.map(d => {
-                          const active = teacherDeptScope === d.id;
-                          return (
-                            <button
-                              key={d.id}
-                              type="button"
-                              onClick={() => setTeacherDeptScope(d.id)}
-                              className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
-                                active
-                                  ? "bg-[#008B85] text-white border-[#00736E]"
-                                  : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
-                              }`}
-                            >
-                              {d.name} ({deptTeacherCounts.byDeptId.get(d.id) || 0})
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Teacher Search & Campus Filter */}
-                  <div className="grid grid-cols-5 gap-2">
-                    <div className="col-span-3 relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={teacherSearchQuery}
-                        onChange={e => setTeacherSearchQuery(e.target.value)}
-                        placeholder="Tìm tên, mã GV..."
-                        className="w-full text-xs pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-[#008B85]"
-                      />
-                    </div>
-                    <select
-                      value={teacherFilterCampusId}
-                      onChange={e => setTeacherFilterCampusId(e.target.value)}
-                      className="col-span-2 text-xs font-semibold px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-slate-700 focus:outline-[#008B85] tabular-nums"
-                      title="Lọc danh sách giáo viên theo cơ sở"
-                    >
-                      <option value="">GV mọi CS ({scopedTeachers.length})</option>
-                      {campuses.map(c => (
-                        <option key={c.id} value={c.id}>
-                          GV: {c.campusName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Primary Teacher (GVBM) Picker */}
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-[#003B3A]">
-                        Giáo viên nhận phân công (GVBM)
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setBulkPrimaryTeacherId("__HOMEROOM__")}
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded border transition-all ${
-                          bulkPrimaryTeacherId === "__HOMEROOM__"
-                            ? "bg-[#003B3A] text-white border-[#003B3A]"
-                            : "bg-white text-[#00736E] border-teal-200 hover:bg-teal-50"
-                        }`}
-                        title="Tự động lấy Giáo viên chủ nhiệm của từng lớp làm GVBM"
-                      >
-                        Theo GVCN từng lớp
-                      </button>
-                    </div>
-                    <select
-                      value={bulkPrimaryTeacherId}
-                      onChange={e => setBulkPrimaryTeacherId(e.target.value)}
-                      className="w-full text-xs font-bold p-2 bg-white border border-teal-300 rounded-lg text-[#003B3A] focus:outline-[#008B85] tabular-nums"
-                    >
-                      <option value="">-- Chọn Giáo viên (GVBM) --</option>
-                      <option value="__HOMEROOM__">★ Tự động gán theo GVCN của từng lớp</option>
-                      {renderGroupedTeacherOptions(bulkPrimaryTeacherId, true)}
-                    </select>
+                <div className="mt-2">
+                  <div className="text-xs font-bold leading-snug">Tất cả môn CTQT</div>
+                  <div
+                    className={`text-[11px] mt-0.5 ${
+                      assignSubjectFilter === "ALL" ? "text-teal-100" : "text-slate-500"
+                    }`}
+                  >
+                    Đã gán: {assignmentLedgerStats.assignedPrimary}/
+                    {assignmentLedgerStats.totalSlots} môn
                   </div>
                 </div>
+              </button>
 
-                {/* Step 2: Subject Multi-Selection */}
-                <div className="space-y-2 pt-2 border-t border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-[#003B3A]">
-                      Bước 2. Chọn môn học áp dụng
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setBulkSubjectCodes(["ALL"])}
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded transition-all ${
-                        bulkSubjectCodes.includes("ALL")
-                          ? "bg-[#003B3A] text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      }`}
-                    >
-                      Tất cả môn của lớp
-                    </button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {allCtqtSubjectOptions.map(sub => {
-                      const isAll = bulkSubjectCodes.includes("ALL");
-                      const isSelected = !isAll && bulkSubjectCodes.includes(sub.code);
-                      return (
-                        <button
-                          key={sub.code}
-                          type="button"
-                          onClick={() => toggleBulkSubjectCode(sub.code)}
-                          className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all ${
-                            isSelected
-                              ? "bg-[#008B85] text-white border-[#00736E] shadow-2xs"
-                              : isAll
-                              ? "bg-teal-50/70 text-[#003B3A] border-teal-200 hover:bg-teal-100"
-                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                          }`}
-                        >
-                          <span className="font-black">{sub.code}</span>
-                          <span className={isSelected ? "text-teal-100 font-normal" : "text-slate-500 font-normal"}>
-                            {sub.nameVi}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Step 3: Campus & Multi-Class Picker (Chọn Cơ sở & Nhiều lớp cho 1 GV) */}
-                <div className="space-y-2.5 pt-2 border-t border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-[#003B3A]">
-                      Bước 3. Chọn nhiều lớp cho GV ({selectedBulkClassIds.length}/{visibleAssignmentClasses.length})
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {selectedBulkClassIds.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedBulkClassIds([])}
-                          className="text-[11px] font-bold text-rose-600 hover:underline"
-                        >
-                          Bỏ chọn hết
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={toggleSelectAllVisibleClasses}
-                        className="text-[11px] font-bold text-[#008B85] hover:underline"
-                      >
-                        {visibleAssignmentClasses.length > 0 &&
-                        visibleAssignmentClasses.every(c => selectedBulkClassIds.includes(c.classId))
-                          ? "Bỏ chọn đang lọc"
-                          : "Chọn tất cả đang lọc"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Direct Campus & Multi-Select Class Box */}
-                  <div className="p-2.5 bg-teal-50/40 border border-teal-200/80 rounded-xl space-y-2 tabular-nums">
-                    {/* Quick Campus Chips */}
-                    <div className="flex flex-wrap items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCampusId("");
-                          setAssignClassFilterId("");
-                        }}
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-md border transition-all ${
-                          !selectedCampusId
-                            ? "bg-[#003B3A] text-white border-[#003B3A]"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
+              {subjectAssignmentSummaries.map(sub => {
+                const isSelected = assignSubjectFilter === sub.code;
+                const isComplete = sub.totalClasses > 0 && sub.assignedClasses === sub.totalClasses;
+                return (
+                  <button
+                    key={sub.code}
+                    type="button"
+                    onClick={() => {
+                      setAssignSubjectFilter(sub.code);
+                      setBulkSubjectCodes([sub.code]);
+                    }}
+                    className={`flex flex-col justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-[#003B3A] text-white border-[#003B3A] shadow-xs ring-2 ring-[#00A19A]/30"
+                        : "bg-[#F8FAFC] hover:bg-teal-50/50 text-slate-800 border-[#E2E8F0]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span
+                        className={`text-[11px] font-black px-2 py-0.5 rounded-md truncate ${
+                          isSelected
+                            ? "bg-white/15 text-[#5EEAD4]"
+                            : "bg-white border border-[#E2E8F0] text-[#003B3A]"
                         }`}
                       >
-                        Tất cả CS ({campusClassCounts.total})
-                      </button>
-                      {campuses.map(c => {
-                        const count = campusClassCounts.byCampusId.get(c.id) || 0;
-                        const active = selectedCampusId === c.id;
-                        return (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCampusId(c.id);
-                              setAssignClassFilterId("");
-                            }}
-                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
-                              active
-                                ? "bg-[#008B85] text-white border-[#00736E]"
-                                : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
+                        {sub.code}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                          isSelected
+                            ? "bg-white/15 text-white"
+                            : isComplete
+                            ? "bg-emerald-50 text-[#059669] border border-emerald-200"
+                            : sub.assignedClasses > 0
+                            ? "bg-amber-50 text-[#D97706] border border-amber-200"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {sub.assignedClasses}/{sub.totalClasses} lớp
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-xs font-bold leading-snug truncate">{sub.nameVi}</div>
+                      <div
+                        className={`text-[11px] mt-0.5 flex items-center justify-between ${
+                          isSelected ? "text-teal-100" : "text-slate-500"
+                        }`}
+                      >
+                        <span>{sub.assignedTeachers.length} GV dạy</span>
+                        {sub.unassignedClasses > 0 && (
+                          <span
+                            className={`text-[10px] font-semibold ${
+                              isSelected ? "text-amber-300" : "text-[#E11D48]"
                             }`}
                           >
-                            {c.campusName} ({count})
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Chọn Cơ sở & Multi-Select Lớp Dropdown */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
-                          Chọn Cơ sở
-                        </label>
-                        <select
-                          value={selectedCampusId}
-                          onChange={e => {
-                            setSelectedCampusId(e.target.value);
-                            setAssignClassFilterId("");
-                          }}
-                          className="w-full text-xs font-bold p-1.5 bg-white border border-teal-300 rounded-lg text-[#003B3A] focus:outline-[#008B85]"
-                        >
-                          <option value="">Tất cả cơ sở ({campusClassCounts.total} lớp)</option>
-                          {campuses.map(c => (
-                            <option key={c.id} value={c.id}>
-                              {c.campusName} ({campusClassCounts.byCampusId.get(c.id) || 0} lớp)
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="relative">
-                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">
-                          Chọn nhiều lớp (Tích chọn)
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setIsMultiClassDropdownOpen(prev => !prev)}
-                          className="w-full text-xs font-bold p-1.5 bg-white border border-teal-300 rounded-lg text-[#003B3A] hover:bg-teal-50/50 flex items-center justify-between gap-1 cursor-pointer"
-                        >
-                          <span className="truncate">
-                            {selectedBulkClassIds.length > 0
-                              ? `Đã chọn ${selectedBulkClassIds.length} lớp`
-                              : `Tích chọn lớp (${levelFilteredAssignmentClasses.length})`}
+                            Thiếu {sub.unassignedClasses}
                           </span>
-                          <span className="text-[10px] text-[#008B85] shrink-0">
-                            {isMultiClassDropdownOpen ? "▲ Đóng" : "▼ Mở"}
-                          </span>
-                        </button>
+                        )}
                       </div>
                     </div>
+                  </button>
+                );
+              })}
+            </div>
 
-                    {/* Expandable Multi-Select Class Dropdown Panel (stays open so user can tick multiple classes!) */}
-                    {isMultiClassDropdownOpen && (
-                      <div className="bg-white border-2 border-[#008B85] rounded-xl p-2.5 shadow-md space-y-2 max-h-[280px] overflow-y-auto">
-                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
-                          <span className="text-[11px] font-extrabold text-[#003B3A]">
-                            Tích chọn nhiều lớp cho giáo viên:
+            {/* HỘP HIỂN THỊ DANH SÁCH GIÁO VIÊN ĐANG PHỤ TRÁCH THEO MÔN HỌC */}
+            {(() => {
+              const targetSummaries =
+                assignSubjectFilter === "ALL"
+                  ? subjectAssignmentSummaries.filter(s => s.totalClasses > 0)
+                  : subjectAssignmentSummaries.filter(s => s.code === assignSubjectFilter);
+
+              if (targetSummaries.length === 0) return null;
+
+              return (
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs font-bold text-[#003B3A]">
+                      {assignSubjectFilter === "ALL"
+                        ? "Tổng hợp danh sách Giáo viên đang phụ trách theo từng môn học:"
+                        : `Danh sách Giáo viên đang phụ trách môn [${assignSubjectFilter}] ${
+                            targetSummaries[0]?.nameVi || ""
+                          }:`}
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      Nhấp vào tên Giáo viên để chọn nhanh GV đó cho thao tác gán thêm lớp
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-[#E2E8F0] bg-white rounded-xl border border-[#E2E8F0] overflow-hidden">
+                    {targetSummaries.map(sub => (
+                      <div
+                        key={sub.code}
+                        className="p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3 hover:bg-[#F8FAFC] transition-colors"
+                      >
+                        {/* Left: Subject Identity + Assigned Ratio */}
+                        <div className="flex items-center gap-2.5 lg:w-[230px] shrink-0">
+                          <span
+                            onClick={() => {
+                              setAssignSubjectFilter(sub.code);
+                              setBulkSubjectCodes([sub.code]);
+                            }}
+                            className="text-[11px] font-black px-2 py-1 rounded-lg bg-[#003B3A] text-white cursor-pointer shrink-0"
+                          >
+                            {sub.code}
                           </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={toggleSelectAllVisibleClasses}
-                              className="text-[11px] font-bold text-[#008B85] hover:underline"
-                            >
-                              {visibleAssignmentClasses.length > 0 &&
-                              visibleAssignmentClasses.every(c => selectedBulkClassIds.includes(c.classId))
-                                ? "Bỏ chọn tất cả"
-                                : `Chọn cả ${visibleAssignmentClasses.length} lớp`}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setIsMultiClassDropdownOpen(false)}
-                              className="text-[11px] font-bold px-2 py-0.5 bg-[#003B3A] text-white rounded-md"
-                            >
-                              Xong
-                            </button>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-[#003B3A] truncate">
+                              {sub.nameVi} ({sub.nameEn})
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                              Đã gán:{" "}
+                              <strong className="text-[#059669]">
+                                {sub.assignedClasses}/{sub.totalClasses} lớp
+                              </strong>
+                              {sub.unassignedClasses > 0 && (
+                                <span className="text-[#E11D48] font-semibold ml-1.5">
+                                  (Chưa gán: {sub.unassignedClasses})
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        {(["PRIMARY", "MIDDLE", "HIGH"] as const).map(lv => {
-                          const groupClasses = visibleAssignmentClasses.filter(c => c.level === lv);
-                          if (groupClasses.length === 0) return null;
-                          const lvLabel =
-                            lv === "PRIMARY"
-                              ? "Tiểu học (Khối 1 - 5)"
-                              : lv === "MIDDLE"
-                              ? "THCS (Khối 6 - 9)"
-                              : "THPT (Khối 10 - 12)";
-                          const allGroupSelected = groupClasses.every(c => selectedBulkClassIds.includes(c.classId));
-
-                          return (
-                            <div key={lv} className="space-y-1">
-                              <div className="flex items-center justify-between bg-slate-100 px-2 py-1 rounded-md">
-                                <span className="text-[11px] font-bold text-slate-700">
-                                  {lvLabel} ({groupClasses.length} lớp)
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleLevelClassesSelection(lv)}
-                                  className="text-[10px] font-bold text-[#008B85] hover:underline"
-                                >
-                                  {allGroupSelected ? "Bỏ chọn cấp này" : "+ Chọn cả cấp"}
-                                </button>
-                              </div>
-                              <div className="grid grid-cols-2 gap-1 pl-1">
-                                {groupClasses.map(cls => {
-                                  const checked = selectedBulkClassIds.includes(cls.classId);
-                                  const hasExplicitTag = /INT|UK/i.test(cls.className || "");
-                                  return (
-                                    <label
-                                      key={cls.classId}
-                                      onClick={() => toggleBulkClassSelection(cls.classId)}
-                                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-xs cursor-pointer select-none transition-all ${
-                                        checked
-                                          ? "bg-[#003B3A] text-white border-[#003B3A] font-bold"
-                                          : "bg-white hover:bg-teal-50 text-slate-800 border-slate-200 font-semibold"
-                                      }`}
-                                    >
-                                      {checked ? (
-                                        <CheckSquare className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
-                                      ) : (
-                                        <Square className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                      )}
-                                      <span className="truncate">
-                                        {cls.className}
-                                        {!hasExplicitTag && cls.grade ? ` (K${cls.grade})` : ""}
-                                      </span>
-                                    </label>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Quick Level Filter Pills (Tiểu học / THCS / THPT) */}
-                    <div className="flex flex-wrap items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAssignLevelFilter("ALL");
-                          setAssignClassFilterId("");
-                        }}
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-md border transition-all ${
-                          assignLevelFilter === "ALL"
-                            ? "bg-[#003B3A] text-white border-[#003B3A]"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
-                        }`}
-                      >
-                        Mọi cấp ({levelClassCounts.ALL})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAssignLevelFilter("PRIMARY");
-                          setAssignClassFilterId("");
-                        }}
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
-                          assignLevelFilter === "PRIMARY"
-                            ? "bg-[#008B85] text-white border-[#00736E]"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
-                        }`}
-                      >
-                        Tiểu học 1-5 ({levelClassCounts.PRIMARY})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAssignLevelFilter("MIDDLE");
-                          setAssignClassFilterId("");
-                        }}
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
-                          assignLevelFilter === "MIDDLE"
-                            ? "bg-[#008B85] text-white border-[#00736E]"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
-                        }`}
-                      >
-                        THCS 6-9 ({levelClassCounts.MIDDLE})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAssignLevelFilter("HIGH");
-                          setAssignClassFilterId("");
-                        }}
-                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
-                          assignLevelFilter === "HIGH"
-                            ? "bg-[#008B85] text-white border-[#00736E]"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50"
-                        }`}
-                      >
-                        THPT 10-12 ({levelClassCounts.HIGH})
-                      </button>
-                    </div>
-
-                    {/* Quick search input inside Step 3 */}
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={assignClassSearch}
-                        onChange={e => setAssignClassSearch(e.target.value)}
-                        placeholder="Tìm nhanh lớp (VD: 1.1, 6INT, 10Compass, Khối 10)..."
-                        className="w-full text-xs pl-8 pr-7 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-[#008B85]"
-                      />
-                      {(assignClassSearch || assignClassFilterId) && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAssignClassSearch("");
-                            setAssignClassFilterId("");
-                          }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                          title="Xóa lọc tên lớp"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Selected Classes Removable Chips (when > 0 classes selected) */}
-                  {selectedBulkClassIds.length > 0 && (
-                    <div className="p-2 bg-teal-50/70 border border-teal-200 rounded-xl space-y-1.5 tabular-nums">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-[#003B3A]">
-                          Các lớp đã tích chọn ({selectedBulkClassIds.length} lớp):
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedBulkClassIds([])}
-                          className="text-[10px] font-bold text-rose-600 hover:underline"
-                        >
-                          Xóa hết
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-1 max-h-[84px] overflow-y-auto">
-                        {selectedBulkClassIds.map(cid => {
-                          const clsObj = assignmentClasses.find(c => c.classId === cid);
-                          if (!clsObj) return null;
-                          return (
-                            <span
-                              key={cid}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold"
-                            >
-                              {clsObj.className}
-                              <button
-                                type="button"
-                                onClick={() => toggleBulkClassSelection(cid)}
-                                className="hover:text-rose-300"
-                                title="Bỏ chọn lớp này"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
+                        {/* Middle: Teachers assigned to this subject & their classes */}
+                        <div className="flex-1 flex flex-wrap items-center gap-1.5">
+                          {sub.assignedTeachers.length === 0 ? (
+                            <span className="text-xs text-slate-400 italic">
+                              Chưa có giáo viên nào được phân công môn {sub.nameVi}
                             </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                          ) : (
+                            sub.assignedTeachers.map(tGroup => {
+                              const isCurrentBulkTeacher =
+                                bulkPrimaryTeacherId === tGroup.teacher.id;
+                              return (
+                                <button
+                                  key={tGroup.teacher.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setBulkPrimaryTeacherId(tGroup.teacher.id);
+                                    setBulkSubjectCodes([sub.code]);
+                                    toast.success(
+                                      `Đã chọn GV ${tGroup.teacher.teacherName} cho môn ${sub.nameVi}`
+                                    );
+                                  }}
+                                  title={`Nhấp để chọn ${tGroup.teacher.teacherName} gán thêm lớp cho môn ${sub.nameVi}`}
+                                  className={`inline-flex flex-wrap items-center gap-1.5 px-2.5 py-1 rounded-lg border text-left text-[11px] transition-all cursor-pointer ${
+                                    isCurrentBulkTeacher
+                                      ? "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
+                                      : "bg-[#F0FDFA]/80 hover:bg-teal-100/70 text-slate-800 border-teal-200"
+                                  }`}
+                                >
+                                  <span className="font-bold">
+                                    {tGroup.teacher.teacherName}
+                                  </span>
+                                  <span
+                                    className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
+                                      isCurrentBulkTeacher
+                                        ? "bg-white/15 text-[#5EEAD4]"
+                                        : "bg-white text-[#00736E] border border-teal-200"
+                                    }`}
+                                  >
+                                    {tGroup.classes.length} lớp:{" "}
+                                    {tGroup.classes.map(c => c.className).join(", ")}
+                                  </span>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
 
-                  {/* Smart Quick-Select Pills */}
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => selectClassesByCondition("MISSING_PRIMARY")}
-                      className="text-[11px] font-semibold px-2 py-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-all"
-                    >
-                      + Lớp thiếu GVBM
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => selectClassesByCondition("PRIMARY")}
-                      className="text-[11px] font-semibold px-2 py-1 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
-                    >
-                      + Cả Khối 1-5
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => selectClassesByCondition("MIDDLE")}
-                      className="text-[11px] font-semibold px-2 py-1 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
-                    >
-                      + Cả Khối 6-9
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => selectClassesByCondition("HIGH")}
-                      className="text-[11px] font-semibold px-2 py-1 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
-                    >
-                      + Cả Khối 10-12
-                    </button>
-                  </div>
-
-                  {/* Compact Multi-Class Checklist inside Panel */}
-                  <div className="border border-slate-200 rounded-xl p-2 bg-slate-50 max-h-[260px] overflow-y-auto grid grid-cols-2 gap-1.5 tabular-nums">
-                    {visibleAssignmentClasses.length === 0 ? (
-                      <div className="col-span-2 py-6 text-center text-xs text-slate-400">
-                        Không có lớp phù hợp bộ lọc
-                      </div>
-                    ) : (
-                      visibleAssignmentClasses.map(cls => {
-                        const isChecked = selectedBulkClassIds.includes(cls.classId);
-                        const primaryAssigned = cls.subjects.filter((s: any) => Boolean(s.primaryTeacherId)).length;
-                        const totalSubs = cls.subjects.length;
-
-                        return (
+                        {/* Right: Quick Action to select unassigned classes of this subject */}
+                        {sub.unassignedClassIds.length > 0 && (
                           <button
-                            key={cls.classId}
                             type="button"
-                            onClick={() => toggleBulkClassSelection(cls.classId)}
-                            className={`flex items-center justify-between p-2 rounded-lg border text-left transition-all cursor-pointer ${
-                              isChecked
-                                ? "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
-                                : "bg-white hover:bg-teal-50/50 text-slate-800 border-slate-200"
-                            }`}
+                            onClick={() => {
+                              setAssignSubjectFilter(sub.code);
+                              setBulkSubjectCodes([sub.code]);
+                              setSelectedBulkClassIds(sub.unassignedClassIds);
+                              toast.success(
+                                `Đã tích chọn ${sub.unassignedClassIds.length} lớp chưa có GVBM môn ${sub.nameVi}. Hãy chọn Giáo viên và nhấn Gán phân công!`
+                              );
+                            }}
+                            className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#E11D48] border border-rose-200 shrink-0 transition-all cursor-pointer whitespace-nowrap"
                           >
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              {isChecked ? (
-                                <CheckSquare className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
-                              ) : (
-                                <Square className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              )}
-                              <div className="truncate">
-                                <div className="text-xs font-bold truncate">{cls.className}</div>
-                                <div className={`text-[10px] truncate ${isChecked ? "text-teal-200" : "text-slate-500"}`}>
-                                  {cls.campusName} • Đã gán {primaryAssigned}/{totalSubs} môn
-                                </div>
-                              </div>
-                            </div>
+                            + Chọn {sub.unassignedClassIds.length} lớp chưa gán {sub.code}
                           </button>
-                        );
-                      })
-                    )}
+                        )}
+                      </div>
+                    ))}
                   </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* 3. THANH CÔNG CỤ HỢP NHẤT: BỘ LỌC HIỂN THỊ & GÁN NHANH PHÂN CÔNG HÀNG LOẠT */}
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs space-y-3 tabular-nums">
+            {/* Row A: Unified Filters (1 nơi duy nhất, không lặp lại) */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#F1F5F9]">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xs font-black text-[#003B3A] flex items-center gap-1.5">
+                  <Filter className="w-3.5 h-3.5 text-[#008B85]" />
+                  Bộ lọc:
+                </span>
+
+                {/* Cơ sở */}
+                <select
+                  value={selectedCampusId}
+                  onChange={e => {
+                    setSelectedCampusId(e.target.value);
+                    setAssignClassFilterId("");
+                  }}
+                  className="text-xs font-bold px-3 py-1.5 bg-[#F8FAFC] border border-slate-300 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
+                >
+                  <option value="">Tất cả cơ sở ({campusClassCounts.total} lớp)</option>
+                  {campuses.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.campusName} ({campusClassCounts.byCampusId.get(c.id) || 0} lớp)
+                    </option>
+                  ))}
+                </select>
+
+                {/* Cấp học */}
+                <div className="inline-flex p-0.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-bold">
+                  {(
+                    [
+                      { key: "ALL", label: `Mọi cấp (${levelClassCounts.ALL})` },
+                      { key: "PRIMARY", label: `Tiểu học (${levelClassCounts.PRIMARY})` },
+                      { key: "MIDDLE", label: `THCS (${levelClassCounts.MIDDLE})` },
+                      { key: "HIGH", label: `THPT (${levelClassCounts.HIGH})` },
+                    ] as const
+                  ).map(lv => (
+                    <button
+                      key={lv.key}
+                      type="button"
+                      onClick={() => {
+                        setAssignLevelFilter(lv.key);
+                        setAssignClassFilterId("");
+                      }}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                        assignLevelFilter === lv.key
+                          ? "bg-[#003B3A] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      {lv.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Trạng thái phân công */}
+                <select
+                  value={assignStatusFilter}
+                  onChange={e => setAssignStatusFilter(e.target.value)}
+                  className="text-xs font-semibold px-3 py-1.5 bg-[#F8FAFC] border border-slate-300 rounded-xl text-slate-700 focus:outline-[#008B85]"
+                >
+                  <option value="ALL">Mọi trạng thái phân công</option>
+                  <option value="MISSING_PRIMARY">Còn thiếu GVBM</option>
+                  <option value="COMPLETE">Đã phân công đủ GVBM</option>
+                </select>
+
+                {/* Tìm kiếm nhanh */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={assignClassSearch}
+                    onChange={e => setAssignClassSearch(e.target.value)}
+                    placeholder="Tìm lớp hoặc tên GV..."
+                    className="text-xs pl-8 pr-7 py-1.5 bg-[#F8FAFC] border border-slate-300 rounded-xl text-slate-800 focus:outline-[#008B85] w-48"
+                  />
+                  {assignClassSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setAssignClassSearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Sticky Bottom Footer: Step 4 Execute Buttons */}
-              <div className="p-3.5 bg-slate-50 border-t border-slate-200 space-y-2 shrink-0">
-                <label className="flex items-center gap-2 p-2 bg-teal-50/60 border border-teal-200/80 rounded-xl cursor-pointer select-none">
+              {/* Quick Bulk Selection Helpers */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => selectClassesByCondition("MISSING_PRIMARY")}
+                  className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-[#D97706] border border-amber-200 transition-all cursor-pointer"
+                >
+                  + Tích chọn các lớp thiếu GVBM
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleSelectAllVisibleClasses}
+                  className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200 flex items-center gap-1 transition-all cursor-pointer"
+                >
+                  {visibleAssignmentClasses.length > 0 &&
+                  visibleAssignmentClasses.every(c => selectedBulkClassIds.includes(c.classId)) ? (
+                    <>
+                      <CheckSquare className="w-3.5 h-3.5 text-[#008B85]" />
+                      Bỏ chọn ({visibleAssignmentClasses.length} lớp)
+                    </>
+                  ) : (
+                    <>
+                      <Square className="w-3.5 h-3.5 text-[#008B85]" />
+                      Chọn cả {visibleAssignmentClasses.length} lớp đang hiển thị
+                    </>
+                  )}
+                </button>
+                {selectedBulkClassIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBulkClassIds([])}
+                    className="text-[11px] font-bold px-2 py-1.5 rounded-xl text-[#E11D48] hover:bg-rose-50 transition-all cursor-pointer"
+                  >
+                    Xóa chọn ({selectedBulkClassIds.length})
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Row B: Streamlined Bulk Assignment Action Bar (Gán nhanh cho nhiều lớp) */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-xs font-black text-[#003B3A] whitespace-nowrap">
+                  Gán hàng loạt ({selectedBulkClassIds.length} lớp đã chọn):
+                </span>
+
+                {/* 1. Tổ chuyên môn */}
+                <select
+                  value={teacherDeptScope}
+                  onChange={e => setTeacherDeptScope(e.target.value)}
+                  className="text-xs font-bold px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] max-w-[210px]"
+                  title="Lọc danh sách Giáo viên theo Tổ chuyên môn"
+                >
+                  <option value="ALL_BP_TA">
+                    Tất cả BP Tiếng Anh ({deptTeacherCounts.totalEnglishDivCount} GV)
+                  </option>
+                  {englishDepartments.length > 0 && (
+                    <optgroup label="Tổ thuộc BP Tiếng Anh">
+                      {englishDepartments.map(d => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} ({deptTeacherCounts.byDeptId.get(d.id) || 0} GV)
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <optgroup label="Mở rộng">
+                    <option value="ALL_SCHOOL">Toàn trường ({enrichedTeachers.length} GV)</option>
+                    {otherDepartments.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({deptTeacherCounts.byDeptId.get(d.id) || 0} GV)
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+
+                {/* 2. Chọn Giáo viên (GVBM) */}
+                <select
+                  value={bulkPrimaryTeacherId}
+                  onChange={e => setBulkPrimaryTeacherId(e.target.value)}
+                  className="text-xs font-bold px-3 py-2 bg-white border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] min-w-[230px]"
+                >
+                  <option value="">-- Chọn Giáo viên (GVBM) cần gán --</option>
+                  <option value="__HOMEROOM__">★ Tự động lấy GVCN của từng lớp</option>
+                  {renderGroupedTeacherOptions(bulkPrimaryTeacherId, true)}
+                </select>
+
+                {/* 3. Môn áp dụng */}
+                <div className="flex flex-wrap items-center gap-1 bg-white px-2.5 py-1.5 rounded-xl border border-[#E2E8F0]">
+                  <span className="text-[11px] font-bold text-slate-500 mr-1">Môn gán:</span>
+                  <button
+                    type="button"
+                    onClick={() => setBulkSubjectCodes(["ALL"])}
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                      bulkSubjectCodes.includes("ALL")
+                        ? "bg-[#003B3A] text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    Tất cả môn
+                  </button>
+                  {allCtqtSubjectOptions.map(sub => {
+                    const isAll = bulkSubjectCodes.includes("ALL");
+                    const isSelected = !isAll && bulkSubjectCodes.includes(sub.code);
+                    return (
+                      <button
+                        key={sub.code}
+                        type="button"
+                        onClick={() => toggleBulkSubjectCode(sub.code)}
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-[#008B85] text-white"
+                            : "bg-slate-100 text-slate-700 hover:bg-teal-50"
+                        }`}
+                        title={`${sub.nameVi} (${sub.nameEn})`}
+                      >
+                        {sub.code}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Action Buttons for Bulk Assign */}
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 cursor-pointer select-none mr-1">
                   <input
                     type="checkbox"
                     checked={sendEmailOnBulkAssign}
                     onChange={e => setSendEmailOnBulkAssign(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-[#003B3A] rounded shrink-0"
+                    className="w-3.5 h-3.5 accent-[#003B3A] rounded"
                   />
-                  <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-[#008B85] shrink-0" />
-                    Gửi email thông báo cho GV ngay sau khi gán
-                  </span>
+                  <span>Gửi mail thông báo</span>
                 </label>
 
                 <button
                   type="button"
                   onClick={() => handleExecuteBulkAssign(false)}
                   disabled={applyingBulk || selectedBulkClassIds.length === 0}
-                  className="w-full py-2.5 px-4 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50 cursor-pointer tabular-nums"
+                  className="text-xs font-bold px-4 py-2 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-[#00A19A]" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#5EEAD4]" />
                   {applyingBulk
-                    ? "Đang áp dụng phân công..."
-                    : `Gán phân công cho ${selectedBulkClassIds.length} lớp đã chọn`}
+                    ? "Đang gán..."
+                    : `Gán cho ${selectedBulkClassIds.length} lớp đã chọn`}
                 </button>
 
                 {selectedBulkClassIds.length > 0 && (
@@ -3401,486 +3559,485 @@ export function DiemCtqtAdminClient({
                     type="button"
                     onClick={() => handleExecuteBulkAssign(true)}
                     disabled={applyingBulk}
-                    className="w-full py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer tabular-nums"
+                    className="text-xs font-bold px-3 py-2 bg-rose-50 hover:bg-rose-100 text-[#E11D48] border border-rose-200 rounded-xl flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    Gỡ phân công của {selectedBulkClassIds.length} lớp đang chọn
+                    Gỡ phân công
                   </button>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* ================================================================= */}
-            {/* RIGHT MAIN AREA: MA TRẬN THEO LỚP HOẶC TỔNG HỢP THEO GIÁO VIÊN    */}
-            {/* ================================================================= */}
-            <div className="flex-1 w-full space-y-4 min-w-0">
-              {/* Filter Bar for Classes / Teachers */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2.5 tabular-nums">
-                  {/* Chọn Cơ sở */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-slate-600">Cơ sở:</span>
-                    <select
-                      value={selectedCampusId}
-                      onChange={e => {
-                        setSelectedCampusId(e.target.value);
-                        setAssignClassFilterId("");
-                      }}
-                      className="text-xs font-bold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
-                    >
-                      <option value="">Tất cả cơ sở ({campusClassCounts.total} lớp)</option>
-                      {campuses.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.campusName} ({campusClassCounts.byCampusId.get(c.id) || 0} lớp)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Chọn Lớp (Lọc xem hoặc mở bảng tích chọn nhiều lớp) */}
-                  {assignmentViewMode === "matrix" && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-slate-600">Lớp:</span>
-                      <select
-                        value={assignClassFilterId}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setAssignClassFilterId(val);
-                        }}
-                        className="text-xs font-bold px-3 py-2 bg-teal-50/70 border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] min-w-[175px]"
-                      >
-                        <option value="">
-                          Tất cả các lớp ({levelFilteredAssignmentClasses.length} lớp)
-                        </option>
-                        {renderGroupedClassOptions(levelFilteredAssignmentClasses, {
-                          idKey: "classId",
-                          showTickedSet: new Set(selectedBulkClassIds),
-                        })}
-                      </select>
-                      {assignClassFilterId && (
-                        <button
-                          type="button"
-                          onClick={() => setAssignClassFilterId("")}
-                          className="text-[11px] font-bold px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-all"
-                          title="Xem lại toàn bộ các lớp"
-                        >
-                          Xem tất cả
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  <select
-                    value={teacherDeptScope}
-                    onChange={e => setTeacherDeptScope(e.target.value)}
-                    className="text-xs font-bold px-3 py-2 bg-teal-50/70 border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] tabular-nums"
-                  >
-                    <option value="ALL_BP_TA">
-                      GV thuộc BP Tiếng Anh ({deptTeacherCounts.totalEnglishDivCount})
-                    </option>
-                    {englishDepartments.length > 0 && (
-                      <optgroup label="Các Tổ chuyên môn thuộc BP Tiếng Anh">
-                        {englishDepartments.map(d => (
-                          <option key={d.id} value={d.id}>
-                            {d.name} ({deptTeacherCounts.byDeptId.get(d.id) || 0})
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    <optgroup label="Mở rộng ngoài BP Tiếng Anh">
-                      <option value="ALL_SCHOOL">Toàn trường ({enrichedTeachers.length} GV)</option>
-                      {otherDepartments.map(d => (
-                        <option key={d.id} value={d.id}>
-                          {d.name} ({deptTeacherCounts.byDeptId.get(d.id) || 0})
-                        </option>
-                      ))}
-                    </optgroup>
-                  </select>
-
-                  {assignmentViewMode === "matrix" ? (
-                    <>
-                      <select
-                        value={assignLevelFilter}
-                        onChange={e => {
-                          setAssignLevelFilter(e.target.value);
-                          setAssignClassFilterId("");
-                        }}
-                        className="text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-700 focus:outline-[#008B85] tabular-nums"
-                      >
-                        <option value="ALL">Tất cả cấp học ({levelClassCounts.ALL} lớp)</option>
-                        <option value="PRIMARY">Tiểu học • Khối 1 - 5 ({levelClassCounts.PRIMARY} lớp)</option>
-                        <option value="MIDDLE">THCS • Khối 6 - 9 ({levelClassCounts.MIDDLE} lớp)</option>
-                        <option value="HIGH">THPT • Khối 10 - 12 ({levelClassCounts.HIGH} lớp)</option>
-                      </select>
-
-                      <select
-                        value={assignStatusFilter}
-                        onChange={e => setAssignStatusFilter(e.target.value)}
-                        className="text-xs font-semibold px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-700 focus:outline-[#008B85]"
-                      >
-                        <option value="ALL">Mọi trạng thái phân công</option>
-                        <option value="COMPLETE">Đã phân công đủ GVBM</option>
-                        <option value="MISSING_PRIMARY">Còn thiếu GVBM</option>
-                      </select>
-
-                      <div className="relative">
-                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="text"
-                          value={assignClassSearch}
-                          onChange={e => setAssignClassSearch(e.target.value)}
-                          placeholder="Tìm lớp hoặc tên GV..."
-                          className="text-xs pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:outline-[#008B85] w-44"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showOnlyAssignedTeachers}
-                        onChange={e => setShowOnlyAssignedTeachers(e.target.checked)}
-                        className="w-3.5 h-3.5 accent-[#003B3A] rounded"
-                      />
-                      Chỉ hiện giáo viên đã có lớp phân công
-                    </label>
-                  )}
+          {/* 4. BẢNG PHÂN CÔNG CHÍNH (THEO MÔN HỌC / MA TRẬN LỚP - MÔN / THEO GIÁO VIÊN) */}
+          {loadingAssignments ? (
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-16 text-center text-slate-500 font-semibold text-sm">
+              Đang tải danh sách phân công...
+            </div>
+          ) : assignmentViewMode === "by_teacher" ? (
+            /* VIEW 3: TỔNG HỢP THEO GIÁO VIÊN */
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xs overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs font-bold text-[#003B3A] tabular-nums">
+                  Danh sách Giáo viên ({teacherWorkloadList.length} GV) • Tổng hợp các môn và lớp đang phụ trách
                 </div>
-
-                {assignmentViewMode === "matrix" && visibleAssignmentClasses.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={toggleSelectAllVisibleClasses}
-                    className="text-xs font-bold px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200 rounded-xl flex items-center gap-1.5 transition-all tabular-nums"
-                  >
-                    {visibleAssignmentClasses.every(c => selectedBulkClassIds.includes(c.classId)) ? (
-                      <>
-                        <CheckSquare className="w-4 h-4 text-[#008B85]" />
-                        Bỏ chọn {visibleAssignmentClasses.length} lớp hiển thị
-                      </>
-                    ) : (
-                      <>
-                        <Square className="w-4 h-4 text-[#008B85]" />
-                        Chọn tất cả {visibleAssignmentClasses.length} lớp hiển thị
-                      </>
-                    )}
-                  </button>
-                )}
+                <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showOnlyAssignedTeachers}
+                    onChange={e => setShowOnlyAssignedTeachers(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-[#003B3A] rounded"
+                  />
+                  Chỉ hiện giáo viên đã có lớp phân công
+                </label>
               </div>
 
-              {/* VIEW 1: MA TRẬN THEO LỚP HỌC (CHỈ PHÂN CÔNG GVBM) */}
-              {loadingAssignments ? (
-                <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center text-slate-500 font-semibold text-sm">
-                  Đang tải danh sách phân công...
+              <div className="overflow-x-auto max-h-[650px] overflow-y-auto">
+                <table className="w-full text-xs text-left border-collapse tabular-nums">
+                  <thead className="bg-[#003B3A] sticky top-0 z-10 border-b border-[#003B3A] text-white">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-3 px-3 border-r border-white/10 text-center w-12">STT</th>
+                      <th className="py-3 px-3 border-r border-white/10 min-w-[220px]">
+                        Giáo viên bộ môn (GVBM)
+                      </th>
+                      <th className="py-3 px-3 border-r border-white/10 text-center w-32 text-teal-100">
+                        Số lớp / môn
+                      </th>
+                      <th className="py-3 px-3 border-r border-white/10 min-w-[340px] text-teal-100">
+                        Danh sách Lớp &amp; Môn học đang phụ trách
+                      </th>
+                      <th className="py-3 px-3 text-center w-[220px]">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                    {teacherWorkloadList.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-12 text-center text-slate-400 font-semibold">
+                          Không có giáo viên nào khớp bộ lọc.
+                        </td>
+                      </tr>
+                    ) : (
+                      teacherWorkloadList.map((row, idx) => {
+                        const t = row.teacher;
+                        const isSelectedPrimary = bulkPrimaryTeacherId === t.id;
+                        return (
+                          <tr
+                            key={t.id}
+                            className={`transition-colors align-middle ${
+                              isSelectedPrimary ? "bg-[#F0FDFA]/70" : "hover:bg-[#F8FAFC]"
+                            }`}
+                          >
+                            <td className="py-3 px-3 text-center font-bold text-slate-500">
+                              {idx + 1}
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="font-bold text-[#003B3A]">{t.teacherName}</div>
+                              <div className="text-[11px] text-slate-500 mt-0.5">
+                                Mã:{" "}
+                                <span className="font-mono font-semibold text-slate-700">
+                                  {t.teacherCode}
+                                </span>
+                                {t.campus?.campusName ? ` • ${t.campus.campusName}` : ""}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className="font-bold text-slate-800">
+                                {row.primaryItems.length} lớp • {row.totalPrimarySlots} môn
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">
+                              {row.primaryItems.length === 0 ? (
+                                <span className="text-slate-400 italic">Chưa phân công lớp</span>
+                              ) : (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {row.primaryItems.map(item => (
+                                    <span
+                                      key={item.classId}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-[#059669] border border-emerald-200 font-semibold text-[11px]"
+                                    >
+                                      <strong className="text-slate-900">{item.className}</strong>
+                                      <span>({item.subjects.join(", ")})</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setBulkPrimaryTeacherId(t.id);
+                                    setSelectedBulkClassIds(row.primaryItems.map(x => x.classId));
+                                    setAssignmentViewMode("by_subject");
+                                    toast.success(
+                                      `Đã chọn ${t.teacherName}. Tích chọn các lớp trên bảng rồi nhấn Gán phân công!`
+                                    );
+                                  }}
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-[11px] cursor-pointer whitespace-nowrap"
+                                >
+                                  Chọn GV để gán lớp
+                                </button>
+                                {row.totalPrimarySlots > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEmailModal([t.id])}
+                                    className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[11px] cursor-pointer"
+                                    title="Gửi email thông báo phân công"
+                                  >
+                                    <Mail className="w-3.5 h-3.5 text-[#008B85]" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : visibleAssignmentClasses.length === 0 ? (
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-16 text-center text-slate-500 font-semibold text-sm">
+              Không tìm thấy lớp học CTQT nào phù hợp với bộ lọc hiện tại.
+            </div>
+          ) : assignSubjectFilter !== "ALL" ? (
+            /* VIEW 1A: KHI CHỌN 1 MÔN CỤ THỂ — BẢNG PHÂN CÔNG GIÁO VIÊN THEO MÔN HỌC ĐÓ */
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-2 tabular-nums">
+                <div className="text-xs font-bold text-[#003B3A]">
+                  Danh sách phân công Giáo viên môn [{assignSubjectFilter}]{" "}
+                  {allCtqtSubjectOptions.find(s => s.code === assignSubjectFilter)?.nameVi || ""} (
+                  {visibleAssignmentClasses.length} lớp hiển thị)
                 </div>
-              ) : assignmentViewMode === "matrix" ? (
-                visibleAssignmentClasses.length === 0 ? (
-                  <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center text-slate-500 font-semibold text-sm">
-                    Không tìm thấy lớp học CTQT nào phù hợp bộ lọc.
-                  </div>
-                ) : (
-                  <div className="space-y-3.5">
-                    {visibleAssignmentClasses.map(cls => {
-                      const isClassSelected = selectedBulkClassIds.includes(cls.classId);
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAssignSubjectFilter("ALL");
+                    setBulkSubjectCodes(["ALL"]);
+                  }}
+                  className="text-xs font-bold text-[#00736E] hover:underline cursor-pointer"
+                >
+                  ← Xem tất cả các môn học
+                </button>
+              </div>
+
+              <div className="overflow-x-auto max-h-[650px] overflow-y-auto">
+                <table className="w-full text-xs text-left border-collapse tabular-nums">
+                  <thead className="bg-[#003B3A] sticky top-0 z-10 border-b border-[#003B3A] text-white">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-3 px-3 border-r border-white/10 text-center w-11">
+                        <input
+                          type="checkbox"
+                          checked={
+                            visibleAssignmentClasses.length > 0 &&
+                            visibleAssignmentClasses.every(c =>
+                              selectedBulkClassIds.includes(c.classId)
+                            )
+                          }
+                          onChange={toggleSelectAllVisibleClasses}
+                          className="w-3.5 h-3.5 accent-[#00A19A] rounded cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-3 px-3 border-r border-white/10 text-center w-12">STT</th>
+                      <th className="py-3 px-3 border-r border-white/10 min-w-[140px]">Lớp học</th>
+                      <th className="py-3 px-3 border-r border-white/10 text-center w-28 text-teal-100">
+                        Cơ sở
+                      </th>
+                      <th className="py-3 px-3 border-r border-white/10 text-center w-40 text-teal-100">
+                        Cấp học
+                      </th>
+                      <th className="py-3 px-3 border-r border-white/10 min-w-[180px] text-teal-100">
+                        Môn học
+                      </th>
+                      <th className="py-3 px-3 border-r border-white/10 min-w-[300px] text-[#5EEAD4]">
+                        Giáo viên bộ môn (GVBM) phụ trách (Chọn là tự động lưu)
+                      </th>
+                      <th className="py-3 px-3 border-r border-white/10 text-center w-32 text-[#5EEAD4]">
+                        Trạng thái
+                      </th>
+                      <th className="py-3 px-3 text-center w-28">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                    {visibleAssignmentClasses.map((cls, idx) => {
+                      const isChecked = selectedBulkClassIds.includes(cls.classId);
+                      const sub = cls.subjects.find((s: any) => s.code === assignSubjectFilter);
+                      if (!sub) return null;
+                      const hasPrimary = Boolean(sub.primaryTeacherId);
+                      const isSavingThis =
+                        savingSlotKey === `${cls.classId}::${sub.code}`;
+
+                      return (
+                        <tr
+                          key={cls.classId}
+                          className={`transition-colors align-middle ${
+                            isChecked
+                              ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]"
+                              : "hover:bg-[#F8FAFC]"
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleBulkClassSelection(cls.classId)}
+                              className="w-3.5 h-3.5 accent-[#003B3A] rounded cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-500">
+                            {idx + 1}
+                          </td>
+                          <td className="py-2.5 px-3 font-black text-[#003B3A] whitespace-nowrap">
+                            Lớp {cls.className}
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-semibold text-slate-600">
+                            {cls.campusName}
+                          </td>
+                          <td className="py-2.5 px-3 text-center text-slate-600">
+                            {cls.level === "PRIMARY"
+                              ? "Tiểu học (1-5)"
+                              : cls.level === "MIDDLE"
+                              ? "THCS (6-9)"
+                              : "THPT (10-12)"}
+                          </td>
+                          <td className="py-2.5 px-3 font-bold text-slate-800">
+                            <span className="font-black text-[#00736E] mr-1.5">[{sub.code}]</span>
+                            {sub.nameVi} ({sub.nameEn})
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={sub.primaryTeacherId || ""}
+                                disabled={isSavingThis}
+                                onChange={e =>
+                                  handleInlineAssignSingleSlot(
+                                    cls.classId,
+                                    sub.code,
+                                    e.target.value || null
+                                  )
+                                }
+                                className={`w-full text-xs font-bold px-3 py-1.5 rounded-xl border focus:outline-[#008B85] transition-colors ${
+                                  hasPrimary
+                                    ? "bg-emerald-50/40 border-emerald-300 text-[#003B3A]"
+                                    : "bg-white border-slate-300 text-slate-500"
+                                }`}
+                              >
+                                <option value="">-- Chưa phân công GVBM --</option>
+                                {renderGroupedTeacherOptions(sub.primaryTeacherId, false)}
+                              </select>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            {hasPrimary ? (
+                              <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#059669] border border-emerald-200 whitespace-nowrap">
+                                Đã phân công
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 text-[#E11D48] border border-rose-200 whitespace-nowrap">
+                                Chưa gán GV
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedClassId(cls.classId);
+                                setSelectedSubjectCode(sub.code);
+                                setActiveTab("subject_gradebook");
+                              }}
+                              className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#00736E] border border-teal-200 transition-all cursor-pointer whitespace-nowrap"
+                            >
+                              Mở sổ điểm ↗
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* VIEW 1B / 2: BẢNG MA TRẬN PHẲNG LỚP × CÁC MÔN HỌC (SKY-LINE ACADEMIC LEDGER TABLE) */
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+              <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-2 tabular-nums">
+                <div className="text-xs font-bold text-[#003B3A]">
+                  Bảng Ma trận Phân công Giáo viên theo Lớp &amp; Môn học (
+                  {visibleAssignmentClasses.length} lớp hiển thị)
+                </div>
+                <span className="text-[11px] text-slate-500">
+                  Chọn Giáo viên ở từng ô môn học để lưu tự động hoặc tích chọn nhiều lớp để gán hàng loạt
+                </span>
+              </div>
+
+              <div className="overflow-x-auto max-h-[680px] overflow-y-auto">
+                <table className="w-full text-xs text-left border-collapse tabular-nums">
+                  <thead className="bg-[#003B3A] sticky top-0 z-10 border-b border-[#003B3A] text-white">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-3 px-2.5 border-r border-white/10 text-center w-10">
+                        <input
+                          type="checkbox"
+                          checked={
+                            visibleAssignmentClasses.length > 0 &&
+                            visibleAssignmentClasses.every(c =>
+                              selectedBulkClassIds.includes(c.classId)
+                            )
+                          }
+                          onChange={toggleSelectAllVisibleClasses}
+                          className="w-3.5 h-3.5 accent-[#00A19A] rounded cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-3 px-2.5 border-r border-white/10 text-center w-11">STT</th>
+                      <th className="py-3 px-3 border-r border-white/10 min-w-[130px]">
+                        Lớp học / Cơ sở
+                      </th>
+                      <th className="py-3 px-3 border-r border-white/10 text-teal-100 min-w-[680px]">
+                        Phân công Giáo viên bộ môn (GVBM) theo từng môn học của lớp
+                      </th>
+                      <th className="py-3 px-2.5 border-r border-white/10 text-center w-28 text-[#5EEAD4]">
+                        Tiến độ gán
+                      </th>
+                      <th className="py-3 px-2.5 text-center w-24">Sổ điểm</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                    {visibleAssignmentClasses.map((cls, idx) => {
+                      const isChecked = selectedBulkClassIds.includes(cls.classId);
                       const totalSubs = cls.subjects.length;
-                      const primaryAssigned = cls.subjects.filter((s: any) => Boolean(s.primaryTeacherId)).length;
+                      const primaryAssigned = cls.subjects.filter((s: any) =>
+                        Boolean(s.primaryTeacherId)
+                      ).length;
                       const isFullyAssigned = primaryAssigned === totalSubs && totalSubs > 0;
 
                       return (
-                        <div
+                        <tr
                           key={cls.classId}
-                          className={`bg-white border rounded-2xl p-4 shadow-xs transition-all ${
-                            isClassSelected
-                              ? "border-[#008B85] border-l-4 border-l-[#003B3A] bg-teal-50/20 ring-1 ring-[#008B85]/30"
-                              : "border-slate-200 hover:border-slate-300"
+                          className={`transition-colors align-middle ${
+                            isChecked
+                              ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]"
+                              : "hover:bg-[#F8FAFC]"
                           }`}
                         >
-                          {/* Class Header Row */}
-                          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 mb-3.5">
-                            <div className="flex flex-wrap items-center gap-2.5">
-                              <button
-                                type="button"
-                                onClick={() => toggleBulkClassSelection(cls.classId)}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-black transition-all cursor-pointer ${
-                                  isClassSelected
-                                    ? "bg-[#003B3A] text-white border-[#003B3A]"
-                                    : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
-                                }`}
-                              >
-                                {isClassSelected ? (
-                                  <CheckSquare className="w-4 h-4 text-[#00A19A]" />
-                                ) : (
-                                  <Square className="w-4 h-4 text-slate-400" />
-                                )}
-                                <span>{cls.className}</span>
-                              </button>
-
-                              <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
-                                {cls.campusName}
-                              </span>
-
-                              <span className="text-xs font-semibold px-2.5 py-1 bg-teal-50 text-[#00736E] rounded-lg border border-teal-200">
-                                {cls.level === "PRIMARY"
-                                  ? "Tiểu học (Khối 1 - 5)"
-                                  : cls.level === "MIDDLE"
-                                  ? "THCS (Khối 6 - 9)"
-                                  : "THPT (Khối 10 - 12)"}
-                              </span>
-
-                              <span
-                                className={`text-xs font-bold px-2.5 py-1 rounded-lg border tabular-nums ${
-                                  isFullyAssigned
-                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                    : primaryAssigned > 0
-                                    ? "bg-amber-50 text-amber-800 border-amber-200"
-                                    : "bg-slate-100 text-slate-600 border-slate-200"
-                                }`}
-                              >
-                                Đã phân công GVBM: {primaryAssigned}/{totalSubs} môn
-                              </span>
+                          <td className="py-3 px-2.5 text-center align-middle">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleBulkClassSelection(cls.classId)}
+                              className="w-3.5 h-3.5 accent-[#003B3A] rounded cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-3 px-2.5 text-center font-bold text-slate-500 align-middle">
+                            {idx + 1}
+                          </td>
+                          <td className="py-3 px-3 align-middle whitespace-nowrap">
+                            <div className="font-black text-[#003B3A] text-xs">
+                              Lớp {cls.className}
                             </div>
-
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedClassId(cls.classId);
-                                  setActiveTab("subject_gradebook");
-                                }}
-                                className="text-xs font-semibold px-2.5 py-1 text-slate-600 hover:text-[#003B3A] hover:bg-slate-100 rounded-lg flex items-center gap-1 transition-all"
-                              >
-                                Mở sổ điểm lớp
-                                <ArrowUpRight className="w-3.5 h-3.5" />
-                              </button>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              {cls.campusName} •{" "}
+                              {cls.level === "PRIMARY"
+                                ? "Tiểu học"
+                                : cls.level === "MIDDLE"
+                                ? "THCS"
+                                : "THPT"}
                             </div>
-                          </div>
-
-                          {/* Subjects Grid inside Class Card (GVBM only) */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-                            {cls.subjects.map((sub: any) => {
-                              const hasPrimary = Boolean(sub.primaryTeacherId);
-                              return (
-                                <div
-                                  key={sub.code}
-                                  className={`p-3.5 rounded-xl border space-y-2.5 transition-all ${
-                                    hasPrimary
-                                      ? "bg-white border-emerald-200/90"
-                                      : "bg-slate-50/80 border-slate-200"
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-1.5 min-w-0">
-                                      <span className="text-[11px] font-black px-2 py-0.5 bg-[#003B3A] text-white rounded">
-                                        {sub.code}
-                                      </span>
-                                      <span className="text-xs font-bold text-slate-800 truncate">
-                                        {sub.nameVi} ({sub.nameEn})
-                                      </span>
-                                    </div>
-
-                                    {sub.primaryTeacherId && (
+                          </td>
+                          <td className="py-2.5 px-3 align-middle">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+                              {cls.subjects.map((sub: any) => {
+                                const hasPrimary = Boolean(sub.primaryTeacherId);
+                                const isSavingThis =
+                                  savingSlotKey === `${cls.classId}::${sub.code}`;
+                                return (
+                                  <div
+                                    key={sub.code}
+                                    className={`p-2 rounded-xl border transition-all ${
+                                      hasPrimary
+                                        ? "bg-emerald-50/30 border-emerald-200"
+                                        : "bg-[#F8FAFC] border-[#E2E8F0]"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between gap-1 mb-1">
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          handleQuickPrefillMultiClass({
-                                            subjectCode: sub.code,
-                                            primaryTeacherId: sub.primaryTeacherId,
-                                            classIds: [cls.classId],
-                                          })
-                                        }
-                                        className="text-[11px] font-bold text-[#008B85] hover:text-[#003B3A] hover:underline shrink-0 flex items-center gap-0.5 cursor-pointer"
-                                        title="Chọn GV này để gán nhanh cho nhiều lớp khác"
+                                        onClick={() => {
+                                          setAssignSubjectFilter(sub.code);
+                                          setBulkSubjectCodes([sub.code]);
+                                        }}
+                                        title={`Lọc riêng môn ${sub.nameVi}`}
+                                        className="text-[11px] font-bold text-[#003B3A] hover:text-[#008B85] flex items-center gap-1 truncate cursor-pointer"
                                       >
-                                        Gán nhiều lớp ↗
+                                        <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-[#003B3A] text-white">
+                                          {sub.code}
+                                        </span>
+                                        <span className="truncate">{sub.nameVi}</span>
                                       </button>
-                                    )}
-                                  </div>
-
-                                  {/* GVBM Primary selector */}
-                                  <div>
-                                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                                      Giáo viên bộ môn (GVBM)
-                                    </label>
+                                      <span
+                                        className={`w-2 h-2 rounded-full shrink-0 ${
+                                          hasPrimary ? "bg-[#059669]" : "bg-rose-400"
+                                        }`}
+                                      />
+                                    </div>
                                     <select
                                       value={sub.primaryTeacherId || ""}
-                                      onChange={e => {
-                                        const val = e.target.value || null;
-                                        setAssignmentClasses(prev =>
-                                          prev.map(item =>
-                                            item.classId !== cls.classId
-                                              ? item
-                                              : {
-                                                  ...item,
-                                                  subjects: item.subjects.map((s: any) =>
-                                                    s.code === sub.code ? { ...s, primaryTeacherId: val } : s
-                                                  ),
-                                                }
-                                          )
-                                        );
-                                      }}
-                                      className="w-full text-xs font-semibold p-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-[#008B85] tabular-nums"
+                                      disabled={isSavingThis}
+                                      onChange={e =>
+                                        handleInlineAssignSingleSlot(
+                                          cls.classId,
+                                          sub.code,
+                                          e.target.value || null
+                                        )
+                                      }
+                                      className={`w-full text-[11px] font-semibold px-2 py-1.5 rounded-lg border focus:outline-[#008B85] ${
+                                        hasPrimary
+                                          ? "bg-white border-emerald-300 text-slate-900"
+                                          : "bg-white border-slate-300 text-slate-500"
+                                      }`}
                                     >
                                       <option value="">-- Chưa phân công --</option>
                                       {renderGroupedTeacherOptions(sub.primaryTeacherId, false)}
                                     </select>
                                   </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                                );
+                              })}
+                            </div>
+                          </td>
+                          <td className="py-3 px-2.5 text-center align-middle">
+                            <span
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-full inline-block whitespace-nowrap border ${
+                                isFullyAssigned
+                                  ? "bg-emerald-50 text-[#059669] border-emerald-200"
+                                  : primaryAssigned > 0
+                                  ? "bg-amber-50 text-[#D97706] border-amber-200"
+                                  : "bg-rose-50 text-[#E11D48] border-rose-200"
+                              }`}
+                            >
+                              {primaryAssigned}/{totalSubs} môn
+                            </span>
+                          </td>
+                          <td className="py-3 px-2.5 text-center align-middle">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedClassId(cls.classId);
+                                setActiveTab("subject_gradebook");
+                              }}
+                              className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] hover:bg-teal-50 text-[#003B3A] border border-[#E2E8F0] transition-all cursor-pointer whitespace-nowrap"
+                            >
+                              Sổ điểm ↗
+                            </button>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </div>
-                )
-              ) : (
-                /* VIEW 2: TỔNG HỢP THEO GIÁO VIÊN (CHỌN 1 GV ĐỂ GÁN NHIỀU LỚP) */
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-xs font-bold text-slate-700 tabular-nums">
-                      Danh sách giáo viên ({teacherWorkloadList.length}) • Nhấn &ldquo;+ Chọn nhiều lớp cho GV này&rdquo; để tích chọn nhiều lớp ở cột trái
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto max-h-[680px] overflow-y-auto">
-                    <table className="w-full text-xs text-left border-collapse tabular-nums">
-                      <thead className="bg-[#003B3A] sticky top-0 z-10 border-b text-white border-[#003B3A]">
-                        <tr className="text-[11px] font-semibold whitespace-nowrap">
-                          <th className="p-3 border-r border-white/15 min-w-[220px] font-semibold">Giáo viên</th>
-                          <th className="p-3 border-r border-white/15 min-w-[320px] font-semibold">
-                            Các lớp &amp; môn đang phụ trách (GVBM)
-                          </th>
-                          <th className="p-3 text-center w-[220px] font-semibold">Thao tác gán nhiều lớp</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E2E8F0]">
-                        {teacherWorkloadList.length === 0 ? (
-                          <tr>
-                            <td colSpan={3} className="p-12 text-center text-slate-400 font-semibold">
-                              Không có giáo viên nào khớp bộ lọc.
-                            </td>
-                          </tr>
-                        ) : (
-                          teacherWorkloadList.map(row => {
-                            const t = row.teacher;
-                            const isSelectedPrimary = bulkPrimaryTeacherId === t.id;
-
-                            return (
-                              <tr
-                                key={t.id}
-                                className={`transition-colors ${
-                                  isSelectedPrimary ? "bg-teal-50/50" : "hover:bg-slate-50"
-                                }`}
-                              >
-                                <td className="p-3 border-r border-slate-200 align-top">
-                                  <div className="font-bold text-slate-800">{t.teacherName}</div>
-                                  <div className="text-[11px] text-slate-500 mt-0.5">
-                                    Mã: <span className="font-mono font-semibold text-slate-700">{t.teacherCode}</span>
-                                    {t.campus?.campusName ? ` • ${t.campus.campusName}` : ""}
-                                  </div>
-                                  {t.resolvedEmail ? (
-                                    <div className="text-[11px] text-slate-500 truncate mt-0.5" title={t.resolvedEmail}>
-                                      {t.resolvedEmail}
-                                    </div>
-                                  ) : (
-                                    <div className="text-[11px] text-amber-700 font-semibold mt-0.5">
-                                      Chưa có địa chỉ email
-                                    </div>
-                                  )}
-                                  {(t.englishDeptNames?.length > 0 || t.allDeptNames?.length > 0) && (
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {(t.englishDeptNames?.length > 0 ? t.englishDeptNames : t.allDeptNames).map(
-                                        (dName: string) => (
-                                          <span
-                                            key={dName}
-                                            className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200"
-                                          >
-                                            {dName}
-                                          </span>
-                                        )
-                                      )}
-                                    </div>
-                                  )}
-                                </td>
-
-                                <td className="p-3 border-r border-slate-200 align-top">
-                                  {row.primaryItems.length === 0 ? (
-                                    <span className="text-slate-400 italic">Chưa phân công lớp</span>
-                                  ) : (
-                                    <div className="space-y-1.5">
-                                      <div className="text-[11px] font-bold text-[#003B3A]">
-                                        Đang dạy {row.primaryItems.length} lớp ({row.totalPrimarySlots} môn):
-                                      </div>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {row.primaryItems.map(item => (
-                                          <span
-                                            key={item.classId}
-                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-semibold text-[11px]"
-                                          >
-                                            <strong>{item.className}</strong>
-                                            <span className="text-emerald-700">({item.subjects.join(", ")})</span>
-                                          </span>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </td>
-
-                                <td className="p-3 align-top">
-                                  <div className="flex flex-col gap-1.5">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setAssignRoleMode("PRIMARY_ONLY");
-                                        setBulkPrimaryTeacherId(t.id);
-                                        setSelectedBulkClassIds(row.primaryItems.map(x => x.classId));
-                                        setIsMultiClassDropdownOpen(true);
-                                        toast.success(
-                                          `Đã chọn ${t.teacherName}. Hãy tích chọn thêm các lớp ở cột trái và nhấn Gán phân công!`
-                                        );
-                                      }}
-                                      className="px-2.5 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-[11px] flex items-center justify-center gap-1 transition-all cursor-pointer"
-                                    >
-                                      + Chọn nhiều lớp cho GV này
-                                    </button>
-                                    {row.totalPrimarySlots > 0 && (
-                                      <>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setProgressPresetSearch(t.teacherCode || t.teacherName || "");
-                                            setActiveTab("grade_progress");
-                                          }}
-                                          className="px-2.5 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200 font-bold text-[11px] flex items-center justify-center gap-1 transition-all cursor-pointer"
-                                          title={`Xem thống kê nhập điểm của ${t.teacherName}`}
-                                        >
-                                          <BarChart3 className="w-3 h-3 text-[#008B85]" />
-                                          Tiến độ nhập điểm
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleOpenEmailModal([t.id])}
-                                          className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[11px] flex items-center justify-center gap-1 transition-all cursor-pointer"
-                                          title={`Gửi email thông báo phân công cho ${t.teacherName}`}
-                                        >
-                                          <Mail className="w-3 h-3 text-[#008B85]" />
-                                          Gửi mail phân công
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

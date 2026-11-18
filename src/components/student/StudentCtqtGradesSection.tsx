@@ -192,13 +192,13 @@ export function StudentCtqtGradesSection({
                   Môn học CTQT
                 </th>
                 <th className="py-2.5 px-2.5 text-center text-teal-100 font-semibold">
-                  KTTX (Progress)
+                  KTTX (Progress Test)
                 </th>
                 <th className="py-2.5 px-2.5 text-center text-teal-100 font-semibold">
-                  Giữa kỳ (Mid term)
+                  Giữa kỳ (GK) (Mid Term)
                 </th>
                 <th className="py-2.5 px-2.5 text-center text-[#5EEAD4] font-semibold">
-                  Cuối kỳ (EOT)
+                  Cuối kỳ (CK) (End Term)
                 </th>
                 <th className="py-2.5 px-3 text-teal-100 font-semibold">
                   Nhận xét chuyên môn (Report Card)
@@ -221,13 +221,13 @@ export function StudentCtqtGradesSection({
                   KTTX (Progress)
                 </th>
                 <th className="py-2.5 px-2.5 text-center text-teal-100 font-semibold">
-                  Giữa kỳ (Mid term)
+                  Giữa kỳ (GK) (Mid Term)
                 </th>
                 <th className="py-2.5 px-2.5 text-center text-teal-100 font-semibold">
-                  Cuối kỳ (End term)
+                  Cuối kỳ (CK) (End Term)
                 </th>
                 <th className="py-2.5 px-2.5 text-center text-[#5EEAD4] font-semibold">
-                  ĐTB môn (GPA / TSM)
+                  ĐTB Môn (GPA / TBM)
                 </th>
                 <th className="py-2.5 px-3 text-teal-100 font-semibold">
                   Nhận xét chuyên môn (Report Card)

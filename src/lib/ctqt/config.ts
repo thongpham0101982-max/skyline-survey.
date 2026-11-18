@@ -44,9 +44,9 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "Eng",
         color: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-800" },
         scoreColumns: [
-          { key: "progressScores_0", labelVi: "KTTX", labelEn: "Progress Test", shortLabel: "E1", maxScore: 100 },
-          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "E2", maxScore: 100 },
-          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "EOT", shortLabel: "E3", maxScore: 100 },
+          { key: "progressScores_0", labelVi: "KTTX", labelEn: "Progress Test", shortLabel: "KTTX", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "Giữa kỳ (GK)", maxScore: 100 },
+          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "Cuối kỳ (CK)", maxScore: 100 },
         ],
       },
       {
@@ -56,8 +56,8 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "Science",
         color: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", badge: "bg-amber-100 text-amber-800" },
         scoreColumns: [
-          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "S1", maxScore: 100 },
-          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "EOT", shortLabel: "S2", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "Giữa kỳ (GK)", maxScore: 100 },
+          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "Cuối kỳ (CK)", maxScore: 100 },
         ],
       },
       {
@@ -67,8 +67,8 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "Maths",
         color: { bg: "bg-sky-50", border: "border-sky-200", text: "text-sky-700", badge: "bg-sky-100 text-sky-800" },
         scoreColumns: [
-          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "M1", maxScore: 100 },
-          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "EOT", shortLabel: "M2", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "Giữa kỳ (GK)", maxScore: 100 },
+          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "Cuối kỳ (CK)", maxScore: 100 },
         ],
       },
     ],
@@ -86,13 +86,13 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "Eng",
         color: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-800" },
         scoreColumns: [
-          { key: "progressScores_0", labelVi: "KTTX 1", labelEn: "Progress 1", shortLabel: "E1", maxScore: 100 },
-          { key: "progressScores_1", labelVi: "KTTX 2", labelEn: "Progress 2", shortLabel: "E2", maxScore: 100 },
-          { key: "progressScores_2", labelVi: "KTTX 3", labelEn: "Progress 3", shortLabel: "E3", maxScore: 100 },
-          { key: "progressScores_3", labelVi: "KTTX 4", labelEn: "Progress 4", shortLabel: "E4", maxScore: 100 },
-          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "E5", maxScore: 100 },
-          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "E6", maxScore: 100 },
-          { key: "gpaScore", labelVi: "ĐTB Môn", labelEn: "GPA / TBM", shortLabel: "E7", maxScore: 100 },
+          { key: "progressScores_0", labelVi: "KTTX 1", labelEn: "Progress 1", shortLabel: "KTTX 1", maxScore: 100 },
+          { key: "progressScores_1", labelVi: "KTTX 2", labelEn: "Progress 2", shortLabel: "KTTX 2", maxScore: 100 },
+          { key: "progressScores_2", labelVi: "KTTX 3", labelEn: "Progress 3", shortLabel: "KTTX 3", maxScore: 100 },
+          { key: "progressScores_3", labelVi: "KTTX 4", labelEn: "Progress 4", shortLabel: "KTTX 4", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "Giữa kỳ (GK)", maxScore: 100 },
+          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "Cuối kỳ (CK)", maxScore: 100 },
+          { key: "gpaScore", labelVi: "ĐTB Môn", labelEn: "GPA / TBM", shortLabel: "ĐTB Môn", maxScore: 100 },
         ],
       },
       {
@@ -102,11 +102,11 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "Science",
         color: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", badge: "bg-amber-100 text-amber-800" },
         scoreColumns: [
-          { key: "progressScores_0", labelVi: "KTTX 1", labelEn: "Progress 1", shortLabel: "S1", maxScore: 100 },
-          { key: "progressScores_1", labelVi: "KTTX 2", labelEn: "Progress 2", shortLabel: "S2", maxScore: 100 },
-          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "S3", maxScore: 100 },
-          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "S4", maxScore: 100 },
-          { key: "gpaScore", labelVi: "ĐTB Môn", labelEn: "GPA / TBM", shortLabel: "S5", maxScore: 100 },
+          { key: "progressScores_0", labelVi: "KTTX 1", labelEn: "Progress 1", shortLabel: "KTTX 1", maxScore: 100 },
+          { key: "progressScores_1", labelVi: "KTTX 2", labelEn: "Progress 2", shortLabel: "KTTX 2", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "Giữa kỳ (GK)", maxScore: 100 },
+          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "Cuối kỳ (CK)", maxScore: 100 },
+          { key: "gpaScore", labelVi: "ĐTB Môn", labelEn: "GPA / TBM", shortLabel: "ĐTB Môn", maxScore: 100 },
         ],
       },
       {
@@ -116,11 +116,11 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "Maths",
         color: { bg: "bg-sky-50", border: "border-sky-200", text: "text-sky-700", badge: "bg-sky-100 text-sky-800" },
         scoreColumns: [
-          { key: "progressScores_0", labelVi: "KTTX 1", labelEn: "Progress 1", shortLabel: "M1", maxScore: 100 },
-          { key: "progressScores_1", labelVi: "KTTX 2", labelEn: "Progress 2", shortLabel: "M2", maxScore: 100 },
-          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "M3", maxScore: 100 },
-          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "M4", maxScore: 100 },
-          { key: "gpaScore", labelVi: "ĐTB Môn", labelEn: "GPA / TBM", shortLabel: "M5", maxScore: 100 },
+          { key: "progressScores_0", labelVi: "KTTX 1", labelEn: "Progress 1", shortLabel: "KTTX 1", maxScore: 100 },
+          { key: "progressScores_1", labelVi: "KTTX 2", labelEn: "Progress 2", shortLabel: "KTTX 2", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Giữa kỳ (GK)", labelEn: "Mid Term", shortLabel: "Giữa kỳ (GK)", maxScore: 100 },
+          { key: "endTermScore", labelVi: "Cuối kỳ (CK)", labelEn: "End Term", shortLabel: "Cuối kỳ (CK)", maxScore: 100 },
+          { key: "gpaScore", labelVi: "ĐTB Môn", labelEn: "GPA / TBM", shortLabel: "ĐTB Môn", maxScore: 100 },
         ],
       },
       {
@@ -147,7 +147,7 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "A.E",
         color: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", badge: "bg-amber-100 text-amber-800" },
         scoreColumns: [
-          { key: "midTermScore", labelVi: "Điểm Đánh giá", labelEn: "Mark", shortLabel: "A3", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Điểm số", labelEn: "Mark", shortLabel: "Điểm số", maxScore: 100 },
         ],
       },
       {
@@ -157,7 +157,7 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "Maths",
         color: { bg: "bg-sky-50", border: "border-sky-200", text: "text-sky-700", badge: "bg-sky-100 text-sky-800" },
         scoreColumns: [
-          { key: "midTermScore", labelVi: "Điểm Dự án / Bài thi", labelEn: "Mark", shortLabel: "M3", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Điểm số", labelEn: "Mark", shortLabel: "Điểm số", maxScore: 100 },
         ],
       },
       {
@@ -167,7 +167,7 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "Science",
         color: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700", badge: "bg-orange-100 text-orange-800" },
         scoreColumns: [
-          { key: "midTermScore", labelVi: "Điểm Đánh giá", labelEn: "Mark", shortLabel: "S3", maxScore: 100 },
+          { key: "midTermScore", labelVi: "Điểm số", labelEn: "Mark", shortLabel: "Điểm số", maxScore: 100 },
         ],
       },
       {
@@ -177,7 +177,7 @@ export const CTQT_LEVEL_CONFIGS: Record<CtqtLevel, CtqtLevelConfig> = {
         sheetName: "IELTS",
         color: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", badge: "bg-indigo-100 text-indigo-800" },
         scoreColumns: [
-          { key: "ieltsScore", labelVi: "Điểm thi IELTS", labelEn: "IELTS Band", shortLabel: "I3", maxScore: 9, isIelts: true },
+          { key: "ieltsScore", labelVi: "IELTS Band (0-9)", labelEn: "IELTS Band", shortLabel: "IELTS Band", maxScore: 9, isIelts: true },
         ],
       },
       {

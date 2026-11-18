@@ -106,17 +106,17 @@ export function generateCtqtTemplate(
     if (ctqtLevel === "HIGH") {
       headers.push("Class\nLớp");
       if (sub.code === "AE" || sub.code === "SCI" || sub.code === "MAT" || sub.code === "MATH") {
-        headers.push("Content", "Nội dung", "Mark\nĐiểm");
+        headers.push("Nội dung EN\nContent", "Nội dung kiểm tra", "Điểm số\nMark");
       } else if (sub.code === "IELTS") {
-        headers.push("Content", "Nội dung", "Mark\nĐiểm");
+        headers.push("Nội dung EN\nContent", "Nội dung kiểm tra", "IELTS Band (0-9)\nIELTS Band");
       }
     } else {
       for (const col of sub.scoreColumns) {
-        headers.push(`${col.labelEn}\n${col.labelVi}`);
+        headers.push(`${col.labelVi}\n${col.labelEn}`);
       }
     }
 
-    headers.push("COMMENTS", "NHẬN XÉT");
+    headers.push("Nhận xét tiếng Anh (Comment EN)", "Nhận xét tiếng Việt (Nhận xét VI)");
 
     const rows: any[][] = [headers];
 
@@ -238,34 +238,44 @@ export function generateCtqtTemplate(
   ];
 
   for (const sub of config.subjects) {
-    if (ctqtLevel === "PRIMARY") {
+    const subPrefix = `[${sub.code}] ${sub.nameVi}`;
+    if (ctqtLevel === "PRIMARY" || ctqtLevel === "MIDDLE") {
       for (const col of sub.scoreColumns) {
-        tongHopHeaders.push(col.shortLabel);
+        tongHopHeaders.push(`${subPrefix} - ${col.labelVi} (${col.labelEn})`);
       }
-      tongHopHeaders.push(`${sub.code[0]}4 (CMT)`, `${sub.code[0]}5 (NX)`);
-    } else if (ctqtLevel === "MIDDLE") {
-      for (const col of sub.scoreColumns) {
-        tongHopHeaders.push(col.shortLabel);
-      }
-      tongHopHeaders.push("CMT", "NX");
+      tongHopHeaders.push(
+        `${subPrefix} - Nhận xét tiếng Anh (Comment EN)`,
+        `${subPrefix} - Nhận xét tiếng Việt (Nhận xét VI)`
+      );
     } else if (ctqtLevel === "HIGH") {
-      if (sub.code === "AE") {
-        tongHopHeaders.push("A1 (Content)", "A2 (Nội dung)", "A3 (Điểm)", "CMT A", "NX A");
-      } else if (sub.code === "MAT" || sub.code === "MATH") {
-        tongHopHeaders.push("M1 (Content)", "M2 (Nội dung)", "M3 (Điểm)", "CMT M", "NX M");
-      } else if (sub.code === "SCI") {
-        tongHopHeaders.push("S1 (Content)", "S2 (Nội dung)", "S3 (Điểm)", "CMT S", "NX S");
-      } else if (sub.code === "IELTS") {
-        tongHopHeaders.push("I1 (Content)", "I2 (Nội dung)", "I3 (Điểm)", "CMT I", "NX I");
-      } else if (sub.code === "AR") {
-        tongHopHeaders.push("CMT R", "NX R");
+      if (sub.code === "IELTS") {
+        tongHopHeaders.push(
+          `${subPrefix} - Nội dung (Content)`,
+          `${subPrefix} - Nội dung tiếng Việt`,
+          `${subPrefix} - IELTS Band (0-9)`,
+          `${subPrefix} - Nhận xét tiếng Anh (Comment EN)`,
+          `${subPrefix} - Nhận xét tiếng Việt (Nhận xét VI)`
+        );
+      } else if (sub.code === "AR" || sub.isQualitative) {
+        tongHopHeaders.push(
+          `${subPrefix} - Nhận xét tiếng Anh (Comment EN)`,
+          `${subPrefix} - Nhận xét tiếng Việt (Nhận xét VI)`
+        );
+      } else {
+        tongHopHeaders.push(
+          `${subPrefix} - Nội dung EN (Content)`,
+          `${subPrefix} - Nội dung kiểm tra`,
+          `${subPrefix} - Điểm số (Mark)`,
+          `${subPrefix} - Nhận xét tiếng Anh (Comment EN)`,
+          `${subPrefix} - Nhận xét tiếng Việt (Nhận xét VI)`
+        );
       }
     }
   }
 
   // Append Core Competencies columns to TỔNG HỢP
   for (const cc of CORE_COMPETENCIES_DEF) {
-    tongHopHeaders.push(cc.labelVi);
+    tongHopHeaders.push(`${cc.labelVi} (${cc.labelEn})`);
   }
 
   const tongHopRows: any[][] = [tongHopHeaders];
@@ -499,11 +509,38 @@ export function parseCtqtExcel(buffer: Buffer): {
     // Individual Subject Sheet (Eng, Science, Maths, Global Studies, A.E, IELTS, A.R)
     const subjectCode = codeSubjectMap[normSheet];
     if (subjectCode && idIdx >= 0) {
-      const cmtIdx = headers.findIndex(h => h === "comments" || h.includes("comments") || h === "cmt");
-      const nxIdx = headers.findIndex(h => h === "nhận xét" || h.includes("nhận xét") || h === "nx");
-      const markIdx = headers.findIndex(h => h.includes("mark") || h.includes("điểm") || h === "gk" || h.includes("mid term"));
-      const eotIdx = headers.findIndex(h => h.includes("eot") || h.includes("cuối kỳ") || h.includes("end term") || h === "ck");
-      const gpaIdx = headers.findIndex(h => h.includes("gpa") || h.includes("tbm") || h.includes("đtb"));
+      const cmtIdx = headers.findIndex(
+        h =>
+          h.includes("comment en") ||
+          h.includes("nhận xét tiếng anh") ||
+          h === "comments" ||
+          h.includes("comments") ||
+          h === "cmt"
+      );
+      const nxIdx = headers.findIndex(
+        h =>
+          h.includes("nhận xét vi") ||
+          h.includes("nhận xét tiếng việt") ||
+          h === "nhận xét" ||
+          (h.includes("nhận xét") && !h.includes("tiếng anh") && !h.includes("comment en")) ||
+          h === "nx"
+      );
+      const markIdx = headers.findIndex(
+        h =>
+          h.includes("giữa kỳ") ||
+          h.includes("mid term") ||
+          h === "gk" ||
+          h.includes("mark") ||
+          h.includes("điểm số") ||
+          h.includes("ielts band") ||
+          (h.includes("điểm") && !h.includes("đtb"))
+      );
+      const eotIdx = headers.findIndex(
+        h => h.includes("eot") || h.includes("cuối kỳ") || h.includes("end term") || h === "ck"
+      );
+      const gpaIdx = headers.findIndex(
+        h => h.includes("gpa") || h.includes("tbm") || h.includes("đtb")
+      );
 
       // Collect progress test columns
       const progressIndexes: number[] = [];
