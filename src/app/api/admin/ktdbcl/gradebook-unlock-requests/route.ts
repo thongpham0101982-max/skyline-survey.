@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
+import { hasModulePermission } from "@/lib/permissions"
 
 export async function GET(request: Request) {
   try {
@@ -11,7 +13,12 @@ export async function GET(request: Request) {
     }
 
     const role = ((session.user as any)?.role || "").toUpperCase().trim()
-    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "KHAO_THI", "TB_DHCM", "GDCS"].includes(role)
+    const scopeInfo = await resolveAccountGradebookScope((session.user as any)?.id, role)
+    const hasPerm = await hasModulePermission(role, ["KTDBCL_THONG_KE_BAO_CAO", "KTDBCL_TK_DUYET_MO_SO", "KTDBCL_GRADE_REMARKS"])
+    const isAllowed =
+      ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "KHAO_THI", "TB_DHCM", "GDCS"].includes(role) ||
+      scopeInfo.isSubjectScoped ||
+      hasPerm
     if (!isAllowed) {
       return NextResponse.json({ success: false, error: "Forbidden: Bạn không có quyền truy cập trang này" }, { status: 403 })
     }
@@ -42,6 +49,9 @@ export async function GET(request: Request) {
     if (status && status !== "ALL") {
       whereClause.status = status
     }
+    if (scopeInfo.isSubjectScoped && scopeInfo.allowedSubjectIds.length > 0) {
+      whereClause.subjectId = { in: scopeInfo.allowedSubjectIds }
+    }
 
     // Query requests and pending count
     const [allRequests, pendingCount] = await Promise.all([
@@ -52,6 +62,9 @@ export async function GET(request: Request) {
       prisma.gradebookUnlockRequest.count({
         where: {
           ...(targetYearId ? { academicYearId: targetYearId } : {}),
+          ...(scopeInfo.isSubjectScoped && scopeInfo.allowedSubjectIds.length > 0
+            ? { subjectId: { in: scopeInfo.allowedSubjectIds } }
+            : {}),
           status: "PENDING"
         }
       })

@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { hasModulePermission } from "@/lib/permissions"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
 
 export async function GET(request: Request) {
   try {
@@ -27,13 +29,25 @@ export async function GET(request: Request) {
     } else if (rawPeriod === "GK1" || rawPeriod === "GIUA_KY_1") {
       periodVariants = ["GK1", "GIUA_KY_1", "ALL"]
     } else if (rawPeriod === "CK1" || rawPeriod === "CUOI_KY_1") {
-      periodVariants = ["CK1", "CUOI_KY_1", "ALL"]
+      periodVariants = ["CK1", "CUOI_KY_1", "HK1", "ALL"]
+    } else if (rawPeriod === "HK1" || rawPeriod === "HOC_KY_1") {
+      periodVariants = ["HK1", "CK1", "CUOI_KY_1", "ALL"]
     } else if (rawPeriod === "GK2" || rawPeriod === "GIUA_KY_2") {
       periodVariants = ["GK2", "GIUA_KY_2", "ALL"]
     } else if (rawPeriod === "CK2" || rawPeriod === "CUOI_KY_2") {
-      periodVariants = ["CK2", "CUOI_KY_2", "ALL"]
+      periodVariants = ["CK2", "CUOI_KY_2", "HK2", "ALL"]
+    } else if (rawPeriod === "HK2" || rawPeriod === "HOC_KY_2") {
+      periodVariants = ["HK2", "CK2", "CUOI_KY_2", "ALL"]
+    } else if (rawPeriod === "CN" || rawPeriod === "CA_NAM") {
+      periodVariants = ["CN", "CK2", "HK2", "ALL"]
     }
     const targetPeriodFilter = periodVariants.filter(p => p !== "ALL")
+    const mappedSemester =
+      rawPeriod === "HK1" || rawPeriod === "CK1" || rawPeriod === "GK1"
+        ? "HK1"
+        : rawPeriod === "CN"
+          ? "CN"
+          : "HK2"
 
     // 1. Get class details
     const targetClass = await prisma.class.findUnique({
@@ -75,7 +89,35 @@ export async function GET(request: Request) {
       }).catch(() => null)
     }
 
-    const isAdmin = ["SUPERADMIN", "ADMIN", "BGH", "KTDBCL"].includes(userRole.toUpperCase())
+    const upperRole = String(userRole || "").toUpperCase().trim()
+    const isAdminRole = [
+      "SUPERADMIN",
+      "SUPER_ADMIN",
+      "ADMIN",
+      "ADMINISTRATOR",
+      "BGH",
+      "KTDBCL",
+      "KT_DBCL",
+      "KHAO_THI",
+      "TB_DHCM",
+      "BAN_DHCM",
+      "GDCS",
+      "GĐCS",
+      "GIAO_VU",
+      "GIAO_VU_CS",
+      "TTCM",
+      "TBP",
+    ].includes(upperRole)
+    const [hasReportPerm, subjectScope] = await Promise.all([
+      hasModulePermission(userRole, [
+        "KTDBCL_XUAT_BANG_DIEM",
+        "KTDBCL_GRADE_REMARKS",
+        "KTDBCL_THONG_KE_BAO_CAO",
+        "KTDBCL_PHAN_TICH_THKQ",
+      ]).catch(() => false),
+      resolveAccountGradebookScope(userId, userRole, targetYearId || undefined).catch(() => null),
+    ])
+    const isAdmin = isAdminRole || hasReportPerm || Boolean(subjectScope?.isSubjectScoped) || Boolean(subjectScope?.isFullAccess)
     const isHomeroomTeacher = teacher && (
       targetClass.homeroomTeacherId === teacher.id ||
       (targetClass.homeroomTeacherId && targetClass.homeroomTeacherId.includes(teacher.id))
@@ -84,7 +126,7 @@ export async function GET(request: Request) {
     if (!isAdmin && !isHomeroomTeacher) {
       return NextResponse.json({
         success: false,
-        error: "Bạn không có quyền truy cập bảng điểm lớp này. Tính năng chỉ dành cho Giáo viên chủ nhiệm."
+        error: "Bạn không có quyền truy cập bảng điểm lớp này. Tính năng chỉ dành cho Giáo viên chủ nhiệm hoặc Quản trị viên được phân quyền."
       }, { status: 403 })
     }
 
@@ -140,19 +182,21 @@ export async function GET(request: Request) {
     }
 
     // 4-9. Concurrently fetch all independent homeroom datasets using Promise.all
+    const effectiveSigTeacherId = homeroomTeacher?.id || teacher?.id || ""
     const [
       students,
       classGradeEntries,
       teachingAssignments,
       surveyConfigs,
       benchmarkConfigs,
-      siblingClasses
+      siblingClasses,
+      homeroomSignatureProfile
     ] = await Promise.all([
       // 4. Get active students of the homeroom class
       prisma.student.findMany({
         where: {
           classId,
-          status: "ACTIVE"
+          status: { not: "INACTIVE" }
         },
         orderBy: { studentName: "asc" },
         select: {
@@ -191,7 +235,7 @@ export async function GET(request: Request) {
           academicYearId: targetYearId,
           evaluationPeriod: { in: periodVariants },
           subjectId: { not: null },
-          status: "ACTIVE"
+          isActive: true
         },
         include: {
           subject: true
@@ -208,7 +252,12 @@ export async function GET(request: Request) {
       prisma.class.findMany({
         where: gradeClassesWhere,
         select: { id: true, className: true, campusId: true }
-      })
+      }),
+      effectiveSigTeacherId
+        ? (prisma as any).teacherSignatureProfile?.findUnique({
+            where: { teacherId: effectiveSigTeacherId }
+          }).catch(() => null)
+        : Promise.resolve(null)
     ])
 
     // Sort students by Vietnamese alphabet
@@ -228,12 +277,40 @@ export async function GET(request: Request) {
       }
     })
 
+    // Also resolve teacher names from SubjectGradeEntry.teacherId if not in teachingAssignments
+    const entryTeacherIds = Array.from(
+      new Set(classGradeEntries.map((ge: any) => ge.teacherId).filter(Boolean))
+    ) as string[]
+    if (entryTeacherIds.length > 0) {
+      const entryTeachers = await prisma.teacher
+        .findMany({
+          where: { id: { in: entryTeacherIds } },
+          select: { id: true, teacherName: true },
+        })
+        .catch(() => [])
+      const entryTeacherById = new Map(entryTeachers.map((t) => [t.id, t.teacherName]))
+      classGradeEntries.forEach((ge: any) => {
+        if (ge.subjectId && ge.teacherId && !subjectTeacherMap[ge.subjectId]) {
+          const tName = entryTeacherById.get(ge.teacherId)
+          if (tName) subjectTeacherMap[ge.subjectId] = tName
+        }
+      })
+    }
+
     const subjectsMap = new Map<string, any>()
+    const subjectConfigMap = new Map<string, any>()
+
+    const effectiveClassGrade = rawGrade || targetClass.grade || targetClass.className || ""
 
     // Priority 1: Add subjects specifically configured in SubjectGradeConfig for this grade
     surveyConfigs.forEach(cfg => {
-      if (cfg.subject && cfg.subjectId !== "ALL" && isGradeMatching(cfg.grade, targetClass.grade)) {
+      if (cfg.subject && cfg.subjectId !== "ALL" && isGradeMatching(cfg.grade, effectiveClassGrade)) {
         subjectsMap.set(cfg.subject.id, cfg.subject)
+        const existingCfg = subjectConfigMap.get(cfg.subject.id)
+        // Prefer exact period match over "ALL"
+        if (!existingCfg || (existingCfg.evaluationPeriod === "ALL" && cfg.evaluationPeriod !== "ALL")) {
+          subjectConfigMap.set(cfg.subject.id, cfg)
+        }
       }
     })
 
@@ -244,7 +321,160 @@ export async function GET(request: Request) {
       }
     })
 
-    const subjectsList = Array.from(subjectsMap.values()).sort((a, b) => (a.orderIndex || 99) - (b.orderIndex || 99))
+    // Priority 3: Include subjects assigned via TeachingAssignment for this class (especially useful for HK1/HK2/CN)
+    teachingAssignments.forEach(ta => {
+      if (ta.subject && !subjectsMap.has(ta.subject.id)) {
+        subjectsMap.set(ta.subject.id, ta.subject)
+      }
+    })
+
+    // Priority 4: Fallback to standard active MOET subjects for the level/grade if no subjects were found yet
+    if (subjectsMap.size === 0) {
+      const allActiveSubjects = await prisma.subject
+        .findMany({
+          where: { status: "ACTIVE" },
+          orderBy: { orderIndex: "asc" },
+        })
+        .catch(() => [])
+      const primaryCodes =
+        num >= 4
+          ? ["TVI", "TOA", "SCI", "LSU", "TA", "TAV", "ICT", "TIN_HOC", "STE", "GTC", "ANA", "MTU", "HDTNHN", "GCD"]
+          : ["TVI", "TOA", "TN-XH", "TA", "TAV", "ICT", "TIN_HOC", "GTC", "ANA", "MTU", "HDTNHN", "GCD"]
+      allActiveSubjects.forEach((sub: any) => {
+        const codeUpper = String(sub.subjectCode || "").toUpperCase()
+        if (levelCode === "TIEU_HOC") {
+          if (primaryCodes.includes(codeUpper) || String(sub.category || "").toUpperCase() === "MOET") {
+            subjectsMap.set(sub.id, sub)
+          }
+        } else if (String(sub.category || "MOET").toUpperCase() === "MOET") {
+          subjectsMap.set(sub.id, sub)
+        }
+      })
+    }
+
+    let subjectsList = Array.from(subjectsMap.values()).sort((a, b) => (a.orderIndex || 99) - (b.orderIndex || 99))
+    if (
+      !isHomeroomTeacher &&
+      subjectScope?.isSubjectScoped &&
+      (subjectScope.allowedSubjectIds.length > 0 || subjectScope.allowedSubjectCodes.length > 0)
+    ) {
+      const allowedIdSet = new Set(subjectScope.allowedSubjectIds)
+      const allowedCodeSet = new Set(subjectScope.allowedSubjectCodes.map((c: string) => String(c || "").toUpperCase()))
+      subjectsList = subjectsList.filter(
+        (sub: any) =>
+          allowedIdSet.has(sub.id) ||
+          allowedCodeSet.has(String(sub.subjectCode || "").toUpperCase())
+      )
+    }
+
+    const homeroomDefaultTeacherName = homeroomTeacher?.teacherName || teacher?.teacherName || "GVCN"
+
+    const buildSubjectConfigMeta = (sub: any) => {
+      const rawCfg = subjectConfigMap.get(sub.id)
+      const subNameLower = String(sub.subjectName || "").toLowerCase()
+      const subCodeUpper = String(sub.subjectCode || "").toUpperCase()
+      const isCommentOnlySubj =
+        String(sub.evaluationType || "").toUpperCase() === "REMARK" ||
+        ["GTC", "ANA", "AM_NHAC", "MTU", "MY_THUAT", "HDTNHN", "HDTN", "NDGDCDP", "GCD"].includes(subCodeUpper) ||
+        subNameLower.includes("thể chất") ||
+        subNameLower.includes("âm nhạc") ||
+        subNameLower.includes("mĩ thuật") ||
+        subNameLower.includes("mỹ thuật") ||
+        subNameLower.includes("trải nghiệm") ||
+        subNameLower.includes("địa phương") ||
+        (levelCode === "TIEU_HOC" && (subNameLower.includes("đạo đức") || subNameLower.includes("tự nhiên và xã hội")))
+
+      let colNames: string[] = []
+      let colTypes: string[] = []
+      let colMaxScores: number[] = []
+      let columnsDef: any[] = []
+
+      if (rawCfg) {
+        try {
+          colNames = typeof rawCfg.columnNames === "string" ? JSON.parse(rawCfg.columnNames) : rawCfg.columnNames || []
+        } catch {}
+        try {
+          colTypes = typeof rawCfg.columnTypes === "string" ? JSON.parse(rawCfg.columnTypes) : rawCfg.columnTypes || []
+        } catch {}
+        try {
+          colMaxScores =
+            typeof rawCfg.columnMaxScores === "string" ? JSON.parse(rawCfg.columnMaxScores) : rawCfg.columnMaxScores || []
+        } catch {}
+        try {
+          columnsDef =
+            typeof rawCfg.columnsJson === "string" ? JSON.parse(rawCfg.columnsJson) : rawCfg.columnsJson || []
+        } catch {}
+      }
+
+      const configType = rawCfg?.configType || "VNEDU"
+      const hasCompositeColumn = rawCfg ? rawCfg.hasCompositeColumn !== false : !isCommentOnlySubj
+      const compositeColumnName =
+        rawCfg?.compositeColumnName ||
+        (levelCode === "TIEU_HOC" ? "Điểm KTĐK" : rawPeriod === "KSĐN" ? "Điểm KS" : "ĐTBmhk")
+      const hasRatingColumn = rawCfg
+        ? Boolean(rawCfg.hasRatingColumn) || levelCode === "TIEU_HOC" || isCommentOnlySubj
+        : levelCode === "TIEU_HOC" || isCommentOnlySubj
+      const ratingColumnName =
+        rawCfg?.ratingColumnName || (levelCode === "TIEU_HOC" ? "Mức đạt (T/H/C)" : "Mức đạt (Đ/CĐ)")
+      const hasRemarkColumn = rawCfg ? rawCfg.hasRemarkColumn !== false : true
+
+      let evaluationMode: "SCORE_AND_RATING" | "SCORE" | "RATING_ONLY" = "SCORE"
+      let evaluationModeLabel = "Đánh giá bằng điểm số & nhận xét"
+      if (isCommentOnlySubj && (!rawCfg || !rawCfg.hasCompositeColumn)) {
+        evaluationMode = "RATING_ONLY"
+        evaluationModeLabel =
+          levelCode === "TIEU_HOC" ? "Đánh giá bằng nhận xét (T / H / C)" : "Đánh giá bằng nhận xét (Đ / CĐ)"
+      } else if (levelCode === "TIEU_HOC" || (hasCompositeColumn && hasRatingColumn)) {
+        evaluationMode = "SCORE_AND_RATING"
+        evaluationModeLabel =
+          levelCode === "TIEU_HOC"
+            ? "Mức đạt (T/H/C) & Điểm KTĐK (TT27)"
+            : "Điểm số kết hợp Xếp loại & Nhận xét"
+      } else if (configType === "INTERNAL") {
+        evaluationModeLabel = `Đánh giá nội bộ Sky-Line (${colNames.length || 1} cột)`
+      } else {
+        evaluationModeLabel = "Điểm số & Nhận xét (TT22)"
+      }
+
+      // Resolve GVBM name for this subject
+      let resolvedTeacher = subjectTeacherMap[sub.id] || ""
+      if (!resolvedTeacher && levelCode === "TIEU_HOC") {
+        const isPrimaryHomeroomSubj =
+          ["TVI", "TOA", "SCI", "LSU", "TN-XH", "GCD", "HDTNHN"].includes(subCodeUpper) ||
+          subNameLower.includes("tiếng việt") ||
+          subNameLower.includes("toán") ||
+          subNameLower.includes("khoa học") ||
+          subNameLower.includes("lịch sử") ||
+          subNameLower.includes("tự nhiên") ||
+          subNameLower.includes("đạo đức") ||
+          subNameLower.includes("trải nghiệm")
+        if (isPrimaryHomeroomSubj) {
+          resolvedTeacher = `${homeroomDefaultTeacherName} (GVCN)`
+        }
+      }
+
+      return {
+        configId: rawCfg?.id || null,
+        configType,
+        evaluationMode,
+        evaluationModeLabel,
+        columnNames: colNames,
+        columnTypes: colTypes,
+        columnMaxScores: colMaxScores,
+        columnsDef,
+        hasCompositeColumn,
+        compositeColumnName,
+        hasRatingColumn,
+        ratingColumnName,
+        hasRemarkColumn,
+        teacherName: resolvedTeacher || "Chưa phân công",
+      }
+    }
+
+    const subjectMetaMap = new Map<string, ReturnType<typeof buildSubjectConfigMeta>>()
+    subjectsList.forEach(sub => {
+      subjectMetaMap.set(sub.id, buildSubjectConfigMeta(sub))
+    })
 
     const resolveBenchmark = (subId: string): number => {
       const defaultScore = levelCode === "TIEU_HOC" ? 7.0 : 6.0
@@ -252,14 +482,14 @@ export async function GET(request: Request) {
 
       const matchPeriodSubGrade = benchmarkConfigs.find(b =>
         b.subjectId === subId &&
-        isGradeMatching(b.grade, targetClass.grade) &&
+        isGradeMatching(b.grade, effectiveClassGrade) &&
         periodVariants.includes(b.evaluationPeriod)
       )
       if (matchPeriodSubGrade) return matchPeriodSubGrade.benchmarkScore
 
       const matchSubGrade = benchmarkConfigs.find(b =>
         b.subjectId === subId &&
-        isGradeMatching(b.grade, targetClass.grade) &&
+        isGradeMatching(b.grade, effectiveClassGrade) &&
         b.evaluationPeriod === "ALL"
       )
       if (matchSubGrade) return matchSubGrade.benchmarkScore
@@ -433,7 +663,7 @@ export async function GET(request: Request) {
     const studentIds = students.map(s => s.id)
     const periodTags = targetPeriodFilter.map(p => `[GradePeriod: ${p}]`)
 
-    const [inputAssessments, learningCommitments, consultationLogs, psychologicalTargets] = await Promise.all([
+    const [inputAssessments, learningCommitments, consultationLogs, psychologicalTargets, termScores, termSummaries] = await Promise.all([
       prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes }
@@ -485,8 +715,31 @@ export async function GET(request: Request) {
           },
           createdBy: { select: { id: true, teacherName: true } }
         }
+      }).catch(() => []),
+      prisma.studentTermScore.findMany({
+        where: {
+          studentId: { in: studentIds },
+          semester: mappedSemester
+        },
+        include: { subject: true }
+      }).catch(() => []),
+      prisma.studentTermSummary.findMany({
+        where: {
+          studentId: { in: studentIds },
+          semester: mappedSemester
+        }
       }).catch(() => [])
     ])
+
+    const termScoreMap = new Map<string, any>()
+    termScores.forEach((ts: any) => {
+      termScoreMap.set(`${ts.studentId}_${ts.subjectId}`, ts)
+    })
+
+    const termSummaryMap = new Map<string, any>()
+    termSummaries.forEach((tsum: any) => {
+      termSummaryMap.set(tsum.studentId, tsum)
+    })
 
     const psychologyMap = new Map<string, any>()
     psychologicalTargets.forEach((pt: any) => {
@@ -564,8 +817,13 @@ export async function GET(request: Request) {
     const studentMatrix = students.map(st => {
       const subjectGrades: Record<string, {
         score: number | null
+        ratingValue: string | null
         componentScores: any
+        formattedComponents: Array<{ key: string; label: string; value: string }>
         remark: string
+        teacherName: string
+        evaluationMode: string
+        evaluationModeLabel: string
         isBelowAverage: boolean
         isBelowBenchmark: boolean
         benchmark: number
@@ -579,28 +837,107 @@ export async function GET(request: Request) {
 
       subjectsList.forEach(sub => {
         const benchmark = resolveBenchmark(sub.id)
+        const meta = subjectMetaMap.get(sub.id)
         const entry = classEntryMap[`${st.id}_${sub.id}`]
+        const tScore = termScoreMap.get(`${st.id}_${sub.id}`)
         let score: number | null = null
+        let ratingValue: string | null = null
         let compScores: any = {}
         let remark = ""
 
         if (entry) {
           remark = entry.remark || ""
+          ratingValue = entry.ratingValue || null
           if (entry.componentScores) {
             try {
               compScores = typeof entry.componentScores === "string" ? JSON.parse(entry.componentScores) : entry.componentScores
             } catch (_) { }
           }
+          if (!ratingValue && compScores && typeof compScores === "object") {
+            ratingValue = compScores.xl || compScores.rating || compScores.mucDat || null
+          }
           if (entry.compositeScore !== null && entry.compositeScore !== undefined) {
             const num = Number(entry.compositeScore)
             if (!isNaN(num)) {
               score = num
-              totalScoreSum += num
-              scoreCount++
-              if (num < 5.0) belowAverageCount++
-              if (num < benchmark) belowBenchmarkCount++
             }
           }
+        }
+
+        // Supplement from StudentTermScore if score or ratingValue is missing (for HK1/HK2/CN/CK1/CK2)
+        if (tScore) {
+          if (score === null && tScore.score !== null && tScore.score !== undefined) {
+            const num = Number(tScore.score)
+            if (!isNaN(num)) score = num
+          }
+          if (!ratingValue && tScore.evaluationGrade) {
+            ratingValue = tScore.evaluationGrade
+          }
+        }
+
+        if (score !== null) {
+          totalScoreSum += score
+          scoreCount++
+          if (score < 5.0) belowAverageCount++
+          if (score < benchmark) belowBenchmarkCount++
+        }
+
+        // Build formatted component scores array based on subject's specific configuration
+        const formattedComponents: Array<{ key: string; label: string; value: string }> = []
+        if (compScores && typeof compScores === "object") {
+          const colNames = meta?.columnNames || []
+          const colsDef = meta?.columnsDef || []
+          const usedKeys = new Set<string>()
+
+          if (colsDef.length > 0) {
+            colsDef.forEach((cDef: any, idx: number) => {
+              const key = cDef.key || `col${idx}`
+              const val = compScores[key] ?? compScores[`col${idx}`]
+              if (val !== undefined && val !== null && String(val).trim() !== "") {
+                usedKeys.add(key)
+                usedKeys.add(`col${idx}`)
+                formattedComponents.push({
+                  key,
+                  label: cDef.label || colNames[idx] || key,
+                  value: String(val),
+                })
+              }
+            })
+          } else if (colNames.length > 0) {
+            colNames.forEach((cName: string, idx: number) => {
+              const key = `col${idx}`
+              const val = compScores[key]
+              if (val !== undefined && val !== null && String(val).trim() !== "") {
+                usedKeys.add(key)
+                formattedComponents.push({
+                  key,
+                  label: cName,
+                  value: String(val),
+                })
+              }
+            })
+          }
+
+          // Also include standard VnEdu keys (tx1..tx4, gk, ck, kt) if present and not yet added
+          const standardKeyLabels: Record<string, string> = {
+            tx1: "ĐĐGtx 1",
+            tx2: "ĐĐGtx 2",
+            tx3: "ĐĐGtx 3",
+            tx4: "ĐĐGtx 4",
+            gk: "ĐĐGgk",
+            ck: "ĐĐGck",
+            kt: "Điểm KTĐK",
+          }
+          Object.entries(compScores).forEach(([k, v]) => {
+            if (usedKeys.has(k) || k === "xl" || k === "rating" || k === "mucDat") return
+            if (v !== undefined && v !== null && String(v).trim() !== "") {
+              formattedComponents.push({
+                key: k,
+                label: standardKeyLabels[k] || k,
+                value: String(v),
+              })
+            }
+          })
         }
 
         const isBelowAverage = score !== null && score < 5.0
@@ -609,8 +946,13 @@ export async function GET(request: Request) {
 
         subjectGrades[sub.id] = {
           score,
+          ratingValue,
           componentScores: compScores,
+          formattedComponents,
           remark,
+          teacherName: meta?.teacherName || subjectTeacherMap[sub.id] || "Chưa phân công",
+          evaluationMode: meta?.evaluationMode || "SCORE",
+          evaluationModeLabel: meta?.evaluationModeLabel || "Điểm số & Nhận xét",
           isBelowAverage,
           isBelowBenchmark,
           benchmark,
@@ -632,6 +974,20 @@ export async function GET(request: Request) {
         )
       )
 
+      const rawSum = termSummaryMap.get(st.id)
+      let parsedCompetencies: Record<string, string> = {}
+      let parsedQualities: Record<string, string> = {}
+      if (rawSum?.competencies) {
+        try {
+          parsedCompetencies = typeof rawSum.competencies === "string" ? JSON.parse(rawSum.competencies) : rawSum.competencies
+        } catch {}
+      }
+      if (rawSum?.qualities) {
+        try {
+          parsedQualities = typeof rawSum.qualities === "string" ? JSON.parse(rawSum.qualities) : rawSum.qualities
+        } catch {}
+      }
+
       return {
         studentId: st.id,
         studentCode: st.studentCode,
@@ -640,6 +996,7 @@ export async function GET(request: Request) {
         dateOfBirth: st.dateOfBirth,
         subjectGrades,
         gpa,
+        avgScore: gpa,
         scoreCount,
         belowAverageCount,
         belowBenchmarkCount,
@@ -648,7 +1005,7 @@ export async function GET(request: Request) {
         learningCommitments: commitments,
         isPsychologySupport: psychologyMap.has(st.id),
         psychologySupport: psychologyMap.get(st.id) || null,
-        teacherRemark: exchangeMap.get(st.id)?.teacherRemark || "",
+        teacherRemark: exchangeMap.get(st.id)?.teacherRemark || rawSum?.notes || "",
         teacherRemarkDate: exchangeMap.get(st.id)?.teacherRemarkDate || null,
         parentFeedback: exchangeMap.get(st.id)?.parentFeedback || "",
         parentFeedbackDate: exchangeMap.get(st.id)?.parentFeedbackDate || null,
@@ -657,7 +1014,21 @@ export async function GET(request: Request) {
         forwardedGvbm: exchangeMap.get(st.id)?.forwardedGvbm || null,
         gvbmResponse: exchangeMap.get(st.id)?.gvbmResponse || null,
         exchangeLogId: exchangeMap.get(st.id)?.logId || null,
-        defaultTeacherRemark: `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh ${st.studentName}. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`
+        termSummary: rawSum
+          ? {
+              academicRating: rawSum.academicRating || "",
+              conductRating: rawSum.conductRating || "",
+              absencesPermitted: rawSum.absencesPermitted || 0,
+              absencesUnpermitted: rawSum.absencesUnpermitted || 0,
+              absencesTotal: (rawSum.absencesPermitted || 0) + (rawSum.absencesUnpermitted || 0),
+              reward: rawSum.reward || "",
+              notes: rawSum.notes || "",
+              promoted: rawSum.promoted !== false,
+              competencies: parsedCompetencies,
+              qualities: parsedQualities,
+            }
+          : null,
+        defaultTeacherRemark: `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả học tập của học sinh ${st.studentName}. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`
       }
     })
 
@@ -675,16 +1046,31 @@ export async function GET(request: Request) {
         id: targetClass.id,
         className: targetClass.className,
         grade: targetClass.grade,
+        levelCode,
         campusName: targetClass.campus?.campusName || targetClass.campus?.name || "Cơ sở",
         campusCode: targetClass.campus?.campusCode || "",
         homeroomTeacherName: homeroomTeacher?.teacherName || teacher?.teacherName || "",
+        homeroomTeacherCode: homeroomTeacher?.teacherCode || teacher?.teacherCode || "",
         totalStudents: students.length,
         academicYearName: targetClass.academicYear?.name || ""
       },
+      homeroomSignatureProfile: homeroomSignatureProfile || null,
       evaluationPeriod: rawPeriod,
       scope,
       siblingClassesCount: siblingClasses.length,
-      subjects: subjectsList.map(s => ({ id: s.id, name: s.subjectName, code: s.subjectCode })),
+      subjects: subjectsList.map(s => {
+        const meta = subjectMetaMap.get(s.id)
+        return {
+          id: s.id,
+          name: s.subjectName,
+          subjectName: s.subjectName,
+          code: s.subjectCode,
+          subjectCode: s.subjectCode,
+          category: s.category || "MOET",
+          teacherName: meta?.teacherName || subjectTeacherMap[s.id] || "Chưa phân công",
+          config: meta || null
+        }
+      }),
       subjectComparisons,
       studentMatrix,
       trackingStudents,

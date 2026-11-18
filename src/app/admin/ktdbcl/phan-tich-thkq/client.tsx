@@ -26,6 +26,7 @@ interface Props {
   subjects: any[]
   gradeConfigs?: any[]
   classes: any[]
+  isSubjectScoped?: boolean
 }
 
 export function PhanTichThkqClient({
@@ -34,14 +35,17 @@ export function PhanTichThkqClient({
   campuses = [],
   subjects = [],
   gradeConfigs = [],
-  classes = []
+  classes = [],
+  isSubjectScoped = false
 }: Props) {
   // Bộ lọc States
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id ?? ""))
   const [selectedPeriod, setSelectedPeriod] = useState("ALL")
   const [selectedLevel, setSelectedLevel] = useState("ALL")
   const [selectedGrade, setSelectedGrade] = useState("ALL")
-  const [selectedSubjectId, setSelectedSubjectId] = useState("ALL")
+  const [selectedSubjectId, setSelectedSubjectId] = useState(
+    isSubjectScoped && subjects.length === 1 ? subjects[0].id : "ALL"
+  )
   const [selectedCampusId, setSelectedCampusId] = useState("ALL")
   const [selectedScoreRange, setSelectedScoreRange] = useState("ALL")
   const [selectedTargetType, setSelectedTargetType] = useState("ALL")
@@ -316,23 +320,36 @@ export function PhanTichThkqClient({
             <Home className="h-3.5 w-3.5" /> Quản trị
           </a>
           <ChevronRight className="h-3 w-3 text-slate-400" />
-          <span className="text-slate-600">Khảo thí & ĐBCL</span>
+          <span className="text-slate-600">Sổ điểm - Nhận xét</span>
           <ChevronRight className="h-3 w-3 text-slate-400" />
-          <span className="text-sky-600 font-bold">Phân tích THKQ</span>
+          <span className="text-[#00736E] font-bold">Phân tích Tổng hợp Kết quả (THKQ)</span>
         </nav>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
               <span>Phân tích Tổng hợp Kết quả (THKQ)</span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800 border border-sky-200">
-                <ShieldCheck className="h-3.5 w-3.5 text-sky-600" /> KT&ĐBCL
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
+                <ShieldCheck className="h-3.5 w-3.5 text-[#00A19A]" /> Sổ điểm - Nhận xét
               </span>
             </h1>
             <p className="text-xs text-slate-500 mt-1 max-w-3xl">
               Giám sát chất lượng học tập, tính ĐTB Lớp - Khối - Cơ sở, Độ lệch chuẩn mẫu (σ), nhận diện học sinh dưới
               chuẩn Sky-Line, chuẩn Bộ GD&ĐT, học sinh cam kết đầu vào và theo dõi tâm lý học đường.
             </p>
+            {isSubjectScoped && subjects.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-slate-600">Môn học được phân quyền:</span>
+                {subjects.map((s: any) => (
+                  <span
+                    key={s.id}
+                    className="px-2 py-0.5 rounded-md bg-[#F0FDFA] border border-[#CCFBF1] text-[11px] font-semibold text-[#00736E]"
+                  >
+                    {s.subjectName}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

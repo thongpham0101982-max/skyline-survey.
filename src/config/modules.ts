@@ -99,7 +99,6 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
       { code: "STUDENT_PORTAL_CONFIG", name: "Cổng ảnh học sinh", icon: Globe, href: "/admin/student-portal", requiresAdmin: true },
       { code: "API_INTEGRATIONS", name: "Kết nối API", icon: KeyRound, href: "/admin/api-integrations", requiresAdmin: true },
       { code: "DIGITAL_SIGNATURES", name: "Cấu hình Chữ ký số", icon: PenTool, href: "/admin/chu-ky-so", requiresAdmin: true },
-      { code: "SKYLINE_CONNECT_ADMIN", name: "Quản trị Sky-Line Connect", icon: Sparkles, href: "/admin/skyline-connect" },
     ]
   },
   {
@@ -187,16 +186,24 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         name: "Hỗ trợ học tập",
         icon: FileText,
         href: "/admin/ktdbcl/support"
-      },
+      }
+    ]
+  },
+  {
+    id: "GRADEBOOK_REMARKS",
+    name: "Sổ điểm - Nhận xét",
+    color: "teal",
+    icon: ClipboardList,
+    modules: [
       {
         code: "KTDBCL_GRADE_REMARKS",
-        name: "QL Điểm/Nhận xét",
+        name: "Sổ điểm Vnedu",
         icon: ClipboardList,
         href: "/admin/ktdbcl/diem-nhan-xet"
       },
       {
         code: "KTDBCL_GRADE_CTQT",
-        name: "Quản lý Điểm CTQT",
+        name: "Sổ điểm CTQT",
         icon: Globe,
         href: "/admin/ktdbcl/diem-ctqt"
       },
@@ -214,15 +221,15 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
       },
       {
         code: "KTDBCL_PHAN_TICH_THKQ",
-        name: "Phân tích THKQ",
+        name: "Phân tích Tổng hợp Kết quả (THKQ)",
         icon: TrendingUp,
         href: "/admin/ktdbcl/phan-tich-thkq"
       },
       {
-        code: "KTDBCL_IMPORT_KQHT",
-        name: "Import KQHT",
+        code: "KTDBCL_XUAT_BANG_DIEM",
+        name: "Xuất bảng điểm",
         icon: FileSpreadsheet,
-        href: "/admin/ktdbcl/import-kqht?v=2.1"
+        href: "/admin/ktdbcl/xuat-bang-diem"
       }
     ]
   },
@@ -331,13 +338,13 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         icon: Calendar,
         href: "/admin/thoi-khoa-bieu",
         subModules: [
-          { code: "TIMETABLE_OVERVIEW", name: "1. Tổng quan", href: "/admin/thoi-khoa-bieu" },
-          { code: "TIMETABLE_CONFIG", name: "2. Cấu hình thời khóa biểu", href: "/admin/thoi-khoa-bieu/cau-hinh" },
-          { code: "TIMETABLE_QUOTA", name: "3. Định mức & Phân công", href: "/admin/thoi-khoa-bieu/phan-cong" },
-          { code: "TIMETABLE_SCHEDULE", name: "4. Xếp TKB (Kéo & Thả)", href: "/admin/thoi-khoa-bieu/xep-lich" },
-          { code: "TIMETABLE_LOOKUP", name: "5. Tra cứu thời khóa biểu", href: "/admin/thoi-khoa-bieu/tra-cuu" },
-          { code: "TIMETABLE_ADJUST", name: "6. Điều chỉnh & Dạy thay", href: "/admin/thoi-khoa-bieu/dieu-chinh" },
-          { code: "TIMETABLE_PUBLISH", name: "7. Duyệt & Ban hành", href: "/admin/thoi-khoa-bieu/ban-hanh" },
+          { code: "TIMETABLE_OVERVIEW", name: "Tổng quan", href: "/admin/thoi-khoa-bieu" },
+          { code: "TIMETABLE_CONFIG", name: "Bước 1. Khung giờ & Quy tắc", href: "/admin/thoi-khoa-bieu/cau-hinh" },
+          { code: "TIMETABLE_QUOTA", name: "Bước 2. Định mức 40t & Phân công", href: "/admin/thoi-khoa-bieu/phan-cong" },
+          { code: "TIMETABLE_SCHEDULE", name: "Bước 3. Xếp TKB (Kéo thả & Tự động)", href: "/admin/thoi-khoa-bieu/xep-lich" },
+          { code: "TIMETABLE_PUBLISH", name: "Bước 4. Duyệt & Ban hành", href: "/admin/thoi-khoa-bieu/ban-hanh" },
+          { code: "TIMETABLE_LOOKUP", name: "Tra cứu thời khóa biểu", href: "/admin/thoi-khoa-bieu/tra-cuu" },
+          { code: "TIMETABLE_ADJUST", name: "Điều chỉnh & Dạy thay", href: "/admin/thoi-khoa-bieu/dieu-chinh" },
         ],
       },
       { code: "STUDENT_TRANSFERS", name: "Quản lý HS lưu chuyển", icon: ArrowRightLeft, href: "/admin/student-transfers" },

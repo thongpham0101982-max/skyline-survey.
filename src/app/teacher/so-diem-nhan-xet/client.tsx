@@ -59,6 +59,16 @@ import { calculateCompositeScore, getColumnMaxScore } from "@/lib/grading/formul
 import { Button } from "@/components/ui/button"
 import { GvbmResponseModal } from "./components/GvbmResponseModal"
 import GvbmAdvisoryTasksPanel from "@/components/advisory/GvbmAdvisoryTasksPanel"
+import { VnEduPrimaryGradebook } from "@/components/grading/VnEduPrimaryGradebook"
+import { VnEduSecondaryGradebook } from "@/components/grading/VnEduSecondaryGradebook"
+import { VnEduImportModal } from "@/app/admin/ktdbcl/diem-nhan-xet/VnEduImportModal"
+import {
+  getPrimaryPeriodMeta,
+  getSubjectCurriculumGroup,
+  isPrimaryGrade,
+  normalizePrimaryXlInput,
+  shouldPrimarySubjectHaveKtColumn,
+} from "@/lib/grading/vnedu-config-types"
 
 interface Props {
   academicYears: any[]
@@ -74,7 +84,8 @@ const EVAL_PERIODS = [
   { code: "GK1", name: "Giữa kỳ 1 (GK1)", semester: 1 },
   { code: "CK1", name: "Cuối kỳ 1 (CK1)", semester: 1 },
   { code: "GK2", name: "Giữa kỳ 2 (GK2)", semester: 2 },
-  { code: "CK2", name: "Cuối kỳ 2 (CK2)", semester: 2 }
+  { code: "CK2", name: "Cuối kỳ 2 (CK2)", semester: 2 },
+  { code: "CN", name: "Cả năm (CN)", semester: 2 }
 ]
 
 export function DiemNhanXetTeacherClient({
@@ -95,6 +106,7 @@ export function DiemNhanXetTeacherClient({
   const [assignments, setAssignments] = useState<any[]>(initialAssignments)
   const [classes, setClasses] = useState<any[]>(initialClasses)
   const [subjects, setSubjects] = useState<any[]>(initialSubjects)
+  const [ksdnConfigs, setKsdnConfigs] = useState<Array<{ subjectId: string | null; grade: string; evaluationPeriod: string }>>([])
 
   // Level, Grade, System filters
   const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
@@ -104,6 +116,7 @@ export function DiemNhanXetTeacherClient({
   const [selectedPeriod, setSelectedPeriod] = useState(
     paramPeriod && EVAL_PERIODS.some((p: any) => p.code === paramPeriod) ? paramPeriod : "KSĐN"
   )
+  const isKsdnSelected = selectedPeriod === "KSĐN" || selectedPeriod === "KSDN"
 
   // Target semester based on selected period
   const targetSemester = useMemo(() => {
@@ -149,8 +162,32 @@ export function DiemNhanXetTeacherClient({
     if (map.size === 0 && assignments.length === 0 && subjects.length > 0) {
       subjects.forEach(s => map.set(s.id, s))
     }
-    return Array.from(map.values())
-  }, [filteredAssignments, selectedClassId, assignments.length, subjects])
+    const baseList = Array.from(map.values())
+    // Khi chọn Kỳ KSĐN: ưu tiên lọc các môn theo cấu hình "2. Đánh giá nội bộ Sky-Line" của Khối (riêng Khối 6 KSĐN lấy các môn ở Tiểu học của Khối 5)
+    if (isKsdnSelected && ksdnConfigs.length > 0) {
+      const currentCls = assignedClasses.find(c => c.id === selectedClassId)
+      const clsGradeNum = String(currentCls?.grade || currentCls?.className || selectedGradeFilter || "").match(/(\d+)/)?.[1] || ""
+      const allowedSubIds = new Set<string>()
+      ksdnConfigs.forEach(cfg => {
+        if (!cfg.subjectId || cfg.subjectId === "ALL") return
+        const cfgGrade = String(cfg.grade || "").trim()
+        const cfgGradeNum = cfgGrade.match(/(\d+)/)?.[1] || ""
+        if (
+          cfgGrade === "ALL" ||
+          !clsGradeNum ||
+          cfgGradeNum === clsGradeNum ||
+          (clsGradeNum === "6" && cfgGradeNum === "5")
+        ) {
+          allowedSubIds.add(cfg.subjectId)
+        }
+      })
+      if (allowedSubIds.size > 0) {
+        const matched = baseList.filter(s => allowedSubIds.has(s.id))
+        if (matched.length > 0) return matched
+      }
+    }
+    return baseList
+  }, [filteredAssignments, selectedClassId, assignments.length, subjects, isKsdnSelected, ksdnConfigs, assignedClasses, selectedGradeFilter])
 
   const educationSystemOptions = useMemo(() => {
     const set = new Set<string>()
@@ -246,13 +283,28 @@ export function DiemNhanXetTeacherClient({
   const [gradeSheetData, setGradeSheetData] = useState<{
     config: any
     students: any[]
-    entries: Record<string, { componentScores: Record<string, string>; compositeScore: string; remark: string }>
+    entries: Record<string, { componentScores: Record<string, string>; compositeScore: string; ratingValue?: string; remark: string }>
   }>({
     config: null,
     students: [],
     entries: {}
   })
 
+  const [gradebookSourceMode, setGradebookSourceMode] = useState<"VNEDU" | "INTERNAL">("VNEDU")
+  const selectedSubjectObjForMode = useMemo(
+    () => assignedSubjects.find(s => s.id === selectedSubjectId) || subjects.find(s => s.id === selectedSubjectId) || null,
+    [assignedSubjects, subjects, selectedSubjectId]
+  )
+  const isSelectedSubjectInternalOnly = useMemo(() => {
+    if (!selectedSubjectObjForMode) return false
+    const grp = getSubjectCurriculumGroup(selectedSubjectObjForMode)
+    return grp === "BILINGUAL"
+  }, [selectedSubjectObjForMode])
+  const effectiveGradebookSourceMode: "VNEDU" | "INTERNAL" =
+    isKsdnSelected || isSelectedSubjectInternalOnly ? "INTERNAL" : gradebookSourceMode
+  const [gradebookSearch, setGradebookSearch] = useState("")
+  const [isVnEduImportOpen, setIsVnEduImportOpen] = useState(false)
+  const [pendingVnEduFiles, setPendingVnEduFiles] = useState<File[]>([])
   const [loadingSheet, setLoadingSheet] = useState(false)
   const [savingEntries, setSavingEntries] = useState(false)
   const [isSheetLocked, setIsSheetLocked] = useState(false)
@@ -384,6 +436,9 @@ export function DiemNhanXetTeacherClient({
           }
           setClasses(data.classes || [])
           setSubjects(data.subjects || [])
+          if (Array.isArray(data.ksdnConfigs)) {
+            setKsdnConfigs(data.ksdnConfigs)
+          }
         }
       })
       .catch(console.error)
@@ -400,11 +455,11 @@ export function DiemNhanXetTeacherClient({
     try {
       setLoadingSheet(true)
       const res = await fetch(
-        `/api/teacher/grade-entries?academicYearId=${selectedYearId}&classId=${selectedClassId}&subjectId=${selectedSubjectId}&evaluationPeriod=${selectedPeriod}`
+        `/api/teacher/grade-entries?academicYearId=${selectedYearId}&classId=${selectedClassId}&subjectId=${selectedSubjectId}&evaluationPeriod=${selectedPeriod}&configType=${effectiveGradebookSourceMode}`
       )
       const data = await res.json()
       if (data.success) {
-        const entryDict: Record<string, { componentScores: Record<string, string>; compositeScore: string; remark: string }> = {}
+        const entryDict: Record<string, { componentScores: Record<string, string>; compositeScore: string; ratingValue?: string; remark: string }> = {}
         if (Array.isArray(data.entries)) {
           data.entries.forEach((e: any) => {
             let parsedComp: Record<string, string> = {}
@@ -415,7 +470,7 @@ export function DiemNhanXetTeacherClient({
             }
             entryDict[e.studentId] = {
               componentScores: parsedComp,
-              compositeScore: e.compositeScore !== null && e.compositeScore !== undefined ? String(e.compositeScore) : "",
+              compositeScore: e.compositeScore !== null && e.compositeScore !== undefined ? String(e.compositeScore) : "", ratingValue: e.ratingValue || "",
               remark: e.remark || ""
             }
           })
@@ -438,7 +493,7 @@ export function DiemNhanXetTeacherClient({
 
   useEffect(() => {
     fetchGradeSheet()
-  }, [selectedClassId, selectedSubjectId, selectedPeriod, selectedYearId])
+  }, [selectedClassId, selectedSubjectId, selectedPeriod, selectedYearId, effectiveGradebookSourceMode])
 
   const handleOpenUnlockModal = () => {
     setUnlockReason("")
@@ -458,7 +513,7 @@ export function DiemNhanXetTeacherClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           academicYearId: selectedYearId,
-          evaluationPeriod: selectedPeriod,
+          evaluationPeriod: selectedPeriod, configType: effectiveGradebookSourceMode, configId: gradeSheetData.config?.id || null, configVersion: gradeSheetData.config?.version || null,
           classId: selectedClassId,
           subjectId: selectedSubjectId,
           reason: unlockReason.trim()
@@ -563,6 +618,22 @@ export function DiemNhanXetTeacherClient({
     })
   }
 
+  const handleRatingChange = (studentId: string, val: string) => {
+    setGradeSheetData(prev => {
+      const studentEntry = prev.entries[studentId] || { componentScores: {}, compositeScore: "", ratingValue: "", remark: "" }
+      return {
+        ...prev,
+        entries: {
+          ...prev.entries,
+          [studentId]: {
+            ...studentEntry,
+            ratingValue: val
+          }
+        }
+      }
+    })
+  }
+
   const handleSaveGradeSheet = async () => {
     if (isSheetLocked) {
       alert("Sổ điểm đã bị khóa bởi Ban Khảo thí & ĐBCL, không thể lưu thay đổi!")
@@ -577,7 +648,7 @@ export function DiemNhanXetTeacherClient({
       const entriesList = Object.entries(gradeSheetData.entries).map(([studentId, data]) => ({
         studentId,
         componentScores: data.componentScores,
-        compositeScore: data.compositeScore,
+        compositeScore: data.compositeScore, ratingValue: data.ratingValue || null,
         remark: data.remark
       }))
 
@@ -588,7 +659,7 @@ export function DiemNhanXetTeacherClient({
           academicYearId: selectedYearId,
           classId: selectedClassId,
           subjectId: selectedSubjectId,
-          evaluationPeriod: selectedPeriod,
+          evaluationPeriod: selectedPeriod, configType: effectiveGradebookSourceMode, configId: gradeSheetData.config?.id || null, configVersion: gradeSheetData.config?.version || null,
           entries: entriesList
         })
       })
@@ -608,6 +679,60 @@ export function DiemNhanXetTeacherClient({
   const handleExportExcel = () => {
     const currentClass = filteredClasses.find(c => c.id === selectedClassId)
     const currentSubject = assignedSubjects.find(s => s.id === selectedSubjectId)
+    const isPrimary = isPrimaryGrade(currentClass?.grade || currentClass?.className || selectedGradeFilter)
+
+    if (isPrimary && effectiveGradebookSourceMode === "VNEDU") {
+      const meta = getPrimaryPeriodMeta(selectedPeriod)
+      const hasKt =
+        gradeSheetData.config && typeof gradeSheetData.config.columnCount === "number"
+          ? gradeSheetData.config.columnCount > 0
+          : shouldPrimarySubjectHaveKtColumn(
+              currentSubject?.subjectName || currentSubject?.subjectCode,
+              currentClass?.grade || currentClass?.className,
+              selectedPeriod
+            )
+
+      const headers = ["STT", "Mã HS", "Mã vnEdu", "Họ và tên đệm", "Tên", "Ngày sinh", meta.remarkColumnLabel]
+      if (hasKt) headers.push(meta.ktColumnLabel)
+      headers.push(meta.xlColumnLabel)
+
+      const rows = gradeSheetData.students.map((st, idx) => {
+        const entry = gradeSheetData.entries[st.id] || { componentScores: {}, compositeScore: "", ratingValue: "", remark: "" }
+        const cleanName = String(st.studentName || "").trim().replace(/\s+/g, " ")
+        const lastSpace = cleanName.lastIndexOf(" ")
+        const lastName = lastSpace === -1 ? "" : cleanName.slice(0, lastSpace)
+        const firstName = lastSpace === -1 ? cleanName : cleanName.slice(lastSpace + 1)
+
+        const d = st.dateOfBirth ? new Date(st.dateOfBirth) : null
+        const dobStr = d && !isNaN(d.getTime())
+          ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`
+          : ""
+
+        const rowData: any[] = [
+          idx + 1,
+          st.studentCode || "",
+          st.vnEduCode || "",
+          lastName,
+          firstName,
+          dobStr,
+          entry.remark || "",
+        ]
+        if (hasKt) {
+          rowData.push(entry.componentScores?.col0 ?? "")
+        }
+        rowData.push(entry.ratingValue || "")
+        return rowData
+      })
+
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows])
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, "SoNhanXet_TieuHoc")
+
+      const fileName = `SoNhanXet_vnEdu_${currentClass?.className || "Lop"}_${currentSubject?.subjectCode || "Mon"}_${selectedPeriod}.xlsx`
+      XLSX.writeFile(workbook, fileName)
+      return
+    }
+
     const compColTitle = gradeSheetData.config?.compositeColumnName || "Điểm thành phần"
 
     const headers = ["STT", "Mã HS", "Họ tên", "Môn học"]
@@ -647,6 +772,11 @@ export function DiemNhanXetTeacherClient({
       try {
         const bstr = evt.target?.result
         const wb = XLSX.read(bstr, { type: "binary" })
+        if (wb.SheetNames.length > 1) {
+          setPendingVnEduFiles([file])
+          setIsVnEduImportOpen(true)
+          return
+        }
         const wsName = wb.SheetNames[0]
         const ws = wb.Sheets[wsName]
         const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
@@ -656,23 +786,45 @@ export function DiemNhanXetTeacherClient({
           return
         }
 
-        const headers = data[0].map(h => String(h || "").trim())
-        const codeIdx = headers.findIndex(h => h.toLowerCase().includes("mã hs") || h.toLowerCase().includes("ma hs"))
+        let headerRowIdx = 0
+        for (let r = 0; r < Math.min(data.length, 15); r++) {
+          const rowStr = (data[r] || []).map(c => String(c || "").toLowerCase()).join(" | ")
+          if (rowStr.includes("mã hs") || rowStr.includes("mã học sinh") || rowStr.includes("mã vnedu") || (rowStr.includes("stt") && rowStr.includes("họ và tên"))) {
+            headerRowIdx = r
+            break
+          }
+        }
+
+        const headers = (data[headerRowIdx] || []).map(h => String(h || "").trim())
+        const codeIdx = headers.findIndex(h => {
+          const l = h.toLowerCase()
+          return l.includes("mã hs") || l.includes("ma hs") || l.includes("mã học sinh") || l.includes("mã vnedu")
+        })
         if (codeIdx === -1) {
-          alert("Không tìm thấy cột 'Mã HS' trong tệp Excel!")
+          setPendingVnEduFiles([file])
+          setIsVnEduImportOpen(true)
           return
         }
 
         const studentMapByCode = new Map<string, string>()
         gradeSheetData.students.forEach(st => {
-          studentMapByCode.set(st.studentCode.trim().toLowerCase(), st.id)
+          if (st.studentCode) studentMapByCode.set(st.studentCode.trim().toLowerCase(), st.id)
+          if (st.vnEduCode) studentMapByCode.set(String(st.vnEduCode).trim().toLowerCase(), st.id)
         })
 
         const newEntries = { ...gradeSheetData.entries }
         let countImported = 0
         const customCompTitle = (gradeSheetData.config?.compositeColumnName || "").trim().toLowerCase()
+        const xlIdx = headers.findIndex(h => {
+          const l = h.toLowerCase()
+          return l.startsWith("xl") || l.includes("xếp loại") || l.includes("mức đạt")
+        })
+        const ktIdx = headers.findIndex(h => {
+          const l = h.toLowerCase()
+          return l.startsWith("kt ") || l === "kt" || l.includes("điểm kt")
+        })
 
-        for (let r = 1; r < data.length; r++) {
+        for (let r = headerRowIdx + 1; r < data.length; r++) {
           const row = data[r]
           if (!row || !row[codeIdx]) continue
           const stCode = String(row[codeIdx]).trim().toLowerCase()
@@ -691,6 +843,10 @@ export function DiemNhanXetTeacherClient({
             }
           })
 
+          if (ktIdx !== -1 && row[ktIdx] !== undefined && row[ktIdx] !== null && String(row[ktIdx]).trim() !== "" && !compScores.col0) {
+            compScores.col0 = String(row[ktIdx]).trim()
+          }
+
           const compScoreIdx = headers.findIndex(h => {
             const lower = h.toLowerCase()
             return (customCompTitle && lower === customCompTitle) || lower.includes("thành phần") || lower.includes("tổng hợp") || lower.includes("tb môn")
@@ -703,6 +859,11 @@ export function DiemNhanXetTeacherClient({
             compVal = calculateCompositeScore(compScores, gradeSheetData.config, activeColNames.length)
           }
 
+          let ratingVal = newEntries[stId]?.ratingValue || ""
+          if (xlIdx !== -1 && row[xlIdx] !== undefined && String(row[xlIdx]).trim() !== "") {
+            ratingVal = normalizePrimaryXlInput(String(row[xlIdx]))
+          }
+
           const remIdx = headers.findIndex(h => h.toLowerCase().includes("nhận xét") || h.toLowerCase().includes("nhan xet"))
           let remVal = ""
           if (remIdx !== -1 && row[remIdx] !== undefined) {
@@ -712,6 +873,7 @@ export function DiemNhanXetTeacherClient({
           newEntries[stId] = {
             componentScores: compScores,
             compositeScore: compVal,
+            ratingValue: ratingVal,
             remark: remVal
           }
           countImported++
@@ -934,6 +1096,23 @@ export function DiemNhanXetTeacherClient({
 
               <button
                 type="button"
+                onClick={() => {
+                  if (isSheetLocked) {
+                    alert("Sổ điểm đã bị khóa, không thể import điểm mới!")
+                    return
+                  }
+                  setPendingVnEduFiles([])
+                  setIsVnEduImportOpen(true)
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#008B85] hover:bg-[#00736E] text-white rounded-xl text-xs font-semibold shadow-xs transition-all"
+                title="Import 1 hoặc nhiều file Excel nhiều sheet (mỗi sheet là 1 môn học)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                Import Excel (Nhiều sheet / Các môn)
+              </button>
+
+              <button
+                type="button"
                 onClick={() => { if (isSheetLocked) { alert("Sổ điểm đã bị khóa, không thể upload điểm mới!"); return; } fileInputRef.current?.click(); }}
                 className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all"
               >
@@ -1141,6 +1320,136 @@ export function DiemNhanXetTeacherClient({
           </div>
         ) : (
           /* Table view */
+          <div className="space-y-4">
+            {/* Thanh chọn loại sổ điểm & tìm kiếm học sinh */}
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-[#E2E8F0]">
+                  <button
+                    type="button"
+                    disabled={isKsdnSelected || isSelectedSubjectInternalOnly}
+                    onClick={() => setGradebookSourceMode("VNEDU")}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                      effectiveGradebookSourceMode === "VNEDU"
+                        ? "bg-[#003B3A] text-white shadow-xs"
+                        : isKsdnSelected || isSelectedSubjectInternalOnly
+                        ? "text-slate-400 cursor-not-allowed"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                    title={isKsdnSelected ? "Kỳ Khảo sát đầu năm (KSĐN) lấy cấu hình theo 2. Đánh giá nội bộ Sky-Line" : "Sổ điểm theo vnEdu (Môn Bộ GD&ĐT)"}
+                  >
+                    1. Sổ điểm theo vnEdu (Môn Bộ GD&amp;ĐT)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGradebookSourceMode("INTERNAL")}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                      effectiveGradebookSourceMode === "INTERNAL"
+                        ? "bg-[#003B3A] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    2. Sổ điểm riêng: Đánh giá nội bộ Sky-Line (Môn Song ngữ &amp; Quốc tế)
+                  </button>
+                </div>
+                {isKsdnSelected && (
+                  <span className="px-2.5 py-1 rounded-lg bg-teal-50 text-[#003B3A] border border-teal-200 text-[11px] font-semibold">
+                    KSĐN lấy cấu hình các môn theo 2. Đánh giá nội bộ Sky-Line
+                  </span>
+                )}
+              </div>
+              <div className="relative flex-1 max-w-sm">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={gradebookSearch}
+                  onChange={(e) => setGradebookSearch(e.target.value)}
+                  placeholder="Tìm theo Mã HS, Mã vnEdu hoặc Họ tên..."
+                  className="w-full border border-[#E2E8F0] rounded-xl pl-8 pr-3 py-1.5 text-xs bg-white focus:ring-2 focus:ring-[#003B3A] outline-none"
+                />
+              </div>
+            </div>
+
+            {effectiveGradebookSourceMode === "VNEDU" &&
+            isPrimaryGrade(currentClass?.grade || currentClass?.className || selectedGradeFilter) &&
+            gradeSheetData.config?.configType !== "INTERNAL" &&
+            !gradeSheetData.config?.hasCompositeColumn &&
+            activeColNames.length <= 1 ? (
+              loadingSheet ? (
+                <div className="text-center py-12 text-slate-400 text-xs font-semibold animate-pulse">Đang tải dữ liệu Sổ nhận xét Tiểu học...</div>
+              ) : gradeSheetData.students.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-xs font-semibold">Chưa có danh sách học sinh cho lớp học này</div>
+              ) : (
+                <VnEduPrimaryGradebook
+                  classObj={currentClass}
+                  subjectObj={currentSubject}
+                  evaluationPeriod={selectedPeriod}
+                  teacherName={teacherName}
+                  roleLabel="Bạn có quyền nhập điểm"
+                  isLocked={isSheetLocked}
+                  config={gradeSheetData.config}
+                  students={gradeSheetData.students}
+                  entries={gradeSheetData.entries}
+                  searchKeyword={gradebookSearch}
+                  homeroomCoordination={homeroomCoordination}
+                  onOpenCoordModal={handleOpenCoordModal}
+                  onChangeScore={handleScoreChange}
+                  onChangeRating={handleRatingChange}
+                  onChangeRemark={handleRemarkChange}
+                  onBulkUpdateEntries={(updater) =>
+                    setGradeSheetData(prev => ({
+                      ...prev,
+                      entries: updater(prev.entries),
+                    }))
+                  }
+                  onOpenMultiSheetImport={() => {
+                    setPendingVnEduFiles([])
+                    setIsVnEduImportOpen(true)
+                  }}
+                  onSave={handleSaveGradeSheet}
+                  saving={savingEntries}
+                />
+              )
+            ) : effectiveGradebookSourceMode === "VNEDU" &&
+              !isPrimaryGrade(currentClass?.grade || currentClass?.className || selectedGradeFilter) &&
+              gradeSheetData.config?.configType !== "INTERNAL" ? (
+              loadingSheet ? (
+                <div className="text-center py-12 text-slate-400 text-xs font-semibold animate-pulse">Đang tải dữ liệu Sổ điểm chi tiết THCS/THPT (Thông tư 22)...</div>
+              ) : gradeSheetData.students.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-xs font-semibold">Chưa có danh sách học sinh cho lớp học này</div>
+              ) : (
+                <VnEduSecondaryGradebook
+                  classObj={currentClass}
+                  subjectObj={currentSubject}
+                  evaluationPeriod={selectedPeriod}
+                  onChangePeriod={(nextP) => setSelectedPeriod(nextP)}
+                  teacherName={teacherName}
+                  roleLabel="Bạn có quyền nhập điểm"
+                  isLocked={isSheetLocked}
+                  config={gradeSheetData.config}
+                  students={gradeSheetData.students}
+                  entries={gradeSheetData.entries}
+                  searchKeyword={gradebookSearch}
+                  homeroomCoordination={homeroomCoordination}
+                  onOpenCoordModal={handleOpenCoordModal}
+                  onChangeScore={handleScoreChange}
+                  onChangeRating={handleRatingChange}
+                  onChangeRemark={handleRemarkChange}
+                  onBulkUpdateEntries={(updater) =>
+                    setGradeSheetData(prev => ({
+                      ...prev,
+                      entries: updater(prev.entries),
+                    }))
+                  }
+                  onOpenMultiSheetImport={() => {
+                    setPendingVnEduFiles([])
+                    setIsVnEduImportOpen(true)
+                  }}
+                  onSave={handleSaveGradeSheet}
+                  saving={savingEntries}
+                />
+              )
+            ) : (
           <div className="overflow-x-auto border border-slate-200 rounded-2xl">
             {loadingSheet ? (
               <div className="text-center py-12 text-slate-400 text-xs font-semibold animate-pulse">Đang tải dữ liệu sổ điểm...</div>
@@ -1332,6 +1641,8 @@ export function DiemNhanXetTeacherClient({
                   })}
                 </tbody>
               </table>
+            )}
+          </div>
             )}
           </div>
         )}
@@ -1728,6 +2039,25 @@ export function DiemNhanXetTeacherClient({
         selectedPeriod={selectedPeriod}
         academicYearId={selectedYearId}
         onSaved={handleCoordinationSaved}
+      />
+
+      <VnEduImportModal
+        isOpen={isVnEduImportOpen}
+        onClose={() => {
+          setIsVnEduImportOpen(false)
+          setPendingVnEduFiles([])
+        }}
+        academicYearId={selectedYearId}
+        academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || ""}
+        defaultPeriod={selectedPeriod}
+        defaultClassId={selectedClassId}
+        initialFiles={pendingVnEduFiles}
+        classes={assignedClasses}
+        subjects={assignedSubjects}
+        configs={[]}
+        onImportSuccess={() => {
+          fetchGradeSheet()
+        }}
       />
       </div>
     </div>

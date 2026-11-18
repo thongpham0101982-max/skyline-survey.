@@ -57,8 +57,11 @@ const EVAL_PERIODS = [
   { code: "KSĐN", label: "Khảo sát đầu năm (KSĐN)", short: "KSĐN" },
   { code: "GK1", label: "Giữa kỳ 1 (GK1)", short: "GK1" },
   { code: "CK1", label: "Cuối kỳ 1 (CK1)", short: "CK1" },
+  { code: "HK1", label: "Tổng kết Học kỳ 1 (HK1)", short: "HK1" },
   { code: "GK2", label: "Giữa kỳ 2 (GK2)", short: "GK2" },
-  { code: "CK2", label: "Cuối kỳ 2 (CK2)", short: "CK2" }
+  { code: "CK2", label: "Cuối kỳ 2 (CK2)", short: "CK2" },
+  { code: "HK2", label: "Tổng kết Học kỳ 2 (HK2)", short: "HK2" },
+  { code: "CN", label: "Tổng kết Cả năm (CN)", short: "CN" }
 ]
 
 interface Props {
@@ -576,6 +579,14 @@ export function HomeroomGradesClient({
 
           {/* Quick Actions & Year */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => handleOpenReport()}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-[#003B3A] hover:bg-teal-50 font-black text-xs shadow-md transition-all border border-teal-200 cursor-pointer"
+            >
+              <Printer className="w-4 h-4 text-[#00A19A]" />
+              <span>Xuất bảng điểm học sinh (Ký số &amp; PDF)</span>
+            </button>
             {isCtqt && (
               <Link
                 href={`/teacher/so-diem-ctqt?tab=consolidated&classId=${selectedClassId}&academicYearId=${selectedYearId}`}
@@ -621,7 +632,7 @@ export function HomeroomGradesClient({
 
             {/* Evaluation Period selector */}
             <div>
-              <label className="block text-[11px] font-bold text-teal-200 mb-1">Kỳ khảo sát / Đánh giá:</label>
+              <label className="block text-[11px] font-bold text-teal-200 mb-1">Kỳ đánh giá / Học kỳ:</label>
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -830,25 +841,23 @@ export function HomeroomGradesClient({
 
         {/* Action button */}
         <div className="flex items-center gap-2 flex-wrap">
-          {activeTab === "matrix" && (
-            <>
-              <button
-                onClick={() => handleOpenReport()}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-teal-50 text-teal-700 border border-teal-300 hover:bg-teal-100 rounded-xl text-xs font-black transition-all w-full sm:w-auto shadow-2xs cursor-pointer"
-                title="Xem và in bảng điểm chi tiết theo từng học sinh hoặc toàn bộ lớp"
-              >
-                <Printer className="w-3.5 h-3.5 text-teal-600" />
-                <span>Xuất Báo Cáo Học Sinh (In / PDF)</span>
-              </button>
+          <button
+            onClick={() => handleOpenReport()}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#003B3A] text-white hover:bg-[#005B58] rounded-xl text-xs font-bold transition-all w-full sm:w-auto shadow-2xs cursor-pointer"
+            title="Chọn Kỳ đánh giá / Học kỳ, chọn Mẫu điểm xuất, Ký chữ ký số GVCN và in / xuất PDF bảng điểm học sinh"
+          >
+            <Printer className="w-3.5 h-3.5 text-[#5EEAD4]" />
+            <span>Xuất bảng điểm học sinh (Ký số &amp; PDF)</span>
+          </button>
 
-              <button
-                onClick={handleExportMatrixExcel}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all w-full sm:w-auto cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Xuất Excel Bảng Điểm</span>
-              </button>
-            </>
+          {activeTab === "matrix" && (
+            <button
+              onClick={handleExportMatrixExcel}
+              className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all w-full sm:w-auto cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Xuất Excel Bảng Điểm</span>
+            </button>
           )}
 
           {activeTab === "comparative" && (
@@ -2113,6 +2122,8 @@ export function HomeroomGradesClient({
         academicYearName={data?.classInfo?.academicYearName || academicYears.find(y => y.id === selectedYearId)?.name || ""}
         selectedPeriod={selectedPeriod}
         periodLabel={EVAL_PERIODS.find(p => p.code === selectedPeriod)?.label || selectedPeriod}
+        onChangePeriod={(newPeriod: string) => setSelectedPeriod(newPeriod)}
+        homeroomSignatureProfile={data?.homeroomSignatureProfile || null}
         onOpenEditFeedback={(st: any) => {
           handleOpenFeedbackModal(st);
         }}

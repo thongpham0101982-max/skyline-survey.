@@ -41,8 +41,7 @@ import {
   QrCode,
   PenTool,
   FileCheck,
-  Users,
-  Puzzle
+  Users
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 import {
@@ -86,11 +85,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [generalStudentCount, setGeneralStudentCount] = useState(0)
   const [specialSubjectCodes, setSpecialSubjectCodes] = useState<string[]>(assignedSpecialSubjects || [])
   const [loadingAssignments, setLoadingAssignments] = useState(true)
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, COMPETENCY_ASSESSMENT: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true, OTHER: true })
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, GRADEBOOK_REMARKS: true, COMPETENCY_ASSESSMENT: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true, OTHER: true })
   const [pendingSignatureCount, setPendingSignatureCount] = useState<number>(0)
   const [expandedTeacherGroups, setExpandedTeacherGroups] = useState<Record<string, boolean>>({
     GROUP_01: true,
-    SKYLINE_CONNECT: true,
     GROUP_02: true,
     GROUP_03: true,
     GROUP_05: false,
@@ -154,6 +152,14 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     }
     if (module === "KTDBCL_THONG_KE_BAO_CAO") {
       hasParent = hasParent || permissionModules?.includes("KTDBCL_GRADE_REMARKS") || permissionModules?.includes("KTDBCL_PHAN_TICH_THKQ") || false
+    }
+    if (module === "KTDBCL_XUAT_BANG_DIEM") {
+      hasParent =
+        hasParent ||
+        permissionModules?.includes("KTDBCL_GRADE_REMARKS") ||
+        permissionModules?.includes("KTDBCL_THONG_KE_BAO_CAO") ||
+        permissionModules?.includes("KTDBCL_PHAN_TICH_THKQ") ||
+        false
     }
     if (module === "TEACHER_TRANSFERS") {
       hasParent = hasParent || permissionModules?.includes("TEACHERS") || permissionModules?.includes("STUDENT_TRANSFERS") || false
@@ -308,9 +314,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         })
         .catch(() => {});
 
-      if (pathname.startsWith("/teacher/skyline-connect") || pathname.startsWith("/teacher/cong-dong-sang-tao")) {
-        setExpandedTeacherGroups(prev => ({ ...prev, GROUP_12: true, SKYLINE_CONNECT: true }));
-      } else if (
+      if (
         pathname === "/teacher" ||
         pathname.startsWith("/teacher/tasks") ||
         pathname.startsWith("/teacher/phan-cong-giang-day") ||
@@ -632,33 +636,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     {!isCollapsed && <span className="break-words leading-tight py-0.5">{lang === "en" ? "Personal Overview" : "Tổng quan cá nhân"}</span>}
                   </Link>
 
-                  {/* 1b. Sky-Line Connect — Nằm ngay dưới Tổng quan */}
-                  <Link
-                    href="/teacher/skyline-connect"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-semibold ${
-                      pathname.startsWith("/teacher/skyline-connect")
-                        ? "bg-gradient-to-r from-[#00A19A]/45 to-teal-500/25 border border-[#5EEAD4]/50 text-white shadow-md shadow-black/15"
-                        : "text-white/90 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/teacher/skyline-connect")
-                        ? "bg-[#00A19A]/40 border border-teal-300/70 text-[#5EEAD4] shadow-[0_0_8px_rgba(0,161,154,0.45)]"
-                        : "bg-white/10 border border-white/15 text-[#5EEAD4] group-hover:text-teal-200 group-hover:scale-110"
-                    }`}>
-                      <Puzzle className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <div className="flex items-center justify-between flex-1 gap-1.5 min-w-0">
-                        <span className="break-words leading-tight py-0.5">Sky-Line Connect</span>
-                        <span className="text-[9px] bg-[#00A19A]/35 text-[#99F6E4] border border-[#5EEAD4]/40 px-1.5 py-0.5 rounded-full font-semibold shrink-0">
-                          {lang === "en" ? "Co-create" : "Sáng tạo"}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-
                   {/* 2. Nhiệm vụ của tôi */}
                   <Link
                     href="/teacher/tasks"
@@ -807,162 +784,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                           2-Chiều
                         </span>
                       </div>
-                    )}
-                  </Link>
-                </div>
-              </div>
-
-              {/* =========================================================================
-                  SKY-LINE CONNECT (MẠNG XÃ HỘI SÁNG TẠO GIÁO VIÊN)
-                  ========================================================================= */}
-              <div className="border-t border-white/10 pt-2">
-                <div
-                  onClick={() => toggleTeacherGroup("SKYLINE_CONNECT")}
-                  className="px-3 py-1.5 cursor-pointer select-none flex items-center justify-between text-white/60 hover:text-white/90 transition-colors group"
-                >
-                  {!isCollapsed ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-semibold text-[#5EEAD4] tracking-tight group-hover:text-teal-200 transition-colors">
-                        {SIDEBAR_TRANSLATIONS.teacherNav.skyline_connect?.[lang] || "Sky-Line Connect"}
-                      </span>
-                      <span className="text-[10px] bg-[#159EAA]/35 text-[#5EEAD4] border border-[#159EAA]/50 px-1.5 py-0.2 rounded-full font-semibold">
-                        AI Wall
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="w-full text-center text-[#5EEAD4] block text-[11px] font-semibold">SC</span>
-                  )}
-                  {!isCollapsed && (
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 text-[#5EEAD4]/60 group-hover:text-[#5EEAD4] transition-transform duration-300 ${
-                        expandedTeacherGroups.SKYLINE_CONNECT ? "rotate-180 text-[#5EEAD4]" : ""
-                      }`}
-                    />
-                  )}
-                </div>
-
-                <div
-                  className={`overflow-hidden transition-all duration-300 space-y-1 ${
-                    expandedTeacherGroups.SKYLINE_CONNECT || isCollapsed ? "max-h-[800px] opacity-100 visible mt-1" : "max-h-0 opacity-0 invisible"
-                  }`}
-                >
-                  {/* 1. Bức tường ý tưởng AI */}
-                  <Link
-                    href="/teacher/skyline-connect"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname === "/teacher/skyline-connect" || pathname.startsWith("/teacher/skyline-connect/posts")
-                        ? "bg-gradient-to-r from-[#159EAA]/40 to-teal-500/20 border border-[#159EAA]/50 text-white shadow-md shadow-black/10"
-                        : "text-white/85 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname === "/teacher/skyline-connect" || pathname.startsWith("/teacher/skyline-connect/posts")
-                        ? "bg-[#159EAA]/35 border border-teal-300/60 text-teal-200 shadow-[0_0_8px_rgba(21,158,170,0.4)]"
-                        : "bg-white/10 border border-white/15 text-slate-300 group-hover:text-teal-200 group-hover:scale-110"
-                    }`}>
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <span className="break-words leading-tight py-0.5">
-                        {SIDEBAR_TRANSLATIONS.teacherNav.slc_wall?.[lang] || "Bức tường ý tưởng AI"}
-                      </span>
-                    )}
-                  </Link>
-
-                  {/* 2. Khám phá sáng tạo */}
-                  <Link
-                    href="/teacher/skyline-connect/explore"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname.startsWith("/teacher/skyline-connect/explore") || pathname.startsWith("/teacher/skyline-connect/products")
-                        ? "bg-gradient-to-r from-[#159EAA]/40 to-teal-500/20 border border-[#159EAA]/50 text-white shadow-md shadow-black/10"
-                        : "text-white/75 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/teacher/skyline-connect/explore") || pathname.startsWith("/teacher/skyline-connect/products")
-                        ? "bg-[#159EAA]/35 border border-teal-300/60 text-teal-200"
-                        : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-teal-200 group-hover:scale-110"
-                    }`}>
-                      <Compass className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <span className="break-words leading-tight py-0.5">
-                        {SIDEBAR_TRANSLATIONS.teacherNav.slc_explore?.[lang] || "Khám phá sáng tạo"}
-                      </span>
-                    )}
-                  </Link>
-
-                  {/* 3. Nhóm & Dự án */}
-                  <Link
-                    href="/teacher/skyline-connect/groups-projects"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname.startsWith("/teacher/skyline-connect/groups-projects") || pathname.startsWith("/teacher/skyline-connect/projects")
-                        ? "bg-gradient-to-r from-[#159EAA]/40 to-teal-500/20 border border-[#159EAA]/50 text-white shadow-md shadow-black/10"
-                        : "text-white/75 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/teacher/skyline-connect/groups-projects") || pathname.startsWith("/teacher/skyline-connect/projects")
-                        ? "bg-[#159EAA]/35 border border-teal-300/60 text-teal-200"
-                        : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-teal-200 group-hover:scale-110"
-                    }`}>
-                      <Users className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <span className="break-words leading-tight py-0.5">
-                        {SIDEBAR_TRANSLATIONS.teacherNav.slc_groups_projects?.[lang] || "Nhóm & Dự án"}
-                      </span>
-                    )}
-                  </Link>
-
-                  {/* 4. Bảng vàng sáng tạo */}
-                  <Link
-                    href="/teacher/skyline-connect/hall-of-fame"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname.startsWith("/teacher/skyline-connect/hall-of-fame")
-                        ? "bg-gradient-to-r from-amber-500/30 to-teal-500/20 border border-amber-400/50 text-white shadow-md shadow-black/10"
-                        : "text-white/75 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/teacher/skyline-connect/hall-of-fame")
-                        ? "bg-amber-500/30 border border-amber-300/60 text-amber-200"
-                        : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-amber-300 group-hover:scale-110"
-                    }`}>
-                      <Award className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <span className="break-words leading-tight py-0.5">
-                        {SIDEBAR_TRANSLATIONS.teacherNav.slc_hall_of_fame?.[lang] || "Bảng vàng sáng tạo"}
-                      </span>
-                    )}
-                  </Link>
-
-                  {/* 5. Không gian của tôi */}
-                  <Link
-                    href="/teacher/skyline-connect/my-space"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname.startsWith("/teacher/skyline-connect/my-space") || pathname.startsWith("/teacher/skyline-connect/profile")
-                        ? "bg-gradient-to-r from-[#159EAA]/40 to-teal-500/20 border border-[#159EAA]/50 text-white shadow-md shadow-black/10"
-                        : "text-white/75 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/teacher/skyline-connect/my-space") || pathname.startsWith("/teacher/skyline-connect/profile")
-                        ? "bg-[#159EAA]/35 border border-teal-300/60 text-teal-200"
-                        : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-teal-200 group-hover:scale-110"
-                    }`}>
-                      <BookOpen className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <span className="break-words leading-tight py-0.5">
-                        {SIDEBAR_TRANSLATIONS.teacherNav.slc_my_space?.[lang] || "Không gian của tôi"}
-                      </span>
                     )}
                   </Link>
                 </div>
@@ -1942,37 +1763,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     expandedTeacherGroups.GROUP_12 || isCollapsed ? "max-h-[800px] opacity-100 visible mt-1" : "max-h-0 opacity-0 invisible"
                   }`}
                 >
-                  {/* Cộng đồng sáng tạo & Skills môn học (Tiện ích -> Cộng đồng sáng tạo) */}
-                  <Link
-                    href="/teacher/skyline-connect"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname.startsWith("/teacher/skyline-connect") ||
-                      pathname.startsWith("/teacher/cong-dong-sang-tao")
-                        ? "bg-gradient-to-r from-[#00A19A]/45 to-teal-500/25 border border-[#5EEAD4]/50 text-white shadow-md shadow-black/15"
-                        : "text-white/85 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/teacher/skyline-connect") ||
-                      pathname.startsWith("/teacher/cong-dong-sang-tao")
-                        ? "bg-[#00A19A]/40 border border-teal-300/70 text-[#5EEAD4] shadow-[0_0_8px_rgba(0,161,154,0.45)]"
-                        : "bg-white/10 border border-white/15 text-[#5EEAD4] group-hover:text-teal-200 group-hover:scale-110"
-                    }`}>
-                      <Puzzle className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <div className="flex items-center justify-between flex-1 min-w-0">
-                        <span className="break-words leading-tight py-0.5">
-                          {lang === "en" ? "Creative Community & Skills" : "Cộng đồng sáng tạo"}
-                        </span>
-                        <span className="text-[9px] bg-[#00A19A]/35 text-[#99F6E4] border border-[#5EEAD4]/40 px-1.5 py-0.5 rounded-full font-semibold ml-1 shrink-0">
-                          Skills
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-
                   {/* Chữ ký số & Hồ sơ chờ ký (Mục gộp mới với 2 tab, có badge số lượng hồ sơ chờ ký) */}
                   <Link
                     href="/teacher/chu-ky-so"

@@ -62,6 +62,7 @@ export function GradeAnalyticsTab({
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
   const [selectedClassId, setSelectedClassId] = useState("ALL")
   const [selectedSubjectId, setSelectedSubjectId] = useState("ALL")
+  const [configTypeFilter, setConfigTypeFilter] = useState<"ALL" | "VNEDU" | "INTERNAL">("ALL")
   const [currentPeriod, setCurrentPeriod] = useState("KSĐN")
   const [baselinePeriod, setBaselinePeriod] = useState("KSĐN")
   const [searchKeyword, setSearchKeyword] = useState("")
@@ -169,7 +170,7 @@ export function GradeAnalyticsTab({
     }
   }, [filteredClasses, selectedClassId])
 
-  // Filter subjects strictly according to the Survey Period
+  // Filter subjects strictly according to the Survey Period & ConfigType (1. vnEdu vs 2. Đánh giá nội bộ Sky-Line)
   const availableSubjectsForPeriod = useMemo(() => {
     const subMap = new Map<string, { id: string; subjectName: string; subjectCode: string }>()
     
@@ -183,11 +184,14 @@ export function GradeAnalyticsTab({
       })
     }
 
-    if (savedConfigs && savedConfigs.length > 0) {
+    if (subMap.size === 0 && savedConfigs && savedConfigs.length > 0) {
       savedConfigs.forEach((cfg: any) => {
-        const pMatch = cfg.evaluationPeriod === currentPeriod || cfg.evaluationPeriod === "ALL"
+        if (cfg.isActive === false || !cfg.subject) return
+        const rawType = (cfg.configType || "INTERNAL").toUpperCase() === "VNEDU" ? "VNEDU" : "INTERNAL"
+        if (configTypeFilter !== "ALL" && rawType !== configTypeFilter) return
+        const pMatch = cfg.evaluationPeriod === currentPeriod || (rawType === "INTERNAL" && cfg.evaluationPeriod === "ALL")
         const gMatch = selectedGradeFilter === "ALL" || isGradeMatching(cfg.grade, selectedGradeFilter)
-        if (pMatch && gMatch && cfg.subject) {
+        if (pMatch && gMatch) {
           subMap.set(cfg.subject.id, {
             id: cfg.subject.id,
             subjectName: cfg.subject.subjectName,
@@ -197,18 +201,8 @@ export function GradeAnalyticsTab({
       })
     }
 
-    if (subMap.size === 0 && subjects && subjects.length > 0) {
-      subjects.forEach((s: any) => {
-        subMap.set(s.id, {
-          id: s.id,
-          subjectName: s.subjectName,
-          subjectCode: s.subjectCode
-        })
-      })
-    }
-
     return Array.from(subMap.values())
-  }, [data.subjects, savedConfigs, currentPeriod, selectedGradeFilter, subjects])
+  }, [data.subjects, savedConfigs, currentPeriod, selectedGradeFilter, configTypeFilter])
 
   // Reset selectedSubjectId if not available
   useEffect(() => {
@@ -231,7 +225,8 @@ export function GradeAnalyticsTab({
         classId: selectedClassId,
         subjectId: selectedSubjectId,
         currentPeriod,
-        baselinePeriod
+        baselinePeriod,
+        configType: configTypeFilter
       })
 
       const res = await fetch(`/api/admin/ktdbcl/grade-analytics?${params.toString()}`)
@@ -254,7 +249,7 @@ export function GradeAnalyticsTab({
 
   useEffect(() => {
     fetchAnalytics()
-  }, [selectedYearId, selectedCampusId, selectedLevelFilter, selectedGradeFilter, selectedClassId, selectedSubjectId, currentPeriod, baselinePeriod])
+  }, [selectedYearId, selectedCampusId, selectedLevelFilter, selectedGradeFilter, selectedClassId, selectedSubjectId, currentPeriod, baselinePeriod, configTypeFilter])
 
   // Filtered Teacher Distributions
   const displayedTeacherDistributions = useMemo(() => {
@@ -795,9 +790,57 @@ export function GradeAnalyticsTab({
       {/* 3. THANH BỘ LỌC ĐA TIÊU CHÍ */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 pb-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-            <Filter className="w-4 h-4 text-[#005B58]" />
-            <span>Bộ lọc Phân tích Phổ điểm</span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#003B3A]">
+              <Filter className="w-4 h-4 text-[#008B85]" />
+              <span>Bộ lọc Phân tích Phổ điểm</span>
+            </div>
+
+            {/* Segmented control: 1. Sổ điểm theo vnEdu vs 2. Đánh giá nội bộ Sky-Line */}
+            <div className="flex flex-wrap items-center bg-[#F8FAFC] border border-[#E2E8F0] p-1 rounded-xl gap-1 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setConfigTypeFilter("ALL")
+                  setSelectedSubjectId("ALL")
+                }}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                  configTypeFilter === "ALL"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Tất cả môn đã cấu hình (1 &amp; 2)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfigTypeFilter("VNEDU")
+                  setSelectedSubjectId("ALL")
+                }}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                  configTypeFilter === "VNEDU"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                1. Sổ điểm theo vnEdu (Môn Bộ GD&amp;ĐT)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfigTypeFilter("INTERNAL")
+                  setSelectedSubjectId("ALL")
+                }}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                  configTypeFilter === "INTERNAL"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                2. Đánh giá nội bộ Sky-Line (Môn Song ngữ &amp; Quốc tế)
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">

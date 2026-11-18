@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { resolveVnEduCodeMap } from "@/lib/grading/vnedu-code-resolver"
 
 export async function GET(request: Request) {
   try {
@@ -118,7 +119,7 @@ export async function GET(request: Request) {
     }
 
     // 5. Fetch Active Students in these Classes
-    const students = await prisma.student.findMany({
+    const studentsRaw = await prisma.student.findMany({
       where: {
         classId: { in: classIds },
         status: "ACTIVE"
@@ -130,12 +131,39 @@ export async function GET(request: Request) {
       select: {
         id: true,
         studentCode: true,
+        vnEduCode: true,
         studentName: true,
         gender: true,
         dateOfBirth: true,
         classId: true
       }
-    })
+    }).catch(() =>
+      prisma.student.findMany({
+        where: {
+          classId: { in: classIds },
+          status: "ACTIVE"
+        },
+        orderBy: [
+          { classId: "asc" },
+          { studentName: "asc" }
+        ],
+        select: {
+          id: true,
+          studentCode: true,
+          studentName: true,
+          gender: true,
+          dateOfBirth: true,
+          classId: true
+        }
+      })
+    )
+
+    const dbCodes = studentsRaw.map(s => s.studentCode).filter(Boolean)
+    const vnEduMap = await resolveVnEduCodeMap(dbCodes, targetYearId)
+    const students = studentsRaw.map(s => ({
+      ...s,
+      vnEduCode: s.vnEduCode || vnEduMap.get(s.studentCode) || ""
+    }))
 
     const studentIds = students.map(s => s.id)
 
@@ -160,11 +188,14 @@ export async function GET(request: Request) {
       }
     })
 
-    // 7. Fetch Grade Configs
+    // 7. Fetch Grade Configs (KSĐN luôn lấy theo 2. Đánh giá nội bộ Sky-Line)
+    const isKsdn = evaluationPeriod === "KSĐN" || evaluationPeriod === "KSDN"
     const configs = await prisma.subjectGradeConfig.findMany({
       where: {
         academicYearId: targetYearId,
-        evaluationPeriod: { in: [...periodVariants, "ALL"] }
+        evaluationPeriod: { in: [...periodVariants, "ALL"] },
+        isActive: true,
+        ...(isKsdn ? { configType: "INTERNAL" } : {})
       }
     })
 

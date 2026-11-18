@@ -1,14 +1,17 @@
 // @ts-nocheck
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
 import { PhanTichThkqClient } from "./client"
 
 export const metadata = {
-  title: "Phân tích THKQ - Khảo thí & Đảm bảo Chất lượng Sky-Line",
+  title: "Phân tích Tổng hợp Kết quả (THKQ) - Sổ điểm - Nhận xét | Sky-Line",
   description: "Hệ thống phân tích tổng hợp kết quả khảo thí, đối chuẩn chất lượng và quản lý học sinh trọng điểm Sky-Line"
 }
 
 export default async function PhanTichThkqPage() {
-  const [academicYears, campuses, subjects, gradeConfigs] = await Promise.all([
+  const [session, academicYears, campuses, rawSubjects, rawGradeConfigs] = await Promise.all([
+    auth().catch(() => null),
     prisma.academicYear.findMany({
       orderBy: { startDate: "desc" },
       select: { id: true, name: true, status: true }
@@ -38,6 +41,27 @@ export default async function PhanTichThkqPage() {
 
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
 
+  const scope = await resolveAccountGradebookScope(
+    (session?.user as any)?.id,
+    (session?.user as any)?.role,
+    activeYear?.id
+  )
+
+  const subjects =
+    scope.isSubjectScoped && scope.allowedSubjectIds.length > 0
+      ? rawSubjects.filter(
+          (s: any) =>
+            scope.allowedSubjectIds.includes(s.id) ||
+            scope.allowedSubjectCodes.includes(String(s.subjectCode || "").toUpperCase().trim())
+        )
+      : rawSubjects
+
+  const allowedSubIdSet = new Set(subjects.map((s: any) => s.id))
+  const gradeConfigs =
+    scope.isSubjectScoped && scope.allowedSubjectIds.length > 0
+      ? rawGradeConfigs.filter((cfg: any) => cfg.subjectId && allowedSubIdSet.has(cfg.subjectId))
+      : rawGradeConfigs
+
   const classes = await prisma.class.findMany({
     where: {
       status: "ACTIVE",
@@ -58,6 +82,7 @@ export default async function PhanTichThkqPage() {
         subjects={JSON.parse(JSON.stringify(subjects))}
         gradeConfigs={JSON.parse(JSON.stringify(gradeConfigs))}
         classes={JSON.parse(JSON.stringify(classes))}
+        isSubjectScoped={scope.isSubjectScoped}
       />
     </div>
   )

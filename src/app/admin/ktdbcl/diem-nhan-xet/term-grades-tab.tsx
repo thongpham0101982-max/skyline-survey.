@@ -68,6 +68,7 @@ export interface TermGradesTabProps {
   initialClassId?: string
   isHomeroomView?: boolean
   homeroomClasses?: any[]
+  isSubjectScoped?: boolean
 }
 
 interface StudentRow {
@@ -141,7 +142,8 @@ export function TermGradesTab({
   activeYearId,
   initialClassId,
   isHomeroomView = false,
-  homeroomClasses = []
+  homeroomClasses = [],
+  isSubjectScoped = false
 }: TermGradesTabProps) {
   // If isHomeroomView and homeroomClasses provided, prioritize homeroomClasses
   const effectiveClasses = useMemo(() => {
@@ -421,6 +423,7 @@ export function TermGradesTab({
       ]
 
       const matched: any[] = []
+      const matchedIds = new Set<string>()
       primarySubjectDefs.forEach(def => {
         const found = subjects.find(s => {
           const sCode = s.subjectCode.toUpperCase()
@@ -443,14 +446,35 @@ export function TermGradesTab({
           )
         })
 
+        if (isSubjectScoped && !isHomeroomView && !found) {
+          return
+        }
+
+        const resolvedId = found ? found.id : `virt-${def.code}`
+        matchedIds.add(resolvedId)
         matched.push({
-          id: found ? found.id : `virt-${def.code}`,
+          id: resolvedId,
           subjectCode: found ? found.subjectCode : def.code,
-          subjectName: def.name,
+          subjectName: found ? found.subjectName || def.name : def.name,
           hasScore: def.hasScore,
           hasLevel: def.hasLevel
         })
       })
+
+      if (isSubjectScoped && !isHomeroomView) {
+        subjects.forEach(sub => {
+          if (!matchedIds.has(sub.id)) {
+            matchedIds.add(sub.id)
+            matched.push({
+              id: sub.id,
+              subjectCode: sub.subjectCode,
+              subjectName: sub.subjectName,
+              hasScore: !isAssessmentOnlySubject(sub.subjectName || sub.subjectCode),
+              hasLevel: true
+            })
+          }
+        })
+      }
 
       return { allScored: matched, allAssess: [] }
     }
@@ -474,13 +498,13 @@ export function TermGradesTab({
       const codeUpper = sub.subjectCode.toUpperCase()
 
       if (isAssess) {
-        if (targetAssessCodes.some(c => codeUpper.includes(c))) {
+        if ((isSubjectScoped && !isHomeroomView) || targetAssessCodes.some(c => codeUpper.includes(c))) {
           if (!assess.some(a => a.id === sub.id)) {
             assess.push(sub)
           }
         }
       } else {
-        if (targetScoredCodes.some(c => codeUpper === c || codeUpper.includes(c))) {
+        if ((isSubjectScoped && !isHomeroomView) || targetScoredCodes.some(c => codeUpper === c || codeUpper.includes(c))) {
           if (!scored.some(s => s.id === sub.id)) {
             scored.push(sub)
           }
@@ -503,15 +527,27 @@ export function TermGradesTab({
     })
 
     return { allScored: scored, allAssess: assess }
-  }, [subjects, selectedLevel, selectedGrade])
+  }, [subjects, selectedLevel, selectedGrade, isSubjectScoped, isHomeroomView])
 
   // Key identify current Level & Grade
   const currentLevelGradeKey = `${selectedLevel}_${selectedGrade}`
 
   // Current active subject list for configuration & rendering
   const currentSubjectList: SubjectConfigItem[] = useMemo(() => {
+    const allowedIdsSet = new Set([
+      ...allAvailableSubjects.allScored.map((s: any) => s.id),
+      ...allAvailableSubjects.allAssess.map((s: any) => s.id)
+    ])
+
     if (subjectConfigs[currentLevelGradeKey] && subjectConfigs[currentLevelGradeKey].length > 0) {
-      return subjectConfigs[currentLevelGradeKey]
+      if (isSubjectScoped && !isHomeroomView) {
+        const filteredSaved = subjectConfigs[currentLevelGradeKey].filter(
+          (item) => allowedIdsSet.has(item.id)
+        )
+        if (filteredSaved.length > 0) return filteredSaved
+      } else {
+        return subjectConfigs[currentLevelGradeKey]
+      }
     }
     // Default list from catalog
     if (selectedLevel === "TIEU_HOC") {
@@ -543,7 +579,7 @@ export function TermGradesTab({
         }))
       ]
     }
-  }, [subjectConfigs, currentLevelGradeKey, allAvailableSubjects, selectedLevel])
+  }, [subjectConfigs, currentLevelGradeKey, allAvailableSubjects, selectedLevel, isSubjectScoped, isHomeroomView])
 
   // Active displayed subjects according to user configuration
   const { scoredSubjects, assessmentSubjects } = useMemo(() => {

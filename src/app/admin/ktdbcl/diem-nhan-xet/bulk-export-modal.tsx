@@ -65,10 +65,13 @@ export function BulkExportModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [exportSuccess, setExportSuccess] = useState(false)
 
-  // Identify subjects configured for current period & grade
+  // Identify subjects configured for current period & grade (KSĐN luôn lấy theo 2. Đánh giá nội bộ Sky-Line)
   const periodSubjectIds = useMemo(() => {
     const ids = new Set<string>()
+    const isKsdn = selectedPeriod === "KSĐN" || selectedPeriod === "KSDN"
     savedConfigs.forEach(c => {
+      if (c.isActive === false) return
+      if (isKsdn && (c.configType || "INTERNAL") !== "INTERNAL") return
       const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
       const gMatch = selectedGrade === "ALL" || isGradeMatching(c.grade, selectedGrade)
       if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
@@ -109,9 +112,12 @@ export function BulkExportModal({
   // Khi người dùng thay đổi Kỳ hoặc Khối: Cập nhật lại danh sách môn theo kỳ
   const handlePeriodChange = (newPeriod: string) => {
     setSelectedPeriod(newPeriod)
+    const isKsdn = newPeriod === "KSĐN" || newPeriod === "KSDN"
     // Tính toán lại các môn theo kỳ mới
     const newPeriodIds = new Set<string>()
     savedConfigs.forEach(c => {
+      if (c.isActive === false) return
+      if (isKsdn && (c.configType || "INTERNAL") !== "INTERNAL") return
       const pMatch = c.evaluationPeriod === newPeriod || c.evaluationPeriod === "ALL"
       const gMatch = selectedGrade === "ALL" || isGradeMatching(c.grade, selectedGrade)
       if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
@@ -125,8 +131,11 @@ export function BulkExportModal({
 
   const handleGradeChange = (newGrade: string) => {
     setSelectedGrade(newGrade)
+    const isKsdn = selectedPeriod === "KSĐN" || selectedPeriod === "KSDN"
     const newPeriodIds = new Set<string>()
     savedConfigs.forEach(c => {
+      if (c.isActive === false) return
+      if (isKsdn && (c.configType || "INTERNAL") !== "INTERNAL") return
       const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
       const gMatch = newGrade === "ALL" || isGradeMatching(c.grade, newGrade)
       if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {

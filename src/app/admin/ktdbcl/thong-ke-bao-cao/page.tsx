@@ -1,13 +1,16 @@
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
 import { ThongKeBaoCaoClient } from "./client"
 
 export const metadata = {
-  title: "Thống kê báo cáo - Khảo thí & ĐBCL - Sky-Line",
+  title: "Thống kê báo cáo - Sổ điểm - Nhận xét | Sky-Line",
   description: "Báo cáo thống kê ĐTB các môn, phân tích phổ điểm, giám sát tiến độ nhập điểm và tổng hợp phản hồi PHHS"
 }
 
 export default async function ThongKeBaoCaoPage() {
-  const [academicYears, campuses, subjects] = await Promise.all([
+  const [session, academicYears, campuses, rawSubjects] = await Promise.all([
+    auth().catch(() => null),
     prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }),
     prisma.campus.findMany({
       where: { status: "ACTIVE" },
@@ -20,6 +23,21 @@ export default async function ThongKeBaoCaoPage() {
     })
   ])
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
+
+  const scope = await resolveAccountGradebookScope(
+    (session?.user as any)?.id,
+    (session?.user as any)?.role,
+    activeYear?.id
+  )
+
+  const subjects =
+    scope.isSubjectScoped && scope.allowedSubjectIds.length > 0
+      ? rawSubjects.filter(
+          (s: any) =>
+            scope.allowedSubjectIds.includes(s.id) ||
+            scope.allowedSubjectCodes.includes(String(s.subjectCode || "").toUpperCase().trim())
+        )
+      : rawSubjects
 
   const classes = await prisma.class.findMany({
     where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
@@ -44,6 +62,7 @@ export default async function ThongKeBaoCaoPage() {
       campuses={JSON.parse(JSON.stringify(campuses))}
       classes={JSON.parse(JSON.stringify(classes))}
       subjects={JSON.parse(JSON.stringify(subjects))}
+      isSubjectScoped={scope.isSubjectScoped}
     />
   )
 }

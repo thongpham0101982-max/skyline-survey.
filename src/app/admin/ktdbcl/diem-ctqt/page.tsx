@@ -1,14 +1,17 @@
 import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions";
 import { DiemCtqtAdminClient } from "./client";
 import { isCtqtClass, compareCtqtClasses } from "@/lib/ctqt/config";
 
 export const metadata = {
-  title: "Quản lý Điểm CTQT & Report Card | Sky-Line",
+  title: "Sổ điểm CTQT & Report Card | Sky-Line",
   description: "Cấu hình sổ điểm, phân công GVBM, gán GVTA ủy quyền, sổ điểm tổng hợp và xuất Report Card",
 };
 
 export default async function DiemCtqtAdminPage() {
-  const [academicYears, campuses, departments, teachers, rawClasses] = await Promise.all([
+  const [session, academicYears, campuses, departments, teachers, rawClasses] = await Promise.all([
+    auth().catch(() => null),
     prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }),
     prisma.campus.findMany({
       where: { status: "ACTIVE" },
@@ -67,6 +70,12 @@ export default async function DiemCtqtAdminPage() {
 
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0];
 
+  const scope = await resolveAccountGradebookScope(
+    (session?.user as any)?.id,
+    (session?.user as any)?.role,
+    activeYear?.id
+  );
+
   // Filter CTQT classes and sort naturally by grade (Khối 1 -> 12)
   const ctqtClasses = rawClasses
     .filter(c => isCtqtClass(c.className, c.educationSystem || undefined, c.level, c.grade))
@@ -80,6 +89,8 @@ export default async function DiemCtqtAdminPage() {
       departments={JSON.parse(JSON.stringify(departments))}
       teachers={JSON.parse(JSON.stringify(teachers))}
       initialClasses={JSON.parse(JSON.stringify(ctqtClasses))}
+      isSubjectScoped={scope.isSubjectScoped}
+      allowedCtqtSubjectCodes={scope.allowedCtqtSubjectCodes}
     />
   );
 }

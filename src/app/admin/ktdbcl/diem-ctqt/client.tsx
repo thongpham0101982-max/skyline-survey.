@@ -41,6 +41,8 @@ interface Props {
   departments?: any[];
   teachers: any[];
   initialClasses: any[];
+  isSubjectScoped?: boolean;
+  allowedCtqtSubjectCodes?: string[];
 }
 
 function resolveClientTeacherEmail(teacher?: {
@@ -110,6 +112,8 @@ export function DiemCtqtAdminClient({
   departments = [],
   teachers,
   initialClasses,
+  isSubjectScoped = false,
+  allowedCtqtSubjectCodes = [],
 }: Props) {
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""));
   const [selectedSemester, setSelectedSemester] = useState(2); // Default to HK2 as seen in screenshots
@@ -133,7 +137,18 @@ export function DiemCtqtAdminClient({
 
   const selectedClass = initialClasses.find(c => c.id === selectedClassId);
   const currentLevel = selectedClass ? detectCtqtLevel(selectedClass.className, selectedClass.grade, selectedClass.level) : "PRIMARY";
-  const currentConfig = CTQT_LEVEL_CONFIGS[currentLevel] || CTQT_LEVEL_CONFIGS.PRIMARY;
+  const baseConfig = CTQT_LEVEL_CONFIGS[currentLevel] || CTQT_LEVEL_CONFIGS.PRIMARY;
+  const currentConfig = useMemo(() => {
+    if (!isSubjectScoped || !allowedCtqtSubjectCodes || allowedCtqtSubjectCodes.length === 0) {
+      return baseConfig;
+    }
+    const allowedSet = new Set(allowedCtqtSubjectCodes.map(c => c.toUpperCase().trim()));
+    const filteredSubs = baseConfig.subjects.filter(s => allowedSet.has(s.code.toUpperCase()));
+    return {
+      ...baseConfig,
+      subjects: filteredSubs.length > 0 ? filteredSubs : baseConfig.subjects,
+    };
+  }, [baseConfig, isSubjectScoped, allowedCtqtSubjectCodes]);
 
   // Assignment tab state
   const [assignmentClasses, setAssignmentClasses] = useState<any[]>([]);
@@ -1515,7 +1530,7 @@ export function DiemCtqtAdminClient({
               </span>
               <div>
                 <h1 className="text-xl md:text-2xl font-black text-[#003B3A] tracking-tight flex items-center gap-2">
-                  Quản lý Điểm CTQT & Report Card
+                  Sổ điểm CTQT & Report Card
                   <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-[#00736E] border border-teal-200">
                     Bilingual / International
                   </span>
@@ -1729,55 +1744,235 @@ export function DiemCtqtAdminClient({
             </div>
           </div>
 
-          {/* Subject Pills / Tabs */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs">
-            <div className="text-xs font-bold text-slate-600 mb-2.5 px-1">
-              Chọn môn học để nhập điểm và phân quyền giáo viên:
+          {/* Subject Pills / Tabs with Live Grade Entry Progress */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs font-bold text-slate-600 px-1">
+                Chọn môn học phụ trách để nhập điểm, theo dõi tiến độ và phân quyền giáo viên:
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("grade_progress")}
+                className="text-xs font-bold text-[#00736E] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>Xem thống kê tiến độ nhập điểm toàn trường theo GV</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <div className="flex items-center gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 tabular-nums">
               {currentConfig.subjects.map(sub => {
                 const isSelected = sub.code === selectedSubjectCode;
                 const assignment = consolidatedData?.assignments?.find((a: any) => a.subjectCode === sub.code);
                 const primaryTeacher = assignment?.primaryTeacher?.teacherName;
-                const delegatedTeacher = assignment?.delegatedTeacher?.teacherName;
                 const status = assignment?.status || "DRAFT";
+
+                // Compute live progress for this subject in the selected class
+                const stList = consolidatedData?.students || [];
+                const totalSt = stList.length;
+                let gradedSt = 0;
+                let fullSt = 0;
+                let cmtEnSt = 0;
+                let cmtViSt = 0;
+                const nonGpaCols = (sub.scoreColumns || []).filter((c: any) => c.key !== "gpaScore");
+                const reqCols = sub.isQualitative ? 1 : Math.max(1, nonGpaCols.length);
+
+                stList.forEach((st: any) => {
+                  const g =
+                    isSelected && subjectGrades[st.id]
+                      ? subjectGrades[st.id]
+                      : consolidatedData?.grades?.find(
+                          (x: any) => x.studentId === st.id && x.subjectCode === sub.code
+                        );
+                  if (!g) return;
+                  const hasEn = Boolean(g.commentEn && String(g.commentEn).trim() !== "");
+                  const hasVi = Boolean(g.commentVi && String(g.commentVi).trim() !== "");
+                  if (hasEn) cmtEnSt++;
+                  if (hasVi) cmtViSt++;
+
+                  if (sub.isQualitative) {
+                    const hasQual =
+                      hasEn ||
+                      hasVi ||
+                      Boolean(g.assessmentContentEn && String(g.assessmentContentEn).trim() !== "") ||
+                      Boolean(g.assessmentContentVi && String(g.assessmentContentVi).trim() !== "");
+                    if (hasQual) {
+                      gradedSt++;
+                      fullSt++;
+                    }
+                    return;
+                  }
+
+                  let pArr: any[] = [];
+                  if (Array.isArray(g.progressScores)) {
+                    pArr = g.progressScores;
+                  } else if (typeof g.progressScores === "string") {
+                    try {
+                      pArr = JSON.parse(g.progressScores || "[]");
+                    } catch {
+                      pArr = [];
+                    }
+                  }
+
+                  let filled = 0;
+                  nonGpaCols.forEach((col: any) => {
+                    let v: any = null;
+                    if (col.key.startsWith("progressScores_")) {
+                      const idx = parseInt(col.key.split("_")[1], 10);
+                      v = pArr[idx];
+                    } else if (col.key === "midTermScore") v = g.midTermScore;
+                    else if (col.key === "endTermScore") v = g.endTermScore;
+                    else if (col.key === "ieltsScore") v = g.ieltsScore;
+                    if (v !== null && v !== undefined && String(v).trim() !== "" && !isNaN(Number(v))) {
+                      filled++;
+                    }
+                  });
+                  const hasGpa =
+                    g.gpaScore !== null &&
+                    g.gpaScore !== undefined &&
+                    String(g.gpaScore).trim() !== "" &&
+                    !isNaN(Number(g.gpaScore));
+                  if (filled > 0 || hasGpa) gradedSt++;
+                  if (filled >= reqCols) fullSt++;
+                });
+
+                const progRate = totalSt > 0 ? Math.round((gradedSt / totalSt) * 100) : 0;
+                const isDone = totalSt > 0 && gradedSt >= totalSt;
+                const isInProg = gradedSt > 0 && gradedSt < totalSt;
 
                 return (
                   <button
                     key={sub.code}
                     type="button"
                     onClick={() => setSelectedSubjectCode(sub.code)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border text-left transition-all shrink-0 ${
+                    className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                       isSelected
                         ? "bg-[#003B3A] text-white border-[#003B3A] shadow-sm ring-2 ring-[#00A19A]/40"
-                        : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200"
+                        : "bg-slate-50 hover:bg-teal-50/40 text-slate-800 border-slate-200"
                     }`}
                   >
-                    <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
-                        isSelected ? "bg-white text-[#003B3A]" : "bg-teal-100 text-[#003B3A]"
-                      }`}
-                    >
-                      {sub.code}
-                    </div>
                     <div>
-                      <div className="font-extrabold text-xs">
-                        {sub.nameVi} <span className={isSelected ? "text-teal-200 font-normal" : "text-slate-500 font-normal"}>({sub.nameEn})</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`text-[11px] font-medium ${isSelected ? "text-teal-100" : "text-slate-500"}`}>
-                          {primaryTeacher ? `GVBM: ${primaryTeacher}` : "Chưa phân công GVBM"}
-                        </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
+                              isSelected ? "bg-white text-[#003B3A]" : "bg-teal-100 text-[#003B3A]"
+                            }`}
+                          >
+                            {sub.code}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-extrabold text-xs truncate">
+                              {sub.nameVi}{" "}
+                              <span
+                                className={
+                                  isSelected
+                                    ? "text-teal-200 font-normal"
+                                    : "text-slate-500 font-normal"
+                                }
+                              >
+                                ({sub.nameEn})
+                              </span>
+                            </div>
+                            <div
+                              className={`text-[11px] font-medium truncate mt-0.5 ${
+                                isSelected ? "text-teal-100" : "text-slate-600"
+                              }`}
+                            >
+                              {primaryTeacher ? `GVBM: ${primaryTeacher}` : "Chưa phân công GVBM"}
+                            </div>
+                          </div>
+                        </div>
+
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                             status === "APPROVED"
-                              ? isSelected ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-800"
+                              ? isSelected
+                                ? "bg-emerald-500 text-white"
+                                : "bg-emerald-100 text-emerald-800"
                               : status === "SUBMITTED"
-                              ? isSelected ? "bg-amber-400 text-slate-900" : "bg-amber-100 text-amber-800"
-                              : isSelected ? "bg-[#00736E] text-teal-100" : "bg-slate-200 text-slate-700"
+                              ? isSelected
+                                ? "bg-amber-400 text-slate-900"
+                                : "bg-amber-100 text-amber-800"
+                              : isSelected
+                              ? "bg-[#00736E] text-teal-100"
+                              : "bg-slate-200 text-slate-700"
                           }`}
                         >
-                          {status === "APPROVED" ? "Đã duyệt" : status === "SUBMITTED" ? "Đã gửi duyệt" : "Bản nháp"}
+                          {status === "APPROVED"
+                            ? "Đã duyệt"
+                            : status === "SUBMITTED"
+                            ? "Đã gửi duyệt"
+                            : "Bản nháp"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress section */}
+                    <div className="mt-2.5 pt-2 border-t border-dashed border-current/15 space-y-1.5 w-full">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className={isSelected ? "text-teal-100" : "text-slate-600"}>
+                          Điểm:{" "}
+                          <strong className={isSelected ? "text-white" : "text-slate-900"}>
+                            {gradedSt}/{totalSt} HS
+                          </strong>{" "}
+                          ({progRate}%)
+                        </span>
+                        <span
+                          className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
+                            isDone
+                              ? isSelected
+                                ? "bg-emerald-500/25 text-[#5EEAD4]"
+                                : "bg-emerald-50 text-[#059669] border border-emerald-200"
+                              : isInProg
+                              ? isSelected
+                                ? "bg-amber-400/25 text-amber-200"
+                                : "bg-amber-50 text-[#D97706] border border-amber-200"
+                              : isSelected
+                              ? "bg-rose-500/25 text-rose-200"
+                              : "bg-rose-50 text-[#E11D48] border border-rose-200"
+                          }`}
+                        >
+                          {isDone
+                            ? "Hoàn thành 100%"
+                            : isInProg
+                            ? `Đang nhập (${gradedSt}/${totalSt})`
+                            : `Chưa nhập (0/${totalSt})`}
+                        </span>
+                      </div>
+                      <div
+                        className={`w-full h-1.5 rounded-full overflow-hidden ${
+                          isSelected ? "bg-white/15" : "bg-slate-200"
+                        }`}
+                      >
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            isDone
+                              ? isSelected
+                                ? "bg-[#5EEAD4]"
+                                : "bg-[#059669]"
+                              : isInProg
+                              ? isSelected
+                                ? "bg-amber-300"
+                                : "bg-[#D97706]"
+                              : isSelected
+                              ? "bg-rose-300"
+                              : "bg-[#E11D48]"
+                          }`}
+                          style={{ width: `${Math.min(100, Math.max(0, progRate))}%` }}
+                        />
+                      </div>
+                      <div
+                        className={`flex items-center justify-between text-[10px] ${
+                          isSelected ? "text-teal-200/90" : "text-slate-500"
+                        }`}
+                      >
+                        <span>
+                          Đủ cột: <strong>{fullSt}/{totalSt}</strong>
+                        </span>
+                        <span>
+                          Nhận xét EN: <strong>{cmtEnSt}/{totalSt}</strong> • VI:{" "}
+                          <strong>{cmtViSt}/{totalSt}</strong>
                         </span>
                       </div>
                     </div>

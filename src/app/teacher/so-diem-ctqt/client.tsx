@@ -13,6 +13,14 @@ import {
   BookOpen,
   MessageSquare,
   Layers,
+  Users,
+  BarChart3,
+  Search,
+  Clock,
+  ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
+  Filter,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
@@ -56,7 +64,70 @@ function getReviewStatusMeta(rawStatus?: string | null) {
   };
 }
 
+function getProgressStatusMeta(
+  progressStatus?: string | null,
+  gradedStudents = 0,
+  totalStudents = 0
+) {
+  const st = (progressStatus || "NOT_STARTED").toUpperCase();
+  if (st === "COMPLETED" || (totalStudents > 0 && gradedStudents >= totalStudents)) {
+    return {
+      code: "COMPLETED",
+      label: "Hoàn thành 100%",
+      shortLabel: `Đủ điểm (${gradedStudents}/${totalStudents})`,
+      badgeClass: "bg-emerald-50 text-[#059669] border border-emerald-200",
+      activeBadgeClass: "bg-emerald-500/25 text-[#5EEAD4] border border-emerald-400/40",
+      barClass: "bg-[#059669]",
+      activeBarClass: "bg-[#5EEAD4]",
+    };
+  }
+  if (st === "IN_PROGRESS" || gradedStudents > 0) {
+    return {
+      code: "IN_PROGRESS",
+      label: "Đang nhập dở",
+      shortLabel: `Đang nhập (${gradedStudents}/${totalStudents})`,
+      badgeClass: "bg-amber-50 text-[#D97706] border border-amber-200",
+      activeBadgeClass: "bg-amber-400/25 text-amber-200 border border-amber-300/40",
+      barClass: "bg-[#D97706]",
+      activeBarClass: "bg-amber-300",
+    };
+  }
+  if (st === "NO_STUDENTS" || totalStudents === 0) {
+    return {
+      code: "NO_STUDENTS",
+      label: "Chưa có HS",
+      shortLabel: "0 HS",
+      badgeClass: "bg-slate-100 text-slate-600 border border-slate-200",
+      activeBadgeClass: "bg-white/15 text-slate-200 border border-white/20",
+      barClass: "bg-slate-300",
+      activeBarClass: "bg-white/30",
+    };
+  }
+  return {
+    code: "NOT_STARTED",
+    label: "Chưa nhập điểm",
+    shortLabel: `Chưa nhập (0/${totalStudents})`,
+    badgeClass: "bg-rose-50 text-[#E11D48] border border-rose-200",
+    activeBadgeClass: "bg-rose-500/25 text-rose-200 border border-rose-400/40",
+    barClass: "bg-[#E11D48]",
+    activeBarClass: "bg-rose-300",
+  };
+}
+
+function formatUpdatedAtVi(iso?: string | null): string {
+  if (!iso) return "Chưa nhập";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "Chưa nhập";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch {
+    return "Chưa nhập";
+  }
+}
+
 export function SoDiemCtqtTeacherClient({
+  teacher,
   academicYears,
   activeYearId,
   ctqtClasses,
@@ -71,18 +142,35 @@ export function SoDiemCtqtTeacherClient({
     urlYearId || activeYearId || academicYears[0]?.id || ""
   );
   const [selectedSemester, setSelectedSemester] = useState(2);
-  const [activeTab, setActiveTab] = useState<"entry" | "review" | "consolidated">(
-    urlTab === "consolidated" || urlTab === "review" || urlTab === "entry"
-      ? (urlTab as "entry" | "review" | "consolidated")
+  const [activeTab, setActiveTab] = useState<"entry" | "progress" | "review" | "consolidated">(
+    urlTab === "consolidated" || urlTab === "review" || urlTab === "progress" || urlTab === "entry"
+      ? (urlTab as "entry" | "progress" | "review" | "consolidated")
       : "entry"
   );
 
-  // Assignments for this teacher
+  // Assignments & slot progress data
   const [assignmentsData, setAssignmentsData] = useState<any>({
     primaryAssignments: [],
     delegatedAssignments: [],
+    allClassSlots: [],
   });
   const [loadingAssignments, setLoadingAssignments] = useState(true);
+
+  // Filter & Tracking states for "Chọn môn học phụ trách theo GV"
+  const [selectedTeacherFilterId, setSelectedTeacherFilterId] = useState<string>("ALL");
+  const [subjectScopeMode, setSubjectScopeMode] = useState<"TEACHER_ONLY" | "ALL_CLASS_SUBJECTS">(
+    "TEACHER_ONLY"
+  );
+  const [subjectProgressFilter, setSubjectProgressFilter] = useState<
+    "ALL" | "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED"
+  >("ALL");
+  const [showInlineTracker, setShowInlineTracker] = useState<boolean>(false);
+
+  // Progress Tab / Panel filters
+  const [trackerViewMode, setTrackerViewMode] = useState<"by_teacher" | "by_slot">("by_teacher");
+  const [trackerSearch, setTrackerSearch] = useState<string>("");
+  const [trackerSubjectFilter, setTrackerSubjectFilter] = useState<string>("ALL");
+  const [trackerStatusFilter, setTrackerStatusFilter] = useState<string>("ALL");
 
   // Selected for Entry Tab
   const [selectedClassId, setSelectedClassId] = useState<string>("");
@@ -110,19 +198,34 @@ export function SoDiemCtqtTeacherClient({
       setActiveTab("consolidated");
     } else if (urlTab === "review") {
       setActiveTab("review");
+    } else if (urlTab === "progress") {
+      setActiveTab("progress");
     }
     if (urlClassId) {
       setConsolidatedClassId(urlClassId);
     }
   }, [urlTab, urlClassId]);
 
-  // Build available class+subject options for Entry Tab
-  const entryAssignmentOptions = useMemo(() => {
+  // All class+subject slots enriched with progress and teacher info
+  const allSlotsWithProgress = useMemo(() => {
+    const rawSlots = Array.isArray(assignmentsData.allClassSlots)
+      ? assignmentsData.allClassSlots
+      : [];
     const primaryList = Array.isArray(assignmentsData.primaryAssignments)
       ? assignmentsData.primaryAssignments
       : [];
-    if (!isSuperAdmin) return primaryList;
 
+    if (rawSlots.length > 0) {
+      if (!isSuperAdmin && teacher?.id) {
+        // Non-admin teacher: include classes where teacher has primary assignment (all subjects of those classes so they can track class progress or filter to their own)
+        const myClassIds = new Set(primaryList.map((a: any) => a.classId));
+        return rawSlots.filter((s: any) => myClassIds.has(s.classId));
+      }
+      return rawSlots;
+    }
+
+    // Fallback if allClassSlots is empty
+    if (!isSuperAdmin) return primaryList;
     const existingKeys = new Set(primaryList.map((a: any) => `${a.classId}::${a.subjectCode}`));
     const adminExtras: any[] = [];
     ctqtClasses.forEach((c: any) => {
@@ -141,31 +244,450 @@ export function SoDiemCtqtTeacherClient({
       });
     });
     return [...primaryList, ...adminExtras];
-  }, [assignmentsData.primaryAssignments, ctqtClasses, isSuperAdmin]);
+  }, [
+    assignmentsData.allClassSlots,
+    assignmentsData.primaryAssignments,
+    ctqtClasses,
+    isSuperAdmin,
+    teacher?.id,
+  ]);
+
+  // Live progress computation for the currently active (selectedClassId + selectedSubjectCode) from subjectGradeData
+  const liveActiveSlotProgress = useMemo(() => {
+    if (!subjectGradeData?.students || !selectedClassId || !selectedSubjectCode) return null;
+    const students = subjectGradeData.students;
+    const entries = subjectGradeData.entries || [];
+    const subDef = subjectGradeData.subjectDef;
+    const totalStudents = students.length;
+
+    let gradedStudents = 0;
+    let fullScoreStudents = 0;
+    let commentEnStudents = 0;
+    let commentViStudents = 0;
+
+    const nonGpaCols = (subDef?.scoreColumns || []).filter((c: any) => c.key !== "gpaScore");
+    const requiredCols = subDef?.isQualitative ? 1 : Math.max(1, nonGpaCols.length);
+
+    students.forEach((st: any) => {
+      const entry = entries.find((e: any) => e.studentId === st.id);
+      const hasEn = Boolean(entry?.commentEn && String(entry.commentEn).trim() !== "");
+      const hasVi = Boolean(entry?.commentVi && String(entry.commentVi).trim() !== "");
+      if (hasEn) commentEnStudents++;
+      if (hasVi) commentViStudents++;
+
+      if (subDef?.isQualitative) {
+        const hasQual =
+          hasEn ||
+          hasVi ||
+          Boolean(entry?.assessmentContentEn && String(entry.assessmentContentEn).trim() !== "") ||
+          Boolean(entry?.assessmentContentVi && String(entry.assessmentContentVi).trim() !== "");
+        if (hasQual) {
+          gradedStudents++;
+          fullScoreStudents++;
+        }
+        return;
+      }
+
+      let progArr: any[] = [];
+      try {
+        progArr = JSON.parse(entry?.progressScores || "[]");
+        if (!Array.isArray(progArr)) progArr = [];
+      } catch {
+        progArr = [];
+      }
+
+      let filled = 0;
+      nonGpaCols.forEach((col: any) => {
+        let v: any = null;
+        if (col.key.startsWith("progressScores_")) {
+          const idx = parseInt(col.key.split("_")[1], 10);
+          v = progArr[idx];
+        } else if (col.key === "midTermScore") {
+          v = entry?.midTermScore;
+        } else if (col.key === "endTermScore") {
+          v = entry?.endTermScore;
+        } else if (col.key === "ieltsScore") {
+          v = entry?.ieltsScore;
+        }
+        if (v !== null && v !== undefined && String(v).trim() !== "" && !isNaN(Number(v))) {
+          filled++;
+        }
+      });
+
+      const hasGpa =
+        entry?.gpaScore !== null &&
+        entry?.gpaScore !== undefined &&
+        String(entry.gpaScore).trim() !== "" &&
+        !isNaN(Number(entry.gpaScore));
+
+      if (filled > 0 || hasGpa) gradedStudents++;
+      if (filled >= requiredCols) fullScoreStudents++;
+    });
+
+    const progressRate = totalStudents > 0 ? Math.round((gradedStudents / totalStudents) * 100) : 0;
+    const fullScoreRate =
+      totalStudents > 0 ? Math.round((fullScoreStudents / totalStudents) * 100) : 0;
+    const commentRate =
+      totalStudents > 0
+        ? Math.round((Math.max(commentEnStudents, commentViStudents) / totalStudents) * 100)
+        : 0;
+
+    let progressStatus: "COMPLETED" | "IN_PROGRESS" | "NOT_STARTED" | "NO_STUDENTS" = "NOT_STARTED";
+    if (totalStudents === 0) progressStatus = "NO_STUDENTS";
+    else if (gradedStudents >= totalStudents) progressStatus = "COMPLETED";
+    else if (gradedStudents > 0) progressStatus = "IN_PROGRESS";
+
+    return {
+      classId: selectedClassId,
+      subjectCode: selectedSubjectCode,
+      totalStudents,
+      gradedStudents,
+      fullScoreStudents,
+      commentEnStudents,
+      commentViStudents,
+      missingStudents: Math.max(0, totalStudents - gradedStudents),
+      progressRate,
+      fullScoreRate,
+      commentRate,
+      progressStatus,
+    };
+  }, [subjectGradeData, selectedClassId, selectedSubjectCode]);
+
+  // Merge live active slot progress into allSlotsWithProgress
+  const effectiveAllSlots = useMemo(() => {
+    return allSlotsWithProgress.map((s: any) => {
+      if (
+        liveActiveSlotProgress &&
+        s.classId === liveActiveSlotProgress.classId &&
+        s.subjectCode === liveActiveSlotProgress.subjectCode
+      ) {
+        return {
+          ...s,
+          ...liveActiveSlotProgress,
+        };
+      }
+      return s;
+    });
+  }, [allSlotsWithProgress, liveActiveSlotProgress]);
+
+  // Teacher summary list for "Chọn môn học phụ trách theo GV" & Progress Tracking
+  const teacherProgressSummaries = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        teacherId: string;
+        teacherName: string;
+        teacherCode: string;
+        classIds: Set<string>;
+        slots: any[];
+        completedSlots: number;
+        inProgressSlots: number;
+        notStartedSlots: number;
+        totalStudents: number;
+        gradedStudents: number;
+        fullScoreStudents: number;
+        commentEnStudents: number;
+        commentViStudents: number;
+        progressRate: number;
+        status: "COMPLETED" | "IN_PROGRESS" | "NOT_STARTED";
+      }
+    >();
+
+    effectiveAllSlots.forEach((slot: any) => {
+      const tId = slot.primaryTeacherId || slot.primaryTeacher?.id;
+      if (!tId) return;
+      if (!map.has(tId)) {
+        map.set(tId, {
+          teacherId: tId,
+          teacherName: slot.primaryTeacher?.teacherName || "Giáo viên",
+          teacherCode: slot.primaryTeacher?.teacherCode || "",
+          classIds: new Set<string>(),
+          slots: [],
+          completedSlots: 0,
+          inProgressSlots: 0,
+          notStartedSlots: 0,
+          totalStudents: 0,
+          gradedStudents: 0,
+          fullScoreStudents: 0,
+          commentEnStudents: 0,
+          commentViStudents: 0,
+          progressRate: 0,
+          status: "NOT_STARTED",
+        });
+      }
+      const item = map.get(tId)!;
+      item.classIds.add(slot.classId);
+      item.slots.push(slot);
+      const st = slot.progressStatus || "NOT_STARTED";
+      if (st === "COMPLETED") item.completedSlots++;
+      else if (st === "IN_PROGRESS") item.inProgressSlots++;
+      else if (st !== "NO_STUDENTS") item.notStartedSlots++;
+
+      item.totalStudents += slot.totalStudents || 0;
+      item.gradedStudents += slot.gradedStudents || 0;
+      item.fullScoreStudents += slot.fullScoreStudents || 0;
+      item.commentEnStudents += slot.commentEnStudents || 0;
+      item.commentViStudents += slot.commentViStudents || 0;
+    });
+
+    return Array.from(map.values())
+      .map(t => {
+        const progressRate =
+          t.totalStudents > 0 ? Math.round((t.gradedStudents / t.totalStudents) * 100) : 0;
+        let status: "COMPLETED" | "IN_PROGRESS" | "NOT_STARTED" = "NOT_STARTED";
+        if (t.slots.length > 0 && t.completedSlots === t.slots.length) status = "COMPLETED";
+        else if (t.gradedStudents > 0 || t.completedSlots > 0) status = "IN_PROGRESS";
+        return {
+          ...t,
+          classCount: t.classIds.size,
+          slotCount: t.slots.length,
+          progressRate,
+          status,
+        };
+      })
+      .sort((a, b) => a.teacherName.localeCompare(b.teacherName, "vi"));
+  }, [effectiveAllSlots]);
+
+  const unassignedSlotsCount = useMemo(() => {
+    return effectiveAllSlots.filter((s: any) => !s.primaryTeacherId && !s.primaryTeacher?.id).length;
+  }, [effectiveAllSlots]);
+
+  // Slots matching the selected teacher filter ("Chọn GV phụ trách")
+  const entryAssignmentOptions = useMemo(() => {
+    if (selectedTeacherFilterId === "UNASSIGNED") {
+      return effectiveAllSlots.filter((s: any) => !s.primaryTeacherId && !s.primaryTeacher?.id);
+    }
+    if (selectedTeacherFilterId !== "ALL") {
+      return effectiveAllSlots.filter(
+        (s: any) => (s.primaryTeacherId || s.primaryTeacher?.id) === selectedTeacherFilterId
+      );
+    }
+    if (!isSuperAdmin && teacher?.id && subjectScopeMode === "TEACHER_ONLY") {
+      const own = effectiveAllSlots.filter(
+        (s: any) => (s.primaryTeacherId || s.primaryTeacher?.id) === teacher.id
+      );
+      if (own.length > 0) return own;
+    }
+    return effectiveAllSlots;
+  }, [
+    effectiveAllSlots,
+    selectedTeacherFilterId,
+    isSuperAdmin,
+    teacher?.id,
+    subjectScopeMode,
+  ]);
 
   // Group available subjects for the currently selected class
   const subjectsForSelectedClass = useMemo(() => {
     if (!selectedClassId) return [];
-    return entryAssignmentOptions.filter((a: any) => a.classId === selectedClassId);
-  }, [entryAssignmentOptions, selectedClassId]);
+    const basePool =
+      subjectScopeMode === "ALL_CLASS_SUBJECTS" ? effectiveAllSlots : entryAssignmentOptions;
+    let classSubs = basePool.filter((a: any) => a.classId === selectedClassId);
+    if (classSubs.length === 0) {
+      classSubs = effectiveAllSlots.filter((a: any) => a.classId === selectedClassId);
+    }
+    if (subjectProgressFilter !== "ALL") {
+      classSubs = classSubs.filter((s: any) => {
+        const meta = getProgressStatusMeta(s.progressStatus, s.gradedStudents, s.totalStudents);
+        return meta.code === subjectProgressFilter;
+      });
+    }
+    return classSubs;
+  }, [
+    effectiveAllSlots,
+    entryAssignmentOptions,
+    selectedClassId,
+    subjectScopeMode,
+    subjectProgressFilter,
+  ]);
 
-  // Unique classes in Entry Tab selector
+  // All subjects of the selected class (unfiltered by status) for summary counters
+  const allSubjectsOfSelectedClass = useMemo(() => {
+    if (!selectedClassId) return [];
+    const basePool =
+      subjectScopeMode === "ALL_CLASS_SUBJECTS" ? effectiveAllSlots : entryAssignmentOptions;
+    const list = basePool.filter((a: any) => a.classId === selectedClassId);
+    return list.length > 0
+      ? list
+      : effectiveAllSlots.filter((a: any) => a.classId === selectedClassId);
+  }, [effectiveAllSlots, entryAssignmentOptions, selectedClassId, subjectScopeMode]);
+
+  // Unique classes in Entry Tab selector (filtered by selectedTeacherFilterId)
   const uniqueEntryClasses = useMemo(() => {
     const seen = new Set<string>();
-    const list: { classId: string; className: string; grade?: string; level?: string }[] = [];
+    const list: {
+      classId: string;
+      className: string;
+      grade?: string;
+      level?: string;
+      slotCount: number;
+      completedSlots: number;
+    }[] = [];
     entryAssignmentOptions.forEach((a: any) => {
       if (a.classId && !seen.has(a.classId)) {
         seen.add(a.classId);
+        const clsSlots = entryAssignmentOptions.filter((x: any) => x.classId === a.classId);
+        const completed = clsSlots.filter(
+          (x: any) =>
+            getProgressStatusMeta(x.progressStatus, x.gradedStudents, x.totalStudents).code ===
+            "COMPLETED"
+        ).length;
         list.push({
           classId: a.classId,
           className: a.class?.className || "Lớp CTQT",
           grade: a.class?.grade,
           level: a.class?.level,
+          slotCount: clsSlots.length,
+          completedSlots: completed,
         });
       }
     });
     return list;
   }, [entryAssignmentOptions]);
+
+  // Selected teacher summary object (when filtering by a specific GV)
+  const selectedTeacherSummary = useMemo(() => {
+    if (selectedTeacherFilterId === "ALL" || selectedTeacherFilterId === "UNASSIGNED") return null;
+    return teacherProgressSummaries.find(t => t.teacherId === selectedTeacherFilterId) || null;
+  }, [teacherProgressSummaries, selectedTeacherFilterId]);
+
+  // Overall progress summary for the currently active scope
+  const activeScopeSummary = useMemo(() => {
+    const pool = entryAssignmentOptions;
+    const totalSlots = pool.length;
+    let completedSlots = 0;
+    let inProgressSlots = 0;
+    let notStartedSlots = 0;
+    let approvedSlots = 0;
+    let totalStudents = 0;
+    let gradedStudents = 0;
+
+    pool.forEach((s: any) => {
+      const meta = getProgressStatusMeta(s.progressStatus, s.gradedStudents, s.totalStudents);
+      if (meta.code === "COMPLETED") completedSlots++;
+      else if (meta.code === "IN_PROGRESS") inProgressSlots++;
+      else if (meta.code === "NOT_STARTED") notStartedSlots++;
+      if ((s.status || s.reviewStatus || "").toUpperCase() === "APPROVED") approvedSlots++;
+      totalStudents += s.totalStudents || 0;
+      gradedStudents += s.gradedStudents || 0;
+    });
+
+    const overallRate = totalStudents > 0 ? Math.round((gradedStudents / totalStudents) * 100) : 0;
+
+    return {
+      totalSlots,
+      completedSlots,
+      inProgressSlots,
+      notStartedSlots,
+      approvedSlots,
+      totalStudents,
+      gradedStudents,
+      overallRate,
+    };
+  }, [entryAssignmentOptions]);
+
+  // Filtered teachers & slots for the Progress Tracking tab / panel
+  const filteredTrackerTeachers = useMemo(() => {
+    const q = trackerSearch.trim().toLowerCase();
+    return teacherProgressSummaries
+      .map(t => {
+        if (
+          selectedTeacherFilterId !== "ALL" &&
+          selectedTeacherFilterId !== "UNASSIGNED" &&
+          t.teacherId !== selectedTeacherFilterId
+        ) {
+          return null;
+        }
+        const matchingSlots = t.slots.filter((s: any) => {
+          if (trackerSubjectFilter !== "ALL" && s.subjectCode !== trackerSubjectFilter) return false;
+          if (trackerStatusFilter !== "ALL") {
+            const code = getProgressStatusMeta(
+              s.progressStatus,
+              s.gradedStudents,
+              s.totalStudents
+            ).code;
+            if (trackerStatusFilter === "INCOMPLETE") {
+              if (code !== "IN_PROGRESS" && code !== "NOT_STARTED") return false;
+            } else if (code !== trackerStatusFilter) {
+              return false;
+            }
+          }
+          if (q) {
+            const mName = (t.teacherName || "").toLowerCase().includes(q);
+            const mCode = (t.teacherCode || "").toLowerCase().includes(q);
+            const mCls = (s.class?.className || "").toLowerCase().includes(q);
+            const mSub = (s.subjectCode || "").toLowerCase().includes(q);
+            if (!mName && !mCode && !mCls && !mSub) return false;
+          }
+          return true;
+        });
+        if (matchingSlots.length === 0) return null;
+        return {
+          ...t,
+          matchingSlots,
+        };
+      })
+      .filter(Boolean) as any[];
+  }, [
+    teacherProgressSummaries,
+    selectedTeacherFilterId,
+    trackerSubjectFilter,
+    trackerStatusFilter,
+    trackerSearch,
+  ]);
+
+  const filteredTrackerSlots = useMemo(() => {
+    const q = trackerSearch.trim().toLowerCase();
+    return effectiveAllSlots.filter((s: any) => {
+      const tId = s.primaryTeacherId || s.primaryTeacher?.id || "";
+      if (selectedTeacherFilterId === "UNASSIGNED" && tId) return false;
+      if (
+        selectedTeacherFilterId !== "ALL" &&
+        selectedTeacherFilterId !== "UNASSIGNED" &&
+        tId !== selectedTeacherFilterId
+      ) {
+        return false;
+      }
+      if (trackerSubjectFilter !== "ALL" && s.subjectCode !== trackerSubjectFilter) return false;
+      if (trackerStatusFilter !== "ALL") {
+        const code = getProgressStatusMeta(
+          s.progressStatus,
+          s.gradedStudents,
+          s.totalStudents
+        ).code;
+        if (trackerStatusFilter === "INCOMPLETE") {
+          if (code !== "IN_PROGRESS" && code !== "NOT_STARTED") return false;
+        } else if (code !== trackerStatusFilter) {
+          return false;
+        }
+      }
+      if (q) {
+        const mCls = (s.class?.className || "").toLowerCase().includes(q);
+        const mSub = (s.subjectCode || "").toLowerCase().includes(q);
+        const mTeacher =
+          (s.primaryTeacher?.teacherName || "").toLowerCase().includes(q) ||
+          (s.primaryTeacher?.teacherCode || "").toLowerCase().includes(q);
+        if (!mCls && !mSub && !mTeacher) return false;
+      }
+      return true;
+    });
+  }, [
+    effectiveAllSlots,
+    selectedTeacherFilterId,
+    trackerSubjectFilter,
+    trackerStatusFilter,
+    trackerSearch,
+  ]);
+
+  // Helper to jump directly to a specific (classId, subjectCode) gradebook in Entry Tab
+  const handleSelectSlotForEntry = (cId: string, subCode: string, teacherId?: string | null) => {
+    if (teacherId && selectedTeacherFilterId !== "ALL" && selectedTeacherFilterId !== teacherId) {
+      setSelectedTeacherFilterId(teacherId);
+    }
+    setSelectedClassId(cId);
+    setSelectedSubjectCode(subCode);
+    setActiveTab("entry");
+  };
 
   // Fetch teacher's CTQT assignments
   const fetchTeacherAssignments = async () => {
@@ -447,6 +969,7 @@ export function SoDiemCtqtTeacherClient({
       if (data.success) {
         toast.success(data.message);
         fetchSubjectGrades();
+        fetchTeacherAssignments();
       } else {
         toast.error(data.error || "Không thể lưu bảng điểm");
       }
@@ -648,6 +1171,29 @@ export function SoDiemCtqtTeacherClient({
             )}
           </button>
 
+          <button
+            type="button"
+            onClick={() => setActiveTab("progress")}
+            className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === "progress"
+                ? "border-[#008B85] text-[#00736E]"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            2. Theo dõi nhập điểm các môn theo GV
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded-full font-bold border ${
+                activeScopeSummary.completedSlots === activeScopeSummary.totalSlots &&
+                activeScopeSummary.totalSlots > 0
+                  ? "bg-emerald-50 text-[#059669] border-emerald-200"
+                  : "bg-teal-50 text-[#00736E] border-teal-200"
+              }`}
+            >
+              {activeScopeSummary.completedSlots}/{activeScopeSummary.totalSlots} môn
+            </span>
+          </button>
+
           {hasDelegatedReviews && (
             <button
               type="button"
@@ -659,7 +1205,7 @@ export function SoDiemCtqtTeacherClient({
               }`}
             >
               <MessageSquare className="w-4 h-4" />
-              2. Rà soát nhận xét song ngữ (GVTA)
+              3. Rà soát nhận xét song ngữ (GVTA)
               {assignmentsData.delegatedAssignments?.length > 0 && (
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-[#D97706] border border-amber-200 font-bold">
                   {assignmentsData.delegatedAssignments.length}
@@ -678,7 +1224,7 @@ export function SoDiemCtqtTeacherClient({
             }`}
           >
             <Layers className="w-4 h-4" />
-            {hasDelegatedReviews ? "3." : "2."} Sổ điểm Tổng hợp & Năng lực cốt lõi (GVCN)
+            {hasDelegatedReviews ? "4." : "3."} Sổ điểm Tổng hợp & Năng lực cốt lõi (GVCN)
           </button>
         </div>
       </div>
@@ -688,13 +1234,81 @@ export function SoDiemCtqtTeacherClient({
       {/* ========================================================================= */}
       {activeTab === "entry" && (
         <div className="space-y-4">
-          {/* Class Selector & Excel / Save Action Strip */}
+          {/* Teacher & Class Selector + Excel / Save Action Strip */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3 tabular-nums">
-              <label className="text-xs font-bold text-slate-700">Chọn Lớp:</label>
+              {/* Chọn GV phụ trách (GVBM) */}
+              {teacherProgressSummaries.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-bold text-slate-700 whitespace-nowrap flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-[#008B85]" />
+                    Chọn GV phụ trách:
+                  </label>
+                  <select
+                    value={selectedTeacherFilterId}
+                    onChange={e => {
+                      const nextTeacherId = e.target.value;
+                      setSelectedTeacherFilterId(nextTeacherId);
+                      setSubjectProgressFilter("ALL");
+                      if (nextTeacherId === "ALL") return;
+
+                      const pool =
+                        nextTeacherId === "UNASSIGNED"
+                          ? effectiveAllSlots.filter(
+                              (s: any) => !s.primaryTeacherId && !s.primaryTeacher?.id
+                            )
+                          : effectiveAllSlots.filter(
+                              (s: any) =>
+                                (s.primaryTeacherId || s.primaryTeacher?.id) === nextTeacherId
+                            );
+
+                      if (pool.length > 0) {
+                        const stillInClass = pool.filter((s: any) => s.classId === selectedClassId);
+                        if (stillInClass.length > 0) {
+                          if (!stillInClass.some((s: any) => s.subjectCode === selectedSubjectCode)) {
+                            setSelectedSubjectCode(stillInClass[0].subjectCode);
+                          }
+                        } else {
+                          setSelectedClassId(pool[0].classId);
+                          setSelectedSubjectCode(pool[0].subjectCode);
+                        }
+                      }
+                    }}
+                    className="text-xs font-bold px-3 py-2 bg-[#F8FAFC] border border-slate-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] max-w-[310px]"
+                  >
+                    <option value="ALL">
+                      Tất cả GV phụ trách ({teacherProgressSummaries.length} GV •{" "}
+                      {assignmentsData.primaryAssignments?.length || effectiveAllSlots.length} môn)
+                    </option>
+                    {teacher?.id &&
+                      teacherProgressSummaries.some(t => t.teacherId === teacher.id) && (
+                        <option value={teacher.id}>
+                          ★ Môn tôi phụ trách — {teacher.teacherName}
+                        </option>
+                      )}
+                    <optgroup label="Chọn Giáo viên bộ môn (GVBM)">
+                      {teacherProgressSummaries.map(t => (
+                        <option key={t.teacherId} value={t.teacherId}>
+                          {t.teacherName}
+                          {t.teacherCode ? ` (${t.teacherCode})` : ""} — {t.classCount} lớp •{" "}
+                          {t.slotCount} môn (Đủ điểm: {t.completedSlots}/{t.slotCount} •{" "}
+                          {t.progressRate}%)
+                        </option>
+                      ))}
+                    </optgroup>
+                    {unassignedSlotsCount > 0 && (
+                      <option value="UNASSIGNED">
+                        Chưa phân công GVBM ({unassignedSlotsCount} môn)
+                      </option>
+                    )}
+                  </select>
+                </div>
+              )}
+
+              <label className="text-xs font-bold text-slate-700 whitespace-nowrap">Chọn Lớp:</label>
               {loadingAssignments ? (
                 <span className="text-xs text-slate-500">Đang tải phân công...</span>
-              ) : entryAssignmentOptions.length === 0 ? (
+              ) : uniqueEntryClasses.length === 0 ? (
                 <span className="text-xs text-slate-500 italic">
                   Bạn chưa được phân công môn học CTQT nào trong học kỳ này.
                 </span>
@@ -715,18 +1329,18 @@ export function SoDiemCtqtTeacherClient({
                         setSelectedSubjectCode(classSubs[0].subjectCode);
                       }
                     }}
-                    className="text-xs font-bold px-3.5 py-2 bg-teal-50/70 border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] min-w-[180px]"
+                    className="text-xs font-bold px-3.5 py-2 bg-teal-50/70 border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] min-w-[185px]"
                   >
                     {uniqueEntryClasses.map(c => (
                       <option key={c.classId} value={c.classId}>
-                        Lớp {c.className}
+                        Lớp {c.className} ({c.completedSlots}/{c.slotCount} môn hoàn thành)
                       </option>
                     ))}
                   </select>
 
                   {subjectGradeData?.class && (
                     <span className="text-xs font-semibold px-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] text-slate-700 rounded-xl">
-                      {entryLevelConfig.levelNameVi} ({subjectsForSelectedClass.length} môn phụ trách)
+                      {entryLevelConfig.levelNameVi} ({allSubjectsOfSelectedClass.length} môn phụ trách)
                     </span>
                   )}
                 </>
@@ -775,6 +1389,7 @@ export function SoDiemCtqtTeacherClient({
                       if (d.success) {
                         toast.success(d.message || "Đã nạp file Excel thành công");
                         fetchSubjectGrades();
+                        fetchTeacherAssignments();
                       } else {
                         toast.error(d.error || "Không thể nạp file Excel");
                       }
@@ -810,71 +1425,528 @@ export function SoDiemCtqtTeacherClient({
             </div>
           </div>
 
-          {/* Subject Pills Switcher (same visual language as Admin) */}
-          {subjectsForSelectedClass.length > 0 && (
-            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs">
-              <div className="text-xs font-semibold text-slate-600 mb-2.5">
-                Chọn môn học phụ trách để nhập điểm và nhận xét:
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {subjectsForSelectedClass.map((item: any) => {
-                  const lv = detectCtqtLevel(
-                    item.class?.className || subjectGradeData?.class?.className,
-                    item.class?.grade || subjectGradeData?.class?.grade,
-                    item.class?.level || subjectGradeData?.class?.level
-                  );
-                  const subMeta = CTQT_LEVEL_CONFIGS[lv]?.subjects?.find(
-                    s => s.code === item.subjectCode
-                  );
-                  const isActive = item.subjectCode === selectedSubjectCode;
-                  const statusMeta = getReviewStatusMeta(item.status);
+          {/* ================================================================= */}
+          {/* KHU VỰC: CHỌN MÔN HỌC PHỤ TRÁCH THEO GV & THEO DÕI NHẬP ĐIỂM CÁC MÔN */}
+          {/* ================================================================= */}
+          {allSubjectsOfSelectedClass.length > 0 && (
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs space-y-3.5">
+              {/* Header row: Title + Summary Badges + Scope/Status Filter Controls */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[#F1F5F9]">
+                <div className="flex flex-wrap items-center gap-2.5 tabular-nums">
+                  <div className="text-xs md:text-sm font-black text-[#003B3A] flex items-center gap-2">
+                    <span>Chọn môn học phụ trách để nhập điểm và nhận xét:</span>
+                  </div>
 
-                  return (
-                    <button
-                      key={`${item.classId}::${item.subjectCode}`}
-                      type="button"
-                      onClick={() => setSelectedSubjectCode(item.subjectCode)}
-                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        isActive
-                          ? "bg-[#003B3A] border-[#003B3A] text-white shadow-xs"
-                          : "bg-[#F8FAFC] hover:bg-teal-50/50 border-[#E2E8F0] text-slate-800"
-                      }`}
-                    >
-                      <span
-                        className={`text-[11px] font-black px-2 py-1 rounded-lg tabular-nums ${
-                          isActive
-                            ? "bg-white/15 text-[#5EEAD4]"
-                            : "bg-white border border-[#E2E8F0] text-[#003B3A]"
+                  {/* Summary Progress Strip of Subjects in Current View */}
+                  {(() => {
+                    const totalSubs = allSubjectsOfSelectedClass.length;
+                    const doneSubs = allSubjectsOfSelectedClass.filter(
+                      (s: any) =>
+                        getProgressStatusMeta(s.progressStatus, s.gradedStudents, s.totalStudents)
+                          .code === "COMPLETED"
+                    ).length;
+                    const inProgSubs = allSubjectsOfSelectedClass.filter(
+                      (s: any) =>
+                        getProgressStatusMeta(s.progressStatus, s.gradedStudents, s.totalStudents)
+                          .code === "IN_PROGRESS"
+                    ).length;
+                    const notStartedSubs = allSubjectsOfSelectedClass.filter(
+                      (s: any) =>
+                        getProgressStatusMeta(s.progressStatus, s.gradedStudents, s.totalStudents)
+                          .code === "NOT_STARTED"
+                    ).length;
+
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#059669] border border-emerald-200">
+                          Hoàn thành: {doneSubs}/{totalSubs} môn
+                        </span>
+                        {inProgSubs > 0 && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-[#D97706] border border-amber-200">
+                            Đang nhập: {inProgSubs} môn
+                          </span>
+                        )}
+                        {notStartedSubs > 0 && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-[#E11D48] border border-rose-200">
+                            Chưa nhập: {notStartedSubs} môn
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Right Controls: Scope Switcher + Status Filter + Inline Tracker Toggle */}
+                <div className="flex flex-wrap items-center gap-2 tabular-nums">
+                  {/* Nếu đang chọn 1 GV cụ thể hoặc tài khoản GV, cho phép chuyển giữa "Môn theo GV" và "Tất cả môn của Lớp" */}
+                  {(selectedTeacherFilterId !== "ALL" || (!isSuperAdmin && teacher?.id)) && (
+                    <div className="inline-flex p-0.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setSubjectScopeMode("TEACHER_ONLY")}
+                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                          subjectScopeMode === "TEACHER_ONLY"
+                            ? "bg-[#003B3A] text-white shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
                         }`}
                       >
-                        {item.subjectCode}
+                        Môn theo GV đang chọn
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSubjectScopeMode("ALL_CLASS_SUBJECTS")}
+                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                          subjectScopeMode === "ALL_CLASS_SUBJECTS"
+                            ? "bg-[#003B3A] text-white shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        Tất cả môn của lớp
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Lọc theo trạng thái tiến độ nhập điểm */}
+                  <select
+                    value={subjectProgressFilter}
+                    onChange={e => setSubjectProgressFilter(e.target.value as any)}
+                    className="text-xs font-semibold px-2.5 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-slate-700 focus:outline-[#008B85]"
+                  >
+                    <option value="ALL">Tất cả tiến độ ({allSubjectsOfSelectedClass.length})</option>
+                    <option value="NOT_STARTED">Chưa nhập điểm</option>
+                    <option value="IN_PROGRESS">Đang nhập dở</option>
+                    <option value="COMPLETED">Hoàn thành 100%</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowInlineTracker(prev => !prev)}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
+                      showInlineTracker
+                        ? "bg-teal-50 text-[#00736E] border-teal-300"
+                        : "bg-[#F8FAFC] hover:bg-slate-100 text-slate-700 border-[#E2E8F0]"
+                    }`}
+                  >
+                    <BarChart3 className="w-3.5 h-3.5 text-[#008B85]" />
+                    <span>Theo dõi tiến độ theo GV</span>
+                    {showInlineTracker ? (
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Dải các Lớp - Môn phụ trách của GV đang chọn (khi lọc theo 1 GV cụ thể) */}
+              {selectedTeacherSummary && selectedTeacherSummary.slots.length > 0 && (
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 space-y-2 tabular-nums">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-[#003B3A]">
+                        GV phụ trách đang chọn: {selectedTeacherSummary.teacherName}
+                        {selectedTeacherSummary.teacherCode
+                          ? ` (${selectedTeacherSummary.teacherCode})`
+                          : ""}
                       </span>
-                      <div>
-                        <div className="text-xs font-bold leading-snug">
-                          {subMeta ? `${subMeta.nameVi} (${subMeta.nameEn})` : item.subjectCode}
-                        </div>
-                        <div
-                          className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${
-                            isActive ? "text-teal-100" : "text-slate-500"
+                      <span className="text-slate-400">•</span>
+                      <span className="text-slate-600 font-medium">
+                        Phụ trách{" "}
+                        <strong className="text-slate-900">
+                          {selectedTeacherSummary.classCount} lớp / {selectedTeacherSummary.slotCount}{" "}
+                          môn
+                        </strong>
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-slate-600 font-medium">
+                        Đã nhập điểm:{" "}
+                        <strong className="text-[#00736E]">
+                          {selectedTeacherSummary.gradedStudents}/
+                          {selectedTeacherSummary.totalStudents} lượt HS (
+                          {selectedTeacherSummary.progressRate}%)
+                        </strong>
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTeacherFilterId("ALL")}
+                      className="text-[11px] font-semibold text-[#00736E] hover:underline cursor-pointer"
+                    >
+                      Xem tất cả giáo viên
+                    </button>
+                  </div>
+
+                  {/* Chips chuyển nhanh giữa tất cả các Lớp - Môn của GV này */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {selectedTeacherSummary.slots.map((slot: any) => {
+                      const isCurrentSlot =
+                        slot.classId === selectedClassId &&
+                        slot.subjectCode === selectedSubjectCode;
+                      const progMeta = getProgressStatusMeta(
+                        slot.progressStatus,
+                        slot.gradedStudents,
+                        slot.totalStudents
+                      );
+                      return (
+                        <button
+                          key={`${slot.classId}::${slot.subjectCode}`}
+                          type="button"
+                          onClick={() => {
+                            setSelectedClassId(slot.classId);
+                            setSelectedSubjectCode(slot.subjectCode);
+                          }}
+                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
+                            isCurrentSlot
+                              ? "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
+                              : "bg-white hover:bg-teal-50/60 text-slate-700 border-[#E2E8F0]"
                           }`}
                         >
-                          <span>Sheet: {subMeta?.sheetName || item.subjectCode}</span>
-                          <span>•</span>
+                          <span>{slot.class?.className || "Lớp"}</span>
+                          <span className={isCurrentSlot ? "text-[#5EEAD4]" : "text-[#00736E]"}>
+                            • {slot.subjectCode}
+                          </span>
                           <span
-                            className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
-                              isActive
-                                ? "bg-white/15 text-white"
-                                : statusMeta.badgeClass
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                              isCurrentSlot ? progMeta.activeBadgeClass : progMeta.badgeClass
                             }`}
                           >
-                            {statusMeta.label}
+                            {slot.gradedStudents ?? 0}/{slot.totalStudents ?? 0} HS
                           </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Subject Progress Cards Grid */}
+              {subjectsForSelectedClass.length === 0 ? (
+                <div className="py-6 text-center text-xs text-slate-500 font-medium">
+                  Không có môn học nào khớp với bộ lọc tiến độ đang chọn.{" "}
+                  <button
+                    type="button"
+                    onClick={() => setSubjectProgressFilter("ALL")}
+                    className="text-[#00736E] font-bold hover:underline cursor-pointer ml-1"
+                  >
+                    Hiển thị tất cả môn
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 tabular-nums">
+                  {subjectsForSelectedClass.map((item: any) => {
+                    const lv = detectCtqtLevel(
+                      item.class?.className || subjectGradeData?.class?.className,
+                      item.class?.grade || subjectGradeData?.class?.grade,
+                      item.class?.level || subjectGradeData?.class?.level
+                    );
+                    const subMeta = CTQT_LEVEL_CONFIGS[lv]?.subjects?.find(
+                      s => s.code === item.subjectCode
+                    );
+                    const isActive = item.subjectCode === selectedSubjectCode;
+                    const statusMeta = getReviewStatusMeta(item.status || item.reviewStatus);
+
+                    const totalSt = item.totalStudents ?? 0;
+                    const gradedSt = item.gradedStudents ?? 0;
+                    const fullSt = item.fullScoreStudents ?? 0;
+                    const cmtEnSt = item.commentEnStudents ?? 0;
+                    const cmtViSt = item.commentViStudents ?? 0;
+                    const progRate =
+                      totalSt > 0 ? Math.round((gradedSt / totalSt) * 100) : item.progressRate ?? 0;
+                    const progMeta = getProgressStatusMeta(item.progressStatus, gradedSt, totalSt);
+                    const gvName = item.primaryTeacher?.teacherName || null;
+                    const gvId = item.primaryTeacherId || item.primaryTeacher?.id || null;
+
+                    return (
+                      <div
+                        key={`${item.classId}::${item.subjectCode}`}
+                        onClick={() => setSelectedSubjectCode(item.subjectCode)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSelectedSubjectCode(item.subjectCode);
+                          }
+                        }}
+                        className={`flex flex-col justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          isActive
+                            ? "bg-[#003B3A] border-[#003B3A] text-white shadow-xs ring-2 ring-[#00A19A]/30"
+                            : "bg-[#F8FAFC] hover:bg-teal-50/40 border-[#E2E8F0] text-slate-800"
+                        }`}
+                      >
+                        {/* Top row: Subject Code + Name + Review Status */}
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span
+                                className={`text-[11px] font-black px-2 py-1 rounded-lg shrink-0 tabular-nums ${
+                                  isActive
+                                    ? "bg-white/15 text-[#5EEAD4]"
+                                    : "bg-white border border-[#E2E8F0] text-[#003B3A]"
+                                }`}
+                              >
+                                {item.subjectCode}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold leading-snug truncate">
+                                  {subMeta ? `${subMeta.nameVi} (${subMeta.nameEn})` : item.subjectCode}
+                                </div>
+                                <div
+                                  className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${
+                                    isActive ? "text-teal-100" : "text-slate-500"
+                                  }`}
+                                >
+                                  <span>Sheet: {subMeta?.sheetName || item.subjectCode}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <span
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                                isActive ? "bg-white/15 text-white" : statusMeta.badgeClass
+                              }`}
+                            >
+                              {statusMeta.label}
+                            </span>
+                          </div>
+
+                          {/* Teacher (GVBM) row */}
+                          <div
+                            className={`mt-2 pt-2 border-t flex items-center justify-between gap-2 text-[11px] ${
+                              isActive
+                                ? "border-white/15 text-teal-100"
+                                : "border-[#E2E8F0] text-slate-600"
+                            }`}
+                          >
+                            <div className="truncate">
+                              <span className="opacity-80">GVBM: </span>
+                              <strong
+                                className={
+                                  isActive
+                                    ? "text-white"
+                                    : gvName
+                                    ? "text-[#00736E]"
+                                    : "text-slate-400 italic font-normal"
+                                }
+                              >
+                                {gvName || "Chưa phân công"}
+                              </strong>
+                            </div>
+                            {gvId && selectedTeacherFilterId !== gvId && (
+                              <button
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setSelectedTeacherFilterId(gvId);
+                                }}
+                                title={`Lọc các môn của GV ${gvName}`}
+                                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md transition-colors cursor-pointer shrink-0 ${
+                                  isActive
+                                    ? "bg-white/10 hover:bg-white/20 text-[#5EEAD4]"
+                                    : "bg-white hover:bg-teal-50 text-[#00736E] border border-[#E2E8F0]"
+                                }`}
+                              >
+                                Lọc theo GV
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Grade & Comment Entry Progress Section */}
+                        <div className="mt-2.5 pt-2 border-t border-dashed border-current/15 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2 text-[11px]">
+                            <span
+                              className={`font-semibold ${
+                                isActive ? "text-teal-100" : "text-slate-600"
+                              }`}
+                            >
+                              Điểm:{" "}
+                              <strong className={isActive ? "text-white" : "text-slate-900"}>
+                                {gradedSt}/{totalSt} HS
+                              </strong>{" "}
+                              ({progRate}%)
+                            </span>
+                            <span
+                              className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
+                                isActive ? progMeta.activeBadgeClass : progMeta.badgeClass
+                              }`}
+                            >
+                              {progMeta.shortLabel}
+                            </span>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div
+                            className={`w-full h-1.5 rounded-full overflow-hidden ${
+                              isActive ? "bg-white/15" : "bg-slate-200"
+                            }`}
+                          >
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${
+                                isActive ? progMeta.activeBarClass : progMeta.barClass
+                              }`}
+                              style={{ width: `${Math.min(100, Math.max(0, progRate))}%` }}
+                            />
+                          </div>
+
+                          {/* Sub-metrics: Full columns & Bilingual comments */}
+                          <div
+                            className={`flex items-center justify-between gap-2 text-[10px] ${
+                              isActive ? "text-teal-200/90" : "text-slate-500"
+                            }`}
+                          >
+                            <span>
+                              Đủ cột điểm: <strong>{fullSt}/{totalSt}</strong>
+                            </span>
+                            <span>
+                              Nhận xét EN: <strong>{cmtEnSt}/{totalSt}</strong> • VI:{" "}
+                              <strong>{cmtViSt}/{totalSt}</strong>
+                            </span>
+                          </div>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Inline Collapsible Progress Tracker Table by Teacher / Subject */}
+              {showInlineTracker && (
+                <div className="pt-3 border-t border-[#E2E8F0] space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs font-black text-[#003B3A] flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-[#008B85]" />
+                      <span>
+                        Bảng theo dõi tiến độ nhập điểm các môn theo Giáo viên phụ trách
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("progress")}
+                      className="text-xs font-bold text-[#00736E] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Mở toàn màn hình</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
                     </button>
-                  );
-                })}
-              </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="py-2.5 px-3 text-center w-10 text-white">STT</th>
+                          <th className="py-2.5 px-3 text-white">Lớp</th>
+                          <th className="py-2.5 px-3 text-white">Môn học phụ trách</th>
+                          <th className="py-2.5 px-3 text-teal-100">Giáo viên bộ môn (GVBM)</th>
+                          <th className="py-2.5 px-3 text-center text-teal-100">Đã nhập điểm</th>
+                          <th className="py-2.5 px-3 text-center text-teal-100">Đủ cột điểm</th>
+                          <th className="py-2.5 px-3 text-center text-teal-100">Nhận xét (EN / VI)</th>
+                          <th className="py-2.5 px-3 text-center text-[#5EEAD4]">Tiến độ</th>
+                          <th className="py-2.5 px-3 text-center text-[#5EEAD4]">Trạng thái duyệt</th>
+                          <th className="py-2.5 px-3 text-center text-white">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                        {(selectedTeacherFilterId !== "ALL"
+                          ? entryAssignmentOptions
+                          : allSubjectsOfSelectedClass
+                        ).map((slot: any, idx: number) => {
+                          const lv = detectCtqtLevel(
+                            slot.class?.className,
+                            slot.class?.grade,
+                            slot.class?.level
+                          );
+                          const subMeta = CTQT_LEVEL_CONFIGS[lv]?.subjects?.find(
+                            s => s.code === slot.subjectCode
+                          );
+                          const progMeta = getProgressStatusMeta(
+                            slot.progressStatus,
+                            slot.gradedStudents,
+                            slot.totalStudents
+                          );
+                          const revMeta = getReviewStatusMeta(slot.status || slot.reviewStatus);
+                          const isCurrent =
+                            slot.classId === selectedClassId &&
+                            slot.subjectCode === selectedSubjectCode;
+
+                          return (
+                            <tr
+                              key={`${slot.classId}::${slot.subjectCode}`}
+                              className={`transition-colors align-middle ${
+                                isCurrent
+                                  ? "bg-[#F0FDFA]/80 hover:bg-[#F0FDFA]"
+                                  : "hover:bg-[#F8FAFC]"
+                              }`}
+                            >
+                              <td className="py-2.5 px-3 text-center font-bold text-slate-500">
+                                {idx + 1}
+                              </td>
+                              <td className="py-2.5 px-3 font-bold text-[#003B3A] whitespace-nowrap">
+                                {slot.class?.className}
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-slate-800">
+                                <span className="font-black text-[#00736E] mr-1.5">
+                                  [{slot.subjectCode}]
+                                </span>
+                                {subMeta ? `${subMeta.nameVi} (${subMeta.nameEn})` : slot.subjectCode}
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-slate-700 whitespace-nowrap">
+                                {slot.primaryTeacher?.teacherName || (
+                                  <span className="text-slate-400 italic font-normal">
+                                    Chưa phân công
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 text-center font-bold text-slate-800">
+                                {slot.gradedStudents ?? 0} / {slot.totalStudents ?? 0} HS (
+                                {slot.progressRate ?? 0}%)
+                              </td>
+                              <td className="py-2.5 px-3 text-center text-slate-700">
+                                {slot.fullScoreStudents ?? 0} / {slot.totalStudents ?? 0}
+                              </td>
+                              <td className="py-2.5 px-3 text-center text-slate-700">
+                                EN: {slot.commentEnStudents ?? 0}/{slot.totalStudents ?? 0} • VI:{" "}
+                                {slot.commentViStudents ?? 0}/{slot.totalStudents ?? 0}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span
+                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block whitespace-nowrap ${progMeta.badgeClass}`}
+                                >
+                                  {progMeta.label}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span
+                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block whitespace-nowrap ${revMeta.badgeClass}`}
+                                >
+                                  {revMeta.label}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedClassId(slot.classId);
+                                    setSelectedSubjectCode(slot.subjectCode);
+                                  }}
+                                  className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                                    isCurrent
+                                      ? "bg-[#003B3A] text-white"
+                                      : "bg-teal-50 hover:bg-teal-100 text-[#00736E] border border-teal-200"
+                                  }`}
+                                >
+                                  {isCurrent ? "Đang mở" : "Nhập điểm"}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1219,6 +2291,499 @@ export function SoDiemCtqtTeacherClient({
                   </span>
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: THEO DÕI NHẬP ĐIỂM CÁC MÔN THEO GV PHỤ TRÁCH                        */}
+      {/* ========================================================================= */}
+      {activeTab === "progress" && (
+        <div className="space-y-4">
+          {/* Unified Academic Ledger Strip */}
+          <div className="bg-white border border-[#E2E8F0] border-l-4 border-l-[#003B3A] rounded-2xl p-4 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-5 tabular-nums">
+              <div>
+                <div className="text-xs font-semibold text-slate-500">Giáo viên phụ trách</div>
+                <div className="text-lg font-black text-[#003B3A] mt-0.5 flex items-baseline gap-1.5">
+                  <span>{teacherProgressSummaries.length}</span>
+                  <span className="text-xs font-semibold text-slate-500">giáo viên</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Đủ 100%:{" "}
+                  <strong className="text-[#059669]">
+                    {teacherProgressSummaries.filter(t => t.status === "COMPLETED").length}
+                  </strong>{" "}
+                  • Đang nhập:{" "}
+                  <strong className="text-[#D97706]">
+                    {teacherProgressSummaries.filter(t => t.status === "IN_PROGRESS").length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="h-9 w-px bg-[#E2E8F0] hidden sm:block" />
+
+              <div>
+                <div className="text-xs font-semibold text-slate-500">Lượt môn phụ trách</div>
+                <div className="text-lg font-black text-[#003B3A] mt-0.5 flex items-baseline gap-1.5">
+                  <span>{activeScopeSummary.totalSlots}</span>
+                  <span className="text-xs font-semibold text-slate-500">lớp – môn</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Đã duyệt chính thức:{" "}
+                  <strong className="text-[#059669]">{activeScopeSummary.approvedSlots}</strong> môn
+                </div>
+              </div>
+
+              <div className="h-9 w-px bg-[#E2E8F0] hidden sm:block" />
+
+              <div>
+                <div className="text-xs font-semibold text-slate-500">Hoàn thành 100%</div>
+                <div className="text-lg font-black text-[#059669] mt-0.5 flex items-baseline gap-1.5">
+                  <span>{activeScopeSummary.completedSlots}</span>
+                  <span className="text-xs font-semibold text-slate-500">
+                    / {activeScopeSummary.totalSlots} môn
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Đã nhập đủ điểm học sinh</div>
+              </div>
+
+              <div className="h-9 w-px bg-[#E2E8F0] hidden sm:block" />
+
+              <div>
+                <div className="text-xs font-semibold text-slate-500">Đang nhập / Chưa bắt đầu</div>
+                <div className="text-lg font-black mt-0.5 flex items-baseline gap-1.5">
+                  <span className="text-[#D97706]">{activeScopeSummary.inProgressSlots}</span>
+                  <span className="text-slate-300 font-normal">/</span>
+                  <span className="text-[#E11D48]">{activeScopeSummary.notStartedSlots}</span>
+                  <span className="text-xs font-semibold text-slate-500">môn</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Cần hoàn thiện nhập điểm</div>
+              </div>
+
+              <div className="h-9 w-px bg-[#E2E8F0] hidden md:block" />
+
+              <div className="min-w-[175px]">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>Tiến độ điểm học sinh</span>
+                  <span className="font-black text-[#00736E]">{activeScopeSummary.overallRate}%</span>
+                </div>
+                <div className="mt-1.5 w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-[#008B85] h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, activeScopeSummary.overallRate))}%`,
+                    }}
+                  />
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  Đã có điểm:{" "}
+                  <strong className="text-slate-800">
+                    {activeScopeSummary.gradedStudents.toLocaleString("vi-VN")} /{" "}
+                    {activeScopeSummary.totalStudents.toLocaleString("vi-VN")}
+                  </strong>{" "}
+                  lượt HS
+                </div>
+              </div>
+            </div>
+
+            {/* Segmented View Mode Switcher */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex p-1 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                <button
+                  type="button"
+                  onClick={() => setTrackerViewMode("by_teacher")}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                    trackerViewMode === "by_teacher"
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  Theo Giáo viên phụ trách
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTrackerViewMode("by_slot")}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                    trackerViewMode === "by_slot"
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  Theo Lớp & Môn học
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Strip */}
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 tabular-nums">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Chọn GV phụ trách */}
+              <div className="flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-[#008B85]" />
+                <span className="text-xs font-bold text-slate-700">GV phụ trách:</span>
+                <select
+                  value={selectedTeacherFilterId}
+                  onChange={e => setSelectedTeacherFilterId(e.target.value)}
+                  className="text-xs font-bold px-3 py-2 bg-[#F8FAFC] border border-slate-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] max-w-[270px]"
+                >
+                  <option value="ALL">
+                    Tất cả GV phụ trách ({teacherProgressSummaries.length} GV)
+                  </option>
+                  {teacher?.id &&
+                    teacherProgressSummaries.some(t => t.teacherId === teacher.id) && (
+                      <option value={teacher.id}>
+                        ★ Môn tôi phụ trách — {teacher.teacherName}
+                      </option>
+                    )}
+                  {teacherProgressSummaries.map(t => (
+                    <option key={t.teacherId} value={t.teacherId}>
+                      {t.teacherName} ({t.classCount} lớp • {t.slotCount} môn • {t.progressRate}%)
+                    </option>
+                  ))}
+                  {unassignedSlotsCount > 0 && (
+                    <option value="UNASSIGNED">
+                      Chưa phân công GVBM ({unassignedSlotsCount} môn)
+                    </option>
+                  )}
+                </select>
+              </div>
+
+              {/* Lọc Môn học */}
+              <select
+                value={trackerSubjectFilter}
+                onChange={e => setTrackerSubjectFilter(e.target.value)}
+                className="text-xs font-bold px-3 py-2 bg-[#F8FAFC] border border-slate-300 rounded-xl text-slate-800 focus:outline-[#008B85]"
+              >
+                <option value="ALL">Tất cả môn CTQT</option>
+                <option value="ENG">ENG - Tiếng Anh</option>
+                <option value="MAT">MAT - Toán quốc tế</option>
+                <option value="SCI">SCI - Khoa học</option>
+                <option value="GLOBAL_STUDIES">GLOBAL_STUDIES - Global Studies</option>
+                <option value="AE">AE - Tiếng Anh Học thuật</option>
+                <option value="IELTS">IELTS</option>
+                <option value="AR">AR - Nghiên cứu Học thuật</option>
+              </select>
+
+              {/* Lọc Trạng thái tiến độ */}
+              <select
+                value={trackerStatusFilter}
+                onChange={e => setTrackerStatusFilter(e.target.value)}
+                className="text-xs font-bold px-3 py-2 bg-[#F8FAFC] border border-slate-300 rounded-xl text-slate-800 focus:outline-[#008B85]"
+              >
+                <option value="ALL">Tất cả trạng thái nhập điểm</option>
+                <option value="INCOMPLETE">Chưa hoàn thành (Đang nhập + Chưa nhập)</option>
+                <option value="NOT_STARTED">Chưa nhập điểm (0%)</option>
+                <option value="IN_PROGRESS">Đang nhập dở</option>
+                <option value="COMPLETED">Hoàn thành 100%</option>
+              </select>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative min-w-[230px]">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={trackerSearch}
+                onChange={e => setTrackerSearch(e.target.value)}
+                placeholder="Tìm giáo viên, lớp, mã môn..."
+                className="w-full text-xs pl-8 pr-3 py-2 bg-[#F8FAFC] border border-slate-300 rounded-xl focus:outline-[#008B85]"
+              />
+            </div>
+          </div>
+
+          {/* Table View 1: By Teacher (Theo Giáo viên phụ trách) */}
+          {trackerViewMode === "by_teacher" ? (
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-center w-12 text-white">STT</th>
+                    <th className="py-3 px-3 text-white min-w-[180px]">Giáo viên phụ trách (GVBM)</th>
+                    <th className="py-3 px-3 text-center text-teal-100 w-28">Số lớp / môn</th>
+                    <th className="py-3 px-3 text-teal-100 min-w-[320px]">
+                      Danh sách môn học phụ trách (Bấm để mở sổ điểm)
+                    </th>
+                    <th className="py-3 px-3 text-center text-teal-100 w-44">
+                      Tiến độ nhập điểm HS
+                    </th>
+                    <th className="py-3 px-3 text-center text-teal-100 w-36">
+                      Nhận xét (EN / VI)
+                    </th>
+                    <th className="py-3 px-3 text-center text-[#5EEAD4] w-32">Trạng thái</th>
+                    <th className="py-3 px-3 text-center text-white w-28">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                  {filteredTrackerTeachers.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-slate-500 font-semibold">
+                        Không có giáo viên nào khớp với bộ lọc hiện tại.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTrackerTeachers.map((t: any, idx: number) => {
+                      const tMeta = getProgressStatusMeta(
+                        t.status,
+                        t.gradedStudents,
+                        t.totalStudents
+                      );
+                      return (
+                        <tr
+                          key={t.teacherId}
+                          className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                        >
+                          <td className="py-3 px-3 text-center font-bold text-slate-500 align-middle">
+                            {idx + 1}
+                          </td>
+                          <td className="py-3 px-3 align-middle">
+                            <div className="font-bold text-[#003B3A]">{t.teacherName}</div>
+                            {t.teacherCode && (
+                              <div className="text-[11px] font-mono text-slate-500">
+                                Mã GV: {t.teacherCode}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-center align-middle">
+                            <div className="font-bold text-slate-800">
+                              {t.classCount} lớp • {t.slotCount} môn
+                            </div>
+                            <div className="text-[11px] text-[#059669] font-semibold">
+                              Đủ 100%: {t.completedSlots}/{t.slotCount}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 align-middle">
+                            <div className="flex flex-wrap gap-1.5">
+                              {t.matchingSlots.map((slot: any) => {
+                                const sMeta = getProgressStatusMeta(
+                                  slot.progressStatus,
+                                  slot.gradedStudents,
+                                  slot.totalStudents
+                                );
+                                return (
+                                  <button
+                                    key={`${slot.classId}::${slot.subjectCode}`}
+                                    type="button"
+                                    onClick={() =>
+                                      handleSelectSlotForEntry(
+                                        slot.classId,
+                                        slot.subjectCode,
+                                        t.teacherId
+                                      )
+                                    }
+                                    title={`Mở sổ điểm Lớp ${slot.class?.className} - Môn ${slot.subjectCode}`}
+                                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${sMeta.badgeClass}`}
+                                  >
+                                    <span className="font-bold text-slate-900">
+                                      {slot.class?.className}
+                                    </span>
+                                    <span>• {slot.subjectCode}</span>
+                                    <span className="font-bold">
+                                      ({slot.gradedStudents ?? 0}/{slot.totalStudents ?? 0})
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 align-middle">
+                            <div className="flex items-center justify-between text-[11px] font-bold mb-1">
+                              <span className="text-slate-800">
+                                {t.gradedStudents}/{t.totalStudents} HS
+                              </span>
+                              <span className="text-[#00736E]">{t.progressRate}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${tMeta.barClass}`}
+                                style={{
+                                  width: `${Math.min(100, Math.max(0, t.progressRate))}%`,
+                                }}
+                              />
+                            </div>
+                            <div className="text-[10px] text-slate-500 mt-1">
+                              Đủ cột điểm: {t.fullScoreStudents}/{t.totalStudents}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center align-middle">
+                            <div className="font-semibold text-slate-700">
+                              EN: {t.commentEnStudents}/{t.totalStudents}
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                              VI: {t.commentViStudents}/{t.totalStudents}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center align-middle">
+                            <span
+                              className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full inline-block whitespace-nowrap ${tMeta.badgeClass}`}
+                            >
+                              {tMeta.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center align-middle">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const firstSlot = t.matchingSlots[0];
+                                if (firstSlot) {
+                                  handleSelectSlotForEntry(
+                                    firstSlot.classId,
+                                    firstSlot.subjectCode,
+                                    t.teacherId
+                                  );
+                                }
+                              }}
+                              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#005250] text-white transition-all cursor-pointer whitespace-nowrap"
+                            >
+                              Chọn GV & Nhập
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* Table View 2: By Class-Subject Slot (Theo Lớp & Môn học) */
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse">
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-3 px-3 text-center w-12 text-white">STT</th>
+                    <th className="py-3 px-3 text-white">Lớp học</th>
+                    <th className="py-3 px-3 text-white">Môn học phụ trách</th>
+                    <th className="py-3 px-3 text-teal-100">Giáo viên bộ môn (GVBM)</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Sĩ số</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Tiến độ nhập điểm</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Đủ cột điểm</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Nhận xét (EN / VI)</th>
+                    <th className="py-3 px-3 text-center text-teal-100">Cập nhật</th>
+                    <th className="py-3 px-3 text-center text-[#5EEAD4]">Tiến độ</th>
+                    <th className="py-3 px-3 text-center text-[#5EEAD4]">Trạng thái duyệt</th>
+                    <th className="py-3 px-3 text-center text-white">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                  {filteredTrackerSlots.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="py-12 text-center text-slate-500 font-semibold">
+                        Không có lớp – môn nào khớp với bộ lọc hiện tại.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTrackerSlots.map((slot: any, idx: number) => {
+                      const lv = detectCtqtLevel(
+                        slot.class?.className,
+                        slot.class?.grade,
+                        slot.class?.level
+                      );
+                      const subMeta = CTQT_LEVEL_CONFIGS[lv]?.subjects?.find(
+                        s => s.code === slot.subjectCode
+                      );
+                      const progMeta = getProgressStatusMeta(
+                        slot.progressStatus,
+                        slot.gradedStudents,
+                        slot.totalStudents
+                      );
+                      const revMeta = getReviewStatusMeta(slot.status || slot.reviewStatus);
+
+                      return (
+                        <tr
+                          key={`${slot.classId}::${slot.subjectCode}`}
+                          className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                        >
+                          <td className="py-3 px-3 text-center font-bold text-slate-500 align-middle">
+                            {idx + 1}
+                          </td>
+                          <td className="py-3 px-3 font-bold text-[#003B3A] whitespace-nowrap align-middle">
+                            Lớp {slot.class?.className}
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-slate-800 align-middle">
+                            <span className="font-black text-[#00736E] mr-1.5">
+                              [{slot.subjectCode}]
+                            </span>
+                            {subMeta ? `${subMeta.nameVi} (${subMeta.nameEn})` : slot.subjectCode}
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-slate-800 whitespace-nowrap align-middle">
+                            {slot.primaryTeacher?.teacherName || (
+                              <span className="text-slate-400 italic font-normal">
+                                Chưa phân công
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-center font-bold text-slate-700 align-middle">
+                            {slot.totalStudents ?? 0}
+                          </td>
+                          <td className="py-3 px-3 align-middle min-w-[140px]">
+                            <div className="flex items-center justify-between text-[11px] font-bold mb-1">
+                              <span>
+                                {slot.gradedStudents ?? 0}/{slot.totalStudents ?? 0} HS
+                              </span>
+                              <span className="text-[#00736E]">{slot.progressRate ?? 0}%</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${progMeta.barClass}`}
+                                style={{
+                                  width: `${Math.min(100, Math.max(0, slot.progressRate ?? 0))}%`,
+                                }}
+                              />
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center text-slate-700 align-middle">
+                            {slot.fullScoreStudents ?? 0}/{slot.totalStudents ?? 0}
+                          </td>
+                          <td className="py-3 px-3 text-center text-slate-700 align-middle whitespace-nowrap">
+                            EN: {slot.commentEnStudents ?? 0}/{slot.totalStudents ?? 0} • VI:{" "}
+                            {slot.commentViStudents ?? 0}/{slot.totalStudents ?? 0}
+                          </td>
+                          <td className="py-3 px-3 text-center text-slate-500 align-middle whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              {formatUpdatedAtVi(slot.lastUpdatedAt)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center align-middle">
+                            <span
+                              className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full inline-block whitespace-nowrap ${progMeta.badgeClass}`}
+                            >
+                              {progMeta.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center align-middle">
+                            <span
+                              className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full inline-block whitespace-nowrap ${revMeta.badgeClass}`}
+                            >
+                              {revMeta.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center align-middle">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleSelectSlotForEntry(
+                                  slot.classId,
+                                  slot.subjectCode,
+                                  slot.primaryTeacherId || slot.primaryTeacher?.id
+                                )
+                              }
+                              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#005250] text-white transition-all cursor-pointer whitespace-nowrap"
+                            >
+                              Mở sổ điểm
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

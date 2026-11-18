@@ -17,6 +17,7 @@ import { prisma } from "@/lib/db"
 import { APP_CATEGORIES, WORKHUB_MODULE_CODES } from "@/config/modules"
 import { getRoleReadableModules } from "@/lib/permissions"
 import { isUserAuthorizedForKtdbclWeeklyReports } from "@/lib/qa-workspace/weeklyReportSchema"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   let session: any = null
@@ -41,6 +42,24 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   try {
     const pAny = prisma as any
     readableModules = await getRoleReadableModules(roleCode)
+    if (session?.user?.id) {
+      const subjectScope = await resolveAccountGradebookScope(session.user.id, roleCode).catch(() => null)
+      if (subjectScope?.hasExplicitSubjectAssignment) {
+        ;[
+          "KTDBCL_GRADE_REMARKS",
+          "KTDBCL_GRADE_CTQT",
+          "KTDBCL_THONG_KE_BAO_CAO",
+          "KTDBCL_TK_DIEM_TB",
+          "KTDBCL_TK_TIEN_DO",
+          "KTDBCL_TK_DUYET_MO_SO",
+          "KTDBCL_TK_PHAN_HOI",
+          "KTDBCL_PHAN_TICH_THKQ",
+          "KTDBCL_XUAT_BANG_DIEM",
+        ].forEach((code) => {
+          if (!readableModules.includes(code)) readableModules.push(code)
+        })
+      }
+    }
     isKtdbclWeeklyAllowed = await isUserAuthorizedForKtdbclWeeklyReports(session?.user?.id, roleCode).catch(() => false)
     if (isKtdbclWeeklyAllowed) {
       if (!readableModules.includes("WEEKLY_REPORTS")) readableModules.push("WEEKLY_REPORTS")

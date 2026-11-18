@@ -1,18 +1,53 @@
 // @ts-nocheck
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
 import { isGradeMatching } from "@/app/admin/ktdbcl/diem-nhan-xet/grade-utils"
+import {
+  extractGradeNumber,
+  getSubjectCurriculumGroup,
+  isKsdnEvaluationPeriod
+} from "@/lib/grading/vnedu-config-types"
+
+function hasValidEntryData(e: any): boolean {
+  if (!e) return false
+  if (e.compositeScore !== null && e.compositeScore !== undefined && String(e.compositeScore).trim() !== "" && !isNaN(Number(e.compositeScore))) {
+    return true
+  }
+  if (e.ratingValue && String(e.ratingValue).trim() !== "") {
+    return true
+  }
+  if (e.remark && String(e.remark).trim() !== "") {
+    return true
+  }
+  if (e.componentScores) {
+    try {
+      const comp = typeof e.componentScores === "string" ? JSON.parse(e.componentScores) : e.componentScores
+      if (comp && typeof comp === "object") {
+        return Object.values(comp).some(v => v !== null && v !== undefined && String(v).trim() !== "")
+      }
+    } catch (_) {}
+  }
+  return false
+}
 
 export async function GET(request: Request) {
   try {
+    let session = null
+    try {
+      session = await auth()
+    } catch (_) {}
     const { searchParams } = new URL(request.url)
     const academicYearId = searchParams.get("academicYearId") || ""
     const evaluationPeriod = searchParams.get("evaluationPeriod") || "KSĐN"
     const campusId = searchParams.get("campusId") || "ALL"
     const grade = searchParams.get("grade") || "ALL"
+    const subjectIdFilter = searchParams.get("subjectId") || "ALL"
     const status = searchParams.get("status") || "ALL"
     const searchTerm = (searchParams.get("search") || "").trim().toLowerCase()
     const scope = searchParams.get("scope") || "SURVEY" // "SURVEY" | "ALL_ASSIGNED"
+    const configTypeFilter = (searchParams.get("configType") || "ALL").toUpperCase() // "ALL" | "VNEDU" | "INTERNAL"
 
     // Optional student details modal query
     const detailClassId = searchParams.get("detailClassId")
@@ -90,7 +125,7 @@ export async function GET(request: Request) {
         where: {
           classId: detailClassId,
           subjectId: detailSubjectId,
-          evaluationPeriod,
+          ...(evaluationPeriod !== "ALL" ? { evaluationPeriod } : {}),
           ...(targetYearId ? { academicYearId: targetYearId } : {})
         }
       })
@@ -103,12 +138,17 @@ export async function GET(request: Request) {
             compScores = typeof e.componentScores === "string" ? JSON.parse(e.componentScores) : e.componentScores
           } catch (_) {}
         }
-        entryMap.set(e.studentId, {
-          compositeScore: e.compositeScore,
-          componentScores: compScores,
-          remark: e.remark || "",
-          updatedAt: e.updatedAt
-        })
+        const existing = entryMap.get(e.studentId)
+        if (!existing || hasValidEntryData(e)) {
+          entryMap.set(e.studentId, {
+            compositeScore: e.compositeScore,
+            ratingValue: e.ratingValue || "",
+            componentScores: compScores,
+            remark: e.remark || "",
+            updatedAt: e.updatedAt,
+            hasData: hasValidEntryData(e)
+          })
+        }
       })
 
       const detailedStudents = students.map(st => {
@@ -119,8 +159,9 @@ export async function GET(request: Request) {
           studentName: st.studentName,
           gender: st.gender,
           dateOfBirth: st.dateOfBirth,
-          hasGrade: Boolean(ent && (ent.compositeScore !== null || Object.keys(ent.componentScores || {}).length > 0)),
+          hasGrade: Boolean(ent && ent.hasData),
           compositeScore: ent ? ent.compositeScore : null,
+          ratingValue: ent ? ent.ratingValue : "",
           componentScores: ent ? ent.componentScores : {},
           remark: ent ? ent.remark : "",
           updatedAt: ent ? ent.updatedAt : null
@@ -151,7 +192,7 @@ export async function GET(request: Request) {
     }
 
     // --- MAIN FEATURE: PROGRESS AUDIT & STATISTICS ---
-    // 1. Load active classes
+    // 1. Load active classes (chỉ lấy lớp phổ thông K1–K12)
     const classWhere: any = { status: "ACTIVE" }
     if (targetYearId) classWhere.academicYearId = targetYearId
     if (campusId && campusId !== "ALL") classWhere.campusId = campusId
@@ -164,17 +205,171 @@ export async function GET(request: Request) {
       orderBy: { className: "asc" }
     })
 
-    // Filter classes by grade if specified
+    const targetFilterGradeNum = grade !== "ALL" ? extractGradeNumber(grade) : null
+
+    // Filter classes by K1-K12 and by grade if specified
     const filteredClasses = classes.filter(cls => {
-      if (grade !== "ALL" && !isGradeMatching(grade, cls.grade)) return false
+      const clsGradeNum = extractGradeNumber(cls.grade || cls.className)
+      if (!clsGradeNum || clsGradeNum < 1 || clsGradeNum > 12) return false
+      if (grade !== "ALL") {
+        if (targetFilterGradeNum !== null) {
+          return clsGradeNum === targetFilterGradeNum
+        }
+        return isGradeMatching(grade, cls.grade || cls.className)
+      }
       return true
     })
+
+    // 4. Load all active configs for targetYearId to build both configuredSubjectsSummary and class-subject tracking
+    const isKsdn = isKsdnEvaluationPeriod(evaluationPeriod)
+    const allYearConfigs = await prisma.subjectGradeConfig.findMany({
+      where: {
+        academicYearId: targetYearId,
+        isActive: true
+      },
+      include: { subject: true },
+      orderBy: [{ grade: "asc" }, { evaluationPeriod: "asc" }]
+    })
+
+    // Classify configs into 1. VNEDU (Môn Bộ GD&ĐT) and 2. INTERNAL (Đánh giá nội bộ Sky-Line: Môn Song ngữ & Quốc tế)
+    // Chỉ tính các cấu hình đã được thiết lập cụ thể theo Kỳ đánh giá (loại bỏ các bản ghi mẫu mặc định evaluationPeriod = "ALL" cũ)
+    const normalizedConfigs = allYearConfigs
+      .filter(c => c.subjectId && c.subjectId !== "ALL" && c.subject && c.evaluationPeriod && c.evaluationPeriod !== "ALL")
+      .map(c => {
+        const currGroup = getSubjectCurriculumGroup(c.subject)
+        // 1. Sổ điểm theo vnEdu (Môn Bộ GD&ĐT): các môn thuộc nhóm MOET
+        // 2. Đánh giá nội bộ Sky-Line (Môn Song ngữ & Quốc tế): các môn thuộc nhóm BILINGUAL / SKL
+        const effectiveConfigType: "VNEDU" | "INTERNAL" =
+          currGroup === "MOET" ? "VNEDU" : "INTERNAL"
+        const gradeNum = extractGradeNumber(c.grade)
+        let colNames: string[] = []
+        try {
+          colNames = Array.isArray(c.columnNames) ? c.columnNames : JSON.parse(c.columnNames || "[]")
+        } catch (_) {}
+        return {
+          ...c,
+          curriculumGroup: currGroup,
+          effectiveConfigType,
+          gradeNum,
+          parsedColumnNames: colNames.filter(Boolean)
+        }
+      })
+
+    // Build summary of configured subjects for 1. VNEDU and 2. INTERNAL
+    const buildGroupSummary = (type: "VNEDU" | "INTERNAL") => {
+      const list = normalizedConfigs.filter(c => c.effectiveConfigType === type)
+      const bySubjectMap = new Map<
+        string,
+        {
+          subjectId: string
+          subjectCode: string
+          subjectName: string
+          curriculumGroup: string
+          configType: "VNEDU" | "INTERNAL"
+          grades: Set<string>
+          periods: Set<string>
+          scopes: Array<{
+            id: string
+            grade: string
+            evaluationPeriod: string
+            program: string
+            columnCount: number
+            columnNames: string[]
+            hasCompositeColumn: boolean
+            hasRatingColumn: boolean
+            hasRemarkColumn: boolean
+          }>
+        }
+      >()
+
+      list.forEach(c => {
+        const sId = c.subjectId!
+        if (!bySubjectMap.has(sId)) {
+          bySubjectMap.set(sId, {
+            subjectId: sId,
+            subjectCode: c.subject?.subjectCode || "",
+            subjectName: c.subject?.subjectName || "",
+            curriculumGroup: c.curriculumGroup,
+            configType: type,
+            grades: new Set(),
+            periods: new Set(),
+            scopes: []
+          })
+        }
+        const item = bySubjectMap.get(sId)!
+        if (c.grade) item.grades.add(c.grade)
+        if (c.evaluationPeriod) item.periods.add(c.evaluationPeriod)
+        item.scopes.push({
+          id: c.id,
+          grade: c.grade || "ALL",
+          evaluationPeriod: c.evaluationPeriod || "ALL",
+          program: c.program || "ALL",
+          columnCount: Number(c.columnCount || 0),
+          columnNames: c.parsedColumnNames,
+          hasCompositeColumn: c.hasCompositeColumn !== false,
+          hasRatingColumn: Boolean(c.hasRatingColumn),
+          hasRemarkColumn: c.hasRemarkColumn !== false
+        })
+      })
+
+      const subjectsArray = Array.from(bySubjectMap.values())
+        .map(s => ({
+          ...s,
+          grades: Array.from(s.grades).sort((a, b) => (extractGradeNumber(a) || 99) - (extractGradeNumber(b) || 99)),
+          periods: Array.from(s.periods)
+        }))
+        .sort((a, b) => a.subjectName.localeCompare(b.subjectName, "vi"))
+
+      return {
+        totalConfigs: list.length,
+        totalUniqueSubjects: subjectsArray.length,
+        subjects: subjectsArray
+      }
+    }
+
+    const configuredSubjectsSummary = {
+      vnEdu: buildGroupSummary("VNEDU"),
+      internal: buildGroupSummary("INTERNAL")
+    }
+
+    // Filter configs matching the active evaluationPeriod & configTypeFilter (chỉ lấy đúng kỳ đã cấu hình, không lấy tràn "ALL")
+    const periodMatchedConfigs = normalizedConfigs.filter(c => {
+      if (configTypeFilter === "VNEDU" && c.effectiveConfigType !== "VNEDU") return false
+      if (configTypeFilter === "INTERNAL" && c.effectiveConfigType !== "INTERNAL") return false
+
+      if (evaluationPeriod === "ALL") return true
+      if (isKsdn) return isKsdnEvaluationPeriod(c.evaluationPeriod)
+      return c.evaluationPeriod === evaluationPeriod
+    })
+
+    // Build available configured subjects for the current filter (for dropdown filter)
+    const availableSubjectsMap = new Map<string, any>()
+    periodMatchedConfigs.forEach(c => {
+      if (grade !== "ALL" && targetFilterGradeNum !== null) {
+        const isG6KsdnMatch = targetFilterGradeNum === 6 && isKsdn && c.gradeNum === 5
+        if (c.gradeNum !== targetFilterGradeNum && !isG6KsdnMatch) return
+      }
+      if (!availableSubjectsMap.has(c.subjectId!)) {
+        availableSubjectsMap.set(c.subjectId!, {
+          id: c.subjectId!,
+          subjectCode: c.subject?.subjectCode || "",
+          subjectName: c.subject?.subjectName || "",
+          curriculumGroup: c.curriculumGroup,
+          configType: c.effectiveConfigType
+        })
+      }
+    })
+    const availableConfiguredSubjects = Array.from(availableSubjectsMap.values()).sort((a, b) =>
+      a.subjectName.localeCompare(b.subjectName, "vi")
+    )
 
     const classIds = filteredClasses.map(c => c.id)
     if (classIds.length === 0) {
       return NextResponse.json({
         success: true,
         evaluationPeriod,
+        configuredSubjectsSummary,
+        availableConfiguredSubjects,
         summary: {
           totalAssignments: 0,
           completedCount: 0,
@@ -214,15 +409,6 @@ export async function GET(request: Request) {
       studentCountMap.set(g.classId, g._count.id)
     })
 
-    // 4. Load configs for evaluationPeriod
-    const configs = await prisma.subjectGradeConfig.findMany({
-      where: {
-        academicYearId: targetYearId,
-        evaluationPeriod: evaluationPeriod === "ALL" ? undefined : { in: [evaluationPeriod, "ALL"] }
-      },
-      include: { subject: true }
-    })
-
     // 5. Load TeachingAssignments
     const assignments = await prisma.teachingAssignment.findMany({
       where: {
@@ -239,7 +425,7 @@ export async function GET(request: Request) {
       taMap.set(`${ta.classId}_${ta.subjectId}`, ta)
     })
 
-    // 6. Load Grade Entries aggregated by classId & subjectId
+    // 6. Load Grade Entries aggregated by classId & subjectId (only counting entries with actual data)
     const entries = await prisma.subjectGradeEntry.findMany({
       where: {
         classId: { in: classIds },
@@ -249,19 +435,40 @@ export async function GET(request: Request) {
       select: {
         classId: true,
         subjectId: true,
+        studentId: true,
+        configType: true,
         compositeScore: true,
+        ratingValue: true,
+        componentScores: true,
+        remark: true,
         updatedAt: true
       }
     })
 
-    const entryStatsMap = new Map<string, { count: number; totalScore: number; validScoreCount: number; lastUpdated: Date | null }>()
+    const entryStatsMap = new Map<
+      string,
+      {
+        gradedStudentIds: Set<string>
+        totalScore: number
+        validScoreCount: number
+        lastUpdated: Date | null
+      }
+    >()
     entries.forEach(e => {
+      if (!hasValidEntryData(e)) return
       const key = `${e.classId}_${e.subjectId}`
-      const existing = entryStatsMap.get(key) || { count: 0, totalScore: 0, validScoreCount: 0, lastUpdated: null }
-      existing.count += 1
-      if (e.compositeScore !== null && e.compositeScore !== undefined && !isNaN(Number(e.compositeScore))) {
-        existing.totalScore += Number(e.compositeScore)
-        existing.validScoreCount += 1
+      const existing = entryStatsMap.get(key) || {
+        gradedStudentIds: new Set<string>(),
+        totalScore: 0,
+        validScoreCount: 0,
+        lastUpdated: null
+      }
+      if (!existing.gradedStudentIds.has(e.studentId)) {
+        existing.gradedStudentIds.add(e.studentId)
+        if (e.compositeScore !== null && e.compositeScore !== undefined && String(e.compositeScore).trim() !== "" && !isNaN(Number(e.compositeScore))) {
+          existing.totalScore += Number(e.compositeScore)
+          existing.validScoreCount += 1
+        }
       }
       if (!existing.lastUpdated || (e.updatedAt && new Date(e.updatedAt) > new Date(existing.lastUpdated))) {
         existing.lastUpdated = e.updatedAt
@@ -269,9 +476,19 @@ export async function GET(request: Request) {
       entryStatsMap.set(key, existing)
     })
 
-    // 7. Active subjects cache
+    // 7. Active subjects cache (filtered by user subject permission scope if applicable)
+    const scopeInfo = await resolveAccountGradebookScope(
+      (session?.user as any)?.id,
+      (session?.user as any)?.role,
+      targetYearId
+    )
     const subjects = await prisma.subject.findMany({
-      where: { status: "ACTIVE" }
+      where: {
+        status: "ACTIVE",
+        ...(scopeInfo.isSubjectScoped && scopeInfo.allowedSubjectIds.length > 0
+          ? { id: { in: scopeInfo.allowedSubjectIds } }
+          : {})
+      }
     })
     const subjectsMap = new Map()
     subjects.forEach(s => subjectsMap.set(s.id, s))
@@ -333,26 +550,60 @@ export async function GET(request: Request) {
     filteredClasses.forEach(cls => {
       const totalStudents = studentCountMap.get(cls.id) || 0
       const classHomeroom = cls.homeroomTeacherId ? homeroomMap.get(cls.homeroomTeacherId) : null
+      const clsGradeNum = extractGradeNumber(cls.grade || cls.className)
 
-      let subjectIdsToTrack: string[] = []
+      const trackedSubjectConfigMap = new Map<string, { configType: "VNEDU" | "INTERNAL"; columnCount: number; columnNames: string[] }>()
+
+      const classAssignments = assignments.filter(ta => ta.classId === cls.id)
+      const classHasAssignments = classAssignments.length > 0
 
       if (scope === "ALL_ASSIGNED") {
         // Track all subjects assigned to this class
-        const classAssignments = assignments.filter(ta => ta.classId === cls.id)
-        subjectIdsToTrack = Array.from(new Set(classAssignments.map(ta => ta.subjectId).filter(Boolean)))
+        classAssignments.forEach(ta => {
+          if (!ta.subjectId) return
+          const subObj = subjectsMap.get(ta.subjectId)
+          const grp = subObj ? getSubjectCurriculumGroup(subObj) : "MOET"
+          const defaultType: "VNEDU" | "INTERNAL" = grp === "MOET" && !isKsdn ? "VNEDU" : "INTERNAL"
+          if (configTypeFilter !== "ALL" && defaultType !== configTypeFilter) return
+          trackedSubjectConfigMap.set(ta.subjectId, {
+            configType: defaultType,
+            columnCount: 0,
+            columnNames: []
+          })
+        })
       } else {
-        // Track survey subjects configured for this grade and period
-        const matchingConfigs = configs.filter(c => isGradeMatching(c.grade, cls.grade))
-        subjectIdsToTrack = Array.from(new Set(matchingConfigs.map(c => c.subjectId).filter(Boolean)))
-        
-        // If no survey subjects configured for this grade yet, fallback to teaching assignments
-        if (subjectIdsToTrack.length === 0) {
-          const classAssignments = assignments.filter(ta => ta.classId === cls.id)
-          subjectIdsToTrack = Array.from(new Set(classAssignments.map(ta => ta.subjectId).filter(Boolean)))
-        }
+        // Track strictly the subjects configured in 1. Sổ điểm theo vnEdu & 2. Đánh giá nội bộ Sky-Line for this class's grade and period
+        const matchingConfigs = periodMatchedConfigs.filter(c => {
+          if (c.gradeNum !== null && clsGradeNum !== null) {
+            if (c.gradeNum === clsGradeNum) return true
+            // Quy tắc Khối 6 KSĐN lấy môn khảo sát Tiểu học Khối 5
+            if (clsGradeNum === 6 && isKsdn && c.gradeNum === 5 && c.effectiveConfigType === "INTERNAL") {
+              return true
+            }
+            return false
+          }
+          return isGradeMatching(c.grade, cls.grade || cls.className)
+        })
+
+        matchingConfigs.forEach(c => {
+          const sId = c.subjectId!
+          // Nếu lớp có phân công giảng dạy nhưng không học môn này (ví dụ lớp Hệ S không học ESL/MAT) và chưa có điểm nhập thì bỏ qua
+          if (classHasAssignments && !taMap.has(`${cls.id}_${sId}`) && !entryStatsMap.has(`${cls.id}_${sId}`)) {
+            return
+          }
+          const existing = trackedSubjectConfigMap.get(sId)
+          if (!existing || c.gradeNum === clsGradeNum) {
+            trackedSubjectConfigMap.set(sId, {
+              configType: c.effectiveConfigType,
+              columnCount: Number(c.columnCount || 0),
+              columnNames: c.parsedColumnNames || []
+            })
+          }
+        })
       }
 
-      subjectIdsToTrack.forEach(subId => {
+      Array.from(trackedSubjectConfigMap.entries()).forEach(([subId, cfgMeta]) => {
+        if (subjectIdFilter !== "ALL" && subId !== subjectIdFilter) return
         const sub = subjectsMap.get(subId)
         if (!sub) return
 
@@ -362,7 +613,7 @@ export async function GET(request: Request) {
         const teacherId = ta?.teacher?.id || classHomeroom?.id || null
 
         const entryStat = entryStatsMap.get(`${cls.id}_${subId}`)
-        const gradedCount = entryStat ? entryStat.count : 0
+        const gradedCount = entryStat ? entryStat.gradedStudentIds.size : 0
         const avgScore = entryStat && entryStat.validScoreCount > 0
           ? Math.round((entryStat.totalScore / entryStat.validScoreCount) * 100) / 100
           : null
@@ -394,12 +645,16 @@ export async function GET(request: Request) {
         rawItems.push({
           classId: cls.id,
           className: cls.className,
-          grade: cls.grade,
+          grade: clsGradeNum ? String(clsGradeNum) : cls.grade,
           campusId: cls.campusId,
           campusName: cls.campus?.campusName || cls.campus?.campusCode || "Cơ sở",
           subjectId: sub.id,
           subjectName: sub.subjectName,
           subjectCode: sub.subjectCode,
+          curriculumGroup: getSubjectCurriculumGroup(sub),
+          configType: cfgMeta.configType,
+          configColumnCount: cfgMeta.columnCount,
+          configColumnNames: cfgMeta.columnNames,
           teacherId,
           teacherName,
           teacherCode,
@@ -468,6 +723,8 @@ export async function GET(request: Request) {
       evaluationPeriod,
       isPeriodLocked,
       periodLockInfo: periodLock || null,
+      configuredSubjectsSummary,
+      availableConfiguredSubjects,
       summary: {
         totalAssignments,
         completedCount,

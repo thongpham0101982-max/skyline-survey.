@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { getThkqAnalyticsData } from "@/lib/ktdbcl/thkqStatisticalEngine"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
+import { hasModulePermission } from "@/lib/permissions"
 
 const ALLOWED_ROLES = [
   "ADMIN",
@@ -15,6 +17,8 @@ const ALLOWED_ROLES = [
   "GIAO_VU_CS",
   "GIAO_VU",
   "TO_TRUONG",
+  "TTCM",
+  "TBP",
   "TEACHER"
 ]
 
@@ -23,12 +27,6 @@ export async function GET(req: NextRequest) {
     const session = await auth()
     if (!session?.user) {
       return NextResponse.json({ success: false, error: "Unauthorized: Vui lòng đăng nhập" }, { status: 401 })
-    }
-
-    const userRole = ((session.user as any)?.role || "").toUpperCase().trim()
-    const isAllowed = ALLOWED_ROLES.includes(userRole)
-    if (!isAllowed) {
-      return NextResponse.json({ success: false, error: "Forbidden: Bạn không có quyền truy cập dữ liệu phân tích THKQ" }, { status: 403 })
     }
 
     const url = new URL(req.url)
@@ -41,6 +39,18 @@ export async function GET(req: NextRequest) {
     const scoreRange = url.searchParams.get("scoreRange") || "ALL"
     const targetType = url.searchParams.get("targetType") || "ALL"
     const searchKeyword = url.searchParams.get("searchKeyword") || ""
+
+    const userRole = ((session.user as any)?.role || "").toUpperCase().trim()
+    const scope = await resolveAccountGradebookScope(
+      (session.user as any)?.id,
+      userRole,
+      academicYearId
+    )
+    const hasPerm = await hasModulePermission(userRole, ["KTDBCL_PHAN_TICH_THKQ", "KTDBCL_GRADE_REMARKS"])
+    const isAllowed = ALLOWED_ROLES.includes(userRole) || scope.isSubjectScoped || hasPerm
+    if (!isAllowed) {
+      return NextResponse.json({ success: false, error: "Forbidden: Bạn không có quyền truy cập dữ liệu phân tích THKQ" }, { status: 403 })
+    }
 
     if (!academicYearId) {
       return NextResponse.json({ success: false, error: "Thiếu tham số academicYearId" }, { status: 400 })
@@ -55,7 +65,8 @@ export async function GET(req: NextRequest) {
       campusId,
       scoreRange,
       targetType,
-      searchKeyword
+      searchKeyword,
+      allowedSubjectIds: scope.isSubjectScoped ? scope.allowedSubjectIds : undefined
     })
 
     return NextResponse.json({

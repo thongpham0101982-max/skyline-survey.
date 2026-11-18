@@ -31,6 +31,7 @@ interface Props {
   classes: any[]
   subjects: any[]
   campuses?: any[]
+  isSubjectScoped?: boolean
 }
 
 export function ThongKeBaoCaoClient(props: Props) {
@@ -41,7 +42,7 @@ export function ThongKeBaoCaoClient(props: Props) {
   )
 }
 
-function ThongKeBaoCaoInner({ academicYears, activeYearId, classes, subjects, campuses = [] }: Props) {
+function ThongKeBaoCaoInner({ academicYears, activeYearId, classes, subjects, campuses = [], isSubjectScoped = false }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -105,7 +106,13 @@ function ThongKeBaoCaoInner({ academicYears, activeYearId, classes, subjects, ca
       if (!res.ok) return
       const data = await res.json()
       if (data.success) {
-        setSavedConfigs(data.configs || [])
+        const rawList = data.configs || []
+        if (isSubjectScoped && subjects.length > 0) {
+          const allowedSet = new Set(subjects.map((s: any) => s.id))
+          setSavedConfigs(rawList.filter((c: any) => !c.subjectId || c.subjectId === "ALL" || allowedSet.has(c.subjectId)))
+        } else {
+          setSavedConfigs(rawList)
+        }
       }
     } catch (err) {
       console.error("Lỗi tải danh sách cấu hình:", err)
@@ -133,6 +140,7 @@ function ThongKeBaoCaoInner({ academicYears, activeYearId, classes, subjects, ca
     if (params.classId) query.set("classId", params.classId)
     if (params.subjectId) query.set("subjectId", params.subjectId)
     if (params.period) query.set("period", params.period)
+    if (params.configType) query.set("configType", params.configType)
     router.push(`/admin/ktdbcl/diem-nhan-xet?${query.toString()}`)
   }
 
@@ -144,12 +152,22 @@ function ThongKeBaoCaoInner({ academicYears, activeYearId, classes, subjects, ca
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-teal-200 mb-2">
               <Award className="w-3.5 h-3.5 text-teal-300" />
-              Khảo thí & Đảm bảo Chất lượng Sky-Line
+              Sổ điểm - Nhận xét Sky-Line
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Thống kê báo cáo</h1>
             <p className="text-teal-100 text-xs md:text-sm mt-1 max-w-3xl">
               Phân tích điểm trung bình các môn & phổ điểm, giám sát tiến độ nhập điểm, phê duyệt mở sổ và tổng hợp phản hồi hai chiều từ PHHS & Giáo viên.
             </p>
+            {isSubjectScoped && subjects.length > 0 && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-teal-200">Môn học được phân quyền:</span>
+                {subjects.map((s: any) => (
+                  <span key={s.id} className="px-2 py-0.5 rounded-md bg-white/15 border border-white/25 text-[11px] font-semibold text-white">
+                    {s.subjectName}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">

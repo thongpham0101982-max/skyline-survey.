@@ -197,7 +197,7 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
 
   const schoolTitle = getSchoolTitle()
   const periodLabel = EVAL_PERIODS.find(p => p.code === selectedPeriod)?.label || selectedPeriod
-  const reportMainTitle = `BÁO CÁO KẾT QUẢ ĐIỂM KIỂM TRA - ${periodLabel.toUpperCase()}`
+  const reportMainTitle = `BẢNG ĐIỂM MÔN HỌC - ${periodLabel.toUpperCase()}`
   const reportYearTitle = `NĂM HỌC: ${data?.classInfo?.academicYearName || defaultYear?.name || "2024 - 2025"}`
 
   const handleSaveFeedback = async () => {
@@ -574,13 +574,13 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
         <span class="info-val">${dob}</span>
       </div>
       <div class="info-row">
-        <span class="info-label">Kỳ khảo sát:</span>
+        <span class="info-label">Kỳ đánh giá / Học kỳ:</span>
         <span class="info-val-blue">${periodLabel}</span>
       </div>
     </div>
 
     <div class="section-bar">
-      <div class="section-title">CHI TIẾT ĐIỂM KIỂM TRA ĐỊNH KỲ</div>
+      <div class="section-title">BẢNG ĐIỂM MÔN HỌC — ${periodLabel.toUpperCase()}</div>
       <div class="section-count">${subjects.length} môn học</div>
     </div>
 
@@ -880,7 +880,7 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-600 font-semibold">Kỳ khảo sát:</span>
+                <span className="text-slate-600 font-semibold">Kỳ đánh giá / Học kỳ:</span>
                 <span className="font-black text-[#0284C7] uppercase">{periodLabel}</span>
               </div>
             </div>
@@ -891,7 +891,7 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
             <div className="flex items-center justify-between">
               <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wide flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-teal-600" />
-                <span>Chi Tiết Điểm Số Khảo Sát</span>
+                <span>BẢNG ĐIỂM MÔN HỌC — {periodLabel}</span>
               </h3>
               <span className="text-xs font-bold text-teal-800 italic">
                 {data?.subjects?.length || 0} môn học

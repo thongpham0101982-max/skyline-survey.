@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Plus, Edit2, Trash2, CheckCircle2, X, Filter, Search, RefreshCw, Lock, Unlock, ShieldAlert } from "lucide-react"
+import { Plus, Edit2, Trash2, CheckCircle2, X, Filter, Search, RefreshCw, Lock, Unlock, ShieldAlert, BookOpen } from "lucide-react"
 
 const cleanStr = (s) => 
   (s || "")
@@ -11,13 +11,15 @@ const cleanStr = (s) =>
    .replace(/Đ/g, "d");
 import { createUser, updateUser, deleteUser, deleteUsers, changeUserRoles, toggleUserStatus, bulkUpdateUserStatus } from "./actions"
 
-export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked = false, defaultCampusId = null }: any) {
+export function UsersClient({ initialUsers, roles, campuses = [], subjects = [], isCampusLocked = false, defaultCampusId = null }: any) {
   const [users, setUsers] = useState(initialUsers || []);
   const [editingId, setEditingId] = useState("");
-  const [formData, setFormData] = useState({ employeeCode: "", fullName: "", password: "", roleCode: "ADMIN", campusIds: [] as string[] });
+  const [formData, setFormData] = useState({ employeeCode: "", fullName: "", password: "", roleCode: "ADMIN", campusIds: [] as string[], subjectIds: [] as string[] });
+  const [subjectSearch, setSubjectSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [filterRole, setFilterRole] = useState("ALL");
   const [filterCampus, setFilterCampus] = useState("ALL");
+  const [filterSubject, setFilterSubject] = useState("ALL");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [search, setSearch] = useState("");
   
@@ -33,13 +35,14 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   const handleReset = () => {
     setFilterRole("ALL");
     setFilterCampus("ALL");
+    setFilterSubject("ALL");
     setFilterStatus("ALL");
     setSearch("");
   };
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterRole, filterCampus, filterStatus, search]);
+  }, [filterRole, filterCampus, filterSubject, filterStatus, search]);
 
   const handleToggleStatus = async (id: string, targetStatus: "ACTIVE" | "LOCKED", name: string) => {
     const actionLabel = targetStatus === "LOCKED" ? "KHÓA" : "MỞ KHÓA";
@@ -95,20 +98,40 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   }
 
   const startEdit = (u?: any) => {
+    setSubjectSearch("");
     if (u) {
       setEditingId(u.id);
-      setFormData({ employeeCode: u.email, fullName: u.fullName, password: "", roleCode: u.role || "ADMIN", campusIds: u.campusIds || [] });
+      setFormData({
+        employeeCode: u.email,
+        fullName: u.fullName,
+        password: "",
+        roleCode: u.role || "ADMIN",
+        campusIds: u.campusIds || [],
+        subjectIds: u.subjectIds || []
+      });
     } else {
       setEditingId("new");
-      setFormData({ employeeCode: "", fullName: "", password: "", roleCode: filterRole !== "ALL" ? filterRole : (roles[0]?.code || "ADMIN"), campusIds: defaultCampusId ? [defaultCampusId] : [] });
+      setFormData({
+        employeeCode: "",
+        fullName: "",
+        password: "",
+        roleCode: filterRole !== "ALL" ? filterRole : (roles[0]?.code || "ADMIN"),
+        campusIds: defaultCampusId ? [defaultCampusId] : [],
+        subjectIds: []
+      });
     }
   }
 
-  
   const toggleCampus = (id: string) => {
     const current = formData.campusIds || [];
     if (current.includes(id)) setFormData({ ...formData, campusIds: current.filter(x => x !== id) });
     else setFormData({ ...formData, campusIds: [...current, id] });
+  }
+
+  const toggleSubject = (id: string) => {
+    const current = formData.subjectIds || [];
+    if (current.includes(id)) setFormData({ ...formData, subjectIds: current.filter(x => x !== id) });
+    else setFormData({ ...formData, subjectIds: [...current, id] });
   }
 
   const cancelEdit = () => {
@@ -165,6 +188,11 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
        if (!u.campusIds.includes(filterCampus)) return false;
     }
 
+    if (filterSubject !== "ALL") {
+      const combinedSubIds = [...(u.subjectIds || []), ...(u.autoSubjectIds || [])];
+      if (!combinedSubIds.includes(filterSubject)) return false;
+    }
+
     if (search) {
       const q = cleanStr(search);
       const fullNameClean = cleanStr(u.fullName || "");
@@ -188,7 +216,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <Filter className="w-4 h-4 text-[#48BFE3]" />
             Bộ lọc & Tìm kiếm nhanh
           </div>
-          {(filterRole !== "ALL" || filterCampus !== "ALL" || filterStatus !== "ALL" || search) && (
+          {(filterRole !== "ALL" || filterCampus !== "ALL" || filterSubject !== "ALL" || filterStatus !== "ALL" || search) && (
             <button 
               onClick={handleReset} 
               className="text-xs font-bold text-slate-500 hover:text-[#48BFE3] transition-colors flex items-center gap-1 cursor-pointer"
@@ -198,7 +226,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Search Input */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -261,6 +289,20 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
               </select>
             </div>
           )}
+
+          {/* Subject Dropdown */}
+          <div className="relative">
+            <select
+              value={filterSubject}
+              onChange={(e) => setFilterSubject(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white transition-all font-bold cursor-pointer text-slate-700"
+            >
+              <option value="ALL">-- Tất cả Môn học --</option>
+              {subjects.map((s: any) => (
+                <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Selected Filter Badges */}
@@ -367,6 +409,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                 <th className="p-2 border border-white/15 font-semibold">Mã NV / Tên ĐN</th>
                 <th className="p-2 border border-white/15 font-semibold">Họ và Tên</th>
                 <th className="p-2 border border-white/15 font-semibold">Nhóm Quyền</th>
+                <th className="p-2 border border-white/15 font-semibold text-teal-100">Môn học phân quyền (Sổ điểm & Thống kê)</th>
                 <th className="p-2 border border-white/15 text-center w-36 font-semibold">Trạng thái</th>
                 <th className="px-6 py-3 border-l border-white/15 font-semibold">Mật khẩu</th>
                 <th className="p-2 text-right border border-white/15 font-semibold">Thao tác</th>
@@ -395,6 +438,54 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                         ))}
                       </div>
                     )}
+                  </td>
+
+                  <td className="p-2 border border-slate-200 min-w-[260px]">
+                    <div className="p-2.5 bg-white border border-slate-200 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-[#003B3A] flex items-center gap-1">
+                          <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" />
+                          Gán môn học ({formData.subjectIds?.length || 0})
+                        </span>
+                        {formData.subjectIds?.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, subjectIds: [] })}
+                            className="text-[10px] font-semibold text-rose-600 hover:underline cursor-pointer"
+                          >
+                            Bỏ chọn hết
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={subjectSearch}
+                        onChange={(e) => setSubjectSearch(e.target.value)}
+                        placeholder="Tìm môn học..."
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#00A19A]"
+                      />
+                      <div className="max-h-40 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                        {subjects
+                          .filter((s: any) => {
+                            if (!subjectSearch.trim()) return true;
+                            const q = cleanStr(subjectSearch);
+                            return cleanStr(s.subjectName).includes(q) || cleanStr(s.subjectCode).includes(q);
+                          })
+                          .map((s: any) => (
+                            <label key={s.id} className="flex items-center gap-2 cursor-pointer hover:bg-teal-50/60 px-1.5 py-1 rounded-md text-xs">
+                              <input
+                                type="checkbox"
+                                checked={(formData.subjectIds || []).includes(s.id)}
+                                onChange={() => toggleSubject(s.id)}
+                                className="w-3.5 h-3.5 rounded text-[#00A19A]"
+                              />
+                              <span className="text-[11px] font-medium text-slate-700">
+                                {s.subjectName} <span className="text-slate-400">({s.subjectCode})</span>
+                              </span>
+                            </label>
+                          ))}
+                      </div>
+                    </div>
                   </td>
                   <td className="p-2 p-2 border border-slate-200"></td>
 
@@ -432,6 +523,42 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                         </div>
                       )}
                     </div>
+                  </td>
+
+                  <td className="p-2 border border-slate-200">
+                    {u.subjectIds && u.subjectIds.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {u.subjectIds.map((sid: string) => {
+                          const sub = subjects.find((sx: any) => sx.id === sid);
+                          return sub ? (
+                            <span
+                              key={sid}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]"
+                            >
+                              <BookOpen className="w-3 h-3 text-[#00A19A]" />
+                              {sub.subjectName}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    ) : u.autoSubjectIds && u.autoSubjectIds.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {u.autoSubjectIds.map((sid: string) => {
+                          const sub = subjects.find((sx: any) => sx.id === sid);
+                          return sub ? (
+                            <span
+                              key={sid}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200"
+                              title="Tự động nhận diện từ Phân công giảng dạy / Môn chính"
+                            >
+                              {sub.subjectName} (PCGD)
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 italic">Theo nhóm quyền</span>
+                    )}
                   </td>
 
                   <td className="p-2 p-2 border border-slate-200 text-center">

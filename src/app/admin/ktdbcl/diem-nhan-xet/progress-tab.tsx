@@ -37,6 +37,7 @@ interface Props {
     classId: string
     subjectId: string
     period: string
+    configType?: "VNEDU" | "INTERNAL"
   }) => void
   onNavigateToRequests?: () => void
 }
@@ -54,14 +55,19 @@ export function GradeProgressTab({
   const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
   const [selectedCampusId, setSelectedCampusId] = useState("ALL")
   const [selectedGrade, setSelectedGrade] = useState("ALL")
+  const [selectedSubjectId, setSelectedSubjectId] = useState("ALL")
   const [selectedStatus, setSelectedStatus] = useState("ALL")
   const [selectedLockFilter, setSelectedLockFilter] = useState("ALL")
   const [scope, setScope] = useState<"SURVEY" | "ALL_ASSIGNED">("SURVEY")
+  const [configTypeFilter, setConfigTypeFilter] = useState<"ALL" | "VNEDU" | "INTERNAL">("ALL")
+  const [showConfiguredOverview, setShowConfiguredOverview] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
 
   // Data states
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState<any[]>([])
+  const [configuredSubjectsSummary, setConfiguredSubjectsSummary] = useState<any>(null)
+  const [availableConfiguredSubjects, setAvailableConfiguredSubjects] = useState<any[]>([])
   const [isPeriodLocked, setIsPeriodLocked] = useState(false)
   const [periodLockInfo, setPeriodLockInfo] = useState<any>(null)
   const [summary, setSummary] = useState({
@@ -106,15 +112,19 @@ export function GradeProgressTab({
         evaluationPeriod: selectedPeriod,
         campusId: selectedCampusId,
         grade: selectedGrade,
+        subjectId: selectedSubjectId,
         status: selectedStatus,
         search: searchTerm,
-        scope
+        scope,
+        configType: configTypeFilter
       })
 
       const res = await fetch(`/api/admin/ktdbcl/grade-progress?${query.toString()}`)
       const data = await res.json()
       if (data.success) {
         setItems(data.items || [])
+        setConfiguredSubjectsSummary(data.configuredSubjectsSummary || null)
+        setAvailableConfiguredSubjects(data.availableConfiguredSubjects || [])
         setIsPeriodLocked(Boolean(data.isPeriodLocked))
         setPeriodLockInfo(data.periodLockInfo || null)
         setSummary(data.summary || {
@@ -141,7 +151,7 @@ export function GradeProgressTab({
   useEffect(() => {
     fetchProgress()
     setSelectedRowKeys(new Set())
-  }, [selectedYearId, selectedPeriod, selectedCampusId, selectedGrade, selectedStatus, scope])
+  }, [selectedYearId, selectedPeriod, selectedCampusId, selectedGrade, selectedSubjectId, selectedStatus, scope, configTypeFilter])
 
   // Handle live search debounce
   useEffect(() => {
@@ -413,10 +423,11 @@ export function GradeProgressTab({
     if (onNavigateToGradebook) {
       onNavigateToGradebook({
         campusId: item.campusId || "ALL",
-        grade: item.grade ? `Khối ${item.grade.replace(/\D/g, "") || item.grade}` : "ALL",
+        grade: item.grade ? `Khối ${String(item.grade).replace(/\D/g, "") || item.grade}` : "ALL",
         classId: item.classId,
         subjectId: item.subjectId,
-        period: item.evaluationPeriod || selectedPeriod
+        period: item.evaluationPeriod || selectedPeriod,
+        configType: item.configType || (configTypeFilter !== "ALL" ? configTypeFilter : undefined)
       })
     }
   }
@@ -437,6 +448,7 @@ export function GradeProgressTab({
       "Khối": it.grade ? `Khối ${it.grade}` : "",
       "Lớp học": it.className,
       "Môn học": `${it.subjectName} (${it.subjectCode})`,
+      "Nhóm cấu hình": it.configType === "VNEDU" ? "1. Sổ điểm theo vnEdu (Môn Bộ GD&ĐT)" : "2. Đánh giá nội bộ Sky-Line (Môn Song ngữ & Quốc tế)",
       "Mã GV": it.teacherCode || "",
       "Giáo viên phân công": it.teacherName,
       "Email GV": it.teacherEmail || "",
@@ -644,31 +656,77 @@ export function GradeProgressTab({
         </div>
       </div>
 
-      {/* 3. THANH BỘ LỌC ĐA TIÊU CHÍ */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+      {/* 3. THANH BỘ LỌC ĐA TIÊU CHÍ & NGUỒN CẤU HÌNH MÔN HỌC */}
+      <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 pb-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-            <Filter className="w-4 h-4 text-[#005B58]" />
-            <span>Bộ lọc Thống kê</span>
+          <div className="flex items-center gap-2 text-xs font-bold text-[#003B3A]">
+            <Filter className="w-4 h-4 text-[#008B85]" />
+            <span>Bộ lọc Thống kê theo nhóm môn đã cấu hình</span>
+            <button
+              type="button"
+              onClick={() => setShowConfiguredOverview(prev => !prev)}
+              className="ml-1 px-2.5 py-1 rounded-lg bg-[#F0FDFA] hover:bg-teal-100/80 text-[#00736E] border border-teal-200 text-[11px] font-semibold transition-colors"
+            >
+              {showConfiguredOverview ? "Ẩn bảng tổng hợp môn đã cấu hình" : "Xem bảng tổng hợp môn đã cấu hình (1 & 2)"}
+            </button>
           </div>
 
-          {/* Scope Toggle: Môn theo kỳ vs Tất cả môn */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 text-xs">
+          {/* Scope & ConfigType Toggle: 1. Sổ điểm vnEdu vs 2. Đánh giá nội bộ Sky-Line */}
+          <div className="flex flex-wrap items-center bg-[#F8FAFC] border border-[#E2E8F0] p-1 rounded-xl gap-1 text-xs">
             <button
-              onClick={() => setScope("SURVEY")}
-              className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                scope === "SURVEY"
-                  ? "bg-white text-[#005B58] shadow-sm"
+              type="button"
+              onClick={() => {
+                setScope("SURVEY")
+                setConfigTypeFilter("ALL")
+                setSelectedSubjectId("ALL")
+              }}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                scope === "SURVEY" && configTypeFilter === "ALL"
+                  ? "bg-[#003B3A] text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              ⭐ Chỉ môn theo Kỳ khảo sát
+              Tất cả môn đã cấu hình (1 &amp; 2)
             </button>
             <button
-              onClick={() => setScope("ALL_ASSIGNED")}
-              className={`px-3 py-1 rounded-lg font-bold transition-all ${
+              type="button"
+              onClick={() => {
+                setScope("SURVEY")
+                setConfigTypeFilter("VNEDU")
+                setSelectedSubjectId("ALL")
+              }}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                scope === "SURVEY" && configTypeFilter === "VNEDU"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              1. Sổ điểm theo vnEdu (Môn Bộ GD&amp;ĐT)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setScope("SURVEY")
+                setConfigTypeFilter("INTERNAL")
+                setSelectedSubjectId("ALL")
+              }}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                scope === "SURVEY" && configTypeFilter === "INTERNAL"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              2. Đánh giá nội bộ Sky-Line (Môn Song ngữ &amp; Quốc tế)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setScope("ALL_ASSIGNED")
+                setSelectedSubjectId("ALL")
+              }}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
                 scope === "ALL_ASSIGNED"
-                  ? "bg-white text-[#005B58] shadow-sm"
+                  ? "bg-[#008B85] text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -677,7 +735,7 @@ export function GradeProgressTab({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-7 gap-3">
           {/* 1. Kỳ khảo sát */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
@@ -695,7 +753,26 @@ export function GradeProgressTab({
             </select>
           </div>
 
-          {/* 2. Cơ sở */}
+          {/* 2. Môn học đã cấu hình */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1">
+              Môn đã cấu hình ({availableConfiguredSubjects.length}):
+            </label>
+            <select
+              value={selectedSubjectId}
+              onChange={e => setSelectedSubjectId(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
+            >
+              <option value="ALL">Tất cả môn ({availableConfiguredSubjects.length})</option>
+              {availableConfiguredSubjects.map((s: any) => (
+                <option key={s.id} value={s.id}>
+                  {s.subjectName} ({s.subjectCode})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Cơ sở */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Cơ sở:
@@ -712,7 +789,7 @@ export function GradeProgressTab({
             </select>
           </div>
 
-          {/* 3. Khối */}
+          {/* 4. Khối */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Khối:
@@ -729,7 +806,7 @@ export function GradeProgressTab({
             </select>
           </div>
 
-          {/* 4. Tình trạng tiến độ */}
+          {/* 5. Tình trạng tiến độ */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Tiến độ nhập:
@@ -746,7 +823,7 @@ export function GradeProgressTab({
             </select>
           </div>
 
-          {/* 5. Tình trạng Khóa sổ */}
+          {/* 6. Tình trạng Khóa sổ */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Khóa sổ:
@@ -762,7 +839,7 @@ export function GradeProgressTab({
             </select>
           </div>
 
-          {/* 6. Tìm kiếm nhanh */}
+          {/* 7. Tìm kiếm nhanh */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Tìm nhanh:
@@ -779,6 +856,215 @@ export function GradeProgressTab({
             </div>
           </div>
         </div>
+
+        {/* KHUNG THỐNG KÊ CÁC MÔN HỌC ĐÃ ĐƯỢC CẤU HÌNH: 1. SỔ ĐIỂM VNEDU & 2. ĐÁNH GIÁ NỘI BỘ SKY-LINE */}
+        {showConfiguredOverview && configuredSubjectsSummary && (
+          <div className="pt-2 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-3.5 tabular-nums">
+            {/* Cột 1: 1. Sổ điểm theo vnEdu (Môn Bộ GD&ĐT) */}
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-5 rounded-full bg-[#003B3A]" />
+                  <div>
+                    <h4 className="text-xs font-bold text-[#003B3A]">
+                      1. Sổ điểm theo vnEdu (Môn Bộ GD&amp;ĐT)
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Chuẩn Thông tư 27 (Tiểu học) &amp; Thông tư 22 (THCS/THPT)
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded-lg bg-[#003B3A] text-white text-[11px] font-semibold">
+                    {configuredSubjectsSummary.vnEdu?.totalUniqueSubjects || 0} môn
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white border border-[#E2E8F0] text-slate-700 text-[11px] font-semibold">
+                    {configuredSubjectsSummary.vnEdu?.totalConfigs || 0} cấu hình khối-kỳ
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto bg-white rounded-xl border border-[#E2E8F0]">
+                <table className="w-full text-left text-xs border-collapse tabular-nums">
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2 px-2.5">Môn học Bộ GD&amp;ĐT</th>
+                      <th className="py-2 px-2.5 text-teal-100">Khối đã cấu hình</th>
+                      <th className="py-2 px-2.5 text-teal-100">Kỳ đánh giá</th>
+                      <th className="py-2 px-2.5 text-right text-[#5EEAD4]">Số cấu hình</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0]">
+                    {(configuredSubjectsSummary.vnEdu?.subjects || []).length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-4 text-center text-slate-400">
+                          Chưa có môn Bộ GD&amp;ĐT nào được cấu hình
+                        </td>
+                      </tr>
+                    ) : (
+                      (configuredSubjectsSummary.vnEdu?.subjects || []).map((s: any) => (
+                        <tr
+                          key={s.subjectId}
+                          onClick={() => {
+                            setScope("SURVEY")
+                            setConfigTypeFilter("VNEDU")
+                            setSelectedSubjectId(s.subjectId)
+                          }}
+                          className={`cursor-pointer transition-colors align-middle hover:bg-[#F8FAFC] ${
+                            configTypeFilter === "VNEDU" && selectedSubjectId === s.subjectId
+                              ? "bg-[#F0FDFA]/80"
+                              : ""
+                          }`}
+                          title="Nhấp để lọc tiến độ riêng môn này trong 1. Sổ điểm theo vnEdu"
+                        >
+                          <td className="py-2 px-2.5 font-semibold text-slate-900">
+                            {s.subjectName}{" "}
+                            <span className="text-[10px] font-mono text-slate-500">({s.subjectCode})</span>
+                          </td>
+                          <td className="py-2 px-2.5">
+                            <div className="flex flex-wrap gap-1">
+                              {s.grades.map((g: string) => (
+                                <span
+                                  key={g}
+                                  className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-medium"
+                                >
+                                  {g}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-2.5">
+                            <div className="flex flex-wrap gap-1">
+                              {s.periods.map((p: string) => (
+                                <span
+                                  key={p}
+                                  className="px-1.5 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200/70 text-[10px] font-semibold"
+                                >
+                                  {p}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-2.5 text-right font-bold text-[#003B3A]">
+                            {s.scopes.length}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Cột 2: 2. Đánh giá nội bộ Sky-Line (Môn Song ngữ & Quốc tế) */}
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-5 rounded-full bg-[#008B85]" />
+                  <div>
+                    <h4 className="text-xs font-bold text-[#003B3A]">
+                      2. Đánh giá nội bộ Sky-Line (Môn Song ngữ &amp; Quốc tế)
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Môn Song ngữ Quốc tế (ESL, Mathematics, Science) &amp; Khảo sát nội bộ (KSĐN)
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded-lg bg-[#008B85] text-white text-[11px] font-semibold">
+                    {configuredSubjectsSummary.internal?.totalUniqueSubjects || 0} môn
+                  </span>
+                  <span className="px-2 py-0.5 rounded-lg bg-white border border-[#E2E8F0] text-slate-700 text-[11px] font-semibold">
+                    {configuredSubjectsSummary.internal?.totalConfigs || 0} cấu hình khối-kỳ
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto bg-white rounded-xl border border-[#E2E8F0]">
+                <table className="w-full text-left text-xs border-collapse tabular-nums">
+                  <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-2 px-2.5">Môn học ĐG nội bộ</th>
+                      <th className="py-2 px-2.5 text-teal-100">Nhóm môn</th>
+                      <th className="py-2 px-2.5 text-teal-100">Khối đã cấu hình</th>
+                      <th className="py-2 px-2.5 text-teal-100">Kỳ đánh giá</th>
+                      <th className="py-2 px-2.5 text-right text-[#5EEAD4]">Số cấu hình</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0]">
+                    {(configuredSubjectsSummary.internal?.subjects || []).length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-4 text-center text-slate-400">
+                          Chưa có môn Đánh giá nội bộ nào được cấu hình
+                        </td>
+                      </tr>
+                    ) : (
+                      (configuredSubjectsSummary.internal?.subjects || []).map((s: any) => (
+                        <tr
+                          key={s.subjectId}
+                          onClick={() => {
+                            setScope("SURVEY")
+                            setConfigTypeFilter("INTERNAL")
+                            setSelectedSubjectId(s.subjectId)
+                          }}
+                          className={`cursor-pointer transition-colors align-middle hover:bg-[#F8FAFC] ${
+                            configTypeFilter === "INTERNAL" && selectedSubjectId === s.subjectId
+                              ? "bg-[#F0FDFA]/80"
+                              : ""
+                          }`}
+                          title="Nhấp để lọc tiến độ riêng môn này trong 2. Đánh giá nội bộ Sky-Line"
+                        >
+                          <td className="py-2 px-2.5 font-semibold text-slate-900">
+                            {s.subjectName}{" "}
+                            <span className="text-[10px] font-mono text-slate-500">({s.subjectCode})</span>
+                          </td>
+                          <td className="py-2 px-2.5">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                s.curriculumGroup === "BILINGUAL"
+                                  ? "bg-teal-50 text-[#00736E] border border-teal-200/70"
+                                  : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {s.curriculumGroup === "BILINGUAL" ? "Song ngữ & QT" : "Khảo sát Bộ GD&ĐT"}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2.5">
+                            <div className="flex flex-wrap gap-1">
+                              {s.grades.map((g: string) => (
+                                <span
+                                  key={g}
+                                  className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-medium"
+                                >
+                                  {g}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-2.5">
+                            <div className="flex flex-wrap gap-1">
+                              {s.periods.map((p: string) => (
+                                <span
+                                  key={p}
+                                  className="px-1.5 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200/70 text-[10px] font-semibold"
+                                >
+                                  {p === "ALL" ? "Tất cả kỳ" : p}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 px-2.5 text-right font-bold text-[#003B3A]">
+                            {s.scopes.length}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. THANH TÁC VỤ HÀNG LOẠT KHI CHỌN DÒNG */}
@@ -938,9 +1224,20 @@ export function GradeProgressTab({
 
                       {/* Môn học */}
                       <td className="py-3 px-3">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-0.5">
                           <span className="font-bold text-slate-800">{item.subjectName}</span>
-                          <span className="text-[10px] text-slate-400 font-semibold">{item.subjectCode}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] text-slate-400 font-semibold font-mono">{item.subjectCode}</span>
+                            <span
+                              className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                                item.configType === "VNEDU"
+                                  ? "bg-[#003B3A]/10 text-[#003B3A]"
+                                  : "bg-teal-50 text-[#00736E] border border-teal-200/70"
+                              }`}
+                            >
+                              {item.configType === "VNEDU" ? "1. Sổ điểm vnEdu" : "2. ĐG nội bộ Sky-Line"}
+                            </span>
+                          </div>
                         </div>
                       </td>
 

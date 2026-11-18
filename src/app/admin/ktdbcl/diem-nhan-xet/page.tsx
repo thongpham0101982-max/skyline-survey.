@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
 import { DiemNhanXetAdminClient } from "./client"
 
 export const metadata = {
-  title: "QL Điểm / Nhận xét - Khảo thí & ĐBCL",
+  title: "Sổ điểm Vnedu - Sổ điểm - Nhận xét | Sky-Line",
 }
 
 export default async function DiemNhanXetAdminPage() {
-  const [academicYears, campuses, subjects] = await Promise.all([
+  const [session, academicYears, campuses, rawSubjects] = await Promise.all([
+    auth().catch(() => null),
     prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }),
     prisma.campus.findMany({
       where: { status: "ACTIVE" },
@@ -15,10 +18,31 @@ export default async function DiemNhanXetAdminPage() {
     }),
     prisma.subject.findMany({
       where: { status: "ACTIVE" },
+      include: { quotas: true },
       orderBy: { subjectName: "asc" }
-    })
+    }).catch(() =>
+      prisma.subject.findMany({
+        where: { status: "ACTIVE" },
+        orderBy: { subjectName: "asc" }
+      })
+    )
   ])
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
+
+  const scope = await resolveAccountGradebookScope(
+    (session?.user as any)?.id,
+    (session?.user as any)?.role,
+    activeYear?.id
+  )
+
+  const subjects =
+    scope.isSubjectScoped && scope.allowedSubjectIds.length > 0
+      ? rawSubjects.filter(
+          (s: any) =>
+            scope.allowedSubjectIds.includes(s.id) ||
+            scope.allowedSubjectCodes.includes(String(s.subjectCode || "").toUpperCase().trim())
+        )
+      : rawSubjects
 
   const classes = await prisma.class.findMany({
     where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
@@ -43,6 +67,7 @@ export default async function DiemNhanXetAdminPage() {
       campuses={JSON.parse(JSON.stringify(campuses))}
       classes={JSON.parse(JSON.stringify(classes))}
       subjects={JSON.parse(JSON.stringify(subjects))}
+      isSubjectScoped={scope.isSubjectScoped}
     />
   )
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { getAdminSession } from "@/lib/session"
+import { saveUserSubjectAssignments } from "@/lib/gradebook/subjectPermissions"
 import { z } from "zod"
 
 const CreateUserSchema = z.object({
@@ -10,7 +11,8 @@ const CreateUserSchema = z.object({
   fullName: z.string().trim().min(2, "Họ và tên không được để trống"),
   password: z.string().min(6, "Mật khẩu khởi tạo phải có ít nhất 6 ký tự"),
   roleCode: z.string().trim().min(1, "Vui lòng chọn vai trò người dùng"),
-  campusIds: z.array(z.string()).optional()
+  campusIds: z.array(z.string()).optional(),
+  subjectIds: z.array(z.string()).optional()
 });
 
 const UpdateUserSchema = z.object({
@@ -20,7 +22,8 @@ const UpdateUserSchema = z.object({
     message: "Mật khẩu mới nếu thay đổi phải có ít nhất 6 ký tự"
   }),
   roleCode: z.string().trim().min(1, "Vui lòng chọn vai trò người dùng"),
-  campusIds: z.array(z.string()).optional()
+  campusIds: z.array(z.string()).optional(),
+  subjectIds: z.array(z.string()).optional()
 });
 
 export async function createUser(data: any) {
@@ -34,6 +37,7 @@ export async function createUser(data: any) {
   }
   try {
     const passwordHash = await bcrypt.hash(validated.data.password, 10);
+    let createdUserId = "";
     await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
@@ -44,6 +48,7 @@ export async function createUser(data: any) {
           status: "ACTIVE"
         }
       });
+      createdUserId = newUser.id;
       if (data.campusIds && data.campusIds.length > 0) {
         const uniqueCampusIds = Array.from(new Set(data.campusIds));
         await Promise.all(uniqueCampusIds.map((cid: any) => 
@@ -64,6 +69,7 @@ export async function createUser(data: any) {
                 teacherCode: data.employeeCode,
                 teacherName: data.fullName,
                 campusId: defaultCampusId,
+                mainSubjectId: Array.isArray(data.subjectIds) && data.subjectIds.length > 0 ? data.subjectIds[0] : null,
                 status: "ACTIVE"
               }
             });
@@ -71,6 +77,10 @@ export async function createUser(data: any) {
         }
       }
     });
+
+    if (createdUserId && Array.isArray(data.subjectIds)) {
+      await saveUserSubjectAssignments(createdUserId, data.subjectIds);
+    }
 
     revalidatePath("/admin/users");
     revalidatePath("/admin/teachers");
@@ -138,6 +148,7 @@ export async function updateUser(id: string, data: any) {
                 teacherCode: data.employeeCode,
                 teacherName: data.fullName,
                 campusId: defaultCampusId,
+                mainSubjectId: Array.isArray(data.subjectIds) && data.subjectIds.length > 0 ? data.subjectIds[0] : null,
                 status: "ACTIVE"
               }
             });
@@ -145,6 +156,10 @@ export async function updateUser(id: string, data: any) {
         }
       }
     });
+
+    if (Array.isArray(data.subjectIds)) {
+      await saveUserSubjectAssignments(id, data.subjectIds);
+    }
 
     revalidatePath("/admin/users");
     revalidatePath("/admin/teachers");

@@ -2,6 +2,12 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
+import {
+  extractGradeNumber,
+  getSubjectCurriculumGroup,
+  isKsdnEvaluationPeriod
+} from "@/lib/grading/vnedu-config-types"
 
 export const dynamic = "force-dynamic"
 
@@ -21,6 +27,7 @@ export async function GET(request: Request) {
     const subjectId = searchParams.get("subjectId") || searchParams.get("subject") || "ALL"
     const currentPeriod = searchParams.get("currentPeriod") || searchParams.get("period") || "GK1"
     const baselinePeriod = searchParams.get("baselinePeriod") || "KSĐN"
+    const configTypeFilter = (searchParams.get("configType") || "ALL").toUpperCase() // "ALL" | "VNEDU" | "INTERNAL"
 
     let academicYearId = searchParams.get("academicYearId") || ""
 
@@ -621,11 +628,23 @@ export async function GET(request: Request) {
 
     // 3.1 - 3.4 & 4 - 5 Parallel fetching of dependencies
     const homeroomIds = Array.from(new Set(filteredClasses.map(c => c.homeroomTeacherId).filter(Boolean)))
+    const scopeInfo = await resolveAccountGradebookScope(
+      (session?.user as any)?.id,
+      (session?.user as any)?.role,
+      academicYearId
+    )
+    const hasSubjectRestriction = scopeInfo.isSubjectScoped && scopeInfo.allowedSubjectIds.length > 0
+
     const entryWhere: any = {
       academicYearId,
       classId: { in: classIds }
     }
-    if (subjectId && subjectId !== "ALL") {
+    if (hasSubjectRestriction) {
+      entryWhere.subjectId =
+        subjectId && subjectId !== "ALL" && scopeInfo.allowedSubjectIds.includes(subjectId)
+          ? subjectId
+          : { in: scopeInfo.allowedSubjectIds }
+    } else if (subjectId && subjectId !== "ALL") {
       entryWhere.subjectId = subjectId
     }
 
@@ -702,7 +721,9 @@ export async function GET(request: Request) {
         ? p.subjectGradeConfig.findMany({
             where: {
               academicYearId,
-              evaluationPeriod: { in: [currentPeriod, baselinePeriod, "ALL"] }
+              isActive: true,
+              evaluationPeriod: { in: [currentPeriod, baselinePeriod, "ALL"] },
+              ...(hasSubjectRestriction ? { subjectId: { in: scopeInfo.allowedSubjectIds } } : {})
             },
             include: { subject: true }
           }).catch((err: any) => {
@@ -769,26 +790,46 @@ export async function GET(request: Request) {
       subMap.get(entry.subjectId)!.set(entry.evaluationPeriod, entry)
     })
 
-    const subjectMap = new Map<string, { id: string; name: string; code: string }>()
+    const isCurrentKsdn = isKsdnEvaluationPeriod(currentPeriod)
+    const targetGradeFilterNum = gradeFilter !== "ALL" ? extractGradeNumber(gradeFilter) : null
 
-    surveyConfigs.forEach(cfg => {
-      if (cfg.subject) {
-        if (gradeFilter === "ALL" || cfg.grade === gradeFilter || cfg.grade === "ALL") {
-          subjectMap.set(cfg.subject.id, {
-            id: cfg.subject.id,
-            name: cfg.subject.subjectName,
-            code: cfg.subject.subjectCode
-          })
+    // Filter surveyConfigs by currentPeriod and configTypeFilter (1. VNEDU - Môn Bộ GD&ĐT vs 2. INTERNAL - Môn Song ngữ & Quốc tế)
+    // Chỉ lấy các cấu hình đã được thiết lập cụ thể theo Kỳ đánh giá (không lấy tràn các bản ghi "ALL" mặc định cũ)
+    const activePeriodConfigs = (surveyConfigs || [])
+      .filter((cfg: any) => cfg.subjectId && cfg.subjectId !== "ALL" && cfg.subject && cfg.isActive !== false && cfg.evaluationPeriod && cfg.evaluationPeriod !== "ALL")
+      .map((cfg: any) => {
+        const currGroup = getSubjectCurriculumGroup(cfg.subject)
+        const effectiveConfigType: "VNEDU" | "INTERNAL" =
+          currGroup === "MOET" ? "VNEDU" : "INTERNAL"
+        const gradeNum = extractGradeNumber(cfg.grade)
+        return {
+          ...cfg,
+          curriculumGroup: currGroup,
+          effectiveConfigType,
+          gradeNum
         }
-      }
-    })
+      })
+      .filter((cfg: any) => {
+        if (configTypeFilter === "VNEDU" && cfg.effectiveConfigType !== "VNEDU") return false
+        if (configTypeFilter === "INTERNAL" && cfg.effectiveConfigType !== "INTERNAL") return false
+        return isCurrentKsdn
+          ? isKsdnEvaluationPeriod(cfg.evaluationPeriod)
+          : cfg.evaluationPeriod === currentPeriod
+      })
 
-    allEntries.forEach(e => {
-      if (e.subject && (e.evaluationPeriod === currentPeriod || e.evaluationPeriod === baselinePeriod)) {
-        subjectMap.set(e.subject.id, {
-          id: e.subject.id,
-          name: e.subject.subjectName,
-          code: e.subject.subjectCode
+    const subjectMap = new Map<string, { id: string; name: string; code: string; configType?: string }>()
+
+    activePeriodConfigs.forEach(cfg => {
+      if (cfg.subject) {
+        if (targetGradeFilterNum !== null) {
+          const isG6KsdnMatch = targetGradeFilterNum === 6 && isCurrentKsdn && cfg.gradeNum === 5
+          if (cfg.gradeNum !== targetGradeFilterNum && !isG6KsdnMatch) return
+        }
+        subjectMap.set(cfg.subject.id, {
+          id: cfg.subject.id,
+          name: cfg.subject.subjectName,
+          code: cfg.subject.subjectCode,
+          configType: cfg.effectiveConfigType
         })
       }
     })
@@ -814,11 +855,20 @@ export async function GET(request: Request) {
       const classStudents = classStudentMap.get(cls.id) || []
       const totalStudents = classStudents.length
       const homeroom = cls.homeroomTeacherId ? homeroomMap.get(cls.homeroomTeacherId) : null
+      const clsGradeNum = extractGradeNumber(cls.grade || cls.className)
+      if (!clsGradeNum || clsGradeNum < 1 || clsGradeNum > 12) return
 
-      // Determine subjects to calculate for this class
-      let subjectsForClass = availableSubjectList
+      // Determine subjects configured specifically for this class's grade & period
+      const classGradeConfigs = activePeriodConfigs.filter(cfg => {
+        if (cfg.gradeNum === clsGradeNum) return true
+        if (clsGradeNum === 6 && isCurrentKsdn && cfg.gradeNum === 5 && cfg.effectiveConfigType === "INTERNAL") return true
+        return false
+      })
+      const classConfiguredSubjIds = new Set(classGradeConfigs.map(cfg => cfg.subjectId))
+
+      let subjectsForClass = availableSubjectList.filter(s => classConfiguredSubjIds.has(s.id))
       if (subjectId && subjectId !== "ALL") {
-        subjectsForClass = availableSubjectList.filter(s => s.id === subjectId)
+        subjectsForClass = subjectsForClass.filter(s => s.id === subjectId)
       }
 
       subjectsForClass.forEach(sub => {

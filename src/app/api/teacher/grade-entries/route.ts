@@ -2,6 +2,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import {
+  buildPrimaryVnEduDefaultConfig,
+  buildSecondaryTt22VnEduDefaultConfig,
+  isKsdnEvaluationPeriod,
+  isPrimaryGrade,
+  resolveGradeConfigForScope,
+} from "@/lib/grading/vnedu-config-types"
+import { resolveVnEduCodeMap } from "@/lib/grading/vnedu-code-resolver"
 
 export async function GET(request: Request) {
   try {
@@ -16,6 +24,13 @@ export async function GET(request: Request) {
     const classId = searchParams.get("classId") || ""
     const subjectId = searchParams.get("subjectId") || ""
     const evaluationPeriod = searchParams.get("evaluationPeriod") || "KSĐN"
+    const isKsdn = isKsdnEvaluationPeriod(evaluationPeriod)
+    // Kỳ Khảo sát đầu năm (KSĐN) luôn lấy cấu hình các môn theo "2. Đánh giá nội bộ Sky-Line" (INTERNAL)
+    const configType = isKsdn
+      ? "INTERNAL"
+      : (searchParams.get("configType") || "INTERNAL").toUpperCase() === "VNEDU"
+      ? "VNEDU"
+      : "INTERNAL"
 
     let teacher = null
     let userId = (session?.user as any)?.id
@@ -63,11 +78,24 @@ export async function GET(request: Request) {
         })
       }
 
+      const ksdnConfigs = await prisma.subjectGradeConfig.findMany({
+        where: {
+          ...(academicYearId ? { academicYearId } : {}),
+          OR: [
+            { evaluationPeriod: { in: ["KSĐN", "KSDN", "ALL"] }, configType: "INTERNAL" },
+            { grade: { in: ["Khối 5", "5"] }, evaluationPeriod: { in: ["KSĐN", "KSDN", "ALL", "GK1"] } },
+          ],
+          isActive: true,
+        },
+        select: { subjectId: true, grade: true, evaluationPeriod: true },
+      }).catch(() => [])
+
       return NextResponse.json({
         success: true,
         assignments: teachingAssignments,
         classes: availableClasses,
-        subjects: availableSubjects
+        subjects: availableSubjects,
+        ksdnConfigs,
       })
     }
 
@@ -107,22 +135,47 @@ export async function GET(request: Request) {
     }
     const numMatch = rawGrade.match(/(\d+)/)
     const gradeNum = numMatch ? numMatch[1] : ""
+    // Với Khối 6 KSĐN: các môn khảo sát lấy ở Tiểu học của Khối 5
     const candidateGrades = Array.from(new Set([
       rawGrade,
       `Khối ${gradeNum}`,
       `Khoi ${gradeNum}`,
       gradeNum,
+      ...(isKsdn && gradeNum === "6" ? ["Khối 5", "Khoi 5", "5"] : []),
       "ALL"
     ].filter(Boolean)))
 
+    const isSecondaryVnEdu = configType === "VNEDU" && !isPrimaryGrade(rawGrade || targetClass.className)
+    const evalUpper = String(evaluationPeriod || "").toUpperCase().trim()
+    const isSem1VnEdu = isSecondaryVnEdu && (evalUpper === "GK1" || evalUpper === "CK1" || evalUpper === "HK1")
+    const isSem2VnEdu = isSecondaryVnEdu && (evalUpper === "GK2" || evalUpper === "CK2" || evalUpper === "HK2")
+
+    const periodQueryList = isKsdn
+      ? gradeNum === "5" || gradeNum === "6"
+        ? ["KSĐN", "KSDN", "ALL", "GK1"]
+        : ["KSĐN", "KSDN", "ALL"]
+      : isSem1VnEdu
+      ? [evaluationPeriod, "CK1", "GK1", "HK1", "ALL"]
+      : isSem2VnEdu
+      ? [evaluationPeriod, "CK2", "GK2", "HK2", "ALL"]
+      : [evaluationPeriod, "ALL"]
+    const entryPeriodList = isKsdn
+      ? ["KSĐN", "KSDN"]
+      : isSem1VnEdu
+      ? [evaluationPeriod, "CK1", "GK1", "HK1"]
+      : isSem2VnEdu
+      ? [evaluationPeriod, "CK2", "GK2", "HK2"]
+      : [evaluationPeriod]
+
     // Fetch evaluation configs, students, teaching assignment, homeroom teacher, locks, and unlock request concurrently
-    const [configs, students, assignment, clsObj, locks, unlockRequest] = await Promise.all([
+    const [configs, studentsRaw, assignment, clsObj, locks, unlockRequest] = await Promise.all([
       prisma.subjectGradeConfig.findMany({
         where: {
           academicYearId: targetAcademicYearId,
-          evaluationPeriod: { in: [evaluationPeriod, "ALL"] },
+          evaluationPeriod: { in: periodQueryList },
           subjectId,
-          grade: { in: candidateGrades }
+          grade: { in: candidateGrades },
+          isActive: true,
         }
       }),
       prisma.student.findMany({
@@ -131,8 +184,17 @@ export async function GET(request: Request) {
           status: "ACTIVE"
         },
         orderBy: { studentName: "asc" },
-        select: { id: true, studentCode: true, studentName: true, gender: true, dateOfBirth: true }
-      }),
+        select: { id: true, studentCode: true, vnEduCode: true, studentName: true, gender: true, dateOfBirth: true }
+      }).catch(() =>
+        prisma.student.findMany({
+          where: {
+            classId,
+            status: "ACTIVE"
+          },
+          orderBy: { studentName: "asc" },
+          select: { id: true, studentCode: true, studentName: true, gender: true, dateOfBirth: true }
+        })
+      ),
       prisma.teachingAssignment.findFirst({
         where: {
           classId,
@@ -148,7 +210,7 @@ export async function GET(request: Request) {
       prisma.gradebookLock.findMany({
         where: {
           academicYearId: targetAcademicYearId,
-          evaluationPeriod,
+          evaluationPeriod: { in: entryPeriodList },
           OR: [
             { classId, subjectId },
             { classId: "ALL", subjectId: "ALL" }
@@ -158,7 +220,7 @@ export async function GET(request: Request) {
       prisma.gradebookUnlockRequest.findFirst({
         where: {
           academicYearId: targetAcademicYearId,
-          evaluationPeriod,
+          evaluationPeriod: { in: entryPeriodList },
           classId,
           subjectId,
           status: { not: "CANCELLED" }
@@ -167,26 +229,54 @@ export async function GET(request: Request) {
       })
     ])
 
-    let config = configs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === evaluationPeriod)
-      || configs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === "ALL")
-      || configs.find(c => c.grade === "ALL" && c.evaluationPeriod === evaluationPeriod)
-      || configs.find(c => c.grade === "ALL" && c.evaluationPeriod === "ALL")
-      || configs[0] || null
+    // Enrich students with vnEduCode (read-only from Student.vnEduCode or StudentCodeMapping across academic years)
+    const studentCodesForMapping = studentsRaw.map(s => s.studentCode).filter(Boolean)
+    const vnEduMappingByDbCode = await resolveVnEduCodeMap(studentCodesForMapping, targetAcademicYearId)
+    const students = studentsRaw.map(s => ({
+      ...s,
+      vnEduCode: s.vnEduCode || vnEduMappingByDbCode.get(s.studentCode) || null
+    }))
 
-    if (!config) {
+    let config = resolveGradeConfigForScope(configs, {
+      academicYearId: targetAcademicYearId,
+      program: targetClass.educationSystem || "ALL",
+      grade: rawGrade || targetClass.className || "ALL",
+      subjectId,
+      evaluationPeriod,
+      configType
+    })
+
+    // Chỉ fallback sang cấu hình bên kia đối với kỳ KSĐN hoặc chế độ INTERNAL (khi ở chế độ VNEDU cho các kỳ GK1/CK1/GK2/CK2/CN thì giữ nguyên chuẩn VNEDU TT27/TT22, tuyệt đối không lấy nhầm mẫu INTERNAL 2 cột Speaking/Listening)
+    if (!config && (isKsdn || configType === "INTERNAL")) {
+      config = resolveGradeConfigForScope(configs, {
+        academicYearId: targetAcademicYearId,
+        program: targetClass.educationSystem || "ALL",
+        grade: rawGrade || targetClass.className || "ALL",
+        subjectId,
+        evaluationPeriod,
+        configType: configType === "VNEDU" ? "INTERNAL" : "VNEDU"
+      })
+    }
+
+    if (!config && (isKsdn || configType === "INTERNAL")) {
       const generalConfigs = await prisma.subjectGradeConfig.findMany({
         where: {
           academicYearId: targetAcademicYearId,
-          evaluationPeriod: { in: [evaluationPeriod, "ALL"] },
+          evaluationPeriod: { in: periodQueryList },
           subjectId: null,
-          grade: { in: candidateGrades }
+          grade: { in: candidateGrades },
+          isActive: true,
+          configType: "INTERNAL"
         }
       })
-      config = generalConfigs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === evaluationPeriod)
-        || generalConfigs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === "ALL")
-        || generalConfigs.find(c => c.grade === "ALL" && c.evaluationPeriod === evaluationPeriod)
-        || generalConfigs.find(c => c.grade === "ALL" && c.evaluationPeriod === "ALL")
-        || generalConfigs[0] || null
+      config = resolveGradeConfigForScope(generalConfigs, {
+        academicYearId: targetAcademicYearId,
+        program: targetClass.educationSystem || "ALL",
+        grade: rawGrade || targetClass.className || "ALL",
+        subjectId,
+        evaluationPeriod,
+        configType: "INTERNAL"
+      })
     }
 
     let assignedTeacher = assignment?.teacher?.teacherName || ""
@@ -214,17 +304,222 @@ export async function GET(request: Request) {
     const studentIds = students.map(s => s.id)
 
     // Get existing grade entries for this class and its active students
-    const entries = await prisma.subjectGradeEntry.findMany({
+    let entries = await prisma.subjectGradeEntry.findMany({
       where: {
         academicYearId: targetAcademicYearId,
         subjectId,
-        evaluationPeriod,
+        evaluationPeriod: { in: entryPeriodList },
+        configType,
         OR: [
           { classId },
           { studentId: { in: studentIds } }
         ]
       }
     })
+
+    if (entries.length === 0) {
+      entries = await prisma.subjectGradeEntry.findMany({
+        where: {
+          academicYearId: targetAcademicYearId,
+          subjectId,
+          evaluationPeriod: { in: entryPeriodList },
+          OR: [
+            { classId },
+            { studentId: { in: studentIds } }
+          ]
+        }
+      })
+    }
+
+    // Với Khối 6 KSĐN: nếu đang chọn môn Tiếng Việt (TVI — Tiểu học K5) mà dữ liệu KSĐN trước đó lưu ở mã môn Ngữ Văn (NVA) hoặc ngược lại, tự động nạp dữ liệu điểm
+    if (entries.length === 0 && isKsdn && gradeNum === "6" && studentIds.length > 0) {
+      const currentSubj = await prisma.subject.findUnique({
+        where: { id: subjectId },
+        select: { subjectCode: true, subjectName: true },
+      })
+      const sCode = String(currentSubj?.subjectCode || "").toUpperCase().trim()
+      const counterpartCodes =
+        sCode === "TVI" ? ["NVA", "VAN"] : sCode === "NVA" || sCode === "VAN" ? ["TVI"] : []
+      if (counterpartCodes.length > 0) {
+        const counterpartSubjs = await prisma.subject.findMany({
+          where: { subjectCode: { in: counterpartCodes } },
+          select: { id: true },
+        })
+        const counterpartIds = counterpartSubjs.map(s => s.id)
+        if (counterpartIds.length > 0) {
+          entries = await prisma.subjectGradeEntry.findMany({
+            where: {
+              academicYearId: targetAcademicYearId,
+              subjectId: { in: counterpartIds },
+              evaluationPeriod: { in: entryPeriodList },
+              OR: [{ classId }, { studentId: { in: studentIds } }],
+            },
+          })
+        }
+      }
+    }
+
+    // When THCS/THPT VNEDU queries across ["CK1", "GK1", "HK1"] or ["CK2", "GK2", "HK2"], merge entries per student
+    if ((isSem1VnEdu || isSem2VnEdu) && entries.length > 0) {
+      const mergedByStudent = new Map<string, any>()
+      // Sort so non-exact periods come first, and exact requested evaluationPeriod + newer updatedAt win on conflicts
+      const sortedEntries = [...entries].sort((a, b) => {
+        const aExact = a.evaluationPeriod === evaluationPeriod ? 1 : 0
+        const bExact = b.evaluationPeriod === evaluationPeriod ? 1 : 0
+        if (aExact !== bExact) return aExact - bExact
+        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+        return aTime - bTime
+      })
+      for (const e of sortedEntries) {
+        let comp: Record<string, any> = {}
+        if (e.componentScores) {
+          try {
+            comp = typeof e.componentScores === "string" ? JSON.parse(e.componentScores) : { ...e.componentScores }
+          } catch {
+            comp = {}
+          }
+        }
+        const prev = mergedByStudent.get(e.studentId)
+        if (!prev) {
+          mergedByStudent.set(e.studentId, {
+            ...e,
+            _compObj: comp,
+          })
+        } else {
+          const nextComp = { ...prev._compObj }
+          for (const [k, v] of Object.entries(comp)) {
+            if (v !== undefined && v !== null && String(v).trim() !== "") {
+              nextComp[k] = v
+            }
+          }
+          mergedByStudent.set(e.studentId, {
+            ...prev,
+            ...e,
+            _compObj: nextComp,
+            compositeScore:
+              e.compositeScore !== null && e.compositeScore !== undefined ? e.compositeScore : prev.compositeScore,
+            ratingValue: e.ratingValue || prev.ratingValue,
+            remark: e.remark || prev.remark,
+          })
+        }
+      }
+      entries = Array.from(mergedByStudent.values()).map(({ _compObj, ...rest }) => ({
+        ...rest,
+        componentScores: JSON.stringify(_compObj),
+      }))
+    }
+
+    // Enrich "CN" (Cả năm) entries with TBHK 1 (from CK1/HK1/GK1), TBHK 2 (from CK2/HK2/GK2), and HK2 Remark
+    if (String(evaluationPeriod).toUpperCase() === "CN" && studentIds.length > 0) {
+      const semesterEntries = await prisma.subjectGradeEntry.findMany({
+        where: {
+          academicYearId: targetAcademicYearId,
+          subjectId,
+          evaluationPeriod: { in: ["CK1", "HK1", "GK1", "CK2", "HK2", "GK2"] },
+          configType,
+          OR: [{ classId }, { studentId: { in: studentIds } }],
+        },
+      })
+      const ck1ByStudent = new Map<string, any>()
+      const ck2ByStudent = new Map<string, any>()
+      for (const se of semesterEntries) {
+        if (se.evaluationPeriod === "CK1" || se.evaluationPeriod === "HK1" || se.evaluationPeriod === "GK1") {
+          const prev = ck1ByStudent.get(se.studentId)
+          if (!prev || se.evaluationPeriod === "CK1" || (prev.compositeScore == null && se.compositeScore != null)) {
+            ck1ByStudent.set(se.studentId, se)
+          }
+        }
+        if (se.evaluationPeriod === "CK2" || se.evaluationPeriod === "HK2" || se.evaluationPeriod === "GK2") {
+          const prev = ck2ByStudent.get(se.studentId)
+          if (!prev || se.evaluationPeriod === "CK2" || (prev.compositeScore == null && se.compositeScore != null)) {
+            ck2ByStudent.set(se.studentId, se)
+          }
+        }
+      }
+
+      const cnByStudent = new Map<string, any>(entries.map(e => [e.studentId, e]))
+      const enrichedEntries: any[] = []
+
+      for (const stId of studentIds) {
+        const existingCn = cnByStudent.get(stId)
+        const ck1 = ck1ByStudent.get(stId)
+        const ck2 = ck2ByStudent.get(stId)
+
+        let compObj: Record<string, any> = {}
+        if (existingCn?.componentScores) {
+          try {
+            compObj =
+              typeof existingCn.componentScores === "string"
+                ? JSON.parse(existingCn.componentScores)
+                : { ...existingCn.componentScores }
+          } catch {
+            compObj = {}
+          }
+        }
+
+        const hk1Val =
+          compObj.tbhk1 ??
+          compObj.col0 ??
+          (ck1?.compositeScore !== null && ck1?.compositeScore !== undefined
+            ? String(ck1.compositeScore)
+            : ck1?.ratingValue || "")
+        const hk2Val =
+          compObj.tbhk2 ??
+          compObj.col1 ??
+          (ck2?.compositeScore !== null && ck2?.compositeScore !== undefined
+            ? String(ck2.compositeScore)
+            : ck2?.ratingValue || "")
+        const hk2Rem = compObj.hk2Remark ?? ck2?.remark ?? ""
+
+        if (hk1Val !== "") {
+          compObj.tbhk1 = String(hk1Val)
+          compObj.col0 = String(hk1Val)
+        }
+        if (hk2Val !== "") {
+          compObj.tbhk2 = String(hk2Val)
+          compObj.col1 = String(hk2Val)
+        }
+        if (hk2Rem) {
+          compObj.hk2Remark = String(hk2Rem)
+        }
+
+        let calcComposite: number | null =
+          existingCn?.compositeScore !== null && existingCn?.compositeScore !== undefined
+            ? Number(existingCn.compositeScore)
+            : null
+        let calcRating: string | null = existingCn?.ratingValue || null
+
+        if (calcComposite === null && hk1Val !== "" && hk2Val !== "") {
+          const n1 = Number(String(hk1Val).replace(",", "."))
+          const n2 = Number(String(hk2Val).replace(",", "."))
+          if (!isNaN(n1) && !isNaN(n2)) {
+            calcComposite = Math.round(((n1 + 2 * n2) / 3 + Number.EPSILON) * 10) / 10
+          } else if (!calcRating && (hk2Val === "Đ" || hk2Val === "CĐ")) {
+            calcRating = hk2Val
+          }
+        }
+
+        if (existingCn || hk1Val !== "" || hk2Val !== "" || hk2Rem !== "") {
+          enrichedEntries.push({
+            ...(existingCn || {
+              id: `virtual_cn_${stId}`,
+              academicYearId: targetAcademicYearId,
+              classId,
+              subjectId,
+              evaluationPeriod: "CN",
+              configType,
+              studentId: stId,
+              remark: "",
+            }),
+            componentScores: JSON.stringify(compObj),
+            compositeScore: calcComposite,
+            ratingValue: calcRating,
+          })
+        }
+      }
+      entries = enrichedEntries
+    }
 
     // Load Homeroom Coordination logs (Transferred from GVCN to GVBM)
     let periodVariants = [evaluationPeriod]
@@ -244,6 +539,26 @@ export async function GET(request: Request) {
       where: { id: subjectId },
       select: { id: true, subjectName: true, subjectCode: true }
     }).catch(() => null)
+
+    if (!config && configType === "VNEDU" && !isKsdn && isPrimaryGrade(rawGrade || targetClass.className)) {
+      config = buildPrimaryVnEduDefaultConfig({
+        academicYearId: targetAcademicYearId,
+        program: targetClass.educationSystem || "ALL",
+        grade: rawGrade || targetClass.className || "Khối 1",
+        subjectId,
+        subjectName: currentSubject?.subjectName || currentSubject?.subjectCode || "",
+        evaluationPeriod,
+      }) as any
+    } else if (!config && configType === "VNEDU" && !isKsdn) {
+      config = buildSecondaryTt22VnEduDefaultConfig({
+        academicYearId: targetAcademicYearId,
+        program: targetClass.educationSystem || "ALL",
+        grade: rawGrade || targetClass.className || "Khối 6",
+        subjectId,
+        subjectName: currentSubject?.subjectName || currentSubject?.subjectCode || "",
+        evaluationPeriod,
+      }) as any
+    }
 
     const consultationLogs = await prisma.academicConsultationLog.findMany({
       where: {
@@ -337,7 +652,22 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { academicYearId, classId, subjectId, evaluationPeriod, entries } = body
+    const {
+      academicYearId,
+      classId,
+      subjectId,
+      evaluationPeriod,
+      entries,
+      configType: rawConfigType = "INTERNAL",
+      configId = null,
+      configVersion = null
+    } = body
+    const isKsdn = isKsdnEvaluationPeriod(evaluationPeriod)
+    const configType = isKsdn
+      ? "INTERNAL"
+      : String(rawConfigType).toUpperCase() === "VNEDU"
+      ? "VNEDU"
+      : "INTERNAL"
 
     if (!classId || !subjectId || !evaluationPeriod || !Array.isArray(entries)) {
       return NextResponse.json({ success: false, error: "Thiếu dữ liệu sổ điểm" }, { status: 400 })
@@ -449,12 +779,13 @@ export async function POST(request: Request) {
     // Upsert each grade entry atomically using transaction and compound unique key
     await prisma.$transaction(
       cleanEntries.map(entry => {
-        const { studentId, componentScores, compositeScore, remark } = entry
+        const { studentId, componentScores, compositeScore, ratingValue, remark } = entry
         const parsedComposite =
           compositeScore !== "" && compositeScore !== null && compositeScore !== undefined
             ? parseFloat(compositeScore)
             : null
         const safeComposite = (parsedComposite !== null && !isNaN(parsedComposite)) ? parsedComposite : null
+        const safeRating = typeof ratingValue === "string" && ratingValue.trim() ? ratingValue.trim().slice(0, 20) : null
 
         let compScoresStr = "{}"
         if (componentScores) {
@@ -472,18 +803,23 @@ export async function POST(request: Request) {
 
         return prisma.subjectGradeEntry.upsert({
           where: {
-            studentId_subjectId_evaluationPeriod_academicYearId: {
+            studentId_subjectId_evaluationPeriod_academicYearId_configType: {
               studentId,
               subjectId,
               evaluationPeriod,
-              academicYearId: targetYearId
+              academicYearId: targetYearId,
+              configType
             }
           },
           update: {
             classId, // Always keep classId up to date
+            configId: configId || undefined,
+            configVersion: configVersion !== null ? Number(configVersion) : undefined,
             componentScores: compScoresStr,
             compositeScore: safeComposite,
+            ratingValue: safeRating,
             remark: typeof remark === "string" ? remark.slice(0, 1000) : "",
+            sourceType: "MANUAL",
             ...(teacherId ? { teacherId } : {})
           },
           create: {
@@ -491,11 +827,16 @@ export async function POST(request: Request) {
             classId,
             subjectId,
             evaluationPeriod,
+            configType,
+            configId: configId || null,
+            configVersion: configVersion !== null ? Number(configVersion) : null,
             studentId,
             teacherId,
             componentScores: compScoresStr,
             compositeScore: safeComposite,
-            remark: typeof remark === "string" ? remark.slice(0, 1000) : ""
+            ratingValue: safeRating,
+            remark: typeof remark === "string" ? remark.slice(0, 1000) : "",
+            sourceType: "MANUAL"
           }
         })
       })

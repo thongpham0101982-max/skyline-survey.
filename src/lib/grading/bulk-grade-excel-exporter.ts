@@ -249,6 +249,7 @@ export async function generateBulkGradeExcel(options: BulkExportOptions) {
       "Khối",
       "Lớp",
       "Mã HS",
+      "Mã vnEdu",
       "Họ và tên",
       "Ngày sinh",
       "Giới tính"
@@ -272,7 +273,8 @@ export async function generateBulkGradeExcel(options: BulkExportOptions) {
         idx + 1,
         cls?.grade || "",
         cls?.className || "",
-        st.studentCode,
+        String(st.studentCode || ""),
+        String(st.vnEduCode || ""),
         st.studentName,
         formatDate(st.dateOfBirth),
         st.gender || ""
@@ -321,24 +323,25 @@ export async function generateBulkGradeExcel(options: BulkExportOptions) {
     let colMaxScores: any = null
     let compositeTitle = "Điểm thành phần / Tổng kết"
     let hasComposite = true
+    let hasRating = false
+    let ratingTitle = "Xếp loại"
     let hasRemark = true
 
     if (subjConfigs.length > 0) {
-      // Ưu tiên config có số cột nhiều nhất hoặc config cụ thể
-      const bestConf = subjConfigs.reduce((max, c) => ((c.columnCount || 1) > (max?.columnCount || 0) ? c : max), subjConfigs[0])
+      const bestConf = subjConfigs.reduce((max, c) => ((c.columnCount || 0) > (max?.columnCount || 0) ? c : max), subjConfigs[0])
       try {
         colNames = typeof bestConf.columnNames === "string" ? JSON.parse(bestConf.columnNames) : bestConf.columnNames || []
         colTypes = typeof bestConf.columnTypes === "string" ? JSON.parse(bestConf.columnTypes) : bestConf.columnTypes || []
         colMaxScores = typeof bestConf.columnMaxScores === "string" ? JSON.parse(bestConf.columnMaxScores) : bestConf.columnMaxScores || []
       } catch {
-        colNames = ["Điểm 1"]
+        colNames = []
       }
       compositeTitle = bestConf.compositeColumnName || "Điểm thành phần"
       hasComposite = bestConf.hasCompositeColumn !== false
+      hasRating = Boolean(bestConf.hasRatingColumn)
+      ratingTitle = bestConf.ratingColumnName || "Xếp loại"
       hasRemark = bestConf.hasRemarkColumn !== false
-    }
-
-    if (colNames.length === 0) {
+    } else {
       colNames = ["Điểm ĐĐGTX"]
     }
 
@@ -347,6 +350,7 @@ export async function generateBulkGradeExcel(options: BulkExportOptions) {
       "Khối",
       "Lớp",
       "Mã HS",
+      "Mã vnEdu",
       "Họ và tên",
       "Ngày sinh",
       "Giới tính"
@@ -359,6 +363,7 @@ export async function generateBulkGradeExcel(options: BulkExportOptions) {
     })
 
     if (hasComposite) headers.push(compositeTitle)
+    if (hasRating) headers.push(ratingTitle)
     if (hasRemark) headers.push("Nhận xét")
 
     const subjectRows: any[][] = [
@@ -390,7 +395,8 @@ export async function generateBulkGradeExcel(options: BulkExportOptions) {
         idx + 1,
         cls?.grade || "",
         cls?.className || "",
-        st.studentCode,
+        String(st.studentCode || ""),
+        String(st.vnEduCode || ""),
         st.studentName,
         formatDate(st.dateOfBirth),
         st.gender || ""
@@ -403,6 +409,9 @@ export async function generateBulkGradeExcel(options: BulkExportOptions) {
 
       if (hasComposite) {
         row.push(ent?.compositeScore !== undefined && ent?.compositeScore !== null ? ent.compositeScore : "")
+      }
+      if (hasRating) {
+        row.push(ent?.ratingValue || "")
       }
       if (hasRemark) {
         row.push(ent?.remark || "")

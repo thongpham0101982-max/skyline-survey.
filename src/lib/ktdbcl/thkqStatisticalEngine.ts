@@ -11,6 +11,7 @@ export interface ThkqFilterParams {
   scoreRange?: string // ALL, UNDER_5, UNDER_BENCHMARK, 8_TO_10, PERFECT_10
   targetType?: string // ALL, BELOW_SKYLINE, BELOW_MOET, COMMITMENT, PSYCHOLOGICAL, PERFECT_10
   searchKeyword?: string
+  allowedSubjectIds?: string[]
 }
 
 // Hàm chuẩn hóa Bậc học từ chuỗi class.level hoặc grade
@@ -53,7 +54,8 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     campusId = "ALL",
     scoreRange = "ALL",
     targetType = "ALL",
-    searchKeyword = ""
+    searchKeyword = "",
+    allowedSubjectIds
   } = filters
 
   if (!academicYearId) {
@@ -138,10 +140,19 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
   })
 
   // 3. Query bảng điểm SubjectGradeEntry
+  const hasSubjectRestriction = Array.isArray(allowedSubjectIds) && allowedSubjectIds.length > 0
+  const effectiveSubjectCondition = hasSubjectRestriction
+    ? subjectId !== "ALL" && allowedSubjectIds.includes(subjectId)
+      ? { subjectId }
+      : { subjectId: { in: allowedSubjectIds } }
+    : subjectId !== "ALL"
+      ? { subjectId }
+      : {}
+
   const gradeEntryWhere: any = {
     academicYearId,
     ...(evaluationPeriod !== "ALL" ? { evaluationPeriod } : {}),
-    ...(subjectId !== "ALL" ? { subjectId } : {})
+    ...effectiveSubjectCondition
   }
 
   // Điều kiện lọc theo Khối (nếu có)
@@ -215,7 +226,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
       where: {
         student: { academicYearId },
         ...(evaluationPeriod !== "ALL" ? { semester: evaluationPeriod } : {}),
-        ...(subjectId !== "ALL" ? { subjectId } : {}),
+        ...effectiveSubjectCondition,
         score: { not: null }
       },
       include: {
@@ -743,7 +754,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     where: {
       academicYearId,
       ...(evaluationPeriod !== "ALL" ? { evaluationPeriod: { in: [evaluationPeriod, "ALL"] } } : {}),
-      subjectId: { not: null }
+      subjectId: hasSubjectRestriction ? { in: allowedSubjectIds } : { not: null }
     },
     include: {
       subject: { select: { id: true, subjectCode: true, subjectName: true } }
