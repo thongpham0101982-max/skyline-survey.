@@ -34,33 +34,42 @@ export const DEFAULT_EMAIL_ROUTING_CONFIG: EmailRoutingConfigData = {
   },
   campuses: {
     CS1: {
-      gdcs: "longtt@skylineschool.edu.vn, gdcs.cs1@skylineschool.edu.vn",
-      tuvan: "thuongttn@skylineschool.edu.vn, tuyensinh.cs1@skylineschool.edu.vn",
-      giaovu: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn, giaovu.cs1@skylineschool.edu.vn",
+      gdcs: "longtt@skylineschool.edu.vn",
+      tuvan: "thuongttn@skylineschool.edu.vn",
+      giaovu: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn",
     },
     CS2: {
-      gdcs: "khanhpt@skylineschool.edu.vn, gdcs.cs2@skylineschool.edu.vn",
-      tuvan: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn, tuyensinh.cs2@skylineschool.edu.vn",
-      giaovu: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn, giaovu.cs2@skylineschool.edu.vn",
+      gdcs: "khanhpt@skylineschool.edu.vn",
+      tuvan: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn",
+      giaovu: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn",
     },
     CS3: {
-      gdcs: "thanhtt@skylineschool.edu.vn, gdcs.cs3@skylineschool.edu.vn",
-      tuvan: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn, tuyensinh.cs3@skylineschool.edu.vn",
-      giaovu: "thuda@skylineschool.edu.vn, giaovu.cs3@skylineschool.edu.vn",
+      gdcs: "thanhtt@skylineschool.edu.vn",
+      tuvan: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn",
+      giaovu: "thuda@skylineschool.edu.vn",
     },
     CS4: {
-      gdcs: "trungct@skylineschool.edu.vn, gdcs.cs4@skylineschool.edu.vn",
-      tuvan: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn, tuyensinh.cs4@skylineschool.edu.vn",
-      giaovu: "bichtramtt@skylineschool.edu.vn, giaovu.cs4@skylineschool.edu.vn",
+      gdcs: "trungct@skylineschool.edu.vn",
+      tuvan: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn",
+      giaovu: "bichtramtt@skylineschool.edu.vn",
     },
     CS5: {
-      gdcs: "trungdq1@skylineschool.edu.vn, gdcs.cs5@skylineschool.edu.vn",
-      tuvan: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn, tuyensinh.cs5@skylineschool.edu.vn",
-      giaovu: "dunglp@skylineschool.edu.vn, giaovu.cs5@skylineschool.edu.vn",
+      gdcs: "trungdq1@skylineschool.edu.vn",
+      tuvan: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn",
+      giaovu: "dunglp@skylineschool.edu.vn",
     },
   },
   ktdbclEmails: "ktdbcl@skylineschool.edu.vn, bankhaothi@skylineschool.edu.vn, thangdx@skylineschool.edu.vn",
 };
+
+function stripGenericCampusAliases(rawStr: string, fallbackStr: string): string {
+  const cleaned = String(rawStr || "")
+    .split(/[,;]/)
+    .map((s) => s.trim().replace(/@dkylineschool\.edu\.vn$/i, "@skylineschool.edu.vn"))
+    .filter((s) => s && s.includes("@") && !/^(giaovu|tuyensinh|tuvan|gdcs)\.cs\d+@skylineschool\.edu\.vn$/i.test(s))
+    .join(", ");
+  return cleaned || fallbackStr;
+}
 
 export function parseSavedEmailRoutingConfig(configs?: any[]): EmailRoutingConfigData {
   const base: EmailRoutingConfigData = JSON.parse(JSON.stringify(DEFAULT_EMAIL_ROUTING_CONFIG));
@@ -87,9 +96,15 @@ export function parseSavedEmailRoutingConfig(configs?: any[]): EmailRoutingConfi
       for (const cs of ["CS1", "CS2", "CS3", "CS4", "CS5"] as const) {
         if (parsed.campuses[cs]) {
           base.campuses[cs] = {
-            gdcs: typeof parsed.campuses[cs].gdcs === "string" ? parsed.campuses[cs].gdcs : base.campuses[cs].gdcs,
-            tuvan: typeof parsed.campuses[cs].tuvan === "string" ? parsed.campuses[cs].tuvan : base.campuses[cs].tuvan,
-            giaovu: typeof parsed.campuses[cs].giaovu === "string" ? parsed.campuses[cs].giaovu : base.campuses[cs].giaovu,
+            gdcs: typeof parsed.campuses[cs].gdcs === "string"
+              ? stripGenericCampusAliases(parsed.campuses[cs].gdcs, base.campuses[cs].gdcs)
+              : base.campuses[cs].gdcs,
+            tuvan: typeof parsed.campuses[cs].tuvan === "string"
+              ? stripGenericCampusAliases(parsed.campuses[cs].tuvan, base.campuses[cs].tuvan)
+              : base.campuses[cs].tuvan,
+            giaovu: typeof parsed.campuses[cs].giaovu === "string"
+              ? stripGenericCampusAliases(parsed.campuses[cs].giaovu, base.campuses[cs].giaovu)
+              : base.campuses[cs].giaovu,
           };
         }
       }
@@ -161,79 +176,64 @@ export function EmailRoutingConfigModal({
       CS1: {
         gdcs: [
           { label: "Tống Thiên Long (GĐCS CS1)", email: "longtt@skylineschool.edu.vn" },
-          { label: "Hòm thư GĐCS CS1", email: "gdcs.cs1@skylineschool.edu.vn" },
         ],
         tuvan: [
-          { label: "Trương Thị Ngọc Thương (Tư vấn CS1)", email: "thuongttn@skylineschool.edu.vn" },
-          { label: "Hòm thư Tuyển sinh CS1", email: "tuyensinh.cs1@skylineschool.edu.vn" },
+          { label: "Trương Thị Ngọc Thương (Tổ Tư vấn CS1)", email: "thuongttn@skylineschool.edu.vn" },
         ],
         giaovu: [
-          { label: "Huỳnh Thị Phượng (Giáo vụ CS1)", email: "phuongvt@skylineschool.edu.vn" },
-          { label: "Đỗ Anh Thư (Giáo vụ CS1-CS2-CS3)", email: "thuda@skylineschool.edu.vn" },
-          { label: "Hòm thư Giáo vụ CS1", email: "giaovu.cs1@skylineschool.edu.vn" },
+          { label: "Huỳnh Thị Phượng (Tổ Giáo vụ CS1)", email: "phuongvt@skylineschool.edu.vn" },
+          { label: "Đỗ Anh Thư (Tổ Giáo vụ CS1-CS2-CS3)", email: "thuda@skylineschool.edu.vn" },
         ],
       },
       CS2: {
         gdcs: [
           { label: "Phạm Thị Khánh (GĐCS CS2)", email: "khanhpt@skylineschool.edu.vn" },
-          { label: "Hòm thư GĐCS CS2", email: "gdcs.cs2@skylineschool.edu.vn" },
         ],
         tuvan: [
-          { label: "Phạm Thương Hoài (Tư vấn CS2)", email: "hoaipt@skylineschool.edu.vn" },
-          { label: "Nguyễn Thị Hồng Dinh (Tư vấn CS2)", email: "dinhnth@skylineschool.edu.vn" },
-          { label: "Hà Thị Thi Đoan (Tư vấn CS2)", email: "doanhtt@skylineschool.edu.vn" },
-          { label: "Nguyễn Thanh Huyền (Tư vấn CS2)", email: "huyennt@skylineschool.edu.vn" },
-          { label: "Hòm thư Tuyển sinh CS2", email: "tuyensinh.cs2@skylineschool.edu.vn" },
+          { label: "Phạm Thương Hoài (Tổ Tư vấn CS2)", email: "hoaipt@skylineschool.edu.vn" },
+          { label: "Nguyễn Thị Hồng Dinh (Tổ Tư vấn CS2)", email: "dinhnth@skylineschool.edu.vn" },
+          { label: "Hà Thị Thi Đoan (Tổ Tư vấn CS2)", email: "doanhtt@skylineschool.edu.vn" },
+          { label: "Nguyễn Thanh Huyền (Tổ Tư vấn CS2)", email: "huyennt@skylineschool.edu.vn" },
         ],
         giaovu: [
-          { label: "Đỗ Anh Thư (Giáo vụ CS1-CS2-CS3)", email: "thuda@skylineschool.edu.vn" },
-          { label: "Lê Phương Dung (Giáo vụ CS2-CS5)", email: "dunglp@skylineschool.edu.vn" },
-          { label: "Hòm thư Giáo vụ CS2", email: "giaovu.cs2@skylineschool.edu.vn" },
+          { label: "Đỗ Anh Thư (Tổ Giáo vụ CS1-CS2-CS3)", email: "thuda@skylineschool.edu.vn" },
+          { label: "Lê Phương Dung (Tổ Giáo vụ CS2-CS5)", email: "dunglp@skylineschool.edu.vn" },
         ],
       },
       CS3: {
         gdcs: [
           { label: "Trần Thị Thanh (GĐCS CS3)", email: "thanhtt@skylineschool.edu.vn" },
-          { label: "Hòm thư GĐCS CS3", email: "gdcs.cs3@skylineschool.edu.vn" },
         ],
         tuvan: [
-          { label: "Trương Thị Thu Nga (Tư vấn CS3)", email: "thungatt@skylineschool.edu.vn" },
-          { label: "Phan Vũ Yên Hà (Tư vấn CS3)", email: "hapvy@skylineschool.edu.vn" },
-          { label: "Hòm thư Tuyển sinh CS3", email: "tuyensinh.cs3@skylineschool.edu.vn" },
+          { label: "Trương Thị Thu Nga (Tổ Tư vấn CS3)", email: "thungatt@skylineschool.edu.vn" },
+          { label: "Phan Vũ Yên Hà (Tổ Tư vấn CS3)", email: "hapvy@skylineschool.edu.vn" },
         ],
         giaovu: [
-          { label: "Đỗ Anh Thư (Giáo vụ CS3)", email: "thuda@skylineschool.edu.vn" },
-          { label: "Hòm thư Giáo vụ CS3", email: "giaovu.cs3@skylineschool.edu.vn" },
+          { label: "Đỗ Anh Thư (Tổ Giáo vụ CS3)", email: "thuda@skylineschool.edu.vn" },
         ],
       },
       CS4: {
         gdcs: [
           { label: "Cao Thanh Trung (GĐCS CS4)", email: "trungct@skylineschool.edu.vn" },
-          { label: "Hòm thư GĐCS CS4", email: "gdcs.cs4@skylineschool.edu.vn" },
         ],
         tuvan: [
-          { label: "Trần Thị Thu Sen (Tư vấn CS4)", email: "senttt@skylineschool.edu.vn" },
-          { label: "Nguyễn Thị Minh Ánh (Tư vấn CS4)", email: "anhntm@skylineschool.edu.vn" },
-          { label: "Hòm thư Tuyển sinh CS4", email: "tuyensinh.cs4@skylineschool.edu.vn" },
+          { label: "Trần Thị Thu Sen (Tổ Tư vấn CS4)", email: "senttt@skylineschool.edu.vn" },
+          { label: "Nguyễn Thị Minh Ánh (Tổ Tư vấn CS4)", email: "anhntm@skylineschool.edu.vn" },
         ],
         giaovu: [
-          { label: "Tống Thị Bích Trâm (Giáo vụ CS4)", email: "bichtramtt@skylineschool.edu.vn" },
-          { label: "Hòm thư Giáo vụ CS4", email: "giaovu.cs4@skylineschool.edu.vn" },
+          { label: "Tống Thị Bích Trâm (Tổ Giáo vụ CS4)", email: "bichtramtt@skylineschool.edu.vn" },
         ],
       },
       CS5: {
         gdcs: [
           { label: "Đỗ Quang Trung (GĐCS CS5)", email: "trungdq1@skylineschool.edu.vn" },
-          { label: "Hòm thư GĐCS CS5", email: "gdcs.cs5@skylineschool.edu.vn" },
         ],
         tuvan: [
-          { label: "Nguyễn Mai Huyền Linh (Tư vấn CS5)", email: "linhnmh@skylineschool.edu.vn" },
-          { label: "Trần Thị Xuân Quyên (Tư vấn CS5)", email: "quyenttx@skylineschool.edu.vn" },
-          { label: "Hòm thư Tuyển sinh CS5", email: "tuyensinh.cs5@skylineschool.edu.vn" },
+          { label: "Nguyễn Mai Huyền Linh (Tổ Tư vấn CS5)", email: "linhnmh@skylineschool.edu.vn" },
+          { label: "Trần Thị Xuân Quyên (Tổ Tư vấn CS5)", email: "quyenttx@skylineschool.edu.vn" },
         ],
         giaovu: [
-          { label: "Lê Phương Dung (Giáo vụ CS5)", email: "dunglp@skylineschool.edu.vn" },
-          { label: "Hòm thư Giáo vụ CS5", email: "giaovu.cs5@skylineschool.edu.vn" },
+          { label: "Lê Phương Dung (Tổ Giáo vụ CS5)", email: "dunglp@skylineschool.edu.vn" },
         ],
       },
     };

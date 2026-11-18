@@ -627,14 +627,358 @@ export async function getDepartmentTeachers(deptCodeOrId?: string) {
 /**
  * Lấy danh sách Giám Đốc Cơ Sở (GĐCS) theo từng cơ sở trường học
  */
+export interface CampusDepartmentStaffMember {
+  userId?: string;
+  teacherId?: string;
+  name: string;
+  email: string;
+  departmentName: string;
+  campusCode: string;
+}
+
+/**
+ * Danh bạ nhân sự chuẩn thuộc Tổ Giáo vụ cơ sở theo từng Cơ sở (CS1–CS5)
+ * (Tuyệt đối không dùng alias giả giaovu.csX@skylineschool.edu.vn)
+ */
+export const CAMPUS_GIAOVU_STAFF_DIRECTORY: Record<"CS1" | "CS2" | "CS3" | "CS4" | "CS5", CampusDepartmentStaffMember[]> = {
+  CS1: [
+    { name: "Cô Huỳnh Thị Phượng", email: "phuongvt@skylineschool.edu.vn", departmentName: "Tổ Giáo vụ CS1", campusCode: "CS1" },
+    { name: "Cô Đỗ Anh Thư", email: "thuda@skylineschool.edu.vn", departmentName: "Tổ Giáo vụ CS1", campusCode: "CS1" }
+  ],
+  CS2: [
+    { name: "Cô Đỗ Anh Thư", email: "thuda@skylineschool.edu.vn", departmentName: "Tổ Giáo vụ CS2", campusCode: "CS2" },
+    { name: "Cô Lê Phương Dung", email: "dunglp@skylineschool.edu.vn", departmentName: "Tổ Giáo vụ CS2", campusCode: "CS2" }
+  ],
+  CS3: [
+    { name: "Cô Đỗ Anh Thư", email: "thuda@skylineschool.edu.vn", departmentName: "Tổ Giáo vụ CS3", campusCode: "CS3" }
+  ],
+  CS4: [
+    { name: "Cô Tống Thị Bích Trâm", email: "bichtramtt@skylineschool.edu.vn", departmentName: "Tổ Giáo vụ CS4", campusCode: "CS4" }
+  ],
+  CS5: [
+    { name: "Cô Lê Phương Dung", email: "dunglp@skylineschool.edu.vn", departmentName: "Tổ Giáo vụ CS5", campusCode: "CS5" }
+  ]
+};
+
+/**
+ * Danh bạ nhân sự chuẩn thuộc Tổ Tư vấn cơ sở theo từng Cơ sở (CS1–CS5)
+ * (Tuyệt đối không dùng alias giả tuyensinh.csX@skylineschool.edu.vn)
+ */
+export const CAMPUS_TUVAN_STAFF_DIRECTORY: Record<"CS1" | "CS2" | "CS3" | "CS4" | "CS5", CampusDepartmentStaffMember[]> = {
+  CS1: [
+    { name: "Cô Trương Thị Ngọc Thương", email: "thuongttn@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS1", campusCode: "CS1" }
+  ],
+  CS2: [
+    { name: "Cô Phạm Thương Hoài", email: "hoaipt@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS2", campusCode: "CS2" },
+    { name: "Cô Nguyễn Thị Hồng Dinh", email: "dinhnth@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS2", campusCode: "CS2" },
+    { name: "Cô Hà Thị Thi Đoan", email: "doanhtt@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS2", campusCode: "CS2" },
+    { name: "Cô Nguyễn Thanh Huyền", email: "huyennt@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS2", campusCode: "CS2" }
+  ],
+  CS3: [
+    { name: "Cô Trương Thị Thu Nga", email: "thungatt@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS3", campusCode: "CS3" },
+    { name: "Cô Phan Vũ Yên Hà", email: "hapvy@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS3", campusCode: "CS3" }
+  ],
+  CS4: [
+    { name: "Cô Trần Thị Thu Sen", email: "senttt@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS4", campusCode: "CS4" },
+    { name: "Cô Nguyễn Thị Minh Ánh", email: "anhntm@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS4", campusCode: "CS4" }
+  ],
+  CS5: [
+    { name: "Cô Nguyễn Mai Huyền Linh", email: "linhnmh@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS5", campusCode: "CS5" },
+    { name: "Cô Trần Thị Xuân Quyên", email: "quyenttx@skylineschool.edu.vn", departmentName: "Tổ Tư vấn CS5", campusCode: "CS5" }
+  ]
+};
+
+/**
+ * Kiểm tra và loại bỏ các hòm thư alias chung không tồn tại (giaovu.csX@..., tuyensinh.csX@...)
+ */
+export function isGenericCampusAliasEmail(email?: string | null): boolean {
+  const e = String(email || "").trim().toLowerCase();
+  if (!e) return true;
+  return /^(giaovu|tuyensinh|tuvan)\.cs\d+@skylineschool\.edu\.vn$/i.test(e);
+}
+
+/**
+ * Danh bạ Email nhân sự Tổ Giáo vụ cơ sở theo Cơ sở trường học
+ */
+export const DEFAULT_GIAOVU_EMAILS: Record<string, string> = {
+  CS1: CAMPUS_GIAOVU_STAFF_DIRECTORY.CS1.map(s => s.email).join(", "),
+  CS2: CAMPUS_GIAOVU_STAFF_DIRECTORY.CS2.map(s => s.email).join(", "),
+  CS3: CAMPUS_GIAOVU_STAFF_DIRECTORY.CS3.map(s => s.email).join(", "),
+  CS4: CAMPUS_GIAOVU_STAFF_DIRECTORY.CS4.map(s => s.email).join(", "),
+  CS5: CAMPUS_GIAOVU_STAFF_DIRECTORY.CS5.map(s => s.email).join(", ")
+};
+
+/**
+ * Danh bạ Email nhân sự Tổ Tư vấn cơ sở theo Cơ sở trường học
+ */
+export const DEFAULT_TUYENSINH_EMAILS: Record<string, string> = {
+  CS1: CAMPUS_TUVAN_STAFF_DIRECTORY.CS1.map(s => s.email).join(", "),
+  CS2: CAMPUS_TUVAN_STAFF_DIRECTORY.CS2.map(s => s.email).join(", "),
+  CS3: CAMPUS_TUVAN_STAFF_DIRECTORY.CS3.map(s => s.email).join(", "),
+  CS4: CAMPUS_TUVAN_STAFF_DIRECTORY.CS4.map(s => s.email).join(", "),
+  CS5: CAMPUS_TUVAN_STAFF_DIRECTORY.CS5.map(s => s.email).join(", ")
+};
+
+/**
+ * Chuẩn hóa Mã cơ sở (CS1..CS5) từ chuỗi mã hoặc tên cơ sở
+ */
+export function normalizeCampusCode(campusCodeOrName?: string): "CS1" | "CS2" | "CS3" | "CS4" | "CS5" {
+  const code = String(campusCodeOrName || "").toUpperCase();
+  if (code.includes("CS5") || code.includes("HỘI AN") || code.includes("HOI AN") || code.includes("HILL") || code.includes("CƠ SỞ 5")) return "CS5";
+  if (code.includes("CS4") || code.includes("BEACH") || code.includes("CƠ SỞ 4")) return "CS4";
+  if (code.includes("CS3") || code.includes("INTER") || code.includes("GLOBAL") || code.includes("CƠ SỞ 3")) return "CS3";
+  if (code.includes("CS2") || code.includes("CENTRAL") || code.includes("CƠ SỞ 2")) return "CS2";
+  return "CS1";
+}
+
+/**
+ * Trích xuất Email Tổ Giáo vụ cơ sở tương ứng theo mã hoặc tên cơ sở
+ */
+export function getCampusGiaovuEmail(campusCodeOrName?: string): string {
+  const cs = normalizeCampusCode(campusCodeOrName);
+  return DEFAULT_GIAOVU_EMAILS[cs] || DEFAULT_GIAOVU_EMAILS.CS1;
+}
+
+/**
+ * Trích xuất Email Tổ Tư vấn cơ sở tương ứng theo mã hoặc tên cơ sở
+ */
+export function getCampusTuyensinhEmail(campusCodeOrName?: string): string {
+  const cs = normalizeCampusCode(campusCodeOrName);
+  return DEFAULT_TUYENSINH_EMAILS[cs] || DEFAULT_TUYENSINH_EMAILS.CS1;
+}
+
+/**
+ * Truy vấn danh sách nhân sự thực tế trong Tổ Giáo vụ và Tổ Tư vấn cơ sở theo từng cơ sở từ CSDL
+ * (kết hợp danh bạ nhân sự chuẩn của Tổ Giáo vụ & Tổ Tư vấn cơ sở, loại bỏ giaovu.csX@... / tuyensinh.csX@...)
+ */
+export async function getCampusGiaovuAndTuvanStaff(campusCodeOrName?: string, campusId?: string | null) {
+  const pAny = prisma as any;
+  const csCode = normalizeCampusCode(campusCodeOrName);
+
+  const giaovuMap = new Map<string, CampusDepartmentStaffMember>();
+  const tuvanMap = new Map<string, CampusDepartmentStaffMember>();
+
+  const addMember = (targetMap: Map<string, CampusDepartmentStaffMember>, item: CampusDepartmentStaffMember) => {
+    const cleanEmail = String(item.email || "")
+      .trim()
+      .toLowerCase()
+      .replace(/@dkylineschool\.edu\.vn$/i, "@skylineschool.edu.vn");
+    if (!cleanEmail || !cleanEmail.includes("@") || /^\d+@/.test(cleanEmail) || isGenericCampusAliasEmail(cleanEmail)) {
+      return;
+    }
+    const existing = targetMap.get(cleanEmail);
+    if (!existing) {
+      targetMap.set(cleanEmail, { ...item, email: cleanEmail });
+    } else {
+      if (!existing.userId && item.userId) existing.userId = item.userId;
+      if (!existing.teacherId && item.teacherId) existing.teacherId = item.teacherId;
+      if (item.name && (!existing.name || existing.name.includes("@"))) existing.name = item.name;
+    }
+  };
+
+  // Khởi tạo từ danh bạ nhân sự Tổ Giáo vụ & Tổ Tư vấn cơ sở chuẩn của trường
+  for (const g of CAMPUS_GIAOVU_STAFF_DIRECTORY[csCode] || []) {
+    addMember(giaovuMap, g);
+  }
+  for (const tv of CAMPUS_TUVAN_STAFF_DIRECTORY[csCode] || []) {
+    addMember(tuvanMap, tv);
+  }
+
+  try {
+    // Truy vấn nhân sự đang ACTIVE trong bảng Teacher & User thuộc Tổ Giáo vụ và Tổ Tư vấn theo cơ sở
+    const [activeTeachers, campusUsers] = await Promise.all([
+      typeof pAny.teacher?.findMany === "function"
+        ? pAny.teacher
+            .findMany({
+              where: { status: "ACTIVE" },
+              include: {
+                departmentRel: true,
+                campus: true,
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    role: true,
+                    campusAssignments: { include: { campus: true } }
+                  }
+                }
+              }
+            })
+            .catch(() => [])
+        : Promise.resolve([]),
+      typeof pAny.user?.findMany === "function"
+        ? pAny.user
+            .findMany({
+              where: {
+                status: "ACTIVE",
+                role: {
+                  in: [
+                    "GIAO_VU", "GIAO_VU_CS", "GVU", "GVCS", "giao_vu", "giao_vu_cs",
+                    "TVAN", "TU_VAN", "TU_VAN_CS", "TVCS", "TUYEN_SINH", "TVTS", "TU_VAN_TS", "tvan", "tu_van"
+                  ]
+                }
+              },
+              include: {
+                teacher: { include: { departmentRel: true, campus: true } },
+                campusAssignments: { include: { campus: true } }
+              }
+            })
+            .catch(() => [])
+        : Promise.resolve([])
+    ]);
+
+    const emailToTeacherMap = new Map<string, any>();
+    for (const t of activeTeachers || []) {
+      const em = String(t.email || t.user?.email || "").trim().toLowerCase();
+      if (em && em.includes("@") && !/^\d+@/.test(em)) {
+        emailToTeacherMap.set(em, t);
+      }
+    }
+
+    // Đồng bộ userId/teacherId cho các nhân sự đã có trong danh bạ chuẩn
+    for (const [em, member] of giaovuMap.entries()) {
+      const matchedT = emailToTeacherMap.get(em);
+      if (matchedT) {
+        member.teacherId = matchedT.id;
+        member.userId = matchedT.userId || matchedT.user?.id || member.userId;
+        if (matchedT.teacherName) member.name = matchedT.teacherName;
+      }
+    }
+    for (const [em, member] of tuvanMap.entries()) {
+      const matchedT = emailToTeacherMap.get(em);
+      if (matchedT) {
+        member.teacherId = matchedT.id;
+        member.userId = matchedT.userId || matchedT.user?.id || member.userId;
+        if (matchedT.teacherName) member.name = matchedT.teacherName;
+      }
+    }
+
+    const matchesTargetCampus = (tCampusCode?: string, tCampusId?: string, userAssigns?: any[]) => {
+      const codes = new Set<string>();
+      if (tCampusCode) codes.add(normalizeCampusCode(tCampusCode));
+      if (Array.isArray(userAssigns)) {
+        for (const ua of userAssigns) {
+          if (ua?.campus?.campusCode) codes.add(normalizeCampusCode(ua.campus.campusCode));
+          if (campusId && ua?.campusId === campusId) codes.add(csCode);
+        }
+      }
+      if (campusId && tCampusId === campusId) codes.add(csCode);
+      return codes.has(csCode);
+    };
+
+    for (const t of activeTeachers || []) {
+      if (!matchesTargetCampus(t.campus?.campusCode, t.campusId, t.user?.campusAssignments)) continue;
+      const deptCode = String(t.departmentRel?.code || "").toUpperCase();
+      const deptName = String(t.departmentRel?.name || "").toLowerCase();
+      const pos = String(t.position || "").toUpperCase();
+      const posList = String(t.positions || "").toUpperCase();
+      const uRole = String(t.user?.role || "").toUpperCase();
+      const em = String(t.email || (t.user?.email?.includes("@") ? t.user.email : "")).trim();
+
+      const isGiaoVu =
+        deptCode.includes("GVU") ||
+        deptCode.includes("GIAO_VU") ||
+        deptCode.includes("GIAOVU") ||
+        deptName.includes("giáo vụ") ||
+        ["GIAO_VU", "GIAO_VU_CS", "GVU", "GVCS"].includes(uRole) ||
+        ["GIAO_VU", "GIAO_VU_CS", "GVU", "GVCS"].includes(pos) ||
+        posList.includes("GIAO_VU");
+
+      const isTuVan =
+        deptCode.includes("TVAN") ||
+        deptCode.includes("TUVAN") ||
+        deptCode.includes("TVTS") ||
+        deptCode.includes("TUYENSINH") ||
+        deptName.includes("tư vấn") ||
+        deptName.includes("tuyển sinh") ||
+        ["TVAN", "TU_VAN", "TU_VAN_CS", "TVCS", "TUYEN_SINH", "TVTS", "TU_VAN_TS"].includes(uRole) ||
+        ["TVAN", "TU_VAN", "TVTS"].includes(pos) ||
+        posList.includes("TU_VAN") ||
+        posList.includes("TVTS");
+
+      if (isGiaoVu) {
+        addMember(giaovuMap, {
+          userId: t.userId || t.user?.id,
+          teacherId: t.id,
+          name: t.teacherName || t.user?.fullName || `Giáo vụ ${csCode}`,
+          email: em,
+          departmentName: t.departmentRel?.name || `Tổ Giáo vụ ${csCode}`,
+          campusCode: csCode
+        });
+      }
+      if (isTuVan) {
+        addMember(tuvanMap, {
+          userId: t.userId || t.user?.id,
+          teacherId: t.id,
+          name: t.teacherName || t.user?.fullName || `Tư vấn ${csCode}`,
+          email: em,
+          departmentName: t.departmentRel?.name || `Tổ Tư vấn ${csCode}`,
+          campusCode: csCode
+        });
+      }
+    }
+
+    for (const u of campusUsers || []) {
+      if (!matchesTargetCampus(u.teacher?.campus?.campusCode, u.teacher?.campusId, u.campusAssignments)) continue;
+      const uRole = String(u.role || "").toUpperCase();
+      const em = String(u.teacher?.email || u.email || "").trim();
+      if (!em.includes("@") || /^\d+@/.test(em)) continue;
+
+      if (["GIAO_VU", "GIAO_VU_CS", "GVU", "GVCS"].includes(uRole)) {
+        addMember(giaovuMap, {
+          userId: u.id,
+          teacherId: u.teacher?.id,
+          name: u.fullName || u.teacher?.teacherName || `Giáo vụ ${csCode}`,
+          email: em,
+          departmentName: u.teacher?.departmentRel?.name || `Tổ Giáo vụ ${csCode}`,
+          campusCode: csCode
+        });
+      } else if (["TVAN", "TU_VAN", "TU_VAN_CS", "TVCS", "TUYEN_SINH", "TVTS", "TU_VAN_TS"].includes(uRole)) {
+        addMember(tuvanMap, {
+          userId: u.id,
+          teacherId: u.teacher?.id,
+          name: u.fullName || u.teacher?.teacherName || `Tư vấn ${csCode}`,
+          email: em,
+          departmentName: u.teacher?.departmentRel?.name || `Tổ Tư vấn ${csCode}`,
+          campusCode: csCode
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("getCampusGiaovuAndTuvanStaff warning:", err);
+  }
+
+  const giaovuStaff = Array.from(giaovuMap.values());
+  const tuvanStaff = Array.from(tuvanMap.values());
+  const giaovuEmail = giaovuStaff.map(s => s.email).join(", ");
+  const tuyensinhEmail = tuvanStaff.map(s => s.email).join(", ");
+  const allStaffUserIds = Array.from(
+    new Set(
+      [...giaovuStaff.map(s => s.userId), ...tuvanStaff.map(s => s.userId)].filter((id): id is string => Boolean(id))
+    )
+  );
+
+  return {
+    campusCode: csCode,
+    giaovuStaff,
+    tuvanStaff,
+    giaovuEmail,
+    tuyensinhEmail,
+    allStaffUserIds
+  };
+}
+
 export async function getGdcsCampusList() {
   const pAny = prisma as any;
   try {
     const campuses = await pAny.campus.findMany({
       include: {
-        manager: true,
+        manager: {
+          include: { teacher: true }
+        },
         userAssignments: {
-          include: { user: true }
+          include: { user: { include: { teacher: true } } }
         }
       },
       orderBy: { campusCode: "asc" }
@@ -645,7 +989,7 @@ export async function getGdcsCampusList() {
       CS2: "khanhpt@skylineschool.edu.vn",
       CS3: "thanhtt@skylineschool.edu.vn",
       CS4: "trungct@skylineschool.edu.vn",
-      CS5: "trungdq@skylineschool.edu.vn"
+      CS5: "trungdq1@skylineschool.edu.vn"
     };
 
     const defaultNames: Record<string, string> = {
@@ -660,85 +1004,138 @@ export async function getGdcsCampusList() {
       campusId: string;
       campusCode: string;
       campusName: string;
+      managerUserId?: string;
       managerName: string;
       managerEmail: string;
+      giaovuEmail: string;
+      tuyensinhEmail: string;
+      giaovuStaff: CampusDepartmentStaffMember[];
+      tuvanStaff: CampusDepartmentStaffMember[];
       roleTitle: string;
     }> = [];
 
-    campuses.forEach((c: any) => {
-      let mName = c.manager?.fullName || defaultNames[c.campusCode] || `Giám đốc Cơ sở ${c.campusName}`;
-      let mEmail = c.manager?.email || defaultEmails[c.campusCode] || "";
+    for (const c of campuses) {
+      const code = normalizeCampusCode(c.campusCode || c.campusName);
+      let mName = c.manager?.fullName || c.manager?.teacher?.teacherName || defaultNames[code] || `Giám đốc Cơ sở ${c.campusName}`;
+      const rawMgrEmail = c.manager?.teacher?.email || c.manager?.email || "";
+      let mEmail = rawMgrEmail.includes("@") && !/^\d+@/.test(rawMgrEmail)
+        ? rawMgrEmail
+        : (defaultEmails[code] || "");
       if (!mEmail.includes("@")) {
-        mEmail = defaultEmails[c.campusCode] || (mEmail ? `${mEmail}@skylineschool.edu.vn` : "");
+        mEmail = defaultEmails[code] || "longtt@skylineschool.edu.vn";
       }
+
+      const staffInfo = await getCampusGiaovuAndTuvanStaff(code, c.id);
 
       gdcsList.push({
         campusId: c.id,
-        campusCode: c.campusCode,
+        campusCode: c.campusCode || code,
         campusName: c.campusName,
+        managerUserId: c.managerId || c.manager?.id || undefined,
         managerName: mName,
         managerEmail: mEmail,
+        giaovuEmail: staffInfo.giaovuEmail,
+        tuyensinhEmail: staffInfo.tuyensinhEmail,
+        giaovuStaff: staffInfo.giaovuStaff,
+        tuvanStaff: staffInfo.tuvanStaff,
         roleTitle: `Giám đốc Cơ sở ${c.campusCode} (${c.campusName})`
       });
-    });
+    }
 
     return gdcsList;
   } catch (error) {
     console.error("Error fetching GDCS list:", error);
-    return [
-      { campusId: "cs1", campusCode: "CS1", campusName: "Sky-Line Riverside (CS1)", managerName: "Thầy Tống Thiên Long", managerEmail: "longtt@skylineschool.edu.vn", roleTitle: "Giám đốc Cơ sở CS1" },
-      { campusId: "cs2", campusCode: "CS2", campusName: "Sky-Line Central (CS2)", managerName: "Cô Phạm Thị Khánh", managerEmail: "khanhpt@skylineschool.edu.vn", roleTitle: "Giám đốc Cơ sở CS2" },
-      { campusId: "cs3", campusCode: "CS3", campusName: "Sky-Line International (CS3)", managerName: "Cô Trần Thị Thanh", managerEmail: "thanhtt@skylineschool.edu.vn", roleTitle: "Giám đốc Cơ sở CS3" },
-      { campusId: "cs4", campusCode: "CS4", campusName: "Sky-Line Beach (CS4)", managerName: "Thầy Cao Thanh Trung", managerEmail: "trungct@skylineschool.edu.vn", roleTitle: "Giám đốc Cơ sở CS4" },
-      { campusId: "cs5", campusCode: "CS5", campusName: "Sky-Line Hill (CS5)", managerName: "Thầy Đỗ Quang Trung", managerEmail: "trungdq@skylineschool.edu.vn", roleTitle: "Giám đốc Cơ sở CS5" }
-    ];
+    return (["CS1", "CS2", "CS3", "CS4", "CS5"] as const).map((code, idx) => {
+      const names: Record<string, string> = {
+        CS1: "Thầy Tống Thiên Long",
+        CS2: "Cô Phạm Thị Khánh",
+        CS3: "Cô Trần Thị Thanh",
+        CS4: "Thầy Cao Thanh Trung",
+        CS5: "Thầy Đỗ Quang Trung"
+      };
+      const emails: Record<string, string> = {
+        CS1: "longtt@skylineschool.edu.vn",
+        CS2: "khanhpt@skylineschool.edu.vn",
+        CS3: "thanhtt@skylineschool.edu.vn",
+        CS4: "trungct@skylineschool.edu.vn",
+        CS5: "trungdq1@skylineschool.edu.vn"
+      };
+      const campusNames: Record<string, string> = {
+        CS1: "Sky-Line Riverside (CS1)",
+        CS2: "Sky-Line Central (CS2)",
+        CS3: "Sky-Line International (CS3)",
+        CS4: "Sky-Line Beach (CS4)",
+        CS5: "Sky-Line Hill (CS5)"
+      };
+      return {
+        campusId: `cs${idx + 1}`,
+        campusCode: code,
+        campusName: campusNames[code],
+        managerName: names[code],
+        managerEmail: emails[code],
+        giaovuEmail: DEFAULT_GIAOVU_EMAILS[code],
+        tuyensinhEmail: DEFAULT_TUYENSINH_EMAILS[code],
+        giaovuStaff: CAMPUS_GIAOVU_STAFF_DIRECTORY[code],
+        tuvanStaff: CAMPUS_TUVAN_STAFF_DIRECTORY[code],
+        roleTitle: `Giám đốc Cơ sở ${code}`
+      };
+    });
   }
 }
 
 /**
- * Danh bạ Email Giáo vụ phụ trách theo Cơ sở trường học
+ * Tổng hợp danh sách CC chuẩn khi gửi báo cáo Tâm lý cho GĐCS:
+ * Bắt buộc CC đúng nhân sự Tổ Giáo vụ cơ sở + Tổ Tư vấn cơ sở (+ Ban KT&ĐBCL),
+ * loại bỏ hoàn toàn các hòm thư alias giả giaovu.csX@skylineschool.edu.vn / tuyensinh.csX@skylineschool.edu.vn
  */
-export const DEFAULT_GIAOVU_EMAILS: Record<string, string> = {
-  CS1: "giaovu.cs1@skylineschool.edu.vn",
-  CS2: "giaovu.cs2@skylineschool.edu.vn",
-  CS3: "giaovu.cs3@skylineschool.edu.vn",
-  CS4: "giaovu.cs4@skylineschool.edu.vn",
-  CS5: "giaovu.cs5@skylineschool.edu.vn"
-};
+export function buildPsychologyGdcsCcList(params: {
+  campusCodeOrName?: string;
+  giaovuEmail?: string;
+  tuyensinhEmail?: string;
+  extraCc?: Array<string | null | undefined>;
+}): string[] {
+  const { campusCodeOrName, giaovuEmail, tuyensinhEmail, extraCc = [] } = params;
+  const cleanCustomList = (raw?: string) =>
+    String(raw || "")
+      .split(/[,;]/)
+      .map(e => e.trim().toLowerCase())
+      .filter(e => e && e.includes("@") && !e.includes(" ") && !isGenericCampusAliasEmail(e));
 
-/**
- * Danh bạ Email Tư vấn Tuyển sinh phụ trách theo Cơ sở
- */
-export const DEFAULT_TUYENSINH_EMAILS: Record<string, string> = {
-  CS1: "tuyensinh.cs1@skylineschool.edu.vn",
-  CS2: "tuyensinh.cs2@skylineschool.edu.vn",
-  CS3: "tuyensinh.cs3@skylineschool.edu.vn",
-  CS4: "tuyensinh.cs4@skylineschool.edu.vn",
-  CS5: "tuyensinh.cs5@skylineschool.edu.vn"
-};
+  const customGiaovu = cleanCustomList(giaovuEmail);
+  const customTuyensinh = cleanCustomList(tuyensinhEmail);
 
-/**
- * Trích xuất Email Giáo vụ cơ sở tương ứng theo mã hoặc tên cơ sở
- */
-export function getCampusGiaovuEmail(campusCodeOrName?: string): string {
-  const code = String(campusCodeOrName || "").toUpperCase();
-  if (code.includes("CS5") || code.includes("HỘI AN") || code.includes("HILL")) return DEFAULT_GIAOVU_EMAILS.CS5;
-  if (code.includes("CS4") || code.includes("BEACH")) return DEFAULT_GIAOVU_EMAILS.CS4;
-  if (code.includes("CS3") || code.includes("INTER")) return DEFAULT_GIAOVU_EMAILS.CS3;
-  if (code.includes("CS2") || code.includes("CENTRAL")) return DEFAULT_GIAOVU_EMAILS.CS2;
-  return DEFAULT_GIAOVU_EMAILS.CS1;
+  const resolvedGiaovu = customGiaovu.length > 0
+    ? customGiaovu
+    : cleanCustomList(getCampusGiaovuEmail(campusCodeOrName));
+  const resolvedTuyensinh = customTuyensinh.length > 0
+    ? customTuyensinh
+    : cleanCustomList(getCampusTuyensinhEmail(campusCodeOrName));
+
+  const rawList = [
+    ...resolvedGiaovu,
+    ...resolvedTuyensinh,
+    "ktdbcl@skylineschool.edu.vn",
+    ...extraCc
+  ];
+
+  const emails = rawList
+    .flatMap((item) => String(item || "").split(/[,;]/))
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e && e.includes("@") && !e.includes(" ") && !isGenericCampusAliasEmail(e));
+
+  return Array.from(new Set(emails));
 }
 
 /**
- * Trích xuất Email Tư vấn Tuyển sinh tương ứng theo mã hoặc tên cơ sở
+ * Kiểm tra trường hợp TỔNG HỢP học sinh có dấu hiệu Tâm lý cần báo cáo GĐCS:
+ * Thang đo 20 câu (0–80 điểm):
+ * - 0–15 điểm: Bình thường (Không có dấu hiệu tâm lý)
+ * - > 15 điểm (16–80 điểm: Dấu hiệu nhẹ / vừa / nguy cơ cao / rất cao) hoặc được đánh dấu thủ công: Có dấu hiệu Tâm lý
  */
-export function getCampusTuyensinhEmail(campusCodeOrName?: string): string {
-  const code = String(campusCodeOrName || "").toUpperCase();
-  if (code.includes("CS5") || code.includes("HỘI AN") || code.includes("HILL")) return DEFAULT_TUYENSINH_EMAILS.CS5;
-  if (code.includes("CS4") || code.includes("BEACH")) return DEFAULT_TUYENSINH_EMAILS.CS4;
-  if (code.includes("CS3") || code.includes("INTER")) return DEFAULT_TUYENSINH_EMAILS.CS3;
-  if (code.includes("CS2") || code.includes("CENTRAL")) return DEFAULT_TUYENSINH_EMAILS.CS2;
-  return DEFAULT_TUYENSINH_EMAILS.CS1;
+export function hasPsychologicalSignsForGdcs(totalScore: number, manualFlag = false): boolean {
+  if (manualFlag) return true;
+  const numScore = Number(totalScore);
+  return !isNaN(numScore) && numScore > 15;
 }
 
 /**

@@ -12,6 +12,11 @@ import {
   getGdcsCampusList,
   getCampusGiaovuEmail,
   getCampusTuyensinhEmail,
+  getCampusGiaovuAndTuvanStaff,
+  isGenericCampusAliasEmail,
+  normalizeCampusCode,
+  buildPsychologyGdcsCcList,
+  hasPsychologicalSignsForGdcs,
   getStudentAssignedSurveyTeachers
 } from "@/lib/orientation/service";
 import { questionsData, defaultQuestions } from "@/lib/orientation/psychologyQuestions";
@@ -190,14 +195,35 @@ export async function GET(req: Request) {
         surveySystem: true,
         surveyFormType: true,
         admissionCampus: true,
+        registeredCampus: true,
         periodId: true,
-        batchId: true
+        batchId: true,
+        batch: {
+          select: {
+            id: true,
+            name: true,
+            campus: {
+              select: {
+                id: true,
+                campusCode: true,
+                campusName: true
+              }
+            }
+          }
+        }
       }
     });
 
     if (!student) {
       return NextResponse.json({ success: false, error: "Không tìm thấy học sinh", gdcsList }, { status: 404 });
     }
+
+    const effectiveCampus =
+      student.admissionCampus ||
+      student.registeredCampus ||
+      student.batch?.campus?.campusCode ||
+      student.batch?.campus?.campusName ||
+      "CS1";
 
     // 1. Lấy danh sách các Tổ / Bộ phận (ưu tiên đưa Tổ TLHN lên đầu)
     const departments = await getDepartments();
@@ -331,6 +357,10 @@ export async function GET(req: Request) {
     }
 
     const assignedSurveyTeachers = await getStudentAssignedSurveyTeachers(studentId);
+    const campusStaffInfo = await getCampusGiaovuAndTuvanStaff(
+      effectiveCampus,
+      student.batch?.campus?.id || null
+    );
 
     return NextResponse.json({
       success: true,
@@ -349,12 +379,16 @@ export async function GET(req: Request) {
       referralReason: orientationRecord?.psychologyReferralReason || "",
       referralTeacherId: activeAssignedTeacher?.teacherId || orientationRecord?.psychologyTeacherId || "",
       referralTeacherName: activeAssignedTeacher?.teacherName || orientationRecord?.psychologyTeacherName || "",
-      defaultGiaovuEmail: getCampusGiaovuEmail(student.admissionCampus),
+      defaultGiaovuEmail: campusStaffInfo.giaovuEmail,
+      defaultTuyensinhEmail: campusStaffInfo.tuyensinhEmail,
+      giaovuStaff: campusStaffInfo.giaovuStaff,
+      tuvanStaff: campusStaffInfo.tuvanStaff,
+      effectiveCampusCode: campusStaffInfo.campusCode,
       campusTeachers: await (prisma as any).teacher.findMany({
         where: {
           OR: [
-            { campus: { campusCode: { contains: String(student.admissionCampus || "").slice(0, 3) } } },
-            { campus: { campusName: { contains: String(student.admissionCampus || "") } } }
+            { campus: { campusCode: { contains: String(effectiveCampus || "").slice(0, 3) } } },
+            { campus: { campusName: { contains: String(effectiveCampus || "") } } }
           ]
         },
         select: { id: true, teacherName: true, email: true, userId: true, position: true },
@@ -372,6 +406,10 @@ export async function GET(req: Request) {
         tlhnTeachers,
         psychQuestions,
         gdcsList,
+        giaovuStaff: campusStaffInfo.giaovuStaff,
+        tuvanStaff: campusStaffInfo.tuvanStaff,
+        defaultGiaovuEmail: campusStaffInfo.giaovuEmail,
+        defaultTuyensinhEmail: campusStaffInfo.tuyensinhEmail,
         psychologyData: parsedPsychData,
         currentReferral: {
           status: orientationRecord?.psychologyReferralStatus || (parsedPsychData ? "COMPLETED" : "NONE"),
@@ -595,7 +633,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // NHÁNH A: BÁO CÁO KẾT QUẢ ĐÁNH GIÁ TÂM LÝ ĐẾN GĐCS & GỬI EMAIL
+    // NHÁNH A: BÁO CÁO KẾT QUẢ ĐÁNH GIÁ TÂM LÝ ĐẾN GĐCS & GỬI EMAIL (KHI TỔNG HỢP HS CÓ DẤU HIỆU TÂM LÝ)
     if (body.action === "reportToGdcs") {
       const {
         studentId,
@@ -603,7 +641,10 @@ export async function POST(req: Request) {
         gdcsEmail,
         campusCode,
         giaovuEmail: inputGiaovuEmail,
-        needGdcsDirective = false,
+        tuyensinhEmail: inputTuyensinhEmail,
+        tuvanEmail: inputTuvanEmail,
+        hasPsychologySigns = false,
+        needGdcsDirective = true,
         directiveTopic = "",
         proposedAction = "DIRECT_PARENT_MEETING",
         scores = [],
@@ -620,12 +661,36 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: "Thiếu studentId hoặc email GĐCS tiếp nhận." }, { status: 400 });
       }
 
+      const normalizedScores = Array.isArray(scores)
+        ? scores.map((s: any) => {
+            const n = Number(s);
+            return !isNaN(n) && n >= 0 ? n : 0;
+          })
+        : [];
+      const computedTotal =
+        Number(totalScore) >= 0
+          ? Number(totalScore)
+          : normalizedScores.reduce((acc: number, v: number) => acc + v, 0);
+
+      // Ràng buộc nghiệp vụ: Trường hợp TỔNG HỢP, Học sinh có dấu hiệu Tâm lý (> 15 điểm hoặc xác nhận có dấu hiệu tâm lý) mới gửi mail GĐCS
+      if (!hasPsychologicalSignsForGdcs(computedTotal, Boolean(hasPsychologySigns))) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Trường hợp TỔNG HỢP học sinh ở mức Bình thường (≤ 15 điểm, không có dấu hiệu tâm lý) thì chỉ lưu kết quả, không gửi email báo cáo GĐCS."
+          },
+          { status: 400 }
+        );
+      }
+
       // 1. Tìm thông tin học sinh
       const student = await (prisma as any).inputAssessmentStudent.findUnique({
         where: { id: studentId },
         include: {
           period: true,
-          batch: true
+          batch: {
+            include: { campus: true }
+          }
         }
       });
 
@@ -633,10 +698,60 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: "Không tìm thấy thông tin học sinh." }, { status: 404 });
       }
 
-      const reporterName = session.user?.name || session.user?.fullName || "Giáo viên Tâm lý";
-      const nowStr = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+      const reporterName = (session.user as any)?.fullName || session.user?.name || "Giáo viên Tâm lý";
+      const reporterId = (session.user as any)?.id || "";
+      let reporterEmail = String(session.user?.email || "").trim();
+      if (reporterId && (!reporterEmail.includes("@") || /^\d+@/.test(reporterEmail))) {
+        try {
+          const uRec = await (prisma as any).user.findUnique({
+            where: { id: reporterId },
+            include: { teacher: true }
+          });
+          const cand = uRec?.teacher?.email || uRec?.email || "";
+          if (cand && cand.includes("@") && !/^\d+@/.test(cand)) {
+            reporterEmail = cand.trim();
+          } else {
+            reporterEmail = "";
+          }
+        } catch {}
+      }
 
-      const resolvedGiaovuEmail = (inputGiaovuEmail || getCampusGiaovuEmail(campusCode || student.admissionCampus)).trim();
+      const nowStr = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+      const effectiveCampus =
+        campusCode ||
+        student.admissionCampus ||
+        student.registeredCampus ||
+        student.batch?.campus?.campusCode ||
+        student.batch?.campus?.campusName ||
+        "CS1";
+      const normalizedCampusCode = normalizeCampusCode(effectiveCampus);
+
+      // Lấy đúng danh sách nhân sự Tổ Giáo vụ & Tổ Tư vấn cơ sở theo cơ sở (tuyệt đối không dùng giaovu.csX@...)
+      const campusStaffInfo = await getCampusGiaovuAndTuvanStaff(
+        effectiveCampus,
+        student.batch?.campus?.id || null
+      );
+
+      const cleanInputGiaovu = String(inputGiaovuEmail || "")
+        .split(/[,;]/)
+        .map((e) => e.trim())
+        .filter((e) => e && e.includes("@") && !/^\d+@/.test(e) && !isGenericCampusAliasEmail(e))
+        .join(", ");
+      const cleanInputTuvan = String(inputTuyensinhEmail || inputTuvanEmail || "")
+        .split(/[,;]/)
+        .map((e) => e.trim())
+        .filter((e) => e && e.includes("@") && !/^\d+@/.test(e) && !isGenericCampusAliasEmail(e))
+        .join(", ");
+
+      const resolvedGiaovuEmail = cleanInputGiaovu || campusStaffInfo.giaovuEmail;
+      const resolvedTuyensinhEmail = cleanInputTuvan || campusStaffInfo.tuyensinhEmail;
+      const giaovuStaffDisplay = campusStaffInfo.giaovuStaff.length > 0
+        ? campusStaffInfo.giaovuStaff.map((s) => `${s.fullName} (${s.email})`).join(", ")
+        : resolvedGiaovuEmail;
+      const tuvanStaffDisplay = campusStaffInfo.tuvanStaff.length > 0
+        ? campusStaffInfo.tuvanStaff.map((s) => `${s.fullName} (${s.email})`).join(", ")
+        : resolvedTuyensinhEmail;
+
       const existingRecordForPrev = await getStudentOrientationRecord(studentId);
       let prevPsychData: any = {};
       try {
@@ -648,22 +763,43 @@ export async function POST(req: Request) {
       } catch (e) {}
 
       const proposedActionLabels: Record<string, string> = {
-        DIRECT_PARENT_MEETING: "Trao đổi trực tiếp PHHS",
-        SCHEDULE_MEETING: "Hẹn lịch làm việc / Hội chẩn chuyên môn",
-        DELEGATE_TEACHER: "Ủy quyền Giáo viên đồng hành"
+        DIRECT_PARENT_MEETING: "1. Trao đổi trực tiếp PHHS",
+        SCHEDULE_MEETING: "2. Hẹn lịch làm việc / Hội chẩn chuyên môn",
+        DELEGATE_TEACHER: "3. Ủy quyền Giáo viên đồng hành"
       };
 
+      const effectiveNeedDirective = needGdcsDirective !== false;
+      const effectiveTopic =
+        directiveTopic ||
+        messageToGdcs ||
+        conclusion ||
+        evaluation?.suggestion ||
+        "Học sinh có dấu hiệu tâm lý qua kết quả TỔNG HỢP, kính trình GĐCS xác nhận nội dung làm việc liên quan";
+
+      const ccList = buildPsychologyGdcsCcList({
+        campusCodeOrName: effectiveCampus,
+        giaovuEmail: resolvedGiaovuEmail,
+        tuyensinhEmail: resolvedTuyensinhEmail,
+        extraCc: [
+          reporterEmail,
+          ...campusStaffInfo.giaovuStaff.map((s) => s.email),
+          ...campusStaffInfo.tuvanStaff.map((s) => s.email)
+        ]
+      });
+
       const psychDataObj = {
-        scores,
+        scores: normalizedScores.length > 0 ? normalizedScores : scores,
         sectionScores,
-        totalScore,
+        totalScore: computedTotal,
         evaluation,
         conclusion,
         recommendation,
         notes,
+        hasPsychologySigns: true,
         digitalSignature: prevPsychData?.digitalSignature || {
           isSigned: true,
           signedBy: reporterName,
+          signerId: reporterId || undefined,
           signerRole: "Giáo viên Tâm lý học đường",
           signedAt: new Date().toISOString(),
           signedAtFormatted: nowStr,
@@ -674,16 +810,26 @@ export async function POST(req: Request) {
         reportedToGdcs: {
           gdcsName: gdcsName || "Giám đốc Cơ sở",
           gdcsEmail,
-          campusCode: campusCode || student.admissionCampus || "",
+          campusCode: normalizedCampusCode,
           giaovuEmail: resolvedGiaovuEmail,
+          tuyensinhEmail: resolvedTuyensinhEmail,
+          giaovuStaff: campusStaffInfo.giaovuStaff,
+          tuvanStaff: campusStaffInfo.tuvanStaff,
+          ccList,
           reportedAt: new Date().toISOString(),
           reportedAtFormatted: nowStr,
           reporterName,
-          messageToGdcs
+          reporterId,
+          reporterEmail,
+          proposedAction: proposedAction || "DIRECT_PARENT_MEETING",
+          proposedActionLabel: proposedActionLabels[proposedAction] || proposedAction,
+          messageToGdcs: messageToGdcs || effectiveTopic
         },
-        gdcsDirectiveRequest: needGdcsDirective ? {
+        gdcsDirectiveRequest: effectiveNeedDirective ? {
           requested: true,
-          topic: directiveTopic || conclusion || "Học sinh cần theo dõi / hỗ trợ tâm lý chuyên sâu",
+          needGdcsDirective: true,
+          topic: effectiveTopic,
+          directiveTopic: effectiveTopic,
           proposedAction: proposedAction || "DIRECT_PARENT_MEETING",
           proposedActionLabel: proposedActionLabels[proposedAction] || proposedAction,
           requestedAt: new Date().toISOString(),
@@ -695,57 +841,100 @@ export async function POST(req: Request) {
       };
 
       // 2. Cập nhật vào StudentOrientationRecord
-      const nextStatus = needGdcsDirective ? "REQUESTED_DIRECTIVE" : "COMPLETED";
+      const nextStatus = effectiveNeedDirective ? "REQUESTED_DIRECTIVE" : "COMPLETED";
       await upsertStudentOrientationRecord({
         studentId,
         psychologyReferralStatus: nextStatus,
+        psychologyTeacherId: reporterId || undefined,
         psychologyTeacherName: reporterName,
-        psychologyReferralReason: conclusion || evaluation?.suggestion || "Đã hoàn thành đánh giá tâm lý chuyên sâu",
+        psychologyReferralReason: conclusion || evaluation?.suggestion || "Học sinh có dấu hiệu tâm lý — Chờ GĐCS xác nhận nội dung làm việc",
         psychologyData: JSON.stringify(psychDataObj)
       });
 
-      // 3. Cập nhật trực tiếp điểm psychologyScore vào InputAssessmentStudent
+      // 3. Cập nhật trực tiếp điểm psychologyScore vào InputAssessmentStudent & InputAssessmentScore (môn TLY)
       try {
         await (prisma as any).inputAssessmentStudent.update({
           where: { id: studentId },
-          data: { psychologyScore: totalScore }
+          data: { psychologyScore: computedTotal }
         });
+
+        const tlySubject = await (prisma as any).inputAssessmentSubject.findFirst({
+          where: {
+            OR: [
+              { code: "TLY" },
+              { name: { contains: "Tâm lý" } },
+              { name: { contains: "tâm lý" } }
+            ]
+          }
+        });
+
+        if (tlySubject && Array.isArray(sectionScores) && sectionScores.length > 0) {
+          const finalScoresArr = [...sectionScores, computedTotal, ...(normalizedScores.length > 0 ? normalizedScores : scores)];
+          const finalCommentsArr = [conclusion, recommendation, ...(Array.isArray(notes) ? notes : [])];
+          const existingScore = await (prisma as any).inputAssessmentScore.findFirst({
+            where: { studentId, subjectId: tlySubject.id }
+          });
+
+          if (existingScore) {
+            await (prisma as any).inputAssessmentScore.update({
+              where: { id: existingScore.id },
+              data: {
+                scores: JSON.stringify(finalScoresArr),
+                comments: JSON.stringify(finalCommentsArr),
+                status: "COMPLETED"
+              }
+            });
+          } else {
+            await (prisma as any).inputAssessmentScore.create({
+              data: {
+                studentId,
+                subjectId: tlySubject.id,
+                scores: JSON.stringify(finalScoresArr),
+                comments: JSON.stringify(finalCommentsArr),
+                status: "COMPLETED"
+              }
+            });
+          }
+        }
       } catch (errUpd) {}
 
       // Lấy bản ghi định hướng chi tiết để đưa vào Form Định Hướng Học Sinh trong email
       const orientationRecord = await getStudentOrientationRecord(studentId);
 
-      // Cấu hình Base URL và đường dẫn trực tiếp mở Phiếu định hướng cho GĐCS
+      // Cấu hình Base URL và đường dẫn trực tiếp mở Phiếu định hướng / Xác nhận chỉ đạo cho GĐCS
       const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
       const protocol = req.headers.get("x-forwarded-proto") || "https";
       const baseUrl = `${protocol}://${host}`;
-      const directOrientationLink = `${baseUrl}/admin/xet-duyet-ket-qua?tab=k12&studentId=${studentId}`;
+      const periodQuery = student.periodId ? `&periodId=${encodeURIComponent(student.periodId)}` : "";
+      const directOrientationLink = `${baseUrl}/admin/xet-duyet-ket-qua?tab=k12&studentId=${studentId}${periodQuery}`;
+      const directPsychFormLink = `${baseUrl}/teacher/input-assessments?type=general&periodId=${student.periodId || ""}&batchId=${student.batchId || ""}&studentCode=${encodeURIComponent(student.studentCode || "")}&autoOpen=true`;
 
       const dobFormatted = student.dateOfBirth
         ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN")
         : "—";
 
-      // 6 phần thang đo sàng lọc điểm số chuẩn xác
-      const psychologicalSections = [
-        { no: 1, title: "Cảm xúc & điều hòa", en: "Emotion & Self-regulation", max: 16 },
-        { no: 2, title: "Hành vi", en: "Behavior & Self-control", max: 12 },
-        { no: 3, title: "Giao tiếp xã hội", en: "Social Communication", max: 12 },
-        { no: 4, title: "Chú ý & kỹ năng học tập", en: "Attention & Learning Skills", max: 12 },
-        { no: 5, title: "Vận động & giác quan", en: "Motor & Sensory", max: 12 },
-        { no: 6, title: "Thích ứng & tự lập", en: "Adaptation & Autonomy", max: 16 }
-      ];
+      // 6 phần thang đo sàng lọc điểm số theo đúng khối của học sinh
+      const rawGradeStr = String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
+      const gradeKey = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].includes(rawGradeStr) ? rawGradeStr : "default";
+      const gradeSectionsConfig = questionsData[gradeKey] || defaultQuestions;
+      const psychologicalSections = gradeSectionsConfig.map((sec: any, idx: number) => ({
+        no: idx + 1,
+        title: String(sec.title || `Mục ${idx + 1}`).replace(/^[IVX]+\.\s*/, "").replace(/\s*\(\d+\s*mục\)\s*$/i, ""),
+        max: (Array.isArray(sec.questions) ? sec.questions.length : 3) * 4
+      }));
 
       const levelTitle = evaluation?.level || (
-        totalScore > 47 ? "Cần can thiệp chuyên sâu" :
-        totalScore > 31 ? "Cần hỗ trợ học đường" :
-        totalScore > 15 ? "Dấu hiệu nhẹ cần lưu ý" : "Bình thường / Theo dõi thích nghi"
+        computedTotal > 63 ? "Nguy cơ rất cao" :
+        computedTotal > 47 ? "Nguy cơ cao" :
+        computedTotal > 31 ? "Dấu hiệu vừa" :
+        computedTotal > 15 ? "Dấu hiệu nhẹ" : "Có dấu hiệu cần lưu ý"
       );
 
-      const levelBadgeColor = totalScore > 47 ? "#b91c1c" : totalScore > 31 ? "#c2410c" : totalScore > 15 ? "#b45309" : "#047857";
-      const levelBadgeBg = totalScore > 47 ? "#fef2f2" : totalScore > 31 ? "#fff7ed" : totalScore > 15 ? "#fffbeb" : "#ecfdf5";
-      const levelBadgeBorder = totalScore > 47 ? "#fecaca" : totalScore > 31 ? "#ffedd5" : totalScore > 15 ? "#fde68a" : "#a7f3d0";
+      const levelBadgeColor = computedTotal > 47 ? "#b91c1c" : computedTotal > 31 ? "#c2410c" : computedTotal > 15 ? "#b45309" : "#047857";
+      const levelBadgeBg = computedTotal > 47 ? "#fef2f2" : computedTotal > 31 ? "#fff7ed" : computedTotal > 15 ? "#fffbeb" : "#ecfdf5";
+      const levelBadgeBorder = computedTotal > 47 ? "#fecaca" : computedTotal > 31 ? "#ffedd5" : computedTotal > 15 ? "#fde68a" : "#a7f3d0";
 
-      // 4. Gửi Email thông báo chuyên nghiệp đến GĐCS
+      // 4. Gửi Email thông báo chuyên nghiệp đến GĐCS (CC Giáo vụ cơ sở, Tư vấn cơ sở, Ban KT&ĐBCL)
       let emailSuccess = false;
       let emailError = "";
       try {
@@ -755,7 +944,7 @@ export async function POST(req: Request) {
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>[Sky-line SMS] Báo cáo kết quả đánh giá tâm lý & Đề xuất định hướng - HS ${student.fullName}</title>
+            <title>[Sky-line SMS] Báo cáo tổng hợp học sinh có dấu hiệu tâm lý & Xác nhận nội dung làm việc - HS ${student.fullName}</title>
           </head>
           <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1e293b;">
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f8fafc" style="background-color: #f8fafc; padding: 24px 0;">
@@ -775,13 +964,13 @@ export async function POST(req: Request) {
                           <tr>
                             <td>
                               <div style="font-size: 11px; font-weight: 700; color: #a7f3d0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-                                HỆ THỐNG GIÁO DỤC SKY-LINE &bull; BAN KHẢO THÍ &amp; ĐBCL
+                                HỆ THỐNG GIÁO DỤC SKY-LINE &bull; TỔ TÂM LÝ HỌC ĐƯỜNG &amp; BAN KT&amp;ĐBCL
                               </div>
-                              <h1 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 800; color: #ffffff; text-transform: uppercase; line-height: 1.35; letter-spacing: 0.3px;">
-                                Báo Cáo Khảo Sát Tâm Lý &amp; Đề Xuất Chỉ Đạo Tiếp Nhận
+                              <h1 style="margin: 0 0 6px 0; font-size: 18px; font-weight: 800; color: #ffffff; line-height: 1.35; letter-spacing: 0.2px;">
+                                Báo cáo Tổng hợp Học sinh có dấu hiệu Tâm lý &amp; Xác nhận nội dung làm việc
                               </h1>
                               <div style="font-size: 12.5px; color: #e2e8f0; font-weight: 500;">
-                                Kính gửi Giám đốc Cơ sở: <strong style="color: #ffffff;">${gdcsName || 'Thầy/Cô GĐCS'}</strong> &bull; Cơ sở ${campusCode || student.admissionCampus || 'Sky-Line'}
+                                Kính gửi Giám đốc Cơ sở: <strong style="color: #ffffff;">${gdcsName || 'Thầy/Cô GĐCS'}</strong> &bull; Cơ sở ${normalizedCampusCode} (${student.admissionCampus || student.registeredCampus || normalizedCampusCode})
                               </div>
                             </td>
                           </tr>
@@ -792,15 +981,16 @@ export async function POST(req: Request) {
                     <!-- THÔNG TIN ĐIỀU PHỐI (ROUTING STRIP) -->
                     <tr>
                       <td style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 24px;">
-                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 11.5px; color: #475569; line-height: 1.5;">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 11.5px; color: #475569; line-height: 1.55;">
                           <tr>
-                            <td style="width: 50%; vertical-align: top; padding-right: 10px;">
+                            <td style="width: 46%; vertical-align: top; padding-right: 10px;">
                               <span style="color: #64748b; font-weight: 600;">Người lập báo cáo:</span> <strong style="color: #0f172a;">${reporterName}</strong> (GV Tâm lý)<br/>
                               <span style="color: #64748b; font-weight: 600;">Thời gian gửi:</span> <span style="color: #0f172a; font-variant-numeric: tabular-nums;">${nowStr}</span>
                             </td>
-                            <td style="width: 50%; vertical-align: top; padding-left: 10px; border-left: 1px solid #e2e8f0;">
-                              <span style="color: #64748b; font-weight: 600;">GĐCS tiếp nhận:</span> <strong style="color: #003B3A;">${gdcsName}</strong> (${gdcsEmail})<br/>
-                              <span style="color: #64748b; font-weight: 600;">Đồng gửi (CC):</span> Ban KT&amp;ĐBCL &bull; Giáo vụ Cơ sở (${resolvedGiaovuEmail})
+                            <td style="width: 54%; vertical-align: top; padding-left: 10px; border-left: 1px solid #e2e8f0;">
+                              <span style="color: #64748b; font-weight: 600;">Gửi đến (To):</span> <strong style="color: #003B3A;">GĐCS ${gdcsName}</strong> (${gdcsEmail})<br/>
+                              <span style="color: #64748b; font-weight: 600;">Tổ Giáo vụ CS (${normalizedCampusCode}):</span> <strong>${giaovuStaffDisplay}</strong><br/>
+                              <span style="color: #64748b; font-weight: 600;">Tổ Tư vấn CS (${normalizedCampusCode}):</span> <strong>${tuvanStaffDisplay}</strong>
                             </td>
                           </tr>
                         </table>
@@ -814,15 +1004,16 @@ export async function POST(req: Request) {
                         <!-- LỜI DẪN NHẬP -->
                         <p style="margin: 0 0 18px 0; font-size: 13px; line-height: 1.6; color: #334155;">
                           Kính gửi <strong>Thầy/Cô ${gdcsName || 'Giám Đốc Cơ Sở'}</strong>,<br/>
-                          Bộ phận Chuyên viên Tâm lý học đường (<strong>${reporterName}</strong>) vừa hoàn thành bài khảo sát đánh giá tâm lý chuyên sâu và trân trọng chuyển gửi báo cáo kết quả kèm Phiếu Định Hướng Học Sinh đến Giám Đốc Cơ Sở để xem xét và ban hành chỉ đạo phương án tiếp nhận.
+                          Đồng kính gửi <strong>Bộ phận Giáo vụ Cơ sở</strong> và <strong>Bộ phận Tư vấn Cơ sở (${normalizedCampusCode})</strong>,<br/>
+                          Qua kết quả <strong>TỔNG HỢP</strong> sàng lọc tâm lý đầu vào, học sinh <strong>${student.fullName}</strong> ghi nhận có <strong>dấu hiệu tâm lý cần lưu ý (${levelTitle} — ${computedTotal}/80 điểm)</strong>. Giáo viên Tâm lý (<strong>${reporterName}</strong>) trân trọng báo cáo chi tiết và kính trình Giám Đốc Cơ Sở xem xét, <strong>xác nhận nội dung làm việc liên quan</strong> để các bộ phận phối hợp triển khai.
                         </p>
 
                         <!-- ========================================================= -->
                         <!-- MỤC 1: HỒ SƠ HỌC SINH ĐẦU VÀO -->
                         <!-- ========================================================= -->
                         <div style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                          <div style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px;">
-                            📋 Hồ sơ học sinh khảo sát đầu vào
+                          <div style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; font-size: 12px; font-weight: 800; color: #003B3A; letter-spacing: 0.3px;">
+                            1. Hồ sơ học sinh khảo sát đầu vào
                           </div>
                           
                           <div style="padding: 14px 16px; background-color: #ffffff;">
@@ -843,7 +1034,7 @@ export async function POST(req: Request) {
                                 <td style="padding: 5px 0; color: #64748b;">Hệ khảo sát:</td>
                                 <td style="padding: 5px 0; font-weight: 600; color: #1e293b;">${student.surveyFormType || student.surveySystem || 'Chất lượng cao'}</td>
                                 <td style="padding: 5px 0; color: #64748b;">Cơ sở tiếp nhận:</td>
-                                <td style="padding: 5px 0; font-weight: 700; color: #00A19A;">${student.admissionCampus || campusCode || 'Sky-Line'}</td>
+                                <td style="padding: 5px 0; font-weight: 700; color: #00A19A;">${student.admissionCampus || student.registeredCampus || normalizedCampusCode}</td>
                               </tr>
                               <tr>
                                 <td style="padding: 5px 0; color: #64748b;">Trường trước đây:</td>
@@ -855,22 +1046,22 @@ export async function POST(req: Request) {
                             <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; font-size: 12px; line-height: 1.55; color: #334155;">
                               <div style="margin-bottom: 4px;">
                                 <strong style="color: #059669;">&bull; Điểm mạnh &amp; Tiềm năng học sinh:</strong>
-                                <span>${orientationRecord?.studentStrengths?.trim() || 'Học sinh có phản xạ tương tác tốt, tự tin.'}</span>
+                                <span>${orientationRecord?.studentStrengths?.trim() || 'Đang cập nhật từ phiếu định hướng.'}</span>
                               </div>
                               <div>
                                 <strong style="color: #d97706;">&bull; Nhu cầu cần hỗ trợ bước đầu:</strong>
-                                <span>${orientationRecord?.studentNeedsSupport?.trim() || 'Cần chú ý thích ứng môi trường nề nếp và giao tiếp trong giai đoạn đầu.'}</span>
+                                <span>${orientationRecord?.studentNeedsSupport?.trim() || conclusion || 'Cần chú ý đồng hành tâm lý và thích ứng môi trường học tập.'}</span>
                               </div>
                             </div>
                           </div>
                         </div>
 
                         <!-- ========================================================= -->
-                        <!-- MỤC 2: KẾT QUẢ KHẢO SÁT TÂM LÝ CHUYÊN SÂU -->
+                        <!-- MỤC 2: TỔNG HỢP KẾT QUẢ KHẢO SÁT TÂM LÝ CHUYÊN SÂU -->
                         <!-- ========================================================= -->
                         <div style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                          <div style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px;">
-                            🧠 Kết quả khảo sát tâm lý chuyên sâu
+                          <div style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; font-size: 12px; font-weight: 800; color: #003B3A; letter-spacing: 0.3px;">
+                            2. Tổng hợp kết quả sàng lọc tâm lý (Học sinh có dấu hiệu tâm lý)
                           </div>
                           
                           <div style="padding: 16px; background-color: #ffffff;">
@@ -879,21 +1070,21 @@ export async function POST(req: Request) {
                             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 14px;">
                               <tr>
                                 <td style="width: 50%; padding: 12px 16px; border-right: 1px solid #e2e8f0; vertical-align: middle;">
-                                  <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block; margin-bottom: 2px;">
+                                  <span style="font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 2px;">
                                     Tổng điểm sàng lọc tâm lý:
                                   </span>
                                   <div style="font-size: 24px; font-weight: 800; color: #003B3A; font-variant-numeric: tabular-nums;">
-                                    ${totalScore} <span style="font-size: 13px; font-weight: 600; color: #64748b;">/ 80 điểm</span>
+                                    ${computedTotal} <span style="font-size: 13px; font-weight: 600; color: #64748b;">/ 80 điểm</span>
                                   </div>
                                   <div style="font-size: 11px; color: #00A19A; font-weight: 600; margin-top: 2px;">
-                                    Thang đo 20 tiêu chí chuyên sâu
+                                    Thang đo 20 tiêu chí chuyên sâu (Khối ${student.grade || '1'})
                                   </div>
                                 </td>
                                 <td style="width: 50%; padding: 12px 16px; vertical-align: middle;">
-                                  <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">
-                                    Phân loại mức độ nhận diện:
+                                  <span style="font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">
+                                    Mức độ dấu hiệu tâm lý:
                                   </span>
-                                  <span style="display: inline-block; padding: 4px 10px; background-color: ${levelBadgeBg}; color: ${levelBadgeColor}; border: 1px solid ${levelBadgeBorder}; border-radius: 4px; font-size: 11.5px; font-weight: 800; text-transform: uppercase;">
+                                  <span style="display: inline-block; padding: 4px 10px; background-color: ${levelBadgeBg}; color: ${levelBadgeColor}; border: 1px solid ${levelBadgeBorder}; border-radius: 4px; font-size: 11.5px; font-weight: 800;">
                                     ${levelTitle}
                                   </span>
                                   <div style="font-size: 11px; color: #475569; margin-top: 4px; line-height: 1.4;">
@@ -905,37 +1096,36 @@ export async function POST(req: Request) {
 
                             <!-- THANG ĐO SÀNG LỌC ĐIỂM SỐ 6 PHẦN CHI TIẾT -->
                             <div style="margin-bottom: 14px;">
-                              <div style="font-size: 11.5px; font-weight: 700; color: #334155; text-transform: uppercase; margin-bottom: 6px;">
-                                Thang đo sàng lọc điểm số 6 phần chi tiết:
+                              <div style="font-size: 11.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                                Điểm tổng hợp 6 phần thành phần:
                               </div>
                               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 11.5px; border: 1px solid #e2e8f0; border-collapse: collapse;">
                                 <thead>
-                                  <tr style="background-color: #f8fafc; color: #334155; font-weight: 700; border-bottom: 1px solid #cbd5e1; text-align: left;">
-                                    <th style="padding: 7px 10px; width: 40px; text-align: center;">STT</th>
-                                    <th style="padding: 7px 10px;">Nội dung Thang đo thành phần</th>
-                                    <th style="padding: 7px 10px; width: 90px; text-align: center;">Điểm số</th>
-                                    <th style="padding: 7px 10px; width: 110px; text-align: center;">Đánh giá sơ bộ</th>
+                                  <tr style="background-color: #003B3A; color: #ffffff; font-weight: 600; border-bottom: 1px solid #003B3A; text-align: left;">
+                                    <th style="padding: 7px 10px; width: 45px; text-align: center; color: #ffffff;">Mục</th>
+                                    <th style="padding: 7px 10px; color: #ccfbf1;">Nội dung thang đo thành phần</th>
+                                    <th style="padding: 7px 10px; width: 95px; text-align: center; color: #ffffff;">Điểm số</th>
+                                    <th style="padding: 7px 10px; width: 115px; text-align: center; color: #5eead4;">Mức biểu hiện</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  ${psychologicalSections.map((sec, idx) => {
+                                  ${psychologicalSections.map((sec: any, idx: number) => {
                                     const sScore = (Array.isArray(sectionScores) && sectionScores[idx] !== undefined)
-                                      ? Number(sectionScores[idx])
+                                      ? Math.max(0, Number(sectionScores[idx]) || 0)
                                       : 0;
                                     const sRate = sec.max > 0 ? (sScore / sec.max) : 0;
                                     const isHigh = sRate > 0.5;
                                     const isMed = sRate > 0.25;
-                                    const statusText = isHigh ? "Dấu hiệu rõ" : isMed ? "Cần lưu ý" : "Bình thường";
+                                    const statusText = isHigh ? "Biểu hiện rõ" : isMed ? "Cần lưu ý" : "Bình thường";
                                     const statusColor = isHigh ? "#e11d48" : isMed ? "#d97706" : "#059669";
                                     return `
-                                      <tr style="border-bottom: 1px solid #f1f5f9; background-color: ${idx % 2 === 0 ? '#ffffff' : '#fafafa'};">
-                                        <td style="padding: 6px 10px; text-align: center; font-weight: 600; color: #64748b;">${sec.no}</td>
+                                      <tr style="border-bottom: 1px solid #e2e8f0; background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+                                        <td style="padding: 6px 10px; text-align: center; font-weight: 700; color: #003B3A;">Mục ${sec.no}</td>
                                         <td style="padding: 6px 10px;">
                                           <strong style="color: #0f172a; font-size: 12px;">${sec.title}</strong>
-                                          <span style="font-size: 10px; color: #94a3b8; margin-left: 4px;">(${sec.en})</span>
                                         </td>
                                         <td style="padding: 6px 10px; text-align: center; font-weight: 800; font-size: 12.5px; color: #003B3A; font-variant-numeric: tabular-nums;">
-                                          ${sScore} <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">/ ${sec.max}đ</span>
+                                          ${sScore} <span style="font-size: 10px; font-weight: normal; color: #64748b;">/ ${sec.max}đ</span>
                                         </td>
                                         <td style="padding: 6px 10px; text-align: center;">
                                           <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 10.5px; color: ${statusColor}; background-color: ${isHigh ? '#fff1f2' : isMed ? '#fffbeb' : '#f0fdf4'}; border: 1px solid ${isHigh ? '#fecdd3' : isMed ? '#fde68a' : '#bbf7d0'};">
@@ -952,20 +1142,20 @@ export async function POST(req: Request) {
                             <!-- KẾT LUẬN & KHUYẾN NGHỊ CHUYÊN MÔN -->
                             <div style="margin-top: 12px;">
                               <div style="background-color: #f0fdfa; border: 1px solid #ccfbf1; border-left: 3px solid #00A19A; border-radius: 4px; padding: 10px 12px; margin-bottom: 8px;">
-                                <strong style="color: #003B3A; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 3px;">
-                                  📌 Kết luận chuyên môn của GV Tâm lý:
+                                <strong style="color: #003B3A; font-size: 11px; display: block; margin-bottom: 3px;">
+                                  Kết luận sơ bộ của Giáo viên Tâm lý:
                                 </strong>
                                 <div style="font-size: 12px; color: #134e4a; line-height: 1.5; font-style: italic;">
-                                  &quot;${conclusion || 'Học sinh có phản xạ tương tác tốt, chưa ghi nhận dấu hiệu bất thường cần can thiệp.'}&quot;
+                                  &quot;${conclusion || evaluation?.suggestion || 'Học sinh có biểu hiện tâm lý cần được theo dõi và đồng hành hỗ trợ thích nghi.'}&quot;
                                 </div>
                               </div>
 
                               <div style="background-color: #ecfdf5; border: 1px solid #d1fae5; border-left: 3px solid #059669; border-radius: 4px; padding: 10px 12px;">
-                                <strong style="color: #065f46; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 3px;">
-                                  💡 Khuyến nghị hành động của GV Tâm lý:
+                                <strong style="color: #065f46; font-size: 11px; display: block; margin-bottom: 3px;">
+                                  Khuyến nghị dành cho Phụ huynh &amp; Nhà trường:
                                 </strong>
                                 <div style="font-size: 12px; color: #064e3b; line-height: 1.5;">
-                                  ${recommendation || 'Tiếp tục tạo môi trường khuyến khích học sinh giao tiếp tự tin, đồng hành cùng nhà trường trong giai đoạn đầu nhập học.'}
+                                  ${recommendation || 'Phối hợp chặt chẽ giữa Gia đình, GVCN và Bộ phận Tâm lý học đường trong giai đoạn đầu nhập học.'}
                                 </div>
                               </div>
                             </div>
@@ -973,42 +1163,39 @@ export async function POST(req: Request) {
                           </div>
                         </div>
 
-                        ${needGdcsDirective ? `
-                          <!-- ========================================================= -->
-                          <!-- MỤC 3: XIN Ý KIẾN CHỈ ĐẠO CỦA GIÁM ĐỐC CƠ SỞ -->
-                          <!-- ========================================================= -->
-                          <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #d97706; border-radius: 6px; padding: 12px 14px; margin-bottom: 20px; font-size: 12px;">
-                            <div style="font-weight: 800; color: #92400e; font-size: 12px; margin-bottom: 6px; text-transform: uppercase;">
-                              🚨 Xin ý kiến chỉ đạo của Giám đốc Cơ sở (Học sinh cần hỗ trợ tâm lý)
-                            </div>
-                            <div style="color: #78350f; line-height: 1.55;">
-                              <div style="margin-bottom: 4px;">&bull; <strong>Vấn đề tâm lý &amp; Lý do xin ý kiến:</strong> ${directiveTopic || conclusion || 'Học sinh có biểu hiện tâm lý cần theo dõi & can thiệp thích ứng'}</div>
-                              <div>&bull; <strong>Đề xuất hình thức mong muốn từ GV:</strong> <span style="background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: 800; border: 1px solid #fde68a;">${proposedActionLabels[proposedAction] || '1. Trao đổi trực tiếp PHHS'}</span></div>
-                            </div>
+                        <!-- ========================================================= -->
+                        <!-- MỤC 3: ĐỀ XUẤT NỘI DUNG LÀM VIỆC LIÊN QUAN TRÌNH GĐCS XÁC NHẬN -->
+                        <!-- ========================================================= -->
+                        <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #d97706; border-radius: 6px; padding: 12px 14px; margin-bottom: 20px; font-size: 12px;">
+                          <div style="font-weight: 800; color: #92400e; font-size: 12px; margin-bottom: 6px;">
+                            3. Đề xuất nội dung làm việc liên quan kính trình Giám đốc Cơ sở xác nhận
                           </div>
-                        ` : ''}
+                          <div style="color: #78350f; line-height: 1.55;">
+                            <div style="margin-bottom: 4px;">&bull; <strong>Phương án đề xuất từ GV Tâm lý:</strong> <span style="background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: 800; border: 1px solid #fde68a;">${proposedActionLabels[proposedAction] || 'Trao đổi trực tiếp PHHS'}</span></div>
+                            <div>&bull; <strong>Nội dung báo cáo &amp; đề xuất làm việc:</strong> ${messageToGdcs || effectiveTopic}</div>
+                          </div>
+                        </div>
 
                         <!-- ========================================================= -->
-                        <!-- MỤC 4: 3 PHƯƠNG ÁN CHỈ ĐẠO DÀNH CHO GIÁM ĐỐC CƠ SỞ -->
+                        <!-- MỤC 4: 3 PHƯƠNG ÁN XÁC NHẬN NỘI DUNG LÀM VIỆC DÀNH CHO GĐCS -->
                         <!-- ========================================================= -->
                         <div style="margin-bottom: 22px; border: 1px solid #e2e8f0; border-top: 3px solid #003B3A; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
-                          <div style="padding: 12px 16px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px;">
-                            🏛️ Phương án xử lý &amp; Chỉ đạo dành cho Giám đốc Cơ sở
+                          <div style="padding: 12px 16px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: 800; color: #003B3A; letter-spacing: 0.3px;">
+                            4. Xác nhận nội dung làm việc liên quan (Dành cho Giám đốc Cơ sở)
                           </div>
 
                           <div style="padding: 14px 16px; font-size: 12px;">
                             <p style="margin: 0 0 10px 0; color: #334155; line-height: 1.5;">
-                              Kính đề nghị Giám Đốc Cơ Sở xem xét kết quả và lựa chọn <strong>1 trong 3 phương án chỉ đạo</strong> trên hệ thống SSM:
+                              Kính đề nghị Giám Đốc Cơ Sở xem xét báo cáo và <strong>xác nhận nội dung làm việc liên quan</strong> (lựa chọn 1 trong 3 phương án dưới đây trên hệ thống SSM để Giáo vụ cơ sở, Tư vấn cơ sở và GV Tâm lý triển khai):
                             </p>
 
-                            <!-- 3 PHƯƠNG ÁN CHỈ ĐẠO THEO ĐÚNG THỨ TỰ -->
                             <div style="margin-bottom: 8px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
                               <div style="font-weight: 800; color: #003B3A; font-size: 12px; margin-bottom: 3px;">
                                 1. Trao đổi trực tiếp Phụ huynh học sinh (PHHS):
                               </div>
                               <div style="color: #475569; font-size: 11.5px; line-height: 1.45;">
-                                &bull; Thiết lập thời gian, địa điểm hẹn gặp trực tiếp Phụ huynh học sinh.<br/>
-                                &bull; Thỏa thuận nội dung cam kết phối hợp giáo dục giữa Gia đình &amp; Nhà trường.
+                                &bull; Xác nhận thời gian, địa điểm hẹn gặp trực tiếp Phụ huynh học sinh.<br/>
+                                &bull; Thống nhất nội dung làm việc và cam kết phối hợp đồng hành giữa Gia đình &amp; Nhà trường.
                               </div>
                             </div>
 
@@ -1017,41 +1204,35 @@ export async function POST(req: Request) {
                                 2. Hẹn lịch làm việc / Hội chẩn chuyên môn:
                               </div>
                               <div style="color: #475569; font-size: 11.5px; line-height: 1.45;">
-                                &bull; Xác định thời gian, địa điểm tổ chức buổi hội chẩn chuyên môn.<br/>
-                                &bull; Thành phần tham dự: Ban Giám đốc Cơ sở, Chuyên viên Tâm lý, GVCN và Tổ chuyên môn.
+                                &bull; Xác nhận thời gian, địa điểm tổ chức buổi làm việc / hội chẩn chuyên môn.<br/>
+                                &bull; Thành phần tham dự: GĐCS, Giáo vụ cơ sở, Tư vấn cơ sở, Chuyên viên Tâm lý và GVCN/TCM.
                               </div>
                             </div>
 
                             <div style="margin-bottom: 14px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
                               <div style="font-weight: 800; color: #003B3A; font-size: 12px; margin-bottom: 3px;">
-                                3. Ủy quyền Giáo viên:
+                                3. Ủy quyền Giáo viên đồng hành:
                               </div>
                               <div style="color: #475569; font-size: 11.5px; line-height: 1.45;">
-                                &bull; Chỉ định giáo viên đồng hành &amp; hỗ trợ chuyên biệt học sinh trong thời gian đầu năm học.<br/>
-                                &bull; Phân công nhiệm vụ cụ thể, mục tiêu theo dõi và báo cáo định kỳ.
+                                &bull; Chỉ định giáo viên đồng hành hỗ trợ học sinh và làm việc với PHHS.<br/>
+                                &bull; Giao nhiệm vụ cụ thể, thời hạn theo dõi và báo cáo kết quả làm việc.
                               </div>
                             </div>
 
-                            <!-- NÚT BẤM CTA BULLETPROOF OUTLOOK COMPATIBLE (TABLE + SOLID BG) -->
-                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 20px auto 10px auto;">
+                            <!-- NÚT BẤM CTA BULLETPROOF OUTLOOK COMPATIBLE -->
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 18px auto 8px auto;">
                               <tr>
                                 <td align="center" bgcolor="#003B3A" style="background-color: #003B3A; border-radius: 6px; padding: 0;">
-                                  <!--[if mso]>
-                                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${directOrientationLink}" style="height:46px;v-text-anchor:middle;width:420px;" arcsize="14%" stroke="f" fillcolor="#003B3A">
-                                  <w:anchorlock/>
-                                  <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;">MỞ PHIẾU ĐỊNH HƯỚNG &amp; PHÊ DUYỆT CHỈ ĐẠO TRÊN SSM &rarr;</center>
-                                  </v:roundrect>
-                                  <![endif]-->
-                                  <a href="${directOrientationLink}" target="_blank" style="mso-hide:all; display: inline-block; padding: 14px 28px; background-color: #003B3A; border: 1px solid #003B3A; border-radius: 6px; color: #ffffff !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
-                                    <span style="color: #ffffff !important; font-weight: 800;">MỞ PHIẾU ĐỊNH HƯỚNG &amp; PHÊ DUYỆT CHỈ ĐẠO TRÊN SSM &rarr;</span>
+                                  <a href="${directOrientationLink}" target="_blank" style="display: inline-block; padding: 13px 24px; background-color: #003B3A; border: 1px solid #003B3A; border-radius: 6px; color: #ffffff !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12.5px; font-weight: 800; text-decoration: none; text-align: center;">
+                                    <span style="color: #ffffff !important; font-weight: 800;">XÁC NHẬN NỘI DUNG LÀM VIỆC TRÊN TRANG XÉT DUYỆT &rarr;</span>
                                   </a>
                                 </td>
                               </tr>
                             </table>
 
-                            <div style="text-align: center; margin-top: 6px;">
-                              <a href="${directOrientationLink}" target="_blank" style="font-size: 11px; color: #00A19A; text-decoration: underline; word-break: break-all;">
-                                ${directOrientationLink}
+                            <div style="text-align: center; margin-top: 8px;">
+                              <a href="${directPsychFormLink}" target="_blank" style="font-size: 11.5px; color: #00736E; font-weight: 700; text-decoration: underline;">
+                                Hoặc mở trực tiếp Phiếu Đánh Giá Tâm Lý Chi Tiết của học sinh &rarr;
                               </a>
                             </div>
 
@@ -1059,7 +1240,7 @@ export async function POST(req: Request) {
                         </div>
 
                         <p style="margin: 0; font-size: 11.5px; color: #64748b; line-height: 1.5;">
-                          Sau khi Giám Đốc Cơ Sở hoàn tất phê duyệt chỉ đạo trên hệ thống, thông tin sẽ được cập nhật đồng bộ cho Bộ phận Tư vấn Tuyển sinh và Giáo viên chuyên trách để kịp thời thực hiện theo đúng kế hoạch.
+                          Ngay sau khi Giám Đốc Cơ Sở xác nhận nội dung làm việc liên quan, hệ thống sẽ tự động cập nhật và gửi thông báo phản hồi đến Giáo vụ Cơ sở (${resolvedGiaovuEmail}), Tư vấn Cơ sở (${resolvedTuyensinhEmail}) và Giáo viên Tâm lý phụ trách.
                         </p>
                       </td>
                     </tr>
@@ -1080,33 +1261,85 @@ export async function POST(req: Request) {
           </html>
         `;
 
-        const ccList = Array.from(new Set(["ktdbcl@skylineschool.edu.vn", resolvedGiaovuEmail].filter(Boolean)));
-        const emailSubject = needGdcsDirective
-          ? `[XIN Ý KIẾN CHỈ ĐẠO] Báo cáo khảo sát tâm lý & Đề xuất tiếp nhận - HS ${student.fullName} (Khối ${student.grade || '1'})`
-          : `Báo cáo kết quả khảo sát tâm lý đầu vào - HS ${student.fullName} (Khối ${student.grade || '1'})`;
+        const emailSubject = `[Báo cáo Tâm lý - ${levelTitle}] Trình GĐCS xác nhận nội dung làm việc - HS ${student.fullName} (Khối ${student.grade || '1'} - ${normalizedCampusCode})`;
 
-        await sendEmail({
+        const sendRes = await sendEmail({
           to: gdcsEmail,
           cc: ccList,
           subject: emailSubject,
           html: emailHtml
         });
-        emailSuccess = true;
+        emailSuccess = Boolean(sendRes && sendRes.success !== false);
+        if (!emailSuccess) {
+          emailError = sendRes?.error || "Không thể gửi email qua máy chủ SMTP";
+        }
       } catch (errMail: any) {
         console.error("Lỗi khi gửi email đến GĐCS:", errMail);
         emailError = errMail.message || "Lỗi gửi email";
       }
 
+      // 5. Tạo thông báo chuông hệ thống (In-App Notification) cho GĐCS, Tổ Giáo vụ CS và Tổ Tư vấn CS
+      try {
+        const gdcsListForNotif = await getGdcsCampusList();
+        const matchedGdcs = gdcsListForNotif.find(
+          (g) => g.campusCode === normalizedCampusCode || g.managerEmail.toLowerCase() === String(gdcsEmail || "").toLowerCase()
+        );
+        const notifLink = `/admin/xet-duyet-ket-qua?tab=k12&studentId=${studentId}${student.periodId ? `&periodId=${encodeURIComponent(student.periodId)}` : ""}`;
+        const propLabel = proposedActionLabels[proposedAction] || "1. Trao đổi trực tiếp PHHS";
+
+        if (matchedGdcs?.managerUserId) {
+          await (prisma as any).notification.create({
+            data: {
+              userId: matchedGdcs.managerUserId,
+              title: `[Trình GĐCS xác nhận] Hồ sơ tâm lý HS ${student.fullName} (${normalizedCampusCode})`,
+              message: `GV Tâm lý ${reporterName} báo cáo HS ${student.fullName} (Khối ${student.grade || "1"}) có dấu hiệu tâm lý (${computedTotal}/80đ - ${levelTitle}). Đề xuất: "${propLabel}". Kính trình GĐCS xác nhận nội dung làm việc.`,
+              link: notifLink,
+              type: "TASK",
+              category: "ASSESSMENT",
+              priority: "HIGH",
+              sourceModule: "ORIENTATION_PSYCHOLOGY",
+              sourceId: student.id
+            }
+          });
+        }
+
+        const staffUserIdsToNotify = (campusStaffInfo.allStaffUserIds || []).filter(
+          (uid: string) => uid && uid !== reporterId && uid !== matchedGdcs?.managerUserId
+        );
+        for (const staffUserId of staffUserIdsToNotify) {
+          await (prisma as any).notification.create({
+            data: {
+              userId: staffUserId,
+              title: `[Thông tin Giáo vụ & Tư vấn ${normalizedCampusCode}] Báo cáo tâm lý HS ${student.fullName}`,
+              message: `GV Tâm lý ${reporterName} đã trình GĐCS ${gdcsName || normalizedCampusCode} hồ sơ tâm lý HS ${student.fullName} (${computedTotal}/80đ - ${levelTitle}) với đề xuất: "${propLabel}".`,
+              link: notifLink,
+              type: "INFO",
+              category: "ASSESSMENT",
+              priority: "HIGH",
+              sourceModule: "ORIENTATION_PSYCHOLOGY",
+              sourceId: student.id
+            }
+          });
+        }
+      } catch (notifErr) {
+        console.error("Lỗi tạo notification báo cáo GĐCS:", notifErr);
+      }
+
       return NextResponse.json({
         success: true,
-        message: `Đã cập nhật kết quả tâm lý lên Phiếu định hướng và ${emailSuccess ? `gửi Email báo cáo đến GĐCS ${gdcsName}` : 'lưu trữ báo cáo (email gửi sau)'}.`,
+        message: `Đã lưu kết quả TỔNG HỢP Tâm lý và ${emailSuccess ? `gửi Email báo cáo đến GĐCS ${gdcsName} (CC Tổ Giáo vụ CS: ${resolvedGiaovuEmail}, Tổ Tư vấn CS: ${resolvedTuyensinhEmail})` : 'lưu trữ báo cáo (chưa gửi được email)'}.`,
         emailSuccess,
         emailError: emailError || null,
+        ccList,
+        giaovuEmail: resolvedGiaovuEmail,
+        tuyensinhEmail: resolvedTuyensinhEmail,
+        giaovuStaff: campusStaffInfo.giaovuStaff,
+        tuvanStaff: campusStaffInfo.tuvanStaff,
         data: psychDataObj
       });
     }
 
-    // NHÁNH A-DIRECTIVE: GĐCS TIẾP NHẬN & PHẢN HỒI Ý KIẾN CHỈ ĐẠO
+    // NHÁNH A-DIRECTIVE: GĐCS XÁC NHẬN NỘI DUNG LÀM VIỆC LIÊN QUAN & PHẢN HỒI CHỈ ĐẠO
     if (body.action === "respondGdcsDirective") {
       const {
         studentId,
@@ -1118,6 +1351,7 @@ export async function POST(req: Request) {
         meetingAgenda = "",
         delegatedTeacherId = "",
         delegatedTeacherName = "",
+        delegatedTeacherEmail = "",
         delegationDuration = "",
         delegationNote = "",
         generalDirectiveNote = "",
@@ -1131,7 +1365,7 @@ export async function POST(req: Request) {
 
       const student = await (prisma as any).inputAssessmentStudent.findUnique({
         where: { id: studentId },
-        include: { period: true, batch: true }
+        include: { period: true, batch: { include: { campus: true } } }
       });
 
       if (!student) {
@@ -1140,8 +1374,9 @@ export async function POST(req: Request) {
 
       const orientationRecord = await getStudentOrientationRecord(studentId);
       const nowStr = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-      const currentDirectorName = directorName || session.user?.name || (session.user as any)?.fullName || "Giám Đốc Cơ Sở";
-      const currentDirectorEmail = directorEmail || session.user?.email || "";
+      const currentDirectorName = directorName || (session.user as any)?.fullName || session.user?.name || "Giám Đốc Cơ Sở";
+      const rawDirectorEmail = directorEmail || session.user?.email || "";
+      const currentDirectorEmail = rawDirectorEmail.includes("@") && !/^\d+@/.test(rawDirectorEmail) ? rawDirectorEmail : "";
 
       let currentPsychData: any = {};
       try {
@@ -1152,21 +1387,62 @@ export async function POST(req: Request) {
         }
       } catch (e) {}
 
+      const campusCodeNorm = normalizeCampusCode(
+        currentPsychData.reportedToGdcs?.campusCode ||
+        student.admissionCampus ||
+        student.registeredCampus ||
+        student.batch?.campus?.campusCode ||
+        student.batch?.campus?.campusName ||
+        "CS1"
+      );
+
+      // Lấy đúng nhân sự Tổ Giáo vụ & Tổ Tư vấn cơ sở theo cơ sở (loại bỏ triệt để giaovu.csX@...)
+      const campusStaffInfo = await getCampusGiaovuAndTuvanStaff(
+        campusCodeNorm,
+        student.batch?.campus?.id || null
+      );
+
+      const cleanPrevGiaovu = String(currentPsychData.reportedToGdcs?.giaovuEmail || "")
+        .split(/[,;]/)
+        .map((e) => e.trim())
+        .filter((e) => e && e.includes("@") && !/^\d+@/.test(e) && !isGenericCampusAliasEmail(e))
+        .join(", ");
+      const cleanPrevTuvan = String(currentPsychData.reportedToGdcs?.tuyensinhEmail || "")
+        .split(/[,;]/)
+        .map((e) => e.trim())
+        .filter((e) => e && e.includes("@") && !/^\d+@/.test(e) && !isGenericCampusAliasEmail(e))
+        .join(", ");
+
+      const giaovuEmail = campusStaffInfo.giaovuEmail || cleanPrevGiaovu || getCampusGiaovuEmail(campusCodeNorm);
+      const tuyensinhEmail = campusStaffInfo.tuyensinhEmail || cleanPrevTuvan || getCampusTuyensinhEmail(campusCodeNorm);
+      const giaovuStaffDisplay = campusStaffInfo.giaovuStaff.length > 0
+        ? campusStaffInfo.giaovuStaff.map((s) => `${s.fullName} (${s.email})`).join(", ")
+        : giaovuEmail;
+      const tuvanStaffDisplay = campusStaffInfo.tuvanStaff.length > 0
+        ? campusStaffInfo.tuvanStaff.map((s) => `${s.fullName} (${s.email})`).join(", ")
+        : tuyensinhEmail;
+
       const responseTypeTitles: Record<string, string> = {
-        DIRECT_PARENT_MEETING: "Trao đổi trực tiếp PHHS",
-        SCHEDULE_MEETING: "Hẹn lịch làm việc / Hội chẩn chuyên môn",
-        DELEGATE_TEACHER: "Ủy quyền Giáo viên đồng hành"
+        DIRECT_PARENT_MEETING: "1. Trao đổi trực tiếp PHHS",
+        SCHEDULE_MEETING: "2. Hẹn lịch làm việc / Hội chẩn chuyên môn",
+        DELEGATE_TEACHER: "3. Ủy quyền Giáo viên đồng hành"
       };
 
       const chosenTitle = responseTypeTitles[responseType] || responseType;
 
       const gdcsResponseObj = {
+        confirmed: true,
         responseType,
         responseTypeName: chosenTitle,
         respondedAt: new Date().toISOString(),
         respondedAtFormatted: nowStr,
         directorName: currentDirectorName,
         directorEmail: currentDirectorEmail,
+        campusCode: campusCodeNorm,
+        giaovuEmail,
+        tuyensinhEmail,
+        giaovuStaff: campusStaffInfo.giaovuStaff,
+        tuvanStaff: campusStaffInfo.tuvanStaff,
         generalDirectiveNote,
         details: {
           meetingTime,
@@ -1176,21 +1452,46 @@ export async function POST(req: Request) {
           meetingAgenda,
           delegatedTeacherId,
           delegatedTeacherName,
+          delegatedTeacherEmail,
           delegationDuration,
           delegationNote
         }
       };
 
       currentPsychData.gdcsResponse = gdcsResponseObj;
+      if (currentPsychData.reportedToGdcs) {
+        currentPsychData.reportedToGdcs.giaovuEmail = giaovuEmail;
+        currentPsychData.reportedToGdcs.tuyensinhEmail = tuyensinhEmail;
+        currentPsychData.reportedToGdcs.giaovuStaff = campusStaffInfo.giaovuStaff;
+        currentPsychData.reportedToGdcs.tuvanStaff = campusStaffInfo.tuvanStaff;
+      }
       if (currentPsychData.gdcsDirectiveRequest) {
         currentPsychData.gdcsDirectiveRequest.status = "RESPONDED";
         currentPsychData.gdcsDirectiveRequest.respondedAt = new Date().toISOString();
       }
 
-      // Cập nhật StudentOrientationRecord & đồng bộ vào admissionConsultantNote
+      // Cập nhật StudentOrientationRecord & đồng bộ vào admissionConsultantNote để Giáo vụ và Tư vấn cơ sở nắm rõ trên mọi màn hình
+      let prevConsultantNoteObj: any = {};
+      try {
+        if (orientationRecord?.admissionConsultantNote && orientationRecord.admissionConsultantNote.trim().startsWith("{")) {
+          prevConsultantNoteObj = JSON.parse(orientationRecord.admissionConsultantNote);
+        }
+      } catch (e) {}
+
       const legacyNotePayload = JSON.stringify({
-        gdcsDecision: "TIEP_NHAN_DONG_HANH",
-        gdcsGeneralNote: generalDirectiveNote,
+        ...prevConsultantNoteObj,
+        gdcsDecision: prevConsultantNoteObj.gdcsDecision || "TIEP_NHAN_DONG_HANH",
+        gdcsGeneralNote: generalDirectiveNote || prevConsultantNoteObj.gdcsGeneralNote || "",
+        gdcsPsychConfirmed: true,
+        gdcsPsychResponseType: responseType,
+        gdcsPsychResponseTypeName: chosenTitle,
+        gdcsPsychRespondedAt: nowStr,
+        gdcsPsychDirectorName: currentDirectorName,
+        campusCode: campusCodeNorm,
+        giaovuEmail,
+        tuyensinhEmail,
+        giaovuStaff: campusStaffInfo.giaovuStaff,
+        tuvanStaff: campusStaffInfo.tuvanStaff,
         directParentMeeting: responseType === "DIRECT_PARENT_MEETING",
         parentMeetingTime: meetingTime,
         parentMeetingLocation: meetingLocation,
@@ -1203,6 +1504,8 @@ export async function POST(req: Request) {
         delegateTeacher: responseType === "DELEGATE_TEACHER",
         delegatedTeacherId,
         delegatedTeacherName,
+        delegatedTeacherEmail,
+        delegationDuration,
         delegationNote
       });
 
@@ -1213,15 +1516,28 @@ export async function POST(req: Request) {
         admissionConsultantNote: legacyNotePayload
       });
 
-      // Tạo thông báo chuông hệ thống cho GV Tâm lý (người thực hiện đánh giá)
-      const targetTeacherUserId = orientationRecord?.psychologyTeacherId || currentPsychData.reportedToGdcs?.reporterId;
-      if (targetTeacherUserId) {
-        try {
+      // Đồng bộ tóm tắt phương án làm việc GĐCS đã xác nhận vào hồ sơ học sinh để bảng Giáo vụ / Tư vấn hiển thị tức thì
+      const actionDetailSummary =
+        responseType === "DIRECT_PARENT_MEETING"
+          ? `${meetingTime ? `Lịch hẹn PHHS: ${meetingTime}. ` : ""}${meetingLocation ? `Tại: ${meetingLocation}. ` : ""}${parentMeetingContent || generalDirectiveNote || ""}`
+          : responseType === "SCHEDULE_MEETING"
+          ? `${meetingTime ? `Lịch hội chẩn: ${meetingTime}. ` : ""}${meetingLocation ? `Tại: ${meetingLocation}. ` : ""}${meetingParticipants ? `TP: ${meetingParticipants}. ` : ""}${meetingAgenda || generalDirectiveNote || ""}`
+          : `${delegatedTeacherName ? `GV đồng hành: ${delegatedTeacherName}. ` : ""}${delegationDuration ? `Thời hạn: ${delegationDuration}. ` : ""}${delegationNote || generalDirectiveNote || ""}`;
+
+      const notifLinkForStaff = `/admin/xet-duyet-ket-qua?tab=k12&studentId=${studentId}${student.periodId ? `&periodId=${encodeURIComponent(student.periodId)}` : ""}`;
+
+      // Tạo thông báo chuông hệ thống cho tất cả nhân sự Tổ Giáo vụ cơ sở & Tổ Tư vấn cơ sở
+      try {
+        const notifiedIds = new Set<string>();
+        const targetTeacherUserId = orientationRecord?.psychologyTeacherId || currentPsychData.reportedToGdcs?.reporterId;
+
+        if (targetTeacherUserId) {
+          notifiedIds.add(targetTeacherUserId);
           await (prisma as any).notification.create({
             data: {
               userId: targetTeacherUserId,
-              title: `[Chỉ đạo GĐCS] Phản hồi khảo sát tâm lý HS ${student.fullName}`,
-              message: `${currentDirectorName} đã phê duyệt chỉ đạo: "${chosenTitle}". ${generalDirectiveNote ? `Lưu ý: "${generalDirectiveNote}"` : ""}`,
+              title: `[Xác nhận GĐCS] Phương án làm việc hồ sơ tâm lý HS ${student.fullName}`,
+              message: `GĐCS ${currentDirectorName} đã xác nhận phương án: "${chosenTitle}". ${actionDetailSummary}`.trim(),
               link: `/teacher/input-assessments?periodId=${student.periodId}&batchId=${student.batchId || ""}&studentCode=${encodeURIComponent(student.studentCode)}&autoOpen=true`,
               type: "TASK",
               category: "ASSESSMENT",
@@ -1230,24 +1546,22 @@ export async function POST(req: Request) {
               sourceId: student.id
             }
           });
-        } catch (nErr) {}
-      }
+        }
 
-      // Nếu là Ủy quyền, tạo thông báo cho Giáo viên được ủy quyền
-      if (responseType === "DELEGATE_TEACHER" && delegatedTeacherId) {
-        try {
-          // Check if teacher has userId
+        // Nếu là Ủy quyền, tạo thông báo cho Giáo viên được ủy quyền
+        if (responseType === "DELEGATE_TEACHER" && delegatedTeacherId) {
           const tRec = await (prisma as any).teacher.findUnique({
             where: { id: delegatedTeacherId },
             include: { user: true }
           });
-          const targetUId = tRec?.userId || tRec?.user?.id;
-          if (targetUId) {
+          const targetUId = tRec?.userId || tRec?.user?.id || delegatedTeacherId;
+          if (targetUId && !notifiedIds.has(targetUId)) {
+            notifiedIds.add(targetUId);
             await (prisma as any).notification.create({
               data: {
                 userId: targetUId,
                 title: `[Ủy quyền GĐCS] Phân công đồng hành HS ${student.fullName}`,
-                message: `${currentDirectorName} đã ủy quyền Thầy/Cô đồng hành hỗ trợ tâm lý & thích ứng cho HS ${student.fullName} (Khối ${student.grade || '1'}). ${delegationNote ? `Nhiệm vụ: "${delegationNote}"` : ""}`,
+                message: `GĐCS ${currentDirectorName} đã ủy quyền Thầy/Cô đồng hành hỗ trợ tâm lý & thích ứng cho HS ${student.fullName} (Khối ${student.grade || '1'}). ${actionDetailSummary}`.trim(),
                 link: `/teacher/input-assessments?periodId=${student.periodId}&studentCode=${encodeURIComponent(student.studentCode)}&autoOpen=true`,
                 type: "TASK",
                 category: "ASSESSMENT",
@@ -1257,77 +1571,145 @@ export async function POST(req: Request) {
               }
             });
           }
-        } catch (nErr2) {}
+        }
+
+        // Gửi thông báo chuông hệ thống cho toàn bộ nhân sự Tổ Giáo vụ cơ sở & Tổ Tư vấn cơ sở
+        for (const staffUserId of campusStaffInfo.allStaffUserIds || []) {
+          if (staffUserId && !notifiedIds.has(staffUserId)) {
+            notifiedIds.add(staffUserId);
+            await (prisma as any).notification.create({
+              data: {
+                userId: staffUserId,
+                title: `[GĐCS ${campusCodeNorm} xác nhận] Phương án làm việc HS ${student.fullName}`,
+                message: `GĐCS ${currentDirectorName} đã xác nhận phương án "${chosenTitle}" đối với hồ sơ tâm lý HS ${student.fullName} (Khối ${student.grade || "1"}). ${actionDetailSummary}`.trim(),
+                link: notifLinkForStaff,
+                type: "TASK",
+                category: "ASSESSMENT",
+                priority: "HIGH",
+                sourceModule: "ORIENTATION_PSYCHOLOGY",
+                sourceId: student.id
+              }
+            });
+          }
+        }
+      } catch (nErr) {
+        console.error("Lỗi tạo notification khi GĐCS xác nhận:", nErr);
       }
 
-      // Gửi Email xác nhận phản hồi chỉ đạo đến GV Tâm lý + CC Ban KT&ĐBCL + Giáo vụ cơ sở
+      // Gửi Email xác nhận nội dung làm việc của GĐCS đến Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý & CC Ban KT&ĐBCL
       let emailSuccess = false;
-      const reporterEmail = currentPsychData.reportedToGdcs?.reporterEmail || orientationRecord?.interviewerId || "";
-      const campusCodeNorm = student.admissionCampus || "";
-      const giaovuEmail = currentPsychData.reportedToGdcs?.giaovuEmail || getCampusGiaovuEmail(campusCodeNorm);
-      const ccList = Array.from(new Set(["ktdbcl@skylineschool.edu.vn", giaovuEmail, currentDirectorEmail].filter(Boolean)));
+      const rawReporterEmail = String(currentPsychData.reportedToGdcs?.reporterEmail || "").trim();
+      const reporterEmail = rawReporterEmail.includes("@") && !/^\d+@/.test(rawReporterEmail) ? rawReporterEmail : "";
+
+      const toList = Array.from(
+        new Set(
+          [
+            ...campusStaffInfo.giaovuStaff.map((s) => s.email),
+            ...campusStaffInfo.tuvanStaff.map((s) => s.email),
+            giaovuEmail,
+            tuyensinhEmail,
+            reporterEmail,
+            responseType === "DELEGATE_TEACHER" ? delegatedTeacherEmail : ""
+          ]
+            .flatMap((item) => String(item || "").split(/[,;]/))
+            .map((e) => e.trim())
+            .filter((e) => e && e.includes("@") && !/^\d+@/.test(e) && !isGenericCampusAliasEmail(e))
+        )
+      );
+
+      const ccList = buildPsychologyGdcsCcList({
+        campusCodeOrName: campusCodeNorm,
+        giaovuEmail,
+        tuyensinhEmail,
+        extraCc: [currentDirectorEmail]
+      });
+
+      const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
+      const protocol = req.headers.get("x-forwarded-proto") || "https";
+      const baseUrl = `${protocol}://${host}`;
+      const directApprovalUrl = `${baseUrl}${notifLinkForStaff}`;
 
       try {
         const confirmEmailHtml = `
           <!DOCTYPE html>
           <html lang="vi">
-          <head><meta charset="utf-8"><title>[Sky-line SSM] Ý kiến chỉ đạo của GĐCS - HS ${student.fullName}</title></head>
+          <head><meta charset="utf-8"><title>[Sky-line SMS] Xác nhận nội dung làm việc của GĐCS - HS ${student.fullName}</title></head>
           <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f1f5f9">
               <tr>
                 <td align="center" style="padding: 24px 12px;">
-                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 650px; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08);">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 660px; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08);">
                     <tr>
                       <td height="4" bgcolor="#00A19A" style="background-color: #00A19A; font-size: 0; line-height: 0;">&nbsp;</td>
                     </tr>
                     <tr>
                       <td bgcolor="#003B3A" style="background-color: #003B3A; color: #ffffff; padding: 22px 26px;">
-                        <span style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a7f3d0;">HỆ THỐNG GIÁO DỤC SKY-LINE &bull; BAN KHẢO THÍ &amp; ĐBCL</span>
-                        <h2 style="margin: 8px 0 4px 0; font-size: 18px; font-weight: 800; color: #ffffff;">Ý KIẾN CHỈ ĐẠO CỦA GIÁM ĐỐC CƠ SỞ (GĐCS)</h2>
-                        <div style="font-size: 12px; color: #e2e8f0;">Khảo sát &amp; Định hướng Học sinh Đầu vào &bull; HS ${student.fullName} (Khối ${student.grade || '1'})</div>
+                        <span style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a7f3d0;">HỆ THỐNG GIÁO DỤC SKY-LINE &bull; BAN GIÁM ĐỐC CƠ SỞ (${campusCodeNorm})</span>
+                        <h2 style="margin: 8px 0 4px 0; font-size: 18px; font-weight: 800; color: #ffffff;">XÁC NHẬN PHƯƠNG ÁN &amp; NỘI DUNG LÀM VIỆC CỦA GĐCS</h2>
+                        <div style="font-size: 12px; color: #e2e8f0;">Hồ sơ khảo sát tâm lý đầu vào &bull; HS ${student.fullName} (Mã HS: ${student.studentCode || '—'} &bull; Khối ${student.grade || '1'})</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 26px; font-size: 11.5px; color: #475569; line-height: 1.55;">
+                        <strong>Người xác nhận:</strong> GĐCS ${currentDirectorName} &bull; <strong>Thời gian:</strong> ${nowStr}<br/>
+                        <strong>Tổ Giáo vụ Cơ sở (${campusCodeNorm}):</strong> ${giaovuStaffDisplay}<br/>
+                        <strong>Tổ Tư vấn Cơ sở (${campusCodeNorm}):</strong> ${tuvanStaffDisplay}
                       </td>
                     </tr>
                     <tr>
                       <td style="padding: 22px 26px; color: #1e293b; font-size: 13px; line-height: 1.6;">
-                        <p style="margin: 0 0 12px 0;">Kính gửi Quý Thầy/Cô và các bộ phận chuyên môn liên quan,</p>
-                        <p style="margin: 0 0 14px 0;">Giám Đốc Cơ Sở (<strong>${currentDirectorName}</strong>) đã xem xét kết quả đánh giá tâm lý của học sinh <strong>${student.fullName}</strong> và ban hành ý kiến chỉ đạo xử lý tiếp nhận như sau:</p>
+                        <p style="margin: 0 0 12px 0;">Kính gửi <strong>Tổ Giáo vụ Cơ sở (${campusCodeNorm})</strong>, <strong>Tổ Tư vấn Cơ sở (${campusCodeNorm})</strong> và <strong>Giáo viên Tâm lý phụ trách</strong>,</p>
+                        <p style="margin: 0 0 14px 0;">Giám Đốc Cơ Sở (<strong>${currentDirectorName}</strong>) đã xem xét báo cáo tổng hợp dấu hiệu tâm lý của học sinh <strong>${student.fullName}</strong> và chính thức <strong>xác nhận phương án làm việc liên quan</strong> để Tổ Giáo vụ, Tổ Tư vấn cơ sở và GV chuyên trách nắm thông tin phối hợp thực hiện:</p>
 
                         <div style="background-color: #f0fdfa; border: 1px solid #ccfbf1; border-left: 4px solid #00a19a; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
-                          <div style="font-size: 11px; font-weight: 800; color: #007a87; text-transform: uppercase; margin-bottom: 4px;">PHƯƠNG ÁN CHỈ ĐẠO CHÍNH THỨC:</div>
+                          <div style="font-size: 11px; font-weight: 800; color: #00736e; text-transform: uppercase; margin-bottom: 4px;">PHƯƠNG ÁN &amp; NỘI DUNG LÀM VIỆC ĐÃ ĐƯỢC GĐCS XÁC NHẬN:</div>
                           <div style="font-size: 15px; font-weight: 800; color: #003b3a; margin-bottom: 8px;">${chosenTitle}</div>
                           ${responseType === "DIRECT_PARENT_MEETING" ? `
-                            <div style="font-size: 12px; color: #334155; line-height: 1.5;">
-                              • <strong>Thời gian hẹn gặp:</strong> ${meetingTime || 'Chưa ấn định'}<br/>
-                              • <strong>Địa điểm:</strong> ${meetingLocation || 'Phòng Giám đốc Cơ sở'}<br/>
-                              • <strong>Nội dung trao đổi với PHHS:</strong> ${parentMeetingContent || 'Trao đổi kế hoạch phối hợp giáo dục & cam kết đồng hành'}
+                            <div style="font-size: 12px; color: #334155; line-height: 1.6;">
+                              • <strong>Thời gian hẹn gặp PHHS:</strong> ${meetingTime || 'Theo lịch hẹn điều phối của Tư vấn / Giáo vụ cơ sở'}<br/>
+                              • <strong>Địa điểm làm việc:</strong> ${meetingLocation || 'Phòng Giám đốc Cơ sở'}<br/>
+                              • <strong>Nội dung làm việc với PHHS:</strong> ${parentMeetingContent || generalDirectiveNote || 'Trao đổi kế hoạch phối hợp giáo dục & cam kết đồng hành cùng học sinh'}<br/>
+                              • <strong>Phối hợp Tổ Tư vấn &amp; Giáo vụ CS:</strong> Tổ Tư vấn liên hệ mời PHHS theo lịch hẹn; Tổ Giáo vụ chuẩn bị hồ sơ khảo sát &amp; biên bản làm việc.
                             </div>
                           ` : ''}
                           ${responseType === "SCHEDULE_MEETING" ? `
-                            <div style="font-size: 12px; color: #334155; line-height: 1.5;">
-                              • <strong>Thời gian làm việc:</strong> ${meetingTime || 'Chưa ấn định'}<br/>
-                              • <strong>Địa điểm:</strong> ${meetingLocation || 'Văn phòng chuyên môn'}<br/>
-                              • <strong>Thành phần tham gia:</strong> ${meetingParticipants || 'GĐCS, GV Tâm lý, GVCN, Tổ chuyên môn'}<br/>
-                              • <strong>Nội dung hội chẩn:</strong> ${meetingAgenda || 'Đánh giá mức độ thích ứng và giải pháp can thiệp'}
+                            <div style="font-size: 12px; color: #334155; line-height: 1.6;">
+                              • <strong>Thời gian làm việc / hội chẩn:</strong> ${meetingTime || 'Theo lịch điều phối của Giáo vụ cơ sở'}<br/>
+                              • <strong>Địa điểm:</strong> ${meetingLocation || 'Văn phòng chuyên môn Cơ sở'}<br/>
+                              • <strong>Thành phần tham gia:</strong> ${meetingParticipants || 'GĐCS, Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý, GVCN/TCM'}<br/>
+                              • <strong>Nội dung làm việc / hội chẩn:</strong> ${meetingAgenda || generalDirectiveNote || 'Thống nhất phương án hỗ trợ tâm lý và lộ trình tiếp nhận học sinh'}<br/>
+                              • <strong>Phối hợp Tổ Giáo vụ &amp; Tư vấn CS:</strong> Tổ Giáo vụ sắp xếp phòng họp và thông báo thành phần tham dự; Tổ Tư vấn tổng hợp thông tin trao đổi từ gia đình.
                             </div>
                           ` : ''}
                           ${responseType === "DELEGATE_TEACHER" ? `
-                            <div style="font-size: 12px; color: #334155; line-height: 1.5;">
-                              • <strong>Giáo viên được ủy quyền:</strong> <strong>${delegatedTeacherName || 'Giáo viên phụ trách'}</strong><br/>
-                              • <strong>Thời hạn ủy quyền:</strong> ${delegationDuration || '4 tuần đầu năm học'}<br/>
-                              • <strong>Nhiệm vụ đồng hành:</strong> ${delegationNote || 'Theo dõi hành vi, hỗ trợ thích nghi và báo cáo định kỳ'}
+                            <div style="font-size: 12px; color: #334155; line-height: 1.6;">
+                              • <strong>Giáo viên được ủy quyền đồng hành:</strong> <strong>${delegatedTeacherName || 'Giáo viên phụ trách'}</strong> ${delegatedTeacherEmail ? `(${delegatedTeacherEmail})` : ''}<br/>
+                              • <strong>Thời hạn đồng hành:</strong> ${delegationDuration || '4 tuần đầu năm học'}<br/>
+                              • <strong>Nội dung công việc ủy quyền:</strong> ${delegationNote || generalDirectiveNote || 'Theo dõi hành vi, làm việc với PHHS, hỗ trợ thích nghi và báo cáo định kỳ'}<br/>
+                              • <strong>Phối hợp Tổ Giáo vụ &amp; Tư vấn CS:</strong> Tổ Giáo vụ cập nhật phân công giáo viên đồng hành vào danh sách lớp/khối; Tổ Tư vấn cung cấp đầu mối liên hệ PHHS cho giáo viên.
                             </div>
                           ` : ''}
                         </div>
 
                         ${generalDirectiveNote ? `
                           <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
-                            <strong style="font-size: 11px; text-transform: uppercase; color: #92400e; display: block; margin-bottom: 4px;">Ghi chú &amp; Chỉ đạo chung của GĐCS:</strong>
+                            <strong style="font-size: 11px; color: #92400e; display: block; margin-bottom: 4px;">Ý kiến xác nhận &amp; chỉ đạo của GĐCS:</strong>
                             <div style="font-style: italic; color: #78350f;">&quot;${generalDirectiveNote}&quot;</div>
                           </div>
                         ` : ''}
 
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 18px auto 12px auto;">
+                          <tr>
+                            <td align="center" bgcolor="#003B3A" style="background-color: #003B3A; border-radius: 8px; padding: 0;">
+                              <a href="${directApprovalUrl}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #003B3A; border: 1px solid #003B3A; border-radius: 8px; color: #ffffff !important; font-size: 12.5px; font-weight: 800; text-decoration: none;">
+                                <span style="color: #ffffff !important; font-weight: 800;">XEM CHI TIẾT TRÊN HỆ THỐNG SSM &rarr;</span>
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+
                         <p style="margin: 0; font-size: 12px; color: #64748b;">
-                          Đề nghị Ban KT&amp;ĐBCL, Giáo vụ Cơ sở và Giáo viên chuyên trách cập nhật thông tin và triển khai thực hiện theo đúng kế hoạch.
+                          Đề nghị Bộ phận Giáo vụ Cơ sở, Bộ phận Tư vấn Cơ sở và Giáo viên chuyên trách phối hợp triển khai nội dung làm việc đã được GĐCS xác nhận.
                         </p>
                       </td>
                     </tr>
@@ -1345,23 +1727,26 @@ export async function POST(req: Request) {
           </html>
         `;
 
-        // Gửi email nếu có người nhận hợp lệ
-        const targetTo = reporterEmail || currentDirectorEmail || "ktdbcl@skylineschool.edu.vn";
-        await sendEmail({
+        const targetTo = toList.length > 0 ? toList : [giaovuEmail, tuyensinhEmail, "ktdbcl@skylineschool.edu.vn"].filter(Boolean);
+        const sendRes = await sendEmail({
           to: targetTo,
           cc: ccList,
-          subject: `[Sky-line SSM] Ý kiến chỉ đạo của GĐCS - HS ${student.fullName} (${chosenTitle})`,
+          subject: `[Xác nhận GĐCS - ${campusCodeNorm}] Phương án làm việc hồ sơ tâm lý - HS ${student.fullName} (${chosenTitle})`,
           html: confirmEmailHtml
         });
-        emailSuccess = true;
+        emailSuccess = Boolean(sendRes && sendRes.success !== false);
       } catch (emErr) {
         console.error("Lỗi gửi email xác nhận chỉ đạo GĐCS:", emErr);
       }
 
       return NextResponse.json({
         success: true,
-        message: `Đã ghi nhận ý kiến chỉ đạo của GĐCS (${chosenTitle}) thành công!`,
+        message: `GĐCS đã xác nhận phương án "${chosenTitle}" và gửi thông báo đến Tổ Giáo vụ CS (${giaovuEmail}), Tổ Tư vấn CS (${tuyensinhEmail}) & GV Tâm lý thành công!`,
         emailSuccess,
+        giaovuEmail,
+        tuyensinhEmail,
+        giaovuStaff: campusStaffInfo.giaovuStaff,
+        tuvanStaff: campusStaffInfo.tuvanStaff,
         data: gdcsResponseObj
       });
     }
@@ -1397,8 +1782,10 @@ export async function POST(req: Request) {
       const orientationRecord = await getStudentOrientationRecord(studentId);
       const curDirectorName = directorName || session.user?.name || (session.user as any)?.fullName || "Giám Đốc Cơ Sở";
       const curDirectorEmail = directorEmail || session.user?.email || "";
-      const campusCodeNorm = student.admissionCampus || "";
-      const giaovuEmail = getCampusGiaovuEmail(campusCodeNorm);
+      const campusCodeNorm = student.admissionCampus || student.registeredCampus || "";
+      const campusStaffInfo = await getCampusGiaovuAndTuvanStaff(campusCodeNorm);
+      const giaovuEmail = campusStaffInfo.giaovuEmail || getCampusGiaovuEmail(campusCodeNorm);
+      const tuyensinhEmail = campusStaffInfo.tuyensinhEmail || getCampusTuyensinhEmail(campusCodeNorm);
       const resolvedParentRep = parentRepresentative || orientationRecord?.parentRepresentativeName || "Phụ huynh học sinh";
       const resolvedParentPhone = parentPhone || orientationRecord?.parentPhone || "Đang cập nhật";
 
@@ -1435,6 +1822,8 @@ export async function POST(req: Request) {
       currentConsultantNote.delegationNote = delegationNote;
       currentConsultantNote.delegatedAt = new Date().toISOString();
       currentConsultantNote.delegatedBy = curDirectorName;
+      currentConsultantNote.giaovuStaff = campusStaffInfo.giaovuStaff;
+      currentConsultantNote.tuvanStaff = campusStaffInfo.tuvanStaff;
 
       await upsertStudentOrientationRecord({
         studentId,
@@ -1443,9 +1832,11 @@ export async function POST(req: Request) {
         admissionConsultantNote: JSON.stringify(currentConsultantNote)
       });
 
-      // Tạo thông báo chuông cho Giáo viên
-      if (targetUserId) {
-        try {
+      // Tạo thông báo chuông cho Giáo viên & Tổ Giáo vụ / Tư vấn cơ sở
+      try {
+        const notifiedIds = new Set<string>();
+        if (targetUserId) {
+          notifiedIds.add(targetUserId);
           await (prisma as any).notification.create({
             data: {
               userId: targetUserId,
@@ -1459,12 +1850,39 @@ export async function POST(req: Request) {
               sourceId: student.id
             }
           });
-        } catch (nErr) {}
-      }
+        }
+        for (const staffUserId of campusStaffInfo.allStaffUserIds || []) {
+          if (staffUserId && !notifiedIds.has(staffUserId)) {
+            notifiedIds.add(staffUserId);
+            await (prisma as any).notification.create({
+              data: {
+                userId: staffUserId,
+                title: `[Ủy quyền GĐCS ${campusStaffInfo.campusCode}] GV ${teacherName || "đồng hành"} phụ trách HS ${student.fullName}`,
+                message: `GĐCS ${curDirectorName} đã ủy quyền GV ${teacherName || "chuyên trách"} đồng hành cùng HS ${student.fullName} (Khối ${student.grade || "1"}). Thời hạn: ${delegationDuration}.`,
+                link: `/admin/xet-duyet-ket-qua?tab=k12&studentId=${student.id}`,
+                type: "INFO",
+                category: "ASSESSMENT",
+                priority: "HIGH",
+                sourceModule: "ORIENTATION_DELEGATION",
+                sourceId: student.id
+              }
+            });
+          }
+        }
+      } catch (nErr) {}
 
       const baseUrl = process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn";
       const feedbackUrl = `${baseUrl}/teacher/orientation/delegation-feedback?studentId=${student.id}`;
-      const ccList = Array.from(new Set(["ktdbcl@skylineschool.edu.vn", giaovuEmail, curDirectorEmail].filter(Boolean)));
+      const ccList = buildPsychologyGdcsCcList({
+        campusCodeOrName: campusCodeNorm,
+        giaovuEmail,
+        tuyensinhEmail,
+        extraCc: [
+          curDirectorEmail,
+          ...campusStaffInfo.giaovuStaff.map((s) => s.email),
+          ...campusStaffInfo.tuvanStaff.map((s) => s.email)
+        ]
+      });
 
       const delegationEmailHtml = `<!DOCTYPE html>
 <html lang="vi">
@@ -1646,9 +2064,10 @@ export async function POST(req: Request) {
       const orientationRecord = await getStudentOrientationRecord(studentId);
       const curDirectorName = directorName || session.user?.name || (session.user as any)?.fullName || "Giám Đốc Cơ Sở";
       const curDirectorEmail = directorEmail || session.user?.email || "";
-      const campusCodeNorm = student.admissionCampus || "";
-      const giaovuEmail = getCampusGiaovuEmail(campusCodeNorm);
-      const tuyensinhEmail = getCampusTuyensinhEmail(campusCodeNorm);
+      const campusCodeNorm = student.admissionCampus || student.registeredCampus || "";
+      const campusStaffInfo = await getCampusGiaovuAndTuvanStaff(campusCodeNorm);
+      const giaovuEmail = campusStaffInfo.giaovuEmail || getCampusGiaovuEmail(campusCodeNorm);
+      const tuyensinhEmail = campusStaffInfo.tuyensinhEmail || getCampusTuyensinhEmail(campusCodeNorm);
 
       let currentConsultantNote: any = {};
       try {
@@ -1664,16 +2083,49 @@ export async function POST(req: Request) {
       currentConsultantNote.meetingAgenda = meetingAgenda;
       currentConsultantNote.meetingScheduledAt = new Date().toISOString();
       currentConsultantNote.meetingScheduledBy = curDirectorName;
+      currentConsultantNote.giaovuStaff = campusStaffInfo.giaovuStaff;
+      currentConsultantNote.tuvanStaff = campusStaffInfo.tuvanStaff;
 
       await upsertStudentOrientationRecord({
         studentId,
         admissionConsultantNote: JSON.stringify(currentConsultantNote)
       });
 
+      // Tạo thông báo chuông hệ thống cho Tổ Giáo vụ & Tổ Tư vấn cơ sở
+      try {
+        for (const staffUserId of campusStaffInfo.allStaffUserIds || []) {
+          await (prisma as any).notification.create({
+            data: {
+              userId: staffUserId,
+              title: `[Lịch hội chẩn GĐCS ${campusStaffInfo.campusCode}] HS ${student.fullName}`,
+              message: `GĐCS ${curDirectorName} thông báo lịch làm việc / hội chẩn chuyên môn đối với HS ${student.fullName} (Khối ${student.grade || "1"}) vào lúc ${meetingTime}${meetingLocation ? ` tại ${meetingLocation}` : ""}.`,
+              link: `/admin/xet-duyet-ket-qua?tab=k12&studentId=${student.id}`,
+              type: "TASK",
+              category: "ASSESSMENT",
+              priority: "HIGH",
+              sourceModule: "ORIENTATION_MEETING",
+              sourceId: student.id
+            }
+          });
+        }
+      } catch (nErr) {}
+
       const baseUrl = process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn";
-      const studentUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=ks17&studentId=${student.id}`;
-      const toRecipients = Array.from(new Set([tuyensinhEmail, giaovuEmail].filter(Boolean)));
-      const ccList = Array.from(new Set(["ktdbcl@skylineschool.edu.vn", curDirectorEmail].filter(Boolean)));
+      const studentUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=k12&studentId=${student.id}`;
+      const toRecipients = Array.from(
+        new Set(
+          [
+            ...campusStaffInfo.giaovuStaff.map((s) => s.email),
+            ...campusStaffInfo.tuvanStaff.map((s) => s.email),
+            tuyensinhEmail,
+            giaovuEmail
+          ]
+            .flatMap((item) => String(item || "").split(/[,;]/))
+            .map((e) => e.trim())
+            .filter((e) => e && e.includes("@") && !/^\d+@/.test(e) && !isGenericCampusAliasEmail(e))
+        )
+      );
+      const ccList = Array.from(new Set(["ktdbcl@skylineschool.edu.vn", curDirectorEmail].filter((e) => e && e.includes("@") && !/^\d+@/.test(e))));
 
       const meetingEmailHtml = `<!DOCTYPE html>
 <html lang="vi">

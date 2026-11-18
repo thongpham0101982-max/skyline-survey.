@@ -4,6 +4,7 @@ import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 const DEFAULT_WATERMARK_SVG = "/images/skyline-doc-watermark.png";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import Link from "next/link"
 import {
   Plus, Search, Edit2, Trash2, Users, Settings, Clock, BarChart3,
   Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
@@ -19,7 +20,7 @@ import { MoveToBatchModal } from "@/app/admin/student-info/MoveToBatchModal";
 import { EntranceAcademicRecordInput } from "@/components/assessments/EntranceAcademicRecordInput";
 import { parseEntranceRecord, serializeEntranceRecord, extractAcademicDetails } from "@/lib/entranceAcademicRecord";
 import { getDestinationSchoolsAction } from "@/app/admin/truong-lien-ket/actions";
-import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
+import { PvdhOrientationModal } from "@/components/orientation/PvdhOrientationModal";
 import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal";
 import { AdmissionRegulationManager } from "@/components/admin/AdmissionRegulationManager";
 import TciResultReviewPanel from "@/components/tci/TciResultReviewPanel";
@@ -166,23 +167,6 @@ const CATEGORY_TYPES = [
   { code: "KQ_REN_LUYEN",  label: "Kết quả Rèn luyện",   color: "from-green-500 to-emerald-500" },
 ]
 
-const ORIENTATION_GRADE_GROUPS = [
-  { code: "ALL", label: "Tất cả các khối" },
-  { code: "KHOI_1", label: "Khối 1 (Tiền tiểu học)" },
-  { code: "KHOI_2_5", label: "Khối 2 - 5 (Tiểu học)" },
-  { code: "KHOI_6_9", label: "Khối 6 - 9 (THCS)" },
-  { code: "KHOI_10_12", label: "Khối 10 - 12 (THPT)" }
-]
-
-const ORIENTATION_CATEGORIES = [
-  { code: "ALL", label: "Tất cả chủ đề", color: "bg-slate-100 text-slate-700" },
-  { code: "HOA_NHAP_GIAO_TIEP", label: "Hòa nhập & Giao tiếp", color: "bg-emerald-50 text-emerald-800 border-emerald-200" },
-  { code: "THOI_QUEN_HOC_TAP", label: "Thói quen Học tập", color: "bg-blue-50 text-blue-800 border-blue-200" },
-  { code: "SO_THICH_NANG_KHIEU", label: "Sở thích & Năng khiếu", color: "bg-teal-50 text-teal-800 border-teal-200" },
-  { code: "TAM_LY_CAM_XUC", label: "Tâm lý & Cảm xúc", color: "bg-pink-50 text-pink-800 border-pink-200" },
-  { code: "NHAN_THUC_BAN_THAN", label: "Nhận thức Bản thân", color: "bg-amber-50 text-amber-800 border-amber-200" },
-  { code: "DINH_HUONG_TUONG_LAI", label: "Định hướng Tương lai", color: "bg-teal-50 text-teal-800 border-teal-200" }
-]
 const STATUS_OPTS = ["ACTIVE", "COMPLETED", "LOCKED", "DRAFT", "CLOSED"]
 const STATUS_MAP: Record<string,{label:string,cls:string}> = {
   ACTIVE:    { label:"Đang mở",    cls:"bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full" },
@@ -684,61 +668,83 @@ export function InputAssessmentsClient({
   const isReadOnly = tabPerms.canRead && !tabPerms.canCreate && !tabPerms.canUpdate && !tabPerms.canDelete;
 
   const EMAIL_MAP = useMemo(() => {
+    const sanitizeAddr = (raw?: string | null) =>
+      String(raw || "")
+        .trim()
+        .replace(/@dkylineschool\.edu\.vn$/i, "@skylineschool.edu.vn");
+
     const map = {
       tuvan: {
-        CS1: "tuyensinh.cs1@skylineschool.edu.vn",
-        CS2: "tuyensinh.cs2@skylineschool.edu.vn",
-        CS3: "tuyensinh.cs3@skylineschool.edu.vn",
-        CS4: "tuyensinh.cs4@skylineschool.edu.vn",
-        CS5: "tuyensinh.cs5@skylineschool.edu.vn",
+        CS1: "thuongttn@skylineschool.edu.vn",
+        CS2: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn",
+        CS3: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn",
+        CS4: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn",
+        CS5: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn",
       },
       giaovu: {
-        CS1: "giaovu.cs1@skylineschool.edu.vn",
-        CS2: "giaovu.cs2@skylineschool.edu.vn",
-        CS3: "giaovu.cs3@skylineschool.edu.vn",
-        CS4: "giaovu.cs4@skylineschool.edu.vn",
-        CS5: "giaovu.cs5@skylineschool.edu.vn",
+        CS1: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn",
+        CS2: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn",
+        CS3: "thuda@skylineschool.edu.vn",
+        CS4: "bichtramtt@skylineschool.edu.vn",
+        CS5: "dunglp@skylineschool.edu.vn",
       },
       gdcs: {
-        CS1: "gdcs.cs1@skylineschool.edu.vn",
-        CS2: "gdcs.cs2@skylineschool.edu.vn",
-        CS3: "gdcs.cs3@skylineschool.edu.vn",
-        CS4: "gdcs.cs4@skylineschool.edu.vn",
-        CS5: "gdcs.cs5@skylineschool.edu.vn",
+        CS1: "longtt@skylineschool.edu.vn",
+        CS2: "khanhpt@skylineschool.edu.vn",
+        CS3: "thanhtt@skylineschool.edu.vn",
+        CS4: "trungct@skylineschool.edu.vn",
+        CS5: "trungdq1@skylineschool.edu.vn",
       },
-      cc: "cc@skylineschool.edu.vn"
+      cc: "ktdbcl@skylineschool.edu.vn"
+    };
+
+    const appendUniqueEmail = (currentStr: string, newEmail: string) => {
+      const clean = sanitizeAddr(newEmail).toLowerCase();
+      if (!clean || !clean.includes("@") || /^(giaovu|tuyensinh|tuvan|gdcs)\.cs\d+@skylineschool\.edu\.vn$/i.test(clean)) {
+        return currentStr;
+      }
+      const list = String(currentStr || "")
+        .split(/[,;]/)
+        .map((e) => e.trim())
+        .filter(Boolean);
+      if (!list.some((e) => e.toLowerCase() === clean)) {
+        list.push(clean);
+      }
+      return list.join(", ");
     };
 
     // 1. Dynamic GĐCS Lookup from campuses
     (campuses || []).forEach((c) => {
       const csCode = c.campusCode;
       if (csCode && csCode in map.gdcs) {
-        const managerEmail = c.manager?.teacher?.email;
+        const managerEmail = sanitizeAddr(c.manager?.teacher?.email);
         if (managerEmail && managerEmail.includes('@')) {
           map.gdcs[csCode] = managerEmail;
         } else {
           const matchedTeacher = (teachers || []).find((t) => t.teacherCode === c.manager?.email);
-          if (matchedTeacher?.email && matchedTeacher.email.includes('@')) {
-            map.gdcs[csCode] = matchedTeacher.email;
+          const tEmail = sanitizeAddr(matchedTeacher?.email);
+          if (tEmail && tEmail.includes('@')) {
+            map.gdcs[csCode] = tEmail;
           }
         }
       }
     });
 
-    // 2. Dynamic Giáo vụ and Tư vấn Lookup from teachers
+    // 2. Dynamic Tổ Giáo vụ and Tổ Tư vấn cơ sở Lookup from teachers
     (teachers || []).forEach((t) => {
       const csCode = t.campus?.campusCode;
       if (csCode && csCode in map.giaovu) {
         const deptName = t.departmentRel?.name?.toLowerCase() || '';
         const deptCode = t.departmentRel?.code?.toLowerCase() || '';
-        const hasEmail = t.email && t.email.includes('@');
+        const cleanMail = sanitizeAddr(t.email);
+        const hasEmail = cleanMail && cleanMail.includes('@');
         
         if (hasEmail) {
           if (deptName.includes('giáo vụ') || deptCode.includes('gvu') || deptCode.includes('giaovu')) {
-            map.giaovu[csCode] = t.email;
+            map.giaovu[csCode] = appendUniqueEmail(map.giaovu[csCode], cleanMail);
           }
           if (deptName.includes('tư vấn') || deptName.includes('tuyển sinh') || deptCode.includes('tuvan') || deptCode.includes('tuyensinh')) {
-            map.tuvan[csCode] = t.email;
+            map.tuvan[csCode] = appendUniqueEmail(map.tuvan[csCode], cleanMail);
           }
         }
       }
@@ -761,29 +767,12 @@ export function InputAssessmentsClient({
   const [editC, setEditC] = useState<AssessmentConfig|null>(null)
   const [cForm, setCForm] = useState({ categoryType:"DIEN_KS", code:"", name:"" })
 
-  // ───────── ORIENTATION QUESTION CATALOG STATE ─────────
-  const [catSubTab, setCatSubTab] = useState<"general" | "orientation" | "regulation">("general")
+  // ───────── ORIENTATION MODAL TARGET STATE ─────────
   const [orientationTargetStudent, setOrientationTargetStudent] = useState<any | null>(null)
   const [reportTargetStudent, setReportTargetStudent] = useState<any | null>(null)
   const [activeReportOrientationData, setActiveReportOrientationData] = useState<any | null>(null)
-  const [orientationQuestions, setOrientationQuestions] = useState<any[]>([])
-  const [loadingOrientation, setLoadingOrientation] = useState(false)
-  const [orientationGradeFilter, setOrientationGradeFilter] = useState("ALL")
-  const [orientationCategoryFilter, setOrientationCategoryFilter] = useState("ALL")
-  const [orientationSearch, setOrientationSearch] = useState("")
-  const [isOrientationModalOpen, setIsOrientationModalOpen] = useState(false)
-  const [editingOrientationId, setEditingOrientationId] = useState<string | null>(null)
-  const [savingOrientation, setSavingOrientation] = useState(false)
-  const [orientationForm, setOrientationForm] = useState({
-    gradeGroup: "KHOI_1",
-    category: "HOA_NHAP_GIAO_TIEP",
-    questionText: "",
-    suggestedGuideline: "",
-    sortOrder: 1,
-    status: "ACTIVE"
-  })
 
-  // URL sync for sub=orientation / sub=regulation
+  // URL sync for tab / sub=regulation
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
@@ -792,138 +781,13 @@ export function InputAssessmentsClient({
       const urlSub = params.get("sub") || params.get("catTab")
       if (urlTab === "regulation" || urlSubTab === "regulation" || urlSub === "regulation") {
         setTab("regulation")
-      } else if (urlTab === "categories" || urlSubTab === "categories" || urlSub === "orientation") {
+      } else if (urlTab === "categories" || urlSubTab === "categories") {
         setTab("categories")
-        if (urlSub === "orientation") {
-          setCatSubTab("orientation")
-        }
       } else if (urlSubTab && ["categories", "subjects", "mapping", "regulation", "periods", "students"].includes(urlSubTab)) {
         setTab(urlSubTab)
       }
     }
   }, [])
-
-  // Fetch orientation questions
-  const fetchOrientationQuestions = async () => {
-    try {
-      setLoadingOrientation(true)
-      const res = await fetch("/api/admin/orientation/catalog")
-      const data = await res.json()
-      if (data.success) {
-        setOrientationQuestions(data.data || [])
-      }
-    } catch (e) {
-      console.error("Lỗi tải danh mục câu hỏi định hướng:", e)
-    } finally {
-      setLoadingOrientation(false)
-    }
-  }
-
-  useEffect(() => {
-    if (tab === "categories" && catSubTab === "orientation") {
-      fetchOrientationQuestions()
-    }
-  }, [tab, catSubTab])
-
-  const openAddOrientationQuestion = () => {
-    setEditingOrientationId(null)
-    setOrientationForm({
-      gradeGroup: orientationGradeFilter !== "ALL" ? orientationGradeFilter : "KHOI_1",
-      category: orientationCategoryFilter !== "ALL" ? orientationCategoryFilter : "HOA_NHAP_GIAO_TIEP",
-      questionText: "",
-      suggestedGuideline: "",
-      sortOrder: (orientationQuestions.length + 1),
-      status: "ACTIVE"
-    })
-    setIsOrientationModalOpen(true)
-  }
-
-  const openEditOrientationQuestion = (q: any) => {
-    setEditingOrientationId(q.id)
-    setOrientationForm({
-      gradeGroup: q.gradeGroup || "KHOI_1",
-      category: q.category || "HOA_NHAP_GIAO_TIEP",
-      questionText: q.questionText || "",
-      suggestedGuideline: q.suggestedGuideline || "",
-      sortOrder: q.sortOrder || 1,
-      status: q.status || "ACTIVE"
-    })
-    setIsOrientationModalOpen(true)
-  }
-
-  const handleSaveOrientationQuestion = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!orientationForm.questionText.trim()) {
-      alert("Vui lòng nhập nội dung câu hỏi phỏng vấn định hướng")
-      return
-    }
-
-    try {
-      setSavingOrientation(true)
-      const method = editingOrientationId ? "PUT" : "POST"
-      const payload = editingOrientationId
-        ? { id: editingOrientationId, ...orientationForm }
-        : orientationForm
-
-      const res = await fetch("/api/admin/orientation/catalog", {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-
-      const data = await res.json()
-      if (data.success) {
-        setIsOrientationModalOpen(false)
-        fetchOrientationQuestions()
-      } else {
-        alert(data.error || "Không thể lưu câu hỏi định hướng")
-      }
-    } catch (err: any) {
-      alert("Lỗi: " + err.message)
-    } finally {
-      setSavingOrientation(false)
-    }
-  }
-
-  const handleDeleteOrientationQuestion = (id: string, text: string) => {
-    setConfirm({
-      msg: `Bạn có chắc muốn xóa câu hỏi "${text.length > 50 ? text.substring(0, 50) + "..." : text}"?`,
-      fn: async () => {
-        try {
-          const res = await fetch(`/api/admin/orientation/catalog?id=${id}`, {
-            method: "DELETE"
-          })
-          const data = await res.json()
-          if (data.success) {
-            fetchOrientationQuestions()
-          } else {
-            alert(data.error || "Không thể xóa câu hỏi")
-          }
-        } catch (e: any) {
-          alert("Lỗi xóa: " + e.message)
-        }
-      }
-    })
-  }
-
-  // Lọc danh sách câu hỏi định hướng
-  const filteredOrientationQuestions = useMemo(() => {
-    return orientationQuestions.filter(q => {
-      if (orientationGradeFilter !== "ALL" && q.gradeGroup !== orientationGradeFilter && q.gradeGroup !== "ALL") {
-        return false
-      }
-      if (orientationCategoryFilter !== "ALL" && q.category !== orientationCategoryFilter) {
-        return false
-      }
-      if (orientationSearch.trim()) {
-        const s = orientationSearch.toLowerCase()
-        const text = (q.questionText || "").toLowerCase()
-        const guide = (q.suggestedGuideline || "").toLowerCase()
-        if (!text.includes(s) && !guide.includes(s)) return false
-      }
-      return true
-    })
-  }, [orientationQuestions, orientationGradeFilter, orientationCategoryFilter, orientationSearch])
 
   // Admission Documents State
   const defaultDocGroups = useMemo(() => [
@@ -11479,56 +11343,37 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             </div>
           )}
 
-          {/* SUB-TABS NAVIGATION: Danh mục chung vs Ngân hàng Câu hỏi định hướng */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 rounded-3xl border border-slate-200 shadow-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCatSubTab("general")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
-                  catSubTab === "general"
-                    ? "bg-[#00A19A] text-white shadow-md shadow-[#00A19A]/20"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
+          {/* HEADER DANH MỤC TUYỂN SINH CHUNG (ĐÃ LOẠI BỎ NGÂN HÀNG CÂU HỎI ĐỊNH HƯỚNG CŨ TRÙNG LẶP) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-3 rounded-2xl border border-[#E2E8F0] shadow-xs tabular-nums">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#F0FDFA] border border-teal-200/70 flex items-center justify-center text-[#00736E]">
                 <Database className="w-4 h-4" />
-                <span>Danh mục Tuyển sinh chung</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  catSubTab === "general" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
-                }`}>
-                  8 nhóm
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCatSubTab("orientation")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
-                  catSubTab === "orientation"
-                    ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-indigo-600/20"
-                    : "text-slate-600 hover:text-teal-800 hover:bg-teal-50"
-                }`}
-              >
-                <HeartHandshake className="w-4 h-4 text-teal-700" />
-                <span>Ngân hàng Câu hỏi Phỏng vấn định hướng</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  catSubTab === "orientation" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-800"
-                }`}>
-                  {orientationQuestions.length} câu hỏi
-                </span>
-              </button>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#003B3A] flex items-center gap-2">
+                  <span>Danh mục tuyển sinh chung</span>
+                  <span className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-[11px] font-semibold">
+                    {CATEGORY_TYPES.length} nhóm
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Cấu hình danh mục chuẩn phục vụ hồ sơ và đợt khảo sát đầu vào
+                </p>
+              </div>
             </div>
 
-            <div className="text-xs text-slate-400 font-semibold px-3">
-              {catSubTab === "orientation"
-                ? "Phiếu định hướng 2 Tab • Đánh giá định tính phi điểm số"
-                : "Cấu hình chuẩn hệ thống khảo sát"}
-            </div>
+            <Link
+              href="/admin/cau-hinh-file-diem-ksdv?tab=orientation"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#004d4b] text-white text-xs font-semibold transition-colors"
+            >
+              <HeartHandshake className="w-3.5 h-3.5 text-[#5EEAD4]" />
+              <span>Mẫu định hướng HS &amp; PHHS (BM.KTĐBCL.31–42)</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#5EEAD4]" />
+            </Link>
           </div>
 
-          {/* VIEW 1: DANH MỤC TUYỂN SINH CHUNG (8 NHÓM) */}
-          {catSubTab === "general" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* DANH MỤC TUYỂN SINH CHUNG (8 NHÓM) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {CATEGORY_TYPES.map(type => (
                 <div key={type.code} className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden">
                   <div className={`h-1.5 bg-gradient-to-r ${type.color}`}/>
@@ -11570,370 +11415,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* VIEW 2: NGÂN HÀNG CÂU HỎI PHỎNG VẤN ĐỊNH HƯỚNG */}
-          {catSubTab === "orientation" && (
-            <div className="space-y-5 animate-in fade-in duration-300">
-              {/* Orientation Banner Thấu hiểu học sinh */}
-              <div className="p-5 rounded-3xl bg-gradient-to-r from-teal-600 via-slate-900 to-emerald-600 text-white border border-teal-700/50 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-700 flex-shrink-0 mt-0.5">
-                    <HeartHandshake className="w-6 h-6 text-teal-700" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-teal-500/30 text-teal-700 text-[10px] font-black uppercase tracking-wider border border-teal-400/30">
-                        Phiếu định hướng 2 Tab
-                      </span>
-                      <h3 className="text-base font-black text-white">
-                        Ngân hàng Câu hỏi Phỏng vấn Định hướng Đầu vào
-                      </h3>
-                    </div>
-                    <p className="text-xs text-teal-700/90 leading-relaxed max-w-3xl">
-                      Bộ câu hỏi tự động áp dụng theo khối học sinh ứng tuyển, ghi nhận đánh giá định tính của giáo viên (Tự tin, Bình thường, Cần hỗ trợ, Lưu ý đặc biệt). 
-                      <strong> Phỏng vấn không phải kỳ thi phụ, không chấm điểm số</strong>; hướng tới thấu hiểu học sinh và phát hiện sớm nhu cầu hỗ trợ.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2.5 flex-shrink-0 w-full md:w-auto">
-                  <button
-                    type="button"
-                    onClick={openAddOrientationQuestion}
-                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98]"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Thêm Câu hỏi mới</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={fetchOrientationQuestions}
-                    title="Tải lại danh sách"
-                    className="p-2.5 text-teal-700 hover:text-white bg-white/10 hover:bg-white/15 rounded-xl transition-all"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${loadingOrientation ? "animate-spin text-white" : ""}`} />
-                  </button>
-                </div>
-              </div>
-
-              {/* 4 Cards tóm tắt theo Khối */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { key: "KHOI_1", label: "Khối 1", desc: "Tiền tiểu học • Thích nghi & Giao tiếp", color: "border-sky-200 bg-sky-50/50 text-sky-900" },
-                  { key: "KHOI_2_5", label: "Khối 2 - 5", desc: "Tiểu học • Thói quen & Ý thức", color: "border-emerald-200 bg-emerald-50/50 text-emerald-900" },
-                  { key: "KHOI_6_9", label: "Khối 6 - 9", desc: "THCS • Tự lập & Năng khiếu", color: "border-teal-200 bg-teal-50/50 text-teal-800" },
-                  { key: "KHOI_10_12", label: "Khối 10 - 12", desc: "THPT • Định hướng & Mục tiêu", color: "border-amber-200 bg-amber-50/50 text-amber-900" }
-                ].map(group => {
-                  const count = orientationQuestions.filter(q => q.gradeGroup === group.key || q.gradeGroup === "ALL").length
-                  return (
-                    <button
-                      key={group.key}
-                      type="button"
-                      onClick={() => setOrientationGradeFilter(prev => prev === group.key ? "ALL" : group.key)}
-                      className={`p-3.5 rounded-2xl border text-left transition-all ${
-                        orientationGradeFilter === group.key
-                          ? "ring-2 ring-indigo-500 shadow-sm " + group.color
-                          : "bg-white border-slate-200 hover:border-teal-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-black text-slate-800">{group.label}</span>
-                        <span className="px-2 py-0.5 rounded-full bg-white text-teal-800 text-[10px] font-black border border-slate-200 shadow-2xs">
-                          {count} câu
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 font-medium truncate">{group.desc}</p>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Bộ lọc & Tìm kiếm */}
-              <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="relative min-w-[240px]">
-                    <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-                    <input
-                      type="text"
-                      value={orientationSearch}
-                      onChange={(e) => setOrientationSearch(e.target.value)}
-                      placeholder="Tìm kiếm câu hỏi, gợi ý quan sát..."
-                      className="w-full h-10 pl-10 pr-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-teal-200 focus:bg-white"
-                    />
-                  </div>
-
-                  <select
-                    value={orientationGradeFilter}
-                    onChange={(e) => setOrientationGradeFilter(e.target.value)}
-                    className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
-                  >
-                    {ORIENTATION_GRADE_GROUPS.map(g => (
-                      <option key={g.code} value={g.code}>{g.label}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={orientationCategoryFilter}
-                    onChange={(e) => setOrientationCategoryFilter(e.target.value)}
-                    className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
-                  >
-                    {ORIENTATION_CATEGORIES.map(c => (
-                      <option key={c.code} value={c.code}>{c.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="text-xs font-bold text-slate-500 self-end md:self-center">
-                  Hiển thị <strong className="text-teal-800">{filteredOrientationQuestions.length}</strong> / {orientationQuestions.length} câu hỏi
-                </div>
-              </div>
-
-              {/* Bảng Danh sách Câu hỏi Định hướng */}
-              {loadingOrientation ? (
-                <div className="py-20 text-center text-xs font-bold text-slate-400">
-                  <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-teal-800" />
-                  Đang tải ngân hàng câu hỏi phỏng vấn định hướng...
-                </div>
-              ) : filteredOrientationQuestions.length === 0 ? (
-                <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center space-y-3">
-                  <HeartHandshake className="w-12 h-12 text-slate-300 mx-auto" />
-                  <h4 className="text-sm font-black text-slate-700">Chưa tìm thấy câu hỏi phỏng vấn định hướng phù hợp</h4>
-                  <p className="text-xs text-slate-400 font-medium">Bấm &quot;Thêm Câu hỏi mới&quot; để bổ sung vào ngân hàng câu hỏi theo khối.</p>
-                  <button
-                    type="button"
-                    onClick={openAddOrientationQuestion}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#003B3A] text-white rounded-xl text-xs font-bold"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Thêm câu hỏi ngay
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left whitespace-nowrap border-collapse">
-                      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                        <tr className="border-b text-[11px] font-semibold">
-                          <th className="px-4 py-3.5 w-14 text-center font-semibold">STT</th>
-                          <th className="px-4 py-3.5 w-32 font-semibold">Khối áp dụng</th>
-                          <th className="px-4 py-3.5 w-44 font-semibold">Chủ đề</th>
-                          <th className="px-4 py-3.5 min-w-[280px] font-semibold">Nội dung Câu hỏi Phỏng vấn gợi ý</th>
-                          <th className="px-4 py-3.5 min-w-[260px] font-semibold">Gợi ý quan sát / Tiêu chí nhận diện cho GV</th>
-                          <th className="px-4 py-3.5 w-24 text-center font-semibold">Trạng thái</th>
-                          <th className="px-4 py-3.5 w-24 text-right font-semibold">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E2E8F0] text-xs font-semibold">
-                        {filteredOrientationQuestions.map((q, idx) => {
-                          const catObj = ORIENTATION_CATEGORIES.find(c => c.code === q.category)
-                          const gradeObj = ORIENTATION_GRADE_GROUPS.find(g => g.code === q.gradeGroup)
-                          return (
-                            <tr key={q.id} className="hover:bg-slate-50/70 transition-colors">
-                              <td className="px-4 py-3.5 text-center font-bold text-slate-400">
-                                {q.sortOrder || idx + 1}
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 font-bold text-[11px] inline-block border border-slate-200">
-                                  {gradeObj?.label || q.gradeGroup}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <span className={`px-2.5 py-1 rounded-xl font-bold text-[11px] inline-block border ${
-                                  catObj?.color || "bg-teal-50 text-teal-800 border-teal-200"
-                                }`}>
-                                  {catObj?.label || q.category}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 whitespace-normal">
-                                <p className="text-slate-800 font-bold leading-relaxed max-w-xl">
-                                  {q.questionText}
-                                </p>
-                              </td>
-                              <td className="px-4 py-3.5 whitespace-normal">
-                                <p className="text-slate-500 italic text-[11px] leading-relaxed max-w-lg">
-                                  {q.suggestedGuideline || "—"}
-                                </p>
-                              </td>
-                              <td className="px-4 py-3.5 text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                                  q.status === "ACTIVE"
-                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                                    : "bg-slate-100 text-slate-600"
-                                }`}>
-                                  {q.status === "ACTIVE" ? "Đang mở" : "Tạm khóa"}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => openEditOrientationQuestion(q)}
-                                    title="Chỉnh sửa câu hỏi"
-                                    className="p-2 text-slate-400 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-all"
-                                  >
-                                    <Edit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteOrientationQuestion(q.id, q.questionText)}
-                                    title="Xóa câu hỏi"
-                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* MODAL THÊM / SỬA CÂU HỎI ĐỊNH HƯỚNG */}
-              {isOrientationModalOpen && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-                  <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-xs" onClick={() => setIsOrientationModalOpen(false)} />
-                  <div className="relative bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
-                    <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 bg-slate-50/60">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-[#003B3A] text-white flex items-center justify-center">
-                          <HeartHandshake className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-black text-slate-800">
-                            {editingOrientationId ? "Chỉnh sửa Câu hỏi Phỏng vấn" : "Thêm Câu hỏi Phỏng vấn Mới"}
-                          </h3>
-                          <span className="text-[11px] font-semibold text-teal-800">
-                            Ngân hàng Câu hỏi Phỏng vấn Định hướng Đầu vào
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsOrientationModalOpen(false)}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <form onSubmit={handleSaveOrientationQuestion} className="p-6 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">
-                            Khối áp dụng <span className="text-rose-500">*</span>
-                          </label>
-                          <select
-                            value={orientationForm.gradeGroup}
-                            onChange={(e) => setOrientationForm(prev => ({ ...prev, gradeGroup: e.target.value }))}
-                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-teal-200"
-                          >
-                            {ORIENTATION_GRADE_GROUPS.map(g => (
-                              <option key={g.code} value={g.code}>{g.label}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">
-                            Chủ đề nhận diện <span className="text-rose-500">*</span>
-                          </label>
-                          <select
-                            value={orientationForm.category}
-                            onChange={(e) => setOrientationForm(prev => ({ ...prev, category: e.target.value }))}
-                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-teal-200"
-                          >
-                            {ORIENTATION_CATEGORIES.filter(c => c.code !== "ALL").map(c => (
-                              <option key={c.code} value={c.code}>{c.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">
-                          Nội dung Câu hỏi gợi ý cho Giáo viên <span className="text-rose-500">*</span>
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={orientationForm.questionText}
-                          onChange={(e) => setOrientationForm(prev => ({ ...prev, questionText: e.target.value }))}
-                          placeholder="Ví dụ: Con thích nhất điều gì khi đến trường? Con thường chơi cùng ai trong giờ ra chơi?"
-                          className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 outline-none focus:border-teal-200 focus:bg-white resize-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">
-                          Gợi ý quan sát / Tiêu chí nhận diện định tính cho Giáo viên
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={orientationForm.suggestedGuideline}
-                          onChange={(e) => setOrientationForm(prev => ({ ...prev, suggestedGuideline: e.target.value }))}
-                          placeholder="Ví dụ: Quan sát sự cởi mở, tự tin biểu đạt cảm xúc, phản xạ mắt và ngôn ngữ cơ thể của học sinh."
-                          className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 outline-none focus:border-teal-200 focus:bg-white resize-none"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 pt-1">
-                        <div>
-                          <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">Thứ tự hiển thị</label>
-                          <input
-                            type="number"
-                            value={orientationForm.sortOrder}
-                            onChange={(e) => setOrientationForm(prev => ({ ...prev, sortOrder: parseInt(e.target.value) || 1 }))}
-                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-teal-200"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">Trạng thái</label>
-                          <select
-                            value={orientationForm.status}
-                            onChange={(e) => setOrientationForm(prev => ({ ...prev, status: e.target.value }))}
-                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-teal-200"
-                          >
-                            <option value="ACTIVE">Đang mở (Áp dụng)</option>
-                            <option value="LOCKED">Tạm khóa</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                        <button
-                          type="button"
-                          onClick={() => setIsOrientationModalOpen(false)}
-                          className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
-                        >
-                          Hủy
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={savingOrientation}
-                          className="px-5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-600/20 disabled:opacity-50 flex items-center gap-1.5"
-                        >
-                          {savingOrientation ? (
-                            <>
-                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                              <span>Đang lưu...</span>
-                            </>
-                          ) : (
-                            <span>{editingOrientationId ? "Cập nhật câu hỏi" : "Lưu câu hỏi"}</span>
-                          )}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -13487,8 +12969,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     {hist.psychologyScore != null && <div><span className="text-slate-400 font-normal">Tâm lý:</span> {hist.psychologyScore}đ</div>}
                                     {hist.mathScore != null && <div><span className="text-slate-400 font-normal">Toán:</span> {hist.mathScore}đ</div>}
                                     {hist.literatureScore != null && <div><span className="text-slate-400 font-normal">Ngữ Văn:</span> {hist.literatureScore}đ</div>}
-                                    {hist.writtenEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (viết):</span> {hist.writtenEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/70'}đ</div>}
-                                    {hist.oralEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (nói):</span> {hist.oralEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/30'}đ</div>}
+                                    {hist.writtenEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (viết):</span> {hist.writtenEnglishScore}/10đ</div>}
+                                    {hist.oralEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (nói):</span> {hist.oralEnglishScore}/10đ</div>}
                                     {parsedScores.filter(Boolean).map((sc, sIdx) => {
                                       const sub = sc?.subject || {};
                                       const subCode = (sub?.code || "").toLowerCase();
@@ -13588,6 +13070,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       let writtenScoreVal = null;
                       let oralScoreText = "—";
                       let writtenScoreText = "—";
+                      let oralMaxScore = 10;
+                      let writtenMaxScore = 10;
+                      let totalMaxScore = 10;
                       
                       if (hasEnglish) {
                         scoresList.forEach((sc) => {
@@ -13607,37 +13092,21 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
                                 oralScoreVal = parseFloat(scoreVal);
                                 oralScoreText = scoreVal.toString();
+                                if (!isNaN(oralScoreVal) && oralScoreVal > 10) {
+                                  oralMaxScore = oralScoreVal <= 30 ? 30 : 100;
+                                }
                               }
                             } else if (sName.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
                               if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
                                 writtenScoreVal = parseFloat(scoreVal);
                                 writtenScoreText = scoreVal.toString();
+                                if (!isNaN(writtenScoreVal) && writtenScoreVal > 10) {
+                                  writtenMaxScore = writtenScoreVal <= 70 ? 70 : 100;
+                                }
                               }
                             }
                           }
                         });
-                        
-                        let totalVal = "—";
-                        if (oralScoreVal !== null || writtenScoreVal !== null) {
-                          totalVal = ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString();
-                        }
-                        
-                        if (!scoresList.some(s => s.id === "tong_diem_tieng_anh")) {
-                          scoresList.push({
-                            id: "tong_diem_tieng_anh",
-                            isVirtual: true,
-                            scores: JSON.stringify([totalVal]),
-                            subject: {
-                              id: "tong_diem_tieng_anh",
-                              code: "eng_total",
-                              name: "Tổng điểm Tiếng Anh",
-                              subjectType: "VIET_NAM",
-                              scoreColumns: 1,
-                              commentColumns: 0,
-                              columnNames: JSON.stringify({ scores: ["Tổng điểm Tiếng Anh"], comments: [] })
-                            }
-                          });
-                        }
                       }
                       
                       return (
@@ -14166,13 +13635,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                             let displayVal = val !== undefined && val !== "" && val !== null ? val : "—";
                                             if (subCode.includes("nltd")) {
                                               displayVal = val !== undefined && val !== "" && val !== null ? `${val}%` : "—%";
-                                            } else if (!isGrade1) {
+                                            } else {
                                               const sNameLower = subName.toLowerCase().normalize("NFC");
                                               if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
                                                 if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("speaking") || subCode.includes("oral") || subCode.includes("vd")) {
-                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/30` : "—/30";
+                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/${oralMaxScore}` : `—/${oralMaxScore}`;
                                                 } else if (sNameLower.includes("viết") || subCode.includes("writing") || subCode.includes("written") || subCode.includes("vt")) {
-                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/70` : "—/70";
+                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/${writtenMaxScore}` : `—/${writtenMaxScore}`;
                                                 }
                                               }
                                             }
@@ -18528,16 +17997,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
         );
       })()}
 
-      {/* MODAL PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (2 TAB) */}
+      {/* MODAL PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & PHHS (PVDH-01..05) */}
       {orientationTargetStudent && (
-        <StudentOrientationModal
+        <PvdhOrientationModal
           isOpen={!!orientationTargetStudent}
           onClose={() => setOrientationTargetStudent(null)}
           student={orientationTargetStudent}
-          onOpenReport={(stu, orData) => {
-            setReportTargetStudent(stu);
-            setActiveReportOrientationData(orData);
-          }}
           onSuccess={() => {
             if (typeof fetchStudents === "function") {
               fetchStudents();

@@ -633,6 +633,24 @@ export function StudentInfoClient({
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccessCount, setImportSuccessCount] = useState<number | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [studentPsychReferralInfo, setStudentPsychReferralInfo] = useState<any>(null);
+
+  useEffect(() => {
+    if (isDetailsOpen && activeTab !== "preschool" && selectedStudent?.id) {
+      fetch(`/api/admin/orientation/psychology-referral?studentId=${encodeURIComponent(selectedStudent.id)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.success) {
+            setStudentPsychReferralInfo(data);
+          } else {
+            setStudentPsychReferralInfo(null);
+          }
+        })
+        .catch(() => setStudentPsychReferralInfo(null));
+    } else {
+      setStudentPsychReferralInfo(null);
+    }
+  }, [isDetailsOpen, activeTab, selectedStudent?.id]);
 
   useEffect(() => {
     if (isDetailsOpen && activeTab === "preschool" && selectedStudent) {
@@ -5736,39 +5754,20 @@ export function StudentInfoClient({
 
                             let writtenDisplay: React.ReactNode = writtenEnglishVal !== null && writtenEnglishVal !== undefined ? writtenEnglishVal : "—";
                             let oralDisplay: React.ReactNode = oralEnglishVal !== null && oralEnglishVal !== undefined ? oralEnglishVal : "—";
-                            let totalScore: number | null = null;
                             
                             if (isGrade1) {
                               writtenDisplay = "Không áp dụng";
                               if (oralEnglishVal !== null && oralEnglishVal !== undefined && oralEnglishVal !== "") {
-                                oralDisplay = `${oralEnglishVal}/30`;
-                                const oScore = parseFloat(oralEnglishVal);
-                                if (!isNaN(oScore)) {
-                                  totalScore = Math.round((oScore / 30) * 100 * 10) / 10;
-                                }
+                                oralDisplay = `${oralEnglishVal}/10`;
                               }
                             } else {
                               if (eptVal !== null && eptVal !== undefined && eptVal !== "") {
                                 writtenDisplay = `${eptVal}/100`;
                               } else if (writtenEnglishVal !== null && writtenEnglishVal !== undefined && writtenEnglishVal !== "") {
-                                writtenDisplay = `${writtenEnglishVal}/70`;
+                                writtenDisplay = `${writtenEnglishVal}/10`;
                               }
                               if (oralEnglishVal !== null && oralEnglishVal !== undefined && oralEnglishVal !== "") {
-                                oralDisplay = `${oralEnglishVal}/30`;
-                              }
-                              
-                              if (eptVal !== null && eptVal !== undefined && eptVal !== "") {
-                                totalScore = parseFloat(eptVal);
-                              } else {
-                                const wScore = parseFloat(writtenEnglishVal);
-                                const oScore = parseFloat(oralEnglishVal);
-                                if (!isNaN(wScore) && !isNaN(oScore)) {
-                                  totalScore = Math.round((wScore + oScore) * 10) / 10;
-                                } else if (!isNaN(wScore)) {
-                                  totalScore = wScore;
-                                } else if (!isNaN(oScore)) {
-                                  totalScore = oScore;
-                                }
+                                oralDisplay = `${oralEnglishVal}/10`;
                               }
                             }
 
@@ -5884,7 +5883,7 @@ export function StudentInfoClient({
                                         <span className="text-3xl font-black text-slate-800 leading-none">
                                           {writtenDisplay}
                                         </span>
-                                        <span className="text-[9px] text-slate-400 font-bold">{eptVal !== null && eptVal !== undefined && eptVal !== "" ? "Thang điểm 100 (EPT)" : "Thang điểm 70"}</span>
+                                        <span className="text-[9px] text-slate-400 font-bold">{eptVal !== null && eptVal !== undefined && eptVal !== "" ? "Thang điểm 100 (EPT)" : "Thang điểm 10"}</span>
                                       </>
                                     ) : (
                                       <>
@@ -5911,7 +5910,7 @@ export function StudentInfoClient({
                                         <span className="text-3xl font-black text-slate-800 leading-none">
                                           {oralDisplay}
                                         </span>
-                                        <span className="text-[9px] text-slate-400 font-bold">Thang điểm 30</span>
+                                        <span className="text-[9px] text-slate-400 font-bold">Thang điểm 10</span>
                                       </>
                                     ) : (
                                       <>
@@ -5961,57 +5960,115 @@ export function StudentInfoClient({
                                   </div>
                                 </div>
 
-                                {/* 2. English Speaking Comment & Total English Score */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <div className="md:col-span-2 bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col justify-center">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <span className="text-xs font-black text-sky-700 uppercase tracking-wider">Nhận xét Tiếng Anh Nói</span>
-                                      <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse"></span>
-                                    </div>
-                                    <p className="text-xs text-slate-600 font-semibold leading-relaxed">
-                                      {oralEnglishComment ? (
-                                        <span className="italic">"{oralEnglishComment}"</span>
-                                      ) : (
-                                        <span className="text-slate-400 font-normal">Chưa có nhận xét Tiếng Anh Nói.</span>
-                                      )}
-                                    </p>
+                                {/* 2. English Speaking Comment */}
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col justify-center">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs font-black text-sky-700 uppercase tracking-wider">Nhận xét Tiếng Anh Nói</span>
                                   </div>
-                                  
-                                  {totalScore !== null ? (
-                                    <div className="bg-gradient-to-br from-teal-600 to-sky-50 p-4 rounded-2xl border border-teal-200 text-center flex flex-col justify-center items-center">
-                                      <span className="block text-[10px] font-black text-teal-800 uppercase tracking-widest">Tổng điểm Tiếng Anh</span>
-                                      <span className="text-2xl font-black text-teal-800 mt-1 block">
-                                        {totalScore}/100
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center flex flex-col justify-center text-slate-400 text-xs font-medium italic">
-                                      Không áp dụng tổng điểm
-                                    </div>
-                                  )}
+                                  <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                                    {oralEnglishComment ? (
+                                      <span className="italic">"{oralEnglishComment}"</span>
+                                    ) : (
+                                      <span className="text-slate-400 font-normal">Chưa có nhận xét Tiếng Anh Nói.</span>
+                                    )}
+                                  </p>
                                 </div>
 
-                                {/* 3. Detailed Psychology Section */}
-                                {(psychologyConclusion || psychologyRecommendation) && (
-                                  <div className="bg-gradient-to-br from-teal-600/20 via-indigo-50/10 to-transparent p-5 rounded-2xl border border-teal-200 text-left animate-fade-in">
-                                    <div className="flex items-center gap-2 mb-3.5 border-b border-teal-100/50 pb-2">
-                                      <Brain className="w-4 h-4 text-teal-800 animate-pulse" />
-                                      <h5 className="text-xs font-black text-teal-800 uppercase tracking-wider">Chi tiết Đánh giá Tâm lý</h5>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {psychologyConclusion && (
-                                        <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-teal-100/30 shadow-sm">
-                                          <span className="block text-[9.5px] font-black text-teal-800 uppercase tracking-wider mb-1.5">Chẩn đoán chuyên môn</span>
-                                          <p className="text-xs text-slate-700 font-semibold leading-relaxed whitespace-pre-wrap">{psychologyConclusion}</p>
-                                        </div>
-                                      )}
-                                      {psychologyRecommendation && (
-                                        <div className="bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-teal-100/30 shadow-sm">
-                                          <span className="block text-[9.5px] font-black text-teal-800 uppercase tracking-wider mb-1.5">Khuyến nghị & Nhận xét</span>
-                                          <p className="text-xs text-slate-700 font-semibold leading-relaxed whitespace-pre-wrap">{psychologyRecommendation}</p>
-                                        </div>
+                                {/* 3. Detailed Psychology Section & GĐCS Confirmed Work Plan for Giáo vụ / Tư vấn cơ sở */}
+                                {(psychologyConclusion || psychologyRecommendation || studentPsychReferralInfo?.psychologyData?.gdcsResponse || studentPsychReferralInfo?.psychologyData?.reportedToGdcs) && (
+                                  <div className="bg-[#F0FDFA] p-5 rounded-2xl border border-[#99F6E4] text-left space-y-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#99F6E4]/70 pb-2.5">
+                                      <div className="flex items-center gap-2">
+                                        <Brain className="w-4 h-4 text-[#003B3A]" />
+                                        <h5 className="text-xs font-bold text-[#003B3A]">Chi tiết Đánh giá Tâm lý &amp; Phương án làm việc của GĐCS</h5>
+                                      </div>
+                                      {studentPsychReferralInfo?.psychologyData?.gdcsResponse && (
+                                        <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 text-[#059669] border border-emerald-200 text-[11px] font-bold">
+                                          ✓ GĐCS đã xác nhận: {studentPsychReferralInfo.psychologyData.gdcsResponse.responseTypeName}
+                                        </span>
                                       )}
                                     </div>
+                                    {(psychologyConclusion || psychologyRecommendation) && (
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {psychologyConclusion && (
+                                          <div className="bg-white p-4 rounded-xl border border-[#CCFBF1] shadow-2xs">
+                                            <span className="block text-[11px] font-bold text-[#003B3A] mb-1">Kết luận chuyên môn Tâm lý</span>
+                                            <p className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">{psychologyConclusion}</p>
+                                          </div>
+                                        )}
+                                        {psychologyRecommendation && (
+                                          <div className="bg-white p-4 rounded-xl border border-[#CCFBF1] shadow-2xs">
+                                            <span className="block text-[11px] font-bold text-[#003B3A] mb-1">Khuyến nghị &amp; Nhận xét</span>
+                                            <p className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">{psychologyRecommendation}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    {(() => {
+                                      const gdcsResp = studentPsychReferralInfo?.psychologyData?.gdcsResponse;
+                                      const repInfo = studentPsychReferralInfo?.psychologyData?.reportedToGdcs;
+                                      const gStaff = gdcsResp?.giaovuStaff || repInfo?.giaovuStaff || studentPsychReferralInfo?.giaovuStaff || [];
+                                      const tStaff = gdcsResp?.tuvanStaff || repInfo?.tuvanStaff || studentPsychReferralInfo?.tuvanStaff || [];
+                                      if (!gdcsResp && !repInfo) return null;
+                                      return (
+                                        <div className="bg-white p-4 rounded-xl border border-[#00A19A] space-y-2 text-xs">
+                                          {gdcsResp ? (
+                                            <>
+                                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <strong className="text-[#003B3A]">
+                                                  Phương án làm việc đã được GĐCS ({gdcsResp.directorName || "Ban Giám đốc Cơ sở"}) xác nhận:
+                                                </strong>
+                                                <span className="text-[11px] text-slate-500 tabular-nums">
+                                                  {gdcsResp.respondedAtFormatted || ""}
+                                                </span>
+                                              </div>
+                                              <div className="text-slate-700 space-y-1">
+                                                <div>
+                                                  • <strong>Phương án:</strong>{" "}
+                                                  <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white font-bold text-[11px]">
+                                                    {gdcsResp.responseTypeName}
+                                                  </span>
+                                                </div>
+                                                {gdcsResp.details?.meetingTime && (
+                                                  <div>• <strong>Thời gian &amp; Địa điểm:</strong> {gdcsResp.details.meetingTime} — {gdcsResp.details.meetingLocation || "Tại cơ sở"}</div>
+                                                )}
+                                                {gdcsResp.details?.parentMeetingContent && (
+                                                  <div>• <strong>Nội dung làm việc với PHHS:</strong> {gdcsResp.details.parentMeetingContent}</div>
+                                                )}
+                                                {gdcsResp.details?.meetingAgenda && (
+                                                  <div>• <strong>Nội dung hội chẩn chuyên môn:</strong> {gdcsResp.details.meetingAgenda} (Thành phần: {gdcsResp.details.meetingParticipants})</div>
+                                                )}
+                                                {gdcsResp.details?.delegatedTeacherName && (
+                                                  <div>• <strong>Giáo viên được ủy quyền đồng hành:</strong> {gdcsResp.details.delegatedTeacherName} ({gdcsResp.details.delegationDuration || "4 tuần đầu"}) — {gdcsResp.details.delegationNote}</div>
+                                                )}
+                                                {gdcsResp.generalDirectiveNote && (
+                                                  <div>• <strong>Ý kiến chỉ đạo của GĐCS:</strong> &ldquo;{gdcsResp.generalDirectiveNote}&rdquo;</div>
+                                                )}
+                                              </div>
+                                            </>
+                                          ) : (
+                                            <div className="text-amber-800 font-medium">
+                                              • <strong>Đã báo cáo GĐCS ({repInfo?.gdcsName || "GĐCS"}):</strong> Đề xuất phương án{" "}
+                                              <strong>{repInfo?.proposedActionLabel || "1. Trao đổi trực tiếp PHHS"}</strong> — Đang chờ GĐCS xác nhận.
+                                            </div>
+                                          )}
+                                          <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600 space-y-0.5">
+                                            <div>
+                                              • <strong>Tổ Giáo vụ cơ sở nắm thông tin:</strong>{" "}
+                                              <span className="font-semibold text-[#003B3A]">
+                                                {gStaff.length > 0 ? gStaff.map((s: any) => `${s.fullName} (${s.email})`).join(", ") : (gdcsResp?.giaovuEmail || repInfo?.giaovuEmail || studentPsychReferralInfo?.defaultGiaovuEmail)}
+                                              </span>
+                                            </div>
+                                            <div>
+                                              • <strong>Tổ Tư vấn cơ sở nắm thông tin:</strong>{" "}
+                                              <span className="font-semibold text-[#003B3A]">
+                                                {tStaff.length > 0 ? tStaff.map((s: any) => `${s.fullName} (${s.email})`).join(", ") : (gdcsResp?.tuyensinhEmail || repInfo?.tuyensinhEmail || studentPsychReferralInfo?.defaultTuyensinhEmail)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 )}
 

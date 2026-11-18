@@ -21,6 +21,8 @@ import { StudentOrientationModal } from "@/components/orientation/StudentOrienta
 import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal";
 import { PvdhOrientationModal } from "@/components/orientation/PvdhOrientationModal";
 import { GvcnHandoverDrawer } from "@/components/orientation/GvcnHandoverDrawer";
+import { getDefaultPvdhCodeForGrade, BM_SHEET_STATUS_OPTIONS, normalizeK12GradeNumber } from "@/lib/pvdh/constants";
+import { parseTeacherSummary } from "@/lib/pvdh/validation";
 import { calculateCompositeScore, getColumnMaxScore, parseMaxScores, roundScore } from "@/lib/grading/formula-calculator";
 
 const QUICK_REMARKS = [
@@ -51,7 +53,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [highlightedStudentCode, setHighlightedStudentCode] = useState<string>("");
     const [orientationTargetStudent, setOrientationTargetStudent] = useState<any | null>(null);
     const [pvdhTargetStudent, setPvdhTargetStudent] = useState<any | null>(null);
-    const [pvdhInitialSection, setPvdhInitialSection] = useState<any>("II_STUDENT");
+    const [pvdhInitialSection, setPvdhInitialSection] = useState<any>("FULL_FORM");
     const [isGvcnHandoverOpen, setIsGvcnHandoverOpen] = useState<boolean>(false);
     const [reportTargetStudent, setReportTargetStudent] = useState<any | null>(null);
     const [activeReportOrientationData, setActiveReportOrientationData] = useState<any | null>(null);
@@ -655,7 +657,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 const isGrade1 = student && String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
                 
                 if (subName.includes("vấn đáp")) {
-                    const maxScore = 30;
+                    const maxScore = 10;
                     if (numVal > maxScore) {
                         alert(`Điểm Tiếng Anh (vấn đáp) tối đa là ${maxScore} đ!`);
                         val = String(maxScore);
@@ -664,9 +666,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     if (isGrade1) {
                         alert("Khối 1 không có bài thi Tiếng Anh (viết)!");
                         val = "";
-                    } else if (numVal > 70) {
-                        alert("Điểm Tiếng Anh (viết) tối đa là 70 đ!");
-                        val = "70";
+                    } else if (numVal > 10) {
+                        alert("Điểm Tiếng Anh (viết) tối đa là 10 đ!");
+                        val = "10";
                     }
                 }
             }
@@ -694,7 +696,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         }));
     };
 
-    const saveStudentScore = async (st: any, customScores?: any[], customComments?: any[]) => {
+    const saveStudentScore = async (st: any, customScores?: any[], customComments?: any[], options?: { keepOpen?: boolean }) => {
         const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
         if (!assignment) return;
 
@@ -731,7 +733,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                 setTimeout(() => setSaveStatus(prev => ({ ...prev, [st.id]: "" })), 2500);
                 
-                if (customScores) {
+                if (customScores && !options?.keepOpen) {
                     setIsPsychModalOpen(false);
                 }
             } else {
@@ -1010,7 +1012,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     setActivePreschoolStudent(target);
                     setIsPreschoolModalOpen(true);
                 } else if (isOrientationSubject) {
-                    setPvdhInitialSection("II_STUDENT");
+                    setPvdhInitialSection("FULL_FORM");
                     setPvdhTargetStudent(target);
                 }
             }
@@ -1087,7 +1089,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 {isPreschoolSubject || (urlType === "preschool" && !currentAssignment) || (assignments.length > 0 && assignments.every(a => a.isPreschool))
                                     ? "Khảo sát & Định hướng Mầm non"
                                     : isOrientationSubject
-                                      ? "Phỏng vấn định hướng Phổ thông"
+                                      ? "Phiếu phỏng vấn định hướng học sinh và trao đổi với phụ huynh (BM.KTĐBCL.31–42)"
                                       : currentAssignment?.subject?.name
                                         ? `${currentAssignment.subject.code ? `${currentAssignment.subject.code} – ` : ""}${currentAssignment.subject.name}`
                                         : "Nhập kết quả theo phân công"}
@@ -1710,8 +1712,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                             </th>
 
                                             {/* Form Column */}
-                                            <th className="px-4 py-3 min-w-[240px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-center">
-                                                {isOrientationSubject ? "Phiếu Định Hướng (3 Tab)" : isPreschoolProbationSubject ? "Form ĐG Học Thử" : (isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo Sát" : (hideComments ? "Chi Tiết Điểm" : "Chi Tiết Điểm & Nhận Xét"))}
+                                            <th className="px-4 py-3 min-w-[260px] font-bold text-[#005854] bg-[#F0FDFA] text-xs text-center">
+                                                {isOrientationSubject ? "Phiếu phỏng vấn định hướng (BM.KTĐBCL.31–42)" : isPreschoolProbationSubject ? "Form ĐG Học thử" : (isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form khảo sát" : (hideComments ? "Chi tiết điểm" : "Chi tiết điểm & nhận xét"))}
                                             </th>
 
                                             {/* Specialized Columns */}
@@ -1948,61 +1950,128 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                 );
                                                             })()
                                                         ) : isOrientationSubject ? (
-                                                            // Phiếu phỏng vấn định hướng HS và trao đổi PHHS (PVDH-01..05)
-                                                            <div className="flex flex-col items-center justify-center gap-1.5 py-1">
-                                                                <div className="flex flex-wrap items-center justify-center gap-1.5">
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setPvdhInitialSection("II_STUDENT");
-                                                                            setPvdhTargetStudent(st);
-                                                                        }}
-                                                                        className="bg-[#003B3A] hover:bg-[#005250] text-white font-bold py-1.5 px-3.5 rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer"
-                                                                    >
-                                                                        <HeartHandshake className="w-3.5 h-3.5 text-[#5EEAD4]" /> 
-                                                                        <span>Nhập định hướng</span>
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setPvdhInitialSection("PREVIEW");
-                                                                            setPvdhTargetStudent(st);
-                                                                        }}
-                                                                        className="px-2.5 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F0FDFA] text-[#00736E] font-semibold text-xs flex items-center gap-1 cursor-pointer"
-                                                                        title="Xem trước phiếu phỏng vấn định hướng A4"
-                                                                    >
-                                                                        <Printer className="w-3.5 h-3.5" />
-                                                                        <span>Xem trước phiếu</span>
-                                                                    </button>
-                                                                    {st.pvdhRecord?.id && (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const pId = st.periodId || currentAssignment?.periodId || "";
-                                                                                window.open(`/api/pvdh/pdf?studentId=${encodeURIComponent(st.id)}&periodId=${encodeURIComponent(pId)}&format=pdf&disposition=attachment`, "_blank");
-                                                                            }}
-                                                                            className="px-2.5 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
-                                                                            title="Tải PDF phiếu định hướng"
+                                                            (() => {
+                                                                const gradeNum = normalizeK12GradeNumber(st.grade) || "1";
+                                                                const bmCode = st.pvdhRecord?.templateCode || getDefaultPvdhCodeForGrade(st.grade) || "BM.KTĐBCL.31";
+                                                                const bmVer = st.pvdhRecord?.templateVersionCode || `v${st.pvdhRecord?.versionNumber || "1.0"}`;
+                                                                const bmSum = parseTeacherSummary(st.pvdhRecord?.teacherSummaryJson);
+                                                                const sheetOpt = BM_SHEET_STATUS_OPTIONS.find((o) => o.code === bmSum.sheetStatus);
+                                                                const hasLegacyContent = Boolean(
+                                                                    st.orientationRecord?.interviewerName ||
+                                                                    st.orientationRecord?.interviewData ||
+                                                                    st.orientationRecord?.parentInterviewData ||
+                                                                    st.orientationRecord?.studentStrengths ||
+                                                                    st.orientationRecord?.admissionConsultantNote
+                                                                );
+                                                                const secBadge = (label: string, status?: string) => {
+                                                                    const done = status === "COMPLETED";
+                                                                    const draft = status === "IN_PROGRESS" || status === "DRAFT" || Boolean(st.pvdhRecord?.id && status !== "NOT_STARTED");
+                                                                    return (
+                                                                        <span
+                                                                            key={label}
+                                                                            className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold border tabular-nums ${
+                                                                                done
+                                                                                    ? "bg-emerald-50 text-[#059669] border-emerald-200"
+                                                                                    : draft
+                                                                                      ? "bg-[#F0FDFA] text-[#00736E] border-[#CCFBF1]"
+                                                                                      : "bg-slate-50 text-slate-500 border-slate-200"
+                                                                            }`}
                                                                         >
-                                                                            <span>Tải PDF</span>
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                                {st.pvdhRecord?.templateCode && (
-                                                                    <div className="text-[11px] text-slate-500 font-medium">
-                                                                        Mẫu <strong className="text-[#003B3A]">{st.pvdhRecord.templateCode}</strong> (v{st.pvdhRecord.versionNumber || "1.0"})
+                                                                            {done ? "✓ " : ""}{label}
+                                                                        </span>
+                                                                    );
+                                                                };
+
+                                                                return (
+                                                                    <div className="flex flex-col items-center justify-center gap-1.5 py-1 tabular-nums">
+                                                                        <div className="flex flex-wrap items-center justify-center gap-1">
+                                                                            <span className="px-2 py-0.5 rounded-md bg-[#003B3A] text-[#5EEAD4] text-[10px] font-bold">
+                                                                                {bmCode}
+                                                                            </span>
+                                                                            <span className="px-2 py-0.5 rounded-md bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] text-[10px] font-semibold">
+                                                                                Dành cho khối {gradeNum} • {bmVer}
+                                                                            </span>
+                                                                            {sheetOpt && (
+                                                                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                                                                    sheetOpt.code === "HOAN_THANH"
+                                                                                        ? "bg-emerald-50 text-[#059669] border-emerald-200"
+                                                                                        : sheetOpt.code === "CAN_BO_SUNG_THONG_TIN"
+                                                                                          ? "bg-amber-50 text-[#D97706] border-amber-200"
+                                                                                          : "bg-rose-50 text-[#E11D48] border-rose-200"
+                                                                                }`}>
+                                                                                    {sheetOpt.label}
+                                                                                </span>
+                                                                            )}
+                                                                            {bmSum.psychInterviewRequested && (
+                                                                                <span className="px-2 py-0.5 rounded-md bg-amber-50 text-[#D97706] border border-amber-200 text-[10px] font-semibold">
+                                                                                    Đề nghị phỏng vấn tâm lí
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+
+                                                                        <div className="flex flex-wrap items-center justify-center gap-1.5">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setPvdhInitialSection("FULL_FORM");
+                                                                                    setPvdhTargetStudent(st);
+                                                                                }}
+                                                                                className="bg-[#003B3A] hover:bg-[#005250] text-white font-bold py-1.5 px-3 rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95 text-xs cursor-pointer"
+                                                                            >
+                                                                                <HeartHandshake className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                                                                <span>
+                                                                                    {st.pvdhRecord?.isLocked
+                                                                                        ? `Xem phiếu ${bmCode}`
+                                                                                        : st.pvdhRecord?.id
+                                                                                          ? `Tiếp tục ${bmCode}`
+                                                                                          : `Nhập phiếu ${bmCode}`}
+                                                                                </span>
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setPvdhInitialSection("PREVIEW");
+                                                                                    setPvdhTargetStudent(st);
+                                                                                }}
+                                                                                className="px-2.5 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F0FDFA] text-[#00736E] font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                                                                                title={`Xem trước bản in A4 (${bmCode})`}
+                                                                            >
+                                                                                <Printer className="w-3.5 h-3.5" />
+                                                                                <span>Xem trước A4</span>
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const pId = st.periodId || currentAssignment?.periodId || "";
+                                                                                    window.open(`/api/pvdh/pdf?studentId=${encodeURIComponent(st.id)}&periodId=${encodeURIComponent(pId)}&format=pdf&disposition=attachment`, "_blank");
+                                                                                }}
+                                                                                className="px-2.5 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                                                                                title={`Tải PDF phiếu ${bmCode}`}
+                                                                            >
+                                                                                <span>Tải PDF</span>
+                                                                            </button>
+                                                                        </div>
+
+                                                                        {st.pvdhRecord?.id && (
+                                                                            <div className="flex flex-wrap items-center justify-center gap-1">
+                                                                                {secBadge("Mục A (HS)", st.pvdhRecord.studentSectionStatus)}
+                                                                                {secBadge("Mục B–C (PH)", st.pvdhRecord.parentSectionStatus)}
+                                                                                {secBadge("Mục D (GV)", st.pvdhRecord.orientationSectionStatus)}
+                                                                            </div>
+                                                                        )}
+
+                                                                        {hasLegacyContent && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => setOrientationTargetStudent(st)}
+                                                                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#00736E] hover:underline cursor-pointer"
+                                                                            >
+                                                                                <span>Xem dữ liệu định hướng cũ</span>
+                                                                            </button>
+                                                                        )}
                                                                     </div>
-                                                                )}
-                                                                {st.orientationRecord?.id && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setOrientationTargetStudent(st)}
-                                                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#00736E] hover:underline cursor-pointer"
-                                                                    >
-                                                                        <span>Xem dữ liệu định hướng cũ</span>
-                                                                    </button>
-                                                                )}
-                                                            </div>
+                                                                );
+                                                            })()
                                                         ) : isPsychSubject ? (
                                                             // Specialized Psychology Display
                                                             <div className="flex flex-col items-center justify-center gap-1.5 py-1">
@@ -2077,7 +2146,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                                                                                 const maxScore = activeGradeConfig 
                                                                                     ? (activeGradeConfig.parsedMaxScores?.[colIdx] ?? getColumnMaxScore(activeGradeConfig.parsedTypes?.[colIdx], activeGradeConfig.parsedMaxScores, colIdx))
-                                                                                    : (subNameLower.includes("vấn đáp") ? 30 : subNameLower.includes("viết") ? 70 : 10);
+                                                                                    : 10;
                                                                                 
                                                                                 let maxScoreBadge = "";
                                                                                 if (!isGradeType) {
@@ -2391,7 +2460,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                                                                     if (isOrientationSubject) {
                                                                         const wf = st.pvdhRecord?.workflowStatus;
-                                                                        if (wf === "VERIFIED_LOCKED") {
+                                                                        const bmSum = parseTeacherSummary(st.pvdhRecord?.teacherSummaryJson);
+                                                                        if (wf === "VERIFIED_LOCKED" || st.pvdhRecord?.isLocked) {
                                                                             return (
                                                                                 <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-[#059669] border border-emerald-200 text-xs font-bold w-full">
                                                                                     <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
@@ -2399,11 +2469,27 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                                 </div>
                                                                             );
                                                                         }
-                                                                        if (wf === "COMPLETED" || wf === "SUBMITTED") {
+                                                                        if (bmSum.sheetStatus === "CAN_TRAO_DOI_CHUYEN_MON") {
+                                                                            return (
+                                                                                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 text-[#E11D48] border border-rose-200 text-xs font-bold w-full">
+                                                                                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                                                                    <span>Cần trao đổi CM</span>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        if (bmSum.sheetStatus === "CAN_BO_SUNG_THONG_TIN") {
+                                                                            return (
+                                                                                <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-[#D97706] border border-amber-200 text-xs font-bold w-full">
+                                                                                    <Clock className="w-3.5 h-3.5 shrink-0" />
+                                                                                    <span>Cần bổ sung TT</span>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        if (wf === "COMPLETED" || wf === "SUBMITTED" || bmSum.sheetStatus === "HOAN_THANH") {
                                                                             return (
                                                                                 <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-[#059669] border border-emerald-200 text-xs font-bold w-full">
                                                                                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                                                                                    <span>Đã hoàn tất</span>
+                                                                                    <span>Hoàn thành</span>
                                                                                 </div>
                                                                             );
                                                                         }
@@ -2423,7 +2509,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                                 </div>
                                                                             );
                                                                         }
-                                                                        return st.orientationRecord?.id ? (
+                                                                        return st.orientationRecord?.interviewerName ? (
                                                                             <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold w-full">
                                                                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                                                                 <span>Đã lưu phiếu cũ</span>
@@ -2431,7 +2517,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                                         ) : (
                                                                             <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-[#D97706] border border-amber-200 text-xs font-bold w-full">
                                                                                 <Clock className="w-3.5 h-3.5 shrink-0" />
-                                                                                <span>Chưa nhập kết quả</span>
+                                                                                <span>Chưa nhập phiếu</span>
                                                                             </div>
                                                                         );
                                                                     }
@@ -2707,7 +2793,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     </div>
                     <PsychologyAssessmentForm 
                         student={activePsychStudent}
-                        onSave={async (st: any, scores: any[], comments: any[]) => { await saveStudentScore(st, scores, comments); }}
+                        user={user}
+                        onSave={async (st: any, scores: any[], comments: any[], options?: { keepOpen?: boolean }) => { await saveStudentScore(st, scores, comments, options); }}
                         isLocked={isLocked}
                         onPrintPsychologyPdf={(stu: any, psychData: any) => {
                             setReportTargetStudent(stu);

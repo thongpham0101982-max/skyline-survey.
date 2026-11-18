@@ -3262,92 +3262,209 @@ export function StudentOrientationModal({
                   </div>
 
                   {/* THÔNG TIN XIN Ý KIẾN CHỈ ĐẠO CỦA GV TÂM LÝ (NẾU CÓ) */}
-                  {psychologyData?.gdcsDirectiveRequest?.needGdcsDirective && (
+                  {(psychologyData?.gdcsDirectiveRequest?.needGdcsDirective || psychologyData?.gdcsDirectiveRequest?.requested || psychologyData?.reportedToGdcs) && (
                     <div className="p-2.5 bg-amber-50/80 rounded-xl border border-amber-200 text-[11px] space-y-1">
                       <div className="font-bold text-amber-900 flex items-center gap-1.5">
                         <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                        <span>GV Tâm lý xin ý kiến chỉ đạo:</span>
+                        <span>Báo cáo học sinh có dấu hiệu Tâm lý trình GĐCS xác nhận nội dung làm việc:</span>
                       </div>
                       <div className="text-slate-700 italic pl-5">
-                        &quot;{psychologyData.gdcsDirectiveRequest.directiveTopic || psychologyData.gdcsDirectiveRequest.topic || psychologyData.conclusion}&quot;
+                        &quot;{psychologyData?.gdcsDirectiveRequest?.directiveTopic || psychologyData?.gdcsDirectiveRequest?.topic || psychologyData?.reportedToGdcs?.messageToGdcs || psychologyData?.conclusion || "Học sinh có dấu hiệu tâm lý cần GĐCS xác nhận nội dung làm việc"}&quot;
                       </div>
                       <div className="text-[10.5px] text-slate-600 pl-5">
-                        • Đề xuất mong muốn: <strong className="text-amber-800">{
-                          psychologyData.gdcsDirectiveRequest.proposedAction === "DIRECT_PARENT_MEETING" ? "1. Trao đổi trực tiếp PHHS" :
-                          psychologyData.gdcsDirectiveRequest.proposedAction === "SCHEDULE_MEETING" ? "2. Hẹn lịch làm việc / Hội chẩn" : "3. Ủy quyền Giáo viên"
+                        • Đề xuất phương án: <strong className="text-amber-800">{
+                          (psychologyData?.gdcsDirectiveRequest?.proposedAction || psychologyData?.reportedToGdcs?.proposedAction) === "SCHEDULE_MEETING"
+                            ? "2. Hẹn lịch làm việc / Hội chẩn chuyên môn"
+                            : (psychologyData?.gdcsDirectiveRequest?.proposedAction || psychologyData?.reportedToGdcs?.proposedAction) === "DELEGATE_TEACHER"
+                            ? "3. Ủy quyền Giáo viên đồng hành"
+                            : "1. Trao đổi trực tiếp PHHS"
                         }</strong>
                       </div>
+                      {psychologyData?.reportedToGdcs?.giaovuEmail && (
+                        <div className="text-[10px] text-slate-500 pl-5">
+                          • Đồng gửi (CC): Giáo vụ CS ({psychologyData.reportedToGdcs.giaovuEmail}) • Tư vấn CS ({psychologyData.reportedToGdcs.tuyensinhEmail || "Theo cơ sở"})
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* 3 HÌNH THỨC PHẢN HỒI CHỈ ĐẠO CỦA GĐCS - CHỌN 1 TRONG 3 */}
-                  <div className="space-y-2 pt-1 border-t border-teal-200">
-                    <label className="font-bold text-[#083d39] block text-[11px] uppercase tracking-wide">
-                      Phương án chỉ đạo của GĐCS (Chọn 1 trong 3 trường hợp):
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const nextVal = !gdcsDirectParentMeeting;
-                          setGdcsDirectParentMeeting(nextVal);
-                          if (nextVal) {
+                  {/* 3 HÌNH THỨC PHẢN HỒI CHỈ ĐẠO CỦA GĐCS - TRỰC QUAN 1 CHẠM */}
+                  <div className="space-y-2.5 pt-2 border-t border-teal-200">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="font-bold text-[#003B3A] block text-xs">
+                        Phương án chỉ đạo của GĐCS (Chạm 1 chạm để chọn &amp; tự động điền nội dung):
+                      </label>
+                      <span className="text-[10.5px] text-[#00736E] font-semibold">
+                        Bấm &ldquo;Chọn &amp; Xác nhận&rdquo; trên thẻ để gửi thông báo ngay
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {[
+                        {
+                          code: "DIRECT_PARENT_MEETING" as const,
+                          badge: "Phương án 1",
+                          title: "1. Trao đổi trực tiếp PHHS",
+                          desc: "GĐCS trực tiếp gặp PHHS & thống nhất cam kết phối hợp",
+                          active: gdcsDirectParentMeeting,
+                          onSelect: () => {
+                            setGdcsDirectParentMeeting(true);
                             setGdcsScheduleMeeting(false);
                             setGdcsDelegateTeacher(false);
+                            if (!gdcsParentMeetingLocation) setGdcsParentMeetingLocation("Phòng Giám đốc Cơ sở");
+                            if (!gdcsParentMeetingContent) {
+                              setGdcsParentMeetingContent("Trao đổi trực tiếp với PHHS về kết quả khảo sát & sàng lọc tâm lý, thống nhất lộ trình đồng hành và cam kết phối hợp giữa Gia đình & Nhà trường.");
+                            }
+                            if (!gdcsGeneralNote) {
+                              setGdcsGeneralNote("Đề nghị Tổ Tư vấn cơ sở liên hệ mời PHHS; Tổ Giáo vụ cơ sở chuẩn bị hồ sơ làm việc.");
+                            }
+                            markDirty();
                           }
-                          markDirty();
-                        }}
-                        className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer transition-all text-[11px] text-left ${
-                          gdcsDirectParentMeeting ? "bg-white border-teal-500 font-bold text-[#083d39] shadow-2xs ring-1 ring-teal-500" : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
-                        }`}
-                      >
-                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${gdcsDirectParentMeeting ? "border-teal-600 bg-teal-600" : "border-slate-300"}`}>
-                          {gdcsDirectParentMeeting && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </span>
-                        <span>1. Trao đổi trực tiếp PHHS</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const nextVal = !gdcsScheduleMeeting;
-                          setGdcsScheduleMeeting(nextVal);
-                          if (nextVal) {
+                        },
+                        {
+                          code: "SCHEDULE_MEETING" as const,
+                          badge: "Phương án 2",
+                          title: "2. Hẹn lịch làm việc / Hội chẩn",
+                          desc: "Họp hội chẩn giữa GĐCS, Tổ Giáo vụ, Tổ Tư vấn & GV Tâm lý",
+                          active: gdcsScheduleMeeting,
+                          onSelect: () => {
                             setGdcsDirectParentMeeting(false);
+                            setGdcsScheduleMeeting(true);
                             setGdcsDelegateTeacher(false);
+                            if (!gdcsMeetingLocation) setGdcsMeetingLocation("Văn phòng Chuyên môn Cơ sở");
+                            if (!gdcsMeetingParticipants) {
+                              setGdcsMeetingParticipants("GĐCS, Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý, GVCN");
+                            }
+                            if (!gdcsMeetingAgenda) {
+                              setGdcsMeetingAgenda("Hội chẩn chuyên môn thống nhất phương án hỗ trợ tâm lý, lộ trình tiếp nhận và xếp lớp phù hợp.");
+                            }
+                            if (!gdcsGeneralNote) {
+                              setGdcsGeneralNote("Đề nghị Tổ Giáo vụ cơ sở sắp xếp lịch hội chẩn; Tổ Tư vấn cơ sở tổng hợp thông tin gia đình.");
+                            }
+                            markDirty();
                           }
-                          markDirty();
-                        }}
-                        className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer transition-all text-[11px] text-left ${
-                          gdcsScheduleMeeting ? "bg-white border-teal-500 font-bold text-[#083d39] shadow-2xs ring-1 ring-teal-500" : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
-                        }`}
-                      >
-                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${gdcsScheduleMeeting ? "border-teal-600 bg-teal-600" : "border-slate-300"}`}>
-                          {gdcsScheduleMeeting && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </span>
-                        <span>2. Hẹn lịch làm việc / Hội chẩn</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const nextVal = !gdcsDelegateTeacher;
-                          setGdcsDelegateTeacher(nextVal);
-                          if (nextVal) {
+                        },
+                        {
+                          code: "DELEGATE_TEACHER" as const,
+                          badge: "Phương án 3",
+                          title: "3. Ủy quyền Giáo viên đồng hành",
+                          desc: "Chỉ định Giáo viên đồng hành hỗ trợ HS & làm việc với PHHS",
+                          active: gdcsDelegateTeacher,
+                          onSelect: () => {
                             setGdcsDirectParentMeeting(false);
                             setGdcsScheduleMeeting(false);
+                            setGdcsDelegateTeacher(true);
+                            if (!gdcsDelegatedTeacherId && assignedSurveyTeachers.length > 0) {
+                              const firstT = assignedSurveyTeachers[0];
+                              setGdcsDelegatedTeacherId(firstT.teacherId || "");
+                              setGdcsDelegatedTeacherName(firstT.teacherName || "");
+                              setGdcsDelegatedTeacherEmail(firstT.email || "");
+                            }
+                            if (!gdcsDelegationDuration) setGdcsDelegationDuration("4 tuần đầu năm học");
+                            if (!gdcsDelegationNote) {
+                              setGdcsDelegationNote("Theo dõi sát biểu hiện tâm lý - hành vi, làm việc với PHHS, hỗ trợ học sinh thích nghi và báo cáo định kỳ cho GĐCS & Tổ Giáo vụ.");
+                            }
+                            if (!gdcsGeneralNote) {
+                              setGdcsGeneralNote("Ủy quyền Giáo viên đồng hành sát sao cùng học sinh; Tổ Giáo vụ và Tổ Tư vấn cơ sở phối hợp hỗ trợ.");
+                            }
+                            markDirty();
                           }
-                          markDirty();
-                        }}
-                        className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer transition-all text-[11px] text-left ${
-                          gdcsDelegateTeacher ? "bg-white border-teal-500 font-bold text-[#083d39] shadow-2xs ring-1 ring-teal-500" : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
-                        }`}
-                      >
-                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${gdcsDelegateTeacher ? "border-teal-600 bg-teal-600" : "border-slate-300"}`}>
-                          {gdcsDelegateTeacher && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </span>
-                        <span>3. Ủy quyền Giáo viên</span>
-                      </button>
+                        }
+                      ].map((opt) => (
+                        <div
+                          key={opt.code}
+                          onClick={opt.onSelect}
+                          className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col justify-between gap-2 text-left ${
+                            opt.active
+                              ? "bg-[#003B3A] border-[#003B3A] text-white shadow-sm ring-2 ring-[#00A19A]/30"
+                              : "bg-white border-slate-200 text-slate-700 hover:border-[#008B85]"
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                opt.active ? "bg-white/15 text-[#5EEAD4]" : "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]"
+                              }`}>
+                                {opt.badge}
+                              </span>
+                              {opt.active && <Check className="w-3.5 h-3.5 text-[#5EEAD4] shrink-0" />}
+                            </div>
+                            <div className="font-bold text-xs leading-snug">{opt.title}</div>
+                            <p className={`text-[10.5px] leading-snug ${opt.active ? "text-teal-100" : "text-slate-500"}`}>
+                              {opt.desc}
+                            </p>
+                          </div>
+
+                          <div className={`pt-2 border-t flex items-center justify-end ${
+                            opt.active ? "border-white/15" : "border-slate-100"
+                          }`}>
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                opt.onSelect();
+                                const firstT = assignedSurveyTeachers[0] || {};
+                                try {
+                                  const res = await fetch("/api/admin/orientation/psychology-referral", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      action: "respondGdcsDirective",
+                                      studentId: student.id,
+                                      responseType: opt.code,
+                                      meetingTime:
+                                        opt.code === "SCHEDULE_MEETING"
+                                          ? gdcsMeetingTime || "Theo lịch điều phối của Giáo vụ cơ sở"
+                                          : gdcsParentMeetingTime || "Theo lịch hẹn của Tư vấn cơ sở",
+                                      meetingLocation:
+                                        opt.code === "SCHEDULE_MEETING"
+                                          ? gdcsMeetingLocation || "Văn phòng Chuyên môn Cơ sở"
+                                          : gdcsParentMeetingLocation || "Phòng Giám đốc Cơ sở",
+                                      parentMeetingContent:
+                                        gdcsParentMeetingContent ||
+                                        "Trao đổi trực tiếp với PHHS về kết quả khảo sát & sàng lọc tâm lý, thống nhất lộ trình đồng hành và cam kết phối hợp.",
+                                      meetingParticipants:
+                                        gdcsMeetingParticipants || "GĐCS, Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý, GVCN",
+                                      meetingAgenda:
+                                        gdcsMeetingAgenda || "Hội chẩn chuyên môn thống nhất phương án hỗ trợ tâm lý và xếp lớp phù hợp.",
+                                      delegatedTeacherId: gdcsDelegatedTeacherId || firstT.teacherId || "",
+                                      delegatedTeacherName: gdcsDelegatedTeacherName || firstT.teacherName || "Giáo viên đồng hành",
+                                      delegatedTeacherEmail: gdcsDelegatedTeacherEmail || firstT.email || "",
+                                      delegationDuration: gdcsDelegationDuration || "4 tuần đầu năm học",
+                                      delegationNote:
+                                        gdcsDelegationNote ||
+                                        "Theo dõi sát biểu hiện tâm lý - hành vi, làm việc với PHHS, hỗ trợ học sinh thích nghi và báo cáo định kỳ.",
+                                      generalDirectiveNote:
+                                        gdcsGeneralNote ||
+                                        (opt.code === "DIRECT_PARENT_MEETING"
+                                          ? "Đề nghị Tổ Tư vấn cơ sở liên hệ mời PHHS; Tổ Giáo vụ cơ sở chuẩn bị hồ sơ làm việc."
+                                          : opt.code === "SCHEDULE_MEETING"
+                                          ? "Đề nghị Tổ Giáo vụ cơ sở sắp xếp lịch hội chẩn; Tổ Tư vấn cơ sở tổng hợp thông tin gia đình."
+                                          : "Ủy quyền Giáo viên đồng hành sát sao cùng học sinh; Tổ Giáo vụ và Tổ Tư vấn cơ sở phối hợp hỗ trợ."),
+                                      directorName: verifierName || "Ban Giám Đốc Cơ Sở"
+                                    })
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    alert(data.message || "GĐCS đã xác nhận phương án làm việc thành công!");
+                                  } else {
+                                    alert(data.error || "Không thể xác nhận phương án làm việc.");
+                                  }
+                                } catch (err: any) {
+                                  alert("Lỗi kết nối: " + err.message);
+                                }
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold cursor-pointer transition-all ${
+                                opt.active
+                                  ? "bg-[#00A19A] hover:bg-[#008B85] text-white"
+                                  : "bg-[#F0FDFA] hover:bg-[#003B3A] text-[#003B3A] hover:text-white border border-[#99F6E4]"
+                              }`}
+                            >
+                              Chọn &amp; Xác nhận ngay
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
                     {/* 1. Chi tiết Trao đổi trực tiếp PHHS */}
@@ -3932,6 +4049,58 @@ export function StudentOrientationModal({
                       placeholder="Chỉ đạo về xếp lớp, phân công giáo viên chủ nhiệm đồng hành..."
                       className="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-teal-600 text-slate-900 bg-white"
                     />
+                  </div>
+
+                  {/* NÚT GĐCS XÁC NHẬN NỘI DUNG LÀM VIỆC LIÊN QUAN & GỬI MAIL PHẢN HỒI */}
+                  <div className="pt-2 border-t border-teal-200 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[10.5px] text-slate-600">
+                      Xác nhận nội dung làm việc và gửi email thông báo đến Giáo vụ cơ sở, Tư vấn cơ sở &amp; GV Tâm lý
+                    </span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const chosenType = gdcsScheduleMeeting
+                          ? "SCHEDULE_MEETING"
+                          : gdcsDelegateTeacher
+                          ? "DELEGATE_TEACHER"
+                          : "DIRECT_PARENT_MEETING";
+                        try {
+                          const res = await fetch("/api/admin/orientation/psychology-referral", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "respondGdcsDirective",
+                              studentId: student.id,
+                              responseType: chosenType,
+                              meetingTime: chosenType === "SCHEDULE_MEETING" ? gdcsMeetingTime : gdcsParentMeetingTime,
+                              meetingLocation: chosenType === "SCHEDULE_MEETING" ? gdcsMeetingLocation : gdcsParentMeetingLocation,
+                              parentMeetingContent: gdcsParentMeetingContent,
+                              meetingParticipants: gdcsMeetingParticipants,
+                              meetingAgenda: gdcsMeetingAgenda,
+                              delegatedTeacherId: gdcsDelegatedTeacherId,
+                              delegatedTeacherName: gdcsDelegatedTeacherName,
+                              delegatedTeacherEmail: gdcsDelegatedTeacherEmail,
+                              delegationDuration: gdcsDelegationDuration,
+                              delegationNote: gdcsDelegationNote,
+                              generalDirectiveNote: gdcsGeneralNote,
+                              directorName: verifierName || "Ban Giám Đốc Cơ Sở"
+                            })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            alert(data.message || "GĐCS đã xác nhận nội dung làm việc liên quan thành công!");
+                          } else {
+                            alert(data.error || "Không thể xác nhận nội dung làm việc.");
+                          }
+                        } catch (err: any) {
+                          alert("Lỗi kết nối: " + err.message);
+                        }
+                      }}
+                      className="px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#005250] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                      <span>GĐCS xác nhận nội dung làm việc &amp; Gửi mail</span>
+                    </button>
                   </div>
                 </div>
               </div>

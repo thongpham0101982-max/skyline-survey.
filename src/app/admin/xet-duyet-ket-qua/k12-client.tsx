@@ -12,7 +12,7 @@ import {
   Filter, ClipboardCheck, ClipboardList, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
   Phone, Printer, Lock, Zap, CheckSquare, Square, Eye,
-  HeartHandshake, Brain, Compass, ExternalLink
+  HeartHandshake, Brain, Compass, ExternalLink, ShieldCheck, Send
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
@@ -20,6 +20,19 @@ import { StudentOrientationModal } from "@/components/orientation/StudentOrienta
 import { StudentOrientationReportModal } from "@/components/orientation/StudentOrientationReportModal"
 import { PvdhOrientationModal } from "@/components/orientation/PvdhOrientationModal"
 import { getOrientationGradeGroupConfig } from "@/lib/orientation/criteria-config"
+import {
+  BM_SHEET_STATUS_OPTIONS,
+  PVDH_SEED_TEMPLATES,
+  getDefaultPvdhCodeForGrade,
+  isBmKtdbclTemplate,
+  PVDH_WORKFLOW_STATUS_LABELS,
+  FURTHER_INQUIRY_OPTIONS,
+  formatFollowUpActionsToText,
+  normalizeK12GradeNumber,
+  type PvdhSectionCode,
+  type PvdhFieldConfig,
+} from "@/lib/pvdh/constants"
+import { parseTeacherSummary } from "@/lib/pvdh/validation"
 import TciResultReviewPanel from "@/components/tci/TciResultReviewPanel"
 import {
   EmailRoutingConfigModal,
@@ -506,14 +519,14 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     const map = {
       tuvan: {
         CS1: "thuongttn@skylineschool.edu.vn",
-        CS2: "hoaipt@skylineschool.edu.vn",
-        CS3: "thungatt@skylineschool.edu.vn",
-        CS4: "senttt@skylineschool.edu.vn",
-        CS5: "linhnmh@skylineschool.edu.vn",
+        CS2: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn",
+        CS3: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn",
+        CS4: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn",
+        CS5: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn",
       },
       giaovu: {
-        CS1: "phuongvt@skylineschool.edu.vn",
-        CS2: "thuda@skylineschool.edu.vn",
+        CS1: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn",
+        CS2: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn",
         CS3: "thuda@skylineschool.edu.vn",
         CS4: "bichtramtt@skylineschool.edu.vn",
         CS5: "dunglp@skylineschool.edu.vn",
@@ -526,6 +539,21 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         CS5: "trungdq1@skylineschool.edu.vn",
       },
       cc: "ktdbcl@skylineschool.edu.vn"
+    };
+
+    const appendUniqueEmail = (currentStr: string, newEmail: string) => {
+      const clean = sanitizeAddr(newEmail).toLowerCase();
+      if (!clean || !clean.includes("@") || /^(giaovu|tuyensinh|tuvan|gdcs)\.cs\d+@skylineschool\.edu\.vn$/i.test(clean)) {
+        return currentStr;
+      }
+      const list = String(currentStr || "")
+        .split(/[,;]/)
+        .map((e) => e.trim())
+        .filter(Boolean);
+      if (!list.some((e) => e.toLowerCase() === clean)) {
+        list.push(clean);
+      }
+      return list.join(", ");
     };
 
     // 1. Dynamic GĐCS Lookup from campuses
@@ -545,7 +573,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       }
     });
 
-    // 2. Dynamic Giáo vụ and Tư vấn Lookup from teachers
+    // 2. Dynamic Tổ Giáo vụ and Tổ Tư vấn cơ sở Lookup from teachers
     (teachers || []).forEach((t) => {
       const csCode = t.campus?.campusCode;
       if (csCode && csCode in map.giaovu) {
@@ -556,10 +584,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         
         if (hasEmail) {
           if (deptName.includes('giáo vụ') || deptCode.includes('gvu') || deptCode.includes('giaovu')) {
-            map.giaovu[csCode] = cleanMail;
+            map.giaovu[csCode] = appendUniqueEmail(map.giaovu[csCode], cleanMail);
           }
           if (deptName.includes('tư vấn') || deptName.includes('tuyển sinh') || deptCode.includes('tuvan') || deptCode.includes('tuyensinh')) {
-            map.tuvan[csCode] = cleanMail;
+            map.tuvan[csCode] = appendUniqueEmail(map.tuvan[csCode], cleanMail);
           }
         }
       }
@@ -1327,51 +1355,247 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     committedSubjects: [] as string[]
   });
 
-  // State và dữ liệu Phiếu Định Hướng Đầu Vào
+  // State và dữ liệu Phiếu phỏng vấn định hướng HS và trao đổi với PHHS (BM.KTĐBCL.31..42)
   const [isOrientationModalOpen, setIsOrientationModalOpen] = useState(false);
   const [isPvdhModalOpen, setIsPvdhModalOpen] = useState(false);
+  const [pvdhModalInitialSection, setPvdhModalInitialSection] = useState<"FULL_FORM" | PvdhSectionCode | "PREVIEW">("FULL_FORM");
   const [isOrientationReportModalOpen, setIsOrientationReportModalOpen] = useState(false);
   const [orientationData, setOrientationData] = useState<any>(null);
+  const [pvdhWorkspace, setPvdhWorkspace] = useState<any>(null);
   const [orientationAssignedTeacher, setOrientationAssignedTeacher] = useState<string>("");
   const [showFullOrientationDetails, setShowFullOrientationDetails] = useState(false);
   const [loadingOrientation, setLoadingOrientation] = useState(false);
   const [dossierActiveTab, setDossierActiveTab] = useState<"scores" | "orientation" | "all">("scores");
-  const [orientationSubTab, setOrientationSubTab] = useState<"student" | "parent" | "summary">("student");
+  const [orientationSubTab, setOrientationSubTab] = useState<PvdhSectionCode | "FULL_FORM">("FULL_FORM");
+
+  // Trạng thái GĐCS xác nhận phương án làm việc hồ sơ Tâm lý (1. Trao đổi trực tiếp PHHS, 2. Hẹn lịch làm việc / Hội chẩn chuyên môn, 3. Ủy quyền Giáo viên đồng hành)
+  const [psychDirectiveType, setPsychDirectiveType] = useState<"DIRECT_PARENT_MEETING" | "SCHEDULE_MEETING" | "DELEGATE_TEACHER">("DIRECT_PARENT_MEETING");
+  const [psychMeetingTime, setPsychMeetingTime] = useState("");
+  const [psychMeetingLocation, setPsychMeetingLocation] = useState("Phòng Giám đốc Cơ sở");
+  const [psychParentContent, setPsychParentContent] = useState("");
+  const [psychParticipants, setPsychParticipants] = useState("GĐCS, Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý, GVCN");
+  const [psychAgenda, setPsychAgenda] = useState("");
+  const [psychDelegatedTeacherId, setPsychDelegatedTeacherId] = useState("");
+  const [psychDelegatedTeacherName, setPsychDelegatedTeacherName] = useState("");
+  const [psychDelegatedTeacherEmail, setPsychDelegatedTeacherEmail] = useState("");
+  const [psychDelegationDuration, setPsychDelegationDuration] = useState("4 tuần đầu năm học");
+  const [psychDelegationNote, setPsychDelegationNote] = useState("");
+  const [psychGeneralNote, setPsychGeneralNote] = useState("");
+  const [savingPsychDirective, setSavingPsychDirective] = useState(false);
+  const [psychOneTouchMode, setPsychOneTouchMode] = useState(true);
+  const [showPsychCustomDetails, setShowPsychCustomDetails] = useState(false);
+  const [mobileDossierPane, setMobileDossierPane] = useState<"evidence" | "decision">("evidence");
+  const [showAuditHistoryDrawer, setShowAuditHistoryDrawer] = useState(false);
+
+  const selectVerdictWithSmartNote = useCallback((nextResult: string) => {
+    const defaultNoteByResult: Record<string, string> = {
+      "Đạt": "Đạt tiêu chuẩn tiếp nhận của nhà trường",
+      "Đạt cam kết": "Đạt cam kết - Yêu cầu bồi dưỡng thêm",
+      "Học thử": "Tiếp nhận học thử và theo dõi khả năng thích nghi",
+      "Không đạt": "Chưa đáp ứng tiêu chuẩn tiếp nhận đầu vào",
+      "Đạt - Giao lưu": "Đạt diện giao lưu theo quy chế tuyển sinh",
+      "Không đạt - Kiểm tra lại": "Không đạt - Yêu cầu kiểm tra lại",
+      "Không đạt - Không kiểm tra lại": "Không đạt - Không kiểm tra lại"
+    };
+    const autoNotesSet = new Set([
+      "",
+      "Đạt",
+      "Đạt chuẩn",
+      "Đạt cam kết",
+      "Học thử",
+      "Không đạt",
+      "Đạt và xuất PDF chi tiết để GV ký",
+      ...Object.values(defaultNoteByResult)
+    ]);
+    setReportForm((prev) => {
+      const curNote = String(prev.directorNote || "").trim();
+      const nextNote = autoNotesSet.has(curNote)
+        ? (defaultNoteByResult[nextResult] || curNote)
+        : prev.directorNote;
+      return {
+        ...prev,
+        admissionResult: nextResult,
+        directorNote: nextNote
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      const rawPsych = orientationData?.psychologyData;
+      const pObj = rawPsych ? (typeof rawPsych === "string" ? JSON.parse(rawPsych) : rawPsych) : null;
+      const resp = pObj?.gdcsResponse;
+      const req = pObj?.gdcsDirectiveRequest || pObj?.reportedToGdcs;
+      if (resp?.responseType) {
+        setPsychDirectiveType(resp.responseType);
+      } else if (req?.proposedAction) {
+        setPsychDirectiveType(req.proposedAction);
+      } else {
+        setPsychDirectiveType("DIRECT_PARENT_MEETING");
+      }
+      setPsychMeetingTime(resp?.details?.meetingTime || "");
+      setPsychMeetingLocation(resp?.details?.meetingLocation || "Phòng Giám đốc Cơ sở");
+      setPsychParentContent(resp?.details?.parentMeetingContent || "");
+      setPsychParticipants(resp?.details?.meetingParticipants || "GĐCS, Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý, GVCN");
+      setPsychAgenda(resp?.details?.meetingAgenda || "");
+      setPsychDelegatedTeacherId(resp?.details?.delegatedTeacherId || "");
+      setPsychDelegatedTeacherName(resp?.details?.delegatedTeacherName || "");
+      setPsychDelegatedTeacherEmail(resp?.details?.delegatedTeacherEmail || "");
+      setPsychDelegationDuration(resp?.details?.delegationDuration || "4 tuần đầu năm học");
+      setPsychDelegationNote(resp?.details?.delegationNote || "");
+      setPsychGeneralNote(resp?.generalDirectiveNote || "");
+    } catch {}
+  }, [orientationData, reportStudentId]);
+
+  const handleConfirmPsychWorkPlan = async (
+    studentObj: any,
+    overrideType?: "DIRECT_PARENT_MEETING" | "SCHEDULE_MEETING" | "DELEGATE_TEACHER"
+  ) => {
+    if (!studentObj?.id) return;
+    const chosenType = overrideType || psychDirectiveType;
+    const csShort = resolvedStudentCampusObj?.campusCode || "CS1";
+    const defaultTeacher = (teachers || [])[0] as any;
+
+    const resolvedLocation =
+      chosenType === "SCHEDULE_MEETING"
+        ? psychMeetingLocation && psychMeetingLocation !== "Phòng Giám đốc Cơ sở"
+          ? psychMeetingLocation
+          : "Văn phòng Chuyên môn Cơ sở"
+        : psychMeetingLocation || "Phòng Giám đốc Cơ sở";
+
+    const resolvedParentContent =
+      psychParentContent ||
+      "Trao đổi trực tiếp với PHHS về kết quả sàng lọc tâm lý, thống nhất lộ trình đồng hành và cam kết phối hợp giữa Gia đình & Nhà trường.";
+
+    const resolvedParticipants =
+      psychParticipants || `GĐCS, Tổ Giáo vụ ${csShort}, Tổ Tư vấn ${csShort}, GV Tâm lý, GVCN`;
+
+    const resolvedAgenda =
+      psychAgenda ||
+      `Hội chẩn chuyên môn thống nhất phương án hỗ trợ tâm lý, lộ trình tiếp nhận và xếp lớp phù hợp cho học sinh ${studentObj.fullName || ""}.`;
+
+    const resolvedTeacherId = psychDelegatedTeacherId || defaultTeacher?.id || defaultTeacher?.userId || "";
+    const resolvedTeacherName = psychDelegatedTeacherName || defaultTeacher?.teacherName || "Giáo viên đồng hành";
+    const resolvedTeacherEmail = psychDelegatedTeacherEmail || defaultTeacher?.email || "";
+    const resolvedDuration = psychDelegationDuration || "4 tuần đầu năm học";
+    const resolvedDelegationNote =
+      psychDelegationNote ||
+      `Theo dõi sát biểu hiện tâm lý - hành vi, làm việc với PHHS, hỗ trợ học sinh thích nghi và báo cáo định kỳ cho GĐCS & Tổ Giáo vụ (${csShort}).`;
+
+    const resolvedGeneralNote =
+      psychGeneralNote ||
+      (chosenType === "DIRECT_PARENT_MEETING"
+        ? `Đề nghị Tổ Tư vấn cơ sở (${csShort}) liên hệ mời PHHS; Tổ Giáo vụ cơ sở chuẩn bị hồ sơ làm việc.`
+        : chosenType === "SCHEDULE_MEETING"
+        ? `Đề nghị Tổ Giáo vụ cơ sở (${csShort}) sắp xếp lịch hội chẩn; Tổ Tư vấn cơ sở tổng hợp thông tin gia đình.`
+        : `Ủy quyền Giáo viên đồng hành sát sao cùng học sinh; Tổ Giáo vụ và Tổ Tư vấn cơ sở (${csShort}) phối hợp hỗ trợ.`);
+
+    setPsychDirectiveType(chosenType);
+    setPsychMeetingLocation(resolvedLocation);
+    if (!psychParentContent) setPsychParentContent(resolvedParentContent);
+    if (!psychParticipants) setPsychParticipants(resolvedParticipants);
+    if (!psychAgenda) setPsychAgenda(resolvedAgenda);
+    if (!psychDelegatedTeacherId && resolvedTeacherId) setPsychDelegatedTeacherId(resolvedTeacherId);
+    if (!psychDelegatedTeacherName && resolvedTeacherName) setPsychDelegatedTeacherName(resolvedTeacherName);
+    if (!psychDelegatedTeacherEmail && resolvedTeacherEmail) setPsychDelegatedTeacherEmail(resolvedTeacherEmail);
+    if (!psychDelegationNote) setPsychDelegationNote(resolvedDelegationNote);
+    if (!psychGeneralNote) setPsychGeneralNote(resolvedGeneralNote);
+
+    setSavingPsychDirective(true);
+    try {
+      const res = await fetch("/api/admin/orientation/psychology-referral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "respondGdcsDirective",
+          studentId: studentObj.id,
+          responseType: chosenType,
+          meetingTime: psychMeetingTime || "Theo lịch điều phối của Tư vấn & Giáo vụ cơ sở",
+          meetingLocation: resolvedLocation,
+          parentMeetingContent: resolvedParentContent,
+          meetingParticipants: resolvedParticipants,
+          meetingAgenda: resolvedAgenda,
+          delegatedTeacherId: resolvedTeacherId,
+          delegatedTeacherName: resolvedTeacherName,
+          delegatedTeacherEmail: resolvedTeacherEmail,
+          delegationDuration: resolvedDuration,
+          delegationNote: resolvedDelegationNote,
+          generalDirectiveNote: resolvedGeneralNote,
+          directorName: autoCampusDirectorName || currentUser?.fullName || "Giám đốc Cơ sở",
+          directorEmail: (currentUser as any)?.email || ""
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        reloadStudentOrientationWorkspace(studentObj.id);
+        setToast({
+          msg: data.message || "GĐCS đã xác nhận phương án làm việc và gửi thông báo đến Tổ Giáo vụ & Tư vấn cơ sở!",
+          type: "ok"
+        });
+      } else {
+        setToast({
+          msg: data.error || "Không thể lưu xác nhận phương án làm việc của GĐCS.",
+          type: "err"
+        });
+      }
+    } catch (e: any) {
+      setToast({
+        msg: "Lỗi kết nối khi lưu xác nhận phương án làm việc của GĐCS.",
+        type: "err"
+      });
+    } finally {
+      setSavingPsychDirective(false);
+    }
+  };
+
+  const reloadStudentOrientationWorkspace = useCallback((studentId: string) => {
+    if (!studentId) return;
+    setLoadingOrientation(true);
+    Promise.all([
+      fetch(`/api/pvdh/records?studentId=${encodeURIComponent(studentId)}`, { cache: "no-store" })
+        .then(r => (r.ok ? r.json() : null))
+        .catch(() => null),
+      fetch(`/api/admin/orientation/records?studentId=${encodeURIComponent(studentId)}`, { cache: "no-store" })
+        .then(r => (r.ok ? r.json() : null))
+        .catch(() => null),
+    ])
+      .then(([pvdhRes, legRes]) => {
+        if (pvdhRes?.success) {
+          setPvdhWorkspace(pvdhRes);
+        } else {
+          setPvdhWorkspace(null);
+        }
+        if (legRes?.success) {
+          setOrientationData(legRes.data || null);
+          setOrientationAssignedTeacher(
+            pvdhRes?.record?.studentInterviewerName ||
+            legRes.assignedOrientation?.assignedTeacherName ||
+            legRes.data?.interviewerName ||
+            ""
+          );
+        } else if (pvdhRes?.record?.studentInterviewerName) {
+          setOrientationAssignedTeacher(pvdhRes.record.studentInterviewerName);
+        }
+      })
+      .finally(() => {
+        setLoadingOrientation(false);
+      });
+  }, []);
 
   // Tự động tải bản ghi định hướng khi mở modal chi tiết học sinh
   useEffect(() => {
     if (!reportStudentId) {
       setOrientationData(null);
+      setPvdhWorkspace(null);
       setOrientationAssignedTeacher("");
       setShowFullOrientationDetails(false);
       setDossierActiveTab("scores");
-      setOrientationSubTab("student");
+      setOrientationSubTab("FULL_FORM");
       return;
     }
-    let isMounted = true;
-    setLoadingOrientation(true);
     setShowFullOrientationDetails(false);
-    fetch(`/api/admin/orientation/records?studentId=${reportStudentId}`)
-      .then(res => res.json())
-      .then(d => {
-        if (isMounted && d.success) {
-          setOrientationData(d.data || null);
-          setOrientationAssignedTeacher(
-            d.assignedOrientation?.assignedTeacherName ||
-            d.data?.interviewerName ||
-            ""
-          );
-        }
-      })
-      .catch(err => console.error("Lỗi tải bản ghi định hướng:", err))
-      .finally(() => {
-        if (isMounted) setLoadingOrientation(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [reportStudentId]);
+    reloadStudentOrientationWorkspace(reportStudentId);
+  }, [reportStudentId, reloadStudentOrientationWorkspace]);
 
   // Helper kiểm tra đợt khảo sát có thuộc Cơ sở được chọn hay không (Cascading Filter)
   const isBatchMatchingCampus = useCallback((batch: any, campusId: string) => {
@@ -2839,7 +3063,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         ...s,
         periodName: s?.period?.name || reportSelPeriod?.name || "",
         batchName: s?.batch?.name || reportBatches.find((b: any) => b.id === s?.batchId)?.name || "",
-        committedSubjectsList: typeof extractCommittedSubjects === "function" ? extractCommittedSubjects(s) : (s.committedSubjects || "")
+        committedSubjectsList: s.committedSubjects || ""
       }));
 
       const res = await fetch("/api/admin/send-quick-email", {
@@ -3719,11 +3943,24 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     }
   }, [selectedReportStudent?.studentCode]);
 
-  // Set default reportPeriodId when periods are loaded: Tự động chọn Kỳ "Khảo sát lẻ" hoặc kỳ đợt mới nhất
+  // Set default reportPeriodId when periods are loaded: Ưu tiên periodId từ URL (nếu mở từ link email GĐCS), sau đó chọn Kỳ "Khảo sát lẻ" hoặc kỳ đợt mới nhất
   const hasInitializedReportPeriodRef = useRef(false);
   useEffect(() => {
     if (visiblePeriods.length > 0 && !hasInitializedReportPeriodRef.current) {
       hasInitializedReportPeriodRef.current = true;
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const urlPId = params.get("periodId");
+        const urlStuId = params.get("studentId");
+        if (urlPId && visiblePeriods.some(p => p.id === urlPId)) {
+          setReportPeriodId(urlPId);
+          return;
+        }
+        if (urlStuId && !urlPId) {
+          setReportPeriodId("all");
+          return;
+        }
+      }
       const kslPeriod = visiblePeriods.find(p => p.name?.toLowerCase().includes("khảo sát lẻ"))
         || (latestBatchInfo?.periodId ? visiblePeriods.find(p => p.id === latestBatchInfo.periodId) : null)
         || visiblePeriods[0];
@@ -3896,7 +4133,9 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       const sCode = String(sub.code || "").toLowerCase();
 
       if (sCode.includes("pdh") || sCode.includes("orientation") || sNameLower.includes("định hướng")) {
-        pills.push({ key: sc.id || `ori-${idx}`, label: "Định hướng", value: "Đã cập nhật", tone: "teal" });
+        if (!student?.pvdhRecord?.id) {
+          pills.push({ key: sc.id || `ori-${idx}`, label: "Định hướng", value: "Đã cập nhật", tone: "teal" });
+        }
         return;
       }
 
@@ -3997,6 +4236,33 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         tone: "teal"
       });
     });
+
+    if (student?.pvdhRecord?.id) {
+      const pRec = student.pvdhRecord;
+      const bmCode = pRec.templateCode || getDefaultPvdhCodeForGrade(student?.grade) || "BM.KTĐBCL.31";
+      const bmSum = parseTeacherSummary(pRec.teacherSummaryJson);
+      let statusText = "Bản nháp";
+      let pillTone: "teal" | "emerald" | "amber" | "rose" = "teal";
+      if (pRec.isLocked || pRec.workflowStatus === "VERIFIED_LOCKED") {
+        statusText = "Đã xác nhận";
+        pillTone = "emerald";
+      } else if (bmSum.sheetStatus === "CAN_TRAO_DOI_CHUYEN_MON") {
+        statusText = "Cần trao đổi CM";
+        pillTone = "rose";
+      } else if (bmSum.sheetStatus === "CAN_BO_SUNG_THONG_TIN" || pRec.workflowStatus === "RETURNED") {
+        statusText = "Cần bổ sung TT";
+        pillTone = "amber";
+      } else if (bmSum.sheetStatus === "HOAN_THANH" || pRec.workflowStatus === "COMPLETED" || pRec.workflowStatus === "SUBMITTED") {
+        statusText = "Hoàn thành";
+        pillTone = "emerald";
+      }
+      pills.push({
+        key: `pvdh-${pRec.id}`,
+        label: bmCode,
+        value: statusText,
+        tone: pillTone,
+      });
+    }
 
     return pills;
   }, []);
@@ -4878,21 +5144,24 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           .filter(Boolean)
       );
       const savedSig = String(selectedReportStudent.signatureName || "").trim();
-      const isSavedSigSubjectTeacherOnly =
-        Boolean(savedSig) &&
-        !knownGdcsSet.has(savedSig) &&
-        Array.isArray(selectedReportStudent.scores) &&
-        selectedReportStudent.scores.some((sc: any) => String(sc?.teacherName || "").trim() === savedSig);
+      const isValidGdcsSignature = Boolean(savedSig) && knownGdcsSet.has(savedSig);
 
       const defaultApproverSignature = selectedReportStudent.admissionResult
-        ? (!isSavedSigSubjectTeacherOnly && savedSig ? savedSig : autoCampusDirectorName)
+        ? (isValidGdcsSignature ? savedSig : (autoCampusDirectorName || savedSig))
         : autoCampusDirectorName;
+
+      const defaultCleanNote =
+        cleanNote && cleanNote !== "Đạt"
+          ? cleanNote
+          : presetResult === "Đạt"
+          ? "Đạt tiêu chuẩn tiếp nhận của nhà trường"
+          : cleanNote;
 
       setReportForm({
         admissionResult: presetResult,
         admissionCampus: selectedReportStudent.admissionCampus || resolvedStudentCampusObj?.campusName || "",
         signatureName: defaultApproverSignature || "",
-        directorNote: cleanNote,
+        directorNote: defaultCleanNote,
         committedSubjects: commSubs
       });
     }
@@ -4900,7 +5169,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   // Phím tắt điều hướng hồ sơ (Alt + Mũi tên Trái/Phải & Esc đóng hồ sơ)
   useEffect(() => {
-    if (!selectedReportStudent || isOrientationModalOpen || isOrientationReportModalOpen || isScoreModalOpen || isRetestModalOpen) return;
+    if (!selectedReportStudent || isPvdhModalOpen || isOrientationModalOpen || isOrientationReportModalOpen || isScoreModalOpen || isRetestModalOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setReportStudentId("");
@@ -4914,7 +5183,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedReportStudent, dossierNav.prevId, dossierNav.nextId, isOrientationModalOpen, isOrientationReportModalOpen, isScoreModalOpen, isRetestModalOpen]);
+  }, [selectedReportStudent, dossierNav.prevId, dossierNav.nextId, isPvdhModalOpen, isOrientationModalOpen, isOrientationReportModalOpen, isScoreModalOpen, isRetestModalOpen]);
   const [sForm, setSForm] = useState({
     studentCode:"", fullName:"", dateOfBirth:"", gender:"", grade:"", admissionCriteria:"", className:"", hocKy:"", kqgdTieuHoc:"", kqHocTap:"", kqRenLuyen:"", targetType:"", surveySystem:"", hoSoCtQuocTe:"", surveyFormType:"", batchId:"", registeredCampus:"", periodId:"",
     cityName: "", districtName: "", wardName: "", countryName: "", oldSchoolName: "", oldSchoolType: ""
@@ -8867,8 +9136,31 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   selectedReportStudent.surveySystem ||
                   "HNS";
 
-                // --- 2. Giải mã Phiếu định hướng HS & PH theo cấu hình Khối ---
+                // --- 2. Giải mã Phiếu phỏng vấn định hướng HS và trao đổi với PHHS (BM.KTĐBCL.31..42) ---
                 const gradeConfig = getOrientationGradeGroupConfig(selectedReportStudent.grade);
+                const dossierGradeNum = normalizeK12GradeNumber(selectedReportStudent.grade) || "1";
+                const defaultPvdhCode = getDefaultPvdhCodeForGrade(selectedReportStudent.grade) || "BM.KTĐBCL.31";
+                const seedPvdhTemplate =
+                  PVDH_SEED_TEMPLATES.find((t) => t.code === (pvdhWorkspace?.version?.templateCode || selectedReportStudent?.pvdhRecord?.templateCode || defaultPvdhCode)) ||
+                  PVDH_SEED_TEMPLATES.find((t) => t.code === defaultPvdhCode) ||
+                  PVDH_SEED_TEMPLATES[0];
+
+                const pvdhCodeDisplay = pvdhWorkspace?.version?.templateCode || seedPvdhTemplate.code;
+                const pvdhVersionDisplay = pvdhWorkspace?.version?.versionCode || "v1.0";
+                const pvdhNameDisplay =
+                  pvdhWorkspace?.template?.name ||
+                  seedPvdhTemplate.name;
+                const pvdhDescriptionDisplay =
+                  pvdhWorkspace?.template?.description ||
+                  seedPvdhTemplate.description;
+
+                const activePvdhFields: PvdhFieldConfig[] =
+                  Array.isArray(pvdhWorkspace?.version?.fields) && pvdhWorkspace.version.fields.length > 0
+                    ? pvdhWorkspace.version.fields
+                    : seedPvdhTemplate.fields;
+
+                const pvdhRec = pvdhWorkspace?.record || null;
+
                 let rawItems: any[] = [];
                 let rawParentItems: any[] = [];
                 let rawSummary9: any = null;
@@ -8903,104 +9195,235 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   } catch {}
                 }
 
-                const configuredStudentCriteria = (gradeConfig.criteria || []).map((criterion, idx) => {
-                  const matched = rawItems.find((it: any) =>
-                    it?.criterionId === criterion.id ||
-                    it?.questionId === criterion.id ||
-                    String(it?.code) === String(criterion.code)
-                  ) || rawItems[idx] || {};
+                // II. Trao đổi với học sinh (6 nhóm theo cấu hình PVDH)
+                const pvdhStudentFields = activePvdhFields
+                  .filter((f) => f.sectionCode === "II_STUDENT")
+                  .sort((a, b) => a.sortOrder - b.sortOrder);
 
-                  const studentAnswer = matched.studentNotes || matched.answer || matched.a || matched.notes || "";
-                  const teacherCmt = matched.teacherComment || (matched.notes && matched.notes !== studentAnswer ? matched.notes : "") || "";
-                  const ratingCode = matched.rating || "NORMAL";
-
-                  return {
-                    idx: idx + 1,
-                    id: criterion.id,
-                    code: criterion.code,
-                    categoryLabel: criterion.categoryLabel,
-                    name: matched.questionText || matched.name || criterion.name,
-                    focus: criterion.focus,
-                    studentAnswer,
-                    ratingCode,
-                    teacherCmt
-                  };
-                });
-
-                const configuredParentGroups = (gradeConfig.parentGroups || []).map((pGroup, idx) => {
-                  const matched = rawParentItems.find((it: any) =>
-                    it?.groupId === pGroup.id ||
-                    String(it?.code) === String(pGroup.code)
-                  ) || rawParentItems[idx] || {};
-
+                const configuredStudentCriteria = pvdhStudentFields.map((field, idx) => {
+                  const recItem = pvdhRec?.studentResponses?.[field.fieldKey];
+                  const legacyMatched = rawItems[idx] || {};
                   const fallbackAnswer =
-                    idx === 0 ? (orientationData?.parentPersonalityNotes || orientationData?.homeHabits) :
-                    idx === 1 ? orientationData?.parentHealthNotes :
-                    idx === 2 ? orientationData?.parentSpecialRequests :
-                    idx === 3 ? orientationData?.cooperationCommitment :
-                    idx === 4 ? orientationData?.parentExpectations : "";
+                    legacyMatched.studentNotes ||
+                    legacyMatched.answer ||
+                    legacyMatched.a ||
+                    legacyMatched.notes ||
+                    "";
+                  const responseText = recItem?.responseText?.trim() || fallbackAnswer || "";
+                  const notRecorded = Boolean(recItem?.notRecorded);
+                  const notRecordedReason = recItem?.notRecordedReason || "";
 
                   return {
-                    idx: idx + 1,
-                    id: pGroup.id,
-                    code: pGroup.code,
-                    categoryLabel: pGroup.categoryLabel,
-                    title: matched.title || pGroup.title,
-                    focus: pGroup.focus,
-                    answer: matched.answer || fallbackAnswer || "",
-                    teacherNote: matched.teacherNote || ""
+                    idx: field.itemNumber || idx + 1,
+                    fieldKey: field.fieldKey,
+                    label: field.label,
+                    promptQuestion: field.promptQuestion || "",
+                    guideline: field.guideline || "",
+                    responseText,
+                    notRecorded,
+                    notRecordedReason,
+                    updatedByName: recItem?.updatedByName || "",
                   };
                 });
+
+                // III. Ghi nhận của giáo viên (4 trường theo cấu hình PVDH)
+                const pvdhTeacherFields = activePvdhFields
+                  .filter((f) => f.sectionCode === "III_TEACHER")
+                  .sort((a, b) => a.sortOrder - b.sortOrder);
+
+                const bmSummary =
+                  pvdhRec?.teacherSummary ||
+                  parseTeacherSummary(pvdhRec?.teacherSummaryJson || selectedReportStudent?.pvdhRecord?.teacherSummaryJson);
 
                 const summary9 = {
-                  strongPoints: rawSummary9?.strongPoints || orientationData?.studentStrengths || orientationData?.strengths || "",
-                  interestsMotivation: rawSummary9?.interestsMotivation || orientationData?.talents || "",
-                  adaptabilityAutonomy: rawSummary9?.adaptabilityAutonomy || (orientationData?.adaptationLevel === "CONFIDENT" ? "Thích nghi nhanh, tự tin và chủ động" : ""),
-                  difficultiesNeeds: rawSummary9?.difficultiesNeeds || orientationData?.studentNeedsSupport || orientationData?.growthAreas || "",
+                  strongPoints:
+                    bmSummary.d01 ||
+                    pvdhRec?.obsStrengthsInterests ||
+                    pvdhRec?.planStrengthsPriority ||
+                    rawSummary9?.strongPoints ||
+                    orientationData?.studentStrengths ||
+                    orientationData?.strengths ||
+                    "",
+                  interestsMotivation:
+                    pvdhRec?.obsCommunicationStyle ||
+                    rawSummary9?.interestsMotivation ||
+                    orientationData?.talents ||
+                    "",
+                  adaptabilityAutonomy:
+                    pvdhRec?.obsParticipationLevel ||
+                    rawSummary9?.adaptabilityAutonomy ||
+                    (orientationData?.adaptationLevel === "CONFIDENT" ? "Thích nghi nhanh, tự tin và chủ động" : ""),
+                  difficultiesNeeds:
+                    bmSummary.d02 ||
+                    pvdhRec?.obsSupportNeeds ||
+                    rawSummary9?.difficultiesNeeds ||
+                    orientationData?.studentNeedsSupport ||
+                    orientationData?.growthAreas ||
+                    "",
                   studentExpectations: rawSummary9?.studentExpectations || "",
                   parentExpectations: rawSummary9?.parentExpectations || orientationData?.parentExpectations || "",
-                  alignmentDifferences: rawSummary9?.alignmentDifferences || "",
-                  initialRecommendations: rawSummary9?.initialRecommendations || orientationData?.proposedPlacementRecommendation || orientationData?.interviewerGeneralRemark || "",
+                  alignmentDifferences:
+                    bmSummary.d03 ||
+                    rawSummary9?.alignmentDifferences ||
+                    "",
+                  initialRecommendations:
+                    bmSummary.d04 ||
+                    pvdhRec?.planGoalsActionsText ||
+                    pvdhRec?.planHandoverNotes ||
+                    rawSummary9?.initialRecommendations ||
+                    orientationData?.proposedPlacementRecommendation ||
+                    orientationData?.interviewerGeneralRemark ||
+                    "",
                   verificationItems: rawSummary9?.verificationItems || ""
                 };
 
-                const getRatingBadge = (r: string) => {
-                  switch (r) {
-                    case "CONFIDENT":
-                      return { label: "Thể hiện rõ", cls: "bg-teal-50 text-[#00736E] border-teal-200 font-bold" };
-                    case "NEED_SUPPORT":
-                      return { label: "Cần tìm hiểu thêm", cls: "bg-amber-50 text-amber-800 border-amber-200 font-bold" };
-                    case "SPECIAL_ATTENTION":
-                      return { label: "Chưa đủ thông tin", cls: "bg-slate-100 text-slate-700 border-slate-200 font-semibold" };
-                    default:
-                      return { label: "Đang hình thành", cls: "bg-sky-50 text-sky-800 border-sky-200 font-semibold" };
+                const configuredTeacherObs = pvdhTeacherFields.map((field, idx) => {
+                  let val = "";
+                  if (field.fieldKey === "obs_strengths_interests") {
+                    val = pvdhRec?.obsStrengthsInterests || summary9.strongPoints || "";
+                  } else if (field.fieldKey === "obs_communication_style") {
+                    val = pvdhRec?.obsCommunicationStyle || orientationData?.behaviorNotes || "";
+                  } else if (field.fieldKey === "obs_participation_level") {
+                    val = pvdhRec?.obsParticipationLevel || summary9.adaptabilityAutonomy || "";
+                  } else if (field.fieldKey === "obs_support_needs") {
+                    val = pvdhRec?.obsSupportNeeds || summary9.difficultiesNeeds || "";
+                  } else {
+                    val = (pvdhRec as any)?.[field.fieldKey] || "";
                   }
+                  return {
+                    idx: field.itemNumber || idx + 1,
+                    fieldKey: field.fieldKey,
+                    label: field.label,
+                    guideline: field.guideline || "",
+                    value: val,
+                  };
+                });
+
+                // IV / B & C. Trao đổi với PHHS
+                const isBmDossier = isBmKtdbclTemplate({
+                  exportLayout: pvdhWorkspace?.version?.exportLayout || seedPvdhTemplate.exportLayout,
+                  fields: activePvdhFields,
+                  templateCode: pvdhCodeDisplay,
+                });
+
+                const pvdhParentFields = activePvdhFields
+                  .filter((f) => f.sectionCode === "IV_PARENT")
+                  .sort((a, b) => a.sortOrder - b.sortOrder);
+
+                const pvdhParentGradeCFields = activePvdhFields
+                  .filter((f) => f.sectionCode === "C_PARENT_GRADE")
+                  .sort((a, b) => a.sortOrder - b.sortOrder);
+
+                const configuredParentGroups = pvdhParentFields.map((field, idx) => {
+                  const recItem = pvdhRec?.parentResponses?.[field.fieldKey];
+                  const legacyMatched = rawParentItems[idx] || {};
+                  const fallbackAnswer =
+                    legacyMatched.answer ||
+                    (idx === 0 ? (orientationData?.parentPersonalityNotes || orientationData?.homeHabits) :
+                     idx === 1 ? orientationData?.parentHealthNotes :
+                     idx === 2 ? orientationData?.parentSpecialRequests :
+                     idx === 3 ? orientationData?.cooperationCommitment :
+                     idx === 4 ? orientationData?.parentExpectations : "") ||
+                    "";
+                  const responseText = recItem?.responseText?.trim() || fallbackAnswer || "";
+                  const notRecorded = Boolean(recItem?.notRecorded);
+                  const notRecordedReason = recItem?.notRecordedReason || "";
+
+                  return {
+                    idx: field.itemNumber || idx + 1,
+                    fieldKey: field.fieldKey,
+                    label: field.label,
+                    promptQuestion: field.promptQuestion || "",
+                    guideline: field.guideline || "",
+                    sensitive: field.sensitivityTier === "SENSITIVE_HEALTH_PSYCH",
+                    responseText,
+                    notRecorded,
+                    notRecordedReason,
+                    updatedByName: recItem?.updatedByName || "",
+                  };
+                });
+
+                const configuredParentGradeCGroups = pvdhParentGradeCFields.map((field, idx) => {
+                  const recItem = pvdhRec?.parentResponses?.[field.fieldKey];
+                  return {
+                    idx: idx + 1,
+                    fieldKey: field.fieldKey,
+                    label: field.label,
+                    promptQuestion: field.promptQuestion || "",
+                    responseText: recItem?.responseText?.trim() || "",
+                    notRecorded: Boolean(recItem?.notRecorded),
+                    notRecordedReason: recItem?.notRecordedReason || "",
+                  };
+                });
+
+                // V. Thống nhất định hướng & hỗ trợ
+                const pvdhOrientationPlan = {
+                  strengthsPriority: pvdhRec?.planStrengthsPriority || summary9.strongPoints || "",
+                  goalsActionsText:
+                    pvdhRec?.planGoalsActionsText ||
+                    (Array.isArray(pvdhRec?.followUpActions) && pvdhRec.followUpActions.length > 0
+                      ? formatFollowUpActionsToText(pvdhRec.followUpActions)
+                      : "") ||
+                    summary9.initialRecommendations ||
+                    "",
+                  followUpActions: Array.isArray(pvdhRec?.followUpActions) ? pvdhRec.followUpActions : [],
+                  coordinator: pvdhRec?.planCoordinator || "",
+                  reviewDate: pvdhRec?.planReviewDate || "",
+                  furtherTopics: Array.isArray(pvdhRec?.planFurtherTopics) ? pvdhRec.planFurtherTopics : [],
+                  furtherOtherText: pvdhRec?.planFurtherOtherText || "",
+                  referralReason: pvdhRec?.planReferralReason || "",
+                  referralReceiver: pvdhRec?.planReferralReceiver || "",
+                  handoverNotes: pvdhRec?.planHandoverNotes || orientationData?.admissionConsultantNote || "",
                 };
 
-                const verStatus = rawVerification?.status || orientationData?.verificationStatus || "PENDING";
+                const hasPvdhContent =
+                  Boolean(pvdhRec?.id || selectedReportStudent?.pvdhRecord?.id) ||
+                  configuredStudentCriteria.some((x) => x.responseText.trim() !== "" || x.notRecorded) ||
+                  configuredTeacherObs.some((x) => x.value.trim() !== "") ||
+                  configuredParentGroups.some((x) => x.responseText.trim() !== "" || x.notRecorded) ||
+                  configuredParentGradeCGroups.some((x) => x.responseText.trim() !== "" || x.notRecorded) ||
+                  Boolean(
+                    bmSummary.d01?.trim() ||
+                    bmSummary.d02?.trim() ||
+                    bmSummary.d03?.trim() ||
+                    bmSummary.d04?.trim() ||
+                    bmSummary.sheetStatus ||
+                    bmSummary.psychInterviewRequested
+                  ) ||
+                  Boolean(pvdhOrientationPlan.strengthsPriority.trim() || pvdhOrientationPlan.goalsActionsText.trim() || pvdhOrientationPlan.handoverNotes.trim()) ||
+                  Boolean(orientationData?.interviewerName || orientationData?.interviewData || orientationData?.parentInterviewData);
+
+                const pvdhWorkflowStatusKey = (pvdhRec?.workflowStatus || "DRAFT") as keyof typeof PVDH_WORKFLOW_STATUS_LABELS;
+                const pvdhWorkflowInfo = PVDH_WORKFLOW_STATUS_LABELS[pvdhWorkflowStatusKey] || PVDH_WORKFLOW_STATUS_LABELS.DRAFT;
+
+                const verStatus =
+                  pvdhRec?.isLocked || pvdhRec?.workflowStatus === "VERIFIED_LOCKED" || pvdhRec?.workflowStatus === "HANDED_OVER"
+                    ? "VERIFIED"
+                    : rawVerification?.status || orientationData?.verificationStatus || "PENDING";
                 const realScoreCount = (selectedReportStudent.scores || []).length;
                 const parsedHistory = parseApprovalHistory(selectedReportStudent?.directorNote);
+                const quickSurveyPills = getStudentSurveyPills(selectedReportStudent);
 
                 return (
                   <div
-                    className="fixed inset-0 z-[180] flex items-center justify-center p-2 sm:p-4"
+                    className="fixed inset-0 z-[180] flex items-center justify-center p-1.5 sm:p-3"
                     onClick={() => setReportStudentId("")}
                   >
                     <div className="absolute inset-0 bg-slate-900/55 backdrop-blur-[2px]" />
 
                     {/* FULL-VIEWPORT ACADEMIC LEDGER SPLIT WORKBENCH */}
                     <div
-                      className="relative bg-[#F8FAFC] w-full max-w-[1400px] h-[94vh] rounded-2xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 text-left"
+                      className="relative bg-[#F8FAFC] w-full max-w-[1440px] h-[96vh] sm:h-[94vh] rounded-2xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 text-left"
                       onClick={e => e.stopPropagation()}
                     >
                       {/* ================= TOP DOSSIER HEADER ================= */}
-                      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 shrink-0 relative">
+                      <div className="bg-white border-b border-slate-200 px-3.5 sm:px-5 py-2.5 shrink-0 relative">
                         <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003B3A]" />
-                        <div className="pl-2 flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
+                        <div className="pl-2 flex flex-col lg:flex-row lg:items-center justify-between gap-2">
                           {/* Left: Student Identity & Live Status */}
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap tabular-nums">
-                              <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap tabular-nums">
+                              <h3 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                                 {selectedReportStudent.fullName}
                               </h3>
                               <span className="font-mono text-xs font-bold text-[#00736E] bg-[#F0FDFA] px-2 py-0.5 rounded-md border border-[#CCFBF1]">
@@ -9012,7 +9435,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200 text-xs font-semibold">
                                 Hệ {eduSystemDisplay}
                               </span>
-                              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">
+                              <span className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-xs font-bold">
                                 {campusName}
                               </span>
 
@@ -9031,7 +9454,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       ? "bg-amber-500"
                                       : "bg-emerald-500"
                                   }`} />
-                                  {selectedReportStudent.admissionResult}
+                                  {selectedReportStudent.admissionResult === "Đạt" ? "Đạt chuẩn" : selectedReportStudent.admissionResult}
                                 </span>
                               ) : (
                                 <span className="font-semibold text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg text-xs inline-flex items-center gap-1.5">
@@ -9041,56 +9464,47 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               )}
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500 mt-1 tabular-nums">
+                            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] sm:text-xs text-slate-500 mt-0.5 tabular-nums">
                               <span>Ngày sinh: <strong className="text-slate-700 font-medium">{dobDisplay} ({genderDisplay})</strong></span>
-                              <span>&bull; Đối tượng: <strong className="text-slate-700 font-medium">{selectedReportStudent.targetType || "—"}</strong></span>
-                              {selectedReportStudent.admissionCriteria && (
-                                <span>&bull; Diện khảo sát: <strong className="text-slate-700 font-medium">{selectedReportStudent.admissionCriteria}</strong></span>
+                              {selectedReportStudent.targetType && (
+                                <span>&bull; Đối tượng: <strong className="text-slate-700 font-medium">{selectedReportStudent.targetType}</strong></span>
                               )}
-                              {selectedReportStudent.admissionResult ? (
-                                (reportForm.signatureName || autoCampusDirectorName || selectedReportStudent.signatureName) && (
-                                  <span>
-                                    &bull; Người phê duyệt:{" "}
-                                    <strong className="text-slate-800 font-semibold">
-                                      {reportForm.signatureName || autoCampusDirectorName || selectedReportStudent.signatureName}
-                                    </strong>
-                                  </span>
-                                )
-                              ) : (
-                                autoCampusDirectorName && (
-                                  <span>
-                                    &bull; GĐCS phụ trách:{" "}
-                                    <strong className="text-[#00736E] font-semibold">
-                                      {autoCampusDirectorName}
-                                    </strong>
-                                  </span>
-                                )
+                              {selectedReportStudent.admissionCriteria && (
+                                <span>&bull; Diện KS: <strong className="text-slate-700 font-medium">{selectedReportStudent.admissionCriteria}</strong></span>
+                              )}
+                              {autoCampusDirectorName && (
+                                <span>
+                                  &bull; GĐCS phụ trách:{" "}
+                                  <strong className="text-[#00736E] font-semibold">
+                                    {autoCampusDirectorName}
+                                  </strong>
+                                </span>
                               )}
                             </div>
                           </div>
 
-                          {/* Right: Quick Student Switcher + Export PDF + Close */}
-                          <div className="flex items-center gap-2 flex-wrap self-end xl:self-center shrink-0">
+                          {/* Right: Quick Student Switcher + Next Pending + Export PDF + Close */}
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap self-end lg:self-center shrink-0">
                             {dossierNav.total > 1 && (
                               <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/90 tabular-nums">
                                 <button
                                   type="button"
                                   disabled={!dossierNav.prevId}
                                   onClick={() => dossierNav.prevId && setReportStudentId(dossierNav.prevId)}
-                                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:text-[#003B3A] disabled:opacity-35 disabled:pointer-events-none transition-colors flex items-center gap-1 cursor-pointer"
+                                  className="px-2 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:text-[#003B3A] disabled:opacity-35 disabled:pointer-events-none transition-colors flex items-center gap-1 cursor-pointer"
                                   title="Học sinh trước (Alt + Mũi tên trái)"
                                 >
                                   <ChevronLeft className="w-3.5 h-3.5" />
                                   <span className="hidden sm:inline">Trước</span>
                                 </button>
-                                <span className="px-2.5 text-xs font-bold text-slate-700 select-none">
+                                <span className="px-2 text-xs font-bold text-slate-700 select-none">
                                   {dossierNav.index} / {dossierNav.total}
                                 </span>
                                 <button
                                   type="button"
                                   disabled={!dossierNav.nextId}
                                   onClick={() => dossierNav.nextId && setReportStudentId(dossierNav.nextId)}
-                                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:text-[#003B3A] disabled:opacity-35 disabled:pointer-events-none transition-colors flex items-center gap-1 cursor-pointer"
+                                  className="px-2 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:bg-white hover:text-[#003B3A] disabled:opacity-35 disabled:pointer-events-none transition-colors flex items-center gap-1 cursor-pointer"
                                   title="Học sinh tiếp theo (Alt + Mũi tên phải)"
                                 >
                                   <span className="hidden sm:inline">Tiếp</span>
@@ -9099,14 +9513,27 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               </div>
                             )}
 
+                            {dossierNav.nextPendingId && dossierNav.nextPendingId !== selectedReportStudent.id && (
+                              <button
+                                type="button"
+                                onClick={() => setReportStudentId(dossierNav.nextPendingId)}
+                                className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                                title="Chuyển nhanh đến hồ sơ chưa duyệt kế tiếp"
+                              >
+                                <span>HS chờ duyệt tiếp</span>
+                                <ArrowRight className="w-3.5 h-3.5 text-amber-700" />
+                              </button>
+                            )}
+
                             <button
                               type="button"
                               onClick={() => setIsOrientationReportModalOpen(true)}
-                              className="px-3.5 py-1.5 bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-slate-200 hover:border-[#008B85] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                              className="px-3 py-1.5 bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-slate-200 hover:border-[#008B85] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                               title="Xem và xuất file PDF khổ A4 toàn bộ hồ sơ để Giáo viên & Hội đồng ký"
                             >
                               <Printer className="w-3.5 h-3.5 text-[#008B85]" />
-                              <span>Xuất PDF hồ sơ</span>
+                              <span className="hidden sm:inline">Xuất PDF hồ sơ</span>
+                              <span className="sm:hidden">PDF</span>
                             </button>
 
                             <button
@@ -9119,46 +9546,93 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             </button>
                           </div>
                         </div>
+
+                        {/* RESPONSIVE MOBILE / TABLET PANE SWITCHER (< 1024px) */}
+                        <div className="lg:hidden mt-2 pt-2 border-t border-slate-100 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setMobileDossierPane("evidence")}
+                            className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                              mobileDossierPane === "evidence"
+                                ? "bg-[#003B3A] text-white shadow-2xs"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>1. Hồ sơ &amp; Điểm ({realScoreCount} môn)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMobileDossierPane("decision")}
+                            className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                              mobileDossierPane === "decision"
+                                ? "bg-[#008B85] text-white shadow-2xs"
+                                : "bg-[#F0FDFA] text-[#003B3A] border border-[#99F6E4]"
+                            }`}
+                          >
+                            <ClipboardCheck className="w-3.5 h-3.5" />
+                            <span>2. Phê duyệt ({reportForm.admissionResult || "Chờ duyệt"})</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* ================= SPLIT 2-PANE WORKSPACE ================= */}
-                      <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 overflow-y-auto lg:overflow-hidden">
+                      <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 overflow-hidden">
                         {/* -------- LEFT PANE (8 COLS): EVIDENCE & DOSSIER -------- */}
-                        <div className="lg:col-span-8 lg:h-full lg:overflow-y-auto px-4 sm:px-5 pb-5 pt-4 space-y-4">
-                          {/* COMPACT ACADEMIC TRANSCRIPT & PRIOR SCHOOL STRIP (ZERO HORIZONTAL SCROLL) */}
-                          <div className="bg-white rounded-xl border border-slate-200/90 p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.02)]">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5 text-xs tabular-nums">
-                              <div className="p-2 rounded-lg bg-slate-50/80 border border-slate-100 col-span-2 sm:col-span-1 xl:col-span-1">
-                                <span className="text-[11px] text-slate-500 block">Trường cũ</span>
-                                <strong className="text-slate-900 font-semibold block truncate mt-0.5" title={selectedReportStudent.oldSchoolName || "Chưa cập nhật"}>
-                                  {selectedReportStudent.oldSchoolName || "—"}
-                                </strong>
+                        <div className={`${mobileDossierPane === "decision" ? "hidden lg:block" : "block"} lg:col-span-8 h-full overflow-y-auto px-3.5 sm:px-5 pb-5 pt-3 space-y-3`}>
+                          {/* UNIFIED QUICK EVIDENCE STRIP: ĐIỂM KHẢO SÁT (LUÔN HIỂN THỊ) + HỌC BẠ THU GỌN */}
+                          <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 sm:p-3 shadow-[0_1px_2px_rgba(15,23,42,0.02)] space-y-2 tabular-nums">
+                            {/* Dòng 1: Điểm khảo sát đầu vào 1 chạm (Giúp GĐCS luôn thấy điểm khi đang xem Phiếu định hướng) */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[11px] font-bold text-[#003B3A] mr-0.5">Điểm khảo sát:</span>
+                                {quickSurveyPills.length > 0 ? (
+                                  quickSurveyPills.map((p) => (
+                                    <button
+                                      key={p.key}
+                                      type="button"
+                                      onClick={() => {
+                                        setDossierActiveTab("scores");
+                                        if (p.key && !String(p.key).startsWith("ori-")) {
+                                          setActiveSubjectId(String(p.key));
+                                        }
+                                      }}
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                                        p.tone === "emerald"
+                                          ? "bg-emerald-50/80 text-emerald-800 border-emerald-200 hover:border-emerald-400"
+                                          : p.tone === "amber"
+                                          ? "bg-amber-50/80 text-amber-900 border-amber-200 hover:border-amber-400"
+                                          : p.tone === "rose"
+                                          ? "bg-rose-50/80 text-rose-800 border-rose-200 hover:border-rose-400"
+                                          : "bg-[#F0FDFA] text-[#003B3A] border-[#CCFBF1] hover:border-[#008B85]"
+                                      }`}
+                                      title="Chạm để xem chi tiết phiếu chấm môn này"
+                                    >
+                                      <span className="opacity-80">{p.label}:</span>
+                                      <strong className="font-bold">{p.value}</strong>
+                                    </button>
+                                  ))
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 italic">Chưa ghi nhận điểm bộ môn</span>
+                                )}
                               </div>
-                              <div className="p-2 rounded-lg bg-slate-50/80 border border-slate-100">
-                                <span className="text-[11px] text-slate-500 block">Học tập (HB)</span>
-                                <strong className="text-emerald-800 font-bold block truncate mt-0.5">{hbHocTap}</strong>
-                              </div>
-                              <div className="p-2 rounded-lg bg-slate-50/80 border border-slate-100">
-                                <span className="text-[11px] text-slate-500 block">Rèn luyện (HB)</span>
-                                <strong className="text-[#00736E] font-bold block truncate mt-0.5">{hbRenLuyen}</strong>
-                              </div>
-                              <div className="p-2 rounded-lg bg-slate-50/80 border border-slate-100">
-                                <span className="text-[11px] text-slate-500 block">Toán (HB)</span>
-                                <strong className="text-slate-900 font-bold block mt-0.5">{hbMath}</strong>
-                              </div>
-                              <div className="p-2 rounded-lg bg-slate-50/80 border border-slate-100">
-                                <span className="text-[11px] text-slate-500 block">{vnSubjectLabel}</span>
-                                <strong className="text-slate-900 font-bold block mt-0.5">{hbLiterature}</strong>
-                              </div>
-                              <div className="p-2 rounded-lg bg-slate-50/80 border border-slate-100">
-                                <span className="text-[11px] text-slate-500 block">Tiếng Anh (HB)</span>
-                                <strong className="text-slate-900 font-bold block mt-0.5">{hbEnglish}</strong>
-                              </div>
+                              <span className="text-[11px] text-slate-500">
+                                Trường cũ: <strong className="text-slate-800">{selectedReportStudent.oldSchoolName || "—"}</strong>
+                              </span>
+                            </div>
+
+                            {/* Dòng 2: Học bạ thu gọn 1 dòng */}
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-600">
+                              <span>Học tập (HB): <strong className="text-emerald-800 font-bold">{hbHocTap}</strong></span>
+                              <span>Rèn luyện (HB): <strong className="text-[#00736E] font-bold">{hbRenLuyen}</strong></span>
+                              <span>Toán (HB): <strong className="text-slate-900 font-bold">{hbMath}</strong></span>
+                              <span>{vnSubjectLabel}: <strong className="text-slate-900 font-bold">{hbLiterature}</strong></span>
+                              <span>Tiếng Anh (HB): <strong className="text-slate-900 font-bold">{hbEnglish}</strong></span>
                             </div>
                           </div>
 
                           {/* STICKY SEGMENTED TAB BAR FOR LEFT PANE */}
-                          <div className="sticky -top-4 z-20 bg-[#F8FAFC] pt-3 pb-1.5 -mx-1 px-1">
+                          <div className="sticky -top-3 z-20 bg-[#F8FAFC] pt-1 pb-1 -mx-1 px-1">
                             <div className="bg-white p-1.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-2">
                               <div className="flex flex-wrap items-center gap-1 text-xs tabular-nums">
                                 <button
@@ -9193,11 +9667,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                                     dossierActiveTab === "orientation"
                                       ? "bg-white/20 text-white"
-                                      : orientationData
+                                      : hasPvdhContent
                                       ? "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]"
                                       : "bg-amber-50 text-amber-800"
                                   }`}>
-                                    {orientationData ? "Đã cập nhật" : gradeConfig.label}
+                                    {hasPvdhContent ? `Đã cập nhật (${pvdhCodeDisplay})` : `${gradeConfig.label} • ${pvdhCodeDisplay}`}
                                   </span>
                                 </button>
 
@@ -9231,12 +9705,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 )}
                                 <button
                                   type="button"
-                                  onClick={() => setIsOrientationModalOpen(true)}
+                                  onClick={() => {
+                                    setPvdhModalInitialSection("FULL_FORM");
+                                    setIsPvdhModalOpen(true);
+                                  }}
                                   className="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer"
-                                  title="Nhập hoặc chỉnh sửa Phiếu định hướng (3 Tab)"
+                                  title={`Nhập hoặc chỉnh sửa ${pvdhNameDisplay} (${pvdhCodeDisplay})`}
                                 >
                                   <Pencil className="w-3.5 h-3.5 text-[#008B85]" />
-                                  <span>Sửa phiếu ĐH</span>
+                                  <span>Phiếu {pvdhCodeDisplay}</span>
                                 </button>
                               </div>
                             </div>
@@ -9308,9 +9785,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   let writtenScoreVal: number | null = null;
                                   let oralScoreText = "—";
                                   let writtenScoreText = "—";
-                                  let oralMaxScore = isGrade2 ? 10 : (studentNumGrade && studentNumGrade >= 7 ? 20 : 30);
-                                  let writtenMaxScore = (studentNumGrade && studentNumGrade >= 7 ? 80 : 70);
-                                  let totalMaxScore = 100;
+                                  // Chuẩn hóa Tiếng Anh (vấn đáp & viết) theo thang điểm 10, không tính điểm tổng môn Tiếng Anh
+                                  let oralMaxScore = 10;
+                                  let writtenMaxScore = 10;
+                                  let totalMaxScore = 10;
 
                                   if (hasEnglish) {
                                     scoresList.forEach((sc) => {
@@ -9334,7 +9812,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                             oralMaxScore = maxFromCmt;
                                           } else if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
                                             const num = parseFloat(scoreVal);
-                                            if (!isNaN(num) && num <= 10 && (isGrade1 || isGrade2 || (studentNumGrade && studentNumGrade <= 5))) {
+                                            if (!isNaN(num) && num > 10) {
+                                              oralMaxScore = num <= 30 ? 30 : 100;
+                                            } else {
                                               oralMaxScore = 10;
                                             }
                                           }
@@ -9346,6 +9826,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                           hasWrittenSubject = true;
                                           if (maxFromCmt) {
                                             writtenMaxScore = maxFromCmt;
+                                          } else if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
+                                            const num = parseFloat(scoreVal);
+                                            if (!isNaN(num) && num > 10) {
+                                              writtenMaxScore = num <= 70 ? 70 : 100;
+                                            } else {
+                                              writtenMaxScore = 10;
+                                            }
                                           }
                                           if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
                                             writtenScoreVal = parseFloat(scoreVal);
@@ -9354,42 +9841,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         }
                                       }
                                     });
-
-                                    let totalVal = "—";
-                                    if (hasOralSubject && hasWrittenSubject) {
-                                      if (oralScoreVal !== null || writtenScoreVal !== null) {
-                                        const sum = (oralScoreVal || 0) + (writtenScoreVal || 0);
-                                        totalVal = (Math.round(sum * 10) / 10).toString();
-                                        totalMaxScore = oralMaxScore + writtenMaxScore;
-                                      }
-                                    } else if (hasOralSubject && !hasWrittenSubject) {
-                                      totalMaxScore = oralMaxScore;
-                                      if (oralScoreVal !== null) totalVal = String(oralScoreVal);
-                                    } else if (!hasOralSubject && hasWrittenSubject) {
-                                      totalMaxScore = writtenMaxScore;
-                                      if (writtenScoreVal !== null) totalVal = String(writtenScoreVal);
-                                    } else if (oralScoreVal !== null || writtenScoreVal !== null) {
-                                      const sum = (oralScoreVal || 0) + (writtenScoreVal || 0);
-                                      totalVal = (Math.round(sum * 10) / 10).toString();
-                                      totalMaxScore = (oralScoreVal !== null ? oralMaxScore : 0) + (writtenScoreVal !== null ? writtenMaxScore : 0) || 100;
-                                    }
-
-                                    if ((hasOralSubject && hasWrittenSubject) && !scoresList.some(s => s.id === "tong_diem_tieng_anh")) {
-                                      scoresList.push({
-                                        id: "tong_diem_tieng_anh",
-                                        isVirtual: true,
-                                        scores: JSON.stringify([totalVal]),
-                                        subject: {
-                                          id: "tong_diem_tieng_anh",
-                                          code: "eng_total",
-                                          name: "Tổng điểm Tiếng Anh",
-                                          subjectType: "VIET_NAM",
-                                          scoreColumns: 1,
-                                          commentColumns: 0,
-                                          columnNames: JSON.stringify({ scores: ["Tổng điểm Tiếng Anh"], comments: [] })
-                                        }
-                                      });
-                                    }
                                   }
 
                                   return (
@@ -9441,12 +9892,28 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                 }
 
                                                 if (isOrientation) {
-                                                  if (orientationData?.admissionConsultantNote) {
+                                                  const activePvdh = pvdhRec || selectedReportStudent?.pvdhRecord;
+                                                  if (activePvdh?.isLocked || activePvdh?.workflowStatus === "VERIFIED_LOCKED") {
+                                                    val = "Đã xác nhận";
+                                                    badgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
+                                                  } else if (bmSummary.sheetStatus === "CAN_TRAO_DOI_CHUYEN_MON") {
+                                                    val = "Cần trao đổi CM";
+                                                    badgeColor = "bg-rose-50 text-rose-800 border-rose-200";
+                                                  } else if (bmSummary.sheetStatus === "CAN_BO_SUNG_THONG_TIN" || activePvdh?.workflowStatus === "RETURNED") {
+                                                    val = "Cần bổ sung TT";
+                                                    badgeColor = "bg-amber-50 text-amber-900 border-amber-200";
+                                                  } else if (bmSummary.sheetStatus === "HOAN_THANH" || activePvdh?.workflowStatus === "COMPLETED" || activePvdh?.workflowStatus === "SUBMITTED") {
+                                                    val = "Hoàn thành";
+                                                    badgeColor = "bg-emerald-50 text-emerald-800 border-emerald-200";
+                                                  } else if (activePvdh?.id) {
+                                                    val = "Bản nháp";
+                                                    badgeColor = "bg-[#F0FDFA] text-[#00736E] border-[#CCFBF1]";
+                                                  } else if (orientationData?.admissionConsultantNote) {
                                                     val = "Đã định hướng";
                                                     badgeColor = "bg-teal-50 text-teal-900 border-teal-200";
-                                                  } else if (orientationData) {
+                                                  } else if (orientationData?.interviewerName) {
                                                     val = "Đã phỏng vấn";
-                                                    badgeColor = "bg-sky-50 text-sky-900 border-sky-200";
+                                                    badgeColor = "bg-teal-50 text-teal-900 border-teal-200";
                                                   } else {
                                                     val = "Chờ phỏng vấn";
                                                     badgeColor = "bg-amber-50 text-amber-900 border-amber-200";
@@ -9523,14 +9990,22 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                                                 let commentPreview = "—";
                                                 if (isOrientation) {
-                                                  if (orientationData?.strengths) {
+                                                  const dParts = [
+                                                    bmSummary.d01?.trim() ? `D01: ${bmSummary.d01.trim()}` : "",
+                                                    bmSummary.d04?.trim() ? `D04: ${bmSummary.d04.trim()}` : "",
+                                                  ].filter(Boolean);
+                                                  if (dParts.length > 0) {
+                                                    commentPreview = dParts.join(" • ");
+                                                  } else if (pvdhRec?.id || selectedReportStudent?.pvdhRecord?.id) {
+                                                    commentPreview = `Phiếu ${pvdhCodeDisplay} (Dành cho khối ${dossierGradeNum})`;
+                                                  } else if (orientationData?.strengths) {
                                                     commentPreview = "Thế mạnh: " + orientationData.strengths;
                                                   } else if (orientationData?.behaviorNotes) {
                                                     commentPreview = orientationData.behaviorNotes;
                                                   } else if (orientationData?.interviewerName) {
                                                     commentPreview = "GV tiếp nhận: " + orientationData.interviewerName;
                                                   } else {
-                                                    commentPreview = "Bản nhận diện & định hướng đầu vào học sinh";
+                                                    commentPreview = `Phiếu phỏng vấn định hướng ${pvdhCodeDisplay} (Dành cho khối ${dossierGradeNum})`;
                                                   }
                                                 } else {
                                                   try {
@@ -9827,6 +10302,439 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                         <p className="text-slate-700 leading-relaxed">{commentVals[1] || "Chưa có khuyến nghị cụ thể."}</p>
                                                       </div>
                                                     </div>
+
+                                                    {/* Phối hợp gửi mail GĐCS (CC Tổ Giáo vụ CS, Tổ Tư vấn CS) & Xác nhận nội dung làm việc khi HS có dấu hiệu tâm lý */}
+                                                    {(() => {
+                                                      const scoreNum = parseFloat(scoreVals[6] || scoreVals[20] || "0");
+                                                      const psychObj = (() => {
+                                                        try {
+                                                          if (!orientationData?.psychologyData) return null;
+                                                          return typeof orientationData.psychologyData === "string"
+                                                            ? JSON.parse(orientationData.psychologyData)
+                                                            : orientationData.psychologyData;
+                                                        } catch {
+                                                          return null;
+                                                        }
+                                                      })();
+                                                      const hasPsychSigns = scoreNum > 15 || Boolean(psychObj?.hasPsychologySigns || psychObj?.reportedToGdcs || psychObj?.gdcsResponse);
+                                                      const reportedInfo = psychObj?.reportedToGdcs;
+                                                      const gdcsResp = psychObj?.gdcsResponse;
+                                                      const csCode = (resolvedStudentCampusObj?.campusCode || "CS1") as keyof typeof EMAIL_MAP.giaovu;
+                                                      const campusGiaovuStr = EMAIL_MAP.giaovu[csCode] || EMAIL_MAP.giaovu.CS1;
+                                                      const campusTuvanStr = EMAIL_MAP.tuvan[csCode] || EMAIL_MAP.tuvan.CS1;
+
+                                                      const cleanDisplayEmails = (rawStr: string | undefined, fallbackStr: string) => {
+                                                        const cleaned = String(rawStr || "")
+                                                          .split(/[,;]/)
+                                                          .map((e) => e.trim())
+                                                          .filter((e) => e && e.includes("@") && !/^(giaovu|tuyensinh|tuvan)\.cs\d+@skylineschool\.edu\.vn$/i.test(e))
+                                                          .join(", ");
+                                                        return cleaned || fallbackStr;
+                                                      };
+
+                                                      const resolvedGiaovuDisplay =
+                                                        Array.isArray(gdcsResp?.giaovuStaff) && gdcsResp.giaovuStaff.length > 0
+                                                          ? gdcsResp.giaovuStaff.map((s: any) => `${s.fullName} (${s.email})`).join(", ")
+                                                          : Array.isArray(reportedInfo?.giaovuStaff) && reportedInfo.giaovuStaff.length > 0
+                                                          ? reportedInfo.giaovuStaff.map((s: any) => `${s.fullName} (${s.email})`).join(", ")
+                                                          : cleanDisplayEmails(gdcsResp?.giaovuEmail || reportedInfo?.giaovuEmail, campusGiaovuStr);
+
+                                                      const resolvedTuvanDisplay =
+                                                        Array.isArray(gdcsResp?.tuvanStaff) && gdcsResp.tuvanStaff.length > 0
+                                                          ? gdcsResp.tuvanStaff.map((s: any) => `${s.fullName} (${s.email})`).join(", ")
+                                                          : Array.isArray(reportedInfo?.tuvanStaff) && reportedInfo.tuvanStaff.length > 0
+                                                          ? reportedInfo.tuvanStaff.map((s: any) => `${s.fullName} (${s.email})`).join(", ")
+                                                          : cleanDisplayEmails(gdcsResp?.tuyensinhEmail || reportedInfo?.tuyensinhEmail, campusTuvanStr);
+
+                                                      if (!hasPsychSigns) {
+                                                        return (
+                                                          <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between gap-2">
+                                                            <span>
+                                                              <strong>Tổng hợp:</strong> Học sinh ở mức Bình thường ({scoreNum}/80 điểm, không có dấu hiệu tâm lý) — Chỉ lưu kết quả, không gửi mail báo cáo GĐCS.
+                                                            </span>
+                                                          </div>
+                                                        );
+                                                      }
+
+                                                      const workPlanOptions = [
+                                                        {
+                                                          code: "DIRECT_PARENT_MEETING" as const,
+                                                          label: "1. Trao đổi trực tiếp PHHS",
+                                                          desc: "GĐCS trực tiếp làm việc & thống nhất cam kết đồng hành với PHHS"
+                                                        },
+                                                        {
+                                                          code: "SCHEDULE_MEETING" as const,
+                                                          label: "2. Hẹn lịch làm việc / Hội chẩn chuyên môn",
+                                                          desc: "Tổ chức họp hội chẩn giữa GĐCS, Tổ Giáo vụ, Tổ Tư vấn & GV Tâm lý"
+                                                        },
+                                                        {
+                                                          code: "DELEGATE_TEACHER" as const,
+                                                          label: "3. Ủy quyền Giáo viên đồng hành",
+                                                          desc: "Chỉ định giáo viên đồng hành hỗ trợ học sinh & làm việc với PHHS"
+                                                        }
+                                                      ];
+
+                                                      return (
+                                                        <div className="p-4 rounded-xl bg-[#F0FDFA] border border-[#99F6E4] space-y-3 text-xs">
+                                                          <div className="flex flex-wrap items-start justify-between gap-2 pb-2.5 border-b border-[#99F6E4]/70">
+                                                            <div className="space-y-1">
+                                                              <div className="font-bold text-[#003B3A] flex items-center gap-1.5 text-xs sm:text-sm">
+                                                                <ShieldCheck className="w-4 h-4 text-[#008B85] shrink-0" />
+                                                                <span>Báo cáo &amp; Xác nhận phương án làm việc Hồ sơ Tâm lý ({scoreNum}/80 điểm)</span>
+                                                              </div>
+                                                              <div className="text-[11px] text-slate-700 space-y-0.5">
+                                                                <div>
+                                                                  • <strong>Tổ Giáo vụ cơ sở ({csCode}) nắm thông tin:</strong> <span className="text-[#003B3A] font-semibold">{resolvedGiaovuDisplay}</span>
+                                                                </div>
+                                                                <div>
+                                                                  • <strong>Tổ Tư vấn cơ sở ({csCode}) nắm thông tin:</strong> <span className="text-[#003B3A] font-semibold">{resolvedTuvanDisplay}</span>
+                                                                </div>
+                                                                {reportedInfo?.proposedActionLabel && (
+                                                                  <div>
+                                                                    • <strong>Đề xuất từ GV Tâm lý ({reportedInfo.reporterName || sc.teacherName || "GV Tâm lý"}):</strong>{" "}
+                                                                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold border border-amber-200">
+                                                                      {reportedInfo.proposedActionLabel}
+                                                                    </span>
+                                                                    {reportedInfo.messageToGdcs ? ` — "${reportedInfo.messageToGdcs}"` : ""}
+                                                                  </div>
+                                                                )}
+                                                              </div>
+                                                            </div>
+                                                            <button
+                                                              type="button"
+                                                              onClick={() => setIsOrientationModalOpen(true)}
+                                                              className="px-3 py-1.5 bg-white hover:bg-[#F8FAFC] text-[#003B3A] border border-[#008B85] rounded-lg font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                                                            >
+                                                              <Eye className="w-3.5 h-3.5 text-[#008B85]" />
+                                                              <span>Mở hồ sơ định hướng &amp; tâm lý</span>
+                                                            </button>
+                                                          </div>
+
+                                                          {/* HIỂN THỊ NỘI DUNG GĐCS ĐÃ XÁC NHẬN ĐỂ GIÁO VỤ & TƯ VẤN CƠ SỞ NẮM BẮT */}
+                                                          {gdcsResp ? (
+                                                            <div className="p-3 bg-white rounded-xl border border-[#00A19A] space-y-1.5 shadow-2xs">
+                                                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                                                <span className="font-bold text-[#059669] flex items-center gap-1.5">
+                                                                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                                                                  <span>Phương án làm việc đã được GĐCS ({gdcsResp.directorName || autoCampusDirectorName || "GĐCS"}) xác nhận:</span>
+                                                                </span>
+                                                                <span className="text-[11px] text-slate-500 font-medium tabular-nums">
+                                                                  {gdcsResp.respondedAtFormatted || (gdcsResp.respondedAt ? new Date(gdcsResp.respondedAt).toLocaleString("vi-VN") : "")}
+                                                                </span>
+                                                              </div>
+                                                              <div className="text-slate-800 space-y-1 pl-1">
+                                                                <div>
+                                                                  • <strong>Phương án xác nhận:</strong>{" "}
+                                                                  <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white font-bold text-[11px]">
+                                                                    {gdcsResp.responseTypeName}
+                                                                  </span>
+                                                                </div>
+                                                                {gdcsResp.details?.meetingTime && (
+                                                                  <div>• <strong>Thời gian &amp; Địa điểm:</strong> {gdcsResp.details.meetingTime} — {gdcsResp.details.meetingLocation || "Tại cơ sở"}</div>
+                                                                )}
+                                                                {gdcsResp.details?.parentMeetingContent && (
+                                                                  <div>• <strong>Nội dung trao đổi trực tiếp PHHS:</strong> {gdcsResp.details.parentMeetingContent}</div>
+                                                                )}
+                                                                {gdcsResp.details?.meetingAgenda && (
+                                                                  <div>• <strong>Nội dung hội chẩn chuyên môn:</strong> {gdcsResp.details.meetingAgenda} (Thành phần: {gdcsResp.details.meetingParticipants})</div>
+                                                                )}
+                                                                {gdcsResp.details?.delegatedTeacherName && (
+                                                                  <div>• <strong>Giáo viên đồng hành được ủy quyền:</strong> {gdcsResp.details.delegatedTeacherName} {gdcsResp.details.delegatedTeacherEmail ? `(${gdcsResp.details.delegatedTeacherEmail})` : ""} — Thời hạn: {gdcsResp.details.delegationDuration || "4 tuần đầu"} — {gdcsResp.details.delegationNote}</div>
+                                                                )}
+                                                                {gdcsResp.generalDirectiveNote && (
+                                                                  <div>• <strong>Ý kiến chỉ đạo của GĐCS:</strong> <span className="italic">&ldquo;{gdcsResp.generalDirectiveNote}&rdquo;</span></div>
+                                                                )}
+                                                              </div>
+                                                            </div>
+                                                          ) : (
+                                                            <div className="p-2.5 bg-amber-50/90 rounded-lg border border-amber-200 text-amber-900 font-medium flex items-center gap-2">
+                                                              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                                                              <span>Hồ sơ đang chờ Giám đốc Cơ sở xác nhận phương án làm việc liên quan (1 trong 3 phương án bên dưới).</span>
+                                                            </div>
+                                                          )}
+
+                                                          {/* BIỂU MẪU TRỰC QUAN 1 CHẠM DÀNH CHO GĐCS CHỌN / CẬP NHẬT 1 TRONG 3 PHƯƠNG ÁN & THÔNG BÁO GIÁO VỤ, TƯ VẤN CƠ SỞ */}
+                                                          {canApprove && (
+                                                            <div className="p-3.5 bg-white rounded-xl border border-slate-200/90 space-y-3">
+                                                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                                                <div>
+                                                                  <div className="font-bold text-[#003B3A] text-xs">
+                                                                    GĐCS chọn 1 chạm phương án làm việc (Thông báo Tổ Giáo vụ &amp; Tổ Tư vấn {csCode}):
+                                                                  </div>
+                                                                  <p className="text-[11px] text-slate-500">
+                                                                    Chạm vào thẻ phương án để tự động áp dụng nội dung chuẩn và gửi thông báo ngay
+                                                                  </p>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                  <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F0FDFA] border border-[#99F6E4] text-[11px] font-bold text-[#003B3A] cursor-pointer">
+                                                                    <input
+                                                                      type="checkbox"
+                                                                      checked={psychOneTouchMode}
+                                                                      onChange={(e) => setPsychOneTouchMode(e.target.checked)}
+                                                                      className="rounded border-teal-400 text-[#003B3A] focus:ring-[#00A19A]"
+                                                                    />
+                                                                    <span>Chạm là xác nhận ngay</span>
+                                                                  </label>
+                                                                  <button
+                                                                    type="button"
+                                                                    onClick={() => setShowPsychCustomDetails(!showPsychCustomDetails)}
+                                                                    className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#008B85] text-[11px] font-semibold text-slate-700 cursor-pointer"
+                                                                  >
+                                                                    {showPsychCustomDetails ? "Ẩn tùy chỉnh" : "Tùy chỉnh chi tiết"}
+                                                                  </button>
+                                                                </div>
+                                                              </div>
+
+                                                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                                                {workPlanOptions.map((opt, idx) => {
+                                                                  const isSelectedOpt = psychDirectiveType === opt.code;
+                                                                  const isConfirmedOpt = gdcsResp?.responseType === opt.code;
+                                                                  const isProposedOpt = reportedInfo?.proposedAction === opt.code;
+                                                                  const CardIcon = idx === 0 ? Phone : idx === 1 ? Calendar : UserCheck;
+                                                                  return (
+                                                                    <div
+                                                                      key={opt.code}
+                                                                      onClick={() => {
+                                                                        if (savingPsychDirective) return;
+                                                                        setPsychDirectiveType(opt.code);
+                                                                        if (psychOneTouchMode) {
+                                                                          handleConfirmPsychWorkPlan(selectedReportStudent, opt.code);
+                                                                        }
+                                                                      }}
+                                                                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                                                                        isSelectedOpt
+                                                                          ? "bg-[#003B3A] border-[#003B3A] text-white shadow-sm ring-2 ring-[#00A19A]/30"
+                                                                          : "bg-slate-50/80 border-slate-200 text-slate-800 hover:bg-white hover:border-[#008B85]"
+                                                                      }`}
+                                                                    >
+                                                                      <div className="space-y-1.5">
+                                                                        <div className="flex items-center justify-between gap-1">
+                                                                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                                                            isSelectedOpt ? "bg-white/15 text-[#5EEAD4]" : "bg-white text-[#003B3A] border border-slate-200"
+                                                                          }`}>
+                                                                            <CardIcon className="w-3 h-3" />
+                                                                            <span>Phương án {idx + 1}</span>
+                                                                          </span>
+                                                                          {isConfirmedOpt ? (
+                                                                            <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-white text-[10px] font-bold flex items-center gap-0.5">
+                                                                              <Check className="w-3 h-3" /> Đã xác nhận
+                                                                            </span>
+                                                                          ) : isProposedOpt ? (
+                                                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                                                              isSelectedOpt ? "bg-amber-400/20 text-amber-200" : "bg-amber-100 text-amber-900"
+                                                                            }`}>
+                                                                              Đề xuất GV
+                                                                            </span>
+                                                                          ) : isSelectedOpt ? (
+                                                                            <Check className="w-3.5 h-3.5 text-[#5EEAD4] shrink-0" />
+                                                                          ) : null}
+                                                                        </div>
+                                                                        <div className="font-bold text-xs leading-snug">{opt.label}</div>
+                                                                        <p className={`text-[10.5px] leading-snug ${isSelectedOpt ? "text-teal-100" : "text-slate-500"}`}>
+                                                                          {opt.desc}
+                                                                        </p>
+                                                                      </div>
+
+                                                                      <div className={`pt-2 border-t flex items-center justify-between gap-1.5 ${
+                                                                        isSelectedOpt ? "border-white/15" : "border-slate-200/70"
+                                                                      }`}>
+                                                                        <span className={`text-[10px] truncate ${isSelectedOpt ? "text-teal-200" : "text-slate-400"}`}>
+                                                                          {idx === 0 ? "Tư vấn mời PHHS" : idx === 1 ? "Giáo vụ xếp lịch họp" : "Giao GV đồng hành"}
+                                                                        </span>
+                                                                        <button
+                                                                          type="button"
+                                                                          disabled={savingPsychDirective}
+                                                                          onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleConfirmPsychWorkPlan(selectedReportStudent, opt.code);
+                                                                          }}
+                                                                          className={`px-2 py-1 rounded-lg text-[10.5px] font-bold shrink-0 cursor-pointer transition-all ${
+                                                                            isSelectedOpt
+                                                                              ? "bg-[#00A19A] hover:bg-[#008B85] text-white"
+                                                                              : "bg-white hover:bg-[#003B3A] text-[#003B3A] hover:text-white border border-slate-200"
+                                                                          }`}
+                                                                        >
+                                                                          {savingPsychDirective && isSelectedOpt ? "Đang lưu..." : "Chọn & Xác nhận"}
+                                                                        </button>
+                                                                      </div>
+                                                                    </div>
+                                                                  );
+                                                                })}
+                                                              </div>
+
+                                                              {/* KHỐI TÙY CHỈNH CHI TIẾT (CHỈ MỞ KHI BẤM TÙY CHỈNH HOẶC CHỌN ỦY QUYỀN GV) */}
+                                                              {(showPsychCustomDetails || psychDirectiveType === "DELEGATE_TEACHER") && (
+                                                                <div className="space-y-2.5 pt-2 border-t border-slate-100 animate-in fade-in duration-150">
+                                                                  {psychDirectiveType === "DIRECT_PARENT_MEETING" && (
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thời gian hẹn gặp PHHS:</label>
+                                                                        <input
+                                                                          type="datetime-local"
+                                                                          value={psychMeetingTime}
+                                                                          onChange={(e) => setPsychMeetingTime(e.target.value)}
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs tabular-nums"
+                                                                        />
+                                                                      </div>
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Địa điểm làm việc:</label>
+                                                                        <input
+                                                                          type="text"
+                                                                          value={psychMeetingLocation}
+                                                                          onChange={(e) => setPsychMeetingLocation(e.target.value)}
+                                                                          placeholder="Phòng Giám đốc Cơ sở..."
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                        />
+                                                                      </div>
+                                                                      <div className="sm:col-span-2">
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nội dung trao đổi trực tiếp PHHS:</label>
+                                                                        <input
+                                                                          type="text"
+                                                                          value={psychParentContent}
+                                                                          onChange={(e) => setPsychParentContent(e.target.value)}
+                                                                          placeholder="Thống nhất lộ trình đồng hành tâm lý & cam kết phối hợp giữa Gia đình và Nhà trường..."
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                        />
+                                                                      </div>
+                                                                    </div>
+                                                                  )}
+
+                                                                  {psychDirectiveType === "SCHEDULE_MEETING" && (
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thời gian họp / hội chẩn:</label>
+                                                                        <input
+                                                                          type="datetime-local"
+                                                                          value={psychMeetingTime}
+                                                                          onChange={(e) => setPsychMeetingTime(e.target.value)}
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs tabular-nums"
+                                                                        />
+                                                                      </div>
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Địa điểm tổ chức:</label>
+                                                                        <input
+                                                                          type="text"
+                                                                          value={psychMeetingLocation}
+                                                                          onChange={(e) => setPsychMeetingLocation(e.target.value)}
+                                                                          placeholder="Văn phòng Chuyên môn Cơ sở..."
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                        />
+                                                                      </div>
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thành phần tham dự:</label>
+                                                                        <input
+                                                                          type="text"
+                                                                          value={psychParticipants}
+                                                                          onChange={(e) => setPsychParticipants(e.target.value)}
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                        />
+                                                                      </div>
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nội dung hội chẩn chuyên môn:</label>
+                                                                        <input
+                                                                          type="text"
+                                                                          value={psychAgenda}
+                                                                          onChange={(e) => setPsychAgenda(e.target.value)}
+                                                                          placeholder="Thống nhất phương án hỗ trợ tâm lý và xếp lớp phù hợp..."
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                        />
+                                                                      </div>
+                                                                    </div>
+                                                                  )}
+
+                                                                  {psychDirectiveType === "DELEGATE_TEACHER" && (
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Giáo viên đồng hành (1 chạm):</label>
+                                                                        <select
+                                                                          value={psychDelegatedTeacherId}
+                                                                          onChange={(e) => {
+                                                                            const tId = e.target.value;
+                                                                            setPsychDelegatedTeacherId(tId);
+                                                                            const foundT = (teachers || []).find((t: any) => t.id === tId || t.userId === tId);
+                                                                            if (foundT) {
+                                                                              setPsychDelegatedTeacherName(foundT.teacherName || "");
+                                                                              setPsychDelegatedTeacherEmail((foundT as any).email || "");
+                                                                            }
+                                                                          }}
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white"
+                                                                        >
+                                                                          <option value="">-- Chọn giáo viên --</option>
+                                                                          {(teachers || []).map((t: any) => (
+                                                                            <option key={t.id || t.userId} value={t.id || t.userId}>
+                                                                              {t.teacherName} {(t as any).email ? `(${(t as any).email})` : ""}
+                                                                            </option>
+                                                                          ))}
+                                                                        </select>
+                                                                      </div>
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email Giáo viên:</label>
+                                                                        <input
+                                                                          type="email"
+                                                                          value={psychDelegatedTeacherEmail}
+                                                                          onChange={(e) => setPsychDelegatedTeacherEmail(e.target.value)}
+                                                                          placeholder="gv@skylineschool.edu.vn"
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                        />
+                                                                      </div>
+                                                                      <div>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thời hạn đồng hành:</label>
+                                                                        <input
+                                                                          type="text"
+                                                                          value={psychDelegationDuration}
+                                                                          onChange={(e) => setPsychDelegationDuration(e.target.value)}
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                        />
+                                                                      </div>
+                                                                      <div className="sm:col-span-3">
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nhiệm vụ ủy quyền cụ thể:</label>
+                                                                        <input
+                                                                          type="text"
+                                                                          value={psychDelegationNote}
+                                                                          onChange={(e) => setPsychDelegationNote(e.target.value)}
+                                                                          placeholder="Theo dõi hành vi, trao đổi PHHS, hỗ trợ học sinh thích nghi và báo cáo định kỳ..."
+                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                        />
+                                                                      </div>
+                                                                    </div>
+                                                                  )}
+
+                                                                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5">
+                                                                    <div className="flex-1">
+                                                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Ý kiến xác nhận / chỉ đạo chung của GĐCS:</label>
+                                                                      <input
+                                                                        type="text"
+                                                                        value={psychGeneralNote}
+                                                                        onChange={(e) => setPsychGeneralNote(e.target.value)}
+                                                                        placeholder="Nhập ý kiến chỉ đạo của GĐCS để Tổ Giáo vụ, Tổ Tư vấn cơ sở và GV Tâm lý phối hợp..."
+                                                                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                      />
+                                                                    </div>
+                                                                    <button
+                                                                      type="button"
+                                                                      disabled={savingPsychDirective}
+                                                                      onClick={() => handleConfirmPsychWorkPlan(selectedReportStudent)}
+                                                                      className="px-3.5 py-2 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
+                                                                    >
+                                                                      {savingPsychDirective ? (
+                                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                      ) : (
+                                                                        <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                                                      )}
+                                                                      <span>
+                                                                        {gdcsResp
+                                                                          ? "Lưu cập nhật & Thông báo Giáo vụ, Tư vấn"
+                                                                          : "GĐCS xác nhận & Thông báo Giáo vụ, Tư vấn"}
+                                                                      </span>
+                                                                    </button>
+                                                                  </div>
+                                                                </div>
+                                                              )}
+                                                            </div>
+                                                          )}
+                                                        </div>
+                                                      );
+                                                    })()}
                                                   </div>
                                                 ) : isChildDev ? (
                                                   <div className="space-y-4">
@@ -9927,234 +10835,370 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <Compass className="w-4 h-4 text-[#008B85]" />
                                       <h4 className="font-bold text-slate-900 text-xs">
-                                        Tóm tắt Phiếu định hướng ({gradeConfig.label})
+                                        Tóm tắt Phiếu phỏng vấn định hướng ({pvdhCodeDisplay} • Dành cho khối {dossierGradeNum})
                                       </h4>
                                       <span className="text-[11px] text-slate-500">
-                                        &bull; GV phỏng vấn: <strong className="text-slate-800">{orientationData?.interviewerName || orientationAssignedTeacher || "Cán bộ tiếp nhận"}</strong>
+                                        &bull; GV thực hiện: <strong className="text-slate-800">{pvdhRec?.studentInterviewerName || orientationData?.interviewerName || orientationAssignedTeacher || "Cán bộ tiếp nhận"}</strong>
                                       </span>
-                                      <span className={`px-2 py-0.2 rounded text-[10px] font-semibold border ${
+                                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
                                         verStatus === "VERIFIED"
                                           ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                          : "bg-amber-50 text-amber-800 border-amber-200"
+                                          : bmSummary.sheetStatus === "CAN_TRAO_DOI_CHUYEN_MON"
+                                            ? "bg-rose-50 text-rose-800 border-rose-200"
+                                            : bmSummary.sheetStatus === "HOAN_THANH"
+                                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                              : "bg-amber-50 text-amber-800 border-amber-200"
                                       }`}>
-                                        {verStatus === "VERIFIED" ? "QLCM đã thẩm định" : "Chờ QLCM thẩm định"}
+                                        {verStatus === "VERIFIED"
+                                          ? "Đã xác nhận phiếu"
+                                          : BM_SHEET_STATUS_OPTIONS.find((o) => o.code === bmSummary.sheetStatus)?.label || pvdhWorkflowInfo.shortLabel}
                                       </span>
                                     </div>
                                     <button
                                       type="button"
-                                      onClick={() => setDossierActiveTab("orientation")}
+                                      onClick={() => {
+                                        setOrientationSubTab("FULL_FORM");
+                                        setDossierActiveTab("orientation");
+                                      }}
                                       className="text-xs font-semibold text-[#00736E] hover:text-[#003B3A] inline-flex items-center gap-1 cursor-pointer"
                                     >
-                                      <span>Xem chi tiết 3 Tab</span>
+                                      <span>Xem toàn bộ phiếu ({pvdhCodeDisplay})</span>
                                       <ArrowRight className="w-3.5 h-3.5" />
                                     </button>
                                   </div>
 
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                     <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70">
-                                      <span className="font-semibold text-slate-700 text-[11px] block">Điểm mạnh nổi bật</span>
+                                      <span className="font-semibold text-[#003B3A] text-[11px] block">
+                                        D01. Điểm mạnh nổi bật của HS (nguồn HS / PHHS / quan sát)
+                                      </span>
                                       <p className="text-slate-600 mt-0.5 leading-relaxed line-clamp-3">
                                         {summary9.strongPoints?.trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
                                       </p>
                                     </div>
                                     <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70">
-                                      <span className="font-semibold text-slate-700 text-[11px] block">Khó khăn / Cần lưu ý hỗ trợ</span>
+                                      <span className="font-semibold text-[#003B3A] text-[11px] block">
+                                        D02. Khó khăn, nhu cầu hỗ trợ và nội dung cần xác minh
+                                      </span>
                                       <p className="text-slate-600 mt-0.5 leading-relaxed line-clamp-3">
                                         {summary9.difficultiesNeeds?.trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
                                       </p>
                                     </div>
+                                    <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70">
+                                      <span className="font-semibold text-[#003B3A] text-[11px] block">
+                                        D03. Kỳ vọng của HS và gia đình (tương đồng / khác biệt)
+                                      </span>
+                                      <p className="text-slate-600 mt-0.5 leading-relaxed line-clamp-3">
+                                        {summary9.alignmentDifferences?.trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
+                                      </p>
+                                    </div>
                                     <div className="p-2.5 rounded-xl bg-[#F0FDFA]/70 border border-[#CCFBF1]">
-                                      <span className="font-semibold text-[#003B3A] text-[11px] block">Đề xuất &amp; Định hướng ban đầu</span>
+                                      <span className="font-semibold text-[#003B3A] text-[11px] block">
+                                        D04. Định hướng giáo dục, phối hợp và bước tiếp theo
+                                      </span>
                                       <p className="text-slate-700 mt-0.5 leading-relaxed line-clamp-3">
                                         {summary9.initialRecommendations?.trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
                                       </p>
                                     </div>
+                                  </div>
+
+                                  <div className="px-3 py-2 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                      <span className="font-semibold text-slate-700">Trạng thái phiếu:</span>
+                                      {BM_SHEET_STATUS_OPTIONS.map((opt) => (
+                                        <span key={opt.code} className={bmSummary.sheetStatus === opt.code ? "font-bold text-[#003B3A]" : "text-slate-500"}>
+                                          {bmSummary.sheetStatus === opt.code ? "☑" : "☐"} {opt.label}
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <span className={bmSummary.psychInterviewRequested ? "font-bold text-[#D97706]" : "font-semibold text-slate-600"}>
+                                      Đề nghị phỏng vấn (tâm lí): {bmSummary.psychInterviewRequested ? "☑" : "☐"}
+                                    </span>
                                   </div>
                                 </div>
                               )}
                             </div>
                           )}
 
-                          {/* ================= SECTION: PHIẾU ĐỊNH HƯỚNG HS & PH ================= */}
+                          {/* ================= SECTION: PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & TRAO ĐỔI VỚI PHỤ HUYNH (BM.KTĐBCL.31..42) ================= */}
                           {(dossierActiveTab === "orientation" || dossierActiveTab === "all") && (
                             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] relative overflow-hidden">
                               <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#003B3A]" />
-                              <div className="px-5 py-3 border-b border-slate-200/80 bg-slate-50/70 flex flex-wrap items-center justify-between gap-2 pl-6">
-                                <div>
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <h4 className="font-bold text-slate-900 text-sm">
-                                      Phiếu định hướng Học sinh &amp; Phụ huynh ({gradeConfig.label})
-                                    </h4>
-                                    {orientationData ? (
-                                      <span className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-[11px] font-semibold">
-                                        Đã cập nhật hồ sơ định hướng
+
+                              {/* Thanh tiêu đề & tác vụ gọn gàng chuẩn Sổ cái Học thuật */}
+                              <div className="px-4 py-3 border-b border-slate-200/80 bg-[#F8FAFC] pl-5 space-y-2.5">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                                    <span className="px-2.5 py-1 rounded-lg bg-[#003B3A] text-white font-bold text-xs tabular-nums">
+                                      {pvdhCodeDisplay} • Khối {dossierGradeNum}
+                                    </span>
+                                    {hasPvdhContent ? (
+                                      <span className="px-2.5 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-[11px] font-semibold">
+                                        {verStatus === "VERIFIED"
+                                          ? "Đã xác nhận & khóa phiếu"
+                                          : BM_SHEET_STATUS_OPTIONS.find((o) => o.code === bmSummary.sheetStatus)?.label || pvdhWorkflowInfo.label}
                                       </span>
                                     ) : (
-                                      <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
+                                      <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
                                         Chưa nhập dữ liệu phỏng vấn
                                       </span>
                                     )}
+                                    <span className="text-[11px] text-slate-600">
+                                      GV thực hiện: <strong className="text-slate-900">{pvdhRec?.studentInterviewerName || orientationData?.interviewerName || orientationAssignedTeacher || "Cán bộ tiếp nhận"}</strong>
+                                    </span>
+                                    <span className="text-[11px] text-slate-500 tabular-nums">
+                                      &bull; Ngày PV: <strong className="text-slate-700">{pvdhRec?.interviewDate ? new Date(pvdhRec.interviewDate).toLocaleDateString("vi-VN") : "—"}</strong>
+                                    </span>
+                                    <span className="text-[11px] text-slate-500">
+                                      &bull; PHHS: <strong className="text-slate-700">{pvdhRec?.parentFullName || selectedReportStudent.parentName || "Chưa ghi nhận"}</strong>
+                                    </span>
                                   </div>
-                                  <p className="text-[11px] text-slate-500 mt-0.5">
-                                    Trọng tâm {gradeConfig.label}: <strong className="text-slate-700 font-medium">{gradeConfig.focus}</strong>
-                                    {" • "}GV phỏng vấn: <strong className="text-slate-800">{orientationData?.interviewerName || orientationAssignedTeacher || "Cán bộ tiếp nhận"}</strong>
-                                  </p>
+
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPvdhModalInitialSection("FULL_FORM");
+                                        setIsPvdhModalOpen(true);
+                                      }}
+                                      className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                    >
+                                      <HeartHandshake className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                      <span>Nhập / Kiểm tra phiếu</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPvdhModalInitialSection("PREVIEW");
+                                        setIsPvdhModalOpen(true);
+                                      }}
+                                      className="px-2.5 py-1.5 bg-white hover:bg-[#F0FDFA] text-[#00736E] border border-[#E2E8F0] rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                      <span>Bản in A4</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const pId = pvdhRec?.periodId || selectedReportStudent.periodId || "";
+                                        window.open(
+                                          `/api/pvdh/pdf?studentId=${encodeURIComponent(selectedReportStudent.id)}&periodId=${encodeURIComponent(pId)}&format=pdf&disposition=attachment`,
+                                          "_blank"
+                                        );
+                                      }}
+                                      className="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-[#E2E8F0] rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                    >
+                                      <Download className="w-3.5 h-3.5 text-[#008B85]" />
+                                      <span>Tải PDF</span>
+                                    </button>
+                                    {orientationData?.interviewerName && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setIsOrientationModalOpen(true)}
+                                        className="px-2.5 py-1.5 bg-white hover:bg-[#F8FAFC] text-slate-600 border border-[#E2E8F0] rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                      >
+                                        <Pencil className="w-3.5 h-3.5 text-[#008B85]" />
+                                        <span>Dữ liệu cũ</span>
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsPvdhModalOpen(true)}
-                                    className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                                  >
-                                    <HeartHandshake className="w-3.5 h-3.5 text-[#5EEAD4]" />
-                                    <span>Nhập / Kiểm tra phiếu PVDH</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setIsOrientationModalOpen(true)}
-                                    className="px-3 py-1.5 bg-white hover:bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                                  >
-                                    <Pencil className="w-3.5 h-3.5 text-[#008B85]" />
-                                    <span>Phiếu 3 Tab cũ</span>
-                                  </button>
+                                {/* Sub-tabs bám sát đúng cấu hình biểu mẫu BM.KTĐBCL.31–42 */}
+                                <div className="flex flex-wrap items-center gap-1 p-1 bg-white rounded-xl border border-slate-200/80">
+                                  {(isBmDossier
+                                    ? [
+                                        { code: "FULL_FORM" as const, label: `Toàn bộ phiếu (${pvdhCodeDisplay})` },
+                                        { code: "D_TEACHER_SUMMARY" as const, label: "D. Tổng hợp & định hướng GV" },
+                                        { code: "II_STUDENT" as const, label: "A. Phỏng vấn HS (A01–A06)" },
+                                        { code: "IV_PARENT" as const, label: "B. Trao đổi PH (B01–B05)" },
+                                        { code: "C_PARENT_GRADE" as const, label: `C. Phân hóa khối ${dossierGradeNum} (C01–C05)` },
+                                        { code: "I_GENERAL" as const, label: "Thông tin chung" },
+                                      ]
+                                    : [
+                                        { code: "I_GENERAL" as const, label: "I. Thông tin chung" },
+                                        { code: "II_STUDENT" as const, label: `II. Trao đổi với học sinh (${configuredStudentCriteria.length} nhóm)` },
+                                        { code: "III_TEACHER" as const, label: `III. Ghi nhận của giáo viên (${configuredTeacherObs.length} trường)` },
+                                        { code: "IV_PARENT" as const, label: `IV. Trao đổi với PHHS (${configuredParentGroups.length} nhóm)` },
+                                        { code: "V_ORIENTATION" as const, label: "V. Thống nhất định hướng & hỗ trợ" },
+                                      ]
+                                  ).map((tab) => {
+                                    const isActiveTab = orientationSubTab === tab.code;
+                                    return (
+                                      <button
+                                        key={tab.code}
+                                        type="button"
+                                        onClick={() => setOrientationSubTab(tab.code)}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                          isActiveTab
+                                            ? "bg-[#003B3A] text-white shadow-2xs"
+                                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                        }`}
+                                      >
+                                        <span>{tab.label}</span>
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
 
-                              {/* 3 Sub-tabs của Phiếu định hướng */}
-                              <div className="px-5 py-2.5 border-b border-slate-200/70 bg-white pl-6 flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/70">
-                                  <button
-                                    type="button"
-                                    onClick={() => setOrientationSubTab("student")}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                                      orientationSubTab === "student"
-                                        ? "bg-[#003B3A] text-white shadow-2xs"
-                                        : "text-slate-600 hover:text-slate-900 hover:bg-white"
-                                    }`}
-                                  >
-                                    <GraduationCap className={`w-3.5 h-3.5 ${orientationSubTab === "student" ? "text-[#5EEAD4]" : "text-[#008B85]"}`} />
-                                    <span>1. Phỏng vấn học sinh ({configuredStudentCriteria.length})</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setOrientationSubTab("parent")}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                                      orientationSubTab === "parent"
-                                        ? "bg-[#003B3A] text-white shadow-2xs"
-                                        : "text-slate-600 hover:text-slate-900 hover:bg-white"
-                                    }`}
-                                  >
-                                    <Users className={`w-3.5 h-3.5 ${orientationSubTab === "parent" ? "text-[#5EEAD4]" : "text-[#008B85]"}`} />
-                                    <span>2. Trao đổi phụ huynh ({configuredParentGroups.length})</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setOrientationSubTab("summary")}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                                      orientationSubTab === "summary"
-                                        ? "bg-[#003B3A] text-white shadow-2xs"
-                                        : "text-slate-600 hover:text-slate-900 hover:bg-white"
-                                    }`}
-                                  >
-                                    <Compass className={`w-3.5 h-3.5 ${orientationSubTab === "summary" ? "text-[#5EEAD4]" : "text-[#008B85]"}`} />
-                                    <span>3. Tổng hợp &amp; Thẩm định (9 mục)</span>
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div className="p-4 pl-6">
+                              <div className="p-4 pl-5 space-y-3.5">
                                 {loadingOrientation ? (
                                   <div className="py-10 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
                                     <Loader2 className="w-5 h-5 animate-spin text-[#008B85]" />
-                                    <span>Đang tải dữ liệu phiếu định hướng...</span>
+                                    <span>Đang tải dữ liệu phiếu định hướng ({pvdhCodeDisplay})...</span>
                                   </div>
                                 ) : (
                                   <>
-                                    {orientationSubTab === "student" && (
-                                      <div className="overflow-x-auto border border-slate-200/90 rounded-xl">
-                                        <table className="w-full text-left border-collapse text-xs tabular-nums">
-                                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                                            <tr className="border-b text-[11px] font-semibold">
-                                              <th className="py-2.5 px-3 w-11 text-center border-r border-white/15 font-semibold">STT</th>
-                                              <th className="py-2.5 px-3 w-1/3 border-r border-white/15 font-semibold">Nhóm nội dung tìm hiểu ({gradeConfig.label})</th>
-                                              <th className="py-2.5 px-3 border-r border-white/15 font-semibold">Câu trả lời / Chia sẻ của HS</th>
-                                              <th className="py-2.5 px-3 w-36 text-center border-r border-white/15 font-semibold">Mức quan sát</th>
-                                              <th className="py-2.5 px-3 w-1/4 font-semibold">Nhận xét của Giáo viên</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody className="divide-y divide-[#E2E8F0]">
-                                            {configuredStudentCriteria.map((item) => {
-                                              const badge = getRatingBadge(item.ratingCode);
-                                              return (
-                                                <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                                                  <td className="py-2.5 px-3 text-center font-bold text-[#003B3A] border-r border-slate-100 align-top">
-                                                    {item.idx}
+                                    {/* TÓM TẮT ĐỊNH HƯỚNG CỦA GIÁO VIÊN (D01–D04) ĐƯA LÊN ĐẦU KHI XEM TOÀN BỘ PHIẾU ĐỂ GĐCS NẮM BẮT TỨC THÌ */}
+                                    {isBmDossier && orientationSubTab === "FULL_FORM" && (
+                                      <div className="p-3 bg-[#F0FDFA]/70 rounded-xl border border-[#CCFBF1] space-y-2 text-xs">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <span className="font-bold text-[#003B3A] text-xs flex items-center gap-1.5">
+                                            <ClipboardCheck className="w-3.5 h-3.5 text-[#008B85]" />
+                                            <span>Tổng hợp &amp; Định hướng trọng tâm của Giáo viên (Mục D01–D04)</span>
+                                          </span>
+                                          <span className={bmSummary.psychInterviewRequested ? "font-bold text-[#D97706] text-[11px]" : "text-slate-600 text-[11px]"}>
+                                            Đề nghị phỏng vấn Tâm lý: {bmSummary.psychInterviewRequested ? "☑ Có" : "☐ Không"}
+                                          </span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                          {[
+                                            { lbl: "D01. Điểm mạnh nổi bật của HS", val: bmSummary.d01 || summary9.strongPoints },
+                                            { lbl: "D02. Khó khăn & nhu cầu hỗ trợ", val: bmSummary.d02 || summary9.difficultiesNeeds },
+                                            { lbl: "D03. Kỳ vọng của HS & gia đình", val: bmSummary.d03 || summary9.alignmentDifferences },
+                                            { lbl: "D04. Định hướng giáo dục & phối hợp", val: bmSummary.d04 || summary9.initialRecommendations },
+                                          ].map((dItem) => (
+                                            <div key={dItem.lbl} className="p-2.5 bg-white rounded-lg border border-teal-200/70">
+                                              <span className="font-bold text-[#003B3A] block text-[11px]">{dItem.lbl}</span>
+                                              <p className="text-slate-700 mt-0.5 leading-snug line-clamp-2">
+                                                {String(dItem.val || "").trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
+                                              </p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* THÔNG TIN CHUNG (CHỈ HIỂN THỊ KHI CHỌN TAB RIÊNG ĐỂ TRÁNH LẶP LẠI THÔNG TIN HEADER) */}
+                                    {orientationSubTab === "I_GENERAL" && (
+                                      <div className="space-y-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs tabular-nums">
+                                          {(isBmDossier
+                                            ? [
+                                                { key: "gen_student_name", label: "Họ và tên HS", val: selectedReportStudent.fullName || "—" },
+                                                { key: "gen_program", label: "Hệ", val: eduSystemDisplay },
+                                                { key: "gen_registered_campus", label: "Cơ sở", val: campusName },
+                                                { key: "gen_academic_year", label: "Năm học", val: pvdhWorkspace?.student?.academicYearName || "—" },
+                                                { key: "gen_interview_date", label: "Ngày phỏng vấn", val: pvdhRec?.interviewDate ? new Date(pvdhRec.interviewDate).toLocaleDateString("vi-VN") : "Chưa ghi nhận" },
+                                                { key: "gen_parent_name", label: "Phụ huynh tham gia", val: pvdhRec?.parentFullName || selectedReportStudent.parentName || "Chưa ghi nhận" },
+                                                { key: "gen_parent_relationship", label: "Quan hệ với HS", val: pvdhRec?.parentRelationship || "—" },
+                                                { key: "gen_teacher", label: "Giáo viên thực hiện", val: pvdhRec?.studentInterviewerName || orientationData?.interviewerName || orientationAssignedTeacher || "Cán bộ tiếp nhận" },
+                                              ]
+                                            : [
+                                                { key: "gen_student_name", label: "Họ tên học sinh", val: selectedReportStudent.fullName || "—" },
+                                                { key: "gen_dob", label: "Ngày sinh", val: dobDisplay },
+                                                { key: "gen_student_code", label: "Mã hồ sơ", val: selectedReportStudent.studentCode || "—" },
+                                                { key: "gen_grade", label: "Khối dự kiến", val: `Khối ${selectedReportStudent.grade || "—"}` },
+                                                { key: "gen_program", label: "Hệ / chương trình", val: eduSystemDisplay },
+                                                { key: "gen_current_school", label: "Trường / lớp đang học", val: [selectedReportStudent.oldSchoolName, selectedReportStudent.className].filter(Boolean).join(" – ") || "—" },
+                                                { key: "gen_registered_campus", label: "Cơ sở đăng ký", val: campusName },
+                                                { key: "gen_interview_date", label: "Ngày phỏng vấn", val: pvdhRec?.interviewDate ? new Date(pvdhRec.interviewDate).toLocaleDateString("vi-VN") : "Chưa ghi nhận" },
+                                                { key: "gen_interviewer_name", label: "Người phỏng vấn", val: pvdhRec?.studentInterviewerName || orientationData?.interviewerName || orientationAssignedTeacher || "Cán bộ tiếp nhận" },
+                                                { key: "gen_interviewer_title", label: "Chức danh", val: pvdhRec?.studentInterviewerTitle || "Giáo viên phỏng vấn" },
+                                                { key: "gen_parent_name", label: "Họ tên PHHS", val: pvdhRec?.parentFullName || selectedReportStudent.parentName || "Chưa ghi nhận" },
+                                                { key: "gen_parent_relationship", label: "Quan hệ với HS", val: pvdhRec?.parentRelationship || "Phụ huynh" },
+                                                { key: "gen_parent_contact", label: "Điện thoại / kênh liên hệ", val: pvdhRec?.parentContactChannel || selectedReportStudent.parentPhone || "—" },
+                                              ]
+                                          ).map((info) => (
+                                            <div key={info.key} className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                                              <span className="text-[11px] text-slate-500 block">{info.label}</span>
+                                              <strong className="text-slate-900 font-semibold block mt-0.5">{info.val}</strong>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* MỤC A / II: PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH (A01–A06) */}
+                                    {(orientationSubTab === "II_STUDENT" || (isBmDossier && orientationSubTab === "FULL_FORM")) && (
+                                      <div className="space-y-1.5">
+                                        {isBmDossier && (
+                                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                            <h5 className="text-xs font-bold text-[#003B3A]">A. Phỏng vấn định hướng học sinh</h5>
+                                            <span className="text-[11px] italic text-slate-500">
+                                              Ghi nhận lời chia sẻ, biểu hiện giao tiếp và cách HS trình bày. Với khối nhỏ, kết hợp trò chuyện và hoạt động đơn giản.
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                                          <table className="w-full text-left border-collapse text-xs tabular-nums">
+                                            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                <th className="py-2.5 px-3 w-16 text-center border-r border-white/15 font-semibold text-white">Mã mục</th>
+                                                <th className="py-2.5 px-3 w-[44%] border-r border-white/15 font-semibold text-teal-100">Câu hỏi phỏng vấn định hướng ({pvdhCodeDisplay})</th>
+                                                <th className="py-2.5 px-3 font-semibold text-[#5EEAD4]">Chia sẻ của học sinh &amp; ghi nhận</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                                              {configuredStudentCriteria.map((item) => (
+                                                <tr key={item.fieldKey} className="hover:bg-[#F8FAFC] transition-colors align-middle">
+                                                  <td className="py-3 px-3 text-center font-mono text-[11px] font-bold text-[#003B3A] border-r border-slate-100">
+                                                    {String(item.fieldKey || "").toUpperCase()}
                                                   </td>
-                                                  <td className="py-2.5 px-3 border-r border-slate-100 align-top">
-                                                    <div className="font-semibold text-slate-900 leading-snug">{item.name}</div>
-                                                    <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{item.focus}</div>
+                                                  <td className="py-3 px-3 border-r border-slate-100">
+                                                    <div className="font-semibold text-slate-900 leading-snug">{item.label}</div>
+                                                    {item.promptQuestion && (
+                                                      <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{item.promptQuestion}</div>
+                                                    )}
                                                   </td>
-                                                  <td className="py-2.5 px-3 border-r border-slate-100 align-top leading-relaxed">
-                                                    {item.studentAnswer.trim() ? (
-                                                      <span className="text-slate-800">{item.studentAnswer}</span>
+                                                  <td className="py-3 px-3 leading-relaxed">
+                                                    {item.responseText.trim() ? (
+                                                      <span className="text-slate-800 whitespace-pre-wrap">{item.responseText}</span>
+                                                    ) : item.notRecorded ? (
+                                                      <span className="text-amber-800 font-medium">
+                                                        Chưa ghi nhận{item.notRecordedReason ? `: ${item.notRecordedReason}` : ""}
+                                                      </span>
                                                     ) : (
                                                       <span className="text-slate-400 italic">Chưa ghi nhận</span>
                                                     )}
                                                   </td>
-                                                  <td className="py-2.5 px-3 text-center border-r border-slate-100 align-top">
-                                                    <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] border ${badge.cls}`}>
-                                                      {badge.label}
-                                                    </span>
-                                                  </td>
-                                                  <td className="py-2.5 px-3 align-top leading-relaxed">
-                                                    {item.teacherCmt.trim() ? (
-                                                      <span className="text-[#00736E] font-medium">{item.teacherCmt}</span>
-                                                    ) : (
-                                                      <span className="text-slate-400">—</span>
-                                                    )}
-                                                  </td>
                                                 </tr>
-                                              );
-                                            })}
-                                          </tbody>
-                                        </table>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
                                       </div>
                                     )}
 
-                                    {orientationSubTab === "parent" && (
-                                      <div className="overflow-x-auto border border-slate-200/90 rounded-xl">
+                                    {/* MỤC III: GHI NHẬN CỦA GIÁO VIÊN (CHỈ VỚI BẢN GHI CŨ NẾU CÓ) */}
+                                    {!isBmDossier && orientationSubTab === "III_TEACHER" && (
+                                      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
                                         <table className="w-full text-left border-collapse text-xs tabular-nums">
                                           <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                                            <tr className="border-b text-[11px] font-semibold">
-                                              <th className="py-2.5 px-3 w-11 text-center border-r border-white/15 font-semibold">STT</th>
-                                              <th className="py-2.5 px-3 w-1/3 border-r border-white/15 font-semibold">Nhóm nội dung trao đổi PHHS ({gradeConfig.label})</th>
-                                              <th className="py-2.5 px-3 border-r border-white/15 font-semibold">Nội dung Phụ huynh chia sẻ &amp; Kỳ vọng</th>
-                                              <th className="py-2.5 px-3 w-1/4 font-semibold">Ghi nhận của Giáo viên</th>
+                                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                              <th className="py-2.5 px-3 w-12 text-center border-r border-white/15 font-semibold">STT</th>
+                                              <th className="py-2.5 px-3 w-[42%] border-r border-white/15 font-semibold text-teal-100">Trường ghi nhận của người phỏng vấn</th>
+                                              <th className="py-2.5 px-3 font-semibold text-[#5EEAD4]">Nội dung ghi nhận thực tế</th>
                                             </tr>
                                           </thead>
-                                          <tbody className="divide-y divide-[#E2E8F0]">
-                                            {configuredParentGroups.map((pItem) => (
-                                              <tr key={pItem.id} className="hover:bg-slate-50/70 transition-colors">
-                                                <td className="py-2.5 px-3 text-center font-bold text-[#003B3A] border-r border-slate-100 align-top">
-                                                  {pItem.idx}
+                                          <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                                            {configuredTeacherObs.map((item) => (
+                                              <tr key={item.fieldKey} className="hover:bg-[#F8FAFC] transition-colors align-middle">
+                                                <td className="py-3 px-3 text-center font-bold text-[#003B3A] border-r border-slate-100">
+                                                  {item.idx}
                                                 </td>
-                                                <td className="py-2.5 px-3 border-r border-slate-100 align-top">
-                                                  <div className="font-semibold text-slate-900 leading-snug">{pItem.title}</div>
-                                                  <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{pItem.focus}</div>
-                                                </td>
-                                                <td className="py-2.5 px-3 border-r border-slate-100 align-top leading-relaxed">
-                                                  {pItem.answer.trim() ? (
-                                                    <span className="text-slate-800">{pItem.answer}</span>
-                                                  ) : (
-                                                    <span className="text-slate-400 italic">Chưa ghi nhận</span>
+                                                <td className="py-3 px-3 border-r border-slate-100">
+                                                  <div className="font-semibold text-slate-900 leading-snug">{item.label}</div>
+                                                  {item.guideline && (
+                                                    <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{item.guideline}</div>
                                                   )}
                                                 </td>
-                                                <td className="py-2.5 px-3 align-top leading-relaxed">
-                                                  {pItem.teacherNote.trim() ? (
-                                                    <span className="text-[#00736E] font-medium">{pItem.teacherNote}</span>
+                                                <td className="py-3 px-3 leading-relaxed">
+                                                  {item.value.trim() ? (
+                                                    <span className="text-slate-800 whitespace-pre-wrap">{item.value}</span>
                                                   ) : (
-                                                    <span className="text-slate-400">—</span>
+                                                    <span className="text-slate-400 italic">Chưa ghi nhận</span>
                                                   )}
                                                 </td>
                                               </tr>
@@ -10164,34 +11208,196 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       </div>
                                     )}
 
-                                    {orientationSubTab === "summary" && (
-                                      <div className="space-y-3 text-xs">
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    {/* MỤC B / IV: TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (B01–B05) */}
+                                    {(orientationSubTab === "IV_PARENT" || (isBmDossier && orientationSubTab === "FULL_FORM")) && (
+                                      <div className="space-y-1.5">
+                                        {isBmDossier && (
+                                          <h5 className="text-xs font-bold text-[#003B3A]">B. Trao đổi định hướng với phụ huynh</h5>
+                                        )}
+                                        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                                          <table className="w-full text-left border-collapse text-xs tabular-nums">
+                                            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                <th className="py-2.5 px-3 w-16 text-center border-r border-white/15 font-semibold text-white">Mã mục</th>
+                                                <th className="py-2.5 px-3 w-[44%] border-r border-white/15 font-semibold text-teal-100">Nội dung trao đổi với phụ huynh ({pvdhCodeDisplay})</th>
+                                                <th className="py-2.5 px-3 font-semibold text-[#5EEAD4]">Chia sẻ của phụ huynh</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                                              {configuredParentGroups.map((pItem) => (
+                                                <tr key={pItem.fieldKey} className="hover:bg-[#F8FAFC] transition-colors align-middle">
+                                                  <td className="py-3 px-3 text-center font-mono text-[11px] font-bold text-[#003B3A] border-r border-slate-100">
+                                                    {String(pItem.fieldKey || "").toUpperCase()}
+                                                  </td>
+                                                  <td className="py-3 px-3 border-r border-slate-100">
+                                                    <div className="font-semibold text-slate-900 leading-snug">{pItem.label}</div>
+                                                    {pItem.promptQuestion && (
+                                                      <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{pItem.promptQuestion}</div>
+                                                    )}
+                                                  </td>
+                                                  <td className="py-3 px-3 leading-relaxed">
+                                                    {pItem.responseText.trim() ? (
+                                                      <span className="text-slate-800 whitespace-pre-wrap">{pItem.responseText}</span>
+                                                    ) : pItem.notRecorded ? (
+                                                      <span className="text-amber-800 font-medium">
+                                                        Chưa ghi nhận{pItem.notRecordedReason ? `: ${pItem.notRecordedReason}` : ""}
+                                                      </span>
+                                                    ) : (
+                                                      <span className="text-slate-400 italic">Chưa ghi nhận</span>
+                                                    )}
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* MỤC C: CÂU HỎI PHÂN HÓA RIÊNG CHO KHỐI 1–12 (PHỤ HUYNH) */}
+                                    {isBmDossier && (orientationSubTab === "C_PARENT_GRADE" || orientationSubTab === "FULL_FORM") && (
+                                      <div className="space-y-1.5">
+                                        <h5 className="text-xs font-bold text-[#003B3A]">
+                                          C. Câu hỏi phân hóa riêng cho khối {dossierGradeNum} (Phụ huynh)
+                                        </h5>
+                                        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
+                                          <table className="w-full text-left border-collapse text-xs tabular-nums">
+                                            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                <th className="py-2.5 px-3 w-16 text-center border-r border-white/15 font-semibold text-white">Mã mục</th>
+                                                <th className="py-2.5 px-3 w-[44%] border-r border-white/15 font-semibold text-teal-100">Câu hỏi phân hóa riêng khối {dossierGradeNum} ({pvdhCodeDisplay})</th>
+                                                <th className="py-2.5 px-3 font-semibold text-[#5EEAD4]">Chia sẻ của phụ huynh</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                                              {configuredParentGradeCGroups.map((cItem) => (
+                                                <tr key={cItem.fieldKey} className="hover:bg-[#F8FAFC] transition-colors align-middle">
+                                                  <td className="py-3 px-3 text-center font-mono text-[11px] font-bold text-[#003B3A] border-r border-slate-100">
+                                                    {String(cItem.fieldKey || "").toUpperCase()}
+                                                  </td>
+                                                  <td className="py-3 px-3 border-r border-slate-100">
+                                                    <div className="font-semibold text-slate-900 leading-snug">{cItem.label}</div>
+                                                    {cItem.promptQuestion && (
+                                                      <div className="text-[11px] text-slate-500 mt-0.5 leading-snug">{cItem.promptQuestion}</div>
+                                                    )}
+                                                  </td>
+                                                  <td className="py-3 px-3 leading-relaxed">
+                                                    {cItem.responseText.trim() ? (
+                                                      <span className="text-slate-800 whitespace-pre-wrap">{cItem.responseText}</span>
+                                                    ) : cItem.notRecorded ? (
+                                                      <span className="text-amber-800 font-medium">
+                                                        Chưa ghi nhận{cItem.notRecordedReason ? `: ${cItem.notRecordedReason}` : ""}
+                                                      </span>
+                                                    ) : (
+                                                      <span className="text-slate-400 italic">Chưa ghi nhận</span>
+                                                    )}
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* MỤC D: TỔNG HỢP VÀ ĐỊNH HƯỚNG CỦA GIÁO VIÊN (BM.KTĐBCL.31–42) */}
+                                    {isBmDossier && (orientationSubTab === "D_TEACHER_SUMMARY" || orientationSubTab === "FULL_FORM") && (
+                                      <div className="space-y-2.5 text-xs">
+                                        <h5 className="text-xs font-bold text-[#003B3A]">
+                                          D. Tổng hợp và định hướng của giáo viên
+                                        </h5>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                           {[
-                                            { label: "1. Điểm mạnh nổi bật của học sinh", val: summary9.strongPoints },
-                                            { label: "2. Sở thích & Động lực học tập", val: summary9.interestsMotivation },
-                                            { label: "3. Khả năng thích nghi & Tự lập", val: summary9.adaptabilityAutonomy },
-                                            { label: "4. Khó khăn, nhu cầu cần quan tâm", val: summary9.difficultiesNeeds },
-                                            { label: "5. Kỳ vọng của học sinh tại Sky-Line", val: summary9.studentExpectations },
-                                            { label: "6. Kỳ vọng của phụ huynh đối với học sinh", val: summary9.parentExpectations },
-                                            { label: "7. Tương đồng / Khác biệt giữa 2 nguồn", val: summary9.alignmentDifferences },
-                                            { label: "8. Đề xuất hỗ trợ & Định hướng ban đầu", val: summary9.initialRecommendations },
-                                            { label: "9. Nội dung cần xác minh chuyên môn", val: summary9.verificationItems }
-                                          ].map((box, bIdx) => (
-                                            <div key={bIdx} className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
-                                              <span className="font-bold text-[#003B3A] block text-[11px]">{box.label}</span>
-                                              <p className="text-slate-700 leading-relaxed">
-                                                {box.val?.trim() ? box.val : <span className="text-slate-400 italic">Chưa ghi nhận</span>}
+                                            { lbl: "D01. Điểm mạnh nổi bật của HS (nguồn HS / PHHS / quan sát)", val: bmSummary.d01 },
+                                            { lbl: "D02. Khó khăn, nhu cầu hỗ trợ và nội dung cần xác minh", val: bmSummary.d02 },
+                                            { lbl: "D03. Kỳ vọng của HS và gia đình (tương đồng / khác biệt)", val: bmSummary.d03 },
+                                            { lbl: "D04. Định hướng giáo dục, phối hợp và bước tiếp theo", val: bmSummary.d04 },
+                                          ].map((dItem) => (
+                                            <div key={dItem.lbl} className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-1">
+                                              <span className="font-bold text-[#003B3A] block text-[11px]">{dItem.lbl}</span>
+                                              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                                {String(dItem.val || "").trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
                                               </p>
                                             </div>
                                           ))}
                                         </div>
+                                        <div className="p-3 bg-[#F0FDFA] rounded-xl border border-[#CCFBF1] flex flex-wrap items-center justify-between gap-3">
+                                          <div className="flex flex-wrap items-center gap-3">
+                                            <span className="font-bold text-[#003B3A]">Trạng thái phiếu:</span>
+                                            {BM_SHEET_STATUS_OPTIONS.map((opt) => (
+                                              <span key={opt.code} className={bmSummary.sheetStatus === opt.code ? "font-bold text-[#003B3A]" : "text-slate-500"}>
+                                                {bmSummary.sheetStatus === opt.code ? "☑" : "☐"} {opt.label}
+                                              </span>
+                                            ))}
+                                          </div>
+                                          <span className="font-bold text-[#003B3A]">
+                                            Đề nghị phỏng vấn (tâm lí): {bmSummary.psychInterviewRequested ? "☑" : "☐"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* MỤC V: THỐNG NHẤT ĐỊNH HƯỚNG & HỖ TRỢ (MẪU KHỐI 3–12) */}
+                                    {!isBmDossier && orientationSubTab === "V_ORIENTATION" && (
+                                      <div className="space-y-3 text-xs">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                          <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-1">
+                                            <span className="font-bold text-[#003B3A] block text-[11px]">
+                                              1. Điểm mạnh và nhu cầu ưu tiên của học sinh (plan_strengths_priority)
+                                            </span>
+                                            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                              {pvdhOrientationPlan.strengthsPriority.trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
+                                            </p>
+                                          </div>
+                                          <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-1">
+                                            <span className="font-bold text-[#003B3A] block text-[11px]">
+                                              2. Mục tiêu ban đầu và hành động thống nhất với HS, PHHS (plan_goals_actions)
+                                            </span>
+                                            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                              {pvdhOrientationPlan.goalsActionsText.trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
+                                            </p>
+                                          </div>
+                                          <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-1">
+                                            <span className="font-bold text-[#003B3A] block text-[11px]">
+                                              3. Người/bộ phận phối hợp &amp; mốc trao đổi lại
+                                            </span>
+                                            <p className="text-slate-700 leading-relaxed">
+                                              Phối hợp: <strong>{pvdhOrientationPlan.coordinator.trim() || "—"}</strong>
+                                              {" • "}Mốc trao đổi lại: <strong>{pvdhOrientationPlan.reviewDate ? new Date(pvdhOrientationPlan.reviewDate).toLocaleDateString("vi-VN") : "—"}</strong>
+                                            </p>
+                                          </div>
+                                          <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-1">
+                                            <span className="font-bold text-[#003B3A] block text-[11px]">
+                                              4. Nội dung cần tìm hiểu thêm (plan_further_topics)
+                                            </span>
+                                            <p className="text-slate-700 leading-relaxed">
+                                              {pvdhOrientationPlan.furtherTopics.length > 0 ? (
+                                                pvdhOrientationPlan.furtherTopics
+                                                  .map((c: string) => FURTHER_INQUIRY_OPTIONS.find((o) => o.code === c)?.label || c)
+                                                  .join(", ") +
+                                                (pvdhOrientationPlan.furtherOtherText ? ` (${pvdhOrientationPlan.furtherOtherText})` : "")
+                                              ) : (
+                                                <span className="text-slate-400 italic">Chưa chọn</span>
+                                              )}
+                                            </p>
+                                          </div>
+                                          <div className="p-3 bg-[#F0FDFA]/80 rounded-xl border border-[#CCFBF1] space-y-1 sm:col-span-2">
+                                            <span className="font-bold text-[#003B3A] block text-[11px]">
+                                              5. Nội dung bàn giao cho GVCN / bộ phận liên quan khi nhập học (plan_handover_notes)
+                                            </span>
+                                            <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
+                                              {pvdhOrientationPlan.handoverNotes.trim() || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
+                                            </p>
+                                          </div>
+                                        </div>
 
                                         <div className="p-3 bg-[#F0FDFA] rounded-xl border border-[#CCFBF1] flex flex-wrap items-center justify-between gap-2">
                                           <div>
-                                            <span className="font-bold text-[#003B3A] block">Thẩm định của Quản lý Chuyên môn (QLCM)</span>
+                                            <span className="font-bold text-[#003B3A] block">Trạng thái xác nhận Phiếu định hướng ({pvdhCodeDisplay})</span>
                                             <p className="text-slate-700 mt-0.5">
-                                              {rawVerification?.notes || orientationData?.verificationNotes || "Hồ sơ phỏng vấn định hướng theo cấu hình chuẩn của khối."}
+                                              {pvdhRec?.confirmedByName
+                                                ? `Đã xác nhận bởi ${pvdhRec.confirmedByName}${pvdhRec.confirmedAt ? ` (${new Date(pvdhRec.confirmedAt).toLocaleDateString("vi-VN")})` : ""}`
+                                                : rawVerification?.notes || orientationData?.verificationNotes || "Phiếu phỏng vấn định hướng theo cấu hình mẫu đề xuất."}
                                             </p>
                                           </div>
                                           <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border ${
@@ -10199,7 +11405,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                               : "bg-amber-50 text-amber-800 border-amber-200"
                                           }`}>
-                                            {verStatus === "VERIFIED" ? "QLCM đã thẩm định" : "Chờ QLCM thẩm định"}
+                                            {verStatus === "VERIFIED" ? "Đã xác nhận & khóa phiếu" : pvdhWorkflowInfo.label}
                                           </span>
                                         </div>
                                       </div>
@@ -10212,22 +11418,22 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         </div>
 
                         {/* -------- RIGHT PANE (4 COLS): STICKY COUNCIL DECISION CONSOLE -------- */}
-                        <div className="lg:col-span-4 lg:h-full bg-[#F8FAFC] border-t lg:border-t-0 lg:border-l border-slate-200/90 flex flex-col justify-between overflow-hidden">
+                        <div className={`${mobileDossierPane === "evidence" ? "hidden lg:flex" : "flex"} lg:col-span-4 h-full bg-[#F8FAFC] border-t lg:border-t-0 lg:border-l border-slate-200/90 flex-col justify-between overflow-hidden`}>
                           {/* Authoritative Deep Pine Console Header */}
                           <div className="shrink-0">
-                            <div className="px-4 sm:px-5 py-3.5 bg-[#003B3A] border-t-2 border-t-[#00A19A] text-white flex items-center justify-between gap-2.5">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
-                                  <ClipboardCheck className="w-4 h-4 text-[#5EEAD4]" />
+                            <div className="px-4 py-2.5 bg-[#003B3A] border-t-2 border-t-[#00A19A] text-white flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-7 h-7 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
+                                  <ClipboardCheck className="w-3.5 h-3.5 text-[#5EEAD4]" />
                                 </div>
                                 <div className="min-w-0">
-                                  <h4 className="font-bold text-white text-sm tracking-tight leading-tight">Quyết định Hội đồng</h4>
-                                  <p className="text-[11px] text-teal-100/80 truncate mt-0.5">Thẩm định &amp; phê duyệt đầu vào</p>
+                                  <h4 className="font-bold text-white text-xs sm:text-sm tracking-tight leading-tight">Quyết định Hội đồng</h4>
+                                  <p className="text-[10.5px] text-teal-100/80 truncate">Chọn 1 chạm kết quả &amp; phê duyệt nhanh</p>
                                 </div>
                               </div>
 
                               {selectedReportStudent.admissionResult ? (
-                                <span className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border shrink-0 flex items-center gap-1 ${
+                                <span className={`px-2 py-0.5 text-[10.5px] font-bold rounded-md border shrink-0 flex items-center gap-1 ${
                                   selectedReportStudent.admissionResult.includes("Không")
                                     ? "bg-rose-500/20 text-rose-100 border-rose-400/40"
                                     : selectedReportStudent.admissionResult.includes("cam kết") || selectedReportStudent.admissionResult === "Học thử"
@@ -10238,7 +11444,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   <span>Đã duyệt</span>
                                 </span>
                               ) : (
-                                <span className="px-2.5 py-1 text-[11px] font-semibold bg-amber-400/20 text-amber-200 rounded-lg border border-amber-300/35 shrink-0">
+                                <span className="px-2 py-0.5 text-[10.5px] font-semibold bg-amber-400/20 text-amber-200 rounded-md border border-amber-300/35 shrink-0">
                                   Chờ phê duyệt
                                 </span>
                               )}
@@ -10246,7 +11452,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                             {/* Live Verdict Summary Strip */}
                             {reportForm.admissionResult ? (
-                              <div className={`px-4 sm:px-5 py-2 border-b text-xs flex items-center justify-between gap-2 transition-colors ${
+                              <div className={`px-4 py-1.5 border-b text-xs flex items-center justify-between gap-2 transition-colors ${
                                 reportForm.admissionResult.includes("Không")
                                   ? "bg-rose-50/90 border-rose-200/80 text-rose-900"
                                   : reportForm.admissionResult.includes("cam kết")
@@ -10270,17 +11476,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 </strong>
                               </div>
                             ) : (
-                              <div className="px-4 sm:px-5 py-2 bg-amber-50/60 border-b border-amber-200/60 text-[11px] text-amber-900 font-medium flex items-center gap-1.5">
+                              <div className="px-4 py-1.5 bg-amber-50/60 border-b border-amber-200/60 text-[11px] text-amber-900 font-medium flex items-center gap-1.5">
                                 <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                <span>Chọn kết quả xét tuyển bên dưới để phê duyệt hồ sơ</span>
+                                <span>Chạm chọn 1 trong 4 mức kết quả bên dưới (Tự động điền nhận xét)</span>
                               </div>
                             )}
                           </div>
 
-                          {/* Console Scrollable Cards Body */}
-                          <div className="p-3.5 sm:p-4 space-y-3.5 flex-1 lg:overflow-y-auto">
+                          {/* Console Scrollable Cards Body (Compact & Zero-Scroll on 1366x768) */}
+                          <div className="p-3 space-y-2.5 flex-1 overflow-y-auto">
                             {!canApprove && (
-                              <div className="text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs font-medium flex items-center gap-2 shadow-2xs">
+                              <div className="text-rose-800 bg-rose-50 border border-rose-200 rounded-xl p-2.5 text-xs font-medium flex items-center gap-2 shadow-2xs">
                                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                                 <span>
                                   {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED"
@@ -10291,16 +11497,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             )}
 
                             {/* CARD 1: VERDICT SELECTION & COMMITTED SUBJECTS */}
-                            <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-[0_1px_3px_rgba(15,23,42,0.03)] space-y-3">
-                              <div className="flex items-center justify-between">
-                                <label className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                                  <span className="w-5 h-5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold inline-flex items-center justify-center tabular-nums">1</span>
+                            <div className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-2.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                  <span className="w-4.5 h-4.5 rounded-md bg-[#003B3A] text-white text-[10px] font-bold inline-flex items-center justify-center tabular-nums">1</span>
                                   <span>Kết quả xét tuyển đầu vào <span className="text-rose-500">*</span></span>
                                 </label>
+                                <span className="text-[10px] text-[#00736E] font-semibold">1 chạm tự động điền ghi chú</span>
                               </div>
 
-                              {/* 2x2 Tactile Semantic Verdict Cards */}
-                              <div className="grid grid-cols-2 gap-2.5">
+                              {/* 2x2 Compact Horizontal Tactile Verdict Cards */}
+                              <div className="grid grid-cols-2 gap-2">
                                 {[
                                   {
                                     val: "Đạt",
@@ -10309,7 +11516,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     icon: CheckCircle2,
                                     idleBorder: "border-slate-200/90 border-l-4 border-l-emerald-500 hover:border-emerald-400 hover:bg-emerald-50/35",
                                     idleIconCls: "bg-emerald-50 text-emerald-600 border border-emerald-200/70",
-                                    activeCls: "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-600/20 ring-2 ring-emerald-500/25",
+                                    activeCls: "bg-emerald-600 border-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/25",
                                     checkBadgeCls: "bg-white text-emerald-700"
                                   },
                                   {
@@ -10319,7 +11526,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     icon: ClipboardCheck,
                                     idleBorder: "border-slate-200/90 border-l-4 border-l-amber-500 hover:border-amber-400 hover:bg-amber-50/35",
                                     idleIconCls: "bg-amber-50 text-amber-600 border border-amber-200/70",
-                                    activeCls: "bg-amber-600 border-amber-600 text-white shadow-md shadow-amber-600/20 ring-2 ring-amber-500/25",
+                                    activeCls: "bg-amber-600 border-amber-600 text-white shadow-sm ring-2 ring-amber-500/25",
                                     checkBadgeCls: "bg-white text-amber-700"
                                   },
                                   {
@@ -10329,7 +11536,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     icon: Clock,
                                     idleBorder: "border-slate-200/90 border-l-4 border-l-[#00A19A] hover:border-[#00A19A] hover:bg-[#F0FDFA]/60",
                                     idleIconCls: "bg-[#F0FDFA] text-[#008B85] border border-[#CCFBF1]",
-                                    activeCls: "bg-[#008B85] border-[#008B85] text-white shadow-md shadow-[#008B85]/20 ring-2 ring-[#00A19A]/25",
+                                    activeCls: "bg-[#008B85] border-[#008B85] text-white shadow-sm ring-2 ring-[#00A19A]/25",
                                     checkBadgeCls: "bg-white text-[#008B85]"
                                   },
                                   {
@@ -10339,7 +11546,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     icon: X,
                                     idleBorder: "border-slate-200/90 border-l-4 border-l-rose-500 hover:border-rose-400 hover:bg-rose-50/35",
                                     idleIconCls: "bg-rose-50 text-rose-600 border border-rose-200/70",
-                                    activeCls: "bg-rose-600 border-rose-600 text-white shadow-md shadow-rose-600/20 ring-2 ring-rose-500/25",
+                                    activeCls: "bg-rose-600 border-rose-600 text-white shadow-sm ring-2 ring-rose-500/25",
                                     checkBadgeCls: "bg-white text-rose-700"
                                   }
                                 ].map(opt => {
@@ -10350,42 +11557,42 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       key={opt.val}
                                       type="button"
                                       disabled={!canApprove}
-                                      onClick={() => setReportForm(f => ({ ...f, admissionResult: opt.val }))}
-                                      className={`relative p-3 rounded-xl border text-left transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                                      onClick={() => selectVerdictWithSmartNote(opt.val)}
+                                      className={`relative p-2.5 rounded-xl border text-left transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between gap-2 ${
                                         isPicked ? opt.activeCls : `bg-white text-slate-800 ${opt.idleBorder}`
                                       }`}
                                     >
-                                      <div className="flex items-start justify-between gap-2">
+                                      <div className="flex items-center gap-2 min-w-0">
                                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                                           isPicked ? "bg-white/20 text-white" : opt.idleIconCls
                                         }`}>
-                                          <IconComp className="w-4 h-4" />
+                                          <IconComp className="w-3.5 h-3.5" />
                                         </div>
-                                        {isPicked ? (
-                                          <span className={`w-5 h-5 rounded-full flex items-center justify-center shadow-2xs ${opt.checkBadgeCls}`}>
-                                            <Check className="w-3 h-3 stroke-[3]" />
+                                        <div className="min-w-0">
+                                          <span className={`text-xs font-bold block leading-tight truncate ${isPicked ? "text-white" : "text-slate-900"}`}>
+                                            {opt.label}
                                           </span>
-                                        ) : (
-                                          <span className="w-4 h-4 rounded-full border border-slate-300 bg-slate-50/80 mt-0.5" />
-                                        )}
+                                          <span className={`text-[10px] block mt-0.5 leading-tight truncate ${isPicked ? "text-white/85" : "text-slate-500"}`}>
+                                            {opt.sub}
+                                          </span>
+                                        </div>
                                       </div>
-                                      <div className="mt-2">
-                                        <span className={`text-xs font-bold block leading-tight ${isPicked ? "text-white" : "text-slate-900"}`}>
-                                          {opt.label}
+                                      {isPicked ? (
+                                        <span className={`w-4.5 h-4.5 rounded-full flex items-center justify-center shrink-0 shadow-2xs ${opt.checkBadgeCls}`}>
+                                          <Check className="w-3 h-3 stroke-[3]" />
                                         </span>
-                                        <span className={`text-[11px] block mt-0.5 leading-tight ${isPicked ? "text-white/85" : "text-slate-500"}`}>
-                                          {opt.sub}
-                                        </span>
-                                      </div>
+                                      ) : (
+                                        <span className="w-3.5 h-3.5 rounded-full border border-slate-300 bg-slate-50/80 shrink-0" />
+                                      )}
                                     </button>
                                   );
                                 })}
                               </div>
 
                               {/* Secondary Special Outcomes Tray */}
-                              <div className="p-2 rounded-xl bg-slate-50/90 border border-slate-200/70 space-y-1.5">
-                                <span className="text-[11px] font-semibold text-slate-500 block px-0.5">Trường hợp xét duyệt chi tiết:</span>
-                                <div className="flex flex-wrap items-center gap-1.5">
+                              <div className="p-1.5 rounded-lg bg-slate-50/90 border border-slate-200/70 flex flex-wrap items-center justify-between gap-1">
+                                <span className="text-[10.5px] font-semibold text-slate-500 px-1">Chi tiết:</span>
+                                <div className="flex flex-wrap items-center gap-1">
                                   {[
                                     {
                                       val: "Đạt - Giao lưu",
@@ -10395,7 +11602,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     },
                                     {
                                       val: "Không đạt - Kiểm tra lại",
-                                      label: "K.Đạt - Kiểm tra lại",
+                                      label: "K.Đạt - KT lại",
                                       dot: "bg-amber-500",
                                       active: "bg-amber-600 text-white border-amber-600 shadow-xs"
                                     },
@@ -10412,8 +11619,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         key={sp.val}
                                         type="button"
                                         disabled={!canApprove}
-                                        onClick={() => setReportForm(f => ({ ...f, admissionResult: sp.val }))}
-                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50 ${
+                                        onClick={() => selectVerdictWithSmartNote(sp.val)}
+                                        className={`px-2 py-0.5 rounded-md text-[10.5px] font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 disabled:opacity-50 ${
                                           isPicked
                                             ? sp.active
                                             : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100/70"
@@ -10435,7 +11642,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 const isRetestMode = String(reportForm.admissionResult || "").toLowerCase().includes("kiểm tra lại");
                                 const selectedCount = (reportForm.committedSubjects || []).length;
                                 return (
-                                  <div className={`rounded-xl p-3 border space-y-2.5 ${
+                                  <div className={`rounded-xl p-2.5 border space-y-2 ${
                                     isRetestMode
                                       ? "bg-rose-50/40 border-rose-200"
                                       : "bg-amber-50/50 border-amber-200"
@@ -10453,13 +11660,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       </span>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1">
+                                    <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto pr-1">
                                       {availableCommitmentSubjects.map((sub, idx) => {
                                         const isChecked = (reportForm.committedSubjects || []).includes(sub.name);
                                         return (
                                           <label
                                             key={idx}
-                                            className={`flex items-center justify-between gap-1.5 p-2 rounded-lg border transition-all cursor-pointer select-none text-[11px] font-semibold ${
+                                            className={`flex items-center justify-between gap-1.5 p-1.5 rounded-lg border transition-all cursor-pointer select-none text-[11px] font-semibold ${
                                               isChecked
                                                 ? "bg-[#003B3A] border-[#003B3A] text-white shadow-2xs"
                                                 : "bg-white border-slate-200 text-slate-700 hover:border-amber-400"
@@ -10483,10 +11690,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               <span className="truncate" title={sub.name}>{sub.name}</span>
                                             </div>
                                             {sub.isSurveySubject && (
-                                              <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                                              <span className={`shrink-0 text-[9px] font-bold px-1 py-0.2 rounded ${
                                                 isChecked ? "bg-white/20 text-[#5EEAD4]" : "bg-teal-50 text-[#00736E] border border-teal-200/70"
                                               }`}>
-                                                Môn KS
+                                                KS
                                               </span>
                                             )}
                                           </label>
@@ -10495,7 +11702,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     </div>
 
                                     {canApprove && (
-                                      <div className="flex items-center gap-1.5 pt-1.5 border-t border-amber-200/60">
+                                      <div className="flex items-center gap-1.5 pt-1 border-t border-amber-200/60">
                                         <input
                                           type="text"
                                           placeholder="Nhập tên môn khác..."
@@ -10507,12 +11714,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               handleAddCustomCommitmentSubject();
                                             }
                                           }}
-                                          className="flex-1 px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#008B85]"
+                                          className="flex-1 px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#008B85]"
                                         />
                                         <button
                                           type="button"
                                           onClick={handleAddCustomCommitmentSubject}
-                                          className="px-3 py-1.5 text-xs bg-[#003B3A] hover:bg-[#005854] text-white font-semibold rounded-lg transition shrink-0 cursor-pointer"
+                                          className="px-2.5 py-1 text-xs bg-[#003B3A] hover:bg-[#005854] text-white font-semibold rounded-lg transition shrink-0 cursor-pointer"
                                         >
                                           Thêm
                                         </button>
@@ -10523,11 +11730,79 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               })()}
                             </div>
 
-                            {/* CARD 2: APPROVER, NOTES & AUTO-EMAIL */}
-                            <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-[0_1px_3px_rgba(15,23,42,0.03)] space-y-3.5">
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-md bg-[#003B3A] text-white text-[11px] font-bold inline-flex items-center justify-center tabular-nums">2</span>
-                                <span className="text-xs font-bold text-slate-900">Thẩm quyền &amp; Ý kiến chuyên môn</span>
+                            {/* CARD 1.5: 1-TOUCH GĐCS WORK PLAN BAR (PHƯƠNG ÁN LÀM VIỆC LIÊN QUAN — ĐỒNG BỘ GIÁO VỤ & TƯ VẤN CS) */}
+                            {(() => {
+                              const rawPsych = orientationData?.psychologyData;
+                              const pObj = rawPsych ? (typeof rawPsych === "string" ? JSON.parse(rawPsych) : rawPsych) : null;
+                              const gdcsResp = pObj?.gdcsResponse;
+                              const reqInfo = pObj?.reportedToGdcs || pObj?.gdcsDirectiveRequest;
+                              const csShort = resolvedStudentCampusObj?.campusCode || "CS1";
+                              return (
+                                <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-2">
+                                  <div className="flex items-center justify-between gap-1.5">
+                                    <span className="text-[11px] font-bold text-[#003B3A] flex items-center gap-1">
+                                      <ShieldCheck className="w-3.5 h-3.5 text-[#008B85]" />
+                                      <span>Phương án làm việc GĐCS (Báo Giáo vụ &amp; Tư vấn {csShort})</span>
+                                    </span>
+                                    {gdcsResp ? (
+                                      <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-[#059669] border border-emerald-200 text-[10px] font-bold">
+                                        ✓ Đã xác nhận
+                                      </span>
+                                    ) : reqInfo ? (
+                                      <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                                        Đề xuất từ GV
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-1.5">
+                                    {[
+                                      { code: "DIRECT_PARENT_MEETING" as const, short: "1. Trao đổi PHHS" },
+                                      { code: "SCHEDULE_MEETING" as const, short: "2. Hội chẩn CM" },
+                                      { code: "DELEGATE_TEACHER" as const, short: "3. Ủy quyền GV" }
+                                    ].map((wp) => {
+                                      const isConfirmedWp = gdcsResp?.responseType === wp.code;
+                                      const isSelectedWp = psychDirectiveType === wp.code;
+                                      return (
+                                        <button
+                                          key={wp.code}
+                                          type="button"
+                                          disabled={!canApprove || savingPsychDirective}
+                                          onClick={() => handleConfirmPsychWorkPlan(selectedReportStudent, wp.code)}
+                                          className={`py-1.5 px-2 rounded-lg border text-[10.5px] font-bold transition-all cursor-pointer text-center truncate ${
+                                            isConfirmedWp
+                                              ? "bg-[#003B3A] border-[#003B3A] text-white shadow-2xs"
+                                              : isSelectedWp
+                                              ? "bg-[#F0FDFA] border-[#008B85] text-[#003B3A]"
+                                              : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-white hover:border-[#008B85]"
+                                          }`}
+                                          title="Chạm 1 chạm để GĐCS xác nhận phương án này và thông báo ngay cho Tổ Giáo vụ & Tổ Tư vấn cơ sở"
+                                        >
+                                          {isConfirmedWp ? `✓ ${wp.short}` : wp.short}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* CARD 2: APPROVER, NOTES & COMPACT AUTO-EMAIL / AUDIT TRAIL */}
+                            <div className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-2.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-4.5 h-4.5 rounded-md bg-[#003B3A] text-white text-[10px] font-bold inline-flex items-center justify-center tabular-nums">2</span>
+                                  <span className="text-xs font-bold text-slate-900">Thẩm quyền &amp; Ý kiến chuyên môn</span>
+                                </div>
+                                {autoCampusDirectorName && reportForm.signatureName !== autoCampusDirectorName && canApprove && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setReportForm(f => ({ ...f, signatureName: autoCampusDirectorName }))}
+                                    className="px-2 py-0.5 rounded-md bg-[#F0FDFA] hover:bg-[#CCFBF1] text-[#00736E] border border-[#CCFBF1] text-[10px] font-bold cursor-pointer"
+                                    title="Đặt lại về Giám đốc Cơ sở phụ trách"
+                                  >
+                                    Đặt về GĐCS ({autoCampusDirectorName})
+                                  </button>
+                                )}
                               </div>
 
                               {/* Approver Identity / Selector (Default: Responsible Campus Director GĐCS) */}
@@ -10538,7 +11813,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                                 if (isGdcsCurrentUser) {
                                   return (
-                                    <div className="p-2.5 rounded-xl bg-[#F0FDFA]/80 border border-[#CCFBF1] flex items-center justify-between gap-2 text-xs">
+                                    <div className="p-2 rounded-xl bg-[#F0FDFA]/80 border border-[#CCFBF1] flex items-center justify-between gap-2 text-xs">
                                       <span className="text-slate-600 font-medium flex items-center gap-1.5">
                                         <UserCheck className="w-3.5 h-3.5 text-[#008B85]" />
                                         GĐCS phê duyệt ({campusShortLabel}):
@@ -10550,7 +11825,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   );
                                 }
 
-                                // Xây dựng danh sách GĐCS chuẩn theo từng cơ sở (đưa GĐCS phụ trách cơ sở của học sinh lên đầu tiên)
                                 const gdcsEntries: { name: string; label: string }[] = [];
                                 const seenNames = new Set<string>();
                                 const pushEntry = (rawName?: string, suffix?: string) => {
@@ -10583,239 +11857,148 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 }
 
                                 return (
-                                  <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <label className="text-xs font-semibold text-slate-700 ml-0.5">
-                                        Người phê duyệt
-                                      </label>
-                                      <span className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-[10px] font-semibold">
-                                        Mặc định GĐCS {campusShortLabel}
-                                      </span>
+                                  <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                      <UserCheck className="w-3.5 h-3.5 text-[#008B85]" />
                                     </div>
-                                    <div className="relative">
-                                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <UserCheck className="w-3.5 h-3.5 text-[#008B85]" />
-                                      </div>
-                                      <select
-                                        value={currentSignerValue}
-                                        onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
-                                        className={`${inp} h-9.5 pl-8 pr-8 py-1 text-xs font-semibold bg-[#F0FDFA]/40 border-[#99F6E4] text-[#003B3A] focus:bg-white appearance-none cursor-pointer`}
-                                        disabled={!canApprove}
-                                      >
-                                        <option value="">— Chọn GĐCS phê duyệt —</option>
-                                        {gdcsEntries.map(item => (
-                                          <option key={item.name} value={item.name}>{item.label}</option>
-                                        ))}
-                                      </select>
-                                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-[#00736E]">
-                                        <ChevronDown className="w-3.5 h-3.5" />
-                                      </div>
+                                    <select
+                                      value={currentSignerValue}
+                                      onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
+                                      className={`${inp} h-8.5 pl-8 pr-8 py-1 text-xs font-semibold bg-[#F0FDFA]/40 border-[#99F6E4] text-[#003B3A] focus:bg-white appearance-none cursor-pointer`}
+                                      disabled={!canApprove}
+                                    >
+                                      <option value="">— Chọn GĐCS phê duyệt —</option>
+                                      {gdcsEntries.map(item => (
+                                        <option key={item.name} value={item.name}>{item.label}</option>
+                                      ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-[#00736E]">
+                                      <ChevronDown className="w-3.5 h-3.5" />
                                     </div>
                                   </div>
                                 );
                               })()}
 
-                              {/* Council Notes & Interactive Quick Chips */}
-                              <Field label="Ý kiến / Ghi chú của Hội đồng">
+                              {/* Council Notes & 1-Tap Quick Chips */}
+                              <div className="space-y-1.5">
+                                <label className="text-[11px] font-semibold text-slate-700 block">
+                                  Ý kiến / Ghi chú của Hội đồng:
+                                </label>
                                 <textarea
                                   value={reportForm.directorNote}
                                   onChange={e => setReportForm(f => ({ ...f, directorNote: e.target.value }))}
-                                  className={`${inp} h-20 py-2 text-xs resize-none bg-slate-50/60 focus:bg-white`}
+                                  className={`${inp} h-14 py-1.5 text-xs resize-none bg-slate-50/60 focus:bg-white`}
                                   placeholder="Nhập nhận định hoặc yêu cầu bồi dưỡng sau tiếp nhận..."
                                   disabled={!canApprove}
                                 />
                                 {canApprove && (
-                                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                  <div className="flex flex-wrap items-center gap-1">
                                     {[
-                                      "Đạt tiêu chuẩn tiếp nhận của nhà trường",
-                                      "Đạt cam kết - Yêu cầu bồi dưỡng thêm",
-                                      "Đạt và xuất PDF chi tiết để GV ký",
-                                      "Không đạt - Yêu cầu kiểm tra lại"
-                                    ].map((sampleNote) => {
-                                      const isSelectedNote = reportForm.directorNote?.trim() === sampleNote;
+                                      { short: "Đạt chuẩn tiếp nhận", full: "Đạt tiêu chuẩn tiếp nhận của nhà trường" },
+                                      { short: "Cam kết bồi dưỡng", full: "Đạt cam kết - Yêu cầu bồi dưỡng thêm" },
+                                      { short: "Đạt & Xuất PDF ký", full: "Đạt và xuất PDF chi tiết để GV ký" },
+                                      { short: "Yêu cầu KT lại", full: "Không đạt - Yêu cầu kiểm tra lại" }
+                                    ].map((sample) => {
+                                      const isSelectedNote = reportForm.directorNote?.trim() === sample.full;
                                       return (
                                         <button
-                                          key={sampleNote}
+                                          key={sample.short}
                                           type="button"
-                                          onClick={() => setReportForm(f => ({ ...f, directorNote: sampleNote }))}
-                                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer inline-flex items-center gap-1 border ${
+                                          onClick={() => setReportForm(f => ({ ...f, directorNote: sample.full }))}
+                                          className={`px-2 py-0.5 rounded-md text-[10.5px] font-medium transition-all cursor-pointer inline-flex items-center gap-1 border ${
                                             isSelectedNote
                                               ? "bg-[#F0FDFA] text-[#003B3A] border-[#008B85] font-semibold shadow-2xs"
                                               : "bg-slate-50 hover:bg-[#F0FDFA]/60 text-slate-600 hover:text-[#00736E] border-slate-200/90"
                                           }`}
                                         >
-                                          {isSelectedNote ? <Check className="w-3 h-3 text-[#008B85]" /> : <Plus className="w-2.5 h-2.5 text-slate-400" />}
-                                          <span>{sampleNote}</span>
+                                          {isSelectedNote ? <Check className="w-2.5 h-2.5 text-[#008B85]" /> : <Plus className="w-2.5 h-2.5 text-slate-400" />}
+                                          <span>{sample.short}</span>
                                         </button>
                                       );
                                     })}
                                   </div>
                                 )}
-                              </Field>
+                              </div>
 
-                              {/* Tinted Auto-send Email Card with Config Trigger */}
-                              <div
-                                className={`p-2.5 rounded-xl border transition-all ${
-                                  autoSendApprovalEmail
-                                    ? "bg-[#F0FDFA]/80 border-[#99F6E4]"
-                                    : "bg-slate-50/80 border-slate-200"
-                                }`}
-                              >
-                                <div className="flex items-start justify-between gap-2">
-                                  <label
-                                    htmlFor="autoSendApprovalEmailCheck"
-                                    className="flex items-start gap-2.5 cursor-pointer select-none flex-1 min-w-0"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      id="autoSendApprovalEmailCheck"
-                                      checked={autoSendApprovalEmail}
-                                      onChange={e => setAutoSendApprovalEmail(e.target.checked)}
-                                      className="mt-0.5 w-4 h-4 text-[#008B85] rounded border-slate-300 focus:ring-[#00A19A] cursor-pointer shrink-0"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                      <span className="text-xs font-semibold text-[#003B3A] flex items-center gap-1.5">
-                                        <Mail className="w-3.5 h-3.5 text-[#008B85]" />
-                                        Gửi email thông báo tự động
-                                      </span>
-                                      <span className="text-[11px] text-slate-600 block mt-0.5 leading-snug">
-                                        Chuyển kết quả đến các bộ phận đã cấu hình ngay sau khi lưu quyết định
-                                      </span>
-                                    </div>
-                                  </label>
+                              {/* Compact 1-Line Auto-Email & Audit Trail Toggle */}
+                              <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-[11px]">
+                                <label
+                                  htmlFor="autoSendApprovalEmailCheck"
+                                  className="inline-flex items-center gap-1.5 cursor-pointer select-none text-slate-700 font-medium"
+                                  title="Tự động gửi email kết quả cho GĐCS, Tư vấn CS, Giáo vụ CS và Ban KT&ĐBCL"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    id="autoSendApprovalEmailCheck"
+                                    checked={autoSendApprovalEmail}
+                                    onChange={e => setAutoSendApprovalEmail(e.target.checked)}
+                                    className="w-3.5 h-3.5 text-[#008B85] rounded border-slate-300 focus:ring-[#00A19A] cursor-pointer"
+                                  />
+                                  <span>Gửi mail tự động</span>
+                                </label>
+
+                                <div className="flex items-center gap-1.5">
                                   <button
                                     type="button"
                                     onClick={() => setIsEmailRoutingModalOpen(true)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-white text-[#003B3A] border border-teal-200 hover:border-[#008B85] hover:bg-[#F0FDFA] transition-colors cursor-pointer shrink-0 shadow-2xs"
-                                    title="Mở bảng thiết lập người nhận (To/CC) và danh bạ email theo từng cơ sở"
+                                    className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-slate-50 hover:bg-[#F0FDFA] text-[#003B3A] border border-slate-200 hover:border-[#008B85] inline-flex items-center gap-1 cursor-pointer"
                                   >
                                     <Settings className="w-3 h-3 text-[#008B85]" />
-                                    <span>Thiết lập</span>
+                                    <span>Cấu hình mail</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowAuditHistoryDrawer(!showAuditHistoryDrawer)}
+                                    className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center gap-1 cursor-pointer tabular-nums"
+                                  >
+                                    <Clock className="w-3 h-3 text-[#008B85]" />
+                                    <span>Nhật ký ({parsedHistory.history?.length || 0})</span>
                                   </button>
                                 </div>
-                                <div className="mt-2 pt-2 border-t border-teal-200/60 flex items-center gap-1.5 flex-wrap pl-6">
-                                  {[
-                                    { key: "gdcs", label: "GĐCS", cfg: emailRoutingConfig?.groups?.gdcs },
-                                    { key: "tuvan", label: "Tư vấn CS", cfg: emailRoutingConfig?.groups?.tuvan },
-                                    { key: "giaovu", label: "Giáo vụ CS", cfg: emailRoutingConfig?.groups?.giaovu },
-                                    { key: "ktdbcl", label: "Ban KT&ĐBCL", cfg: emailRoutingConfig?.groups?.ktdbcl },
-                                  ].map(item => {
-                                    const isEnabled = item.cfg?.enabled !== false;
-                                    const target = item.cfg?.target || (item.key === "ktdbcl" ? "cc" : "to");
-                                    return (
-                                      <span
-                                        key={item.key}
-                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${
-                                          !isEnabled
-                                            ? "bg-slate-100 text-slate-400 border-slate-200 line-through"
-                                            : target === "to"
-                                              ? "bg-white text-[#00736E] border-teal-200"
-                                              : "bg-amber-50/80 text-amber-800 border-amber-200"
-                                        }`}
-                                      >
-                                        <span>{item.label}</span>
-                                        {isEnabled && (
-                                          <span className="text-[9px] font-bold opacity-80">
-                                            ({target === "to" ? "To" : "CC"})
-                                          </span>
-                                        )}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* CARD 3: COMPACT APPROVAL AUDIT TRAIL & RETEST HISTORY */}
-                            <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-[0_1px_3px_rgba(15,23,42,0.03)] space-y-3">
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                                    <Clock className="w-3.5 h-3.5 text-[#008B85]" />
-                                    Nhật ký xét duyệt
-                                  </span>
-                                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-semibold text-slate-600 tabular-nums">
-                                    {parsedHistory.history?.length || 0} lần
-                                  </span>
-                                </div>
-
-                                {(!parsedHistory.history || parsedHistory.history.length === 0) ? (
-                                  <p className="text-[11px] text-slate-400 italic">
-                                    Chưa có lịch sử phê duyệt trước đó.
-                                  </p>
-                                ) : (
-                                  <div className="relative pl-3 border-l-2 border-teal-200 space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                                    {parsedHistory.history.map((h, idx) => (
-                                      <div key={idx} className="relative text-[11px]">
-                                        <span className="absolute -left-[16px] top-2 w-2 h-2 rounded-full bg-[#008B85] ring-2 ring-white" />
-                                        <div className="p-2.5 rounded-xl bg-slate-50/90 border border-slate-200/70 space-y-1">
-                                          <div className="flex items-center justify-between gap-1">
-                                            <strong className="text-slate-800">{h.approver}</strong>
-                                            <span className="text-[10px] text-slate-400 tabular-nums">{h.timestamp}</span>
-                                          </div>
-                                          <div className="flex items-center gap-1.5 font-semibold flex-wrap">
-                                            <span className="text-slate-400 line-through">{h.oldResult}</span>
-                                            <ArrowRight className="w-3 h-3 text-[#008B85]" />
-                                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold border ${
-                                              h.newResult.includes("Không")
-                                                ? "bg-rose-50 text-rose-700 border-rose-200"
-                                                : h.newResult.includes("cam kết") || h.newResult === "Học thử"
-                                                ? "bg-amber-50 text-amber-800 border-amber-200"
-                                                : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                            }`}>
-                                              {h.newResult}
-                                            </span>
-                                          </div>
-                                          {h.note && <p className="text-slate-600 italic">&ldquo;{h.note}&rdquo;</p>}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
                               </div>
 
-                              {Array.isArray(retestHistory) && retestHistory.length > 1 && (
-                                <div className="space-y-1.5 pt-2.5 border-t border-slate-100">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                                      <RefreshCw className="w-3.5 h-3.5 text-[#008B85]" />
-                                      Lịch sử các đợt khảo sát
-                                    </span>
-                                    <span className="text-[11px] text-slate-500 tabular-nums">{retestHistory.length} đợt</span>
-                                  </div>
-                                  <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
-                                    {retestHistory.filter(Boolean).map((hist: any, idx: number) => {
-                                      const isCurrent = hist?.id === selectedReportStudent.id;
-                                      return (
-                                        <div key={hist?.id || idx} className="p-2 bg-slate-50 rounded-lg border border-slate-200/70 text-[11px] flex items-center justify-between gap-2">
-                                          <div>
-                                            <div className="font-semibold text-slate-800">{hist?.period?.name || "Đợt khảo sát"}</div>
-                                            <div className="text-[10px] text-slate-400 tabular-nums">
-                                              {hist?.createdAt ? new Date(hist.createdAt).toLocaleDateString("vi-VN") : "—"}
+                              {/* Collapsible Audit History Drawer */}
+                              {showAuditHistoryDrawer && (
+                                <div className="pt-2 border-t border-slate-100 space-y-2 animate-in fade-in duration-150">
+                                  {(!parsedHistory.history || parsedHistory.history.length === 0) ? (
+                                    <p className="text-[11px] text-slate-400 italic">
+                                      Chưa có lịch sử phê duyệt trước đó.
+                                    </p>
+                                  ) : (
+                                    <div className="relative pl-3 border-l-2 border-teal-200 space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+                                      {parsedHistory.history.map((h, idx) => (
+                                        <div key={idx} className="relative text-[10.5px]">
+                                          <span className="absolute -left-[16px] top-2 w-2 h-2 rounded-full bg-[#008B85] ring-2 ring-white" />
+                                          <div className="p-2 rounded-lg bg-slate-50/90 border border-slate-200/70 space-y-0.5">
+                                            <div className="flex items-center justify-between gap-1">
+                                              <strong className="text-slate-800">{h.approver}</strong>
+                                              <span className="text-[10px] text-slate-400 tabular-nums">{h.timestamp}</span>
                                             </div>
+                                            <div className="flex items-center gap-1 font-semibold flex-wrap">
+                                              <span className="text-slate-400 line-through">{h.oldResult}</span>
+                                              <ArrowRight className="w-3 h-3 text-[#008B85]" />
+                                              <span className="text-[#003B3A] font-bold">{h.newResult}</span>
+                                            </div>
+                                            {h.note && <p className="text-slate-600 italic">&ldquo;{h.note}&rdquo;</p>}
                                           </div>
-                                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                                            isCurrent ? "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]" : "bg-white text-slate-600 border border-slate-200"
-                                          }`}>
-                                            {hist?.admissionResult || "Chưa duyệt"}
-                                          </span>
                                         </div>
-                                      );
-                                    })}
-                                  </div>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
                           </div>
 
                           {/* Elevated Sticky Console Footer Actions */}
-                          <div className="px-4 sm:px-5 py-3.5 bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(15,23,42,0.05)] space-y-2 shrink-0">
+                          <div className="px-3.5 py-2.5 bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(15,23,42,0.05)] space-y-1.5 shrink-0">
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleSaveReportResult(false)}
                                 disabled={saveReportLoading || !canApprove}
-                                className="flex-1 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-md shadow-[#003B3A]/15 disabled:opacity-50 transition-all flex justify-center items-center gap-2 cursor-pointer active:scale-[0.99]"
+                                className="flex-1 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs py-2.5 px-3.5 rounded-xl shadow-sm disabled:opacity-50 transition-all flex justify-center items-center gap-1.5 cursor-pointer active:scale-[0.99]"
                               >
                                 {saveReportLoading ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -10834,7 +12017,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   type="button"
                                   onClick={() => handleSaveReportResult(true)}
                                   disabled={saveReportLoading || !canApprove}
-                                  className="bg-[#008B85] hover:bg-[#00736E] text-white font-bold text-xs py-3 px-3.5 rounded-xl shadow-sm disabled:opacity-50 transition-all flex justify-center items-center gap-1 cursor-pointer shrink-0 active:scale-[0.99]"
+                                  className="bg-[#008B85] hover:bg-[#00736E] text-white font-bold text-xs py-2.5 px-3.5 rounded-xl shadow-sm disabled:opacity-50 transition-all flex justify-center items-center gap-1 cursor-pointer shrink-0 active:scale-[0.99]"
                                   title="Lưu quyết định hiện tại và tự động mở hồ sơ tiếp theo"
                                 >
                                   <span>Lưu &amp; Tiếp</span>
@@ -10861,6 +12044,64 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           </div>
                         </div>
                       </div>
+
+                      {/* STICKY MOBILE / TABLET QUICK-APPROVE BAR (< 1024px when viewing Evidence) */}
+                      {mobileDossierPane === "evidence" && (
+                        <div className="lg:hidden bg-white border-t border-slate-200 px-3 py-2.5 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] shrink-0 space-y-2">
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {[
+                              { val: "Đạt", label: "Đạt chuẩn", activeCls: "bg-emerald-600 text-white border-emerald-600" },
+                              { val: "Đạt cam kết", label: "Cam kết", activeCls: "bg-amber-600 text-white border-amber-600" },
+                              { val: "Học thử", label: "Học thử", activeCls: "bg-[#008B85] text-white border-[#008B85]" },
+                              { val: "Không đạt", label: "Không đạt", activeCls: "bg-rose-600 text-white border-rose-600" },
+                            ].map((mOpt) => {
+                              const picked = reportForm.admissionResult === mOpt.val;
+                              return (
+                                <button
+                                  key={mOpt.val}
+                                  type="button"
+                                  disabled={!canApprove}
+                                  onClick={() => {
+                                    selectVerdictWithSmartNote(mOpt.val);
+                                    if (mOpt.val === "Đạt cam kết") {
+                                      setMobileDossierPane("decision");
+                                    }
+                                  }}
+                                  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer disabled:opacity-50 ${
+                                    picked ? mOpt.activeCls : "bg-slate-50 text-slate-700 border-slate-200"
+                                  }`}
+                                >
+                                  {mOpt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveReportResult(false)}
+                              disabled={saveReportLoading || !canApprove}
+                              className="flex-1 bg-[#003B3A] text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                            >
+                              <Check className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                              <span className="truncate">
+                                {reportForm.admissionResult ? `Lưu: ${reportForm.admissionResult === "Đạt" ? "Đạt chuẩn" : reportForm.admissionResult}` : "Chọn & Lưu quyết định"}
+                              </span>
+                            </button>
+                            {canApprove && (dossierNav.nextPendingId || dossierNav.nextId) && (
+                              <button
+                                type="button"
+                                onClick={() => handleSaveReportResult(true)}
+                                disabled={saveReportLoading || !canApprove}
+                                className="bg-[#008B85] text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1 shrink-0 disabled:opacity-50 cursor-pointer"
+                              >
+                                <span>Lưu &amp; Tiếp</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -10953,10 +12194,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 const isWritten = isEnglish && (sName.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt"));
                 const isOral = isEnglish && (sName.includes("vấn đáp") || sName.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd"));
                 
-                const studentNumGrade = parseInt(selectedReportStudent?.grade || "0") || null;
-                const isGrade2 = studentNumGrade === 2;
-                const oralMaxScore = isGrade2 ? 10 : (studentNumGrade && studentNumGrade >= 7 ? 20 : 30);
-                const writtenMaxScore = (studentNumGrade && studentNumGrade >= 7 ? 80 : 70);
+                const oralMaxScore = 10;
+                const writtenMaxScore = 10;
 
                 let parsedCols = { scores: [], comments: [] };
                 try {
@@ -13120,17 +14359,16 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           </div>
         </div>
       )}
-      {/* MODAL PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & PHHS (PVDH-01..05) */}
+      {/* MODAL PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & TRAO ĐỔI VỚI PHỤ HUYNH (BM.KTĐBCL.31..42) */}
       {isPvdhModalOpen && selectedReportStudent && (
         <PvdhOrientationModal
           isOpen={isPvdhModalOpen}
           onClose={() => setIsPvdhModalOpen(false)}
           student={selectedReportStudent}
+          initialSection={pvdhModalInitialSection}
           onSuccess={() => {
             if (selectedReportStudent?.id) {
-              fetch(`/api/admin/orientation/records?studentId=${selectedReportStudent.id}`)
-                .then(r => r.json())
-                .then(d => { if (d.success) setOrientationData(d.data || null); });
+              reloadStudentOrientationWorkspace(selectedReportStudent.id);
             }
           }}
         />
@@ -13151,9 +14389,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           }}
           onSuccess={() => {
             if (selectedReportStudent?.id) {
-              fetch(`/api/admin/orientation/records?studentId=${selectedReportStudent.id}`)
-                .then(r => r.json())
-                .then(d => { if (d.success) setOrientationData(d.data || null); });
+              reloadStudentOrientationWorkspace(selectedReportStudent.id);
             }
           }}
         />

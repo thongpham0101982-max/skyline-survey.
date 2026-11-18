@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
 import { buildStudentQuickApproveUrls } from "@/lib/k12-approval-service"
+import { buildPsychologyGdcsCcList } from "@/lib/orientation/service"
 
 function parseSmartDate(d: any): Date | null {
   if (!d) return null;
@@ -626,13 +627,22 @@ export async function POST(req) {
       `;
 
       try {
-        await sendEmail({
+        const ccList = buildPsychologyGdcsCcList({
+          campusCodeOrName: campusName,
+          giaovuEmail: data?.giaovuEmail,
+          tuyensinhEmail: data?.tuyensinhEmail
+        });
+        const mailRes = await sendEmail({
           to: gdcsEmail,
+          cc: ccList,
           subject: `[Sky-line SMS - Xét Duyệt] Yêu cầu duyệt kết quả khảo sát đầu vào - Học sinh ${student.fullName} (${campusName})`,
           html: emailHtml,
           replyTo: "ktdbcl@skylineschool.edu.vn"
         });
-        return NextResponse.json({ success: true });
+        if (!mailRes?.success) {
+          return NextResponse.json({ error: "Lỗi khi gửi email: " + (mailRes?.error || "SMTP error") }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, ccList });
       } catch(err) {
         console.error("GDCS send email err", err);
         return NextResponse.json({ error: "Lỗi khi gửi email: " + err.message }, { status: 500 });
