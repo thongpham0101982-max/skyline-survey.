@@ -634,7 +634,8 @@ export function PhanCongK12Client({
                 notify(`Đã lưu phân công (Email: ${nData.errors?.[0] || "Chưa gửi được mail"})`, "err")
               }
             } else {
-              notify("Đã lưu phân công (Chưa gửi được email thông báo)", "err")
+              const errData = await notifyRes.json().catch(() => null)
+              notify(`Đã lưu phân công (Chưa gửi được email: ${errData?.error || `HTTP ${notifyRes.status}`})`, "err")
             }
           } catch (e: any) {
             notify(`Đã lưu phân công (Lỗi gửi email: ${e?.message})`, "err")
@@ -662,7 +663,10 @@ export function PhanCongK12Client({
         const result = await res.json()
         if (result.success && result.sentCount > 0) { notify(`Đã gửi email thông báo cho GV ${a.user?.fullName || ""}!`) }
         else { notify(`Gửi email thất bại: ${result.errors?.[0] || "Không gửi được email"}`, "err") }
-      } else { notify("Lỗi khi kết nối gửi thông báo", "err") }
+      } else {
+        const errData = await res.json().catch(() => null)
+        notify(`Lỗi khi gửi thông báo: ${errData?.error || `HTTP ${res.status}`}`, "err")
+      }
     } catch { notify("Có lỗi xảy ra", "err") }
     finally { setAsNotifyingId(null) }
   }
@@ -682,7 +686,10 @@ export function PhanCongK12Client({
           notify(`Đã gửi thông báo thành công cho ${result.sentCount} giáo viên!`)
           if (result.failedCount > 0) notify(`Gửi thất bại cho ${result.failedCount} giáo viên`, "err")
         } else { notify("Gửi thông báo hàng loạt thất bại", "err") }
-      } else { notify("Lỗi kết nối", "err") }
+      } else {
+        const errData = await res.json().catch(() => null)
+        notify(`Lỗi kết nối: ${errData?.error || `HTTP ${res.status}`}`, "err")
+      }
     } catch { notify("Có lỗi xảy ra", "err") }
     finally { setAsNotifyingAll(false) }
   }

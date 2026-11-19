@@ -5,9 +5,14 @@ import { sendEmail } from "@/lib/mail";
 import { auth } from "@/lib/auth";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 import { getCampusGiaovuEmail } from "@/lib/orientation/service";
+import { requireStaffSession, writeSecurityAuditLog } from "@/lib/security-guard";
 
 export async function GET(req) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const periodId = searchParams.get("periodId");
     
@@ -39,6 +44,10 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await req.json();
     const { action, periodId, batchId, sessionId, assignments } = body;
     
@@ -474,7 +483,8 @@ export async function POST(req) {
           if (group.batchId) {
              studentWhere.batchId = group.batchId;
           }
-          if (gradeList.length > 0) {
+          const hasAllGrades = gradeList.some((g) => String(g || "").trim().toLowerCase() === "tất cả");
+          if (gradeList.length > 0 && !hasAllGrades) {
               const gradeConditions = new Set<string>();
               for (const g of gradeList) {
                  gradeConditions.add(String(g));
@@ -548,6 +558,24 @@ export async function POST(req) {
              : hasOrientation
              ? `Ban Khảo thí trân trọng thông báo Thầy/Cô đã được phân công thực hiện khảo sát năng lực và phỏng vấn định hướng đầu vào cho học sinh bậc Phổ thông. Chi tiết thông tin phân công như sau:`
              : `Ban Khảo thí trân trọng thông báo Thầy/Cô đã được phân công thực hiện chấm/khảo sát năng lực đầu vào cho học sinh bậc Phổ thông. Chi tiết thông tin phân công như sau:`;
+
+          const periodLabel = isOnlyOrientation
+             ? "KỲ PHỎNG VẤN:"
+             : "KỲ KHẢO SÁT:";
+
+          const batchLabel = isOnlyOrientation
+             ? "ĐỢT PHỎNG VẤN:"
+             : "ĐỢT KHẢO SÁT:";
+
+          const scopeSectionTitle = isOnlyOrientation
+             ? "📌 PHẠM VI PHỎNG VẤN ĐỊNH HƯỚNG ĐƯỢC PHÂN CÔNG"
+             : hasOrientation
+             ? "📌 PHẠM VI KHẢO SÁT & PHỎNG VẤN ĐƯỢC PHÂN CÔNG"
+             : "📌 PHẠM VI CHẤM / KHẢO SÁT ĐƯỢC PHÂN CÔNG";
+
+          const subjectColHeader = isOnlyOrientation
+             ? "Nội dung phỏng vấn"
+             : "Môn khảo sát";
 
           const studentCountBadge = isOnlyOrientation
              ? `${matchedStudents.length} học sinh cần phỏng vấn định hướng`
@@ -888,18 +916,79 @@ export async function POST(req) {
 
 export async function DELETE(req) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const ids = searchParams.get("ids");
     
+    const ipAddress =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "127.0.0.1";
+
+    const mapAssignmentForAudit = (a: any) => ({
+      id: a.id,
+      teacherName: a.user?.fullName || null,
+      teacherEmail: a.user?.email || null,
+      subjectName: a.subject?.name || null,
+      subjectCode: a.subject?.code || null,
+      grade: a.grade,
+      educationSystem: a.educationSystem,
+      periodName: a.period?.name || null,
+      batchName: a.batch?.name || null,
+    });
+
     if (ids) {
-      const idArr = ids.split(",");
+      const idArr = ids.split(",").map((s) => s.trim()).filter(Boolean);
+      const existingAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
+        where: { id: { in: idArr } },
+        include: {
+          user: { select: { fullName: true, email: true } },
+          subject: { select: { name: true, code: true } },
+          period: { select: { name: true } },
+          batch: { select: { name: true } },
+        },
+      });
       await prisma.inputAssessmentTeacherAssignment.deleteMany({ where: { id: { in: idArr } } });
+      await writeSecurityAuditLog({
+        userId: ctx.userId,
+        userEmail: ctx.userEmail,
+        action: "DELETE_INPUT_ASSESSMENT_ASSIGNMENT",
+        targetTable: "InputAssessmentTeacherAssignment",
+        targetId: idArr.slice(0, 5).join(","),
+        oldValues: existingAssignments.length > 0
+          ? { items: existingAssignments.map(mapAssignmentForAudit) }
+          : undefined,
+        newValues: { deletedCount: idArr.length },
+        ipAddress,
+      });
       return NextResponse.json({ success: true, count: idArr.length });
     }
     
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+    const existingAssignment = await prisma.inputAssessmentTeacherAssignment.findUnique({
+      where: { id },
+      include: {
+        user: { select: { fullName: true, email: true } },
+        subject: { select: { name: true, code: true } },
+        period: { select: { name: true } },
+        batch: { select: { name: true } },
+      },
+    });
     await prisma.inputAssessmentTeacherAssignment.delete({ where: { id } });
+    await writeSecurityAuditLog({
+      userId: ctx.userId,
+      userEmail: ctx.userEmail,
+      action: "DELETE_INPUT_ASSESSMENT_ASSIGNMENT",
+      targetTable: "InputAssessmentTeacherAssignment",
+      targetId: String(id),
+      oldValues: existingAssignment ? mapAssignmentForAudit(existingAssignment) : undefined,
+      newValues: { deletedCount: 1 },
+      ipAddress,
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
@@ -908,6 +997,10 @@ export async function DELETE(req) {
 
 export async function PUT(req) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await req.json();
     const { action, id, status } = body;
     
