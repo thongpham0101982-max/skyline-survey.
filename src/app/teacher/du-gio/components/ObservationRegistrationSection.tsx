@@ -3315,73 +3315,15 @@ export function ObservationRegistrationSection(props: any) {
                 );
               })()}
 
-              {/* Group 2: Môn học & Chủ đề/Tên bài dạy */}
+              {/* Group 2: Cơ sở & Cấp học */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">3. Chọn Môn học *</label>
-                  <select
-                    value={reqSubjectId}
-                    onChange={e => setReqSubjectId(e.target.value)}
-                    required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
-                  >
-                    <option value="">-- Chọn môn học --</option>
-                    {subjects.map((s: any) => (
-                      <option key={s.id} value={s.id}>{s.subjectName}</option>
-                    ))}
-                    {!subjects.some((s: any) => {
-                      const sName = (s.subjectName || "").toLowerCase();
-                      const sNorm = sName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                      return (sNorm.includes("khac") && sNorm.includes("chuyen de")) || sName === "khác/chuyên đề";
-                    }) && (
-                      <option value="Khác/Chuyên đề">Khác/Chuyên đề</option>
-                    )}
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">4. Tên bài dạy / Chủ đề dự giờ *</label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Cấp số cộng, Sự nảy mầm của hạt..."
-                    value={reqTopic}
-                    onChange={e => setReqTopic(e.target.value)}
-                    required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
-                  />
-                </div>
-
-                {reqSubjectId && reqSubjectId !== "other" && reqSubjectId !== "Khác/Chuyên đề" && ((reqClassId && reqClassId !== "other") || (reqLevel && reqGrade && reqGrade !== "all")) && (
-                  <ObservationTeachingPlanPicker
-                    classId={reqClassId && reqClassId !== "other" ? reqClassId : undefined}
-                    subjectId={reqSubjectId}
-                    level={reqLevel}
-                    grade={reqGrade}
-                    campusId={reqCampusId}
-                    academicYearId={props.selectedYearId}
-                    sessionDate={reqDate}
-                    onChangeLink={(link) => {
-                      const hadPrev = Boolean(props.selectedTeachingPlanLink);
-                      if (props.setSelectedTeachingPlanLink) props.setSelectedTeachingPlanLink(link);
-                      if (link) {
-                        setReqTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
-                      } else if (hadPrev) {
-                        setReqTopic("");
-                      }
-                    }}
-                  />
-                )}
-              </div>
-
-              {/* Group 3: Cơ sở & Cấp học */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">5. Chọn Cơ sở *</label>
+                  <label className="text-[11px] font-semibold text-[#003B3A]">3. Chọn cơ sở *</label>
                   <select
                     value={reqCampusId}
                     onChange={e => { setReqCampusId(e.target.value); setReqClassId(""); }}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn cơ sở --</option>
                     {campuses.map((c: any) => (
@@ -3391,12 +3333,12 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">6. Chọn Cấp học *</label>
+                  <label className="text-[11px] font-semibold text-[#003B3A]">4. Chọn cấp học *</label>
                   <select
                     value={reqLevel}
                     onChange={e => { setReqLevel(e.target.value); setReqGrade(""); setReqClassId(""); }}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn cấp học --</option>
                     <option value="Mầm non">Mầm non</option>
@@ -3407,16 +3349,16 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               </div>
 
-              {/* Group 4: Khối & Lớp */}
+              {/* Group 3: Khối & Lớp */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">7. Chọn Khối lớp *</label>
+                  <label className="text-[11px] font-semibold text-[#003B3A]">5. Chọn khối lớp *</label>
                   <select
                     value={reqGrade}
                     onChange={e => { setReqGrade(e.target.value); setReqClassId(""); }}
                     required
                     disabled={!reqLevel}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                    className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">-- Chọn khối học --</option>
                     {getGradesForLevel(reqLevel).map((g: any) => (
@@ -3426,7 +3368,7 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">8. Chọn Lớp học *</label>
+                  <label className="text-[11px] font-semibold text-[#003B3A]">6. Chọn lớp học *</label>
                   <select
                     value={reqClassId}
                     onChange={e => {
@@ -3454,7 +3396,7 @@ export function ObservationRegistrationSection(props: any) {
                     }}
                     required
                     disabled={!reqCampusId && !reqGrade && !reqLevel}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                    className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">
                       {filteredReqClasses.length > 0
@@ -3475,30 +3417,90 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               </div>
 
-              {/* Group 5: Tiết & Ngày */}
+              {/* Group 4: Môn học & Ngày dạy dự kiến */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">9. Tiết học dự *</label>
+                  <label className="text-[11px] font-semibold text-[#003B3A]">7. Chọn môn học *</label>
                   <select
-                    value={reqPeriod}
-                    onChange={e => setReqPeriod(e.target.value)}
+                    value={reqSubjectId}
+                    onChange={e => setReqSubjectId(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800"
                   >
-                    {periodOptions.map((p: any) => <option key={p} value={p}>{p}</option>)}
+                    <option value="">-- Chọn môn học --</option>
+                    {subjects.map((s: any) => (
+                      <option key={s.id} value={s.id}>{s.subjectName}</option>
+                    ))}
+                    {!subjects.some((s: any) => {
+                      const sName = (s.subjectName || "").toLowerCase();
+                      const sNorm = sName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                      return (sNorm.includes("khac") && sNorm.includes("chuyen de")) || sName === "khác/chuyên đề";
+                    }) && (
+                      <option value="Khác/Chuyên đề">Khác/Chuyên đề</option>
+                    )}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide">10. Ngày dạy dự kiến *</label>
+                  <label className="text-[11px] font-semibold text-[#003B3A]">8. Ngày dạy dự kiến *</label>
                   <input
                     type="date"
                     value={reqDate}
                     min={minAllowedDate}
                     onChange={e => setReqDate(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-medium p-2.5 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800"
                   />
+                </div>
+              </div>
+
+              {/* Kế hoạch dạy học đã đồng bộ (nếu có) — đặt ngay trên Tên bài dạy / Chủ đề */}
+              {reqSubjectId && reqSubjectId !== "other" && reqSubjectId !== "Khác/Chuyên đề" && ((reqClassId && reqClassId !== "other") || (reqLevel && reqGrade && reqGrade !== "all")) && (
+                <ObservationTeachingPlanPicker
+                  className="w-full"
+                  classId={reqClassId && reqClassId !== "other" ? reqClassId : undefined}
+                  subjectId={reqSubjectId}
+                  level={reqLevel}
+                  grade={reqGrade}
+                  campusId={reqCampusId}
+                  academicYearId={props.selectedYearId}
+                  sessionDate={reqDate}
+                  onChangeLink={(link) => {
+                    const hadPrev = Boolean(props.selectedTeachingPlanLink);
+                    if (props.setSelectedTeachingPlanLink) props.setSelectedTeachingPlanLink(link);
+                    if (link) {
+                      setReqTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
+                    } else if (hadPrev) {
+                      setReqTopic("");
+                    }
+                  }}
+                />
+              )}
+
+              {/* Group 5: Tên bài dạy / Chủ đề & Tiết học dự */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold text-[#003B3A]">9. Tên bài dạy / Chủ đề dự giờ *</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Cấp số cộng, Sự nảy mầm của hạt..."
+                    value={reqTopic}
+                    onChange={e => setReqTopic(e.target.value)}
+                    required
+                    className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold text-[#003B3A]">10. Tiết học dự *</label>
+                  <select
+                    value={reqPeriod}
+                    onChange={e => setReqPeriod(e.target.value)}
+                    required
+                    className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800"
+                  >
+                    {periodOptions.map((p: any) => <option key={p} value={p}>{p}</option>)}
+                  </select>
                 </div>
               </div>
 
