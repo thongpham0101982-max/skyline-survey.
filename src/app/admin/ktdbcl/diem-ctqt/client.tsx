@@ -1730,26 +1730,17 @@ export function DiemCtqtAdminClient({
               ))}
             </select>
 
-            <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setSelectedSemester(1)}
-                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                  selectedSemester === 1 ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
-                }`}
+            {(activeTab === "assignments" || activeTab === "grade_progress") && (
+              <select
+                value={selectedSemester}
+                onChange={e => setSelectedSemester(Number(e.target.value))}
+                aria-label="Chọn Học kỳ"
+                className="text-xs font-bold px-3 py-2 bg-[#F0FDFA] border border-[#008B85]/50 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
               >
-                Học kỳ 1
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedSemester(2)}
-                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                  selectedSemester === 2 ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Học kỳ 2
-              </button>
-            </div>
+                <option value={1}>Học kỳ 1</option>
+                <option value={2}>Học kỳ 2</option>
+              </select>
+            )}
           </div>
         </div>
 
@@ -1872,6 +1863,19 @@ export function DiemCtqtAdminClient({
                   className="text-xs font-bold px-3.5 py-2 bg-teal-50 border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] min-w-[190px]"
                 >
                   {renderGroupedClassOptions(filteredClasses, { idKey: "id" })}
+                </select>
+              </div>
+
+              {/* Semester selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-600">Chọn Học kỳ:</span>
+                <select
+                  value={selectedSemester}
+                  onChange={e => setSelectedSemester(Number(e.target.value))}
+                  className="text-xs font-bold px-3 py-2 bg-[#F0FDFA] border border-[#008B85]/50 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
+                >
+                  <option value={1}>Học kỳ 1</option>
+                  <option value={2}>Học kỳ 2</option>
                 </select>
               </div>
 
@@ -2599,6 +2603,19 @@ export function DiemCtqtAdminClient({
                   className="text-xs font-bold px-3.5 py-2 bg-teal-50 border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] min-w-[190px]"
                 >
                   {renderGroupedClassOptions(filteredClasses, { idKey: "id" })}
+                </select>
+              </div>
+
+              {/* Semester selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-600">Chọn Học kỳ:</span>
+                <select
+                  value={selectedSemester}
+                  onChange={e => setSelectedSemester(Number(e.target.value))}
+                  className="text-xs font-bold px-3 py-2 bg-[#F0FDFA] border border-[#008B85]/50 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
+                >
+                  <option value={1}>Học kỳ 1</option>
+                  <option value={2}>Học kỳ 2</option>
                 </select>
               </div>
 
@@ -4094,7 +4111,7 @@ export function DiemCtqtAdminClient({
               </p>
 
               <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 tabular-nums">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Chọn Cơ sở:</label>
                     <select
@@ -4119,6 +4136,18 @@ export function DiemCtqtAdminClient({
                       className="w-full text-xs font-bold p-2.5 bg-white border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
                     >
                       {renderGroupedClassOptions(filteredClasses, { idKey: "id" })}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Chọn Học kỳ:</label>
+                    <select
+                      value={selectedSemester}
+                      onChange={e => setSelectedSemester(Number(e.target.value))}
+                      className="w-full text-xs font-bold p-2.5 bg-[#F0FDFA] border border-[#008B85]/50 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
+                    >
+                      <option value={1}>Học kỳ 1</option>
+                      <option value={2}>Học kỳ 2</option>
                     </select>
                   </div>
                 </div>
@@ -4246,6 +4275,18 @@ export function DiemCtqtAdminClient({
                   className="text-xs font-bold px-3.5 py-2 bg-teal-50 border border-teal-300 rounded-xl text-[#003B3A] focus:outline-[#008B85] min-w-[190px]"
                 >
                   {renderGroupedClassOptions(filteredClasses, { idKey: "id" })}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-600">Chọn Học kỳ:</span>
+                <select
+                  value={selectedSemester}
+                  onChange={e => setSelectedSemester(Number(e.target.value))}
+                  className="text-xs font-bold px-3 py-2 bg-[#F0FDFA] border border-[#008B85]/50 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
+                >
+                  <option value={1}>Học kỳ 1</option>
+                  <option value={2}>Học kỳ 2</option>
                 </select>
               </div>
             </div>
