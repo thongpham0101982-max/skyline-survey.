@@ -29,6 +29,7 @@ import {
   CTQT_LEVEL_CONFIGS,
   detectCtqtLevel,
 } from "@/lib/ctqt/config";
+import { SavePeriodConfirmModal } from "@/components/grading/SavePeriodConfirmModal";
 
 interface Props {
   teacher: any;
@@ -142,6 +143,9 @@ export function SoDiemCtqtTeacherClient({
     urlYearId || activeYearId || academicYears[0]?.id || ""
   );
   const [selectedSemester, setSelectedSemester] = useState(2);
+  const [saveSemesterModalAction, setSaveSemesterModalAction] = useState<
+    null | "saveDraft" | "submitReview" | "competencies"
+  >(null);
   const [activeTab, setActiveTab] = useState<"entry" | "progress" | "review" | "consolidated">(
     urlTab === "consolidated" || urlTab === "review" || urlTab === "progress" || urlTab === "entry"
       ? (urlTab as "entry" | "progress" | "review" | "consolidated")
@@ -931,8 +935,9 @@ export function SoDiemCtqtTeacherClient({
   }, [subjectGradeData]);
 
   // Save Subject Grades (Draft or Submit Review)
-  const handleSaveGrades = async (isSubmitReview = false) => {
+  const handleSaveGrades = async (isSubmitReview = false, targetSemester?: number) => {
     if (!subjectGradeData?.students || !selectedClassId || !selectedSubjectCode) return;
+    const semToSave = targetSemester ?? selectedSemester;
     setSavingGrades(true);
     try {
       const entries = subjectGradeData.students.map((st: any) => {
@@ -958,7 +963,7 @@ export function SoDiemCtqtTeacherClient({
         body: JSON.stringify({
           action: isSubmitReview ? "submitReview" : "saveDraft",
           academicYearId: selectedYearId,
-          semester: selectedSemester,
+          semester: semToSave,
           classId: selectedClassId,
           subjectCode: selectedSubjectCode,
           entries,
@@ -967,7 +972,11 @@ export function SoDiemCtqtTeacherClient({
 
       const data = await res.json();
       if (data.success) {
-        toast.success(data.message);
+        setSaveSemesterModalAction(null);
+        if (semToSave !== selectedSemester) {
+          setSelectedSemester(semToSave);
+        }
+        toast.success(`${data.message} (Học kỳ ${semToSave})`);
         fetchSubjectGrades();
         fetchTeacherAssignments();
       } else {
@@ -1030,8 +1039,9 @@ export function SoDiemCtqtTeacherClient({
   };
 
   // Save Core Competencies
-  const handleSaveCompetencies = async () => {
+  const handleSaveCompetencies = async (targetSemester?: number) => {
     if (!consolidatedData?.students || !consolidatedClassId) return;
+    const semToSave = targetSemester ?? selectedSemester;
     setSavingCompetencies(true);
     try {
       const competencies = consolidatedData.students.map((st: any) => {
@@ -1054,14 +1064,18 @@ export function SoDiemCtqtTeacherClient({
         body: JSON.stringify({
           classId: consolidatedClassId,
           academicYearId: selectedYearId,
-          semester: selectedSemester,
+          semester: semToSave,
           competencies,
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        toast.success(data.message);
+        setSaveSemesterModalAction(null);
+        if (semToSave !== selectedSemester) {
+          setSelectedSemester(semToSave);
+        }
+        toast.success(`${data.message} (Học kỳ ${semToSave})`);
         fetchConsolidatedGrades();
       } else {
         toast.error(data.error);
@@ -1405,7 +1419,7 @@ export function SoDiemCtqtTeacherClient({
 
               <button
                 type="button"
-                onClick={() => handleSaveGrades(false)}
+                onClick={() => setSaveSemesterModalAction("saveDraft")}
                 disabled={savingGrades || !subjectGradeData}
                 className="text-xs font-bold px-3.5 py-2 bg-white hover:bg-teal-50 border border-teal-300 text-[#003B3A] rounded-xl flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
               >
@@ -1415,7 +1429,7 @@ export function SoDiemCtqtTeacherClient({
 
               <button
                 type="button"
-                onClick={() => handleSaveGrades(true)}
+                onClick={() => setSaveSemesterModalAction("submitReview")}
                 disabled={savingGrades || !subjectGradeData}
                 className="text-xs font-bold px-4 py-2 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
               >
@@ -2984,7 +2998,7 @@ export function SoDiemCtqtTeacherClient({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleSaveCompetencies}
+                onClick={() => setSaveSemesterModalAction("competencies")}
                 disabled={savingCompetencies || !consolidatedData}
                 className="text-xs font-bold px-4 py-2 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
               >
@@ -3401,6 +3415,32 @@ export function SoDiemCtqtTeacherClient({
           )}
         </div>
       )}
+      <SavePeriodConfirmModal
+        isOpen={saveSemesterModalAction !== null}
+        title={
+          saveSemesterModalAction === "submitReview"
+            ? "Chọn Học kỳ trước khi gửi duyệt điểm"
+            : saveSemesterModalAction === "competencies"
+            ? "Chọn Học kỳ trước khi lưu Năng lực cốt lõi"
+            : "Chọn Học kỳ trước khi lưu nháp điểm"
+        }
+        description="Vui lòng chọn Học kỳ 1 hoặc Học kỳ 2 để xác nhận nơi lưu dữ liệu."
+        currentValue={String(selectedSemester)}
+        options={[
+          { value: "1", label: "Học kỳ 1 (HK1)", sublabel: "Lưu vào Học kỳ 1" },
+          { value: "2", label: "Học kỳ 2 (HK2)", sublabel: "Lưu vào Học kỳ 2" },
+        ]}
+        saving={savingGrades || savingCompetencies}
+        onClose={() => setSaveSemesterModalAction(null)}
+        onConfirm={(val) => {
+          const sem = Number(val);
+          if (saveSemesterModalAction === "competencies") {
+            handleSaveCompetencies(sem);
+          } else {
+            handleSaveGrades(saveSemesterModalAction === "submitReview", sem);
+          }
+        }}
+      />
     </div>
   );
 }

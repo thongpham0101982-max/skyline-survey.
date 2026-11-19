@@ -50,6 +50,7 @@ import { updateStudentVnEduCodeAction } from "@/app/admin/classes/[id]/actions"
 import { VnEduConfigMatrixPanel } from "./VnEduConfigMatrixPanel"
 import { VnEduPrimaryGradebook } from "@/components/grading/VnEduPrimaryGradebook"
 import { VnEduSecondaryGradebook } from "@/components/grading/VnEduSecondaryGradebook"
+import { SavePeriodConfirmModal } from "@/components/grading/SavePeriodConfirmModal"
 import {
   extractGradeNumber,
   getPrimaryPeriodMeta,
@@ -1149,6 +1150,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || "")
   const [selectedPeriod, setSelectedPeriod] = useState("CK1")
   const [termTabSemester, setTermTabSemester] = useState<"HK1" | "HK2" | "CN">("HK1")
+  const [isSavePeriodModalOpen, setIsSavePeriodModalOpen] = useState(false)
   const [assignedTeacher, setAssignedTeacher] = useState("")
 
   // Xác định Học kỳ đang chọn (1 = HK1, 2 = HK2) đồng bộ giữa Header, Tab Nhập điểm và Tab Điểm tổng kết
@@ -1594,9 +1596,15 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
     })
   }
 
-  const handleSaveGradeSheet = async () => {
+  const handleSaveGradeSheet = () => {
+    setIsSavePeriodModalOpen(true)
+  }
+
+  const executeSaveGradeSheet = async (targetPeriod: string) => {
     try {
       setSavingEntries(true)
+      const periodToSave = targetPeriod || selectedPeriod
+      const periodLabel = EVAL_PERIODS.find(p => p.code === periodToSave)?.name || periodToSave
       const entriesList = Object.entries(gradeSheetData.entries).map(([studentId, data]: [string, any]) => ({
         studentId,
         componentScores: data.componentScores,
@@ -1612,7 +1620,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           academicYearId: selectedYearId,
           classId: selectedClassId,
           subjectId: selectedSubjectId,
-          evaluationPeriod: selectedPeriod,
+          evaluationPeriod: periodToSave,
           configType: effectiveGradebookSourceMode,
           configId: gradeSheetData.config?.id || null,
           configVersion: gradeSheetData.config?.version || null,
@@ -1621,7 +1629,11 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
       })
       const data = await res.json()
       if (data.success) {
-        alert(`Đã lưu sổ điểm ${savePeriodMeta.full} thành công!`)
+        setIsSavePeriodModalOpen(false)
+        if (periodToSave !== selectedPeriod) {
+          setSelectedPeriod(periodToSave)
+        }
+        alert(`Đã lưu sổ điểm ${periodLabel} thành công!`)
       } else {
         alert("Lỗi: " + (data.error || "Không thể lưu điểm"))
       }
@@ -5047,6 +5059,25 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
         onImportSuccess={() => {
           fetchGradeSheet()
         }}
+      />
+
+      <SavePeriodConfirmModal
+        isOpen={isSavePeriodModalOpen}
+        title="Chọn Kỳ đánh giá trước khi lưu Sổ điểm"
+        description="Vui lòng chọn rõ Học kỳ / Kỳ đánh giá cần lưu để đảm bảo ghi đúng kỳ dữ liệu."
+        contextSummary={`Lớp: ${classes.find(c => c.id === selectedClassId)?.className || "—"} • Môn: ${subjects.find(s => s.id === selectedSubjectId)?.subjectName || "—"}`}
+        currentValue={selectedPeriod}
+        options={[
+          { value: "KSĐN", label: "Khảo sát đầu năm (KSĐN)", sublabel: "Đánh giá đầu năm học", group: "Học kỳ 1" },
+          { value: "GK1", label: "Giữa kỳ 1 (GK1)", sublabel: "Học kỳ 1 • Giữa kỳ", group: "Học kỳ 1" },
+          { value: "CK1", label: "Cuối kỳ 1 (CK1)", sublabel: "Học kỳ 1 • Cuối kỳ", group: "Học kỳ 1" },
+          { value: "GK2", label: "Giữa kỳ 2 (GK2)", sublabel: "Học kỳ 2 • Giữa kỳ", group: "Học kỳ 2 & Cả năm" },
+          { value: "CK2", label: "Cuối kỳ 2 (CK2)", sublabel: "Học kỳ 2 • Cuối kỳ", group: "Học kỳ 2 & Cả năm" },
+          { value: "CN", label: "Cả năm (CN)", sublabel: "Tổng kết cả năm học", group: "Học kỳ 2 & Cả năm" },
+        ]}
+        saving={savingEntries}
+        onClose={() => setIsSavePeriodModalOpen(false)}
+        onConfirm={(val) => executeSaveGradeSheet(val)}
       />
 
     </div>

@@ -33,6 +33,7 @@ import {
 import { toast } from "react-hot-toast";
 import { CTQT_LEVEL_CONFIGS, detectCtqtLevel, CORE_COMPETENCIES_DEF, compareCtqtClasses } from "@/lib/ctqt/config";
 import { CtqtGradeProgressTab } from "./grade-progress-tab";
+import { SavePeriodConfirmModal } from "@/components/grading/SavePeriodConfirmModal";
 
 interface Props {
   academicYears: any[];
@@ -192,6 +193,7 @@ export function DiemCtqtAdminClient({
   const [consolidatedData, setConsolidatedData] = useState<any>(null);
   const [loadingConsolidated, setLoadingConsolidated] = useState(false);
   const [savingGrades, setSavingGrades] = useState(false);
+  const [isSaveSemesterModalOpen, setIsSaveSemesterModalOpen] = useState(false);
 
   // Excel tab state
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -1481,8 +1483,9 @@ export function DiemCtqtAdminClient({
   };
 
   // Save Subject Grades
-  const handleSaveSubjectGrades = async () => {
+  const handleSaveSubjectGrades = async (targetSemester?: number) => {
     if (!selectedClassId || !selectedSubjectCode) return;
+    const semToSave = targetSemester ?? selectedSemester;
     setSavingGrades(true);
     try {
       const gradesPayload = Object.values(subjectGrades).map((g: any) => ({
@@ -1508,14 +1511,18 @@ export function DiemCtqtAdminClient({
         body: JSON.stringify({
           classId: selectedClassId,
           academicYearId: selectedYearId,
-          semester: selectedSemester,
+          semester: semToSave,
           grades: gradesPayload,
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        toast.success(`Đã lưu bảng điểm môn ${currentSubjectDef?.nameVi || selectedSubjectCode} thành công!`);
+        setIsSaveSemesterModalOpen(false);
+        if (semToSave !== selectedSemester) {
+          setSelectedSemester(semToSave);
+        }
+        toast.success(`Đã lưu bảng điểm môn ${currentSubjectDef?.nameVi || selectedSubjectCode} (Học kỳ ${semToSave}) thành công!`);
         fetchConsolidatedGrades();
       } else {
         toast.error(data.error || "Lỗi lưu bảng điểm");
@@ -1901,12 +1908,12 @@ export function DiemCtqtAdminClient({
 
               <button
                 type="button"
-                onClick={handleSaveSubjectGrades}
+                onClick={() => setIsSaveSemesterModalOpen(true)}
                 disabled={savingGrades}
-                className="text-xs font-bold px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50"
+                className="text-xs font-bold px-4 py-2 bg-[#003B3A] hover:bg-[#002B2A] text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50"
               >
-                <Save className="w-3.5 h-3.5" />
-                {savingGrades ? "Đang lưu điểm..." : "Lưu điểm môn này"}
+                <Save className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                {savingGrades ? "Đang lưu điểm..." : `Lưu điểm HK${selectedSemester}`}
               </button>
             </div>
           </div>
@@ -4557,6 +4564,20 @@ export function DiemCtqtAdminClient({
           </div>
         </div>
       )}
+      <SavePeriodConfirmModal
+        isOpen={isSaveSemesterModalOpen}
+        title="Chọn Học kỳ trước khi lưu điểm CTQT"
+        description="Vui lòng chọn Học kỳ 1 hoặc Học kỳ 2 để xác nhận nơi lưu bảng điểm môn học này."
+        contextSummary={`Lớp: ${selectedClass?.className || "—"} • Môn: ${currentSubjectDef?.nameVi || selectedSubjectCode}`}
+        currentValue={String(selectedSemester)}
+        options={[
+          { value: "1", label: "Học kỳ 1 (HK1)", sublabel: "Lưu điểm vào Học kỳ 1" },
+          { value: "2", label: "Học kỳ 2 (HK2)", sublabel: "Lưu điểm vào Học kỳ 2" },
+        ]}
+        saving={savingGrades}
+        onClose={() => setIsSaveSemesterModalOpen(false)}
+        onConfirm={(val) => handleSaveSubjectGrades(Number(val))}
+      />
     </div>
   );
 }
