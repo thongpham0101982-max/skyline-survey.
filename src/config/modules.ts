@@ -73,7 +73,7 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
   {
     id: "SYSTEM_KPIS",
     name: "KPIs Hệ thống",
-    color: "violet",
+    color: "teal",
     icon: BarChart3,
     modules: [
       {
@@ -87,7 +87,7 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
   {
     id: "SYSTEM",
     name: "Hệ thống",
-    color: "violet",
+    color: "teal",
     icon: Settings,
     modules: [
       { code: "AUDIT_LOGS", name: "Nhật ký Hệ thống", icon: ClipboardList, href: "/admin/logs" },
@@ -211,19 +211,36 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         code: "KTDBCL_THONG_KE_BAO_CAO",
         name: "Thống kê báo cáo",
         icon: BarChart3,
-        href: "/admin/ktdbcl/thong-ke-bao-cao",
+        href: "/admin/ktdbcl/thong-ke-bao-cao?tab=requests",
         subModules: [
-          { code: "KTDBCL_TK_DIEM_TB", name: "1. ĐTB các môn & Phổ điểm", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=analytics" },
-          { code: "KTDBCL_TK_TIEN_DO", name: "2. Giám sát: Tiến độ nhập điểm", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=progress" },
-          { code: "KTDBCL_TK_DUYET_MO_SO", name: "3. Duyệt yêu cầu mở sổ điểm", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=requests" },
-          { code: "KTDBCL_TK_PHAN_HOI", name: "4. Tổng hợp: Phản hồi PHHS & Trao đổi", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=feedback" },
+          { code: "KTDBCL_TK_DUYET_MO_SO", name: "1. Duyệt yêu cầu mở sổ điểm", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=requests" },
+          { code: "KTDBCL_TK_PHAN_HOI", name: "2. Phản hồi PHHS & Trao đổi", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=feedback" },
+          { code: "KTDBCL_TK_HS_CAM_KET", name: "3. Học sinh cam kết đầu vào", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=entrance-commitment" },
         ]
       },
       {
         code: "KTDBCL_PHAN_TICH_THKQ",
         name: "Phân tích Tổng hợp Kết quả (THKQ)",
         icon: TrendingUp,
-        href: "/admin/ktdbcl/phan-tich-thkq"
+        href: "/admin/ktdbcl/phan-tich-thkq",
+        subModules: [
+          { code: "KTDBCL_THKQ_KT_DINH_KY", name: "1. TK kết quả kiểm tra định kỳ", href: "/admin/ktdbcl/phan-tich-thkq?report=periodic-test-results" },
+          { code: "KTDBCL_THKQ_CHAT_LUONG_GV", name: "2. Chất lượng KT theo giáo viên", href: "/admin/ktdbcl/phan-tich-thkq?report=teacher-test-quality" },
+          { code: "KTDBCL_THKQ_DIEM_TB", name: "3. ĐTB theo môn, khối, cơ sở", href: "/admin/ktdbcl/phan-tich-thkq?report=average-by-scope" },
+          { code: "KTDBCL_THKQ_KHOANG_DIEM", name: "4. Phân phối theo khoảng điểm", href: "/admin/ktdbcl/phan-tich-thkq?report=score-range-distribution" },
+          { code: "KTDBCL_THKQ_TONG_HOP_HE_THONG", name: "5. Thống kê cơ bản", href: "/admin/ktdbcl/phan-tich-thkq?report=basic-statistics" },
+          { code: "KTDBCL_THKQ_HS_CAM_KET", name: "6. Học sinh cam kết đầu vào", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=entrance-commitment" },
+        ]
+      },
+      {
+        code: "KTDBCL_GIAM_SAT_TIEN_DO",
+        name: "Giám sát tiến độ nhập điểm",
+        icon: ClipboardCheck,
+        href: "/admin/ktdbcl/giam-sat-tien-do?tab=missing-students",
+        subModules: [
+          { code: "KTDBCL_GSTD_HS_THIEU_DIEM", name: "1. Thống kê học sinh thiếu điểm", href: "/admin/ktdbcl/giam-sat-tien-do?tab=missing-students" },
+          { code: "KTDBCL_GSTD_TINH_HINH_NHAP", name: "2. Thống kê tình hình nhập điểm", href: "/admin/ktdbcl/giam-sat-tien-do?tab=entry-status" },
+        ]
       },
       {
         code: "KTDBCL_XUAT_BANG_DIEM",
@@ -347,6 +364,7 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
           { code: "TIMETABLE_ADJUST", name: "Điều chỉnh & Dạy thay", href: "/admin/thoi-khoa-bieu/dieu-chinh" },
         ],
       },
+      { code: "TEACHING_PLAN", name: "Kế hoạch dạy học", icon: BookOpen, href: "/admin/ke-hoach-day-hoc" },
       { code: "STUDENT_TRANSFERS", name: "Quản lý HS lưu chuyển", icon: ArrowRightLeft, href: "/admin/student-transfers" },
       { code: "MONTHLY_ENROLLMENT", name: "Theo dõi Sỹ số Tháng", icon: TrendingUp, href: "/admin/sy-so" },
       { code: "DESTINATION_SCHOOLS", name: "Danh mục Trường học", icon: Building2, href: "/admin/truong-lien-ket" },

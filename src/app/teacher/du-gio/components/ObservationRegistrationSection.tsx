@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { QuickCommentPresets } from "./QuickCommentPresets"
 import { getObserverSurpriseQuota, checkTeacherSurpriseHistory, findExistingSurpriseSlot, checkObservationConflict, createAssignedObservation } from "../actions"
+import { ObservationTeachingPlanPicker } from "@/components/teaching-plan/ObservationTeachingPlanPicker"
 
 
 const K12_SECTIONS = [
@@ -4172,6 +4173,33 @@ export function ObservationRegistrationSection(props: any) {
                     </select>
                   </div>
 
+                  {newSubjectId && newSubjectId !== "other" && ((newClassId && newClassId !== "other") || (newLevel && newGrade && newGrade !== "all")) && (
+                    <ObservationTeachingPlanPicker
+                      classId={newClassId && newClassId !== "other" ? newClassId : undefined}
+                      subjectId={newSubjectId}
+                      level={newLevel}
+                      grade={newGrade}
+                      campusId={newCampusId}
+                      academicYearId={props.selectedYearId}
+                      sessionDate={newDate}
+                      onAutoFillTimetableSlot={(tkbSlot) => {
+                        if (props.setLinkedTkbSlotId) props.setLinkedTkbSlotId(tkbSlot.timetableSlotId);
+                        if (tkbSlot.campusId) setNewCampusId(tkbSlot.campusId);
+                        if (tkbSlot.classId) setNewClassId(tkbSlot.classId);
+                        if (tkbSlot.subjectId) setNewSubjectId(tkbSlot.subjectId);
+                      }}
+                      onChangeLink={(link) => {
+                        const hadPrevLink = Boolean(props.selectedTeachingPlanLink);
+                        if (props.setSelectedTeachingPlanLink) props.setSelectedTeachingPlanLink(link);
+                        if (link) {
+                          setNewTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
+                        } else if (hadPrevLink) {
+                          setNewTopic("");
+                        }
+                      }}
+                    />
+                  )}
+
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Ngày dạy *</label>
                     <input
@@ -4291,6 +4319,33 @@ export function ObservationRegistrationSection(props: any) {
                       <option value="other">Lớp khác (Nhập tay...)</option>
                     </select>
                   </div>
+
+                  {newSubjectId && newSubjectId !== "other" && ((newClassId && newClassId !== "other") || (newLevel && newGrade && newGrade !== "all")) && (
+                    <ObservationTeachingPlanPicker
+                      classId={newClassId && newClassId !== "other" ? newClassId : undefined}
+                      subjectId={newSubjectId}
+                      level={newLevel}
+                      grade={newGrade}
+                      campusId={newCampusId}
+                      academicYearId={props.selectedYearId}
+                      sessionDate={newDate}
+                      onAutoFillTimetableSlot={(tkbSlot) => {
+                        if (props.setLinkedTkbSlotId) props.setLinkedTkbSlotId(tkbSlot.timetableSlotId);
+                        if (tkbSlot.campusId) setNewCampusId(tkbSlot.campusId);
+                        if (tkbSlot.classId) setNewClassId(tkbSlot.classId);
+                        if (tkbSlot.subjectId) setNewSubjectId(tkbSlot.subjectId);
+                      }}
+                      onChangeLink={(link) => {
+                        const hadPrevLink = Boolean(props.selectedTeachingPlanLink);
+                        if (props.setSelectedTeachingPlanLink) props.setSelectedTeachingPlanLink(link);
+                        if (link) {
+                          setNewTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
+                        } else if (hadPrevLink) {
+                          setNewTopic("");
+                        }
+                      }}
+                    />
+                  )}
 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Ngày dạy *</label>

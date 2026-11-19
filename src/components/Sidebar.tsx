@@ -150,8 +150,13 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     if (module === "KTDBCL_INTERNATIONAL_EXAMS") {
       hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAMS") || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || permissionModules?.includes("KTDBCL_GRADE_CTQT") || false
     }
-    if (module === "KTDBCL_THONG_KE_BAO_CAO") {
-      hasParent = hasParent || permissionModules?.includes("KTDBCL_GRADE_REMARKS") || permissionModules?.includes("KTDBCL_PHAN_TICH_THKQ") || false
+    if (module === "KTDBCL_THONG_KE_BAO_CAO" || module === "KTDBCL_GIAM_SAT_TIEN_DO") {
+      hasParent =
+        hasParent ||
+        permissionModules?.includes("KTDBCL_GRADE_REMARKS") ||
+        permissionModules?.includes("KTDBCL_PHAN_TICH_THKQ") ||
+        permissionModules?.includes("KTDBCL_THKQ_GIAM_SAT_NHAP") ||
+        false
     }
     if (module === "KTDBCL_XUAT_BANG_DIEM") {
       hasParent =
@@ -200,6 +205,17 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         permissionModules?.includes("KET_QUA_KHAO_SAT") ||
         permissionModules?.includes("XET_DUYET_KET_QUA") ||
         permissionModules?.includes("INPUT_ASSESSMENTS") ||
+        false
+    }
+    if (module === "TEACHING_PLAN") {
+      hasParent =
+        hasParent ||
+        Boolean(isTTCM) ||
+        permissionModules?.includes("DU_GIO_K12") ||
+        permissionModules?.includes("TIMETABLE") ||
+        permissionModules?.includes("SUBJECTS") ||
+        permissionModules?.includes("ASSIGNMENTS") ||
+        permissionModules?.includes("DEPARTMENTS") ||
         false
     }
     // WorkHub • Quản lý công việc & KPI chỉ hiển thị riêng cho tài khoản được cấp quyền thuộc Ban KT&ĐBCL
@@ -351,6 +367,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
       ) {
         setExpandedTeacherGroups(prev => ({ ...prev, GROUP_07: true }));
       } else if (
+        pathname.startsWith("/teacher/ke-hoach-day-hoc") ||
         pathname.startsWith("/teacher/du-gio") ||
         pathname.includes("skyline-journey")
       ) {
@@ -556,10 +573,14 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                           <div className="pl-9 pr-1 space-y-1 py-1 border-l-2 border-teal-500/30 ml-4 animate-in fade-in slide-in-from-top-1 duration-200">
                             {effectiveSubModules.map((sub: any) => {
                               const currentTab = searchParams?.get("tab");
+                              const currentReport = searchParams?.get("report");
                               const isSubActive =
                                 pathname === sub.href ||
                                 (sub.href && sub.href !== m.href && !sub.href.includes("?") && pathname.startsWith(sub.href + "/")) ||
-                                (sub.href?.includes("?") && pathname === sub.href.split("?")[0] && currentTab && sub.href.includes(`tab=${currentTab}`));
+                                (sub.href?.includes("?") &&
+                                  pathname === sub.href.split("?")[0] &&
+                                  ((currentTab && sub.href.includes(`tab=${currentTab}`)) ||
+                                    (currentReport && sub.href.includes(`report=${currentReport}`))));
                               return (
                                 <Link
                                   key={sub.code}
@@ -1502,6 +1523,26 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     expandedTeacherGroups.GROUP_10 || isCollapsed ? "max-h-[800px] opacity-100 visible mt-1" : "max-h-0 opacity-0 invisible"
                   }`}
                 >
+                  {/* Kế hoạch dạy học */}
+                  <Link
+                    href="/teacher/ke-hoach-day-hoc"
+                    onClick={() => setIsOpen(false)}
+                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
+                      pathname.startsWith("/teacher/ke-hoach-day-hoc")
+                        ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10"
+                        : "text-white/75 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
+                      pathname.startsWith("/teacher/ke-hoach-day-hoc")
+                        ? "bg-teal-500/25 border border-teal-400/50 text-teal-200 shadow-[0_0_8px_rgba(45,212,191,0.25)]"
+                        : "bg-white/5 border border-white/10 text-slate-400 group-hover:text-teal-200 group-hover:scale-110"
+                    }`}>
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    {!isCollapsed && <span className="break-words leading-tight py-0.5">{lang === "en" ? "Teaching Plans" : "Kế hoạch dạy học"}</span>}
+                  </Link>
+
                   {/* Khối Phổ thông */}
                   <Link
                     href="/teacher/du-gio"
@@ -1923,48 +1964,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         </nav>
         
         <div className="mt-auto pt-3 flex flex-col gap-2">
-          {/* Language Switcher */}
-          <div className={`flex items-center ${isCollapsed ? 'justify-center p-1.5' : 'justify-between px-3 py-1.5'} bg-white/5 border border-white/10 rounded-xl transition-all`}>
-            {!isCollapsed && (
-              <span className="text-[11px] text-white/70 font-medium flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-teal-400" />
-                <span>{SIDEBAR_TRANSLATIONS.common.language[lang]}</span>
-              </span>
-            )}
-            <div className={`flex items-center gap-1 ${isCollapsed ? 'flex-col' : ''}`}>
-              <button
-                type="button"
-                onClick={() => handleLanguageChange("vi")}
-                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
-                  lang === "vi"
-                    ? "bg-[#48BFE3] text-slate-900 shadow-xs"
-                    : "text-white/60 hover:text-white hover:bg-white/10"
-                }`}
-                title="Tiếng Việt"
-              >
-                <span className="inline-flex shrink-0 overflow-hidden rounded-[2px] border border-black/10">
-                  <VietnamFlag className="w-[14px] h-[9px]" />
-                </span>
-                <span>VI</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleLanguageChange("en")}
-                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
-                  lang === "en"
-                    ? "bg-[#48BFE3] text-slate-900 shadow-xs"
-                    : "text-white/60 hover:text-white hover:bg-white/10"
-                }`}
-                title="English"
-              >
-                <span className="inline-flex shrink-0 overflow-hidden rounded-[2px] border border-black/10">
-                  <UKFlag className="w-[14px] h-[9px]" />
-                </span>
-                <span>EN</span>
-              </button>
-            </div>
-          </div>
-
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={`hidden md:flex items-center ${isCollapsed ? 'justify-center' : 'px-4'} py-2.5 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 text-sm font-medium group w-full`}

@@ -51,6 +51,10 @@ export async function getRolePermissions(roleCode: string): Promise<any[]> {
       where: { roleCode: { in: variants } }
     })
     const perms = [...raw]
+    const duGioPerm = perms.find((p: any) => p.module === "DU_GIO_K12")
+    if (duGioPerm && !perms.some((p: any) => p.module === "TEACHING_PLAN")) {
+      perms.push({ ...duGioPerm, module: "TEACHING_PLAN" })
+    }
     const studentInfoPerm = perms.find((p: any) => p.module === "STUDENT_INFO")
     if (studentInfoPerm && !perms.some((p: any) => p.module === "KET_QUA_KHAO_SAT")) {
       perms.push({ ...studentInfoPerm, module: "KET_QUA_KHAO_SAT" })
@@ -86,6 +90,36 @@ export async function getRolePermissions(roleCode: string): Promise<any[]> {
       for (const sc of dgnlSubCodes) {
         if (!perms.some((p: any) => p.module === sc)) {
           perms.push({ ...dgnlPerm, module: sc })
+        }
+      }
+    }
+    const thkqPerm = perms.find(
+      (p: any) =>
+        p.module === "KTDBCL_PHAN_TICH_THKQ" ||
+        p.module === "KTDBCL_GRADE_REMARKS" ||
+        p.module === "KTDBCL_THONG_KE_BAO_CAO" ||
+        p.module === "KTDBCL_GIAM_SAT_TIEN_DO" ||
+        p.module === "KTDBCL_THKQ_GIAM_SAT_NHAP"
+    )
+    if (thkqPerm) {
+      const thkqSubCodes = [
+        "KTDBCL_PHAN_TICH_THKQ",
+        "KTDBCL_THKQ_KT_DINH_KY",
+        "KTDBCL_THKQ_CHAT_LUONG_GV",
+        "KTDBCL_THKQ_DIEM_TB",
+        "KTDBCL_THKQ_KHOANG_DIEM",
+        "KTDBCL_THKQ_GIAM_SAT_NHAP",
+        "KTDBCL_THKQ_TONG_HOP_HE_THONG",
+        "KTDBCL_GIAM_SAT_TIEN_DO",
+        "KTDBCL_GSTD_HS_THIEU_DIEM",
+        "KTDBCL_GSTD_TINH_HINH_NHAP",
+        "KTDBCL_THONG_KE_BAO_CAO",
+        "KTDBCL_TK_DUYET_MO_SO",
+        "KTDBCL_TK_PHAN_HOI",
+      ]
+      for (const sc of thkqSubCodes) {
+        if (!perms.some((p: any) => p.module === sc)) {
+          perms.push({ ...thkqPerm, module: sc })
         }
       }
     }

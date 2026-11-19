@@ -32,6 +32,7 @@ import { DetailDrawer } from "@/components/ui/drawer"
 import { StatusBadge, Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { ObservationObjectiveEvidencePanel } from "@/components/teaching-plan/ObservationObjectiveEvidencePanel"
 
 export interface ObservationDetailDrawerProps {
   open: boolean
@@ -266,6 +267,13 @@ export function ObservationDetailDrawer({
             )}
           </div>
         </div>
+
+        {/* 2B. TEACHING PLAN LINK & OBSERVATION OBJECTIVE EVIDENCES */}
+        <ObservationObjectiveEvidencePanel
+          observationSlotId={slot.id}
+          evaluationId={myReg?.evaluation?.id || evaluations[0]?.evaluation?.id || null}
+          editable={Boolean(myReg?.evaluation?.id)}
+        />
         {/* 3. TEACHER (NGƯỜI DẠY) */}
         <div className="space-y-1.5">
           <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Giáo viên giảng dạy</h4>

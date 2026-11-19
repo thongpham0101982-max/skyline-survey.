@@ -805,6 +805,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "CAMPUS_SCHEDULE" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED">("TEACHER_OPEN")
   const [linkedTkbSlotId, setLinkedTkbSlotId] = useState<string>("")
+  const [selectedTeachingPlanLink, setSelectedTeachingPlanLink] = useState<any>(null)
 
   const minAllowedDate = useMemo(() => {
     const now = new Date();
@@ -3312,8 +3313,9 @@ export function ObservationClient(props: ObservationClientProps) {
         classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
         className: classNameStr,
         lessonPlanName: newLessonPlanName || undefined, lessonPlanData: newLessonPlanData || undefined,
-        tkbSlotId: linkedTkbSlotId || undefined
-      });
+        tkbSlotId: linkedTkbSlotId || undefined,
+        teachingPlanLink: selectedTeachingPlanLink || undefined
+      } as any);
     }
     setSubmitting(false)
     if (res.success) {
@@ -9138,6 +9140,10 @@ export function ObservationClient(props: ObservationClientProps) {
         onClose={() => setShowCreateModal(false)}
         creationMode={creationMode}
         setCreationMode={setCreationMode}
+        selectedTeachingPlanLink={selectedTeachingPlanLink}
+        setSelectedTeachingPlanLink={setSelectedTeachingPlanLink}
+        setLinkedTkbSlotId={setLinkedTkbSlotId}
+        selectedYearId={selectedYearId}
         isMamNonTeacher={isMamNonTeacher}
         isAdminUser={isAdminUser}
         isTTCM={isTTCM}

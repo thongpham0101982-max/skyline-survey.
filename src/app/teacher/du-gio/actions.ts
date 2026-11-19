@@ -3,6 +3,12 @@
 
 import { buildAssignedCreatorTag, getAssignedCreatorTeacherId, isAssignedSlotCreator } from "./utils"
 import { verifyTimetableSlotForObservation } from "@/lib/timetable/effectiveScheduleService"
+import {
+  linkPeriodToSession,
+  lockObservationTeachingPlanSnapshot,
+  saveObservationObjectiveEvidences,
+} from "@/lib/teaching-plan/service"
+import { getTeachingPlanAuthContext } from "@/lib/teaching-plan/rbac"
 
 function getTeacherResolvedEmail(teacher: any, allowSystemEmail = false): string | null {
   if (!teacher) return null;
@@ -1040,6 +1046,29 @@ export async function createObservationSlot(data: {
         lessonPageNumber: (data as any).lessonPageNumber ? Number((data as any).lessonPageNumber) : null
       }
     });
+
+    // Optional Teaching Plan period link (non-breaking for legacy slots)
+    const tpLink = (data as any).teachingPlanLink;
+    if (tpLink?.planId && tpLink?.stablePeriodId && newSlot.classId && newSlot.subjectId) {
+      try {
+        const tpCtx = await getTeachingPlanAuthContext();
+        await linkPeriodToSession({
+          timetableSlotId: tpLink.timetableSlotId || data.tkbSlotId || null,
+          observationSlotId: newSlot.id,
+          classId: newSlot.classId,
+          subjectId: newSlot.subjectId,
+          academicYearId: newSlot.academicYearId || undefined,
+          sessionDate: data.date,
+          timetablePeriodNumber: tpLink.timetablePeriodNumber ?? null,
+          timetableSession: tpLink.timetableSession ?? null,
+          planId: String(tpLink.planId),
+          stablePeriodId: String(tpLink.stablePeriodId),
+          ctx: tpCtx,
+        });
+      } catch (tpErr) {
+        console.error("[createObservationSlot] TeachingPlan link warning:", tpErr);
+      }
+    }
 
     revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
@@ -2614,12 +2643,30 @@ export async function submitEvaluation(data: {
       submittedAt: new Date(),
       reEvaluationStatus: registration.evaluation?.reEvaluationStatus === "APPROVED" ? "COMPLETED" : (registration.evaluation?.reEvaluationStatus === "DRAFT" ? null : registration.evaluation?.reEvaluationStatus)
     }
+    let savedEvaluationId = registration.evaluation?.id || "";
     if (registration.evaluation) {
-      await prisma.observationEvaluation.update({ where: { registrationId: data.registrationId }, data: evalData })
+      const upd = await prisma.observationEvaluation.update({ where: { registrationId: data.registrationId }, data: evalData })
+      savedEvaluationId = upd.id;
     } else {
-      await prisma.observationEvaluation.create({
+      const cr = await prisma.observationEvaluation.create({
         data: { registrationId: data.registrationId, slotId: data.slotId, evaluatorId: currentTeacher.id, ...evalData }
       })
+      savedEvaluationId = cr.id;
+    }
+
+    // Freeze teaching plan snapshot & persist per-objective observation evidences if linked
+    try {
+      await lockObservationTeachingPlanSnapshot(data.slotId);
+      const evidences = (data as any).objectiveEvidences;
+      if (savedEvaluationId && Array.isArray(evidences) && evidences.length > 0) {
+        await saveObservationObjectiveEvidences({
+          evaluationId: savedEvaluationId,
+          observationSlotId: data.slotId,
+          evidences,
+        });
+      }
+    } catch (tpErr) {
+      console.error("[submitEvaluation] TeachingPlan snapshot/evidence sync warning:", tpErr);
     }
 
     // Gửi Email thông báo kết quả đánh giá cho Giáo viên được dự (Host Teacher) & Người dự giờ (Observer)
