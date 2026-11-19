@@ -2980,6 +2980,9 @@ export function ObservationClient(props: ObservationClientProps) {
       });
     }
 
+    if (selectedTeachingPlanLink) {
+      payload.teachingPlanLink = selectedTeachingPlanLink;
+    }
     setSurpriseSubmitting(true);
     const res = await createSurpriseObservation(payload);
     setSurpriseSubmitting(false);
@@ -3221,7 +3224,8 @@ export function ObservationClient(props: ObservationClientProps) {
           notes: reqNotes,
           academicYearId: filterAcademicYearId,
           tkbSlotId: linkedTkbSlotId || undefined,
-        })
+          teachingPlanLink: selectedTeachingPlanLink || undefined,
+        } as any)
         setSubmitting(false)
         if (res.success) {
           showToast("Đã gửi đề xuất xin dự giờ và gửi Email thông báo tới Giáo viên dạy thành công!", "success")

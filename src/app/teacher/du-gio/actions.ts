@@ -3410,6 +3410,26 @@ export async function requestObservationSlot(data: {
       });
     }
 
+    const reqTpLink = (data as any).teachingPlanLink;
+    if (reqTpLink?.planId && reqTpLink?.stablePeriodId && newSlot.classId && newSlot.subjectId) {
+      try {
+        const tpCtx = await getTeachingPlanAuthContext();
+        await linkPeriodToSession({
+          timetableSlotId: reqTpLink.timetableSlotId || data.tkbSlotId || null,
+          observationSlotId: newSlot.id,
+          classId: newSlot.classId,
+          subjectId: newSlot.subjectId,
+          academicYearId: newSlot.academicYearId || undefined,
+          sessionDate: data.date,
+          planId: String(reqTpLink.planId),
+          stablePeriodId: String(reqTpLink.stablePeriodId),
+          ctx: tpCtx,
+        });
+      } catch (tpErr) {
+        console.error("[requestObservationSlot] TeachingPlan link warning:", tpErr);
+      }
+    }
+
     // Instant purge for active cache paths
     revalidatePath("/teacher/du-gio");
     revalidatePath("/admin/du-gio");
@@ -4929,6 +4949,26 @@ export async function createSurpriseObservation(data: {
           approvedAt: new Date()
         }
       });
+    }
+
+    const surpTpLink = (data as any).teachingPlanLink;
+    if (surpTpLink?.planId && surpTpLink?.stablePeriodId && slotRecord?.classId && slotRecord?.subjectId) {
+      try {
+        const tpCtx = await getTeachingPlanAuthContext();
+        await linkPeriodToSession({
+          observationSlotId: slotRecord.id,
+          classId: slotRecord.classId,
+          subjectId: slotRecord.subjectId,
+          academicYearId: slotRecord.academicYearId || undefined,
+          sessionDate: data.date,
+          planId: String(surpTpLink.planId),
+          stablePeriodId: String(surpTpLink.stablePeriodId),
+          ctx: tpCtx,
+        });
+        await lockObservationTeachingPlanSnapshot(slotRecord.id);
+      } catch (tpErr) {
+        console.error("[createSurpriseObservation] TeachingPlan link warning:", tpErr);
+      }
     }
 
     // 3. Create or Update ObservationEvaluation
@@ -6946,6 +6986,25 @@ export async function createAssignedObservation(data: {
           approvedAt: new Date()
         }
       });
+    }
+
+    const assignTpLink = (data as any).teachingPlanLink;
+    if (assignTpLink?.planId && assignTpLink?.stablePeriodId && newSlot.classId && newSlot.subjectId) {
+      try {
+        const tpCtx = await getTeachingPlanAuthContext();
+        await linkPeriodToSession({
+          observationSlotId: newSlot.id,
+          classId: newSlot.classId,
+          subjectId: newSlot.subjectId,
+          academicYearId: newSlot.academicYearId || undefined,
+          sessionDate: data.date,
+          planId: String(assignTpLink.planId),
+          stablePeriodId: String(assignTpLink.stablePeriodId),
+          ctx: tpCtx,
+        });
+      } catch (tpErr) {
+        console.error("[createAssignedObservation] TeachingPlan link warning:", tpErr);
+      }
     }
 
     // 10. Ghi AuditLog

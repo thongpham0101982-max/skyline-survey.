@@ -617,6 +617,7 @@ export function ObservationRegistrationSection(props: any) {
   const [assignedSubjectId, setAssignedSubjectId] = React.useState<string>("");
   const [assignedSubjectName, setAssignedSubjectName] = React.useState<string>("");
   const [assignedTopic, setAssignedTopic] = React.useState<string>("");
+  const [assignedTeachingPlanLink, setAssignedTeachingPlanLink] = React.useState<any>(null);
   const [assignedNotes, setAssignedNotes] = React.useState<string>("");
   const [assignedObserverIds, setAssignedObserverIds] = React.useState<string[]>([]);
   const [assignedSubmitting, setAssignedSubmitting] = React.useState<boolean>(false);
@@ -1068,7 +1069,8 @@ export function ObservationRegistrationSection(props: any) {
         topic: assignedTopic || `Chỉ định dự giờ: ${assignedSubjectName || "Chuyên môn"} - ${assignedClassName}`,
         notes: assignedNotes,
         observerTeacherIds: assignedObserverIds,
-        academicYearId: assignedAcademicYearId || undefined
+        academicYearId: assignedAcademicYearId || undefined,
+        teachingPlanLink: assignedTeachingPlanLink || undefined
       };
 
       if (assignedJoinExisting && assignedConflict?.id) {
@@ -1083,6 +1085,7 @@ export function ObservationRegistrationSection(props: any) {
         setAssignedTeacherId("");
         setAssignedObserverIds([]);
         setAssignedTopic("");
+        setAssignedTeachingPlanLink(null);
         setAssignedNotes("");
         setAssignedConflict(null);
         setAssignedJoinExisting(false);
@@ -2516,6 +2519,29 @@ export function ObservationRegistrationSection(props: any) {
                     />
                   </div>
 
+                  {/* 9B. Kế hoạch dạy học đã đồng bộ (nếu có) */}
+                  {surpriseSubjectId && surpriseSubjectId !== "other" && ((surpriseClassId && surpriseClassId !== "other") || (surpriseLevel && surpriseGrade && surpriseGrade !== "all")) && (
+                    <ObservationTeachingPlanPicker
+                      className="col-span-12"
+                      classId={surpriseClassId && surpriseClassId !== "other" ? surpriseClassId : undefined}
+                      subjectId={surpriseSubjectId}
+                      level={surpriseLevel}
+                      grade={surpriseGrade}
+                      campusId={surpriseCampusId}
+                      academicYearId={props.selectedYearId}
+                      sessionDate={surpriseDate}
+                      onChangeLink={(link) => {
+                        const hadPrev = Boolean(props.selectedTeachingPlanLink);
+                        if (props.setSelectedTeachingPlanLink) props.setSelectedTeachingPlanLink(link);
+                        if (link) {
+                          setSurpriseTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
+                        } else if (hadPrev) {
+                          setSurpriseTopic("");
+                        }
+                      }}
+                    />
+                  )}
+
                   {/* 10. Chủ đề / Nội dung bài dạy */}
                   <div className="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
@@ -3324,6 +3350,27 @@ export function ObservationRegistrationSection(props: any) {
                     className="w-full text-xs font-bold p-3 rounded-xl border border-teal-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   />
                 </div>
+
+                {reqSubjectId && reqSubjectId !== "other" && reqSubjectId !== "Khác/Chuyên đề" && ((reqClassId && reqClassId !== "other") || (reqLevel && reqGrade && reqGrade !== "all")) && (
+                  <ObservationTeachingPlanPicker
+                    classId={reqClassId && reqClassId !== "other" ? reqClassId : undefined}
+                    subjectId={reqSubjectId}
+                    level={reqLevel}
+                    grade={reqGrade}
+                    campusId={reqCampusId}
+                    academicYearId={props.selectedYearId}
+                    sessionDate={reqDate}
+                    onChangeLink={(link) => {
+                      const hadPrev = Boolean(props.selectedTeachingPlanLink);
+                      if (props.setSelectedTeachingPlanLink) props.setSelectedTeachingPlanLink(link);
+                      if (link) {
+                        setReqTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
+                      } else if (hadPrev) {
+                        setReqTopic("");
+                      }
+                    }}
+                  />
+                )}
               </div>
 
               {/* Group 3: Cơ sở & Cấp học */}
@@ -3948,6 +3995,29 @@ export function ObservationRegistrationSection(props: any) {
                   </select>
                 </div>
               </div>
+
+              {/* Nhóm 5B: Kế hoạch dạy học đã đồng bộ (nếu có) */}
+              {assignedSubjectId && assignedSubjectId !== "other" && ((assignedClassId && assignedClassId !== "other") || (assignedLevel && assignedGrade && assignedGrade !== "all")) && (
+                <ObservationTeachingPlanPicker
+                  className="w-full"
+                  classId={assignedClassId && assignedClassId !== "other" ? assignedClassId : undefined}
+                  subjectId={assignedSubjectId}
+                  level={assignedLevel}
+                  grade={assignedGrade}
+                  campusId={assignedCampusId}
+                  academicYearId={assignedAcademicYearId || props.selectedYearId}
+                  sessionDate={assignedDate}
+                  onChangeLink={(link) => {
+                    const hadPrev = Boolean(assignedTeachingPlanLink);
+                    setAssignedTeachingPlanLink(link);
+                    if (link) {
+                      setAssignedTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
+                    } else if (hadPrev) {
+                      setAssignedTopic("");
+                    }
+                  }}
+                />
+              )}
 
               {/* Nhóm 6: Chuyên đề, Ghi chú & Hình thức */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

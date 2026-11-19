@@ -27,6 +27,7 @@ interface Props {
   campusId?: string
   academicYearId?: string
   sessionDate?: string
+  className?: string
   onAutoFillTimetableSlot?: (slot: any) => void
   onChangeLink: (link: SelectedTeachingPlanLinkPayload | null) => void
 }
@@ -39,6 +40,7 @@ export function ObservationTeachingPlanPicker({
   campusId,
   academicYearId,
   sessionDate,
+  className = "sm:col-span-2",
   onChangeLink,
 }: Props) {
   const [loading, setLoading] = useState(false)
@@ -137,7 +139,7 @@ export function ObservationTeachingPlanPicker({
   }
 
   return (
-    <div className="sm:col-span-2 bg-[#F8FAFC] border border-[#E2E8F0] border-l-4 border-l-[#003B3A] rounded-xl p-4 space-y-3 text-xs">
+    <div className={`${className} bg-[#F8FAFC] border border-[#E2E8F0] border-l-4 border-l-[#003B3A] rounded-xl p-4 space-y-3 text-xs`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 font-semibold text-[#003B3A]">
           <BookOpen className="w-4 h-4 text-[#00736E]" />
