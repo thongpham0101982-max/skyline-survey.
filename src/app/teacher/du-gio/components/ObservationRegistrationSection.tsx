@@ -2421,8 +2421,8 @@ export function ObservationRegistrationSection(props: any) {
                   </div>
 
                   {/* 7. Cấp học */}
-                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <div className="col-span-12 sm:col-span-4 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-semibold text-[#003B3A] flex items-center gap-1.5">
                       <Award className="w-3.5 h-3.5 text-[#00A19A]" />
                       <span>Cấp học</span>
                     </label>
@@ -2438,7 +2438,7 @@ export function ObservationRegistrationSection(props: any) {
                           setSurpriseSubjectName("Chủ đề/Chuyên đề");
                         }
                       }}
-                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800 transition-all cursor-pointer"
                     >
                       <option value="Phổ thông K-12">Phổ thông K-12</option>
                       <option value="Tiểu học">Tiểu học</option>
@@ -2449,14 +2449,14 @@ export function ObservationRegistrationSection(props: any) {
                   </div>
 
                   {/* 8. Lớp học */}
-                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                  <div className="col-span-12 sm:col-span-4 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-semibold text-[#003B3A] flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-[#00A19A]" />
                         <span>Lớp học *</span>
                       </span>
                       {filteredClassesForSurprise.length > 0 && (
-                        <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
+                        <span className="text-[10px] text-teal-700 font-medium bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
                           {filteredClassesForSurprise.length} lớp
                         </span>
                       )}
@@ -2495,7 +2495,7 @@ export function ObservationRegistrationSection(props: any) {
                           }
                         }
                       }}
-                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800 transition-all cursor-pointer"
                     >
                       <option value="">-- Chọn danh sách lớp --</option>
                       {filteredClassesForSurprise.map((c: any) => (
@@ -2505,8 +2505,8 @@ export function ObservationRegistrationSection(props: any) {
                   </div>
 
                   {/* 9. Phòng học */}
-                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <div className="col-span-12 sm:col-span-4 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-semibold text-[#003B3A] flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#00A19A]" />
                       <span>Phòng học</span>
                     </label>
@@ -2515,7 +2515,7 @@ export function ObservationRegistrationSection(props: any) {
                       placeholder="VD: Phòng 204, Phòng Lab..."
                       value={surpriseRoom}
                       onChange={e => setSurpriseRoom(e.target.value)}
-                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs placeholder:text-slate-400"
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800 transition-all placeholder:text-slate-400"
                     />
                   </div>
 
@@ -2543,10 +2543,10 @@ export function ObservationRegistrationSection(props: any) {
                   )}
 
                   {/* 10. Chủ đề / Nội dung bài dạy */}
-                  <div className="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <div className="col-span-12 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-semibold text-[#003B3A] flex items-center gap-1.5">
                       <FileText className="w-3.5 h-3.5 text-[#00A19A]" />
-                      <span>Chủ đề / Nội dung bài dạy *</span>
+                      <span>Tên bài dạy / Chủ đề dự giờ *</span>
                     </label>
                     <input
                       type="text"
@@ -2556,7 +2556,7 @@ export function ObservationRegistrationSection(props: any) {
                       value={surpriseTopic}
                       onChange={e => setSurpriseTopic(e.target.value)}
                       required
-                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs placeholder:text-slate-400"
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800 transition-all placeholder:text-slate-400"
                     />
                   </div>
                 </div>
@@ -3818,12 +3818,62 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               </div>
 
+              {/* Nhóm 4B: Kế hoạch dạy học đã đồng bộ & Tên bài dạy / Nội dung trọng tâm */}
+              {assignedSubjectId && assignedSubjectId !== "other" && ((assignedClassId && assignedClassId !== "other") || (assignedLevel && assignedGrade && assignedGrade !== "all")) && (
+                <ObservationTeachingPlanPicker
+                  className="w-full"
+                  classId={assignedClassId && assignedClassId !== "other" ? assignedClassId : undefined}
+                  subjectId={assignedSubjectId}
+                  level={assignedLevel}
+                  grade={assignedGrade}
+                  campusId={assignedCampusId}
+                  academicYearId={assignedAcademicYearId || props.selectedYearId}
+                  sessionDate={assignedDate}
+                  onChangeLink={(link) => {
+                    const hadPrev = Boolean(assignedTeachingPlanLink);
+                    setAssignedTeachingPlanLink(link);
+                    if (link) {
+                      setAssignedTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
+                    } else if (hadPrev) {
+                      setAssignedTopic("");
+                    }
+                  }}
+                />
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold text-[#003B3A]">
+                    10. Tên bài dạy / Chủ đề / Nội dung trọng tâm
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="VD: Kiểm tra chuyên môn định kỳ phương pháp dạy học..."
+                    value={assignedTopic}
+                    onChange={e => setAssignedTopic(e.target.value)}
+                    className="w-full text-xs font-medium p-3 rounded-xl border border-[#E2E8F0] focus:ring-2 focus:ring-[#00736E]/30 focus:border-[#00736E] outline-none bg-white text-slate-800"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold text-[#003B3A]">
+                    11. Hình thức dự giờ
+                  </label>
+                  <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between">
+                    <span className="font-semibold text-[#003B3A] text-xs">Chỉ định dự giờ</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-white text-[#00736E] border border-teal-200">
+                      Tự động gán (ASSIGNED)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Nhóm 5: Người dự (Multi-select có chọn TCM phụ trách và tìm kiếm theo Tên/Mã GV) */}
               <div className="flex flex-col gap-3 p-4 bg-teal-50/50 rounded-2xl border-2 border-teal-200/90 shadow-2xs">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <label className="text-[11px] font-black text-teal-800 uppercase tracking-wide flex items-center gap-1.5">
-                    <Users className="size-4 text-teal-800" />
-                    <span>10. Người dự (Phân công cán bộ/GV đi dự) *</span>
+                  <label className="text-[11px] font-semibold text-[#003B3A] flex items-center gap-1.5">
+                    <Users className="size-4 text-[#00736E]" />
+                    <span>12. Người dự (Phân công cán bộ/GV đi dự) *</span>
                   </label>
                   <div className="flex items-center gap-2">
                     {/* Nút bấm nhanh phân công bản thân người tạo */}
@@ -3998,59 +4048,8 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
               </div>
 
-              {/* Nhóm 5B: Kế hoạch dạy học đã đồng bộ (nếu có) */}
-              {assignedSubjectId && assignedSubjectId !== "other" && ((assignedClassId && assignedClassId !== "other") || (assignedLevel && assignedGrade && assignedGrade !== "all")) && (
-                <ObservationTeachingPlanPicker
-                  className="w-full"
-                  classId={assignedClassId && assignedClassId !== "other" ? assignedClassId : undefined}
-                  subjectId={assignedSubjectId}
-                  level={assignedLevel}
-                  grade={assignedGrade}
-                  campusId={assignedCampusId}
-                  academicYearId={assignedAcademicYearId || props.selectedYearId}
-                  sessionDate={assignedDate}
-                  onChangeLink={(link) => {
-                    const hadPrev = Boolean(assignedTeachingPlanLink);
-                    setAssignedTeachingPlanLink(link);
-                    if (link) {
-                      setAssignedTopic(`${link.lessonName} – Tiết ${link.periodIndexInLesson}/${link.totalPeriodsInLesson}`);
-                    } else if (hadPrev) {
-                      setAssignedTopic("");
-                    }
-                  }}
-                />
-              )}
-
-              {/* Nhóm 6: Chuyên đề, Ghi chú & Hình thức */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
-                    11. Tên chuyên đề / Nội dung trọng tâm
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="VD: Kiểm tra chuyên môn định kỳ phương pháp dạy học..."
-                    value={assignedTopic}
-                    onChange={e => setAssignedTopic(e.target.value)}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
-                    12. Hình thức dự giờ
-                  </label>
-                  <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between">
-                    <span className="font-black text-teal-800 text-xs">Chỉ định dự giờ</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800">
-                      Tự động gán (ASSIGNED)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                <label className="text-[11px] font-semibold text-[#003B3A]">
                   13. Ghi chú điều hành / Yêu cầu đối với giáo viên & người dự
                 </label>
                 <textarea
