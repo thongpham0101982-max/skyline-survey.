@@ -1147,8 +1147,42 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
   const [selectedSystemFilter, setSelectedSystemFilter] = useState("ALL")
   const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id || "")
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || "")
-  const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
+  const [selectedPeriod, setSelectedPeriod] = useState("CK1")
+  const [termTabSemester, setTermTabSemester] = useState<"HK1" | "HK2" | "CN">("HK1")
   const [assignedTeacher, setAssignedTeacher] = useState("")
+
+  // Xác định Học kỳ đang chọn (1 = HK1, 2 = HK2) đồng bộ giữa Header, Tab Nhập điểm và Tab Điểm tổng kết
+  const activeSemester: 1 | 2 = useMemo(() => {
+    if (activeTab === "term-grades") {
+      return termTabSemester === "HK1" ? 1 : 2
+    }
+    const p = String(activeTab === "config" ? configPeriod : selectedPeriod).toUpperCase().trim()
+    if (p === "GK2" || p === "CK2" || p === "HK2" || p === "CN") return 2
+    return 1
+  }, [activeTab, selectedPeriod, configPeriod, termTabSemester])
+
+  const handleSelectSemester = (sem: 1 | 2) => {
+    if (sem === 1) {
+      setSelectedPeriod((prev) => (prev === "GK2" ? "GK1" : "CK1"))
+      setConfigPeriod((prev) => (prev === "GK2" ? "GK1" : "CK1"))
+      setTermTabSemester("HK1")
+    } else {
+      setSelectedPeriod((prev) => (prev === "GK1" ? "GK2" : "CK2"))
+      setConfigPeriod((prev) => (prev === "GK1" ? "GK2" : "CK2"))
+      setTermTabSemester("HK2")
+    }
+  }
+
+  const savePeriodMeta = useMemo(() => {
+    const p = String(selectedPeriod || "CK1").toUpperCase().trim()
+    if (p === "GK1") return { short: "HK1 (GK1)", full: "Học kỳ 1 (Giữa kỳ 1)", semLabel: "HK1" }
+    if (p === "CK1" || p === "HK1") return { short: "HK1 (CK1)", full: "Học kỳ 1 (Cuối kỳ 1)", semLabel: "HK1" }
+    if (p === "GK2") return { short: "HK2 (GK2)", full: "Học kỳ 2 (Giữa kỳ 2)", semLabel: "HK2" }
+    if (p === "CK2" || p === "HK2") return { short: "HK2 (CK2)", full: "Học kỳ 2 (Cuối kỳ 2)", semLabel: "HK2" }
+    if (p === "CN") return { short: "Cả năm (CN)", full: "Cả năm (CN)", semLabel: "CN" }
+    if (p === "KSĐN" || p === "KSDN") return { short: "HK1 (KSĐN)", full: "Học kỳ 1 (Khảo sát đầu năm)", semLabel: "KSĐN" }
+    return { short: p, full: p, semLabel: p }
+  }, [selectedPeriod])
 
   // Modal Nhập nhận xét theo khoảng điểm
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false)
@@ -1231,7 +1265,11 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
     const tab = searchParams?.get("tab")
     if (tab === "grades" || tab === "config") {
       setActiveTab(tab)
-    } else if (tab === "analytics" || tab === "progress" || tab === "requests" || tab === "feedback") {
+    } else if (tab === "analytics") {
+      router.replace(`/admin/ktdbcl/phan-tich-thkq?report=teacher-test-quality`)
+    } else if (tab === "progress") {
+      router.replace(`/admin/ktdbcl/giam-sat-tien-do?tab=entry-status`)
+    } else if (tab === "requests" || tab === "feedback") {
       router.replace(`/admin/ktdbcl/thong-ke-bao-cao?tab=${tab}`)
     }
     const cId = searchParams?.get("campusId")
@@ -1583,7 +1621,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
       })
       const data = await res.json()
       if (data.success) {
-        alert("Đã lưu sổ điểm thành công!")
+        alert(`Đã lưu sổ điểm ${savePeriodMeta.full} thành công!`)
       } else {
         alert("Lỗi: " + (data.error || "Không thể lưu điểm"))
       }
@@ -1829,26 +1867,26 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
 
         const wsName = wb.SheetNames[0]
         const ws = wb.Sheets[wsName]
-        const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
+        const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[][]
 
         if (!data || data.length < 2) {
           alert("File Excel không có dữ liệu hợp lệ")
           return
         }
 
-        // Find header row (supports row 1 orvnEdu multi-row top metadata)
+        // Find header row (supports row 1 or vnEdu multi-row top metadata)
         let headerRowIdx = 0
         for (let r = 0; r < Math.min(data.length, 15); r++) {
-          const rowStr = (data[r] || []).map(c => String(c || "").toLowerCase()).join(" | ")
+          const rowStr = Array.from(data[r] || [], c => String(c ?? "").toLowerCase()).join(" | ")
           if (rowStr.includes("mã hs") || rowStr.includes("mã học sinh") || rowStr.includes("mã vnedu") || (rowStr.includes("stt") && rowStr.includes("họ và tên"))) {
             headerRowIdx = r
             break
           }
         }
 
-        const headers = (data[headerRowIdx] || []).map(h => String(h || "").trim())
+        const headers = Array.from(data[headerRowIdx] || [], h => String(h ?? "").trim())
         const codeIdx = headers.findIndex(h => {
-          const l = h.toLowerCase()
+          const l = String(h ?? "").toLowerCase()
           return l.includes("mã hs") || l.includes("ma hs") || l.includes("mã học sinh") || l.includes("mã vnedu")
         })
         if (codeIdx === -1) {
@@ -1860,20 +1898,20 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
 
         const studentMapByCode = new Map<string, string>()
         gradeSheetData.students.forEach(st => {
-          if (st.studentCode) studentMapByCode.set(st.studentCode.trim().toLowerCase(), st.id)
+          if (st.studentCode) studentMapByCode.set(String(st.studentCode).trim().toLowerCase(), st.id)
           if (st.vnEduCode) studentMapByCode.set(String(st.vnEduCode).trim().toLowerCase(), st.id)
         })
 
         const newEntries = { ...gradeSheetData.entries }
         let countImported = 0
 
-        const customCompTitle = (gradeSheetData.config?.compositeColumnName || "").trim().toLowerCase()
+        const customCompTitle = String(gradeSheetData.config?.compositeColumnName ?? "").trim().toLowerCase()
         const xlIdx = headers.findIndex(h => {
-          const l = h.toLowerCase()
+          const l = String(h ?? "").toLowerCase()
           return l.startsWith("xl") || l.includes("xếp loại") || l.includes("mức đạt")
         })
         const ktIdx = headers.findIndex(h => {
-          const l = h.toLowerCase()
+          const l = String(h ?? "").toLowerCase()
           return l.startsWith("kt ") || l === "kt" || l.includes("điểm kt")
         })
 
@@ -1886,10 +1924,11 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
 
           const compScores: Record<string, string> = {}
           activeColNames.forEach((colName: string, cIdx: number) => {
-            const cleanColName = colName.trim().toLowerCase()
+            const cleanColName = String(colName ?? "").trim().toLowerCase()
             const hIdx = headers.findIndex(h => {
-              const cleanH = h.trim().toLowerCase().replace(/\s*\(tối đa.*?\)/i, "")
-              return cleanH === cleanColName || h.toLowerCase() === cleanColName
+              const strH = String(h ?? "")
+              const cleanH = strH.trim().toLowerCase().replace(/\s*\(tối đa.*?\)/i, "")
+              return cleanH === cleanColName || strH.toLowerCase() === cleanColName
             })
             if (hIdx !== -1 && row[hIdx] !== undefined && row[hIdx] !== null) {
               compScores[`col${cIdx}`] = String(row[hIdx])
@@ -1901,7 +1940,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           }
 
           const compScoreIdx = headers.findIndex(h => {
-            const lower = h.toLowerCase()
+            const lower = String(h ?? "").toLowerCase()
             return (customCompTitle && lower === customCompTitle) || lower.includes("thành phần") || lower.includes("tổng hợp") || lower.includes("tb môn")
           })
 
@@ -1917,7 +1956,10 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
             ratingVal = normalizePrimaryXlInput(String(row[xlIdx]))
           }
 
-          const remIdx = headers.findIndex(h => h.toLowerCase().includes("nhận xét") || h.toLowerCase().includes("nhan xet"))
+          const remIdx = headers.findIndex(h => {
+            const l = String(h ?? "").toLowerCase()
+            return l.includes("nhận xét") || l.includes("nhan xet")
+          })
           let remVal = ""
           if (remIdx !== -1 && row[remIdx] !== undefined) {
             remVal = String(row[remIdx])
@@ -1968,7 +2010,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 tabular-nums">
             <select
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
@@ -1980,6 +2022,31 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                 </option>
               ))}
             </select>
+
+            <div className="inline-flex p-1 bg-white/10 rounded-xl border border-white/20">
+              <button
+                type="button"
+                onClick={() => handleSelectSemester(1)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                  activeSemester === 1
+                    ? "bg-white text-[#003B3A] shadow-xs"
+                    : "text-white/80 hover:text-white"
+                }`}
+              >
+                Học kỳ 1
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectSemester(2)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                  activeSemester === 2
+                    ? "bg-white text-[#003B3A] shadow-xs"
+                    : "text-white/80 hover:text-white"
+                }`}
+              >
+                Học kỳ 2
+              </button>
+            </div>
           </div>
         </div>
 
@@ -2025,11 +2092,11 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           </div>
 
           <Link
-            href="/admin/ktdbcl/thong-ke-bao-cao"
+            href="/admin/ktdbcl/phan-tich-thkq"
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/20 text-white transition-all backdrop-blur-sm shadow-sm hover:scale-105 group"
           >
             <BarChart3 className="w-4 h-4 text-teal-300 group-hover:scale-110 transition-transform" />
-            <span>Thống kê báo cáo & Tiến độ</span>
+            <span>Phân tích THKQ & Tiến độ</span>
             <ChevronRight className="w-3.5 h-3.5 text-white/70 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
@@ -3778,10 +3845,10 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                 </div>
               </div>
               <Link
-                href="/admin/ktdbcl/thong-ke-bao-cao"
+                href="/admin/ktdbcl/phan-tich-thkq"
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#005B58] hover:bg-[#004845] text-white font-bold text-xs shrink-0 shadow-sm transition-all"
               >
-                <span>Xem Thống kê báo cáo</span>
+                <span>Mở Phân tích THKQ</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -3790,15 +3857,43 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
             <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
               {/* Dòng 1: Bộ lọc chính */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-[#005B58]/10 text-[#005B58] flex items-center justify-center">
-                    <BookOpen className="w-4 h-4" />
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#005B58]/10 text-[#005B58] flex items-center justify-center">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-black text-slate-800 tracking-tight flex items-center gap-2">
+                        <span className="text-[#005B58]">[{currentYearName}]</span> Sổ điểm
+                      </h2>
+                      <p className="text-[11px] text-slate-500">Quản lý và nhập bảng điểm điện tử học sinh • Đang chọn: <strong className="text-[#003B3A]">{savePeriodMeta.full}</strong></p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-base font-black text-slate-800 tracking-tight flex items-center gap-2">
-                      <span className="text-[#005B58]">[{currentYearName}]</span> Sổ điểm
-                    </h2>
-                    <p className="text-[11px] text-slate-500">Quản lý và nhập bảng điểm điện tử học sinh</p>
+
+                  {/* Bộ chọn nhanh Học kỳ 1 / Học kỳ 2 ngay tại thanh nhập điểm */}
+                  <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-[#E2E8F0] tabular-nums">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSemester(1)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        activeSemester === 1
+                          ? "bg-[#003B3A] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Học kỳ 1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSemester(2)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        activeSemester === 2
+                          ? "bg-[#003B3A] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Học kỳ 2
+                    </button>
                   </div>
                 </div>
 
@@ -3868,10 +3963,11 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                     type="button"
                     onClick={handleSaveGradeSheet}
                     disabled={savingEntries}
-                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#005B58] hover:bg-[#004845] text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                    title={`Lưu sổ điểm ${savePeriodMeta.full}`}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#003B3A] hover:bg-[#002B2A] text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
                   >
-                    {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                    Lưu Sổ Điểm
+                    {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-[#5EEAD4]" />}
+                    {savingEntries ? "Đang lưu..." : `Lưu điểm ${savePeriodMeta.short}`}
                   </button>
                 </div>
               </div>
@@ -4153,6 +4249,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                   classObj={currentClass}
                   subjectObj={currentSubject}
                   evaluationPeriod={selectedPeriod}
+                  onChangePeriod={(nextP) => setSelectedPeriod(nextP)}
                   teacherName={assignedTeacher || "Chưa phân công"}
                   roleLabel="Quản trị viên (Bạn có quyền nhập điểm)"
                   config={gradeSheetData.config}
@@ -4645,6 +4742,8 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           academicYears={academicYears}
           activeYearId={selectedYearId}
           isSubjectScoped={isSubjectScoped}
+          externalSemester={termTabSemester}
+          onExternalSemesterChange={setTermTabSemester}
         />
       )}
     

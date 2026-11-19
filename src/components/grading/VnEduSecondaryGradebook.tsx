@@ -479,7 +479,7 @@ export function VnEduSecondaryGradebook({
                 type="button"
                 onClick={() => {
                   setViewMode(sem.code)
-                  if (onChangePeriod && sem.code !== "CN") {
+                  if (onChangePeriod) {
                     onChangePeriod(sem.targetPeriod)
                   }
                 }}
@@ -620,10 +620,11 @@ export function VnEduSecondaryGradebook({
               type="button"
               disabled={isLocked || saving}
               onClick={onSave}
+              title={`Lưu sổ điểm ${semesterDisplayTitle}`}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#003B3A] hover:bg-[#002B2A] text-white rounded-xl font-semibold shadow-xs transition-colors disabled:opacity-50"
             >
               <Check className="w-3.5 h-3.5 text-[#5EEAD4]" />
-              {saving ? "Đang lưu..." : "Lưu"}
+              {saving ? "Đang lưu..." : viewMode === "CN" ? "Lưu điểm Cả năm" : `Lưu điểm ${viewMode}`}
             </button>
           )}
         </div>

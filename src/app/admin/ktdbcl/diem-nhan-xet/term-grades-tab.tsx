@@ -69,6 +69,8 @@ export interface TermGradesTabProps {
   isHomeroomView?: boolean
   homeroomClasses?: any[]
   isSubjectScoped?: boolean
+  externalSemester?: "HK1" | "HK2" | "CN"
+  onExternalSemesterChange?: (sem: "HK1" | "HK2" | "CN") => void
 }
 
 interface StudentRow {
@@ -143,7 +145,9 @@ export function TermGradesTab({
   initialClassId,
   isHomeroomView = false,
   homeroomClasses = [],
-  isSubjectScoped = false
+  isSubjectScoped = false,
+  externalSemester,
+  onExternalSemesterChange,
 }: TermGradesTabProps) {
   // If isHomeroomView and homeroomClasses provided, prioritize homeroomClasses
   const effectiveClasses = useMemo(() => {
@@ -159,7 +163,16 @@ export function TermGradesTab({
   const [selectedClassId, setSelectedClassId] = useState<string>(
     initialClassId || (effectiveClasses[0]?.id ?? "")
   )
-  const [selectedSemester, setSelectedSemester] = useState<"HK1" | "HK2" | "CN">("HK1")
+  const [selectedSemester, setSelectedSemesterState] = useState<"HK1" | "HK2" | "CN">(externalSemester || "HK1")
+  const setSelectedSemester = (nextSem: "HK1" | "HK2" | "CN") => {
+    setSelectedSemesterState(nextSem)
+    onExternalSemesterChange?.(nextSem)
+  }
+  useEffect(() => {
+    if (externalSemester && externalSemester !== selectedSemester) {
+      setSelectedSemesterState(externalSemester)
+    }
+  }, [externalSemester])
   const [searchQuery, setSearchQuery] = useState<string>("")
 
   // Subject Config Modal & Configs by level_grade key
@@ -1234,7 +1247,7 @@ export function TermGradesTab({
               className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
             >
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span>Lưu bảng điểm</span>
+              <span>Lưu bảng điểm {selectedSemester === "CN" ? "Cả năm" : selectedSemester}</span>
             </button>
 
             <button

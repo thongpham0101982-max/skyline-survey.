@@ -33,6 +33,7 @@ export interface VnEduPrimaryGradebookProps {
   classObj: any
   subjectObj: any
   evaluationPeriod: string
+  onChangePeriod?: (nextPeriod: string) => void
   teacherName: string
   roleLabel?: string
   isLocked?: boolean
@@ -246,6 +247,7 @@ export function VnEduPrimaryGradebook({
   classObj,
   subjectObj,
   evaluationPeriod,
+  onChangePeriod,
   teacherName,
   roleLabel = "Bạn có quyền nhập điểm",
   isLocked = false,
@@ -656,6 +658,32 @@ export function VnEduPrimaryGradebook({
       {/* DÒNG 1: THANH CÔNG CỤ SỔ NHẬN XÉT CHUẨN VNEDU TIỂU HỌC */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-3">
+          {onChangePeriod && (
+            <>
+              {/* Bộ chọn Học kỳ nhanh: Học kỳ 1 | Học kỳ 2 */}
+              <div className="inline-flex items-center gap-1 bg-[#F8FAFC] p-1 rounded-xl border border-[#E2E8F0]">
+                {[
+                  { sem: 1 as const, label: "Học kỳ 1", targetPeriod: periodMeta.isMidterm ? "GK1" : "CK1" },
+                  { sem: 2 as const, label: "Học kỳ 2", targetPeriod: periodMeta.isMidterm ? "GK2" : "CK2" },
+                ].map((item) => (
+                  <button
+                    key={item.sem}
+                    type="button"
+                    onClick={() => onChangePeriod(item.targetPeriod)}
+                    className={`px-3 py-1 rounded-lg font-semibold transition-colors ${
+                      periodMeta.semesterNumber === item.sem
+                        ? "bg-[#003B3A] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <span className="text-slate-300">|</span>
+            </>
+          )}
+
           <span className="font-bold text-[#003B3A] flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-[#008B85]" />
             Danh mục nhận xét:
@@ -768,10 +796,11 @@ export function VnEduPrimaryGradebook({
               type="button"
               disabled={isLocked || saving}
               onClick={onSave}
+              title={`Lưu sổ điểm ${periodMeta.semesterLabel} (${periodMeta.periodShortLabel})`}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#003B3A] hover:bg-[#002B2A] text-white rounded-xl font-semibold shadow-xs transition-colors disabled:opacity-50"
             >
               <Check className="w-3.5 h-3.5 text-[#5EEAD4]" />
-              {saving ? "Đang lưu..." : "Lưu"}
+              {saving ? "Đang lưu..." : `Lưu điểm HK${periodMeta.semesterNumber} (${periodMeta.periodCode})`}
             </button>
           )}
         </div>
