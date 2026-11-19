@@ -475,7 +475,7 @@ export async function POST(req) {
              continue;
           }
 
-          // Query danh sách học sinh theo đợt & phạm vi phân công của giáo viên
+          // Query danh sách học sinh theo đợt & phạm vi phân công của giáo viên (đồng bộ logic với UI getAssignedStudentsForGroup)
           const gradeList = Array.from(group.grades as Set<string>);
           const studentWhere: any = {
              periodId: group.periodId
@@ -483,21 +483,8 @@ export async function POST(req) {
           if (group.batchId) {
              studentWhere.batchId = group.batchId;
           }
-          const hasAllGrades = gradeList.some((g) => String(g || "").trim().toLowerCase() === "tất cả");
-          if (gradeList.length > 0 && !hasAllGrades) {
-              const gradeConditions = new Set<string>();
-              for (const g of gradeList) {
-                 gradeConditions.add(String(g));
-                 gradeConditions.add(`Khối ${g}`);
-                 gradeConditions.add(`K${g}`);
-                 if (String(g).startsWith("Khối ")) {
-                    gradeConditions.add(String(g).replace("Khối ", "").trim());
-                 }
-              }
-              studentWhere.grade = { in: Array.from(gradeConditions) };
-           }
 
-          const rawStudents = await (prisma as any).inputAssessmentStudent.findMany({
+          const allScopeStudents = await (prisma as any).inputAssessmentStudent.findMany({
              where: studentWhere,
              select: {
                 id: true,
@@ -514,13 +501,33 @@ export async function POST(req) {
              ]
           });
 
-          const eduSystemList = Array.from(group.educationSystems as Set<string>);
-          const matchedStudents = rawStudents.filter((st: any) => {
-             if (eduSystemList.length === 0) return true;
-             const sSys = (st.surveySystem || st.surveyFormType || "").toUpperCase();
+          const normalizeGrade = (g: any) =>
+             String(g || "").toLowerCase().replace(/^khối\s*/i, "").replace(/^k(?=\d)/i, "").trim();
+          const normalizedGrades = gradeList.map(normalizeGrade).filter(Boolean);
+          const hasAllGrades = normalizedGrades.length === 0 || normalizedGrades.includes("tất cả");
+
+          const eduSystemList = Array.from(group.educationSystems as Set<string>)
+             .map((s) => String(s || "").trim().toUpperCase())
+             .filter(Boolean);
+          const DELIVERY_FORM_TYPES = new Set(["OFFLINE", "ONLINE", "TRỰC TIẾP", "TRỰC TUYẾN"]);
+
+          const strictMatched = allScopeStudents.filter((st: any) => {
+             const stG = normalizeGrade(st.grade);
+             const matchGrade = hasAllGrades || normalizedGrades.includes(stG);
+             if (!matchGrade) return false;
+
+             if (eduSystemList.length === 0 || eduSystemList.includes("TẤT CẢ")) return true;
+             const primarySys = String(st.surveySystem || "").trim().toUpperCase();
+             const fallbackForm = String(st.surveyFormType || "").trim().toUpperCase();
+             const sSys = primarySys || (DELIVERY_FORM_TYPES.has(fallbackForm) ? "" : fallbackForm);
              if (!sSys) return true;
-             return eduSystemList.some((sys: string) => sSys.includes(sys.toUpperCase()) || sys.toUpperCase().includes(sSys));
+             return eduSystemList.some((sys: string) => sSys.includes(sys) || sys.includes(sSys));
           });
+
+          const matchedStudents =
+             strictMatched.length === 0 && group.batchId && allScopeStudents.length > 0
+                ? allScopeStudents
+                : strictMatched;
           
           const itemsArray = Object.values(group.items);
           const hasOrientation = itemsArray.some((item: any) => {
