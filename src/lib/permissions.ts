@@ -254,6 +254,16 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
     readableModules.add("DIEU_HANH_KHAO_SAT")
   }
 
+  if (
+    readableModules.has("MANAGE_CLASSES") ||
+    readableModules.has("STUDENT_TRANSFERS") ||
+    isGiaoVuEntranceRole(upper) ||
+    isGdcsOrBghEntranceRole(upper) ||
+    isKtdbclEntranceRole(upper)
+  ) {
+    readableModules.add("STUDENT_NAME_REQUESTS")
+  }
+
   if (readableModules.has("STUDENT_INFO_K12")) {
     readableModules.add("KET_QUA_KHAO_SAT")
     readableModules.add("KQKS_K12")

@@ -363,6 +363,7 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
       { code: "SUBJECTS", name: "Quản lý môn học", icon: BookOpen, href: "/admin/subjects" },
       { code: "ACADEMIC_YEARS", name: "Năm học & Học kỳ", icon: Calendar, href: "/admin/academic-years" },
       { code: "MANAGE_CLASSES", name: "Quản lý Lớp học", icon: Layers, href: "/admin/classes" },
+      { code: "STUDENT_NAME_REQUESTS", name: "Yêu cầu đổi tên HS", icon: UserPen, href: "/admin/yeu-cau-doi-ten" },
       { code: "ASSIGNMENTS", name: "Phân công giảng dạy", icon: Layout, href: "/admin/teaching-assignments" },
       {
         code: "TIMETABLE",
@@ -381,7 +382,6 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
       },
       { code: "TEACHING_PLAN", name: "Kế hoạch dạy học", icon: BookOpen, href: "/admin/ke-hoach-day-hoc" },
       { code: "STUDENT_TRANSFERS", name: "Quản lý HS lưu chuyển", icon: ArrowRightLeft, href: "/admin/student-transfers" },
-      { code: "STUDENT_NAME_REQUESTS", name: "Yêu cầu đổi tên HS", icon: UserPen, href: "/admin/yeu-cau-doi-ten" },
       { code: "MONTHLY_ENROLLMENT", name: "Theo dõi Sỹ số Tháng", icon: TrendingUp, href: "/admin/sy-so" },
       { code: "DESTINATION_SCHOOLS", name: "Danh mục Trường học", icon: Building2, href: "/admin/truong-lien-ket" },
       { code: "TEACHER_TRANSFERS", name: "Kết chuyển Nhân sự", icon: RefreshCcw, href: "/admin/teacher-transfers" },

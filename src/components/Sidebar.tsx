@@ -178,6 +178,16 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     if (module === "TEACHER_TRANSFERS") {
       hasParent = hasParent || permissionModules?.includes("TEACHERS") || permissionModules?.includes("STUDENT_TRANSFERS") || false
     }
+    if (module === "STUDENT_NAME_REQUESTS") {
+      hasParent =
+        hasParent ||
+        isGDCS ||
+        isGiaoVu ||
+        isKtdbcl ||
+        permissionModules?.includes("MANAGE_CLASSES") ||
+        permissionModules?.includes("STUDENT_TRANSFERS") ||
+        false
+    }
     if (
       module === "COMPETENCY_IMPORT" ||
       module === "COMPETENCY_SUBJECTS" ||
