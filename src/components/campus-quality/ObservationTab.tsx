@@ -2,6 +2,16 @@
 
 import React, { useState } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { ObservationTabPayload } from "@/lib/campus-quality/types"
 
 interface ObservationTabProps {
@@ -14,6 +24,13 @@ export function ObservationTab({ data, onOpenDrilldown }: ObservationTabProps) {
     data.departments[0]?.departmentId || null
   )
   const [showUnobservedOnly, setShowUnobservedOnly] = useState(false)
+
+  const deptChartData = data.departments.map((d) => ({
+    name: d.departmentName.length > 22 ? `${d.departmentName.slice(0, 22)}…` : d.departmentName,
+    observed: d.observedLessons,
+    plan: d.plannedLessons,
+    compliant: d.compliantTeachers,
+  }))
 
   return (
     <div className="space-y-5">
@@ -64,6 +81,29 @@ export function ObservationTab({ data, onOpenDrilldown }: ObservationTabProps) {
           <div className="text-[11px] text-rose-700 mt-1">Mở danh sách chờ duyệt</div>
         </button>
       </div>
+
+      {/* Biểu đồ tiến độ dự giờ theo Tổ chuyên môn */}
+      {!showUnobservedOnly && deptChartData.length > 0 && (
+        <section className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5">
+          <h3 className="text-sm font-semibold text-[#003B3A] mb-3">
+            Biểu đồ tiến độ dự giờ theo tổ chuyên môn · {data.monthLabel}
+          </h3>
+          <div className="h-60">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={deptChartData} margin={{ top: 8, right: 16, left: -12, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#475569" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, borderColor: "#E2E8F0" }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="observed" name="Tiết đã dự giờ" fill="#003B3A" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="plan" name="Kế hoạch tiết" fill="#CBD5E1" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="compliant" name="GV dạy theo quy định" fill="#059669" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
 
       {showUnobservedOnly ? (
         <section className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">

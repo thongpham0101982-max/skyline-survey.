@@ -1,6 +1,17 @@
 "use client"
 
 import React, { useState } from "react"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { AdmissionsMobilityTabPayload } from "@/lib/campus-quality/types"
 
 interface AdmissionsMobilityTabProps {
@@ -14,6 +25,21 @@ export function AdmissionsMobilityTab({ data, onOpenDrilldown }: AdmissionsMobil
   const filteredMobility = data.mobilityRows.filter((r) =>
     mobilityFilter === "ALL" ? true : r.movementType === mobilityFilter
   )
+
+  const batchChartData = data.batchGradeRows.slice(0, 12).map((r) => ({
+    label: `${r.batchName} (K${r.targetGrade})`,
+    surveyed: r.surveyedCount,
+    passed: r.passedCount,
+    enrolled: r.enrolledCount,
+  }))
+
+  const mobilityBreakdownChart = [
+    { name: "Nhập mới", value: data.mobilitySummary.newEnrollments, color: "#003B3A" },
+    { name: "Ngoài đến", value: data.mobilitySummary.externalIn, color: "#059669" },
+    { name: "Nội bộ đến", value: data.mobilitySummary.internalIn, color: "#00A19A" },
+    { name: "Ngoài đi", value: data.mobilitySummary.externalOut, color: "#E11D48" },
+    { name: "Nội bộ đi", value: data.mobilitySummary.internalOut, color: "#D97706" },
+  ]
 
   const badgeTone = (type: string) => {
     if (type === "NEW_ENROLLMENT") return "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -72,6 +98,50 @@ export function AdmissionsMobilityTab({ data, onOpenDrilldown }: AdmissionsMobil
           </div>
           <div className="text-[11px] text-amber-700 mt-1">Tháng hiện tại cần xử lý</div>
         </button>
+      </div>
+
+      {/* Biểu đồ trực quan Tuyển sinh & Cơ cấu Biến động */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <section className="lg:col-span-7 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5">
+          <h3 className="text-sm font-semibold text-[#003B3A] mb-3">
+            Biểu đồ tuyển sinh theo đợt & khối dự kiến
+          </h3>
+          <div className="h-60">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={batchChartData} margin={{ top: 8, right: 12, left: -12, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#475569" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, borderColor: "#E2E8F0" }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="surveyed" name="Đã khảo sát" fill="#003B3A" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="passed" name="Đạt (đã duyệt)" fill="#059669" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="enrolled" name="Đã nhập học" fill="#00A19A" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        <section className="lg:col-span-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5">
+          <h3 className="text-sm font-semibold text-[#003B3A] mb-3">
+            Cơ cấu biến động (Nhập mới · Ngoài · Nội bộ Sky-Line)
+          </h3>
+          <div className="h-60">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={mobilityBreakdownChart} margin={{ top: 8, right: 12, left: -12, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#475569" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, borderColor: "#E2E8F0" }} />
+                <Bar dataKey="value" name="Lượt biến động" radius={[4, 4, 0, 0]} barSize={32}>
+                  {mobilityBreakdownChart.map((entry, idx) => (
+                    <Cell key={idx} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
       </div>
 
       {/* Bảng theo Đợt tuyển sinh × Khối dự kiến */}

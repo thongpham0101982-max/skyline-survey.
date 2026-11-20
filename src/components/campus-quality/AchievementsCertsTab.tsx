@@ -2,6 +2,16 @@
 
 import React, { useState } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { AchievementsCertsTabPayload } from "@/lib/campus-quality/types"
 
 interface AchievementsCertsTabProps {
@@ -13,6 +23,13 @@ export function AchievementsCertsTab({ data }: AchievementsCertsTabProps) {
     data.exams[0]?.examId || null
   )
   const [expandedClassKey, setExpandedClassKey] = useState<string | null>(null)
+
+  const examChartData = data.exams.slice(0, 10).map((ex) => ({
+    name: ex.examName.length > 26 ? `${ex.examName.slice(0, 26)}…` : ex.examName,
+    sat: ex.satCount,
+    awarded: ex.awardedCount,
+    certs: ex.certificatesIssuedCount,
+  }))
 
   return (
     <div className="space-y-5">
@@ -49,6 +66,29 @@ export function AchievementsCertsTab({ data }: AchievementsCertsTabProps) {
           </div>
         </div>
       </div>
+
+      {/* Biểu đồ tổng quan theo kỳ thi */}
+      {examChartData.length > 0 && (
+        <section className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5">
+          <h3 className="text-sm font-semibold text-[#003B3A] mb-3">
+            Biểu đồ dự thi, đạt giải và chứng chỉ theo kỳ thi
+          </h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={examChartData} margin={{ top: 8, right: 16, left: -12, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#475569" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, borderColor: "#E2E8F0" }} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="sat" name="Dự thi" fill="#003B3A" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="awarded" name="Đạt giải / Mục tiêu" fill="#059669" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="certs" name="Chứng chỉ đã cấp" fill="#00A19A" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
 
       {/* Bảng phân cấp: Kỳ thi → Khối/Lớp → Học sinh */}
       <section className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
