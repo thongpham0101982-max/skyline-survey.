@@ -90,7 +90,9 @@ const APPROVER_ROLES = new Set([
   "GDCS",
   "GIAO_VU",
   "GVU",
+  "KHAO_THI",
   "KTDBCL",
+  "TBP",
   "TRUONG_BAN",
   "LANH_DAO",
 ])

@@ -145,7 +145,8 @@ export function StudentNameRequestsClient() {
   const [formNewName, setFormNewName] = useState("")
   const [formReason, setFormReason] = useState("")
 
-  // Reject Modal state
+  // Approve & Reject Modal state
+  const [approveTargets, setApproveTargets] = useState<NameChangeItem[] | null>(null)
   const [rejectTargetIds, setRejectTargetIds] = useState<string[] | null>(null)
   const [rejectReasonInput, setRejectReasonInput] = useState("")
 
@@ -401,13 +402,9 @@ export function StudentNameRequestsClient() {
     }
   }
 
-  const handleApprove = async (ids: string[]) => {
-    if (ids.length === 0) return
-    const msg =
-      ids.length === 1
-        ? "Xác nhận DUYỆT yêu cầu đổi tên này? Họ tên học sinh sẽ được cập nhật tự động trên hệ thống."
-        : `Xác nhận DUYỆT ${ids.length} yêu cầu đổi tên đã chọn? Họ tên học sinh sẽ được cập nhật tự động trên hệ thống.`
-    if (!confirm(msg)) return
+  const handleConfirmApprove = async () => {
+    if (!approveTargets || approveTargets.length === 0) return
+    const ids = approveTargets.map((i) => i.id)
 
     setSubmitting(true)
     try {
@@ -422,6 +419,7 @@ export function StudentNameRequestsClient() {
         return
       }
       toast.success(data.message || "Đã duyệt yêu cầu đổi tên.")
+      setApproveTargets(null)
       await fetchList()
     } catch {
       toast.error("Lỗi kết nối khi duyệt yêu cầu.")
@@ -665,16 +663,33 @@ export function StudentNameRequestsClient() {
             Xóa bỏ
           </button>
 
-          {canApprove && approvableSelected.length > 0 && (
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => handleApprove(approvableSelected.map((i) => i.id))}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-xs disabled:opacity-50"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Duyệt ({approvableSelected.length})
-            </button>
+          {canApprove && (
+            <>
+              <button
+                type="button"
+                disabled={approvableSelected.length === 0 || submitting}
+                onClick={() => setApproveTargets(approvableSelected)}
+                className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Chọn các yêu cầu Chờ duyệt để phê duyệt"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {approvableSelected.length > 0 ? `Duyệt (${approvableSelected.length})` : "Duyệt"}
+              </button>
+
+              <button
+                type="button"
+                disabled={approvableSelected.length === 0 || submitting}
+                onClick={() => {
+                  setRejectTargetIds(approvableSelected.map((i) => i.id))
+                  setRejectReasonInput("")
+                }}
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Chọn các yêu cầu Chờ duyệt để từ chối"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                Từ chối
+              </button>
+            </>
           )}
 
           <button
@@ -838,17 +853,18 @@ export function StudentNameRequestsClient() {
                         )}
                       </td>
                       <td className="py-3 px-3 text-center whitespace-nowrap align-middle">
-                        <div className="inline-flex items-center justify-center gap-1">
+                        <div className="inline-flex items-center justify-center gap-1.5">
                           {canApprove && item.status === "PENDING" && (
                             <>
                               <button
                                 type="button"
                                 disabled={submitting}
-                                onClick={() => handleApprove([item.id])}
-                                className="p-1.5 rounded-lg text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                onClick={() => setApproveTargets([item])}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition-colors shadow-xs disabled:opacity-50"
                                 title="Duyệt yêu cầu đổi tên"
                               >
-                                <CheckCircle2 className="w-4 h-4" />
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Duyệt
                               </button>
                               <button
                                 type="button"
@@ -857,10 +873,11 @@ export function StudentNameRequestsClient() {
                                   setRejectTargetIds([item.id])
                                   setRejectReasonInput("")
                                 }}
-                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-semibold transition-colors disabled:opacity-50"
                                 title="Từ chối yêu cầu"
                               >
-                                <XCircle className="w-4 h-4" />
+                                <XCircle className="w-3.5 h-3.5" />
+                                Từ chối
                               </button>
                             </>
                           )}
@@ -1163,6 +1180,74 @@ export function StudentNameRequestsClient() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xác nhận Phê duyệt yêu cầu */}
+      {approveTargets && approveTargets.length > 0 && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px] z-[70] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xl w-full max-w-lg overflow-hidden">
+            <div className="bg-[#003B3A] px-5 py-3.5 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#5EEAD4]" />
+                <h3 className="text-sm font-semibold">
+                  Phê duyệt yêu cầu đổi tên ({approveTargets.length})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApproveTargets(null)}
+                className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Sau khi phê duyệt, hệ thống sẽ tự động cập nhật họ tên học sinh trên danh sách lớp, hồ sơ học sinh và đồng bộ dữ liệu liên quan.
+              </p>
+
+              <div className="max-h-60 overflow-y-auto divide-y divide-[#E2E8F0] border border-[#E2E8F0] rounded-xl bg-[#F8FAFC] tabular-nums">
+                {approveTargets.map((t) => (
+                  <div key={t.id} className="p-3 text-xs space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-slate-800">{t.className}</span>
+                      <span className="font-mono text-[11px] text-slate-500">Mã HS: {t.studentCode}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="line-through text-slate-400">{t.oldName}</span>
+                      <span className="text-slate-400">→</span>
+                      <span className="font-semibold text-[#003B3A]">{t.newName}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Lý do: {t.reason}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#F1F5F9]">
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleConfirmApprove}
+                  className="inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {submitting ? "Đang duyệt..." : "Xác nhận duyệt"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setApproveTargets(null)}
+                  disabled={submitting}
+                  className="px-4 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
