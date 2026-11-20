@@ -130,6 +130,7 @@ model Campus {
   inputAssessmentBatches          InputAssessmentBatch[]
   inputAssessmentSessions         InputAssessmentSession[]
   preschoolInputAssessmentSessions PreschoolInputAssessmentSession[]
+  studentNameChangeRequests       StudentNameChangeRequest[]
 }
 
 model AcademicYear {
@@ -191,6 +192,7 @@ model AcademicYear {
   ctqtGradeEntries               CtqtGradeEntry[]
   ctqtCompetencyEntries          CtqtCompetencyEntry[]
   signableDocuments              SignableDocument[]
+  studentNameChangeRequests      StudentNameChangeRequest[]
 }
 
 model Class {
@@ -220,6 +222,7 @@ model Class {
   specialAssignments     SpecialTeachingAssignment[]
   signableDocuments      SignableDocument[]
   achievementRequests    StudentAchievementRequest[]
+  studentNameChangeRequests StudentNameChangeRequest[]
 
   @@index([campusId])
   @@index([academicYearId])
@@ -292,6 +295,7 @@ model Student {
   specialGradeEntries    SpecialGradeEntry[]
   specialProjectMembers  SpecialProjectMember[]
   signableDocuments      SignableDocument[]
+  nameChangeRequests     StudentNameChangeRequest[]
 
   @@unique([studentCode, academicYearId])
   @@unique([vnEduCode, academicYearId])
@@ -6801,6 +6805,42 @@ model KsdvExportMapping {
   @@unique([fileTemplateId, targetFormat, targetRef])
   @@index([fileTemplateId, sortOrder])
   @@map("ksdv_export_mappings")
+}
+
+model StudentNameChangeRequest {
+  id              String       @id @default(cuid())
+  academicYearId  String
+  campusId        String
+  grade           String
+  classId         String
+  studentId       String
+  studentCode     String
+  vnEduCode       String?
+  oldName         String
+  newName         String
+  reason          String
+  status          String       @default("PENDING") // PENDING | APPROVED | REJECTED
+  requestedById   String?
+  requestedByName String
+  updatedById     String?
+  updatedByName   String
+  approvedById    String?
+  approvedByName  String?
+  approvedAt      DateTime?
+  rejectReason    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  campus          Campus       @relation(fields: [campusId], references: [id])
+  class           Class        @relation(fields: [classId], references: [id])
+  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([academicYearId])
+  @@index([campusId])
+  @@index([classId])
+  @@index([studentId])
+  @@index([status])
 }
 
 

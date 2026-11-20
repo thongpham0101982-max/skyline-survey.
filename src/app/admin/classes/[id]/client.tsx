@@ -4,7 +4,7 @@ import { useState, useRef, useMemo } from "react"
 import { 
   Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save, Send, 
   RefreshCw, ArrowUpDown, Layers, ExternalLink, FileCode, ArrowRightLeft, 
-  Sparkles, CheckCircle2, AlertCircle, Check, FileSpreadsheet 
+  Sparkles, CheckCircle2, AlertCircle, Check, FileSpreadsheet, UserPen 
 } from "lucide-react"
 import * as xlsx from "xlsx"
 import { 
@@ -313,16 +313,19 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           const rawDate = findVal(row, ["ngày sinh", "ngay sinh", "dob", "birth"]);
           if (rawDate) {
             if (typeof rawDate === "number") {
-              const date = new Date(Math.round((rawDate - 25569)*86400*1000))
-              parsedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000)
+              parsedDate = new Date(Math.round((rawDate - 25569) * 86400 * 1000))
             } else if (typeof rawDate === "string") {
-              const parts = String(rawDate).split(/[\/\-]/);
+              const parts = String(rawDate).trim().split(/[\/\-]/);
               if (parts.length === 3) {
-                const d = parseInt(parts[0], 10);
-                const m = parseInt(parts[1], 10) - 1;
-                const y = parseInt(parts[2], 10);
-                if (parts[0].length === 4) parsedDate = new Date(String(rawDate));
-                else parsedDate = new Date(y, m, d);
+                const p0 = parseInt(parts[0], 10);
+                const p1 = parseInt(parts[1], 10);
+                const p2 = parseInt(parts[2], 10);
+                if (parts[0].length === 4) {
+                  parsedDate = new Date(Date.UTC(p0, p1 - 1, p2));
+                } else {
+                  const fullY = p2 < 100 ? 2000 + p2 : p2;
+                  parsedDate = new Date(Date.UTC(fullY, p1 - 1, p0));
+                }
               } else {
                 parsedDate = new Date(String(rawDate));
               }
@@ -489,6 +492,16 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
     }
   };
 
+  const formatStudentDobYmd = (raw: any) => {
+    if (!raw) return "";
+    const dt = new Date(raw);
+    if (isNaN(dt.getTime())) return "";
+    if (dt.getUTCHours() === 0 && dt.getUTCMinutes() === 0 && dt.getUTCSeconds() === 0 && dt.getUTCMilliseconds() === 0) {
+      return dt.toISOString().split("T")[0];
+    }
+    return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(dt);
+  };
+
   const openEdit = (s: any) => {
     setEditingStudent(s)
     setFormData({
@@ -496,7 +509,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
       vnEduCode: s.vnEduCode !== "—" ? s.vnEduCode || "" : "",
       studentName: s.studentName,
       gender: s.gender || "Nam",
-      dateOfBirth: s.dateOfBirth ? new Date(s.dateOfBirth).toISOString().split("T")[0] : "",
+      dateOfBirth: formatStudentDobYmd(s.dateOfBirth),
       status: s.status || "ACTIVE",
       studentType: s.studentType || "CHINH_KHOA",
       studentTypeNote: s.studentTypeNote || ""
@@ -762,6 +775,14 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
             <Sparkles className={`w-4 h-4 mr-1.5 text-sky-600 ${normalizingNames ? "animate-spin" : ""}`} />
             {normalizingNames ? "Đang chuẩn hóa..." : "Chuẩn hóa Họ & Tên"}
           </button>
+          <Link
+            href={`/admin/yeu-cau-doi-ten?classId=${classId}&action=new`}
+            className="flex items-center bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-300 font-semibold py-2 px-3.5 rounded-md transition-colors shadow-sm text-xs"
+            title="Lập yêu cầu đổi tên học sinh trong lớp này"
+          >
+            <UserPen className="w-4 h-4 mr-1.5 text-[#008B85]" />
+            Yêu cầu đổi tên
+          </Link>
           <button
             onClick={handleSyncSurveys}
             disabled={syncingSurveys}

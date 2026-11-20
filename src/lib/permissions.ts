@@ -55,6 +55,10 @@ export async function getRolePermissions(roleCode: string): Promise<any[]> {
     if (duGioPerm && !perms.some((p: any) => p.module === "TEACHING_PLAN")) {
       perms.push({ ...duGioPerm, module: "TEACHING_PLAN" })
     }
+    const manageClassesPerm = perms.find((p: any) => p.module === "MANAGE_CLASSES" || p.module === "STUDENT_TRANSFERS")
+    if (manageClassesPerm && !perms.some((p: any) => p.module === "STUDENT_NAME_REQUESTS")) {
+      perms.push({ ...manageClassesPerm, module: "STUDENT_NAME_REQUESTS" })
+    }
     const studentInfoPerm = perms.find((p: any) => p.module === "STUDENT_INFO")
     if (studentInfoPerm && !perms.some((p: any) => p.module === "KET_QUA_KHAO_SAT")) {
       perms.push({ ...studentInfoPerm, module: "KET_QUA_KHAO_SAT" })

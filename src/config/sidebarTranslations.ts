@@ -142,6 +142,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     TIMETABLE_ADJUST: { vi: "6. Điều chỉnh & Dạy thay", en: "6. Adjustments & Substitutions" },
     TIMETABLE_PUBLISH: { vi: "7. Duyệt & Ban hành", en: "7. Approval & Publishing" },
     STUDENT_TRANSFERS: { vi: "Quản lý HS lưu chuyển", en: "Student Transfers" },
+    STUDENT_NAME_REQUESTS: { vi: "Yêu cầu đổi tên HS", en: "Student Name Requests" },
     MONTHLY_ENROLLMENT: { vi: "Theo dõi Sỹ số Tháng", en: "Monthly Enrollment" },
     DESTINATION_SCHOOLS: { vi: "Danh mục Trường học", en: "Partner Schools" },
     TEACHER_TRANSFERS: { vi: "Kết chuyển Nhân sự", en: "Staff Transfers" },
