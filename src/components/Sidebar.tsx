@@ -85,7 +85,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [generalStudentCount, setGeneralStudentCount] = useState(0)
   const [specialSubjectCodes, setSpecialSubjectCodes] = useState<string[]>(assignedSpecialSubjects || [])
   const [loadingAssignments, setLoadingAssignments] = useState(true)
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, GRADEBOOK_REMARKS: true, COMPETENCY_ASSESSMENT: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true, OTHER: true })
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ ANALYTICS_HUB: true, SYSTEM_KPIS: true, SPECIAL_SUBJECTS: true, STUDENT_LOOKUP: true, KTDBCL: true, GRADEBOOK_REMARKS: true, COMPETENCY_ASSESSMENT: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true, OTHER: true })
   const [pendingSignatureCount, setPendingSignatureCount] = useState<number>(0)
   const [expandedTeacherGroups, setExpandedTeacherGroups] = useState<Record<string, boolean>>({
     GROUP_01: true,
@@ -144,6 +144,15 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     if (!module) return false
     
     let hasParent = permissionModules?.includes(module) || false
+    if (module === "CAMPUS_QUALITY_GOVERNANCE") {
+      hasParent =
+        hasParent ||
+        isKtdbcl ||
+        isGDCS ||
+        permissionModules?.includes("KTDBCL_PHAN_TICH_THKQ") ||
+        permissionModules?.includes("KTDBCL_GRADE_REMARKS") ||
+        false
+    }
     if (module === "KTDBCL_EXAMS") {
       hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
     }
@@ -508,7 +517,12 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     const rawSubModules = m.subModules || [];
                     const permittedSubModules = isSuperAdmin
                       ? rawSubModules
-                      : rawSubModules.filter((sub: any) => permissionModules?.includes(sub.code));
+                      : rawSubModules.filter((sub: any) =>
+                          permissionModules?.includes(sub.code) ||
+                          (sub.code === "PHAN_CONG_CHUYEN_HE" &&
+                            (permissionModules?.includes("PHAN_CONG_K12") ||
+                              permissionModules?.includes("PHAN_CONG_KHAO_SAT")))
+                        );
                     const effectiveSubModules = permittedSubModules.length > 0 ? permittedSubModules : rawSubModules;
                     const hasSubModules = !isCollapsed && effectiveSubModules.length > 0;
                     const effectiveHref =

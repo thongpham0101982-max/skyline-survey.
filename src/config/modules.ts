@@ -71,6 +71,20 @@ export const WORKHUB_MODULE_CODES = [
 
 export const APP_CATEGORIES: AppCategoryItem[] = [
   {
+    id: "ANALYTICS_HUB",
+    name: "Phân tích tổng hợp",
+    color: "teal",
+    icon: LayoutDashboard,
+    modules: [
+      {
+        code: "CAMPUS_QUALITY_GOVERNANCE",
+        name: "Quản trị chất lượng theo cơ sở",
+        icon: BarChart3,
+        href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-co-so",
+      },
+    ],
+  },
+  {
     id: "SYSTEM_KPIS",
     name: "KPIs Hệ thống",
     color: "teal",
@@ -428,7 +442,8 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         href: "/admin/phan-cong-khao-sat",
         subModules: [
           { code: "PHAN_CONG_K12", name: "Phân công K-12", href: "/admin/phan-cong-khao-sat?tab=k12" },
-          { code: "PHAN_CONG_MAM_NON", name: "Phân công Mầm non", href: "/admin/phan-cong-khao-sat?tab=preschool" }
+          { code: "PHAN_CONG_MAM_NON", name: "Phân công Mầm non", href: "/admin/phan-cong-khao-sat?tab=preschool" },
+          { code: "PHAN_CONG_CHUYEN_HE", name: "Phân công Chuyển hệ", href: "/admin/phan-cong-khao-sat?tab=transfer" }
         ]
       },
       {

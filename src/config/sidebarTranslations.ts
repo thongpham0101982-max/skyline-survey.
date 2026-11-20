@@ -10,6 +10,7 @@ export interface SidebarTranslations {
 
 export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
   categories: {
+    ANALYTICS_HUB: { vi: "Phân tích tổng hợp", en: "Integrated Analytics" },
     SYSTEM_KPIS: { vi: "KPIs Hệ thống", en: "System KPIs" },
     SYSTEM: { vi: "Hệ thống", en: "System Administration" },
     KTDBCL: { vi: "Khảo thí & ĐBCL", en: "Testing & Quality Assurance" },
@@ -27,6 +28,12 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     OTHER: { vi: "QA Workspace • KT&ĐBCL", en: "QA Workspace • KT&ĐBCL" },
   },
   modules: {
+    // ANALYTICS_HUB
+    CAMPUS_QUALITY_GOVERNANCE: {
+      vi: "Quản trị chất lượng theo cơ sở",
+      en: "Campus Quality Governance",
+    },
+
     // SYSTEM_KPIS
     KPI_PHAM_CHAT_TU_HAO: {
       vi: "Phẩm chất HS & Tự hào Sky-Line",
@@ -70,12 +77,21 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     KTDBCL_SUPPORT: { vi: "Hỗ trợ học tập", en: "Academic Support" },
     KTDBCL_GRADE_REMARKS: { vi: "Sổ điểm Vnedu", en: "VnEdu Gradebook & Remarks" },
     KTDBCL_GRADE_CTQT: { vi: "Sổ điểm CTQT", en: "International Gradebook (CTQT)" },
-    KTDBCL_THONG_KE_BAO_CAO: { vi: "Thống kê báo cáo", en: "Statistics & Reports" },
-    KTDBCL_TK_DIEM_TB: { vi: "1. ĐTB các môn & Phổ điểm", en: "1. Subject Averages & Distribution" },
-    KTDBCL_TK_TIEN_DO: { vi: "2. Giám sát: Tiến độ nhập điểm", en: "2. Grade Entry Progress" },
-    KTDBCL_TK_DUYET_MO_SO: { vi: "3. Duyệt yêu cầu mở sổ điểm", en: "3. Gradebook Unlock Requests" },
-    KTDBCL_TK_PHAN_HOI: { vi: "4. Tổng hợp: Phản hồi PHHS & Trao đổi", en: "4. Parent Feedback & Dialogue" },
+    KTDBCL_THONG_KE_BAO_CAO: { vi: "Thống kê báo cáo", en: "Unlock Requests & Parent Feedback" },
+    KTDBCL_TK_DUYET_MO_SO: { vi: "1. Duyệt yêu cầu mở sổ điểm", en: "1. Gradebook Unlock Requests" },
+    KTDBCL_TK_PHAN_HOI: { vi: "2. Phản hồi PHHS & Trao đổi", en: "2. Parent Feedback & Dialogue" },
+    KTDBCL_TK_HS_CAM_KET: { vi: "3. Học sinh cam kết đầu vào", en: "3. Entrance Commitment Students" },
     KTDBCL_PHAN_TICH_THKQ: { vi: "Phân tích Tổng hợp Kết quả (THKQ)", en: "Integrated Results Analytics (THKQ)" },
+    KTDBCL_THKQ_KT_DINH_KY: { vi: "1. TK kết quả kiểm tra định kỳ", en: "1. Periodic Test Results (vnEdu)" },
+    KTDBCL_THKQ_CHAT_LUONG_GV: { vi: "2. Chất lượng KT theo giáo viên", en: "2. Test Quality by Teacher" },
+    KTDBCL_THKQ_DIEM_TB: { vi: "3. ĐTB theo môn, khối, cơ sở", en: "3. Averages by Subject, Grade & Campus" },
+    KTDBCL_THKQ_KHOANG_DIEM: { vi: "4. Phân phối theo khoảng điểm", en: "4. Score Range Distribution" },
+    KTDBCL_THKQ_TONG_HOP_HE_THONG: { vi: "5. Thống kê cơ bản", en: "5. Basic Statistics" },
+    KTDBCL_THKQ_HS_CAM_KET: { vi: "6. Học sinh cam kết đầu vào", en: "6. Entrance Commitment Students" },
+    KTDBCL_GIAM_SAT_TIEN_DO: { vi: "Giám sát tiến độ nhập điểm", en: "Grade Entry Progress Monitor" },
+    KTDBCL_GSTD_HS_THIEU_DIEM: { vi: "1. Thống kê học sinh thiếu điểm", en: "1. Students Missing Grades" },
+    KTDBCL_GSTD_TINH_HINH_NHAP: { vi: "2. Thống kê tình hình nhập điểm", en: "2. Grade Entry Status" },
+    KTDBCL_THKQ_GIAM_SAT_NHAP: { vi: "Giám sát tiến độ nhập điểm", en: "Grade Entry Progress Monitor" },
     KTDBCL_XUAT_BANG_DIEM: { vi: "Xuất bảng điểm", en: "Export Report Cards" },
 
     // COMPETENCY_ASSESSMENT (QL ĐG Năng lực)
