@@ -149,7 +149,7 @@ export default function PreschoolWorkflowClient() {
             Phân hệ Khảo sát đầu vào · Quy trình Mầm non 2026 (B1–B13)
           </p>
           <h1 className="text-xl font-bold text-[#003B3A] mt-0.5">
-            Khảo sát đầu vào Mầm non
+            Điều phối Khảo sát Mầm non
           </h1>
           <p className="text-xs text-slate-600 mt-1">
             Quản lý trọn vòng đời từ tiếp nhận lịch (B1–B3), Y tế (B4A), đánh giá BM.KTĐBCL (B5/B4B), sàng lọc tâm lý BM.KTĐBCL.09 & hẹn trải nghiệm (B7–B8), phê duyệt B10 đến xuất thư BM.KTĐBCL.17/04 & lưu hồ sơ (B11–B13).

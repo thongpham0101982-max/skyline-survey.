@@ -83,6 +83,24 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         icon: BarChart3,
         href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-co-so",
       },
+      {
+        code: "TEACHER_QUALITY_GOVERNANCE",
+        name: "Quản trị chất lượng giáo viên",
+        icon: GraduationCap,
+        href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-giao-vien",
+        subModules: [
+          {
+            code: "TEACHER_QUALITY_MONTHLY_OBS",
+            name: "Thành tích & Bồi dưỡng GV · Dự giờ theo tháng",
+            href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-giao-vien?section=du-gio-thang",
+          },
+          {
+            code: "TEACHER_QUALITY_COACHING",
+            name: "Nội dung bồi dưỡng GV",
+            href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-giao-vien?section=boi-duong",
+          },
+        ],
+      },
     ],
   },
   {
@@ -429,7 +447,7 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
       },
       {
         code: "KHAO_SAT_MAM_NON",
-        name: "Mầm non",
+        name: "Điều phối Khảo sát Mầm non",
         icon: ClipboardList,
         href: "/admin/khao-sat-mam-non"
       },
