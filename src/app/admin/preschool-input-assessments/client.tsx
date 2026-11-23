@@ -4192,29 +4192,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               >
                 <Upload className="w-3.5 h-3.5" /> {importing ? "Đang import..." : "Nhập Excel"}
               </button>
-              <button 
-                onClick={() => {
-                  if (cPeriodId) {
-                    openAddBatch(cPeriodId);
-                  }
-                }} 
-                disabled={!cPeriodId} 
-                className="flex items-center gap-1.5 h-9 px-3.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 text-slate-500" /> Tạo đợt
-              </button>
-              <button
-                type="button"
-                onClick={() => openPreschoolHandoverModal(cPeriodId && cPeriodId !== "all" ? cPeriodId : undefined, cBatchId || undefined)}
-                className="flex items-center gap-1.5 h-9 px-3.5 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-xs transition-all cursor-pointer"
-                title="Bàn giao tới Giáo vụ: Gửi thông tin Danh sách trẻ theo đợt Khảo sát đến Giáo vụ để Phân công Khảo sát"
-              >
-                <Mail className="w-3.5 h-3.5" /> Bàn giao tới Giáo vụ
-              </button>
               <button
                 onClick={openAddChild}
                 disabled={periods.length === 0}
-                className="flex items-center gap-1.5 h-9 px-4 text-xs font-semibold text-white bg-[#00736E] hover:bg-[#005f5b] rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 h-9 px-4 text-xs font-semibold text-white bg-[#003B3A] hover:bg-[#005854] rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer active:scale-95"
               >
                 <Plus className="w-4 h-4" /> Thêm mới
               </button>
