@@ -199,14 +199,15 @@ function Field({ label, required, children }: any) {
 
 const xetDuyetCols = [
   { id: "stt", label: "#", width: "w-10 min-w-[40px] max-w-[40px] sticky left-0 z-20 text-center" },
-  { id: "fullName", label: "Họ và tên", width: "w-[160px] min-w-[160px] max-w-[160px] sticky left-10 z-20 whitespace-normal" },
+  { id: "fullName", label: "Họ và tên", width: "w-[170px] min-w-[170px] max-w-[170px] sticky left-10 z-20 whitespace-normal" },
   { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
-  { id: "admissionCampus", label: "Cơ sở", width: "w-24 min-w-[96px]" },
-  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[140px] min-w-[140px]" },
-  { id: "bghApproval", label: "BGH MN duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
-  { id: "gdcsApproval", label: "GĐCS duyệt", width: "w-[148px] min-w-[148px] whitespace-normal" },
-  { id: "result", label: "Kết quả", width: "w-[110px] min-w-[110px]" },
-  { id: "pcgv", label: "Phân lớp học thử", width: "w-[160px] min-w-[160px] whitespace-normal" }
+  { id: "admissionCampus", label: "Cơ sở", width: "w-20 min-w-[80px]" },
+  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[116px] min-w-[116px] text-center" },
+  { id: "bghApproval", label: "1. BGH MN duyệt", width: "w-[156px] min-w-[156px] whitespace-normal" },
+  { id: "trialAssign", label: "2. Phân công học thử", width: "w-[162px] min-w-[162px] whitespace-normal" },
+  { id: "trialResult", label: "2. Kết quả học thử", width: "w-[172px] min-w-[172px] whitespace-normal" },
+  { id: "gdcsApproval", label: "3. GĐCS duyệt", width: "w-[156px] min-w-[156px] whitespace-normal" },
+  { id: "result", label: "Kết quả", width: "w-[128px] min-w-[128px] whitespace-normal" }
 ];
 
 const assessCols = [
@@ -377,6 +378,79 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const showBghSection = true;
   const showGdcsSection = true;
 
+  const getPreschoolRowWorkflowState = (s: any) => {
+    const bghRaw = String(s.bghApprovalStatus || "").trim().toUpperCase();
+    const gdcsRaw = String(s.gdcsApprovalStatus || "").trim().toUpperCase();
+    const generalRaw = String(s.generalResult || "").trim().toUpperCase();
+    const admRaw = String(s.admissionResult || "").trim().toUpperCase();
+    const probRes = String(s.probationaryResult || "").trim().toUpperCase();
+    const probBgh = String(s.probationaryBghStatus || "").trim().toUpperCase();
+
+    const isPassToken = (v: string) =>
+      v === "DAT" ||
+      v === "ĐẠT" ||
+      v === "DAT_MIEN_HOC_THU" ||
+      v === "MIEN_HOC_THU" ||
+      v === "MIEN_HT" ||
+      v.includes("MIỄN HT") ||
+      v.includes("MIEN HT") ||
+      v.includes("MIỄN HỌC THỬ") ||
+      v.includes("MIEN_HOC_THU");
+
+    const isTrialToken = (v: string) =>
+      !isPassToken(v) &&
+      (v === "DAT_HOC_THU" ||
+        v === "HOC_THU" ||
+        v === "HOC_THU_LAI" ||
+        v.includes("HỌC THỬ") ||
+        v.includes("HOC_THU"));
+
+    const isBghDirectPass = isPassToken(bghRaw);
+    const isBghTrial = isTrialToken(bghRaw);
+    const isExemptTrial =
+      isBghDirectPass ||
+      (!isBghTrial && (isPassToken(gdcsRaw) || isPassToken(generalRaw) || isPassToken(admRaw)));
+
+    const hasTrialAssignment = Boolean(s.probationaryTeacher || s.probationaryClass);
+    const hasTrialData = Boolean(isBghTrial || hasTrialAssignment || probRes || probBgh);
+    const isTrialPassed = probBgh === "DAT";
+
+    // Chỉ mở nút GĐCS xét duyệt khi:
+    // 1. BGH MN duyệt Đạt / Miễn học thử trực tiếp, HOẶC
+    // 2. Đã qua luồng Học thử và BGH duyệt kết quả học thử = Đạt, HOẶC
+    // 3. GĐCS đã có kết quả duyệt trước đó
+    const canGdcsApprove = Boolean(gdcsRaw || isBghDirectPass || isTrialPassed);
+
+    let pendingReason = "";
+    if (!canGdcsApprove) {
+      if (!bghRaw) {
+        pendingReason = "Chờ BGH MN duyệt";
+      } else if (isBghTrial) {
+        if (!hasTrialAssignment) pendingReason = "Chờ phân công HT";
+        else if (!probRes) pendingReason = "Đang học thử";
+        else if (!probBgh) pendingReason = "Chờ duyệt KQHT";
+        else pendingReason = "KQ học thử chưa đạt";
+      } else {
+        pendingReason = "Cần xử lý / trao đổi";
+      }
+    }
+
+    return {
+      bghRaw,
+      gdcsRaw,
+      probRes,
+      probBgh,
+      isBghDirectPass,
+      isBghTrial,
+      isExemptTrial,
+      hasTrialAssignment,
+      hasTrialData,
+      isTrialPassed,
+      canGdcsApprove,
+      pendingReason,
+    };
+  };
+
   const renderApprovalCell = (s: any, isBGH: boolean) => {
     const status = isBGH ? s.bghApprovalStatus : s.gdcsApprovalStatus;
     const comment = isBGH ? s.bghApprovalComment : s.gdcsApprovalComment;
@@ -388,42 +462,60 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     if (status) {
       const initials = user ? user.split(" ").map((w: string) => w[0]).join("").substring(0, 2).toUpperCase() : (isBGH ? "BGH" : "GD");
       return (
-        <div 
-          onClick={onOpen} 
-          className="cursor-pointer hover:bg-slate-50/80 p-2 rounded-xl border border-slate-200 hover:border-[#48BFE3]/40 transition-all w-full flex flex-col gap-1.5 bg-white shadow-2xs"
+        <div
+          onClick={onOpen}
+          className="cursor-pointer hover:bg-[#F0FDFA]/60 p-2 rounded-xl border border-slate-200 hover:border-[#008B85]/50 transition-all w-full flex flex-col gap-1.5 bg-white shadow-2xs"
         >
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[9px] font-black text-slate-400 tracking-wide uppercase">{label}</span>
+            <span className="text-[10px] font-semibold text-slate-500">{label}</span>
             {getStatusBadge(status)}
           </div>
           {comment && (
-            <div className="text-[9px] text-slate-500 leading-tight italic truncate max-w-[130px]" title={comment}>
+            <div className="text-[10px] text-slate-500 leading-tight italic truncate max-w-[136px]" title={comment}>
               "{comment}"
             </div>
           )}
-          <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
-            <div className="w-5 h-5 rounded-full bg-[#48BFE3]/10  flex items-center justify-center text-[8px] font-black text-slate-800 shrink-0">
+          <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+            <div className="w-5 h-5 rounded-full bg-[#003B3A]/10 flex items-center justify-center text-[9px] font-bold text-[#003B3A] shrink-0">
               {initials}
             </div>
-            <span className="text-[9px] text-slate-500 font-bold truncate max-w-[100px]" title={user || ""}>{user || "—"}</span>
+            <span className="text-[10px] text-slate-600 font-medium truncate max-w-[104px]" title={user || ""}>{user || "—"}</span>
           </div>
         </div>
       );
     }
 
+    // Cột 3. GĐCS duyệt: nếu chưa đạt điều kiện chuyển GĐCS thì hiển thị trạng thái Đang xử lý
+    if (!isBGH) {
+      const wf = getPreschoolRowWorkflowState(s);
+      if (!wf.canGdcsApprove) {
+        return (
+          <div className="flex flex-col items-start gap-1 p-2 rounded-xl border border-amber-200/80 bg-amber-50/60 w-full">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800">
+              <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+              Đang xử lý
+            </span>
+            <span className="text-[10px] text-amber-700/90 leading-snug">
+              {wf.pendingReason}
+            </span>
+          </div>
+        );
+      }
+    }
+
     return (
-      <div className="flex items-center gap-2 w-full justify-between">
-        <button 
-          onClick={onOpen} 
-          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-[10px] font-bold text-white bg-[#48BFE3] hover:bg-[#009085] active:scale-[0.98] rounded-lg transition-all shadow-xs border border-[#009085]/10 cursor-pointer"
+      <div className="flex items-center gap-1.5 w-full justify-between">
+        <button
+          onClick={onOpen}
+          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-white bg-[#008B85] hover:bg-[#00736E] active:scale-[0.98] rounded-lg transition-all shadow-2xs cursor-pointer"
         >
           Xét duyệt
         </button>
-        <button 
-          disabled={sendingNotifyId === s.id} 
-          onClick={onNotify} 
-          className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 active:scale-[0.98] rounded-lg transition-all border border-slate-200/50 cursor-pointer" 
-          title="Gửi email yêu cầu duyệt"
+        <button
+          disabled={sendingNotifyId === s.id}
+          onClick={onNotify}
+          className="p-1.5 text-slate-500 hover:text-[#003B3A] hover:bg-[#F0FDFA] active:scale-[0.98] rounded-lg transition-all border border-slate-200 cursor-pointer"
+          title={isBGH ? "Gửi email yêu cầu BGH Mầm non duyệt" : "Gửi email yêu cầu GĐCS duyệt"}
         >
           {sendingNotifyId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
         </button>
@@ -1356,15 +1448,22 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()))
         .filter(s => {
           if (!approvalFilter) return true;
+          const wf = getPreschoolRowWorkflowState(s);
           const res = s.generalResult || "";
           if (approvalFilter === "CHUA_DUYET") {
-            return !res || res === "" || res === "CHUA_DUYET" || res === "Chưa duyệt";
+            return !wf.bghRaw && (!res || res === "" || res === "CHUA_DUYET" || res === "Chưa duyệt");
+          }
+          if (approvalFilter === "DANG_XU_LY") {
+            return !wf.canGdcsApprove && (Boolean(wf.bghRaw) || wf.hasTrialData);
+          }
+          if (approvalFilter === "CHO_GDCS") {
+            return wf.canGdcsApprove && !wf.gdcsRaw;
           }
           if (approvalFilter === "DAT_MIEN_HOC_THU") {
             return res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử";
           }
           if (approvalFilter === "DAT_HOC_THU") {
-            return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU";
+            return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU" || wf.isBghTrial;
           }
           if (approvalFilter === "DAT") {
             return res === "DAT" || res === "Đạt";
@@ -4602,7 +4701,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           <div className="bg-white p-2 rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] no-print mb-4 flex flex-wrap items-center gap-1.5">
             {([
               { id: "xetDuyet", label: "Duyệt kết quả đánh giá", icon: CheckCircle2 },
-              { id: "dgkqHocThu", label: "Duyệt kết quả học thử", icon: ClipboardList },
               { id: "stats", label: "Báo cáo & Thống kê", icon: BarChart3 }
             ] as const).map(item => {
               const Icon = item.icon;
@@ -5278,8 +5376,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <select value={approvalFilter} onChange={e => setApprovalFilter(e.target.value)} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer">
                     <option value="">Tất cả kết quả</option>
                     <option value="CHUA_DUYET">Chưa duyệt</option>
+                    <option value="DANG_XU_LY">Đang xử lý (Học thử / Chờ)</option>
+                    <option value="CHO_GDCS">Chờ GĐCS duyệt</option>
                     <option value="DAT_MIEN_HOC_THU">Đạt - Miễn học thử</option>
-                    <option value="DAT_HOC_THU">Đạt - Học thử</option>
+                    <option value="DAT_HOC_THU">Học thử</option>
                     <option value="DAT">Đạt</option>
                     <option value="KHONG_DAT">Không đạt</option>
                     <option value="Y_KIEN_KHAC">Ý kiến khác</option>
@@ -5302,6 +5402,32 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
               </div>
 
+              {/* Dải chỉ dẫn luồng xét duyệt chuẩn quy trình */}
+              <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-slate-600">
+                <span className="font-bold text-[#003B3A] inline-flex items-center gap-1.5">
+                  <span className="w-1.5 h-4 rounded-full bg-[#003B3A]" />
+                  Luồng xét duyệt:
+                </span>
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
+                  <span className="px-1.5 py-0.5 rounded bg-slate-100 text-[#003B3A] font-bold">1</span>
+                  BGH MN duyệt
+                </span>
+                <span className="text-slate-300">→</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/70">
+                  Đạt / Miễn HT → Chuyển thẳng GĐCS duyệt
+                </span>
+                <span className="text-slate-300">|</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/70">
+                  <span className="px-1 rounded bg-amber-100 text-amber-900 font-bold">2</span>
+                  Học thử → Phân công &amp; Duyệt KQ học thử (Đang xử lý)
+                </span>
+                <span className="text-slate-300">→</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-[#00736E]">
+                  <span className="px-1.5 py-0.5 rounded bg-[#F0FDFA] text-[#003B3A] border border-[#99F6E4] font-bold">3</span>
+                  GĐCS duyệt → Kết quả
+                </span>
+              </div>
+
               <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03)] border border-slate-200/90 overflow-hidden tabular-nums">
                 {sumLoading ? (
                   <div className="flex flex-col items-center justify-center p-16 gap-3">
@@ -5321,7 +5447,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             if (col.id === "gdcsApproval") return showGdcsSection;
                             return true;
                           }).map(col => (
-                            <th key={col.id} className={`px-4 py-3 text-[11px] font-semibold border-b border-[#003B3A] ${col.id === "bghApproval" || col.id === "gdcsApproval" || col.id === "result" ? "text-[#5EEAD4]" : col.id === "fullName" || col.id === "actions" ? "text-white" : "text-teal-100"} ${col.width}`}>
+                            <th key={col.id} className={`px-3.5 py-3 text-[11px] font-semibold border-b border-[#003B3A] ${col.id === "bghApproval" || col.id === "gdcsApproval" || col.id === "result" ? "text-[#5EEAD4]" : col.id === "fullName" || col.id === "actions" ? "text-white" : "text-teal-100"} ${col.width}`}>
                               {col.label}
                             </th>
                           ))}
@@ -5494,72 +5620,167 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 </td>
 
                                 {/* KQGV DG cell */}
-                                <td className="w-[140px] min-w-[140px] p-3 align-middle text-center bg-inherit border border-slate-100">
-                                  {getStatusBadge(s.scoredCount > 0 ? "DA_DANH_GIA" : "CHUA_DANH_GIA")}
+                                <td className="w-[116px] min-w-[116px] p-3 align-middle text-center bg-inherit border border-slate-100">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEvaluation(s)}
+                                    className="cursor-pointer hover:opacity-85 transition-opacity"
+                                    title="Xem phiếu đánh giá phát triển của Giáo viên"
+                                  >
+                                    {getStatusBadge(s.scoredCount > 0 ? "DA_DANH_GIA" : "CHUA_DANH_GIA")}
+                                  </button>
                                 </td>
 
-                                {/* BGH column */}
+                                {/* 1. BGH MN duyệt */}
                                 {showBghSection && (
-                                  <td className="w-[148px] min-w-[148px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                  <td className="w-[156px] min-w-[156px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                     {renderApprovalCell(s, true)}
                                   </td>
                                 )}
 
-                                {/* GDCS column */}
-                                {showGdcsSection && (
-                                  <td className="w-[148px] min-w-[148px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                    {renderApprovalCell(s, false)}
-                                  </td>
-                                )}
-
-                                <td className="w-[110px] min-w-[110px] p-3 align-middle bg-inherit border border-slate-100">{getStatusBadge(s.generalResult)}</td>
-
-                                <td className="w-[160px] min-w-[160px] p-3 align-middle bg-inherit border border-slate-100">
+                                {/* 2. Phân công học thử */}
+                                <td className="w-[162px] min-w-[162px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
-                                    const isMienHT = (() => {
-                                      const values = [
-                                        s.generalResult || "",
-                                        s.bghApprovalStatus || "",
-                                        s.gdcsApprovalStatus || "",
-                                        s.admissionResult || ""
-                                      ].map(v => v.toUpperCase());
-                                      return values.some(v => 
-                                        v === "DAT_MIEN_HOC_THU" || 
-                                        v === "MIEN_HOC_THU" || 
-                                        v === "MIEN_HT" || 
-                                        v.includes("MIỄN HT") || 
-                                        v.includes("MIEN HT") || 
-                                        v.includes("MIỄN HỌC THỬ") || 
-                                        v.includes("MIEN_HOC_THU") ||
-                                        v.includes("MIEN HOC THU")
-                                      );
-                                    })();
-
-                                    if (isMienHT) {
+                                    const wf = getPreschoolRowWorkflowState(s);
+                                    if (wf.isExemptTrial) {
                                       return (
-                                        <button onClick={() => openEmailCongratsModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[10px] font-bold text-white bg-teal-500 hover:bg-teal-500 active:scale-[0.98] rounded-lg transition-all shadow-sm border border-teal-700/10 cursor-pointer">
-                                          <Mail className="w-3.5 h-3.5" /> Trả Kết quả
-                                        </button>
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-800 border border-teal-200/70">
+                                          Miễn học thử
+                                        </span>
                                       );
                                     }
-
+                                    if (!wf.hasTrialData) {
+                                      return <span className="text-[11px] text-slate-300 font-medium">—</span>;
+                                    }
                                     return (
                                       <div className="flex flex-col gap-1.5 w-full items-start">
-                                        {s.probationaryTeacher ? (
+                                        {s.probationaryTeacher || s.probationaryClass ? (
                                           <div className="flex flex-col gap-1 w-full items-start">
-                                            <span className="text-[11px] font-extrabold text-slate-700 leading-snug">{s.probationaryTeacher}</span>
-                                            {s.probationaryClass && <span className="text-[10px] text-slate-400 font-semibold">{s.probationaryClass}</span>}
-                                            <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[9px] font-extrabold text-slate-800 bg-teal-50/50 hover:bg-[#48BFE3]/10 active:scale-[0.98] rounded-lg border border-[#48BFE3]/30 transition-all cursor-pointer">
+                                            {s.probationaryTeacher && (
+                                              <span className="text-[11px] font-bold text-slate-800 leading-snug">{s.probationaryTeacher}</span>
+                                            )}
+                                            {s.probationaryClass && (
+                                              <span className="text-[10px] text-slate-500 font-medium">{s.probationaryClass}</span>
+                                            )}
+                                            <button
+                                              type="button"
+                                              onClick={() => openAssignModal(s)}
+                                              className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-[#003B3A] bg-[#F0FDFA] hover:bg-[#CCFBF1] active:scale-[0.98] rounded-lg border border-[#99F6E4] transition-all cursor-pointer"
+                                            >
                                               Phân công lại
                                             </button>
                                           </div>
                                         ) : (
-                                          <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[10px] font-bold text-white bg-[#48BFE3] hover:bg-[#009085] active:scale-[0.98] rounded-lg transition-all shadow-sm border border-[#009085]/10 cursor-pointer">
+                                          <button
+                                            type="button"
+                                            onClick={() => openAssignModal(s)}
+                                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-white bg-[#008B85] hover:bg-[#00736E] active:scale-[0.98] rounded-lg transition-all shadow-2xs cursor-pointer"
+                                          >
                                             Phân công
                                           </button>
                                         )}
                                       </div>
                                     );
+                                  })()}
+                                </td>
+
+                                {/* 2. Kết quả học thử (Gom từ tab Duyệt KQ Học thử) */}
+                                <td className="w-[172px] min-w-[172px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                  {(() => {
+                                    const wf = getPreschoolRowWorkflowState(s);
+                                    if (wf.isExemptTrial) {
+                                      return <span className="text-[11px] text-slate-400 font-medium">Không cần HT</span>;
+                                    }
+                                    if (!wf.hasTrialData) {
+                                      return <span className="text-[11px] text-slate-300 font-medium">—</span>;
+                                    }
+                                    const gvLabel =
+                                      wf.probRes === "DAT"
+                                        ? { text: "GV: Đạt", cls: "bg-emerald-50 text-emerald-700 border-emerald-200/70" }
+                                        : wf.probRes === "CHUA_DAT" || wf.probRes === "KHONG_DAT"
+                                          ? { text: "GV: Chưa đạt", cls: "bg-rose-50 text-rose-700 border-rose-200/70" }
+                                          : { text: "GV: Chưa ĐG", cls: "bg-slate-100 text-slate-500 border-slate-200/70" };
+
+                                    const bghHtLabel =
+                                      wf.probBgh === "DAT"
+                                        ? { text: "BGH: Đạt", cls: "bg-emerald-50 text-emerald-800 border-emerald-200" }
+                                        : wf.probBgh === "KHONG_DAT"
+                                          ? { text: "BGH: Không đạt", cls: "bg-rose-50 text-rose-800 border-rose-200" }
+                                          : wf.probBgh === "Y_KIEN_KHAC"
+                                            ? { text: "BGH: Ý kiến khác", cls: "bg-amber-50 text-amber-800 border-amber-200" }
+                                            : { text: "BGH: Chưa duyệt", cls: "bg-amber-50/70 text-amber-700 border-amber-200/70" };
+
+                                    return (
+                                      <div className="flex flex-col gap-1.5 items-start w-full">
+                                        <div className="flex flex-wrap items-center gap-1">
+                                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${gvLabel.cls}`}>
+                                            {gvLabel.text}
+                                          </span>
+                                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${bghHtLabel.cls}`}>
+                                            {bghHtLabel.text}
+                                          </span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => openProbationary(s)}
+                                          className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-[#003B3A] bg-white hover:bg-[#F0FDFA] rounded-lg border border-slate-200 hover:border-[#008B85] transition-all cursor-pointer"
+                                        >
+                                          <ClipboardList className="w-3 h-3 text-[#008B85]" />
+                                          {wf.probBgh ? "Xem / Sửa KQHT" : "Duyệt KQ học thử"}
+                                        </button>
+                                      </div>
+                                    );
+                                  })()}
+                                </td>
+
+                                {/* 3. GĐCS duyệt */}
+                                {showGdcsSection && (
+                                  <td className="w-[156px] min-w-[156px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                    {renderApprovalCell(s, false)}
+                                  </td>
+                                )}
+
+                                {/* Kết quả chung cuộc */}
+                                <td className="w-[128px] min-w-[128px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                  {(() => {
+                                    const wf = getPreschoolRowWorkflowState(s);
+                                    if (wf.gdcsRaw) {
+                                      const isFinalPass =
+                                        wf.isExemptTrial ||
+                                        wf.gdcsRaw === "DAT" ||
+                                        wf.gdcsRaw === "DAT_MIEN_HOC_THU" ||
+                                        wf.isTrialPassed;
+                                      return (
+                                        <div className="flex flex-col gap-1.5 items-start">
+                                          {getStatusBadge(s.generalResult || s.gdcsApprovalStatus)}
+                                          {isFinalPass && (
+                                            <button
+                                              type="button"
+                                              onClick={() => openEmailCongratsModal(s)}
+                                              className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-white bg-[#003B3A] hover:bg-[#005854] active:scale-[0.98] rounded-lg transition-all cursor-pointer"
+                                            >
+                                              <Mail className="w-3 h-3 text-[#5EEAD4]" /> Trả kết quả
+                                            </button>
+                                          )}
+                                        </div>
+                                      );
+                                    }
+                                    if (wf.canGdcsApprove) {
+                                      return (
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#99F6E4]">
+                                          Chờ GĐCS duyệt
+                                        </span>
+                                      );
+                                    }
+                                    if (wf.bghRaw || wf.hasTrialData) {
+                                      return (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/80">
+                                          <Clock className="w-3 h-3 text-amber-600" />
+                                          Đang xử lý
+                                        </span>
+                                      );
+                                    }
+                                    return getStatusBadge(s.generalResult);
                                   })()}
                                 </td>
                               </tr>
