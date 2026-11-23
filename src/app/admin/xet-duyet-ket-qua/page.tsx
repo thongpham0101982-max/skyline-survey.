@@ -138,7 +138,7 @@ export default async function XetDuyetKetQuaPage() {
       }
       if (pAny.user) {
         examBoardUsers = await pAny.user.findMany({ 
-          where: { role: { in: ["KT_DBCL", "ADMIN"] } }, 
+          where: { role: { in: ["KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "ADMIN"] } }, 
           select: { id: true, fullName: true } 
         }).catch(() => []);
 

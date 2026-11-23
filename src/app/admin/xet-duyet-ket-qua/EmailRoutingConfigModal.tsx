@@ -5,6 +5,7 @@ import { Mail, Settings2, Check, Plus, RotateCcw, X, Building2, ShieldCheck, Use
 export type CampusCodeKey = "CS1" | "CS2" | "CS3" | "CS4" | "CS5";
 
 export interface CampusRoleEmails {
+  bghmn?: string;
   gdcs: string;
   tuvan: string;
   giaovu: string;
@@ -14,6 +15,7 @@ export interface EmailRoutingConfigData {
   autoSendOnApprove: boolean;
   autoMergeDbStaff: boolean;
   groups: {
+    bghmn?: { enabled: boolean; target: "to" | "cc" };
     gdcs: { enabled: boolean; target: "to" | "cc" };
     tuvan: { enabled: boolean; target: "to" | "cc" };
     giaovu: { enabled: boolean; target: "to" | "cc" };
@@ -27,6 +29,7 @@ export const DEFAULT_EMAIL_ROUTING_CONFIG: EmailRoutingConfigData = {
   autoSendOnApprove: true,
   autoMergeDbStaff: true,
   groups: {
+    bghmn: { enabled: true, target: "to" },
     gdcs: { enabled: true, target: "to" },
     tuvan: { enabled: true, target: "to" },
     giaovu: { enabled: true, target: "to" },
@@ -34,26 +37,31 @@ export const DEFAULT_EMAIL_ROUTING_CONFIG: EmailRoutingConfigData = {
   },
   campuses: {
     CS1: {
+      bghmn: "",
       gdcs: "longtt@skylineschool.edu.vn",
       tuvan: "thuongttn@skylineschool.edu.vn",
       giaovu: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn",
     },
     CS2: {
+      bghmn: "",
       gdcs: "khanhpt@skylineschool.edu.vn",
       tuvan: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn",
       giaovu: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn",
     },
     CS3: {
+      bghmn: "",
       gdcs: "thanhtt@skylineschool.edu.vn",
       tuvan: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn",
       giaovu: "thuda@skylineschool.edu.vn",
     },
     CS4: {
+      bghmn: "",
       gdcs: "trungct@skylineschool.edu.vn",
       tuvan: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn",
       giaovu: "bichtramtt@skylineschool.edu.vn",
     },
     CS5: {
+      bghmn: "",
       gdcs: "trungdq1@skylineschool.edu.vn",
       tuvan: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn",
       giaovu: "dunglp@skylineschool.edu.vn",
@@ -83,10 +91,10 @@ export function parseSavedEmailRoutingConfig(configs?: any[]): EmailRoutingConfi
     if (typeof parsed.autoSendOnApprove === "boolean") base.autoSendOnApprove = parsed.autoSendOnApprove;
     if (typeof parsed.autoMergeDbStaff === "boolean") base.autoMergeDbStaff = parsed.autoMergeDbStaff;
     if (parsed.groups) {
-      for (const k of ["gdcs", "tuvan", "giaovu", "ktdbcl"] as const) {
+      for (const k of ["bghmn", "gdcs", "tuvan", "giaovu", "ktdbcl"] as const) {
         if (parsed.groups[k]) {
           base.groups[k] = {
-            enabled: typeof parsed.groups[k].enabled === "boolean" ? parsed.groups[k].enabled : base.groups[k].enabled,
+            enabled: typeof parsed.groups[k].enabled === "boolean" ? parsed.groups[k].enabled : (base.groups[k]?.enabled ?? true),
             target: parsed.groups[k].target === "cc" ? "cc" : "to",
           };
         }
@@ -96,6 +104,9 @@ export function parseSavedEmailRoutingConfig(configs?: any[]): EmailRoutingConfi
       for (const cs of ["CS1", "CS2", "CS3", "CS4", "CS5"] as const) {
         if (parsed.campuses[cs]) {
           base.campuses[cs] = {
+            bghmn: typeof parsed.campuses[cs].bghmn === "string"
+              ? parsed.campuses[cs].bghmn.trim()
+              : (base.campuses[cs].bghmn || ""),
             gdcs: typeof parsed.campuses[cs].gdcs === "string"
               ? stripGenericCampusAliases(parsed.campuses[cs].gdcs, base.campuses[cs].gdcs)
               : base.campuses[cs].gdcs,
@@ -168,12 +179,14 @@ export function EmailRoutingConfigModal({
     const result: Record<
       CampusCodeKey,
       {
+        bghmn: { label: string; email: string }[];
         gdcs: { label: string; email: string }[];
         tuvan: { label: string; email: string }[];
         giaovu: { label: string; email: string }[];
       }
     > = {
       CS1: {
+        bghmn: [],
         gdcs: [
           { label: "Tống Thiên Long (GĐCS CS1)", email: "longtt@skylineschool.edu.vn" },
         ],
@@ -186,6 +199,7 @@ export function EmailRoutingConfigModal({
         ],
       },
       CS2: {
+        bghmn: [],
         gdcs: [
           { label: "Phạm Thị Khánh (GĐCS CS2)", email: "khanhpt@skylineschool.edu.vn" },
         ],
@@ -201,6 +215,7 @@ export function EmailRoutingConfigModal({
         ],
       },
       CS3: {
+        bghmn: [],
         gdcs: [
           { label: "Trần Thị Thanh (GĐCS CS3)", email: "thanhtt@skylineschool.edu.vn" },
         ],
@@ -213,6 +228,7 @@ export function EmailRoutingConfigModal({
         ],
       },
       CS4: {
+        bghmn: [],
         gdcs: [
           { label: "Cao Thanh Trung (GĐCS CS4)", email: "trungct@skylineschool.edu.vn" },
         ],
@@ -225,6 +241,7 @@ export function EmailRoutingConfigModal({
         ],
       },
       CS5: {
+        bghmn: [],
         gdcs: [
           { label: "Đỗ Quang Trung (GĐCS CS5)", email: "trungdq1@skylineschool.edu.vn" },
         ],
@@ -258,6 +275,14 @@ export function EmailRoutingConfigModal({
         }
       };
 
+      if (
+        ["BGH_MN", "BGH MN", "NHOM_TRUONG_MN", "BGH", "BGH_CS"].includes(uRole) ||
+        deptName.includes("bgh") ||
+        deptName.includes("mầm non") ||
+        deptCode.includes("bgh")
+      ) {
+        addIfMissing(result[csCode].bghmn, `BGH MN ${csCode}`);
+      }
       if (deptCode.includes("gđ_cs") || deptName.includes("gđcs") || ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(uRole)) {
         addIfMissing(result[csCode].gdcs, `GĐCS ${csCode}`);
       } else if (deptName.includes("giáo vụ") || deptCode.includes("gvu") || ["GIAO_VU", "GIAO_VU_CS"].includes(uRole)) {
@@ -360,9 +385,14 @@ export function EmailRoutingConfigModal({
 
   const groupMeta = [
     {
+      key: "bghmn" as const,
+      title: "BGH Mầm non / Nhóm trưởng MN",
+      desc: "Nhận email yêu cầu rà soát & duyệt kết quả khảo sát Mầm non (B6 / B9A)",
+    },
+    {
       key: "gdcs" as const,
       title: "Giám đốc Cơ sở (GĐCS)",
-      desc: "Nhận thông báo xác nhận quyết định phê duyệt tại cơ sở phụ trách",
+      desc: "Nhận email yêu cầu duyệt & thông báo xác nhận quyết định phê duyệt tại cơ sở",
     },
     {
       key: "tuvan" as const,
@@ -391,6 +421,7 @@ export function EmailRoutingConfigModal({
     const currentVal = draft.campuses[csCode]?.[roleKey] || "";
     const activeEmails = splitEmailList(currentVal).map(e => e.toLowerCase());
     const count = activeEmails.length;
+    const roleGroupCfg = draft.groups[roleKey] || { enabled: true, target: "to" as const };
 
     return (
       <div className="bg-slate-50/70 rounded-xl border border-slate-200/90 p-3.5 space-y-2.5">
@@ -400,13 +431,13 @@ export function EmailRoutingConfigModal({
               <span>{roleTitle}</span>
               <span
                 className={`px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums border ${
-                  draft.groups[roleKey].enabled
+                  roleGroupCfg.enabled
                     ? "bg-[#F0FDFA] text-[#00736E] border-[#99F6E4]"
                     : "bg-slate-100 text-slate-500 border-slate-200"
                 }`}
               >
-                {draft.groups[roleKey].enabled
-                  ? `${draft.groups[roleKey].target.toUpperCase()} • ${count} email`
+                {roleGroupCfg.enabled
+                  ? `${roleGroupCfg.target.toUpperCase()} • ${count} email`
                   : "Đang tắt"}
               </span>
             </div>
@@ -553,7 +584,7 @@ export function EmailRoutingConfigModal({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               {groupMeta.map(g => {
-                const state = draft.groups[g.key];
+                const state = draft.groups[g.key] || { enabled: true, target: "to" as const };
                 return (
                   <div
                     key={g.key}
@@ -572,7 +603,7 @@ export function EmailRoutingConfigModal({
                             ...prev,
                             groups: {
                               ...prev.groups,
-                              [g.key]: { ...prev.groups[g.key], enabled: e.target.checked },
+                              [g.key]: { ...(prev.groups[g.key] || { enabled: true, target: "to" as const }), enabled: e.target.checked },
                             },
                           }))
                         }
@@ -595,7 +626,7 @@ export function EmailRoutingConfigModal({
                               ...prev,
                               groups: {
                                 ...prev.groups,
-                                [g.key]: { ...prev.groups[g.key], target: mode },
+                                [g.key]: { ...(prev.groups[g.key] || { enabled: true, target: "to" as const }), target: mode },
                               },
                             }))
                           }
@@ -634,6 +665,7 @@ export function EmailRoutingConfigModal({
               {(["CS1", "CS2", "CS3", "CS4", "CS5"] as const).map(cs => {
                 const cObj = campuses.find((c: any) => String(c.campusCode || "").toUpperCase() === cs);
                 const totalEmails =
+                  splitEmailList(draft.campuses[cs]?.bghmn || "").length +
                   splitEmailList(draft.campuses[cs]?.gdcs).length +
                   splitEmailList(draft.campuses[cs]?.tuvan).length +
                   splitEmailList(draft.campuses[cs]?.giaovu).length;
@@ -687,9 +719,16 @@ export function EmailRoutingConfigModal({
               <div className="space-y-3">
                 {renderRoleEmailEditor(
                   activeTab,
+                  "bghmn",
+                  `Ban Giám hiệu Mầm non / Nhóm trưởng MN (${activeTab})`,
+                  "Nhận email yêu cầu rà soát & duyệt kết quả khảo sát Mầm non tại cơ sở " + activeTab,
+                  staffSuggestions[activeTab]?.bghmn || []
+                )}
+                {renderRoleEmailEditor(
+                  activeTab,
                   "gdcs",
                   `Giám đốc Cơ sở ${activeTab} (GĐCS)`,
-                  "Nhận thông báo kết quả xét duyệt của học sinh thuộc cơ sở " + activeTab,
+                  "Nhận email yêu cầu phê duyệt & thông báo kết quả xét duyệt của cơ sở " + activeTab,
                   staffSuggestions[activeTab]?.gdcs || []
                 )}
                 {renderRoleEmailEditor(

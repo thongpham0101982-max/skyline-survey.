@@ -13,6 +13,12 @@ import {
 } from "@/lib/preschool-workflow";
 import { PreschoolDossierDrawer } from "@/app/admin/khao-sat-mam-non/PreschoolDossierDrawer";
 import {
+  PreschoolApprovalEmailConfigModal,
+  DEFAULT_PRESCHOOL_APPROVAL_EMAIL_CONFIG,
+  parseSavedPreschoolApprovalEmailConfig,
+  type PreschoolApprovalEmailConfigData,
+} from "./PreschoolApprovalEmailConfigModal";
+import {
   isSuperAdminRole,
   isKtdbclEntranceRole,
   isGdcsOrBghEntranceRole,
@@ -376,7 +382,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     const comment = isBGH ? s.bghApprovalComment : s.gdcsApprovalComment;
     const user = isBGH ? s.bghApprovalUser : s.gdcsApprovalUser;
     const onOpen = () => openEvaluation(s);
-    const onNotify = () => sendApprovalNotification(s.id);
+    const onNotify = () => sendApprovalNotification(s.id, isBGH ? "BGH_MN" : "GDCS");
     const label = isBGH ? "BGH MN" : "GĐCS";
 
     if (status) {
@@ -2526,6 +2532,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     loading: boolean;
     sending: boolean;
     studentId: string;
+    targetRole?: "BGH_MN" | "GDCS";
     studentName: string;
     studentCode: string;
     campus: string;
@@ -2539,6 +2546,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     loading: false,
     sending: false,
     studentId: "",
+    targetRole: "GDCS",
     studentName: "",
     studentCode: "",
     campus: "",
@@ -2549,7 +2557,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     html: "",
   });
 
-  const sendApprovalNotification = async (studentId: string) => {
+  const [isPreschoolEmailConfigOpen, setIsPreschoolEmailConfigOpen] = useState(false);
+  const [preschoolEmailConfig, setPreschoolEmailConfig] = useState<PreschoolApprovalEmailConfigData>(
+    () => JSON.parse(JSON.stringify(DEFAULT_PRESCHOOL_APPROVAL_EMAIL_CONFIG))
+  );
+
+  useEffect(() => {
+    fetch("/api/assessment-configs?categoryType=APPROVAL_EMAIL_CONFIG")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.configs || data?.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          setPreschoolEmailConfig(parseSavedPreschoolApprovalEmailConfig(list));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const sendApprovalNotification = async (studentId: string, targetRole: "BGH_MN" | "GDCS" = "GDCS") => {
     setSendingNotifyId(studentId);
     setApprovalPreviewModal((prev) => ({
       ...prev,
@@ -2557,6 +2582,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       loading: true,
       sending: false,
       studentId,
+      targetRole,
       html: "",
       recipients: [],
       selectedEmails: [],
@@ -2569,6 +2595,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         body: JSON.stringify({
           action: "SEND_APPROVAL_NOTIFICATION",
           studentId,
+          targetRole,
           previewOnly: true,
         }),
       });
@@ -2580,6 +2607,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           loading: false,
           sending: false,
           studentId,
+          targetRole,
           studentName: data.studentName || "",
           studentCode: data.studentCode || "",
           campus: data.campus || "",
@@ -2616,6 +2644,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         body: JSON.stringify({
           action: "SEND_APPROVAL_NOTIFICATION",
           studentId: approvalPreviewModal.studentId,
+          targetRole: approvalPreviewModal.targetRole || "GDCS",
           customSubject: approvalPreviewModal.subject,
           selectedEmails: approvalPreviewModal.selectedEmails,
           extraEmails: approvalPreviewModal.extraEmails,
@@ -4593,6 +4622,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </button>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setIsPreschoolEmailConfigOpen(true)}
+              className="ml-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#99F6E4] bg-[#F0FDFA] text-[#003B3A] hover:bg-[#CCFBF1] transition-colors cursor-pointer"
+              title="Cấu hình danh sách email BGH Mầm non & GĐCS nhận thông báo xét duyệt theo từng cơ sở"
+            >
+              <Settings className="w-3.5 h-3.5 text-[#008B85]" />
+              <span>Cấu hình Email BGHMN & GĐCS</span>
+            </button>
           </div>
 
           {/* Sub-tab: Thống kê Phân tích */}
@@ -9542,7 +9580,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </p>
                 <h3 className="text-base font-bold mt-0.5 flex items-center gap-2">
                   <Mail className="w-4 h-4 text-[#5EEAD4]" />
-                  Xem trước Email yêu cầu duyệt — {approvalPreviewModal.studentName || "Học sinh"}
+                  Xem trước Email yêu cầu{" "}
+                  {approvalPreviewModal.targetRole === "BGH_MN"
+                    ? "BGH Mầm non duyệt"
+                    : approvalPreviewModal.targetRole === "GDCS"
+                      ? "GĐCS duyệt"
+                      : "duyệt"}{" "}
+                  — {approvalPreviewModal.studentName || "Học sinh"}
                   {approvalPreviewModal.studentCode ? ` (${approvalPreviewModal.studentCode})` : ""}
                 </h3>
               </div>
@@ -9672,6 +9716,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           fetchDevStudents();
         }}
         staffUsers={[]}
+      />
+
+      {/* Modal Cấu hình Email BGHMN & GĐCS xét duyệt Mầm non */}
+      <PreschoolApprovalEmailConfigModal
+        isOpen={isPreschoolEmailConfigOpen}
+        onClose={() => setIsPreschoolEmailConfigOpen(false)}
+        config={preschoolEmailConfig}
+        onSaved={(cfg) => {
+          setPreschoolEmailConfig(cfg);
+          notify("Đã lưu cấu hình email BGHMN & GĐCS xét duyệt!");
+        }}
       />
     </div>
   );

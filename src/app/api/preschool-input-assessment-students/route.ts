@@ -887,7 +887,7 @@ export async function POST(req) {
     }
 
     if (action === "SEND_APPROVAL_NOTIFICATION") {
-      const { studentId, previewOnly, customSubject, selectedEmails, extraEmails } = body;
+      const { studentId, targetRole, previewOnly, customSubject, selectedEmails, extraEmails } = body;
       if (!studentId) {
         return NextResponse.json({ error: "Missing studentId" }, { status: 400 });
       }
@@ -916,42 +916,87 @@ export async function POST(req) {
         }
       });
 
-      let resolvedUsers = [];
+      // Load saved PRESCHOOL_APPROVAL_ROUTING_V1 (fallback to EMAIL_ROUTING_V1 + Sky-Line defaults)
+      const DEFAULT_PRESCHOOL_CAMPUS_EMAILS: Record<string, { bghmn: string; gdcs: string }> = {
+        CS1: { bghmn: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn", gdcs: "longtt@skylineschool.edu.vn" },
+        CS2: { bghmn: "yenlth@skylineschool.edu.vn, thanhmaitt@skylineschool.edu.vn", gdcs: "khanhpt@skylineschool.edu.vn" },
+        CS3: { bghmn: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn", gdcs: "thanhtt@skylineschool.edu.vn" },
+        CS4: { bghmn: "quyenlth@skylineschool.edu.vn, chault@skylineschool.edu.vn", gdcs: "trungct@skylineschool.edu.vn" },
+        CS5: { bghmn: "monghatn@skylineschool.edu.vn, ngocltb@skylineschool.edu.vn", gdcs: "trungdq1@skylineschool.edu.vn, oanhntk@skylineschool.edu.vn" },
+      };
 
-      if (campus) {
-        // Find all users assigned to this campus
-        const assignments = await (prisma as any).userCampusAssignment.findMany({
-          where: { campusId: campus.id },
-          include: { user: true }
+      let configuredKtdbclEmails: string[] = ["ktdbcl@skylineschool.edu.vn"];
+      let ktdbclEnabled = true;
+      let autoMergeDbStaff = true;
+      let parsedPreschoolCfg: any = null;
+      let parsedGeneralCfg: any = null;
+
+      try {
+        const savedConfigs = await (prisma as any).assessmentConfig.findMany({
+          where: {
+            categoryType: "APPROVAL_EMAIL_CONFIG",
+            code: { in: ["PRESCHOOL_APPROVAL_ROUTING_V1", "EMAIL_ROUTING_V1"] },
+          },
+          select: { code: true, name: true },
         });
+        for (const row of savedConfigs || []) {
+          if (!row?.name) continue;
+          try {
+            if (row.code === "PRESCHOOL_APPROVAL_ROUTING_V1") parsedPreschoolCfg = JSON.parse(row.name);
+            if (row.code === "EMAIL_ROUTING_V1") parsedGeneralCfg = JSON.parse(row.name);
+          } catch {}
+        }
+      } catch {}
 
-        const assignedUsers = assignments.map((a: any) => a.user);
-
-        // Filter users by BGH or GDCS roles
-        resolvedUsers = assignedUsers.filter((u: any) => {
-          const role = (u.role || "").toUpperCase();
-          const isBgh = ["KT_DBCL", "BGH MN", "BGH_MN", "ADMIN"].includes(role);
-          const isGdcs = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "ADMIN"].includes(role);
-          return isBgh || isGdcs;
-        });
+      const activeCfg = parsedPreschoolCfg || parsedGeneralCfg;
+      if (activeCfg) {
+        if (typeof activeCfg.autoMergeDbStaff === "boolean") autoMergeDbStaff = activeCfg.autoMergeDbStaff;
+        if (typeof activeCfg.includeKtdbclCc === "boolean") ktdbclEnabled = activeCfg.includeKtdbclCc;
+        else if (activeCfg?.groups?.ktdbcl?.enabled === false) ktdbclEnabled = false;
+        if (typeof activeCfg?.ktdbclEmails === "string") {
+          const list = activeCfg.ktdbclEmails
+            .split(/[,;\n]+/)
+            .map((s: string) => s.trim())
+            .filter((s: string) => s && s.includes("@"));
+          if (list.length > 0) configuredKtdbclEmails = list;
+        }
       }
 
-      // If no specific campus assignments found, fallback to system admins and BGH users
-      if (resolvedUsers.length === 0) {
-        const targetRoles = ["ADMIN", "KT_DBCL", "BGH MN", "BGH_MN"];
-        const searchRoles = [
-          ...targetRoles,
-          ...targetRoles.map(r => r.toLowerCase()),
-          "Admin", "Kt_Dbcl", "Bgh Mn", "Bgh_Mn"
-        ];
-        const allUsers = await (prisma as any).user.findMany({
-          where: {
-            role: { in: searchRoles }
-          }
+      const normCampus = String(campus?.campusCode || campusName || "").toUpperCase();
+      let csKey: "CS1" | "CS2" | "CS3" | "CS4" | "CS5" | null = null;
+      if (normCampus.includes("CS1") || normCampus.includes("RIVERSIDE")) csKey = "CS1";
+      else if (normCampus.includes("CS2") || normCampus.includes("CENTRAL")) csKey = "CS2";
+      else if (normCampus.includes("CS3") || normCampus.includes("GLOBAL")) csKey = "CS3";
+      else if (normCampus.includes("CS4") || normCampus.includes("HILL")) csKey = "CS4";
+      else if (normCampus.includes("CS5") || normCampus.includes("BEACH")) csKey = "CS5";
+
+      const wantsBgh = !targetRole || targetRole === "ALL" || targetRole === "BGH_MN";
+      const wantsGdcs = !targetRole || targetRole === "ALL" || targetRole === "GDCS";
+
+      const splitCfg = (raw?: string) =>
+        String(raw || "")
+          .split(/[,;\n]+/)
+          .map((s) => s.trim())
+          .filter((s) => s && s.includes("@"));
+
+      let resolvedUsers: any[] = [];
+      if (autoMergeDbStaff && campus) {
+        const assignments = await (prisma as any).userCampusAssignment.findMany({
+          where: { campusId: campus.id },
+          include: {
+            user: {
+              include: { teacher: { select: { email: true, teacherName: true } } },
+            },
+          },
         });
-        resolvedUsers = allUsers.filter((u: any) => {
+        const assignedUsers = assignments.map((a: any) => a.user).filter(Boolean);
+        resolvedUsers = assignedUsers.filter((u: any) => {
           const role = (u.role || "").toUpperCase();
-          return targetRoles.includes(role);
+          const isBgh = ["BGH MN", "BGH_MN", "BGH_MAM_NON", "BGHMN"].includes(role);
+          const isGdcs = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(role);
+          if (wantsBgh && isBgh) return true;
+          if (wantsGdcs && isGdcs) return true;
+          return false;
         });
       }
 
@@ -959,57 +1004,86 @@ export async function POST(req) {
       let notificationCount = 0;
       let emailSentCount = 0;
 
-      const title = `[Preschool-Survey] Yêu cầu phê duyệt kết quả đầu vào - Bé ${student.fullName}`;
-      const message = `Kính gửi thầy/cô, học sinh ${student.fullName} (${student.studentCode}) thuộc Cơ sở ${campusName} đã hoàn thành khảo sát đầu vào. Kính đề xuất thầy/cô truy cập hệ thống để tiến hành phê duyệt học thử cho bé.`;
+      const roleTitlePrefix =
+        targetRole === "BGH_MN"
+          ? "BGH Mầm non"
+          : targetRole === "GDCS"
+            ? "GĐCS"
+            : "BGH MN / GĐCS";
+
+      const title = `[Preschool-Survey] Yêu cầu ${roleTitlePrefix} phê duyệt kết quả đầu vào - Bé ${student.fullName}`;
+      const message = `Kính gửi thầy/cô, học sinh ${student.fullName} (${student.studentCode}) thuộc Cơ sở ${campusName} đã hoàn thành khảo sát đầu vào. Kính đề xuất thầy/cô truy cập hệ thống để tiến hành phê duyệt cho bé.`;
 
       const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
       const protocol = req.headers.get("x-forwarded-proto") || "https";
       const baseUrl = `${protocol}://${host}`;
 
-      // Pre-fetch developmental assessment summary (scores, criteria, areas, percentages)
       const devSummary = await getPreschoolDevelopmentSummary(student.id);
       const emailSubject =
         (typeof customSubject === "string" && customSubject.trim()) ||
-        `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`;
+        `[Preschool-Approval] Yêu cầu ${roleTitlePrefix} duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`;
 
-      // Build deduplicated recipient list for both preview & actual send
+      // Build deduplicated recipient list (Configured emails first, then DB staff resolved via Teacher.email || User.email)
       const recipientMap = new Map<string, { id?: string; fullName: string; email: string; role: string; isArchiveCopy: boolean }>();
-      for (const u of resolvedUsers) {
-        if (u.email && u.email.includes("@")) {
-          const key = u.email.trim().toLowerCase();
-          if (!recipientMap.has(key)) {
-            recipientMap.set(key, {
-              id: u.id,
-              fullName: u.fullName || u.email,
-              email: u.email.trim(),
-              role: u.role || "BGH/GĐCS",
-              isArchiveCopy: false,
-            });
+
+      if (csKey) {
+        const campusCfg =
+          parsedPreschoolCfg?.campuses?.[csKey] ||
+          parsedGeneralCfg?.campuses?.[csKey] ||
+          DEFAULT_PRESCHOOL_CAMPUS_EMAILS[csKey];
+        const fallbackCfg = DEFAULT_PRESCHOOL_CAMPUS_EMAILS[csKey];
+
+        if (wantsBgh) {
+          const bghList = splitCfg(campusCfg?.bghmn || fallbackCfg?.bghmn);
+          for (const em of bghList) {
+            const key = em.toLowerCase();
+            if (!recipientMap.has(key)) {
+              recipientMap.set(key, {
+                fullName: `BGH Mầm non (${csKey})`,
+                email: em,
+                role: `BGH Mầm non ${csKey}`,
+                isArchiveCopy: false,
+              });
+            }
+          }
+        }
+        if (wantsGdcs) {
+          const gdcsList = splitCfg(campusCfg?.gdcs || fallbackCfg?.gdcs);
+          for (const em of gdcsList) {
+            const key = em.toLowerCase();
+            if (!recipientMap.has(key)) {
+              recipientMap.set(key, {
+                fullName: `GĐCS (${csKey})`,
+                email: em,
+                role: `GĐCS ${csKey}`,
+                isArchiveCopy: false,
+              });
+            }
           }
         }
       }
-      // Load saved EMAIL_ROUTING_V1 config for Ban KT&ĐBCL / Nhóm Khảo thí members
-      let configuredKtdbclEmails: string[] = ["ktdbcl@skylineschool.edu.vn"];
-      let ktdbclEnabled = true;
-      try {
-        const savedRouting = await (prisma as any).assessmentConfig.findFirst({
-          where: { categoryType: "APPROVAL_EMAIL_CONFIG", code: "EMAIL_ROUTING_V1" },
-          select: { name: true },
-        });
-        if (savedRouting?.name) {
-          const parsedCfg = JSON.parse(savedRouting.name);
-          if (parsedCfg?.groups?.ktdbcl?.enabled === false) {
-            ktdbclEnabled = false;
-          }
-          if (typeof parsedCfg?.ktdbclEmails === "string") {
-            const list = parsedCfg.ktdbclEmails
-              .split(/[,;\n]+/)
-              .map((s: string) => s.trim())
-              .filter((s: string) => s && s.includes("@"));
-            if (list.length > 0) configuredKtdbclEmails = list;
+
+      for (const u of resolvedUsers) {
+        const resolvedEmail =
+          (u.teacher?.email && u.teacher.email.includes("@") ? u.teacher.email : null) ||
+          (u.email && u.email.includes("@") ? u.email : null);
+        if (resolvedEmail) {
+          const key = resolvedEmail.trim().toLowerCase();
+          if (!recipientMap.has(key)) {
+            recipientMap.set(key, {
+              id: u.id,
+              fullName: u.teacher?.teacherName || u.fullName || resolvedEmail,
+              email: resolvedEmail.trim(),
+              role: u.role || "BGH/GĐCS",
+              isArchiveCopy: false,
+            });
+          } else if (!recipientMap.get(key)?.id) {
+            const existing = recipientMap.get(key)!;
+            existing.id = u.id;
+            existing.fullName = u.teacher?.teacherName || u.fullName || existing.fullName;
           }
         }
-      } catch {}
+      }
 
       if (ktdbclEnabled) {
         for (const ktEmail of configuredKtdbclEmails) {
