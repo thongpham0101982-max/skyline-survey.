@@ -4,8 +4,17 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { 
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp, Pencil,
-  X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, PenLine, Tag, Check, Printer, FileText
+  X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, PenLine, Tag, Check, Printer, FileText, Monitor, Smartphone
 } from "lucide-react"
+import { AdmissionDossierTab } from "./AdmissionDossierTab"
+import {
+  AdmissionDossierGroup,
+  createDefaultAdmissionDossierGroups,
+  loadAdmissionDossierGroups,
+  resolveStudentDossier,
+  saveAdmissionDossierGroups,
+  studentHasLearningCommitment,
+} from "@/lib/admission-dossier"
 
 // Types
 interface Campus { id: string; campusName: string; campusCode?: string; manager?: { fullName?: string } }
@@ -325,7 +334,7 @@ function Field({ label, required, children }: any) {
 
 function Modal({ open, onClose, title, children, footer, size = "md" }: any) {
   if (!open) return null;
-  const sizeMap: Record<string, string> = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
+  const sizeMap: Record<string, string> = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl", "2xl": "max-w-5xl" };
   return (
     <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200" onClick={onClose}>
       <div className={`bg-white rounded-3xl shadow-2xl w-full ${sizeMap[size]} overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e => e.stopPropagation()}>
@@ -365,6 +374,10 @@ export function ReportsClient({
 
   // Report config states
   const [rcCampusId, setRcCampusId] = useState(() => campuses?.[0]?.id || "");
+  const rcSelectedCampus = useMemo(() => {
+    const obj = (campuses || []).find((c: any) => c.id === rcCampusId);
+    return obj?.campusCode || obj?.campusName || rcCampusId || "";
+  }, [campuses, rcCampusId]);
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung");
   const [rcTargetGroup, setRcTargetGroup] = useState("all");
   const [rcTitle, setRcTitle] = useState("THƯ CHÚC MỪNG");
@@ -387,16 +400,19 @@ export function ReportsClient({
   }, [rcReportType, selectedLevel]);
 
   const reportDocGroups = [
-    { id: "all", label: "Tất cả các khối (Mặc định)" },
-    { id: "khoi_1", label: "Hồ sơ Khối 1" },
-    { id: "khoi_2_5", label: "Hồ sơ Khối 2-5" },
-    { id: "khoi_6", label: "Hồ sơ Khối 6" },
-    { id: "khoi_10_noi_tinh", label: "Hồ sơ Khối 10 (Nội tỉnh)" },
-    { id: "khoi_10_ngoai_tinh", label: "Hồ sơ Khối 10 (Ngoại tỉnh)" }
+    { id: "all", label: "Tất cả các khối (Mặc định - Lớp 1)" },
+    { id: "khoi_1", label: "Trong nước — Khối 1" },
+    { id: "khoi_2_5", label: "Trong nước — Khối 2–5" },
+    { id: "khoi_6", label: "Trong nước — Khối 6" },
+    { id: "khoi_7_9", label: "Trong nước — Khối 7–9" },
+    { id: "khoi_10", label: "Trong nước — Khối 10" },
+    { id: "khoi_11_12", label: "Trong nước — Khối 11–12" },
+    { id: "nuoc_ngoai", label: "VN về nước / Nước ngoài (Lớp 2–12)" },
+    { id: "homeschooling", label: "Homeschooling (Lớp 2–6)" },
   ];
 
   // Active periods depending on level
-  // --- ADMISSION DOCUMENTS STATES & DEFAULTS ---
+  // --- ADMISSION DOCUMENTS MATRIX STATE ---
   const [configs, setConfigs] = useState<any[]>([]);
   useEffect(() => {
     fetch('/api/assessment-configs')
@@ -407,336 +423,58 @@ export function ReportsClient({
       .catch(() => {});
   }, []);
 
-  const defaultDocumentsGrade1 = useMemo(() => [
-    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
-    { id: 2, name: "Đơn xin nhập học lớp 1", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
-    { id: 3, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
-  ], []);
-
-  const defaultDocumentsGrade2_5 = useMemo(() => [
-    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
-    { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
-    { id: 3, name: "Giấy giới thiệu chuyển của trường nơi đi", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
-    { id: 4, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
-    { id: 5, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
-    { id: 6, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
-  ], []);
-
-  const defaultDocumentsGrade6 = useMemo(() => [
-    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 3, name: "Giấy chứng nhận HTCT Tiểu học", qty: "1", note: "Nếu có", targets: ["Nội tỉnh"], grades: ["Khối 6"] },
-    { id: 4, name: "Giấy giới thiệu chuyển của trường nơi đi (nhập học sau 15/8)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 6"] },
-    { id: 5, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 6, name: "Giấy giới thiệu chuyển trường do UBND/ Sở GD&ĐT nơi đi (Trường trực thuộc sở)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 7, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 8, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 9, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
-    { id: 10, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
-  ], []);
-
-  const defaultDocumentsGrade10NoiTinh = useMemo(() => [
-    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 2, name: "Học bạ THCS (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 3, name: "Giấy chứng nhận tốt nghiệp THCS tạm thời hoặc Bằng tốt nghiệp THCS", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 4, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 5, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 6, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 7, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-    { id: 8, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
-  ], []);
-
-  const defaultDocumentsGrade10NgoaiTinh = useMemo(() => [
-    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 2, name: "Học bạ THCS (bản gốc)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 3, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 4, name: "Giấy giới thiệu chuyển trường do Sở GD&ĐT nơi đi (Trường trực phục sở hoặc ngoại tỉnh)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 5, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 6, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 7, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-    { id: 8, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
-  ], []);
-
-  const previewDocList = useMemo(() => {
-    if (typeof window === "undefined") return [];
-    const group = rcTargetGroup === "all" ? "khoi_1" : rcTargetGroup;
-    const saved = localStorage.getItem('admission_docs_' + group);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      } catch (e) {}
-    }
-    if (group === "khoi_2_5") return defaultDocumentsGrade2_5;
-    if (group === "khoi_6") return defaultDocumentsGrade6;
-    if (group === "khoi_10_noi_tinh") return defaultDocumentsGrade10NoiTinh;
-    if (group === "khoi_10_ngoai_tinh") return defaultDocumentsGrade10NgoaiTinh;
-    return defaultDocumentsGrade1;
-  }, [rcTargetGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, defaultDocumentsGrade10NoiTinh, defaultDocumentsGrade10NgoaiTinh]);
-
-  // Admission Documents State
-  const defaultDocGroups = useMemo(() => [
-    { id: "khoi_1", label: "Khối 1" },
-    { id: "khoi_2_5", label: "Khối 2 đến 5" },
-    { id: "khoi_6", label: "Khối 6" },
-    { id: "khoi_7_9", label: "Khối 7 đến 9" },
-    { id: "khoi_10_noi_tinh", label: "Khối 10 - Nội tỉnh" },
-    { id: "khoi_10_ngoai_tinh", label: "Khối 10 - Ngoại tỉnh" },
-    { id: "khoi_11_12", label: "Khối 11 đến 12" },
-    { id: "doi_tuong_tuyen_sinh", label: "Đối tượng Hồ sơ" },
-  ], []);
-  const [customDocGroups, setCustomDocGroups] = useState<any[]>([]);
+  const [dossierGroups, setDossierGroups] = useState<AdmissionDossierGroup[]>(() =>
+    createDefaultAdmissionDossierGroups()
+  );
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedGroups = localStorage.getItem('admission_doc_groups');
-      if (savedGroups) {
-        try {
-          setCustomDocGroups(JSON.parse(savedGroups));
-        } catch (e) {}
-      } else {
-        setCustomDocGroups(defaultDocGroups);
-      }
-    }
-  }, [defaultDocGroups]);
-
-  const docGroups = useMemo(() => {
-    return customDocGroups;
-  }, [customDocGroups]);
-
-  const [docGroupTargets, setDocGroupTargets] = useState<Record<string, string[]>>({});
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedTargets = localStorage.getItem('admission_doc_targets');
-      let parsed = {};
-      if (savedTargets) {
-        try {
-          parsed = JSON.parse(savedTargets);
-        } catch (e) {}
-      }
-      let updated = false;
-      if (!parsed["khoi_1"]) {
-        parsed["khoi_1"] = ["Nội tỉnh", "Ngoại tỉnh"];
-        updated = true;
-      }
-      if (!parsed["khoi_2_5"]) {
-        parsed["khoi_2_5"] = ["Nội tỉnh", "Ngoại tỉnh"];
-        updated = true;
-      }
-      if (!parsed["khoi_6"]) {
-        parsed["khoi_6"] = ["Nội tỉnh", "Ngoại tỉnh"];
-        updated = true;
-      }
-      if (!parsed["khoi_10_noi_tinh"]) {
-        parsed["khoi_10_noi_tinh"] = ["Nội tỉnh"];
-        updated = true;
-      }
-      if (!parsed["khoi_10_ngoai_tinh"]) {
-        parsed["khoi_10_ngoai_tinh"] = ["Ngoại tỉnh"];
-        updated = true;
-      }
-      if (!parsed["khoi_10"]) {
-        parsed["khoi_10"] = ["Nội tỉnh", "Ngoại tỉnh"];
-        updated = true;
-      }
-      if (updated) {
-        localStorage.setItem('admission_doc_targets', JSON.stringify(parsed));
-      }
-      setDocGroupTargets(parsed);
-    }
+    setDossierGroups(loadAdmissionDossierGroups());
   }, []);
 
-  const [docGroupGrades, setDocGroupGrades] = useState<Record<string, string[]>>({
-    "khoi_1": ["Khối 1"],
-    "khoi_2_5": ["Khối 2", "Khối 3", "Khối 4", "Khối 5"],
-    "khoi_6": ["Khối 6"],
-    "khoi_7_9": ["Khối 7", "Khối 8", "Khối 9"],
-    "khoi_10_noi_tinh": ["Khối 10"],
-    "khoi_10_ngoai_tinh": ["Khối 10"],
-    "khoi_11_12": ["Khối 11", "Khối 12"]
-  });
+  const handleChangeDossierGroups = (next: AdmissionDossierGroup[]) => {
+    setDossierGroups(next);
+    saveAdmissionDossierGroups(next);
+  };
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedGrades = localStorage.getItem('admission_doc_grades_mapping');
-      if (savedGrades) {
-        try {
-          setDocGroupGrades(JSON.parse(savedGrades));
-        } catch (e) {}
-      }
-    }
-  }, []);
-
-  const [selectedDocGroup, setSelectedDocGroup] = useState("khoi_1");
-  const getDocStorageKey = (group: string) => 'admission_docs_' + group;
-
-  const [docList, setDocList] = useState<any[]>([]);
-  const filteredDocList = useMemo(() => {
-    const activeTargets = docGroupTargets[selectedDocGroup] || [];
-    const activeGrades = docGroupGrades[selectedDocGroup] || [];
-    return docList.filter(d => {
-      const matchTarget = activeTargets.length === 0 || !d.targets || d.targets.length === 0 || d.targets.some(t => activeTargets.includes(t));
-      const matchGrade = activeGrades.length === 0 || !d.grades || d.grades.length === 0 || d.grades.some(g => activeGrades.includes(g));
-      return matchTarget && matchGrade;
-    });
-  }, [docList, selectedDocGroup, docGroupTargets, docGroupGrades]);
-
-  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
-  const [editingDoc, setEditingDoc] = useState<any>(null);
-  const [docFormName, setDocFormName] = useState("");
-  const [docFormQty, setDocFormQty] = useState("");
-  const [docFormNote, setDocFormNote] = useState("");
-  const [docFormSelectedTargets, setDocFormSelectedTargets] = useState<string[]>([]);
-  const [docFormSelectedGrades, setDocFormSelectedGrades] = useState<string[]>([]);
-
-
-  // Student print/export modal states - declared BEFORE modalDocList useMemo which depends on them
+  // Student print/export modal states - declared BEFORE modalDossier useMemo which depends on them
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [selectedReportStudent, setSelectedReportStudent] = useState(null);
+  const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
   const [isInvitation, setIsInvitation] = useState(false);
   const [isCommitment, setIsCommitment] = useState(false);
 
-  // One-time automatic migration for new default checklists
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isMigrated = localStorage.getItem('admission_docs_migrated_reports_v4');
-      if (!isMigrated) {
-        localStorage.removeItem('admission_doc_groups');
-        localStorage.removeItem('admission_docs_khoi_1');
-        localStorage.removeItem('admission_docs_khoi_2_5');
-        localStorage.removeItem('admission_docs_khoi_6');
-        localStorage.removeItem('admission_docs_khoi_10_noi_tinh');
-        localStorage.removeItem('admission_docs_khoi_10_ngoai_tinh');
-        localStorage.removeItem('admission_doc_targets');
-        localStorage.removeItem('admission_doc_grades_mapping');
-        localStorage.setItem('admission_docs_migrated_reports_v4', 'true');
+  const previewDossier = useMemo(() => {
+    const mapPreviewTarget = (key: string): { groupId: string; grade: number } => {
+      if (key === "khoi_2_5") return { groupId: "trong_nuoc", grade: 2 };
+      if (key === "khoi_6") return { groupId: "trong_nuoc", grade: 6 };
+      if (key === "khoi_7_9") return { groupId: "trong_nuoc", grade: 7 };
+      if (key === "khoi_10" || key === "khoi_10_noi_tinh" || key === "khoi_10_ngoai_tinh") {
+        return { groupId: "trong_nuoc", grade: 10 };
       }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedGroups = localStorage.getItem('admission_doc_groups');
-      if (savedGroups) {
-        try { setCustomDocGroups(JSON.parse(savedGroups)); } catch (e) {}
-      }
-      const savedTargets = localStorage.getItem('admission_doc_targets');
-      if (savedTargets) {
-        try { setDocGroupTargets(JSON.parse(savedTargets)); } catch (e) {}
-      }
-      const savedGrades = localStorage.getItem('admission_doc_grades_mapping');
-      if (savedGrades) {
-        try { setDocGroupGrades(JSON.parse(savedGrades)); } catch (e) {}
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storageKey = getDocStorageKey(selectedDocGroup);
-      const savedDocs = localStorage.getItem(storageKey);
-      if (savedDocs) {
-        try {
-          setDocList(JSON.parse(savedDocs));
-        } catch (e) {
-          setDocList([]);
-        }
-      } else if (selectedDocGroup === "khoi_1") {
-        setDocList(defaultDocumentsGrade1);
-        localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade1));
-      } else if (selectedDocGroup === "khoi_2_5") {
-        setDocList(defaultDocumentsGrade2_5);
-        localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade2_5));
-      } else if (selectedDocGroup === "khoi_6") {
-        setDocList(defaultDocumentsGrade6);
-        localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade6));
-      } else if (selectedDocGroup === "khoi_10_noi_tinh") {
-        setDocList(defaultDocumentsGrade10NoiTinh);
-        localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade10NoiTinh));
-      } else if (selectedDocGroup === "khoi_10_ngoai_tinh") {
-        setDocList(defaultDocumentsGrade10NgoaiTinh);
-        localStorage.setItem(storageKey, JSON.stringify(defaultDocumentsGrade10NgoaiTinh));
-      } else {
-        setDocList([]);
-      }
-    }
-  }, [selectedDocGroup, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, defaultDocumentsGrade10NoiTinh, defaultDocumentsGrade10NgoaiTinh]);
-
-  const modalDocList = useMemo(() => {
-    if (typeof window === "undefined" || !selectedReportStudent) return [];
-    
-    let studentGroup = "khoi_1";
-    const getNumericGrade = (g: any) => {
-      if (!g) return null;
-      const match = g.toString().match(/\d+/);
-      return match ? parseInt(match[0], 10) : null;
+      if (key === "khoi_11_12") return { groupId: "trong_nuoc", grade: 11 };
+      if (key === "nuoc_ngoai") return { groupId: "nuoc_ngoai", grade: 2 };
+      if (key === "homeschooling") return { groupId: "homeschooling", grade: 2 };
+      return { groupId: "trong_nuoc", grade: 1 };
     };
-    const sGradeNum = getNumericGrade(selectedReportStudent.grade);
-    
-    const gradeMatchedGroups = docGroups.filter(g => {
-      const mappedGrades = docGroupGrades[g.id] || [];
-      const hasGradeMatch = mappedGrades.some(gradeStr => {
-        if (!selectedReportStudent.grade) return false;
-        const sGrade = selectedReportStudent.grade.toString().toLowerCase();
-        const gStr = gradeStr.toLowerCase();
-        return sGrade === gStr || sGrade.includes(gStr) || gStr.includes(sGrade);
-      });
-      if (hasGradeMatch) return true;
-      
-      if (sGradeNum !== null) {
-        if (g.id === "khoi_1" && sGradeNum === 1) return true;
-        if (g.id === "khoi_2_5" && sGradeNum >= 2 && sGradeNum <= 5) return true;
-        if (g.id === "khoi_6" && sGradeNum === 6) return true;
-        if (g.id === "khoi_10_noi_tinh" && sGradeNum === 10) return true;
-        if (g.id === "khoi_10_ngoai_tinh" && sGradeNum === 10) return true;
-      }
-      return false;
+    const { groupId, grade } = mapPreviewTarget(rcTargetGroup);
+    return resolveStudentDossier(dossierGroups, {
+      groupId,
+      grade,
+      hasCommitment: false,
     });
+  }, [rcTargetGroup, dossierGroups]);
 
-    if (selectedReportStudent.targetType) {
-      const studentTargets = selectedReportStudent.targetType.split(',').map((x: any) => x.trim().toLowerCase()).filter(Boolean);
-      
-      const targetMatch = gradeMatchedGroups.find(g => {
-        const mappedTs = docGroupTargets[g.id] || [];
-        return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
-      });
-      
-      if (targetMatch) {
-        studentGroup = targetMatch.id;
-      } else {
-        const anyTargetMatch = docGroups.find(g => {
-          const mappedTs = docGroupTargets[g.id] || [];
-          return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
-        });
-        if (anyTargetMatch) {
-          studentGroup = anyTargetMatch.id;
-        } else {
-          studentGroup = gradeMatchedGroups[0]?.id || "doi_tuong_tuyen_sinh";
-        }
-      }
-    } else {
-      studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
-    }
-    
-    const saved = localStorage.getItem('admission_docs_' + studentGroup);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      } catch (e) {}
-    }
-    
-    if (studentGroup === "khoi_2_5") return defaultDocumentsGrade2_5;
-    if (studentGroup === "khoi_6") return defaultDocumentsGrade6;
-    if (studentGroup === "khoi_10_noi_tinh") return defaultDocumentsGrade10NoiTinh;
-    if (studentGroup === "khoi_10_ngoai_tinh") return defaultDocumentsGrade10NgoaiTinh;
-    return defaultDocumentsGrade1;
-  }, [selectedReportStudent, docGroups, docGroupTargets, docGroupGrades, defaultDocumentsGrade1, defaultDocumentsGrade2_5, defaultDocumentsGrade6, defaultDocumentsGrade10NoiTinh, defaultDocumentsGrade10NgoaiTinh]);
+  const previewDocList = previewDossier.items;
+
+  const modalDossier = useMemo(() => {
+    if (!selectedReportStudent) return null;
+    return resolveStudentDossier(dossierGroups, {
+      grade: selectedReportStudent.grade,
+      targetType: selectedReportStudent.targetType,
+      hasCommitment: studentHasLearningCommitment(selectedReportStudent),
+    });
+  }, [selectedReportStudent, dossierGroups]);
+
+  const modalDocList = modalDossier?.items || [];
 
 
   const activePeriods = useMemo(() => {
@@ -1598,82 +1336,18 @@ export function ReportsClient({
     return null;
   };
 
-  const getStudentDocListForEmail = (student: any) => {
-    if (typeof window === "undefined" || !student) return [];
-    
-    let studentGroup = "khoi_1";
-    const getNumericGrade = (g: any) => {
-      if (!g) return null;
-      const match = g.toString().match(/d+/);
-      return match ? parseInt(match[0], 10) : null;
-    };
-    const sGradeNum = getNumericGrade(student.grade);
-    
-    const gradeMatchedGroups = docGroups.filter(g => {
-      const mappedGrades = docGroupGrades[g.id] || [];
-      const hasGradeMatch = mappedGrades.some(gradeStr => {
-        if (!student.grade) return false;
-        const sGrade = student.grade.toString().toLowerCase();
-        const gStr = gradeStr.toLowerCase();
-        return sGrade === gStr || sGrade.includes(gStr) || gStr.includes(sGrade);
-      });
-      if (hasGradeMatch) return true;
-      
-      if (sGradeNum !== null) {
-        if (g.id === "khoi_1" && sGradeNum === 1) return true;
-        if (g.id === "khoi_2_5" && sGradeNum >= 2 && sGradeNum <= 5) return true;
-        if (g.id === "khoi_6" && sGradeNum === 6) return true;
-        if (g.id === "khoi_10_noi_tinh" && sGradeNum === 10) return true;
-        if (g.id === "khoi_10_ngoai_tinh" && sGradeNum === 10) return true;
-      }
-      return false;
+  const getStudentDossierForEmail = (student: any) => {
+    if (!student) return null;
+    return resolveStudentDossier(dossierGroups, {
+      grade: student.grade,
+      targetType: student.targetType,
+      hasCommitment: studentHasLearningCommitment(student),
     });
-
-    if (student.targetType) {
-      const studentTargets = student.targetType.split(',').map((x: any) => x.trim().toLowerCase()).filter(Boolean);
-      
-      const targetMatch = gradeMatchedGroups.find(g => {
-        const mappedTs = docGroupTargets[g.id] || [];
-        return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
-      });
-      
-      if (targetMatch) {
-        studentGroup = targetMatch.id;
-      } else {
-        const anyTargetMatch = docGroups.find(g => {
-          const mappedTs = docGroupTargets[g.id] || [];
-          return mappedTs.some(ts => studentTargets.includes(ts.toLowerCase()));
-        });
-        if (anyTargetMatch) {
-          studentGroup = anyTargetMatch.id;
-        } else {
-          studentGroup = gradeMatchedGroups[0]?.id || "doi_tuong_tuyen_sinh";
-        }
-      }
-    } else {
-      studentGroup = gradeMatchedGroups[0]?.id || "khoi_1";
-    }
-    
-    const saved = localStorage.getItem('admission_docs_' + studentGroup);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      } catch (e) {}
-    }
-    
-    if (studentGroup === "khoi_2_5") return defaultDocumentsGrade2_5;
-    if (studentGroup === "khoi_6") return defaultDocumentsGrade6;
-    if (studentGroup === "khoi_10_noi_tinh") return defaultDocumentsGrade10NoiTinh;
-    if (studentGroup === "khoi_10_ngoai_tinh") return defaultDocumentsGrade10NgoaiTinh;
-    return defaultDocumentsGrade1;
   };
 
   const buildLetterHtmlForEmail = (student: any, config: any, isCommitmentDoc?: boolean) => {
     const rawGrade = student?.grade || "1";
-    const gradeMatch = rawGrade.toString().match(/d+/);
+    const gradeMatch = rawGrade.toString().match(/\d+/);
     const numericGrade = gradeMatch ? gradeMatch[0] : rawGrade;
     const extSubs2 = extractCommittedSubjects(student);
     const comSubs = extSubs2.length > 0 ? extSubs2.join(", ") : "";
@@ -1696,29 +1370,37 @@ export function ReportsClient({
 
     const rawParagraphs = renderedContent.split("\n").map((p: string) => p.trim()).filter(Boolean);
     const isCommitmentReport = isCommitmentDoc || isCommitment || (config?.title?.toUpperCase().includes("CAM KẾT")) || (rcReportType === "cam_ket_hoc_tap");
-    const hasSubtitleLine = !isCommitmentReport && rawParagraphs.length > 0 && /^về\s+(kết\s+quả|việc)\s+/i.test(rawParagraphs[0]);
+    const hasSubtitleLine = rawParagraphs.length > 0 && /^về\s+(kết\s+quả|việc)\s+/i.test(rawParagraphs[0]);
     const subtitleLineHtml = hasSubtitleLine
       ? '<p style="text-align: center; font-style: italic; font-size: 11pt; color: #334155; margin: 3px 0 0 0; text-indent: 0;">' + rawParagraphs[0] + '</p>'
       : '';
     const paragraphs = hasSubtitleLine ? rawParagraphs.slice(1) : rawParagraphs;
     const bodyHtml = paragraphs.map((p: string) => {
       const pClean = p.trim();
-      const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
+      const isList = /^\s*[\d•\-*]+[\.)]?\s+/.test(pClean);
+      const isKinhGui = pClean.toLowerCase().startsWith("kính gửi:");
+      const isCentred = pClean.toLowerCase().includes("về việc");
       const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
       const isWishLine = /^chúc\s+(em|con)\s+luôn\s+tự\s+tin/i.test(pClean);
       const isClosingLine = /^trân\s+trọng[,./]*$/i.test(pClean);
       
       if (isDateLine) return "";
       if (isCentred) {
-        return '<p style="text-align: center; font-weight: 700; text-indent: 0; margin: 0 0 7px 0;">' + pClean + '</p>';
+        return '<p style="text-align: center; font-style: italic; font-weight: 600; text-indent: 0; margin: 0 0 8px 0;">' + pClean + '</p>';
+      }
+      if (isKinhGui) {
+        return '<p style="text-align: center; font-weight: 700; text-indent: 0; margin: 4px 0 9px 0; color: #0f172a;">' + pClean + '</p>';
       }
       if (isClosingLine) {
-        return '<p style="font-weight: 700; font-style: italic; text-indent: 0; margin: 6px 0 2px 0;">' + pClean + '</p>';
+        return '<p style="font-weight: 700; font-style: italic; text-indent: 0; margin: 8px 0 4px 0; color: #0f172a;">' + pClean + '</p>';
       }
       if (isWishLine) {
-        return '<p style="font-weight: 700; text-indent: 0; margin: 0 0 7px 0;">' + pClean + '</p>';
+        return '<p style="font-weight: 700; text-indent: 0; margin: 0 0 8px 0;">' + pClean + '</p>';
       }
-      return '<p style="text-indent: ' + (isCommitmentReport ? '10mm' : '0') + '; margin: 0 0 7px 0;">' + formatParagraphInlineHtmlStr(pClean) + '</p>';
+      if (isList) {
+        return '<p style="padding-left: 18px; text-indent: 0; margin: 0 0 7px 0; text-align: justify; line-height: 1.48; color: #1e293b;">' + formatParagraphInlineHtmlStr(pClean) + '</p>';
+      }
+      return '<p style="text-indent: ' + (isCommitmentReport ? '10mm' : '0') + '; margin: 0 0 8px 0; text-align: justify; line-height: 1.48;">' + formatParagraphInlineHtmlStr(pClean) + '</p>';
     }).filter(Boolean).join("");
     
     const pronounLabel = selectedLevel === "preschool" ? "Thân gửi con " : "Thân gửi em ";
@@ -1772,15 +1454,30 @@ export function ReportsClient({
 
     let page2Html = "";
     if (selectedLevel !== "preschool") {
-      const docList = getStudentDocListForEmail(student);
-      if (docList && docList.length > 0) {
+      const resolvedDossier = getStudentDossierForEmail(student);
+      const docList = resolvedDossier?.items || [];
+      if (docList.length > 0) {
         const rowsHtml = docList.map((item: any, idx: number) => {
-          return '<tr style="border-bottom: 1px solid #000000;">' +
-            '<td style="padding: 10px; border-right: 1px solid #000000; text-align: center; color: #000000;">' + (idx + 1) + '</td>' +
-            '<td style="padding: 10px 15px; border-right: 1px solid #000000; font-weight: bold; color: #000000;">' + item.name + '</td>' +
-            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;" className="p-2 border border-slate-200">' + item.qty + '</td>' +
+          return '<tr style="border-bottom: 1px solid #0f172a;">' +
+            '<td style="padding: 9px 10px; border-right: 1px solid #0f172a; text-align: center; color: #0f172a;">' + (idx + 1) + '</td>' +
+            '<td style="padding: 9px 14px; border-right: 1px solid #0f172a; font-weight: 500; color: #0f172a;">' + item.name + '</td>' +
+            '<td style="padding: 9px 10px; text-align: center; font-weight: 700; color: #0f172a;">' + item.qty + '</td>' +
           '</tr>';
         }).join("");
+
+        const footnotesHtml = (resolvedDossier?.footnotes || []).length > 0
+          ? '<div style="margin-top: 14px; font-size: 12px; color: #0f172a; line-height: 1.5; position: relative; z-index: 10;">' +
+              (resolvedDossier?.footnotes || []).map((line: string, i: number) =>
+                '<p style="margin: 0 0 4px 0;' + (i === 0 ? ' font-weight: 700; font-style: italic;' : '') + '">' + line + '</p>'
+              ).join("") +
+            '</div>'
+          : '';
+
+        const submissionNoteHtml = resolvedDossier?.submissionNote
+          ? '<p style="margin-top: 14px; font-size: 12.5px; font-weight: 700; color: #0f172a; line-height: 1.5; text-align: left; position: relative; z-index: 10;">' +
+              resolvedDossier.submissionNote +
+            '</p>'
+          : '';
 
         page2Html = '<div class="print-page">' +
             getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 130mm; height: auto; opacity: 1; z-index: 0; pointer-events: none;", "Watermark") +
@@ -1795,23 +1492,22 @@ export function ReportsClient({
             '<div class="letter-title">' +
               '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
             '</div>' +
-            '<div style="margin-top: 20px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
-              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;" className="border border-slate-200 border-collapse">' +
-                '<thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">' +
-                  '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
-                    '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
-                    '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
-                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="p-2 border border-white/15 font-semibold">Số lượng</th>' +
+            '<div style="margin-top: 16px; border: 1px solid #0f172a; overflow: hidden; position: relative; z-index: 10;">' +
+              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #0f172a; font-family: \'Open Sans\', Arial, sans-serif;">' +
+                '<thead>' +
+                  '<tr style="background-color: #003B3A; color: #ffffff; border-bottom: 1px solid #0f172a;">' +
+                    '<th style="padding: 10px; border-right: 1px solid #0f172a; text-align: center; font-weight: 700; width: 60px;">STT</th>' +
+                    '<th style="padding: 10px 14px; border-right: 1px solid #0f172a; text-align: left; font-weight: 700;">Tên hồ sơ</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: 700; width: 110px;">Số lượng</th>' +
                   '</tr>' +
                 '</thead>' +
-                '<tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">' +
+                '<tbody style="background-color: #ffffff;">' +
                   rowsHtml +
                 '</tbody>' +
               '</table>' +
             '</div>' +
-            '<p style="margin-top: 24px; font-size: 13px; font-weight: bold; color: #000000; line-height: 1.5; text-align: left; position: relative; z-index: 10;">' +
-              'Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.' +
-            '</p>' +
+            footnotesHtml +
+            submissionNoteHtml +
             '<div class="footer-container">' +
               customFooterHtml +
             '</div>' +
@@ -1839,8 +1535,8 @@ export function ReportsClient({
           '.print-page {' +
             'font-family: "Open Sans", Arial, sans-serif;' +
             'width: 210mm;' +
-            (isCommitmentReport ? 'height: auto; min-height: 296.8mm; overflow: visible;' : 'height: 296.8mm; overflow: hidden;') +
-            'padding: 15mm 20mm 32mm 22mm;' +
+            'height: 296.8mm; overflow: hidden;' +
+            (isCommitmentReport ? 'padding: 13mm 19mm 28mm 21mm;' : 'padding: 15mm 20mm 32mm 22mm;') +
             'box-sizing: border-box;' +
             'position: relative;' +
             'background-color: #ffffff;' +
@@ -1889,8 +1585,7 @@ export function ReportsClient({
             'z-index: 10;' +
           '}' +
           '.content-body {' +
-            'font-size: 11pt;' +
-            'line-height: 1.42;' +
+            (isCommitmentReport ? 'font-size: 10.6pt; line-height: 1.48;' : 'font-size: 11pt; line-height: 1.46;') +
             'text-align: justify;' +
             'color: #1e293b;' +
             'position: relative;' +
@@ -2046,10 +1741,63 @@ export function ReportsClient({
     return { periodLabel, batchLabel, batchDateRange };
   };
 
-  const handleOpenEmailModal = () => {
-    const { periodLabel, batchLabel } = resolvePeriodAndBatchForStudents(filteredStudents);
-    
-    setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào KSNL - Kỳ: ${periodLabel} - Đợt: ${batchLabel}`);
+  const [quickEmailPreviewHtml, setQuickEmailPreviewHtml] = useState<string>("");
+  const [quickEmailPreviewLoading, setQuickEmailPreviewLoading] = useState<boolean>(false);
+  const [showQuickEmailPreview, setShowQuickEmailPreview] = useState<boolean>(false);
+  const [quickEmailPreviewDevice, setQuickEmailPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+
+  const handlePreviewQuickEmail = async () => {
+    const targetStudents = filteredStudents
+      .filter(s => selectedEmailStudentIds.includes(s.id))
+      .map(s => ({
+        ...s,
+        periodName: s?.period?.name || activePeriods.find(p => p.id === s?.periodId)?.name || activePeriod?.name || "",
+        batchName: s?.batch?.name || activeBatches.find(b => b.id === s?.batchId)?.name || "",
+        committedSubjectsList: extractCommittedSubjects(s),
+      }));
+    if (targetStudents.length === 0) return alert("Vui lòng chọn ít nhất 1 học sinh để xem trước!");
+    setQuickEmailPreviewLoading(true);
+    setShowQuickEmailPreview(true);
+    try {
+      const { periodLabel, batchLabel, batchDateRange } = resolvePeriodAndBatchForStudents(targetStudents);
+      const apiRoute = selectedLevel === "preschool"
+        ? "/api/admin/preschool-send-quick-email"
+        : "/api/admin/send-quick-email";
+      const res = await fetch(apiRoute, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: recipientEmail,
+          cc: ccEmail,
+          subject: emailSubject,
+          periodName: periodLabel,
+          batchName: batchLabel,
+          batchDateRange,
+          campusName: selectedCampusObj?.campusName || campusLabel,
+          students: targetStudents,
+          baseUrl: typeof window !== "undefined" ? window.location.origin : "",
+          previewOnly: true
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.preview?.html) {
+        setQuickEmailPreviewHtml(data.preview.html);
+      } else {
+        setQuickEmailPreviewHtml("");
+        alert("Không thể tạo bản xem trước email: " + (data.error || "Lỗi không xác định"));
+      }
+    } catch (err: any) {
+      setQuickEmailPreviewHtml("");
+      alert("Lỗi kết nối khi xem trước email: " + err.message);
+    } finally {
+      setQuickEmailPreviewLoading(false);
+    }
+  };
+
+  const handleOpenEmailModal = (openInPreview = false) => {
+    const { periodLabel, batchLabel, batchDateRange } = resolvePeriodAndBatchForStudents(filteredStudents);
+    const nextSubject = `[Báo cáo nhanh] Kết quả Khảo sát đầu vào ${selectedLevel === "preschool" ? "Mầm non" : "KSNL"} - Kỳ: ${periodLabel} - Đợt: ${batchLabel}`;
+    setEmailSubject(nextSubject);
     
     // Automatically pre-populate To: Giáo vụ + GĐCS + BGH MN (nếu mầm non) + Tư vấn theo Cơ sở
     const defaultTo = [
@@ -2065,8 +1813,48 @@ export function ReportsClient({
     setCcEmail(defaultCc);
 
     setAttachLetters(false);
-    setSelectedEmailStudentIds(filteredStudents.map(s => s.id));
+    const allIds = filteredStudents.map(s => s.id);
+    setSelectedEmailStudentIds(allIds);
+    setQuickEmailPreviewHtml("");
+    setShowQuickEmailPreview(Boolean(openInPreview));
     setIsEmailModalOpen(true);
+
+    if (openInPreview && filteredStudents.length > 0) {
+      const targetStudents = filteredStudents.map(s => ({
+        ...s,
+        periodName: s?.period?.name || activePeriods.find(p => p.id === s?.periodId)?.name || activePeriod?.name || "",
+        batchName: s?.batch?.name || activeBatches.find(b => b.id === s?.batchId)?.name || "",
+        committedSubjectsList: extractCommittedSubjects(s),
+      }));
+      setQuickEmailPreviewLoading(true);
+      const apiRoute = selectedLevel === "preschool"
+        ? "/api/admin/preschool-send-quick-email"
+        : "/api/admin/send-quick-email";
+      fetch(apiRoute, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: defaultTo,
+          cc: defaultCc,
+          subject: nextSubject,
+          periodName: periodLabel,
+          batchName: batchLabel,
+          batchDateRange,
+          campusName: selectedCampusObj?.campusName || campusLabel,
+          students: targetStudents,
+          baseUrl: typeof window !== "undefined" ? window.location.origin : "",
+          previewOnly: true,
+        }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data?.success && data?.preview?.html) {
+            setQuickEmailPreviewHtml(data.preview.html);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setQuickEmailPreviewLoading(false));
+    }
   };
 
   const handleSendEmailsSubmit = async () => {
@@ -2111,9 +1899,24 @@ export function ReportsClient({
       const data = await res.json();
       if (res.ok && data.success) {
         const syncedCnt = data?.handoverSync?.syncedCount ?? targetStudents.length;
+        const sentIdsSet = new Set(targetStudents.map(st => String(st.id)));
+        const actorName = data?.handoverSync?.actorName || "Cán bộ Khảo thí / Giáo vụ";
+        const sentAtIso = data?.handoverSync?.syncedAt || new Date().toISOString();
+        setStudents(prev => prev.map(st =>
+          sentIdsSet.has(String(st.id))
+            ? {
+                ...st,
+                resultEmailStatus: "SENT",
+                resultEmailSentBy: actorName,
+                resultEmailSentAt: sentAtIso,
+                resultEmailNote: `Đã gửi email tới: ${recipientEmail}${ccEmail ? ` (CC: ${ccEmail})` : ""}`,
+              }
+            : st
+        ));
         notify(`Đã gửi email trả kết quả và cập nhật nhật ký Bàn giao Tư vấn (Bước 7) cho ${syncedCnt} học sinh!`);
         alert(`Đã gửi email trả kết quả thành công và cập nhật nhật ký Bàn giao Tư vấn (Bước 7) cho ${syncedCnt} học sinh!`);
         setIsEmailModalOpen(false);
+        setShowQuickEmailPreview(false);
       } else {
         alert("Gửi email thất bại: " + (data.error || "Lỗi không xác định"));
       }
@@ -2224,7 +2027,7 @@ export function ReportsClient({
                 min-height: 296mm !important;
                 max-height: 296mm !important;
                 margin: 0 auto !important;
-                padding: 15mm 20mm 32mm 22mm !important;
+                padding: 13mm 19mm 28mm 21mm !important;
                 box-sizing: border-box !important;
                 position: relative !important;
                 background-color: white !important;
@@ -2328,32 +2131,23 @@ export function ReportsClient({
       },
       activePeriod?.academicYear?.name || selectedYearName
     );
-    // Split the paragraph if "Kính mong Phụ huynh..." is in the middle of a paragraph
-    const paragraphs: string[] = [];
-    fullContent.replace(/\u00a0/g, ' ').split('\n').filter(Boolean).forEach(p => {
-      const pNorm = p.normalize('NFC');
-      const regex = /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i;
-      const match = pNorm.match(regex);
-      if (match && match.index !== undefined && match.index > 0) {
-        paragraphs.push(p.substring(0, match.index).trim());
-        paragraphs.push(p.substring(match.index).trim());
-      } else {
-        paragraphs.push(p.trim());
-      }
-    });
+    // Giữ nguyên từng đoạn văn tự nhiên, không cắt đôi câu giữa đoạn
+    const paragraphs: string[] = fullContent
+      .replace(/\u00a0/g, ' ')
+      .split('\n')
+      .map((p: string) => p.trim())
+      .filter(Boolean);
 
     const isCommitmentReport = isCommitment || (studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT"));
-    const splitIndex = isCommitmentReport ? paragraphs.findIndex(p => {
-      return /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i.test(p.normalize('NFC'));
-    }) : -1;
-    const isSplit = isCommitmentReport && splitIndex !== -1;
+    // Bản Cam kết học tập luôn gói gọn trong đúng 1 trang A4 (không tách sang trang 2)
+    const isSplit = false;
 
-    const hasPrintSubtitle = !isCommitmentReport && paragraphs.length > 0 && /^về\s+(kết\s+quả|việc)\s+/i.test(paragraphs[0]);
+    const hasPrintSubtitle = paragraphs.length > 0 && /^về\s+(kết\s+quả|việc)\s+/i.test(paragraphs[0]);
     const printSubtitleText = hasPrintSubtitle ? paragraphs[0] : "";
     const effectivePrintParagraphs = hasPrintSubtitle ? paragraphs.slice(1) : paragraphs;
 
-    const page1Paragraphs = isSplit ? paragraphs.slice(0, splitIndex) : effectivePrintParagraphs;
-    const page2Paragraphs = isSplit ? paragraphs.slice(splitIndex) : [];
+    const page1Paragraphs = effectivePrintParagraphs;
+    const page2Paragraphs: string[] = [];
 
     const printSchoolHeaderName = selectedLevel === "preschool"
       ? "TRƯỜNG MẦM NON SKY-LINE"
@@ -2399,10 +2193,14 @@ export function ReportsClient({
     };
 
     const buildParagraphElement = (paras: string[]) => {
+      const bodyFontSize = isCommitmentReport ? "10.6pt" : "11pt";
+      const bodyLineHeight = isCommitmentReport ? "1.48" : "1.46";
+      const bodyMarginBottom = isCommitmentReport ? "8px" : "8px";
       return paras.map((para, idx) => {
         const pClean = para.trim();
-        const isList = /^\s*[\d•\-*]+/.test(pClean);
-        const isCentred = pClean.toLowerCase().includes("về việc") || pClean.toLowerCase().includes("kính gửi:");
+        const isList = /^\s*[\d•\-*]+[\.)]?\s+/.test(pClean);
+        const isKinhGui = pClean.toLowerCase().startsWith("kính gửi:");
+        const isCentred = pClean.toLowerCase().includes("về việc");
         const isDateLine = pClean.toLowerCase().includes("ngày") && pClean.toLowerCase().includes("tháng") && pClean.toLowerCase().includes("năm") && (pClean.toLowerCase().includes("đà nẵng") || pClean.toLowerCase().includes("hà nội") || pClean.toLowerCase().includes("hồ chí minh"));
         const isWishLine = /^chúc\s+(em|con)\s+luôn\s+tự\s+tin/i.test(pClean);
         const isClosingLine = /^trân\s+trọng[,./]*$/i.test(pClean);
@@ -2410,28 +2208,50 @@ export function ReportsClient({
         if (isDateLine) return null;
         if (isCentred) {
           return (
-            <p key={idx} style={{ textAlign: "center", fontWeight: "700", margin: "0 0 7px 0", fontSize: "11pt", textIndent: 0 }}>
+            <p key={idx} style={{ textAlign: "center", fontStyle: "italic", fontWeight: "600", margin: "0 0 8px 0", fontSize: bodyFontSize, textIndent: 0, color: "#334155" }}>
+              {pClean}
+            </p>
+          );
+        }
+        if (isKinhGui) {
+          return (
+            <p key={idx} style={{ textAlign: "center", fontWeight: "700", margin: "4px 0 9px 0", fontSize: "11pt", textIndent: 0, color: "#0f172a" }}>
               {pClean}
             </p>
           );
         }
         if (isClosingLine) {
           return (
-            <p key={idx} style={{ fontWeight: "700", fontStyle: "italic", margin: "6px 0 2px 0", fontSize: "11pt", textIndent: 0, color: "#0f172a" }}>
+            <p key={idx} style={{ fontWeight: "700", fontStyle: "italic", margin: "8px 0 4px 0", fontSize: bodyFontSize, textIndent: 0, color: "#0f172a" }}>
               {pClean}
             </p>
           );
         }
         if (isWishLine) {
           return (
-            <p key={idx} style={{ fontWeight: "700", margin: "0 0 7px 0", textAlign: "justify", lineHeight: "1.42", fontSize: "11pt", textIndent: 0, color: "#0f172a" }}>
+            <p key={idx} style={{ fontWeight: "700", margin: `0 0 ${bodyMarginBottom} 0`, textAlign: "justify", lineHeight: bodyLineHeight, fontSize: bodyFontSize, textIndent: 0, color: "#0f172a" }}>
               {pClean}
+            </p>
+          );
+        }
+        if (isList) {
+          const listMatch = pClean.match(/^(\s*(?:\d+\.|[•\-*])\s+)(.*)$/);
+          return (
+            <p key={idx} style={{ paddingLeft: "18px", fontWeight: "400", color: "#1e293b", margin: "0 0 7px 0", textAlign: "justify", lineHeight: bodyLineHeight, fontSize: bodyFontSize, textIndent: 0 }}>
+              {listMatch ? (
+                <>
+                  <strong style={{ fontWeight: "700", color: "#0f172a" }}>{listMatch[1]}</strong>
+                  {renderFormattedParagraphContent(listMatch[2])}
+                </>
+              ) : (
+                renderFormattedParagraphContent(pClean)
+              )}
             </p>
           );
         }
         
         return (
-          <p key={idx} style={isList ? { paddingLeft: "20px", fontWeight: "700", color: "#334155", margin: "3px 0", fontSize: "11pt" } : { textIndent: isCommitmentReport ? "10mm" : 0, margin: "0 0 7px 0", textAlign: "justify", lineBreak: "auto", lineHeight: "1.42", fontSize: "11pt", color: "#1e293b" }}>
+          <p key={idx} style={{ textIndent: isCommitmentReport ? "10mm" : 0, margin: `0 0 ${bodyMarginBottom} 0`, textAlign: "justify", lineBreak: "auto", lineHeight: bodyLineHeight, fontSize: bodyFontSize, color: "#1e293b" }}>
             {renderFormattedParagraphContent(pClean)}
           </p>
         );
@@ -2516,14 +2336,14 @@ export function ReportsClient({
     return (
       <>
         {/* PAGE 1: THE LETTER */}
-        <div className={`bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] p-[15mm_20mm_32mm_22mm] box-border relative flex flex-col justify-start select-none font-sans text-slate-800 leading-normal ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto min-h-[297mm] overflow-visible' : 'h-[297mm] min-h-[297mm] overflow-hidden'}`} style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>
+        <div className={`bg-white rounded-none border border-slate-300 w-[210mm] min-w-[210mm] max-w-[210mm] h-[297mm] min-h-[297mm] max-h-[297mm] overflow-hidden box-border relative flex flex-col justify-start select-none font-sans text-slate-800 leading-normal ${isCommitmentReport ? 'p-[13mm_19mm_28mm_21mm]' : 'p-[15mm_20mm_32mm_22mm]'}`} style={{ fontFamily: '"Open Sans", Arial, sans-serif' }}>
           <img crossOrigin={(studentCampusConfig?.background || DEFAULT_WATERMARK_SVG).startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig?.background || DEFAULT_WATERMARK_SVG} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "130mm", height: "auto", opacity: 1, zIndex: 0, pointerEvents: "none" }} />
 
-          <div className={`relative z-10 flex flex-col justify-start ${isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT") ? 'h-auto' : 'h-full'}`}>
+          <div className="relative z-10 flex flex-col justify-start h-full">
             <div>
-              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A19A", paddingBottom: "6px", marginBottom: "12px" }}>
+              <div className="header-container" style={{ display: "flex", flexDirection: "column", borderBottom: "1.5px solid #00A19A", paddingBottom: isCommitmentReport ? "5px" : "6px", marginBottom: isCommitmentReport ? "10px" : "12px" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <img src={studentCampusConfig?.logo || DEFAULT_LOGO_URL} alt="Logo" style={{ maxHeight: "42px", objectFit: "contain" }} />
+                  <img src={studentCampusConfig?.logo || DEFAULT_LOGO_URL} alt="Logo" style={{ maxHeight: isCommitmentReport ? "38px" : "42px", objectFit: "contain" }} />
                 </div>
                 <div style={{ textAlign: "left", marginTop: "4px" }}>
                   <h4 style={{ fontFamily: '"Open Sans", Arial, sans-serif', fontSize: "10.5pt", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.3px", color: "#0f172a", margin: 0 }}>
@@ -2532,18 +2352,18 @@ export function ReportsClient({
                 </div>
               </div>
 
-              <div style={{ textAlign: "center", margin: "6px 0 12px 0" }}>
-                <h2 style={{ textAlign: "center", fontSize: "17pt", fontWeight: "800", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: 0 }}>
+              <div style={{ textAlign: "center", margin: isCommitmentReport ? "4px 0 10px 0" : "6px 0 12px 0" }}>
+                <h2 style={{ textAlign: "center", fontSize: isCommitmentReport ? "16pt" : "17pt", fontWeight: "800", color: "#0f172a", textTransform: "uppercase", letterSpacing: "1px", margin: 0 }}>
                   {studentCampusConfig?.title}
                 </h2>
                 {printSubtitleText && (
-                  <p style={{ textAlign: "center", fontSize: "11pt", fontStyle: "italic", color: "#334155", margin: "3px 0 0 0", textIndent: 0 }}>
+                  <p style={{ textAlign: "center", fontSize: "10.8pt", fontStyle: "italic", color: "#334155", margin: "3px 0 0 0", textIndent: 0 }}>
                     {printSubtitleText}
                   </p>
                 )}
               </div>
 
-              {!(isCommitment || studentCampusConfig?.title?.toUpperCase().includes("CAM KẾT")) && (
+              {!isCommitmentReport && (
                 <p style={{ fontSize: "11.5pt", fontWeight: "700", marginBottom: "8px", color: "#0f172a", textIndent: 0 }}>
                   {isInvitation ? (
                     <>Kính gửi Quý Phụ huynh và em <strong style={{ fontWeight: "700", color: "#0f172a" }}>{selectedReportStudent?.fullName}</strong>,</>
@@ -2560,23 +2380,24 @@ export function ReportsClient({
               </div>
             </div>
 
-            <div style={{ flex: "0 1 auto", minHeight: "4px", maxHeight: "14px" }} />
-            {isCommitment ? (
-              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", marginTop: "6px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                  <p style={{ fontSize: "10.5pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#334155" }}>ĐẠI DIỆN GIA ĐÌNH</p>
-                  <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "1px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
-                  <div style={{ height: "48px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "2px 0" }}>
-                    <span style={{ fontSize: "9.5pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
+            <div style={{ flex: "0 1 auto", minHeight: "6px", maxHeight: "14px" }} />
+            {isCommitmentReport ? (
+              <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: "8px", paddingTop: "2px", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%", paddingTop: "16px" }}>
+                  <p style={{ fontSize: "10.2pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>ĐẠI DIỆN GIA ĐÌNH</p>
+                  <p style={{ fontSize: "9pt", fontStyle: "italic", color: "#64748b", marginTop: "2px", textIndent: 0 }}>(Ký và ghi rõ họ tên)</p>
+                  <div style={{ height: "46px", display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "2px 0" }}>
+                    <span style={{ fontSize: "9pt", color: "#cbd5e1", fontStyle: "italic" }}>Ký tên</span>
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "45%" }}>
-                  <p style={{ fontSize: "10.5pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
-                  <p style={{ fontSize: "9.5pt", fontWeight: "700", textTransform: "uppercase", color: "#334155", margin: "1px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
-                  <div style={{ height: "48px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", width: "48%" }}>
+                  <p style={{ fontSize: "9.8pt", fontStyle: "italic", color: "#334155", margin: "0 0 2px 0", textAlign: "center", textIndent: 0 }}>{formattedLetterDate}</p>
+                  <p style={{ fontSize: "10.2pt", fontWeight: "700", textTransform: "uppercase", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>TM. HỘI ĐỒNG TUYỂN SINH</p>
+                  <p style={{ fontSize: "9pt", fontWeight: "700", textTransform: "uppercase", color: "#334155", margin: "2px 0 0 0", textAlign: "center", textIndent: 0 }}>GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
+                  <div style={{ height: "46px", display: "flex", alignItems: "center", justifyContent: "center", margin: "2px 0" }}>
                     {renderDirectorSignatureVisual()}
                   </div>
-                  <p style={{ fontSize: "11pt", fontWeight: "700", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
+                  <p style={{ fontSize: "10.5pt", fontWeight: "700", margin: 0, textAlign: "center", textIndent: 0, color: "#0f172a" }}>{studentCampusConfig?.directorName || "Trần Thị Thanh"}</p>
                 </div>
               </div>
             ) : (
@@ -2619,30 +2440,42 @@ export function ReportsClient({
                   DANH MỤC HỒ SƠ NHẬP HỌC
                 </h2>
 
-                <div style={{ marginTop: "10px", overflow: "hidden", border: "1.5px solid #0f172a", borderRadius: "8px" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }} className="border border-slate-200 border-collapse">
-                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                      <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1.5px solid #0f172a" }}>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textAlign: "center", width: "60px", textTransform: "uppercase" }} className="p-2 border border-white/15 font-semibold">STT</th>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", borderRight: "1.5px solid #0f172a", textTransform: "uppercase" }} className="p-2 border border-white/15 font-semibold">Tên hồ sơ / Giấy tờ</th>
-                        <th style={{ padding: "10px 15px", fontWeight: "bold", textAlign: "center", width: "120px", textTransform: "uppercase" }} className="p-2 border border-white/15 font-semibold">Số lượng</th>
+                <div style={{ marginTop: "10px", overflow: "hidden", border: "1.5px solid #0f172a", borderRadius: "6px" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", color: "#0f172a" }} className="tabular-nums">
+                    <thead>
+                      <tr style={{ backgroundColor: "#003B3A", color: "#ffffff", borderBottom: "1.5px solid #0f172a" }}>
+                        <th style={{ padding: "10px 12px", fontWeight: "bold", borderRight: "1px solid #1e293b", textAlign: "center", width: "60px" }}>STT</th>
+                        <th style={{ padding: "10px 14px", fontWeight: "bold", borderRight: "1px solid #1e293b", textAlign: "left" }}>Tên hồ sơ / Giấy tờ</th>
+                        <th style={{ padding: "10px 12px", fontWeight: "bold", textAlign: "center", width: "110px" }}>Số lượng</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                    <tbody className="bg-white">
                       {modalDocList.map((item, idx) => (
                         <tr key={item.id || idx} style={{ borderBottom: "1px solid #0f172a" }}>
-                          <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", textAlign: "center" }} className="p-2 border border-slate-200">{idx + 1}</td>
-                          <td style={{ padding: "10px 15px", borderRight: "1.5px solid #0f172a", fontWeight: "500" }} className="p-2 border border-slate-200">{item.name}</td>
-                          <td style={{ padding: "10px 15px", textAlign: "center", fontWeight: "bold" }} className="p-2 border border-slate-200">{item.qty}</td>
+                          <td style={{ padding: "9px 12px", borderRight: "1px solid #0f172a", textAlign: "center" }}>{idx + 1}</td>
+                          <td style={{ padding: "9px 14px", borderRight: "1px solid #0f172a", fontWeight: "500" }}>{item.name}</td>
+                          <td style={{ padding: "9px 12px", textAlign: "center", fontWeight: "bold" }}>{item.qty}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
 
-                <p style={{ marginTop: "10px", fontSize: "13px", fontWeight: "bold", color: "#1e293b", textAlign: "justify" }}>
-                  * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
-                </p>
+                {modalDossier && modalDossier.footnotes.length > 0 && (
+                  <div style={{ marginTop: "12px", fontSize: "12px", color: "#1e293b", lineHeight: 1.5 }}>
+                    {modalDossier.footnotes.map((line, i) => (
+                      <p key={i} style={{ margin: "0 0 4px 0", fontWeight: i === 0 ? "bold" : "normal", fontStyle: i === 0 ? "italic" : "normal" }}>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {modalDossier?.submissionNote && (
+                  <p style={{ marginTop: "12px", fontSize: "13px", fontWeight: "bold", color: "#1e293b", textAlign: "justify" }}>
+                    {modalDossier.submissionNote}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -2913,8 +2746,6 @@ export function ReportsClient({
 
           {/* Right panel live preview */}
           {(() => {
-            const rcSelectedCampusObj = campuses.find((c: any) => c.id === rcCampusId);
-            const rcSelectedCampus = rcSelectedCampusObj?.campusCode || rcSelectedCampusObj?.campusName || rcCampusId || "";
             const tempFullText = renderTemplate(
               rcContent || "",
               { 
@@ -2928,27 +2759,20 @@ export function ReportsClient({
               }
             );
             
-            const tempParagraphs: string[] = [];
-            tempFullText.replace(/\u00a0/g, ' ').split('\n').filter(Boolean).forEach(p => {
-              const pNorm = p.normalize('NFC');
-              const regex = /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i;
-              const match = pNorm.match(regex);
-              if (match && match.index !== undefined && match.index > 0) {
-                tempParagraphs.push(p.substring(0, match.index).trim());
-                tempParagraphs.push(p.substring(match.index).trim());
-              } else {
-                tempParagraphs.push(p.trim());
-              }
-            });
+            const tempParagraphs: string[] = tempFullText
+              .replace(/\u00a0/g, ' ')
+              .split('\n')
+              .map((p: string) => p.trim())
+              .filter(Boolean);
 
             const isTempCommitment = rcReportType === "cam_ket_hoc_tap";
             const splitIndexTemp = isTempCommitment ? tempParagraphs.findIndex(p => {
               return /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i.test(p.normalize('NFC'));
             }) : -1;
-            const isSplitTemp = isTempCommitment && splitIndexTemp !== -1;
+            const isSplitTemp = false;
 
-            const page1ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(0, splitIndexTemp) : tempParagraphs;
-            const page2ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(splitIndexTemp) : [];
+            const page1ParagraphsTemp = tempParagraphs;
+            const page2ParagraphsTemp: string[] = [];
 
             return (
               <div className="lg:col-span-7 shadow-inner p-8 flex flex-col justify-between min-h-[500px] text-xs font-semibold">
@@ -3010,34 +2834,44 @@ export function ReportsClient({
 
                           {/* Table of documents */}
                           <div className="mt-3 overflow-hidden border border-slate-950">
-                            <table className="w-full border-collapse text-left text-[8.5px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                            <table className="w-full border-collapse text-left text-[8.5px] text-slate-900 tabular-nums" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                               <thead>
-                                <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
-                                  <th className="px-2 py-1 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
-                                  <th className="px-3 py-1 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
-                                  <th className="p-1.5 text-center uppercase w-16 border border-slate-200">Số lượng</th>
+                                <tr className="bg-[#003B3A] text-white border-b border-slate-950 font-bold">
+                                  <th className="px-2 py-1 border-r border-slate-700 text-center w-10">STT</th>
+                                  <th className="px-3 py-1 border-r border-slate-700 text-left">Tên hồ sơ</th>
+                                  <th className="p-1.5 text-center w-16">Số lượng</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                              <tbody className="bg-white">
                                 {previewDocList.map((item, idx) => (
                                   <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
-                                    <td className="px-2 py-1 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
-                                    <td className="px-3 py-1 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
-                                    <td className="p-1.5 text-center text-slate-950 font-bold border border-slate-200">{item.qty || "—"}</td>
+                                    <td className="px-2 py-1 border-r border-slate-950 text-center text-slate-900">{idx + 1}</td>
+                                    <td className="px-3 py-1 border-r border-slate-950 font-medium text-slate-900">{item.name}</td>
+                                    <td className="p-1.5 text-center text-slate-950 font-bold">{item.qty || "—"}</td>
                                   </tr>
                                 ))}
                                 {previewDocList.length === 0 && (
                                   <tr>
-                                    <td colSpan={3} className="text-center p-2 text-slate-400 italic border border-slate-200">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
+                                    <td colSpan={3} className="text-center p-2 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
                                   </tr>
                                 )}
                               </tbody>
                             </table>
                           </div>
 
-                          <p className="mt-3 text-[8.5px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                            * Quý phụ huynh vui lòng hoàn thiện và nộp đầy đủ các giấy tờ nêu trên trong vòng 10 ngày kể từ ngày nhận được thông báo trúng tuyển.
-                          </p>
+                          {previewDossier.footnotes.length > 0 && (
+                            <div className="mt-2.5 space-y-0.5 text-[8px] text-slate-800 leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                              {previewDossier.footnotes.map((line, idx) => (
+                                <p key={idx} className={idx === 0 ? "font-bold italic" : ""}>{line}</p>
+                              ))}
+                            </div>
+                          )}
+
+                          {previewDossier.submissionNote && (
+                            <p className="mt-2.5 text-[8.5px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                              {previewDossier.submissionNote}
+                            </p>
+                          )}
                         </div>
                       ) : (
                         /* PAGE 2: COMMITMENT EXPECTATIONS & SIGNATURES PREVIEW */
@@ -3612,7 +3446,16 @@ export function ReportsClient({
 
             <div className="flex items-center gap-2 self-end md:self-center">
               <button
-                onClick={handleOpenEmailModal}
+                type="button"
+                onClick={() => handleOpenEmailModal(true)}
+                className="border border-[#008B85] bg-[#F0FDFA] hover:bg-[#CCFBF1]/70 text-[#003B3A] px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Eye className="w-3.5 h-3.5 text-[#00736E]" />
+                Xem trước Email
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOpenEmailModal(false)}
                 className="bg-[#003B3A] hover:bg-[#005250] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
@@ -3670,13 +3513,24 @@ export function ReportsClient({
                 <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
                   <Mail className="w-5 h-5 text-teal-700" /> Trả kết quả / Gửi mail nhanh
                 </h3>
-                <button
-                  onClick={handleOpenEmailModal}
-                  className="bg-[#003B3A] hover:bg-[#005250] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 cursor-pointer transition-all"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  Gửi Email báo cáo nhanh
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEmailModal(true)}
+                    className="border border-[#008B85] bg-[#F0FDFA] hover:bg-[#CCFBF1]/70 text-[#003B3A] px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#00736E]" />
+                    Xem trước Email
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEmailModal(false)}
+                    className="bg-[#003B3A] hover:bg-[#005250] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 cursor-pointer transition-all"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Gửi Email báo cáo nhanh
+                  </button>
+                </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/70 space-y-2.5 text-xs leading-relaxed text-slate-600 font-semibold">
@@ -3726,7 +3580,10 @@ export function ReportsClient({
                       <th className="p-3 text-center w-36 border-r border-teal-800 whitespace-nowrap font-semibold">Kết quả Phê duyệt</th>
                       <th className="p-3 border-r border-teal-800 whitespace-nowrap font-semibold">Môn Cam kết</th>
                       <th className="p-3 text-center w-[135px] border-r border-teal-800 whitespace-nowrap font-semibold">Thư mời</th>
-                      <th className="p-3 text-center w-[125px] whitespace-nowrap font-semibold">Cam kết</th>
+                      <th className="p-3 text-center w-[125px] border-r border-teal-800 whitespace-nowrap font-semibold">Cam kết</th>
+                      <th className="p-3 text-center w-[135px] border-r border-teal-800 whitespace-nowrap font-semibold text-[#5EEAD4]">Trạng thái gửi email</th>
+                      <th className="p-3 text-left min-w-[140px] border-r border-teal-800 whitespace-nowrap font-semibold text-teal-100">Người gửi</th>
+                      <th className="p-3 text-center w-[140px] whitespace-nowrap font-semibold text-teal-100">Thời gian gửi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0] bg-white">
@@ -3813,6 +3670,50 @@ export function ReportsClient({
                               <span className="text-slate-300">—</span>
                             )}
                           </td>
+                          {/* Trạng thái gửi email */}
+                          <td className="p-3 text-center border border-slate-200 whitespace-nowrap">
+                            {s.resultEmailStatus === "SENT" ? (
+                              <span
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200"
+                                title={s.resultEmailNote || "Đã gửi email trả kết quả"}
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>Đã gửi</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                <span>Chưa gửi</span>
+                              </span>
+                            )}
+                          </td>
+                          {/* Người gửi */}
+                          <td className="p-3 border border-slate-200 whitespace-nowrap text-slate-700">
+                            {s.resultEmailStatus === "SENT" && s.resultEmailSentBy ? (
+                              <span className="font-semibold text-[#003B3A]">{s.resultEmailSentBy}</span>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          {/* Thời gian gửi */}
+                          <td className="p-3 text-center border border-slate-200 whitespace-nowrap tabular-nums text-slate-600">
+                            {s.resultEmailStatus === "SENT" && s.resultEmailSentAt ? (() => {
+                              const dt = new Date(s.resultEmailSentAt);
+                              if (isNaN(dt.getTime())) return String(s.resultEmailSentAt);
+                              const hh = String(dt.getHours()).padStart(2, "0");
+                              const mm = String(dt.getMinutes()).padStart(2, "0");
+                              const dd = String(dt.getDate()).padStart(2, "0");
+                              const mo = String(dt.getMonth() + 1).padStart(2, "0");
+                              const yy = dt.getFullYear();
+                              return (
+                                <span className="font-medium text-slate-700">
+                                  {hh}:{mm} {dd}/{mo}/{yy}
+                                </span>
+                              );
+                            })() : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -3826,388 +3727,25 @@ export function ReportsClient({
 
             {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
       {tab === "admission_documents" && selectedLevel === "high" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 flex items-center justify-center text-teal-600 shadow-inner text-xs font-semibold">
-                <Tag className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="text-lg font-black text-slate-800">Danh mục Hồ sơ nhập học</h2>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Cấu hình danh sách giấy tờ cần nộp theo từng đối tượng tuyển sinh</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => {
-                  setConfirm({
-                    msg: "Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?",
-                    fn: () => {
-                      const defaultDocs = selectedDocGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : selectedDocGroup === "khoi_6" ? defaultDocumentsGrade6 : selectedDocGroup === "khoi_10_noi_tinh" ? defaultDocumentsGrade10NoiTinh : selectedDocGroup === "khoi_10_ngoai_tinh" ? defaultDocumentsGrade10NgoaiTinh : defaultDocumentsGrade1;
-                      setDocList(defaultDocs);
-                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(defaultDocs));
-                    }
-                  });
-                }}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black transition-all flex items-center gap-2"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Khôi phục mẫu
-              </button>
-              <button 
-                onClick={() => {
-                  setEditingDoc(null);
-                  setDocFormName("");
-                  setDocFormQty("");
-                  setDocFormNote("");
-                  setDocFormSelectedTargets(docGroupTargets[selectedDocGroup] || []);
-                  setDocFormSelectedGrades(docGroupGrades[selectedDocGroup] || []);
-                  setIsDocModalOpen(true);
-                }}
-                className="hover:bg-[#003B3A] text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer text-xs font-semibold"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Thêm hồ sơ mới
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left side configurations */}
-            <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
-              <div className="group space-y-2">
-                <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-teal-800/70 ml-1">Chọn Đối tượng Hồ sơ</label>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="relative w-full">
-                    <select 
-                      value={selectedDocGroup} 
-                      onChange={(e) => setSelectedDocGroup(e.target.value)} 
-                      className="w-full pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-teal-200 focus:bg-white transition-all duration-300 text-xs font-semibold"
-                    >
-                      {docGroups.map(g => (
-                        <option key={g.id} value={g.id}>{g.label}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
-                  </div>
-
-                  <div className="flex gap-2 w-full mt-2">
-                    <button 
-                      onClick={() => {
-                        const newName = prompt("Nhập tên Đối tượng Hồ sơ mới:");
-                        if (newName && newName.trim()) {
-                          const newId = "custom_" + Date.now();
-                          const updated = [...customDocGroups, { id: newId, label: newName.trim() }];
-                          setCustomDocGroups(updated);
-                          localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
-                          setSelectedDocGroup(newId);
-                        }
-                      }}
-                      className="flex-1 hover:bg-teal-50 text-teal-600 flex items-center justify-center gap-2 text-xs font-black transition-all shadow-sm text-xs font-semibold"
-                      title="Thêm đối tượng mới"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Thêm đối tượng
-                    </button>
-
-                    {selectedDocGroup && (
-                      <>
-                        <button 
-                          onClick={() => {
-                            const current = customDocGroups.find(g => g.id === selectedDocGroup);
-                            const newName = prompt("Sửa tên Đối tượng Hồ sơ:", current?.label);
-                            if (newName && newName.trim()) {
-                              const updated = customDocGroups.map(g => g.id === selectedDocGroup ? { ...g, label: newName.trim() } : g);
-                              setCustomDocGroups(updated);
-                              localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
-                            }
-                          }}
-                          className="w-10 h-10 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all shadow-sm text-xs font-semibold"
-                          title="Sửa tên đối tượng"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => {
-                            const current = customDocGroups.find(g => g.id === selectedDocGroup);
-                            setConfirm({
-                              msg: `Bạn có chắc chắn muốn xóa Đối tượng "${current?.label}" và toàn bộ hồ sơ đi kèm?`,
-                              fn: () => {
-                                const updated = customDocGroups.filter(g => g.id !== selectedDocGroup);
-                                setCustomDocGroups(updated);
-                                localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
-                                localStorage.removeItem(getDocStorageKey(selectedDocGroup));
-                                setSelectedDocGroup("khoi_1");
-                              }
-                            });
-                          }}
-                          className="w-10 h-10 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all shadow-sm text-xs font-semibold"
-                          title="Xóa đối tượng"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Association checkboxes */}
-              <div className="p-4 space-y-4 text-xs font-semibold">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
-                    Áp dụng cho Đối tượng Tuyển sinh:
-                  </span>
-                  <button
-                    onClick={() => {
-                      localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
-                      notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
-                    }}
-                    className="hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100 cursor-pointer text-xs font-semibold"
-                  >
-                    <Check className="w-3 h-3" />
-                    Lưu
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
-                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
-                    const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
-                    return (
-                      <label key={c.id} className="flex items-center gap-2 shadow-sm cursor-pointer hover:bg-teal-50/20 hover:border-teal-200 transition-all select-none text-xs font-semibold">
-                        <input 
-                          type="checkbox" 
-                          checked={isChecked}
-                          onChange={(e) => {
-                            const currentTargets = docGroupTargets[selectedDocGroup] || [];
-                            let updated;
-                            if (e.target.checked) {
-                              updated = [...currentTargets, c.name];
-                            } else {
-                              updated = currentTargets.filter(name => name !== c.name);
-                            }
-                            const updatedMappings = { ...docGroupTargets, [selectedDocGroup]: updated };
-                            setDocGroupTargets(updatedMappings);
-                            localStorage.setItem('admission_doc_targets', JSON.stringify(updatedMappings));
-                          }}
-                          className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
-                        />
-                        <span className="text-[11px] font-bold text-slate-600">{c.name}</span>
-                      </label>
-                    );
-                  })}
-                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
-                    <span className="text-xs text-slate-400 italic ml-1">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Grade association checkboxes */}
-              <div className="p-4 space-y-4 text-xs font-semibold">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
-                    Áp dụng cho Khối lớp học:
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => {
-                        const updated = ["Khối 2", "Khối 3", "Khối 4", "Khối 5"];
-                        const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
-                        setDocGroupGrades(updatedMappings);
-                        localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
-                      }}
-                      type="button"
-                      className="hover:bg-teal-50 text-teal-600 text-[9px] font-black transition-all text-xs font-semibold"
-                    >
-                      Chọn nhanh 2,3,4,5
-                    </button>
-                    <button
-                      onClick={() => {
-                        localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(docGroupGrades));
-                        notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
-                      }}
-                      type="button"
-                      className="hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100 text-xs font-semibold"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      Lưu
-                    </button>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
-                  {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
-                    const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
-                    return (
-                      <label key={g} className="flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-teal-50/20 hover:border-teal-200 transition-all select-none font-medium text-xs font-semibold">
-                        <input 
-                          type="checkbox" 
-                          checked={isChecked}
-                          onChange={(e) => {
-                            const currentGrades = docGroupGrades[selectedDocGroup] || [];
-                            let updated;
-                            if (e.target.checked) {
-                              updated = [...currentGrades, g];
-                            } else {
-                              updated = currentGrades.filter(name => name !== g);
-                            }
-                            const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
-                            setDocGroupGrades(updatedMappings);
-                            localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
-                          }}
-                          className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
-                        />
-                        <span className="text-[11px] font-bold text-slate-600">{g}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {filteredDocList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                  <Tag className="w-8 h-8 text-slate-300 mb-2" />
-                  <p className="font-bold text-xs text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
-                </div>
-              ) : (
-                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
-                  <table className="w-full border-collapse text-left text-xs text-slate-700">
-                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                      <tr className="text-xs font-semibold">
-                        <th className="p-2 text-center w-12 border border-white/15 font-semibold">TT</th>
-                        <th className="p-2 border border-white/15 text-teal-100 font-semibold">Hồ sơ</th>
-                        <th className="p-2 text-center w-20 border border-white/15 font-semibold">SL</th>
-                        <th className="p-2 text-center w-24 border border-white/15 font-semibold">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E2E8F0] bg-white">
-                      {filteredDocList.map((item, idx) => (
-                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors text-xs font-semibold">
-                          <td className="p-2 p-2 text-center font-bold text-slate-400 border border-slate-200">{idx + 1}</td>
-                          <td className="p-2 p-2 border border-slate-200">
-                            <div className="font-bold text-slate-800 text-[11px] truncate max-w-[120px] sm:max-w-none" title={item.name}>{item.name}</div>
-                          </td>
-                          <td className="p-2 p-2 text-center font-bold text-slate-600 border border-slate-200">{item.qty || "—"}</td>
-                          <td className="p-2 p-2 text-center border border-slate-200">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button 
-                                onClick={() => {
-                                  setEditingDoc(item);
-                                  setDocFormName(item.name);
-                                  setDocFormQty(item.qty);
-                                  setDocFormNote(item.note);
-                                  setDocFormSelectedTargets(item.targets || []);
-                                  setDocFormSelectedGrades(item.grades || []);
-                                  setIsDocModalOpen(true);
-                                }}
-                                className="w-7 h-7 hover:bg-teal-50 text-teal-600 flex items-center justify-center transition-colors text-xs font-semibold"
-                                title="Sửa hồ sơ"
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  setConfirm({
-                                    msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
-                                    fn: () => {
-                                      const updated = docList.filter(d => d.id !== item.id);
-                                      setDocList(updated);
-                                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
-                                    }
-                                  });
-                                }}
-                                className="w-7 h-7 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors text-xs font-semibold"
-                                title="Xóa hồ sơ"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Right side live A4 design preview stack */}
-            <div className="lg:col-span-7 shadow-inner p-8 flex flex-col justify-between min-h-[500px] text-xs font-semibold">
-              <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest mb-5">Khung Xem trước thiết kế A4 thực tế</span>
-              <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                {/* Background Watermark for Preview */}
-                <div 
-                  className="absolute pointer-events-none"
-                  style={{
-                    backgroundImage: `url('${rcBackground || DEFAULT_WATERMARK_SVG}')`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                    backgroundSize: 'contain',
-                    opacity: 1,
-                    top: '50%',
-                    left: '50%',
-                    width: '80%',
-                    height: '80%',
-                    transform: 'translate(-50%, -50%)'
-                  }}
-                />
-
-                {/* Top info */}
-                <div className="relative z-10 space-y-4 flex flex-col h-full justify-between">
-                  <div>
-                    <div className="border-b border-slate-200 pb-2 mb-3">
-                      <img src={rcLogo || DEFAULT_LOGO_URL} alt="Logo" className="h-8 object-contain mb-1" />
-                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        TRƯỜNG TH, THCS, THPT SKY-LINE
-                      </h4>
-                    </div>
-
-                    <div className="text-center mb-3">
-                      <h2 className="text-xs font-black tracking-widest text-teal-800 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        DANH MỤC HỒ SƠ NHẬP HỌC
-                      </h2>
-                    </div>
-
-                    {/* Table stack */}
-                    <div className="mt-4 overflow-hidden border border-slate-950">
-                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        <thead>
-                          <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
-                            <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
-                            <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
-                            <th className="p-2 p-2 text-center uppercase w-16 border border-slate-200">Số lượng</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
-                          {filteredDocList.map((item, idx) => (
-                            <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
-                              <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
-                              <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
-                              <td className="p-2 p-2 text-center text-slate-950 font-bold border border-slate-200">{item.qty || "—"}</td>
-                            </tr>
-                          ))}
-                          {filteredDocList.length === 0 && (
-                            <tr>
-                              <td colSpan={3} className="text-center p-2 text-slate-400 italic border border-slate-200">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                      * Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
-                    </p>
-                  </div>
-
-                  {/* Signature/Footer Anchor */}
-                  <div className="pt-2 border-t border-slate-200 mt-2">
-                    <img src={rcFooter || DEFAULT_FOOTER_URL} alt="Footer" className="w-full h-auto object-contain" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AdmissionDossierTab
+          groups={dossierGroups}
+          onChangeGroups={handleChangeDossierGroups}
+          targetTypeOptions={configs
+            .filter((c) => c.categoryType === "DOI_TUONG_TS")
+            .map((c) => ({ id: c.id, name: c.name }))}
+          logoUrl={rcLogo || DEFAULT_LOGO_URL}
+          watermarkUrl={rcBackground || DEFAULT_WATERMARK_SVG}
+          footerUrl={rcFooter || DEFAULT_FOOTER_URL}
+          schoolHeaderName={(() => {
+            const cObj = (campuses || []).find((c: any) => c.id === rcCampusId);
+            const cCode = String(cObj?.campusCode || cObj?.campusName || "").toUpperCase();
+            return cCode.includes("CS4") || cCode.includes("HILL")
+              ? "TRƯỜNG TH, THCS, THPT SKY-LINE HILL"
+              : "TRƯỜNG TH, THCS, THPT SKY-LINE";
+          })()}
+          onNotify={(msg, type) => notify(msg, type || "ok")}
+          onConfirm={(msg, fn) => setConfirm({ msg, fn })}
+        />
       )}
       <Modal 
         open={isPrintModalOpen} 
@@ -4267,158 +3805,146 @@ export function ReportsClient({
       )}
 
             {/* DOCUMENT ADD/EDIT MODAL */}
-      {isDocModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
-            <div className="flex items-center justify-between text-xs font-semibold">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 text-teal-600 flex items-center justify-center text-xs font-semibold">
-                  <Tag className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-800">{editingDoc ? "Cập nhật Hồ sơ" : "Thêm Hồ sơ Mới"}</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Đối tượng: {selectedDocGroup === "khoi_1" ? "Khối 1" : selectedDocGroup === "khoi_2_5" ? "Khối 2 đến 5" : selectedDocGroup === "khoi_6" ? "Khối 6" : selectedDocGroup === "khoi_7_9" ? "Khối 7 đến 9" : selectedDocGroup === "khoi_10" ? "Khối 10" : selectedDocGroup === "khoi_11_12" ? "Khối 11 đến 12" : "Đối tượng Tuyển sinh"}</p>
-                </div>
-              </div>
-              <button onClick={() => setIsDocModalOpen(false)} className="w-8 h-8 rounded-lg bg-slate-200/50 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Tên Hồ sơ yêu cầu <span className="text-rose-500">*</span></label>
-                <input 
-                  type="text" 
-                  value={docFormName} 
-                  onChange={(e) => setDocFormName(e.target.value)} 
-                  placeholder="Ví dụ: Đơn đăng ký nhập học" 
-                  className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Số lượng</label>
-                  <input 
-                    type="text" 
-                    value={docFormQty} 
-                    onChange={(e) => setDocFormQty(e.target.value)} 
-                    placeholder="Ví dụ: 01 bản" 
-                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Ghi chú</label>
-                  <input 
-                    type="text" 
-                    value={docFormNote} 
-                    onChange={(e) => setDocFormNote(e.target.value)} 
-                    placeholder="Ví dụ: Bản sao y" 
-                    className="w-full text-sm font-bold text-slate-700 outline-none focus:border-teal-200 focus:bg-white transition-all animate-none text-xs font-semibold"
-                  />
-                </div>
-              </div>
-              <div className="pt-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Khối lớp học</label>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
-                    const isChecked = docFormSelectedGrades.includes(g);
-                    return (
-                      <label key={g} className="flex items-center gap-1 hover:bg-emerald-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
-                        <input type="checkbox" checked={isChecked} onChange={(e) => { if(e.target.checked) setDocFormSelectedGrades(p=>[...p,g]); else setDocFormSelectedGrades(p=>p.filter(x=>x!==g)); }} className="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300" />
-                        <span className="text-[11px] font-bold text-slate-600">{g}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Đối tượng Tuyển sinh</label>
-                <div className="flex flex-wrap gap-2">
-                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
-                    const isChecked = docFormSelectedTargets.includes(c.name);
-                    return (
-                      <label key={c.id} className="flex items-center gap-1.5 hover:bg-teal-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
-                        <input 
-                          type="checkbox" 
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setDocFormSelectedTargets(p => [...p, c.name]);
-                            } else {
-                              setDocFormSelectedTargets(p => p.filter(x => x !== c.name));
-                            }
-                          }}
-                          className="w-4 h-4 rounded text-teal-600 focus:ring-indigo-500 border-slate-300"
-                        />
-                        <span className="text-xs font-bold text-slate-600">{c.name}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 text-xs font-semibold">
-              <button 
-                onClick={() => setIsDocModalOpen(false)} 
-                className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-xl text-xs font-black transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button 
-                onClick={() => {
-                  if (!docFormName.trim()) {
-                    notify("Vui lòng nhập tên hồ sơ!", "err");
-                    return;
-                  }
-                  
-                  let updated = [];
-                  if (editingDoc) {
-                    updated = docList.map(d => d.id === editingDoc.id ? { ...d, name: docFormName, qty: docFormQty, note: docFormNote, targets: docFormSelectedTargets, grades: docFormSelectedGrades } : d);
-                  } else {
-                    const newId = docList.length > 0 ? Math.max(...docList.map(d => d.id)) + 1 : 1;
-                    updated = [...docList, { id: newId, name: docFormName, qty: docFormQty, note: docFormNote, targets: docFormSelectedTargets, grades: docFormSelectedGrades }];
-                  }
-                  
-                  setDocList(updated);
-                  localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
-                  setIsDocModalOpen(false);
-                }} 
-                className="hover:bg-[#003B3A] text-white text-xs font-black transition-colors shadow-lg shadow-indigo-100 text-xs font-semibold"
-              >
-                Lưu hồ sơ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* EMAIL QUICK MODAL */}
       <Modal
         open={isEmailModalOpen}
-        onClose={() => setIsEmailModalOpen(false)}
+        onClose={() => {
+          setIsEmailModalOpen(false);
+          setShowQuickEmailPreview(false);
+        }}
         title="Gửi email Trả kết quả theo đợt"
-        size="xl"
+        size={showQuickEmailPreview ? "2xl" : "xl"}
         footer={
-          <div className="flex items-center justify-end gap-3 w-full">
-            <button
-              onClick={() => setIsEmailModalOpen(false)}
-              className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={handleSendEmailsSubmit}
-              disabled={emailSending}
-              className="px-6 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#005250] text-white text-xs font-bold shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {emailSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {emailSending ? emailSendingStatus : "Gửi ngay"}
-            </button>
+          <div className="flex items-center justify-between gap-3 w-full flex-wrap">
+            {showQuickEmailPreview ? (
+              <button
+                type="button"
+                onClick={() => setShowQuickEmailPreview(false)}
+                disabled={emailSending}
+                className="px-4 py-2.5 rounded-xl border border-[#008B85] bg-[#F0FDFA] hover:bg-[#CCFBF1]/70 text-[#003B3A] text-xs font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors"
+              >
+                ← Quay lại chỉnh người nhận / danh sách
+              </button>
+            ) : (
+              <span className="text-[11px] font-semibold text-slate-500">
+                Bước 1/2: Kiểm tra người nhận & danh sách, sau đó xem trước nội dung Email trước khi gửi.
+              </span>
+            )}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEmailModalOpen(false);
+                  setShowQuickEmailPreview(false);
+                }}
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              {!showQuickEmailPreview ? (
+                <button
+                  type="button"
+                  onClick={handlePreviewQuickEmail}
+                  disabled={quickEmailPreviewLoading}
+                  className="px-6 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#005250] text-white text-xs font-bold shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {quickEmailPreviewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4 text-[#5EEAD4]" />}
+                  Xem trước Email trước khi gửi
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSendEmailsSubmit}
+                  disabled={emailSending || quickEmailPreviewLoading}
+                  className="px-6 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#005250] text-white text-xs font-bold shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {emailSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-[#5EEAD4]" />}
+                  {emailSending ? emailSendingStatus : "Xác nhận gửi Email"}
+                </button>
+              )}
+            </div>
           </div>
         }
       >
+        {showQuickEmailPreview ? (
+          <div className="flex flex-col gap-3 h-[70vh]">
+            <div className="rounded-xl bg-white border border-[#E2E8F0] px-4 py-2.5 text-xs grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div className="truncate"><span className="text-slate-500">Người nhận (To): </span><strong className="text-[#003B3A]">{recipientEmail || "Chưa nhập"}</strong></div>
+              <div className="truncate"><span className="text-slate-500">CC: </span><strong className="text-slate-700">{ccEmail || "Không có"}</strong></div>
+              <div className="truncate"><span className="text-slate-500">Tiêu đề: </span><strong className="text-slate-800">{emailSubject}</strong></div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs text-[#003B3A]">
+              <span className="leading-relaxed">
+                <strong>Xem trước Email thật:</strong> Bộ phận Tư vấn bấm trực tiếp nút <strong>↓ Thư chúc mừng</strong> hoặc <strong>↓ Bản cam kết</strong> để tải PDF A4 (không cần đăng nhập).
+              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="inline-flex items-center rounded-lg border border-[#E2E8F0] bg-white p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setQuickEmailPreviewDevice("desktop")}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      quickEmailPreviewDevice === "desktop"
+                        ? "bg-[#003B3A] text-white"
+                        : "text-slate-600 hover:text-[#003B3A]"
+                    }`}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    Máy tính
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickEmailPreviewDevice("mobile")}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      quickEmailPreviewDevice === "mobile"
+                        ? "bg-[#003B3A] text-white"
+                        : "text-slate-600 hover:text-[#003B3A]"
+                    }`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Điện thoại
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePreviewQuickEmail}
+                  disabled={quickEmailPreviewLoading}
+                  className="px-2.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-[#00736E] text-[11px] font-semibold hover:bg-[#F0FDFA] shrink-0 cursor-pointer transition-colors"
+                >
+                  Làm mới
+                </button>
+              </div>
+            </div>
+            {quickEmailPreviewLoading ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs bg-slate-50 rounded-xl border border-slate-200">
+                <Loader2 className="w-6 h-6 animate-spin text-[#008B85]" />
+                <span>Đang dựng bản xem trước Email Trả kết quả...</span>
+              </div>
+            ) : quickEmailPreviewHtml ? (
+              <div className="flex-1 min-h-0 flex items-stretch justify-center bg-[#E2E8F0]/60 rounded-xl border border-[#CBD5E1] p-2 sm:p-3 overflow-hidden">
+                <div
+                  className={
+                    quickEmailPreviewDevice === "mobile"
+                      ? "w-[390px] max-w-full h-full rounded-[26px] border-[6px] border-[#0F172A] bg-white shadow-xl overflow-hidden transition-all duration-200"
+                      : "w-full h-full rounded-lg border border-[#CBD5E1] bg-white shadow-xs overflow-hidden transition-all duration-200"
+                  }
+                >
+                  <iframe
+                    title="Xem trước Email Trả kết quả theo đợt"
+                    srcDoc={quickEmailPreviewHtml}
+                    className="w-full h-full bg-[#F1F5F9] border-0"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-slate-200">
+                Không có dữ liệu xem trước.
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-h-[70vh] overflow-y-auto pr-1">
           {/* Left inputs column */}
           <div className="lg:col-span-7 space-y-4 text-left">
@@ -4502,11 +4028,11 @@ export function ReportsClient({
               <input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Nhập tiêu đề email..." className={inp} />
             </div>
 
-            {/* Summary table note (No PDF attachment needed) */}
+            {/* Summary table note (Direct 1-click PDF download links) */}
             <div className="p-3.5 rounded-2xl bg-teal-50/60 border border-teal-200/80 text-xs font-semibold text-slate-700 space-y-1">
-              <p className="font-bold text-[#003B3A]">Nội dung bảng Trả kết quả trong Email (không đính kèm PDF):</p>
+              <p className="font-bold text-[#003B3A]">Nội dung bảng Trả kết quả trong Email (tích hợp nút tải trực tiếp PDF):</p>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                Ghi rõ thông tin kết quả từng học sinh theo đợt gồm các cột: <strong>STT, Mã HS, Học sinh, Giới tính, Khối, Hệ, Kết quả Phê duyệt, Môn Cam kết, Thư mời, Cam kết</strong>.
+                Gồm đầy đủ các cột: <strong>STT, Mã HS, Học sinh, Giới tính, Khối, Hệ, Đợt khảo sát, Kết quả Phê duyệt, Môn Cam kết, Thư chúc mừng, Bản cam kết</strong>. Bộ phận Tư vấn chỉ cần bấm trực tiếp nút <strong>⬇ Tải Thư chúc mừng</strong> hoặc <strong>⬇ Tải Bản cam kết</strong> ngay trên email để tải file PDF A4 mà không cần đăng nhập.
               </p>
             </div>
           </div>
@@ -4578,6 +4104,7 @@ export function ReportsClient({
             </div>
           </div>
         </div>
+        )}
       </Modal>
 
       {/* Native Print Media Styles */}
