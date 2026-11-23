@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 import { isOfficiallyApprovedConclusion } from "@/lib/entrance-progress/constants";
-import { buildStudentQuickApproveUrls, generateBatchApprovalToken } from "@/lib/k12-approval-service";
 
 function normalizeEmailAddr(raw?: string | null): string {
   if (!raw || typeof raw !== "string") return "";
@@ -117,6 +116,46 @@ function cleanDirectorNoteForEmail(rawNote?: string | null): string {
   return withoutHistory.replace(/\r?\n/g, "<br/>");
 }
 
+function extractCommitmentSubjectsAndNote(s: any): { committedSubjects: string[]; remainingNoteHtml: string } {
+  const rawNote = String(s?.directorNote || s?.notes || s?.comment || "");
+  let cleanText = rawNote
+    .replace(/--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---[\s\S]*$/i, "")
+    .trim();
+
+  const subjects: string[] = [];
+  const pushSubjects = (items: string[]) => {
+    for (const item of items) {
+      const trimmed = String(item || "").trim();
+      if (!trimmed || trimmed === "—" || trimmed === "-" || trimmed.toLowerCase() === "không") continue;
+      if (!subjects.includes(trimmed)) {
+        subjects.push(trimmed);
+      }
+    }
+  };
+
+  // 1. Ưu tiên đọc từ trường tường minh nếu payload truyền lên
+  const explicitField = s?.committedSubjects ?? s?.commitmentSubjects;
+  if (Array.isArray(explicitField)) {
+    pushSubjects(explicitField);
+  } else if (typeof explicitField === "string" && explicitField.trim()) {
+    pushSubjects(explicitField.split(/[,;]/));
+  }
+
+  // 2. Trích xuất từ dòng "Môn cam kết: [...]" hoặc "[Môn cam kết: ...]" trong directorNote và loại bỏ khỏi ghi chú tránh lặp lại
+  const commitRegex = /(?:^|\r?\n)\s*\[?\s*(?:Môn cam kết|Mon cam ket):\s*\[?([^\]\r\n]+)\]?\s*\]?(?:\r?\n)*/i;
+  const match = cleanText.match(commitRegex);
+  if (match && match[1]) {
+    pushSubjects(match[1].split(/[,;]/));
+    cleanText = cleanText.replace(commitRegex, "\n").trim();
+  }
+
+  const remainingNoteHtml = cleanText ? cleanText.replace(/\r?\n/g, "<br/>") : "—";
+  return {
+    committedSubjects: subjects,
+    remainingNoteHtml
+  };
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user) {
@@ -135,7 +174,8 @@ export async function POST(req: Request) {
       students,
       isPreschool,
       approverName,
-      approverRole
+      approverRole,
+      previewOnly
     } = body;
 
     if (!students || !Array.isArray(students) || students.length === 0) {
@@ -404,47 +444,51 @@ export async function POST(req: Request) {
       } catch {}
     }
 
-    // --- Danh bạ chuẩn / Cấu hình theo từng Cơ sở Sky-Line ---
+    // --- Danh bạ chuẩn / Cấu hình theo từng Cơ sở Sky-Line (chỉ giữ email nhân sự thực tế, loại bỏ alias ảo gdcs.cs*@ / tuyensinh.cs*@ / giaovu.cs*@ / bankhaothi@) ---
+    const isPlaceholderAliasEmail = (em: string) => {
+      const lower = String(em || "").trim().toLowerCase();
+      return (
+        /^(gdcs|tuyensinh|giaovu)\.cs\d+@skylineschool\.edu\.vn$/.test(lower) ||
+        lower === "bankhaothi@skylineschool.edu.vn"
+      );
+    };
+
     const officialGdcsMap: Record<string, string[]> = {
-      CS1: ["longtt@skylineschool.edu.vn", "gdcs.cs1@skylineschool.edu.vn"],
-      CS2: ["khanhpt@skylineschool.edu.vn", "gdcs.cs2@skylineschool.edu.vn"],
-      CS3: ["thanhtt@skylineschool.edu.vn", "gdcs.cs3@skylineschool.edu.vn"],
-      CS4: ["trungct@skylineschool.edu.vn", "gdcs.cs4@skylineschool.edu.vn"],
-      CS5: ["trungdq1@skylineschool.edu.vn", "gdcs.cs5@skylineschool.edu.vn"],
+      CS1: ["longtt@skylineschool.edu.vn"],
+      CS2: ["khanhpt@skylineschool.edu.vn"],
+      CS3: ["thanhtt@skylineschool.edu.vn"],
+      CS4: ["trungct@skylineschool.edu.vn"],
+      CS5: ["trungdq1@skylineschool.edu.vn"],
     };
 
     const officialTuvanMap: Record<string, string[]> = {
-      CS1: ["thuongttn@skylineschool.edu.vn", "tuyensinh.cs1@skylineschool.edu.vn"],
+      CS1: ["thuongttn@skylineschool.edu.vn"],
       CS2: [
         "hoaipt@skylineschool.edu.vn",
         "dinhnth@skylineschool.edu.vn",
         "doanhtt@skylineschool.edu.vn",
         "huyennt@skylineschool.edu.vn",
-        "tuyensinh.cs2@skylineschool.edu.vn",
       ],
       CS3: [
         "thungatt@skylineschool.edu.vn",
         "hapvy@skylineschool.edu.vn",
-        "tuyensinh.cs3@skylineschool.edu.vn",
       ],
       CS4: [
         "senttt@skylineschool.edu.vn",
         "anhntm@skylineschool.edu.vn",
-        "tuyensinh.cs4@skylineschool.edu.vn",
       ],
       CS5: [
         "linhnmh@skylineschool.edu.vn",
         "quyenttx@skylineschool.edu.vn",
-        "tuyensinh.cs5@skylineschool.edu.vn",
       ],
     };
 
     const officialGiaovuMap: Record<string, string[]> = {
-      CS1: ["phuongvt@skylineschool.edu.vn", "thuda@skylineschool.edu.vn", "giaovu.cs1@skylineschool.edu.vn"],
-      CS2: ["thuda@skylineschool.edu.vn", "dunglp@skylineschool.edu.vn", "giaovu.cs2@skylineschool.edu.vn"],
-      CS3: ["thuda@skylineschool.edu.vn", "giaovu.cs3@skylineschool.edu.vn"],
-      CS4: ["bichtramtt@skylineschool.edu.vn", "giaovu.cs4@skylineschool.edu.vn"],
-      CS5: ["dunglp@skylineschool.edu.vn", "giaovu.cs5@skylineschool.edu.vn"],
+      CS1: ["phuongvt@skylineschool.edu.vn", "thuda@skylineschool.edu.vn"],
+      CS2: ["thuda@skylineschool.edu.vn", "dunglp@skylineschool.edu.vn"],
+      CS3: ["thuda@skylineschool.edu.vn"],
+      CS4: ["bichtramtt@skylineschool.edu.vn"],
+      CS5: ["dunglp@skylineschool.edu.vn"],
     };
 
     for (const csCode of campusCodesList) {
@@ -453,16 +497,23 @@ export async function POST(req: Request) {
       const tuvanList = Array.isArray(customCampusCfg?.tuvan) ? customCampusCfg.tuvan : (officialTuvanMap[csCode] || []);
       const giaovuList = Array.isArray(customCampusCfg?.giaovu) ? customCampusCfg.giaovu : (officialGiaovuMap[csCode] || []);
 
-      gdcsList.forEach((e: string) => addEmailToSet(gdcsEmails, e));
-      tuvanList.forEach((e: string) => addEmailToSet(tuvanEmails, e));
-      giaovuList.forEach((e: string) => addEmailToSet(giaovuEmails, e));
+      gdcsList.forEach((e: string) => !isPlaceholderAliasEmail(e) && addEmailToSet(gdcsEmails, e));
+      tuvanList.forEach((e: string) => !isPlaceholderAliasEmail(e) && addEmailToSet(tuvanEmails, e));
+      giaovuList.forEach((e: string) => !isPlaceholderAliasEmail(e) && addEmailToSet(giaovuEmails, e));
     }
 
     // --- D. Ban Kiểm tra & Đảm bảo Chất lượng (Ban KT&ĐBCL) ---
     const configuredKtdbclList = Array.isArray(savedEmailCfg?.ktdbclEmails)
       ? savedEmailCfg.ktdbclEmails
-      : ["thangdx@skylineschool.edu.vn", "ktdbcl@skylineschool.edu.vn", "bankhaothi@skylineschool.edu.vn"];
-    configuredKtdbclList.forEach((e: string) => addEmailToSet(ktdbclEmails, e));
+      : ["thangdx@skylineschool.edu.vn", "ktdbcl@skylineschool.edu.vn"];
+    configuredKtdbclList.forEach((e: string) => !isPlaceholderAliasEmail(e) && addEmailToSet(ktdbclEmails, e));
+
+    // Lọc sạch mọi alias ảo nếu lỡ tồn tại trong DB / cấu hình cũ
+    for (const grp of [gdcsEmails, tuvanEmails, giaovuEmails, ktdbclEmails]) {
+      for (const em of Array.from(grp)) {
+        if (isPlaceholderAliasEmail(em)) grp.delete(em);
+      }
+    }
 
     // Áp dụng cấu hình bật/tắt nhóm người nhận và phân bổ To / CC
     if (!groupCfg.gdcs.enabled) gdcsEmails.clear();
@@ -537,14 +588,9 @@ export async function POST(req: Request) {
     const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
     const protocol = req.headers.get("x-forwarded-proto") || "https";
     const baseUrl = `${protocol}://${host}`;
-    const primaryGdcsEmail = Array.from(gdcsEmails)[0] || currentUserEmail || "gdcs@skylineschool.edu.vn";
-    const effPeriodId = periodId || students[0]?.periodId || "";
-    const effBatchId = batchId || students[0]?.batchId || "all";
-    const batchApproveToken = generateBatchApprovalToken(effPeriodId, effBatchId, Boolean(isPreschool), primaryGdcsEmail);
-    const batchQuickApproveUrl = `${baseUrl}/api/admin/quick-approve/k12?mode=batch&periodId=${encodeURIComponent(effPeriodId)}&batchId=${encodeURIComponent(effBatchId)}&isPreschool=${isPreschool ? "1" : "0"}&email=${encodeURIComponent(primaryGdcsEmail)}&token=${batchApproveToken}`;
 
-    // 4. Xây dựng Bảng HTML 10 cột chuẩn Sổ cái Học thuật Sky-Line:
-    // Mã HS | Học sinh | Ngày sinh | Giới tính | Khối | Hệ | Cơ sở | Kết quả khảo sát | KQ đã xét duyệt | Thao tác (Duyệt trên mail)
+    // 4. Xây dựng Bảng HTML 10 cột chuẩn Sổ cái Học thuật Sky-Line (không hiển thị cột Thao tác, bổ sung cột Môn cam kết):
+    // Mã HS | Học sinh | Ngày sinh | Giới tính | Khối | Hệ | Cơ sở | Kết quả khảo sát | Môn cam kết | KQ đã xét duyệt
     const rowsHtml = students.map((s, idx) => {
       const dob = s.dateOfBirth
         ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN")
@@ -591,90 +637,97 @@ export async function POST(req: Request) {
       }
 
       const scoreDetailHtml = formatStudentScoreSummaryHtml(s);
-      const directorNoteHtml = cleanDirectorNoteForEmail(s.directorNote || s.notes || s.comment);
+      const { committedSubjects, remainingNoteHtml } = extractCommitmentSubjectsAndNote(s);
+      const committedSubjectsHtml =
+        committedSubjects.length > 0
+          ? committedSubjects
+              .map(
+                (subj) =>
+                  `<span style="display: inline-block; padding: 2px 7px; margin: 2px 3px 2px 0; font-size: 10.5px; font-weight: 700; color: #B45309; background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 5px; line-height: 1.35;">${subj}</span>`
+              )
+              .join("")
+          : `<span style="font-size: 11.5px; color: #64748B; font-weight: 500;">Không</span>`;
       const studentBatchLabel = s.batch?.name || finalBatchName;
-
-      const quickUrls = buildStudentQuickApproveUrls({
-        studentId: String(s.id || ""),
-        isPreschool: Boolean(isPreschool),
-        baseUrl,
-        recipientEmail: primaryGdcsEmail,
-        periodId: s.periodId || effPeriodId,
-        batchId: s.batchId || effBatchId
-      });
 
       return `
         <tr style="border-bottom: 1px solid #E2E8F0; background-color: ${idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'};">
           <!-- 1. Mã HS -->
-          <td style="padding: 11px 8px; text-align: left; white-space: nowrap;">
-            <span style="font-size: 11.5px; font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-weight: 700; color: #003B3A; background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 3px 7px; border-radius: 5px;">
-              ${s.studentCode || "—"}
+          <td style="padding: 10px 7px; text-align: left; white-space: nowrap; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Mã HS:</span>
+            <span class="mobile-val">
+              <span style="font-size: 11px; font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-weight: 700; color: #003B3A; background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 3px 6px; border-radius: 5px;">
+                ${s.studentCode || "—"}
+              </span>
             </span>
           </td>
           <!-- 2. Học sinh -->
-          <td style="padding: 11px 10px;">
-            <div style="font-size: 13px; font-weight: 800; color: #0F172A;">${s.fullName || "—"}</div>
-            <div style="margin-top: 3px; font-size: 10.5px; color: #00736E; font-weight: 600;">
-              ${studentBatchLabel}
-            </div>
+          <td style="padding: 10px 8px; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Học sinh:</span>
+            <span class="mobile-val">
+              <div style="font-size: 12.5px; font-weight: 800; color: #0F172A; line-height: 1.35;">${s.fullName || "—"}</div>
+              <div style="margin-top: 2px; font-size: 10px; color: #00736E; font-weight: 600; line-height: 1.35;">
+                ${studentBatchLabel}
+              </div>
+            </span>
           </td>
           <!-- 3. Ngày sinh -->
-          <td style="padding: 11px 8px; font-size: 12px; color: #475569; text-align: center; white-space: nowrap;">${dob}</td>
+          <td style="padding: 10px 6px; font-size: 11.5px; color: #475569; text-align: center; white-space: nowrap; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Ngày sinh:</span>
+            <span class="mobile-val">${dob}</span>
+          </td>
           <!-- 4. Giới tính -->
-          <td style="padding: 11px 8px; font-size: 12px; color: #475569; text-align: center; white-space: nowrap;">${gender}</td>
+          <td style="padding: 10px 6px; font-size: 11.5px; color: #475569; text-align: center; white-space: nowrap; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Giới tính:</span>
+            <span class="mobile-val">${gender}</span>
+          </td>
           <!-- 5. Khối -->
-          <td style="padding: 11px 8px; font-size: 12px; font-weight: 700; color: #003B3A; text-align: center; white-space: nowrap;">${grade}</td>
+          <td style="padding: 10px 6px; font-size: 11.5px; font-weight: 700; color: #003B3A; text-align: center; white-space: nowrap; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Khối:</span>
+            <span class="mobile-val">${grade}</span>
+          </td>
           <!-- 6. Hệ -->
-          <td style="padding: 11px 8px; font-size: 11.5px; font-weight: 600; color: #334155; text-align: center; white-space: nowrap;">${system}</td>
+          <td style="padding: 10px 6px; font-size: 11.5px; font-weight: 600; color: #334155; text-align: center; white-space: nowrap; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Hệ:</span>
+            <span class="mobile-val">${system}</span>
+          </td>
           <!-- 7. Cơ sở -->
-          <td style="padding: 11px 8px; text-align: center; white-space: nowrap;">
-            <span style="display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: 700; color: #00736E; background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 5px;">
-              ${rowCampusCode}
+          <td style="padding: 10px 6px; text-align: center; white-space: nowrap; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Cơ sở:</span>
+            <span class="mobile-val">
+              <span style="display: inline-block; padding: 2px 7px; font-size: 10.5px; font-weight: 700; color: #00736E; background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 5px;">
+                ${rowCampusCode}
+              </span>
             </span>
           </td>
           <!-- 8. Kết quả khảo sát -->
-          <td style="padding: 11px 10px; font-size: 11.5px; color: #334155; line-height: 1.5;">${scoreDetailHtml}</td>
-          <!-- 9. KQ đã xét duyệt -->
-          <td style="padding: 11px 8px; text-align: center;">
-            <span style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; background-color: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder};">
-              ${statusLabel}
-            </span>
-            ${directorNoteHtml && directorNoteHtml !== "—" ? `
-              <div style="margin-top: 4px; font-size: 10.5px; color: #475569; font-style: italic; line-height: 1.35;">
-                ${directorNoteHtml}
-              </div>
-            ` : ""}
+          <td style="padding: 10px 8px; font-size: 11.5px; color: #334155; line-height: 1.5; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Kết quả khảo sát:</span>
+            <span class="mobile-val">${scoreDetailHtml}</span>
           </td>
-          <!-- 10. Thao tác (GĐCS duyệt trực tiếp trên Email) -->
-          <td style="padding: 10px 10px; text-align: right; white-space: nowrap;">
-            ${s.id ? `
-              <div style="margin-bottom: 4px;">
-                <a href="${quickUrls.approveDatUrl}" target="_blank" style="display: inline-block; padding: 4px 9px; font-size: 10.5px; font-weight: 700; color: #FFFFFF; background-color: #059669; border-radius: 5px; text-decoration: none; margin-right: 3px;">
-                  ${quickUrls.primaryLabel}
-                </a>
-                <a href="${quickUrls.approveCamKetOrHocThuUrl}" target="_blank" style="display: inline-block; padding: 4px 9px; font-size: 10.5px; font-weight: 700; color: #FFFFFF; background-color: #D97706; border-radius: 5px; text-decoration: none;">
-                  ${quickUrls.secondaryLabel}
-                </a>
-              </div>
-              <div>
-                <a href="${quickUrls.approveKhongDatUrl}" target="_blank" style="display: inline-block; padding: 3px 8px; font-size: 10px; font-weight: 700; color: #E11D48; background-color: #FFF1F2; border: 1px solid #FECDD3; border-radius: 5px; text-decoration: none; margin-right: 3px;">
-                  ${quickUrls.rejectLabel}
-                </a>
-                <a href="${quickUrls.portalUrl}" target="_blank" style="display: inline-block; padding: 3px 8px; font-size: 10px; font-weight: 700; color: #003B3A; background-color: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 5px; text-decoration: none;">
-                  Chi tiết
-                </a>
-              </div>
-            ` : `
-              <a href="${baseUrl}/admin/xet-duyet-ket-qua" target="_blank" style="display: inline-block; padding: 5px 10px; font-size: 11px; font-weight: 700; color: #FFFFFF; background-color: #003B3A; border-radius: 6px; text-decoration: none;">
-                Chi tiết
-              </a>
-            `}
+          <!-- 9. Môn cam kết -->
+          <td style="padding: 10px 8px; text-align: left; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">Môn cam kết:</span>
+            <span class="mobile-val">${committedSubjectsHtml}</span>
+          </td>
+          <!-- 10. KQ đã xét duyệt -->
+          <td style="padding: 10px 8px; text-align: center; vertical-align: middle;">
+            <span class="mobile-label" style="display: none; mso-hide: all;">KQ đã xét duyệt:</span>
+            <span class="mobile-val">
+              <span style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; background-color: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; white-space: nowrap;">
+                ${statusLabel}
+              </span>
+              ${remainingNoteHtml && remainingNoteHtml !== "—" ? `
+                <div style="margin-top: 4px; font-size: 10.5px; color: #475569; font-style: italic; line-height: 1.35;">
+                  ${remainingNoteHtml}
+                </div>
+              ` : ""}
+            </span>
           </td>
         </tr>
       `;
     }).join("");
 
-    // 5. HTML Email chuẩn Sky-Line Academic Ledger & tương thích 100% Microsoft Outlook
+    // 5. HTML Email chuẩn Sky-Line Academic Ledger, Responsive trên Desktop/Mobile & tương thích Microsoft Outlook
     const emailHtml = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="vi">
@@ -682,9 +735,70 @@ export async function POST(req: Request) {
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thông báo Kết quả Xét duyệt Khảo sát Tuyển sinh - Hệ thống Giáo dục Sky-Line</title>
+  <style type="text/css">
+    body, table, td { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table { border-collapse: collapse; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .mobile-label { display: none; }
+    @media only screen and (max-width: 680px) {
+      .outer-wrap { padding: 8px 4px !important; }
+      .main-card { border-radius: 10px !important; }
+      .header-pad { padding: 20px 16px !important; }
+      .email-title { font-size: 17px !important; line-height: 1.35 !important; }
+      .section-pad { padding: 18px 16px !important; }
+      .table-title-pad { padding: 18px 16px 10px 16px !important; }
+      .table-pad { padding: 0 12px 18px 12px !important; }
+      .footer-pad { padding: 18px 14px !important; }
+      .kpi-row { display: block !important; font-size: 0 !important; }
+      .kpi-cell { display: inline-block !important; width: 50% !important; box-sizing: border-box !important; vertical-align: top !important; }
+      .table-scroll { border: none !important; border-radius: 0 !important; overflow: visible !important; }
+      .responsive-table, .responsive-table tbody { display: block !important; width: 100% !important; min-width: 0 !important; }
+      .responsive-table thead { display: none !important; }
+      .responsive-table tr {
+        display: block !important;
+        margin-bottom: 12px !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 10px !important;
+        background-color: #FFFFFF !important;
+        padding: 8px 12px !important;
+      }
+      .responsive-table td {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 6px 0 !important;
+        text-align: left !important;
+        white-space: normal !important;
+        border-bottom: 1px solid #F1F5F9 !important;
+      }
+      .responsive-table td:last-child { border-bottom: none !important; }
+      .mobile-label {
+        display: inline-block !important;
+        font-size: 10.5px !important;
+        font-weight: 700 !important;
+        color: #64748B !important;
+        width: 112px !important;
+        margin-right: 6px !important;
+        vertical-align: top !important;
+      }
+      .mobile-val {
+        display: inline-block !important;
+        width: calc(100% - 122px) !important;
+        vertical-align: top !important;
+      }
+      .cta-btn {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+        padding: 12px 16px !important;
+      }
+    }
+  </style>
   <!--[if mso]>
   <style type="text/css">
     body, table, td, h1, h2, p, a, div, span { font-family: Arial, Helvetica, sans-serif !important; }
+    .mobile-label { display: none !important; }
   </style>
   <![endif]-->
 </head>
@@ -695,25 +809,26 @@ export async function POST(req: Request) {
     Thông báo Kết quả Xét duyệt Khảo sát Tuyển sinh Sky-Line: ${finalBatchName} - ${finalCampusName}. Kết quả: ${passedCount + committedCount}/${totalCount} Đạt.
   </div>
 
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 24px 12px; min-width: 100%;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#F1F5F9" class="outer-wrap" style="background-color: #F1F5F9; padding: 20px 10px; min-width: 100%;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#FFFFFF" style="max-width: 960px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0, 59, 58, 0.08); border: 1px solid #CBD5E1;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#FFFFFF" class="main-card" style="max-width: 980px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 30px rgba(0, 59, 58, 0.08); border: 1px solid #CBD5E1;">
           
           <!-- BRAND HEADER -->
           <tr>
-            <td bgcolor="#003B3A" style="background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #064E3B 50%, #007A87 100%); padding: 32px 36px; text-align: left; border-bottom: 4px solid #00A19A;">
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+            <td bgcolor="#003B3A" class="header-pad" style="background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #064E3B 50%, #007A87 100%); padding: 26px 32px; text-align: left; border-bottom: 4px solid #00A19A;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
                 <tr>
-                  <td bgcolor="#064E3B" style="background-color: #064E3B; border: 1px solid #00A19A; border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 800; color: #5EEAD4; letter-spacing: 1px; text-transform: uppercase;">
-                    🏫 HỆ THỐNG GIÁO DỤC SKY-LINE &bull; QUẢN LÝ KHẢO SÁT &amp; XÉT TUYỂN
+                  <td bgcolor="#064E3B" style="background-color: #064E3B; border: 1px solid #00A19A; border-radius: 20px; padding: 5px 14px; font-size: 11px; font-weight: 800; color: #5EEAD4; letter-spacing: 0.8px; text-transform: uppercase;">
+                    <img src="${baseUrl}/logo.png" alt="Sky-Line" height="18" style="height: 18px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block;" />
+                    <span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE &bull; QUẢN LÝ KHẢO SÁT &amp; XÉT TUYỂN</span>
                   </td>
                 </tr>
               </table>
-              <h1 style="margin: 0; font-size: 22px; font-weight: 900; color: #FFFFFF; line-height: 1.35; letter-spacing: 0.5px; text-transform: uppercase;">
+              <h1 class="email-title" style="margin: 0; font-size: 21px; font-weight: 900; color: #FFFFFF; line-height: 1.35; letter-spacing: 0.4px; text-transform: uppercase;">
                 THÔNG BÁO KẾT QUẢ XÉT DUYỆT KHẢO SÁT ĐẦU VÀO
               </h1>
-              <div style="margin-top: 10px; font-size: 13px; color: #CCFBF1; font-weight: 500; line-height: 1.5;">
+              <div style="margin-top: 8px; font-size: 13px; color: #CCFBF1; font-weight: 500; line-height: 1.5;">
                 Đợt: <strong style="color: #FDE047;">${finalBatchName}</strong> &bull; Cơ sở: <strong style="color: #FFFFFF;">${finalCampusName}</strong>
               </div>
             </td>
@@ -721,81 +836,71 @@ export async function POST(req: Request) {
 
           <!-- APPROVER & CONTEXT INFO CARD -->
           <tr>
-            <td style="padding: 24px 32px 20px 32px; background-color: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
+            <td class="section-pad" style="padding: 22px 28px 18px 28px; background-color: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
               <div style="font-size: 13.5px; line-height: 1.6; color: #334155;">
                 <div style="margin-bottom: 8px;">
-                  <strong style="color: #003B3A;">Kính gửi:</strong> Giám đốc Cơ sở, Bộ phận Tư vấn Tuyển sinh Cơ sở, Bộ phận Giáo vụ Cơ sở và Ban Kiểm tra &amp; Đảm bảo Chất lượng (KT&amp;ĐBCL),
+                  <strong style="color: #003B3A;">Kính gửi:</strong> Giám đốc Cơ sở, Bộ phận Tư vấn Tuyển sinh Cơ sở, Bộ phận Giáo vụ Cơ sở và Ban KT&amp;ĐBCL,
                 </div>
                 <div>
-                  Hệ thống ghi nhận <strong style="color: #003B3A;">${currentUserName}</strong> (${approverRole || "Giám đốc Cơ sở"}) đã hoàn tất xét duyệt kết quả cho học sinh thuộc <strong style="color: #003B3A;">${finalBatchName}</strong> (${finalPeriodName}) tại cơ sở <strong style="color: #003B3A;">${finalCampusName}</strong> vào lúc <strong>${nowFormatted}</strong>.
+                  <strong style="color: #003B3A;">Hội đồng Tuyển sinh ${finalCampusName}</strong> đã hoàn tất xét duyệt kết quả khảo sát đầu vào cho học sinh thuộc <strong style="color: #003B3A;">${finalBatchName}</strong> (${finalPeriodName}) vào lúc <strong>${nowFormatted}</strong>.
                 </div>
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 14px; background-color: #F0FDFA; border-left: 4px solid #00A19A; border-radius: 6px;">
-                  <tr>
-                    <td style="padding: 12px 16px; font-size: 12.5px; color: #0F766E; line-height: 1.65;">
-                      📌 <strong style="color: #003B3A;">Phân công trách nhiệm &amp; Phối hợp xử lý:</strong><br/>
-                      &bull; <strong>Bộ phận Tư vấn Tuyển sinh Cơ sở:</strong> Căn cứ kết quả đã phê duyệt chính thức để liên hệ Quý Phụ huynh, thông báo kết quả và hướng dẫn triển khai thủ tục nhập học theo đúng thời hạn quy định.<br/>
-                      &bull; <strong>Bộ phận Giáo vụ Cơ sở:</strong> Tiếp nhận kết quả xét duyệt, phối hợp xếp lớp, theo dõi diện cam kết học tập / học thử hoặc bố trí lịch kiểm tra lại (nếu có).<br/>
-                      &bull; <strong>Ban KT&amp;ĐBCL:</strong> Tiếp nhận dữ liệu, giám sát quy trình và lưu trữ hồ sơ theo quy chuẩn đảm bảo chất lượng của Hệ thống Sky-Line.
-                    </td>
-                  </tr>
-                </table>
               </div>
 
               <!-- KPI SUMMARY METRICS -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top: 18px;">
-                <tr>
-                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" style="padding: 4px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="tabular-nums" style="margin-top: 16px;">
+                <tr class="kpi-row">
+                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" class="kpi-cell" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#F0FDFA" align="center" style="background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 12px; padding: 12px 8px; text-align: center;">
-                          <div style="font-size: 10px; font-weight: 800; color: #0F766E; text-transform: uppercase; letter-spacing: 0.8px;">Tổng hồ sơ</div>
+                          <div style="font-size: 11px; font-weight: 700; color: #0F766E;">Tổng hồ sơ</div>
                           <div style="font-size: 22px; font-weight: 900; color: #003B3A; margin-top: 3px;">${totalCount}</div>
-                          <div style="font-size: 10px; color: #007A87; font-weight: 600;">học sinh</div>
+                          <div style="font-size: 10.5px; color: #007A87; font-weight: 600;">học sinh</div>
                         </td>
                       </tr>
                     </table>
                   </td>
-                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" style="padding: 4px;">
+                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" class="kpi-cell" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#ECFDF5" align="center" style="background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 12px; padding: 12px 8px; text-align: center;">
-                          <div style="font-size: 10px; font-weight: 800; color: #065F46; text-transform: uppercase; letter-spacing: 0.8px;">Đạt / Học thử</div>
+                          <div style="font-size: 11px; font-weight: 700; color: #065F46;">Đạt / Học thử</div>
                           <div style="font-size: 22px; font-weight: 900; color: #059669; margin-top: 3px;">${passedCount}</div>
-                          <div style="font-size: 10px; color: #10B981; font-weight: 600;">học sinh</div>
+                          <div style="font-size: 10.5px; color: #10B981; font-weight: 600;">học sinh</div>
                         </td>
                       </tr>
                     </table>
                   </td>
-                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" style="padding: 4px;">
+                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" class="kpi-cell" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#FFFBEB" align="center" style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 12px 8px; text-align: center;">
-                          <div style="font-size: 10px; font-weight: 800; color: #92400E; text-transform: uppercase; letter-spacing: 0.8px;">Đạt cam kết</div>
+                          <div style="font-size: 11px; font-weight: 700; color: #92400E;">Đạt cam kết</div>
                           <div style="font-size: 22px; font-weight: 900; color: #D97706; margin-top: 3px;">${committedCount}</div>
-                          <div style="font-size: 10px; color: #B45309; font-weight: 600;">học sinh</div>
+                          <div style="font-size: 10.5px; color: #B45309; font-weight: 600;">học sinh</div>
                         </td>
                       </tr>
                     </table>
                   </td>
-                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" style="padding: 4px;">
+                  <td width="${absentCount > 0 ? '20%' : '25%'}" align="center" class="kpi-cell" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#FEF2F2" align="center" style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 8px; text-align: center;">
-                          <div style="font-size: 10px; font-weight: 800; color: #991B1B; text-transform: uppercase; letter-spacing: 0.8px;">Không đạt</div>
+                          <div style="font-size: 11px; font-weight: 700; color: #991B1B;">Không đạt</div>
                           <div style="font-size: 22px; font-weight: 900; color: #DC2626; margin-top: 3px;">${failedCount}</div>
-                          <div style="font-size: 10px; color: #EF4444; font-weight: 600;">học sinh</div>
+                          <div style="font-size: 10.5px; color: #EF4444; font-weight: 600;">học sinh</div>
                         </td>
                       </tr>
                     </table>
                   </td>
                   ${absentCount > 0 ? `
-                  <td width="20%" align="center" style="padding: 4px;">
+                  <td width="20%" align="center" class="kpi-cell" style="padding: 4px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td bgcolor="#F1F5F9" align="center" style="background-color: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 12px; padding: 12px 8px; text-align: center;">
-                          <div style="font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.8px;">Vắng KS</div>
+                          <div style="font-size: 11px; font-weight: 700; color: #475569;">Vắng khảo sát</div>
                           <div style="font-size: 22px; font-weight: 900; color: #64748B; margin-top: 3px;">${absentCount}</div>
-                          <div style="font-size: 10px; color: #94A3B8; font-weight: 600;">học sinh</div>
+                          <div style="font-size: 10.5px; color: #94A3B8; font-weight: 600;">học sinh</div>
                         </td>
                       </tr>
                     </table>
@@ -807,15 +912,15 @@ export async function POST(req: Request) {
 
           <!-- TABLE TITLE -->
           <tr>
-            <td style="padding: 24px 32px 14px 32px;">
+            <td class="table-title-pad" style="padding: 20px 28px 12px 28px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td align="left">
-                    <h2 style="margin: 0; font-size: 15px; font-weight: 900; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px;">
-                      📋 Danh Sách Học Sinh &amp; Kết Quả Xét Duyệt Chi Tiết
+                    <h2 style="margin: 0; font-size: 14.5px; font-weight: 800; color: #003B3A; letter-spacing: 0.2px;">
+                      📋 Danh sách học sinh &amp; Kết quả xét duyệt chi tiết
                     </h2>
                   </td>
-                  <td align="right" style="font-size: 12px; font-weight: 700; color: #64748B;">
+                  <td align="right" class="tabular-nums" style="font-size: 12px; font-weight: 700; color: #64748B; white-space: nowrap;">
                     Tổng số: <strong style="color: #007A87;">${totalCount}</strong> học sinh
                   </td>
                 </tr>
@@ -823,23 +928,23 @@ export async function POST(req: Request) {
             </td>
           </tr>
 
-          <!-- DATA TABLE -->
+          <!-- DATA TABLE (RESPONSIVE: TABLE ON DESKTOP / STACKED CARDS ON MOBILE) -->
           <tr>
-            <td style="padding: 0 32px 24px 32px;">
-              <div style="overflow-x: auto; border: 1px solid #CBD5E1; border-radius: 10px;">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; min-width: 920px; font-size: 12px;">
+            <td class="table-pad" style="padding: 0 28px 24px 28px;">
+              <div class="table-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #E2E8F0; border-radius: 12px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="responsive-table tabular-nums" style="border-collapse: collapse; width: 100%; font-size: 12px;">
                   <thead>
                     <tr bgcolor="#003B3A" style="background-color: #003B3A; border-bottom: 2px solid #00A19A;">
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: left; width: 88px; white-space: nowrap;">Mã HS</th>
-                      <th style="padding: 11px 10px; font-size: 11px; font-weight: 700; color: #FFFFFF; text-align: left; width: 155px;">Học sinh</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 78px; white-space: nowrap;">Ngày sinh</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 62px; white-space: nowrap;">Giới tính</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 64px; white-space: nowrap;">Khối</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 72px; white-space: nowrap;">Hệ</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #CCFBF1; text-align: center; width: 64px; white-space: nowrap;">Cơ sở</th>
-                      <th style="padding: 11px 10px; font-size: 11px; font-weight: 700; color: #FFFFFF; text-align: left; width: 165px;">Kết quả khảo sát</th>
-                      <th style="padding: 11px 8px; font-size: 11px; font-weight: 700; color: #5EEAD4; text-align: center; width: 120px;">KQ đã xét duyệt</th>
-                      <th style="padding: 11px 10px; font-size: 11px; font-weight: 700; color: #FFFFFF; text-align: right; width: 145px; white-space: nowrap;">Thao tác</th>
+                      <th style="padding: 10px 7px; font-size: 11px; font-weight: 600; color: #CCFBF1; text-align: left; white-space: nowrap;">Mã HS</th>
+                      <th style="padding: 10px 8px; font-size: 11px; font-weight: 600; color: #FFFFFF; text-align: left;">Học sinh</th>
+                      <th style="padding: 10px 6px; font-size: 11px; font-weight: 600; color: #CCFBF1; text-align: center; white-space: nowrap;">Ngày sinh</th>
+                      <th style="padding: 10px 6px; font-size: 11px; font-weight: 600; color: #CCFBF1; text-align: center; white-space: nowrap;">Giới tính</th>
+                      <th style="padding: 10px 6px; font-size: 11px; font-weight: 600; color: #CCFBF1; text-align: center; white-space: nowrap;">Khối</th>
+                      <th style="padding: 10px 6px; font-size: 11px; font-weight: 600; color: #CCFBF1; text-align: center; white-space: nowrap;">Hệ</th>
+                      <th style="padding: 10px 6px; font-size: 11px; font-weight: 600; color: #CCFBF1; text-align: center; white-space: nowrap;">Cơ sở</th>
+                      <th style="padding: 10px 8px; font-size: 11px; font-weight: 600; color: #FFFFFF; text-align: left;">Kết quả khảo sát</th>
+                      <th style="padding: 10px 8px; font-size: 11px; font-weight: 600; color: #FDE68A; text-align: left; white-space: nowrap;">Môn cam kết</th>
+                      <th style="padding: 10px 8px; font-size: 11px; font-weight: 600; color: #5EEAD4; text-align: center; white-space: nowrap;">KQ đã xét duyệt</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -847,27 +952,16 @@ export async function POST(req: Request) {
                   </tbody>
                 </table>
               </div>
-              <div style="margin-top: 8px; font-size: 11.5px; color: #0F766E; font-weight: 600;">
-                💡 <strong>Duyệt trực tiếp trên Email:</strong> Thầy/Cô Giám đốc Cơ sở có thể bấm trực tiếp vào các nút <strong>✓ Duyệt Đạt</strong>, <strong>⚠ Cam kết</strong> hoặc <strong>✕ Không đạt</strong> ở cột <em>Thao tác</em> trên từng học sinh để phê duyệt hoặc điều chỉnh kết quả ngay mà không cần đăng nhập lại.
-              </div>
             </td>
           </tr>
 
-          <!-- ACTION BUTTONS -->
+          <!-- PORTAL LINK BUTTON -->
           <tr>
-            <td style="padding: 24px 32px 28px 32px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
+            <td class="section-pad" style="padding: 20px 28px 24px 28px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
                 <tr>
-                  ${pendingCount > 0 ? `
-                  <td align="center" bgcolor="#059669" style="background-color: #059669; border-radius: 10px; padding-right: 0;">
-                    <a href="${batchQuickApproveUrl}" target="_blank" style="display: inline-block; padding: 13px 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
-                      ✓ Duyệt Đạt toàn bộ HS chờ duyệt (${pendingCount} HS)
-                    </a>
-                  </td>
-                  <td width="12"></td>
-                  ` : ""}
                   <td align="center" bgcolor="#003B3A" style="background-color: #003B3A; border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 59, 58, 0.2);">
-                    <a href="${baseUrl}/admin/xet-duyet-ket-qua" target="_blank" style="display: inline-block; padding: 13px 28px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                    <a href="${baseUrl}/admin/xet-duyet-ket-qua" target="_blank" class="cta-btn" style="display: inline-block; padding: 12px 26px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
                       🔗 Truy cập Cổng quản lý để xem hồ sơ &amp; biên bản &rarr;
                     </a>
                   </td>
@@ -878,12 +972,12 @@ export async function POST(req: Request) {
 
           <!-- OFFICIAL SKY-LINE BRAND FOOTER -->
           <tr>
-            <td bgcolor="#003B3A" style="background-color: #003B3A; border-top: 3px solid #00A19A; padding: 24px 28px; text-align: center; font-size: 11px; color: #CCFBF1; line-height: 1.6;">
+            <td bgcolor="#003B3A" class="footer-pad" style="background-color: #003B3A; border-top: 3px solid #00A19A; padding: 22px 24px; text-align: center; font-size: 11px; color: #CCFBF1; line-height: 1.6;">
               <div style="font-weight: 800; color: #FFFFFF; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
                 HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
               </div>
-              <div style="color: #99F6E4; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">
-                BAN ĐÀO TẠO &amp; KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC (KT&amp;ĐBCL)
+              <div style="color: #99F6E4; font-weight: 700; font-size: 11px; letter-spacing: 0.4px; margin-top: 3px;">
+                Ban KT&amp;ĐBCL
               </div>
               <div style="margin-top: 8px; color: rgba(255, 255, 255, 0.85); font-size: 11px;">
                 Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 700;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 700;">skylineschool.edu.vn</a>
@@ -907,6 +1001,21 @@ export async function POST(req: Request) {
     // 6. Gửi email qua SMTP & cập nhật Tiến độ Điều hành Khảo sát (Stage 6 & 7)
     const recipientsTo = Array.from(toEmails);
     const recipientsCc = Array.from(ccEmails);
+
+    if (previewOnly) {
+      return NextResponse.json({
+        success: true,
+        preview: {
+          subject: emailSubject,
+          html: emailHtml,
+          toRecipients: recipientsTo,
+          ccRecipients: recipientsCc,
+          batchName: finalBatchName,
+          campusName: finalCampusName,
+          studentCount: students.length
+        }
+      });
+    }
 
     try {
       const actor = {

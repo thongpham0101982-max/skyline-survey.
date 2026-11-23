@@ -483,7 +483,7 @@ export function renderPreschoolApprovalEmailHtml(params: {
                 HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
               </p>
               <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
-                BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                Ban KT&amp;ĐBCL
               </p>
               <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
                 Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">ktdbcl@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
