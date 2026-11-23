@@ -988,13 +988,41 @@ export async function POST(req) {
           }
         }
       }
-      if (!recipientMap.has("ktdbcl@skylineschool.edu.vn")) {
-        recipientMap.set("ktdbcl@skylineschool.edu.vn", {
-          fullName: "Ban Khảo Thí & ĐBCL",
-          email: "ktdbcl@skylineschool.edu.vn",
-          role: "KT&ĐBCL (Bản sao)",
-          isArchiveCopy: true,
+      // Load saved EMAIL_ROUTING_V1 config for Ban KT&ĐBCL / Nhóm Khảo thí members
+      let configuredKtdbclEmails: string[] = ["ktdbcl@skylineschool.edu.vn"];
+      let ktdbclEnabled = true;
+      try {
+        const savedRouting = await (prisma as any).assessmentConfig.findFirst({
+          where: { categoryType: "APPROVAL_EMAIL_CONFIG", code: "EMAIL_ROUTING_V1" },
+          select: { name: true },
         });
+        if (savedRouting?.name) {
+          const parsedCfg = JSON.parse(savedRouting.name);
+          if (parsedCfg?.groups?.ktdbcl?.enabled === false) {
+            ktdbclEnabled = false;
+          }
+          if (typeof parsedCfg?.ktdbclEmails === "string") {
+            const list = parsedCfg.ktdbclEmails
+              .split(/[,;\n]+/)
+              .map((s: string) => s.trim())
+              .filter((s: string) => s && s.includes("@"));
+            if (list.length > 0) configuredKtdbclEmails = list;
+          }
+        }
+      } catch {}
+
+      if (ktdbclEnabled) {
+        for (const ktEmail of configuredKtdbclEmails) {
+          const key = ktEmail.toLowerCase();
+          if (!recipientMap.has(key)) {
+            recipientMap.set(key, {
+              fullName: ktEmail.split("@")[0],
+              email: ktEmail,
+              role: "Nhóm Khảo thí / KT&ĐBCL",
+              isArchiveCopy: true,
+            });
+          }
+        }
       }
 
       const allRecipients = Array.from(recipientMap.values());

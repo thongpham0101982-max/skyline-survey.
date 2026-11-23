@@ -59,14 +59,14 @@ export const DEFAULT_EMAIL_ROUTING_CONFIG: EmailRoutingConfigData = {
       giaovu: "dunglp@skylineschool.edu.vn",
     },
   },
-  ktdbclEmails: "ktdbcl@skylineschool.edu.vn, bankhaothi@skylineschool.edu.vn, thangdx@skylineschool.edu.vn",
+  ktdbclEmails: "ktdbcl@skylineschool.edu.vn, thangdx@skylineschool.edu.vn",
 };
 
 function stripGenericCampusAliases(rawStr: string, fallbackStr: string): string {
   const cleaned = String(rawStr || "")
     .split(/[,;]/)
     .map((s) => s.trim().replace(/@dkylineschool\.edu\.vn$/i, "@skylineschool.edu.vn"))
-    .filter((s) => s && s.includes("@") && !/^(giaovu|tuyensinh|tuvan|gdcs)\.cs\d+@skylineschool\.edu\.vn$/i.test(s))
+    .filter((s) => s && s.includes("@") && !/^(giaovu|tuyensinh|tuvan|gdcs)\.cs\d+@skylineschool\.edu\.vn$/i.test(s) && s.toLowerCase() !== "bankhaothi@skylineschool.edu.vn")
     .join(", ");
   return cleaned || fallbackStr;
 }
@@ -270,16 +270,55 @@ export function EmailRoutingConfigModal({
     return result;
   }, [teachers]);
 
-  const ktdbclSuggestions = [
-    { label: "Hòm thư Ban KT&ĐBCL", email: "ktdbcl@skylineschool.edu.vn" },
-    { label: "Hòm thư Ban Khảo thí", email: "bankhaothi@skylineschool.edu.vn" },
-    { label: "Thầy Dương Xuân Thắng (Trưởng ban)", email: "thangdx@skylineschool.edu.vn" },
-    { label: "Cô Dương Thị Hoàng Yến (KT&ĐBCL)", email: "hoangyendt@skylineschool.edu.vn" },
-    { label: "Thầy Phạm Nguyên Thông (KT&ĐBCL)", email: "thongpn@skylineschool.edu.vn" },
-    { label: "Cô Mai Thị Hoài Thương (ĐBCL)", email: "thuongmth@skylineschool.edu.vn" },
-    { label: "Cô Phạm Nguyễn Khánh Vy (Khảo thí)", email: "vypnk@skylineschool.edu.vn" },
-    { label: "Cô Từ Thảo Nguyên (Khảo thí)", email: "nguyentt@skyline.edu.vn" },
-  ];
+  const [ktSearch, setKtSearch] = useState("");
+
+  const ktdbclMembers = useMemo(() => {
+    const khaoThiList: { label: string; email: string; roleTag: string; group: "KHAO_THI" | "BAN_KTDBCL" }[] = [
+      { label: "Hòm thư Nhóm Khảo thí", email: "bankhaothi@skylineschool.edu.vn", roleTag: "Nhóm Khảo thí", group: "KHAO_THI" },
+      { label: "Cô Phạm Nguyễn Khánh Vy", email: "vypnk@skylineschool.edu.vn", roleTag: "Khảo thí", group: "KHAO_THI" },
+      { label: "Cô Từ Thảo Nguyên", email: "nguyentt@skyline.edu.vn", roleTag: "Khảo thí", group: "KHAO_THI" },
+      { label: "Thầy Phạm Nguyên Thông", email: "thongpn@skylineschool.edu.vn", roleTag: "Khảo thí / KT&ĐBCL", group: "KHAO_THI" },
+    ];
+    const banList: { label: string; email: string; roleTag: string; group: "KHAO_THI" | "BAN_KTDBCL" }[] = [
+      { label: "Hòm thư Ban KT&ĐBCL", email: "ktdbcl@skylineschool.edu.vn", roleTag: "Hòm thư chung", group: "BAN_KTDBCL" },
+      { label: "Thầy Dương Xuân Thắng", email: "thangdx@skylineschool.edu.vn", roleTag: "Trưởng ban", group: "BAN_KTDBCL" },
+      { label: "Cô Dương Thị Hoàng Yến", email: "hoangyendt@skylineschool.edu.vn", roleTag: "KT&ĐBCL", group: "BAN_KTDBCL" },
+      { label: "Cô Mai Thị Hoài Thương", email: "thuongmth@skylineschool.edu.vn", roleTag: "ĐBCL", group: "BAN_KTDBCL" },
+    ];
+
+    const merged = [...khaoThiList, ...banList];
+    const seen = new Set(merged.map((m) => m.email.toLowerCase()));
+
+    (teachers || []).forEach((t: any) => {
+      const rawEmail = t.email || t.user?.email || "";
+      const cleanEmail = String(rawEmail).trim().toLowerCase();
+      if (!cleanEmail || !cleanEmail.includes("@") || seen.has(cleanEmail)) return;
+      const deptName = String(t.departmentRel?.name || "").toLowerCase();
+      const deptCode = String(t.departmentRel?.code || "").toLowerCase();
+      const uRole = String(t.user?.role || "").toUpperCase();
+      const isKhaoThi =
+        uRole === "KHAO_THI" ||
+        deptName.includes("khảo thí") ||
+        deptCode.includes("khao_thi") ||
+        deptCode.includes("kt_");
+      const isKtdbcl =
+        ["KTDBCL", "KT_DBCL", "DBCL", "ĐBCL"].includes(uRole) ||
+        deptName.includes("kt&đbcl") ||
+        deptName.includes("đbcl") ||
+        deptName.includes("đảm bảo chất lượng");
+      if (isKhaoThi || isKtdbcl) {
+        seen.add(cleanEmail);
+        merged.push({
+          label: t.teacherName || t.user?.fullName || cleanEmail,
+          email: cleanEmail,
+          roleTag: isKhaoThi ? "Nhóm Khảo thí" : "Ban KT&ĐBCL",
+          group: isKhaoThi ? "KHAO_THI" : "BAN_KTDBCL",
+        });
+      }
+    });
+
+    return merged;
+  }, [teachers]);
 
   if (!isOpen) return null;
 
@@ -337,8 +376,8 @@ export function EmailRoutingConfigModal({
     },
     {
       key: "ktdbcl" as const,
-      title: "Ban KT&ĐBCL",
-      desc: "Tiếp nhận dữ liệu tổng hợp, giám sát quy trình và lưu trữ chất lượng",
+      title: "Ban KT&ĐBCL — Nhóm Khảo thí",
+      desc: "Chọn thành viên Nhóm Khảo thí & Ban KT&ĐBCL nhận thông báo tổng hợp, giám sát và lưu trữ",
     },
   ];
 
@@ -669,11 +708,11 @@ export function EmailRoutingConfigModal({
                 )}
               </div>
             ) : (
-              <div className="bg-slate-50/70 rounded-xl border border-slate-200/90 p-3.5 space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
+              <div className="bg-slate-50/70 rounded-xl border border-slate-200/90 p-4 space-y-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="text-xs font-bold text-[#003B3A] flex items-center gap-2">
-                      <span>Ban Kiểm tra &amp; Đảm bảo Chất lượng (Toàn hệ thống)</span>
+                      <span>Ban KT&amp;ĐBCL · Chọn thành viên Nhóm Khảo thí nhận email</span>
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums bg-[#F0FDFA] text-[#00736E] border border-[#99F6E4]">
                         {draft.groups.ktdbcl.enabled
                           ? `${draft.groups.ktdbcl.target.toUpperCase()} • ${splitEmailList(draft.ktdbclEmails).length} email`
@@ -681,46 +720,110 @@ export function EmailRoutingConfigModal({
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      Nhận bản sao tất cả thông báo kết quả xét duyệt của các cơ sở để giám sát và lưu trữ chất lượng
+                      Tick chọn trực tiếp thành viên Nhóm Khảo thí hoặc Ban KT&amp;ĐBCL sẽ nhận email xét duyệt (có thể nhập thêm email bên dưới).
                     </p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ktEmails = ktdbclMembers
+                          .filter((m) => m.group === "KHAO_THI")
+                          .map((m) => m.email);
+                        const merged = Array.from(new Set([...splitEmailList(draft.ktdbclEmails), ...ktEmails]));
+                        setDraft((prev) => ({ ...prev, ktdbclEmails: merged.join(", ") }));
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-[#003B3A] hover:bg-[#005854] text-white text-[11px] font-semibold cursor-pointer"
+                    >
+                      Chọn cả Nhóm Khảo thí
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDraft((prev) => ({ ...prev, ktdbclEmails: "" }))}
+                      className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-semibold cursor-pointer"
+                    >
+                      Bỏ chọn hết
+                    </button>
                   </div>
                 </div>
 
-                <input
-                  type="text"
-                  value={draft.ktdbclEmails}
-                  onChange={e => setDraft(prev => ({ ...prev, ktdbclEmails: e.target.value }))}
-                  placeholder="Nhập danh sách email Ban KT&ĐBCL, phân cách bằng dấu phẩy (,)"
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-[#008B85] focus:ring-2 focus:ring-[#00A19A]/15 transition-all font-mono"
-                />
+                {/* Danh sách chọn thành viên Nhóm Khảo thí & Ban KT&ĐBCL */}
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={ktSearch}
+                    onChange={(e) => setKtSearch(e.target.value)}
+                    placeholder="Tìm nhanh thành viên Nhóm Khảo thí / Ban KT&ĐBCL theo tên hoặc email..."
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-[#008B85]"
+                  />
 
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <span className="text-[11px] font-medium text-slate-500 mr-1">Chọn nhanh:</span>
-                  {ktdbclSuggestions.map(sug => {
-                    const activeList = splitEmailList(draft.ktdbclEmails).map(e => e.toLowerCase());
-                    const isSelected = activeList.includes(sug.email.toLowerCase());
+                  {(["KHAO_THI", "BAN_KTDBCL"] as const).map((grp) => {
+                    const activeList = splitEmailList(draft.ktdbclEmails).map((e) => e.toLowerCase());
+                    const q = ktSearch.trim().toLowerCase();
+                    const members = ktdbclMembers.filter(
+                      (m) =>
+                        m.group === grp &&
+                        (!q || m.label.toLowerCase().includes(q) || m.email.toLowerCase().includes(q))
+                    );
+                    if (members.length === 0) return null;
                     return (
-                      <button
-                        key={sug.email}
-                        type="button"
-                        onClick={() =>
-                          setDraft(prev => ({
-                            ...prev,
-                            ktdbclEmails: toggleEmailInString(prev.ktdbclEmails, sug.email),
-                          }))
-                        }
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium border transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-[#F0FDFA] text-[#003B3A] border-[#008B85] font-semibold"
-                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                        }`}
-                      >
-                        {isSelected ? <Check className="w-3 h-3 text-[#008B85]" /> : <Plus className="w-3 h-3 text-slate-400" />}
-                        <span>{sug.label}</span>
-                        <span className="text-[10px] text-slate-400 font-mono">({sug.email.split("@")[0]})</span>
-                      </button>
+                      <div key={grp} className="space-y-1.5">
+                        <div className="text-[11px] font-bold text-[#003B3A] flex items-center gap-1.5">
+                          <span className={`w-1.5 h-3.5 rounded-full ${grp === "KHAO_THI" ? "bg-[#00A19A]" : "bg-[#003B3A]"}`} />
+                          {grp === "KHAO_THI" ? "Nhóm Khảo thí (Chọn thành viên nhận email)" : "Lãnh đạo & Thành viên Ban KT&ĐBCL"}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {members.map((m) => {
+                            const isSelected = activeList.includes(m.email.toLowerCase());
+                            return (
+                              <label
+                                key={m.email}
+                                className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-xs cursor-pointer transition-colors ${
+                                  isSelected
+                                    ? "bg-[#F0FDFA] border-[#008B85] text-[#003B3A]"
+                                    : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                                }`}
+                              >
+                                <span className="flex items-center gap-2 min-w-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() =>
+                                      setDraft((prev) => ({
+                                        ...prev,
+                                        ktdbclEmails: toggleEmailInString(prev.ktdbclEmails, m.email),
+                                      }))
+                                    }
+                                    className="rounded border-slate-300 accent-[#003B3A] shrink-0"
+                                  />
+                                  <span className="min-w-0">
+                                    <span className="font-semibold block truncate">{m.label}</span>
+                                    <span className="text-[11px] text-slate-500 font-mono block truncate">{m.email}</span>
+                                  </span>
+                                </span>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 shrink-0">
+                                  {m.roleTag}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
+                </div>
+
+                <div className="pt-1 border-t border-slate-200/80 space-y-1">
+                  <label className="block text-[11px] font-semibold text-slate-600">
+                    Danh sách email đã chọn (có thể gõ bổ sung, cách nhau bằng dấu phẩy)
+                  </label>
+                  <input
+                    type="text"
+                    value={draft.ktdbclEmails}
+                    onChange={e => setDraft(prev => ({ ...prev, ktdbclEmails: e.target.value }))}
+                    placeholder="Nhập danh sách email Nhóm Khảo thí / Ban KT&ĐBCL, phân cách bằng dấu phẩy (,)"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-[#008B85] focus:ring-2 focus:ring-[#00A19A]/15 transition-all font-mono"
+                  />
                 </div>
               </div>
             )}
