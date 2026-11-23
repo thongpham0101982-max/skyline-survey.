@@ -1,5 +1,7 @@
 "use client"
 import { useState, useEffect, useCallback, useMemo } from "react"
+import { getCurrentMonthYearKey, getBatchMonthYearKey, sortMonthYearKeysDesc } from "@/lib/surveyMonth"
+import { suggestPreschoolForm, PRESCHOOL_FORM_REGISTRY } from "@/lib/preschool-workflow"
 import {
   UserCheck, Baby, Settings, Search, Trash2,
   Mail, Loader2, Filter, Calendar, CheckCircle2, Layers,
@@ -36,7 +38,7 @@ function Empty({ text, sub }: { text: string; sub?: string }) {
 function Field({ label, required, children, tooltip }: { label: string; required?: boolean; children: React.ReactNode; tooltip?: string }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+      <label className="flex items-center gap-1 text-xs font-semibold text-slate-700">
         {label}
         {required && <span className="text-rose-500">*</span>}
         {tooltip && (
@@ -105,10 +107,17 @@ export function PhanCongMamNonClient({
   rolePermissions = []
 }: Props) {
   const userRole = (currentUser?.role || "").toUpperCase()
-  const isAdmin = userRole === "ADMIN" || userRole === "KT_DBCL"
-  const canCreate = isAdmin || (rolePermissions.some(p => p.module === "PHAN_CONG_MAM_NON" && p.canCreate))
-  const canUpdate = isAdmin || (rolePermissions.some(p => p.module === "PHAN_CONG_MAM_NON" && p.canUpdate))
-  const canDelete = isAdmin || (rolePermissions.some(p => p.module === "PHAN_CONG_MAM_NON" && p.canDelete))
+  const isAdmin =
+    userRole === "ADMIN" ||
+    userRole === "SUPER_ADMIN" ||
+    ["KTDBCL", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "BGH_MN", "NHOM_TRUONG_MN", "GDCS"].includes(userRole)
+  const isPreschoolModule = (m: string) =>
+    m === "PCKS_MAM_NON" || m === "PHAN_CONG_MAM_NON" || m === "PHAN_CONG_KHAO_SAT" || m === "PRESCHOOL_INPUT_ASSESSMENTS"
+  const canCreate = isAdmin || rolePermissions.some(p => isPreschoolModule(p.module) && p.canCreate)
+  const canUpdate = isAdmin || rolePermissions.some(p => isPreschoolModule(p.module) && p.canUpdate)
+  const canDelete = isAdmin || rolePermissions.some(p => isPreschoolModule(p.module) && p.canDelete)
+  const [confirmingStage3, setConfirmingStage3] = useState(false)
+  const [aMonthFilter, setAMonthFilter] = useState(() => getCurrentMonthYearKey())
 
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null)
   const notify = (msg: string, type: "ok" | "err" = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200) }
@@ -616,7 +625,84 @@ export function PhanCongMamNonClient({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {(() => {
+              const curMk = getCurrentMonthYearKey()
+              const periodBatches = aSelPeriod?.batches || []
+              const monthKeys = sortMonthYearKeysDesc([
+                curMk,
+                ...periodBatches.map((b: any) => getBatchMonthYearKey(b))
+              ])
+              return (
+                <select
+                  value={aMonthFilter}
+                  onChange={e => {
+                    const nextM = e.target.value
+                    setAMonthFilter(nextM)
+                    if (nextM !== "all") {
+                      const matched = periodBatches.filter((b: any) => getBatchMonthYearKey(b) === nextM)
+                      if (matched.length > 0) {
+                        setABatchId(matched[0].id)
+                        setShowCustomBatch(true)
+                      } else {
+                        setABatchId("all")
+                      }
+                    } else {
+                      setABatchId("all")
+                    }
+                  }}
+                  aria-label="Lọc theo Tháng khảo sát Mầm non"
+                  className="bg-white border border-slate-200 hover:border-[#008B85] rounded-xl px-2.5 py-1.5 text-xs font-semibold text-[#003B3A] outline-none cursor-pointer tabular-nums"
+                >
+                  <option value="all">Tất cả Tháng</option>
+                  {monthKeys.map(mk => (
+                    <option key={mk} value={mk}>
+                      Tháng {mk}{mk === curMk ? " (Hiện tại)" : ""}
+                    </option>
+                  ))}
+                </select>
+              )
+            })()}
+            {aPeriodId && (canCreate || canUpdate) && (
+              <button
+                type="button"
+                disabled={confirmingStage3}
+                onClick={async () => {
+                  try {
+                    setConfirmingStage3(true)
+                    const normalizedBatchId = (aBatchId && aBatchId !== "all" && aBatchId !== "null") ? aBatchId : null
+                    const res = await fetch("/api/admin/entrance-progress", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "CONFIRM",
+                        targetScope: normalizedBatchId ? "BATCH" : "PERIOD",
+                        periodId: aPeriodId,
+                        batchId: normalizedBatchId,
+                        isPreschool: true,
+                        stageNumber: 3,
+                        status: "COMPLETED",
+                        note: `Xác nhận hoàn thành phân công khảo sát Mầm non (${assignments.length} lượt phân công).`,
+                      }),
+                    })
+                    const data = await res.json()
+                    if (res.ok && data.success) {
+                      notify("Đã xác nhận hoàn thành phân công Mầm non (Bước 3) và đồng bộ tiến độ!")
+                    } else {
+                      notify(data.error || "Không thể xác nhận hoàn thành phân công", "err")
+                    }
+                  } catch {
+                    notify("Lỗi kết nối khi xác nhận Bước 3", "err")
+                  } finally {
+                    setConfirmingStage3(false)
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#003B3A] hover:bg-[#005250] text-white transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                <span>{confirmingStage3 ? "Đang xác nhận..." : "Xác nhận hoàn thành phân công (B3)"}</span>
+              </button>
+            )}
             <button 
               type="button"
               onClick={fetchPeriods} 
@@ -656,58 +742,36 @@ export function PhanCongMamNonClient({
             </div>
 
             <div className="md:col-span-5">
-              <Field label="Đợt Khảo sát" tooltip="Hệ thống tự động kích hoạt đợt khảo sát mới nhất của kỳ">
+              <Field label="Đợt khảo sát" tooltip="Hệ thống tự động chọn đợt khảo sát mới nhất của kỳ">
                 {!aPeriodId ? (
                   <div className="h-[42px] px-3.5 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-xs font-medium text-slate-400 flex items-center">
                     Vui lòng chọn Kỳ khảo sát trước
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <div className="min-h-[42px] px-3.5 py-2 bg-gradient-to-r from-teal-50/80 via-emerald-50/30 to-white border border-teal-200/80 rounded-xl flex items-center justify-between gap-2 shadow-2xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Sparkles className="w-4 h-4 text-[#00736E] flex-shrink-0" />
-                        <span className="font-bold text-xs text-[#003B3A] truncate">
-                          {aBatchId && aBatchId !== "all" 
-                            ? (aSelPeriod?.batches?.find((b: any) => b.id === aBatchId)?.name || "Đợt khảo sát")
-                            : (aBatchId === "all" ? "Tất cả các đợt" : "Áp dụng Toàn kỳ / Khảo sát lẻ")}
-                        </span>
-                        {aLatestBatch && aBatchId === aLatestBatch.id && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#00736E] text-white flex-shrink-0">
-                            Mới nhất
-                          </span>
-                        )}
-                      </div>
-                      {aSelPeriod?.batches && aSelPeriod.batches.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowCustomBatch(!showCustomBatch)}
-                          className="px-2.5 py-1 text-[11px] font-bold text-[#005854] bg-white hover:bg-teal-50 border border-teal-200 rounded-lg cursor-pointer flex-shrink-0"
-                        >
-                          {showCustomBatch ? "Đóng" : "Đổi đợt"}
-                        </button>
-                      )}
-                    </div>
-
-                    {showCustomBatch && aSelPeriod?.batches && aSelPeriod.batches.length > 0 && (
-                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1 shadow-2xs animate-in fade-in duration-200">
-                        <select
-                          value={aBatchId}
-                          onChange={e => {
-                            setABatchId(e.target.value)
-                            setAGrades([])
-                            setUiForm("")
-                          }}
-                          className={`${inp} text-xs py-2`}
-                        >
-                          <option value="">-- Áp dụng toàn kỳ --</option>
-                          <option value="all">Tất cả các đợt</option>
-                          {aSelPeriod.batches.map((b: any) => (
-                            <option key={b.id} value={b.id}>
-                              {b.name} {b.id === aLatestBatch?.id ? "(Mới nhất)" : ""}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={aBatchId}
+                      onChange={e => {
+                        setABatchId(e.target.value)
+                        setAGrades([])
+                        setUiForm("")
+                      }}
+                      className={`${inp} h-[42px] text-xs flex-1 min-w-0 tabular-nums`}
+                    >
+                      <option value="">-- Áp dụng toàn kỳ --</option>
+                      <option value="all">Tất cả các đợt</option>
+                      {(aSelPeriod?.batches || [])
+                        .filter((b: any) => !aMonthFilter || aMonthFilter === "all" || getBatchMonthYearKey(b) === aMonthFilter || b.id === aBatchId)
+                        .map((b: any) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name} {b.id === aLatestBatch?.id ? "(Mới nhất)" : ""}
+                          </option>
+                        ))}
+                    </select>
+                    {aLatestBatch && aBatchId === aLatestBatch.id && (
+                      <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 shrink-0">
+                        Mới nhất
+                      </span>
                     )}
                   </div>
                 )}
@@ -856,11 +920,11 @@ export function PhanCongMamNonClient({
       {/* ─── MAIN 2-COLUMN WORKSPACE: BƯỚC 1 (KHỐI & MẪU PHIẾU) & BƯỚC 2 (CHỌN GIÁO VIÊN & LƯU) ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Left Column (5/12): Phạm vi & Ánh xạ khảo sát */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
-          <div className="bg-gradient-to-r from-[#003B3A] to-[#005854] px-5 py-3.5 flex items-center justify-between text-white">
+        <div className="lg:col-span-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden flex flex-col">
+          <div className="bg-[#003B3A] px-5 py-3.5 flex items-center justify-between text-white">
             <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-lg bg-[#00A19A] text-white flex items-center justify-center text-xs font-black">1</span>
-              <h2 className="font-bold text-white text-sm">Phạm vi Khối & Ánh xạ Mẫu phiếu</h2>
+              <span className="w-6 h-6 rounded-lg bg-[#00A19A] text-white flex items-center justify-center text-xs font-bold tabular-nums">1</span>
+              <h2 className="font-bold text-white text-sm">Phạm vi Nhóm tuổi &amp; Biểu mẫu 2026</h2>
             </div>
           </div>
 
@@ -868,85 +932,79 @@ export function PhanCongMamNonClient({
             {!aPeriodId ? (
               <div className="flex-1 flex flex-col items-center justify-center py-8 text-center text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 p-4">
                 <Info className="w-6 h-6 text-slate-300 mb-2" />
-                <p className="text-xs font-medium">Vui lòng chọn Kỳ khảo sát để hiển thị phạm vi & ánh xạ</p>
+                <p className="text-xs font-medium">Vui lòng chọn Kỳ khảo sát để hiển thị phạm vi &amp; ánh xạ</p>
               </div>
             ) : (
               <>
                 <div className="space-y-2.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#003B3A] flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-[#003B3A] flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-[#00736E]" />
-                    <span>Khối tương ứng</span>
+                    <span>Nhóm tuổi tương ứng</span>
                     <span className="text-rose-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {grades.map(g => {
                       const isChecked = aGrades.includes(g)
+                      const bmS = suggestPreschoolForm({ grade: g, surveySystem: "Hệ S" }).suggestedFormCode
                       return (
                         <button 
                           key={g} 
                           type="button"
                           onClick={() => toggleGradeSelection(g)}
-                          className={`inline-flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-all text-xs text-left ${
+                          className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-all text-xs text-left ${
                             isChecked 
-                              ? "bg-[#00736E] border-[#00736E] text-white font-bold shadow-xs" 
-                              : "bg-white border-slate-200/90 text-slate-700 hover:border-teal-300 hover:bg-teal-50/40 font-medium"
+                              ? "bg-[#003B3A] border-[#003B3A] text-white font-semibold shadow-xs" 
+                              : "bg-white border-[#E2E8F0] text-slate-700 hover:border-[#00A19A] hover:bg-[#F0FDFA]/50 font-medium"
                           }`}
                         >
-                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isChecked ? "border-white bg-white text-[#00736E]" : "border-slate-300"}`}>
-                            {isChecked && <Check className="w-2.5 h-2.5" />}
-                          </div>
-                          <span className="truncate">{g}</span>
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isChecked ? "border-[#5EEAD4] bg-[#00A19A] text-white" : "border-slate-300"}`}>
+                              {isChecked && <Check className="w-2.5 h-2.5" />}
+                            </span>
+                            <span className="truncate">{g}</span>
+                          </span>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 tabular-nums ${isChecked ? "bg-white/15 text-[#5EEAD4]" : "bg-slate-100 text-slate-500"}`}>
+                            {bmS.replace("BM.KTĐBCL.", "BM.")}
+                          </span>
                         </button>
                       )
                     })}
                   </div>
                 </div>
 
-                <div className="p-4 bg-teal-50/30 border border-teal-200/60 rounded-xl space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-[#005854] flex items-center gap-1">
-                      Mẫu Phiếu khảo sát tự động
-                      <span className="text-slate-400 hover:text-slate-600 cursor-help" title="Mẫu khảo sát tâm lý tương ứng với Khối và Giai đoạn đánh giá"><HelpCircle className="w-3.5 h-3.5" /></span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#00736E]">
-                        <Baby className="w-4 h-4" />
-                      </div>
-                      <select 
-                        value={uiForm} 
-                        disabled 
-                        className={`${inp} pl-9 bg-white cursor-not-allowed border-teal-200 font-bold text-[#005854]`}>
-                        <option value="">Chờ lựa chọn Khối khảo sát...</option>
-                        {formOptions.map(f => (
-                          <option key={f} value={f}>Mẫu: {f}</option>
-                        ))}
-                      </select>
-                    </div>
+                {/* Ánh xạ Biểu mẫu 2026 (BM.KTĐBCL) */}
+                <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-3 text-xs">
+                  <div className="font-bold text-[#003B3A] flex items-center justify-between">
+                    <span>Ánh xạ biểu mẫu quy trình 2026</span>
+                    <span className="text-[11px] font-medium text-[#00736E]">Tự động theo nhóm tuổi</span>
                   </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
-                      Mẫu phiếu học thử tự động
-                      <span className="text-slate-400 hover:text-slate-600 cursor-help" title="Mẫu phiếu khảo sát học thử tương ứng"><HelpCircle className="w-3.5 h-3.5" /></span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#00736E]">
-                        <Sparkles className="w-4 h-4" />
+                  {aGrades.length === 0 ? (
+                    <p className="text-slate-500 text-[11px]">Chọn nhóm tuổi phía trên để xem mã biểu mẫu BM.KTĐBCL tương ứng.</p>
+                  ) : (() => {
+                    const activeG = aGrades[0]
+                    const bmS = suggestPreschoolForm({ grade: activeG, surveySystem: "Hệ S" }).suggestedFormCode
+                    const bmG = suggestPreschoolForm({ grade: activeG, surveySystem: "Hệ Global" }).suggestedFormCode
+                    const defS = PRESCHOOL_FORM_REGISTRY[bmS]
+                    const defG = PRESCHOOL_FORM_REGISTRY[bmG]
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between bg-white border border-[#E2E8F0] rounded-lg px-3 py-2">
+                          <span className="text-slate-600 font-medium">Hệ S ({activeG})</span>
+                          <span className="font-bold text-[#003B3A] tabular-nums">{bmS} <span className="font-normal text-slate-500">({defS?.shortTitle})</span></span>
+                        </div>
+                        {bmG !== bmS && (
+                          <div className="flex items-center justify-between bg-white border border-[#E2E8F0] rounded-lg px-3 py-2">
+                            <span className="text-slate-600 font-medium">Hệ Global ({activeG})</span>
+                            <span className="font-bold text-[#00736E] tabular-nums">{bmG} <span className="font-normal text-slate-500">({defG?.shortTitle})</span></span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-[#E2E8F0]">
+                          <span>Bộ tiêu chí đánh giá ({uiStage === "STAGE_1" ? "GĐ 1" : "GĐ 2"}):</span>
+                          <span className="font-semibold text-slate-700">{uiForm || "—"}</span>
+                        </div>
                       </div>
-                      <select 
-                        value={uiProbationForm} 
-                        disabled 
-                        className={`${inp} pl-9 bg-white cursor-not-allowed border-slate-200 font-semibold text-slate-700`}>
-                        <option value="">Chờ lựa chọn Khối khảo sát...</option>
-                        <option value="Mẫu phiếu học thử 12_18">Mẫu: Mẫu phiếu học thử 12_18</option>
-                        <option value="Mẫu phiếu học thử 18 đến 24 tháng">Mẫu: Mẫu phiếu học thử 18 đến 24 tháng</option>
-                        <option value="Mẫu phiếu học thử 24 đến 36">Mẫu: Mẫu phiếu học thử 24 đến 36</option>
-                        <option value="Mẫu phiếu 3 đến 4 tuổi">Mẫu: Mẫu phiếu 3 đến 4 tuổi</option>
-                        <option value="Mẫu phiếu 4 đến 5 tuổi">Mẫu: Mẫu phiếu 4 đến 5 tuổi</option>
-                        <option value="Mẫu phiếu 5 đến 6 tuổi">Mẫu: Mẫu phiếu 5 đến 6 tuổi</option>
-                      </select>
-                    </div>
-                  </div>
+                    )
+                  })()}
                 </div>
               </>
             )}
@@ -954,24 +1012,24 @@ export function PhanCongMamNonClient({
         </div>
 
         {/* Right Column (7/12): Phân công Giáo viên & Lưu */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
-          <div className="bg-gradient-to-r from-[#005854] to-[#00736E] px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
+        <div className="lg:col-span-7 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden flex flex-col">
+          <div className="bg-[#003B3A] px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
             <div className="flex items-center gap-2.5">
-              <span className="w-6 h-6 rounded-lg bg-white text-[#003B3A] flex items-center justify-center text-xs font-black">2</span>
-              <h2 className="font-bold text-white text-sm">Chọn Giáo viên Phụ trách Mầm non</h2>
+              <span className="w-6 h-6 rounded-lg bg-[#00A19A] text-white flex items-center justify-center text-xs font-bold tabular-nums">2</span>
+              <h2 className="font-bold text-white text-sm">Chọn Giáo viên phụ trách Mầm non</h2>
             </div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="px-2.5 py-0.5 rounded-full bg-white/15 border border-white/20 text-xs text-white font-semibold">
-                Đã chọn {aSelectedTeachers.length} Giáo viên
+              <span className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 text-xs text-[#5EEAD4] font-semibold tabular-nums">
+                Đã chọn {aSelectedTeachers.length} giáo viên
               </span>
               <button 
                 type="button"
                 onClick={saveAssignments} 
                 disabled={aSaving || !canCreate}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-[#003B3A] text-xs font-black rounded-xl bg-white hover:bg-teal-50 active:scale-[0.99] transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 text-white text-xs font-semibold rounded-xl bg-[#00A19A] hover:bg-[#008B85] active:scale-[0.99] transition-all shadow-sm disabled:opacity-50 cursor-pointer"
               >
-                {aSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00736E]" /> : <CheckCircle2 className="w-3.5 h-3.5 text-[#00A19A]" />}
-                <span>Xác nhận & Lưu Phân công</span>
+                {aSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                <span>Xác nhận &amp; Lưu phân công</span>
               </button>
             </div>
           </div>
@@ -1136,17 +1194,17 @@ export function PhanCongMamNonClient({
           <div className="overflow-x-auto animate-in fade-in duration-300">
             <table className="w-full text-left border-collapse text-xs">
               <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                <tr className="bg-[#003B3A] text-white border-b border-[#003B3A] text-[11px] font-semibold">
-                  <th className="px-4 py-3 font-bold text-[11px] w-12 text-center">#</th>
-                  <th className="px-4 py-3 font-bold text-[11px]">Giáo viên phụ trách</th>
-                  <th className="px-4 py-3 font-bold text-[11px]">Khối / Nhóm tuổi</th>
-                  <th className="px-4 py-3 font-bold text-[11px]">Đợt khảo sát</th>
-                  <th className="px-4 py-3 font-bold text-[11px]">Ủy quyền Giáo vụ CS</th>
-                  <th className="px-4 py-3 font-bold text-[11px]">Ngày giao</th>
-                  <th className="px-4 py-3 font-bold text-[11px] text-right">Thao tác</th>
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="px-4 py-3 text-teal-100 w-12 text-center">#</th>
+                  <th className="px-4 py-3 text-white">Giáo viên phụ trách</th>
+                  <th className="px-4 py-3 text-[#5EEAD4]">Nhóm tuổi / Biểu mẫu</th>
+                  <th className="px-4 py-3 text-teal-100">Đợt khảo sát</th>
+                  <th className="px-4 py-3 text-teal-100">Ủy quyền Giáo vụ CS</th>
+                  <th className="px-4 py-3 text-teal-100">Ngày giao</th>
+                  <th className="px-4 py-3 text-white text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E2E8F0]">
+              <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
                 {assignments.map((assign: any, idx: number) => {
                   const t = teachers.find(teach => teach.user?.id === assign.userId)
                   const tName = t?.teacherName || assign.user?.fullName || "Chưa rõ danh tính"
