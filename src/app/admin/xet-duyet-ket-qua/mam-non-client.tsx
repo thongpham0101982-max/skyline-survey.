@@ -6,6 +6,13 @@ import * as XLSX from "xlsx"
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
 import {
+  suggestPreschoolForm,
+  PRESCHOOL_FORM_REGISTRY,
+  formatPreschoolSystemLabel,
+  resolvePreschoolAdmissionResult,
+} from "@/lib/preschool-workflow";
+import { PreschoolDossierDrawer } from "@/app/admin/khao-sat-mam-non/PreschoolDossierDrawer";
+import {
   isSuperAdminRole,
   isKtdbclEntranceRole,
   isGdcsOrBghEntranceRole,
@@ -2513,6 +2520,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [sendingNotifyId, setSendingNotifyId] = useState<string | null>(null);
+  const [workflowDrawerStudentId, setWorkflowDrawerStudentId] = useState<string | null>(null);
   const [approvalPreviewModal, setApprovalPreviewModal] = useState<{
     open: boolean;
     loading: boolean;
@@ -5328,14 +5336,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             const getHeightVal = (score: any) => {
                               if (!score || !score.note) return null;
                               const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
-                              const num = parseFloat(rawPart.replace(/[^d.]/g, ""));
+                              const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
                               return isNaN(num) || num <= 0 ? null : num;
                             };
 
                             const getWeightVal = (score: any) => {
                               if (!score || !score.note) return null;
                               const rawPart = score.note.includes("|") ? score.note.split("|")[0] : score.note;
-                              const num = parseFloat(rawPart.replace(/[^d.]/g, ""));
+                              const num = parseFloat(rawPart.replace(/[^\d.]/g, ""));
                               return isNaN(num) || num <= 0 ? null : num;
                             };
 
@@ -8263,95 +8271,144 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         title={`Phiếu đánh giá phát triển: ${evalStudent?.fullName || ""}`}
         size="xl"
         footer={isAssessmentLocked ? (
-          <button onClick={() => setEvalModal(false)} className="w-full py-3 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-500 font-extrabold rounded-2xl transition-all cursor-pointer border-none text-[11px] tracking-wider uppercase">
-            Đóng
-          </button>
-        ) : (
-          <div className="flex items-center justify-end gap-3 w-full px-6 py-4 bg-slate-50 border-t border-slate-200/60 -mx-6 -mb-6 mt-6 rounded-b-3xl">
-            <button onClick={() => setEvalModal(false)} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 text-slate-500 font-extrabold rounded-2xl transition-all cursor-pointer border-none text-[11px] tracking-wider uppercase">
+          <div className="flex items-center justify-end w-full">
+            <button onClick={() => setEvalModal(false)} className="px-5 py-2.5 bg-white hover:bg-slate-50 border border-[#E2E8F0] text-slate-700 font-semibold rounded-xl transition-colors cursor-pointer text-xs">
               Đóng
             </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3 w-full px-6 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0] -mx-6 -mb-6 mt-6 rounded-b-2xl">
             <button
-              onClick={saveEvaluation}
-              disabled={savingEval || devLoading}
-              className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#008075] hover:from-[#008075] hover:to-[#007067] text-white font-black rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer border-none text-[11px] tracking-wider uppercase shadow-md shadow-[#48BFE3]/15"
+              type="button"
+              onClick={() => {
+                if (evalStudent?.id) {
+                  setEvalModal(false);
+                  setWorkflowDrawerStudentId(evalStudent.id);
+                }
+              }}
+              className="px-4 py-2.5 rounded-xl border border-[#008B85] bg-[#F0FDFA] hover:bg-[#CCFBF1]/70 text-[#003B3A] text-xs font-semibold transition-colors cursor-pointer"
             >
-              {savingEval ? "Đang lưu..." : "Lưu Đánh Giá"}
+              Mở Hồ sơ B1–B13 (Tâm lý BM.09 / Hẹn trải nghiệm / Xuất thư)
             </button>
+            <div className="flex items-center gap-2.5">
+              <button onClick={() => setEvalModal(false)} className="px-5 py-2.5 bg-white hover:bg-slate-50 border border-[#E2E8F0] text-slate-600 font-semibold rounded-xl transition-colors cursor-pointer text-xs">
+                Đóng
+              </button>
+              <button
+                onClick={saveEvaluation}
+                disabled={savingEval || devLoading}
+                className="px-6 py-2.5 bg-[#003B3A] hover:bg-[#005854] text-white font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer text-xs"
+              >
+                {savingEval ? "Đang lưu..." : "Lưu đánh giá & phê duyệt"}
+              </button>
+            </div>
           </div>
         )}
       >
-        <div className="space-y-6">
+        <div className="space-y-5">
           {isAssessmentLocked && (
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50/50 border border-emerald-250/60 text-emerald-800 px-5 py-4 rounded-2xl flex items-center gap-3.5 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
-              <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-3.5 rounded-2xl flex items-center gap-3.5">
+              <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
               <div>
-                <p className="text-[11px] font-black uppercase tracking-wider leading-none">Phiếu đánh giá đã hoàn thành</p>
-                <p className="text-[11px] font-semibold text-emerald-600 mt-1.5">Học sinh đã đạt cả hai bước phê duyệt (BGH &amp; GĐCS). Phiếu ở trạng thái chỉ đọc để lưu trữ.</p>
+                <p className="text-xs font-bold leading-none">Phiếu đánh giá đã hoàn thành phê duyệt</p>
+                <p className="text-xs text-emerald-700 mt-1">Học sinh đã hoàn tất phê duyệt (BGH MN &amp; GĐCS). Phiếu ở trạng thái chỉ đọc để lưu trữ.</p>
               </div>
             </div>
           )}
 
-          {/* Student Profile Card Header */}
-          <div className="bg-gradient-to-r from-[#EBF5F4]/60 via-[#F5FAF9]/20 to-[#EBF5F4]/40 p-5 rounded-3xl border border-[#48BFE3]/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#48BFE3]/15 to-[#008075]/5 text-slate-800 flex items-center justify-center shadow-inner shrink-0">
-                <Baby className="w-7 h-7" />
+          {/* Student Profile & Quy chế 2026 Form Mapping Banner */}
+          {(() => {
+            const rawSys = (evalStudent as any)?.surveySystem || evalStudent?.surveyFormType || "Hệ S";
+            const sysLabel = formatPreschoolSystemLabel(rawSys);
+            const formSug = suggestPreschoolForm({
+              dateOfBirth: evalStudent?.dateOfBirth || null,
+              grade: evalStudent?.grade || null,
+              surveySystem: rawSys,
+            });
+            const formDef = PRESCHOOL_FORM_REGISTRY[formSug.suggestedFormCode];
+            return (
+              <div className="space-y-3">
+                <div className="bg-[#F8FAFC] p-5 rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[#003B3A] text-[#5EEAD4] flex items-center justify-center shrink-0">
+                      <Baby className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold text-[#00736E] leading-none mb-1">
+                        Biểu mẫu quy chế 2026 · {formSug.suggestedFormCode} (v{formSug.formVersion})
+                      </p>
+                      <h4 className="text-base font-bold text-[#003B3A] leading-tight">{evalStudent?.fullName}</h4>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5 tabular-nums">
+                        <span className="text-[11px] font-semibold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-[#E2E8F0]">
+                          {evalStudent?.studentCode}
+                        </span>
+                        <span className="text-[11px] font-semibold text-[#003B3A] bg-[#F0FDFA] px-2 py-0.5 rounded-md border border-teal-200">
+                          {sysLabel}
+                        </span>
+                        {formDef && (
+                          <span className="text-[11px] text-slate-600">{formDef.shortTitle}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-t md:border-t-0 border-[#E2E8F0] pt-3 md:pt-0 w-full md:w-auto text-xs tabular-nums">
+                    <div>
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">Nhóm tuổi</span>
+                      <span className="font-semibold text-[#003B3A] bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0] inline-block">{evalStudent?.grade || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">Khối lớp</span>
+                      <span className="font-semibold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0] inline-block">{getStandardGrade(evalStudent?.grade)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">Cơ sở</span>
+                      <span className="font-semibold text-[#00736E] bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200 inline-block">{evalStudent?.admissionCampus || "—"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">GV khảo sát</span>
+                      <span className="font-semibold text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0] truncate max-w-[130px] inline-block align-bottom" title={assignedTeachers}>{assignedTeachers || "Chưa phân công"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {formSug.isAgeBoundary && formSug.boundaryReason && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span><strong>Mốc tuổi giáp ranh:</strong> {formSug.boundaryReason}</span>
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Học sinh khảo sát</p>
-                <h4 className="text-lg font-black text-slate-800 tracking-tight leading-none">{evalStudent?.fullName}</h4>
-                <p className="text-[11px] font-extrabold text-slate-800 font-mono mt-1.5 bg-[#48BFE3]/5 px-2 py-0.5 rounded-lg border border-[#48BFE3]/10 w-fit">{evalStudent?.studentCode}</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 border-t md:border-t-0 border-slate-200/60 pt-4 md:pt-0 w-full md:w-auto">
-              <div className="text-xs">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1.5">Nhóm tuổi</span>
-                <span className="text-xs font-black text-teal-800 bg-teal-50 px-2.5 py-1 rounded-xl border border-teal-100/50">{evalStudent?.grade}</span>
-              </div>
-              <div className="text-xs">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1.5">Khối lớp</span>
-                <span className="text-xs font-black text-slate-800 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100/50">{getStandardGrade(evalStudent?.grade)}</span>
-              </div>
-              <div className="text-xs">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1.5">Cơ sở tuyển sinh</span>
-                <span className="text-xs font-black text-blue-700 bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-100/50">{evalStudent?.admissionCampus || "—"}</span>
-              </div>
-              <div className="text-xs">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1.5">GV khảo sát</span>
-                <span className="text-xs font-black text-teal-800 bg-teal-50 px-2.5 py-1 rounded-xl border border-teal-100/50 truncate max-w-[120px] inline-block align-bottom" title={assignedTeachers}>{assignedTeachers || "Chưa phân công"}</span>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {devLoading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 className="w-8 h-8 text-slate-800 animate-spin" />
-              <span className="text-slate-400 font-bold text-xs uppercase tracking-wider">Đang tải tiêu chí...</span>
+              <Loader2 className="w-8 h-8 text-[#00A19A] animate-spin" />
+              <span className="text-slate-500 font-semibold text-xs">Đang tải tiêu chí theo biểu mẫu...</span>
             </div>
           ) : devAreas.length === 0 ? (
-            <div className="text-center text-slate-400 font-extrabold text-xs py-12 bg-slate-50 border border-dashed border-slate-200 rounded-3xl">
+            <div className="text-center text-slate-500 font-semibold text-xs py-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
               Chưa cấu hình tiêu chí nào cho nhóm tuổi: {evalStudent?.grade}
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {devAreas.map(area => (
-                <div key={area.id} className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden hover:border-[#48BFE3]/20 transition-all duration-300">
+                <div key={area.id} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
                   
                   {/* Area Title Bar */}
-                  <div className="flex items-center justify-between gap-4 px-6 py-4 bg-slate-50/60 border-b border-slate-100">
+                  <div className="flex items-center justify-between gap-4 px-5 py-3.5 bg-[#F8FAFC] border-b border-[#E2E8F0]">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: area.color || "#6366f1" }} />
-                      <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider">{area.name}</h4>
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: area.color || "#00A19A" }} />
+                      <h4 className="font-bold text-[#003B3A] text-xs">{area.name}</h4>
                     </div>
                     {(area.code === "THE_CHAT" || area.name?.toLowerCase().includes("thể chất")) && (() => {
                       const bmiVal = calculateBMI();
                       const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
                       if (!bmiVal || !bmiClass) return null;
                       return (
-                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[10px] font-black uppercase tracking-wider animate-in fade-in zoom-in-95 ${bmiClass.color}`}>
-                          <div className={`w-2 h-2 rounded-full animate-pulse ${bmiClass.dot}`} />
+                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-semibold tabular-nums ${bmiClass.color}`}>
+                          <div className={`w-2 h-2 rounded-full ${bmiClass.dot}`} />
                           <span>BMI: {bmiVal.toFixed(1)} ({bmiClass.label})</span>
                         </div>
                       );
@@ -8371,7 +8428,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       const pipeIdx = rawNote.indexOf("|");
                       const rawMeasure = pipeIdx >= 0 ? rawNote.substring(0, pipeIdx) : rawNote;
                       const rawObs = pipeIdx >= 0 ? rawNote.substring(pipeIdx + 1) : "";
-                      const parsedNum = parseFloat(rawMeasure.replace(/[^d.]/g, ""));
+                      const parsedNum = parseFloat(rawMeasure.replace(/[^\d.]/g, ""));
                       const numStr = (isPhysical && !isNaN(parsedNum) && parsedNum > 0) ? String(parsedNum) : "";
 
                       const updatePhysical = (newNum: string, newObs: string) => {
@@ -8381,7 +8438,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         else if (newObs) combined = `|${newObs}`;
                         setStudentScores(prev => ({
                           ...prev,
-                          [crit.id]: { result: prev[crit.id]?.result || "CHUA_THE_HIEN", note: combined }
+                          [crit.id]: { result: newNum ? "DAT" : (prev[crit.id]?.result || "CHUA_THE_HIEN"), note: combined }
                         }));
                       };
 
@@ -8403,27 +8460,33 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               {crit.name}
                             </p>
 
-                            {/* Options choices group */}
-                            <div className="flex flex-wrap gap-2 shrink-0 md:self-center">
-                              {radioOpts.map(opt => (
-                                <label key={opt.key} className={`relative flex items-center ${isAssessmentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
-                                  <input
-                                    type="radio"
-                                    name={`crit-${crit.id}`}
-                                    checked={studentScores[crit.id]?.result === opt.key}
-                                    onChange={() => setStudentScores(prev => ({
-                                      ...prev,
-                                      [crit.id]: { result: opt.key, note: prev[crit.id]?.note || "" }
-                                    }))}
-                                    disabled={isAssessmentLocked}
-                                    className="sr-only peer"
-                                  />
-                                  <span className={`px-3.5 py-1.5 rounded-full border text-[11px] font-extrabold transition-all peer-checked:ring-4 peer-checked:ring-slate-500/10 ${opt.color}`}>
-                                    {opt.label}
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
+                            {/* Options choices group — ẩn trên dòng chỉ số đo Y tế B4A (Chiều cao / Cân nặng) */}
+                            {isPhysical ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#F0FDFA] border border-teal-200 text-[#00736E] text-[11px] font-semibold shrink-0">
+                                B4A · Chỉ số Y tế
+                              </span>
+                            ) : (
+                              <div className="flex flex-wrap gap-2 shrink-0 md:self-center">
+                                {radioOpts.map(opt => (
+                                  <label key={opt.key} className={`relative flex items-center ${isAssessmentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                                    <input
+                                      type="radio"
+                                      name={`crit-${crit.id}`}
+                                      checked={studentScores[crit.id]?.result === opt.key}
+                                      onChange={() => setStudentScores(prev => ({
+                                        ...prev,
+                                        [crit.id]: { result: opt.key, note: prev[crit.id]?.note || "" }
+                                      }))}
+                                      disabled={isAssessmentLocked}
+                                      className="sr-only peer"
+                                    />
+                                    <span className={`px-3.5 py-1.5 rounded-full border text-[11px] font-semibold transition-all peer-checked:ring-2 peer-checked:ring-slate-500/15 ${opt.color}`}>
+                                      {opt.label}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
                           {/* Suffix inputs for Thể chất (Chiều cao, Cân nặng, BMI) */}
@@ -8555,25 +8618,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             const getCalculatedResult = () => {
               const bgh = bghApprovalStatus || "";
               const gdcs = gdcsApprovalStatus || "";
-              const isApproved = (s: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
-
-              if (bgh && gdcs) {
-                if (isApproved(bgh) && isApproved(gdcs)) {
-                  if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU" || bgh === "DAT" || gdcs === "DAT") {
-                    return "Đạt - Miễn Học Thử";
-                  } else if (bgh === "DAT_HOC_THU" || gdcs === "DAT_HOC_THU") {
-                    return "Đạt - Học Thử";
-                  } else {
-                    return "Đạt";
-                  }
-                }
-              }
-              if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") {
-                return "Không đạt";
-              }
-              if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") {
-                return "Ý kiến khác";
-              }
+              const resolved = resolvePreschoolAdmissionResult({ bghStatus: bgh, gdcsStatus: gdcs });
+              if (resolved) return resolved;
+              if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") return "Không đạt";
+              if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") return "Ý kiến khác";
               return "Chưa duyệt";
             };
 
@@ -9615,6 +9663,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           </div>
         </div>
       )}
+
+      {/* Drawer Điều phối hồ sơ Mầm non B1–B13 (Tâm lý BM.09, Hẹn trải nghiệm, Xuất thư BM.17/04) */}
+      <PreschoolDossierDrawer
+        studentId={workflowDrawerStudentId}
+        onClose={() => setWorkflowDrawerStudentId(null)}
+        onUpdated={() => {
+          fetchDevStudents();
+        }}
+        staffUsers={[]}
+      />
     </div>
   );
 }
