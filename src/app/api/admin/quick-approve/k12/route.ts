@@ -81,7 +81,16 @@ function summarizeScoresHtml(scores: any[], student: any): string {
 
       const nonEmpty = vArr.filter(x => x !== undefined && x !== null && String(x).trim() !== "");
       if (nonEmpty.length > 0) {
-        items.push(`<span class="score-pill"><span>${subName}:</span> <strong>${nonEmpty[0]}</strong></span>`);
+        const isOralNonScoring =
+          (sNameLower.includes("tiếng anh") || sCode === "tavd" || sCode.includes("english_speaking")) &&
+          !sCode.includes("esl") &&
+          !sNameLower.includes("esl") &&
+          (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("vd") || sCode.includes("speaking") || sCode.includes("oral"));
+        if (isOralNonScoring) {
+          items.push(`<span class="score-pill" style="background:#FFFBEB;border-color:#FCD34D;color:#92400E;"><span>${subName}:</span> <strong>${nonEmpty[0]}</strong> <span style="font-size:10px;padding:1px 5px;border-radius:4px;background:#FEF3C7;color:#B45309;font-weight:700;margin-left:4px;">Không xét KQ</span></span>`);
+        } else {
+          items.push(`<span class="score-pill"><span>${subName}:</span> <strong>${nonEmpty[0]}</strong></span>`);
+        }
       }
     }
   }
@@ -189,6 +198,7 @@ export async function GET(req: NextRequest) {
   const email = searchParams.get("email") || "gdcs@skylineschool.edu.vn";
   const token = searchParams.get("token") || "";
   const confirm = searchParams.get("confirm") === "1";
+  const preselect = searchParams.get("preselect") || "";
 
   const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
   const protocol = req.headers.get("x-forwarded-proto") || "https";
@@ -303,12 +313,60 @@ export async function GET(req: NextRequest) {
     include: { subject: true }
   }).catch(() => []);
 
-  // Immediate 1-click approval when action === "DAT" and confirm === true
-  if (confirm && action === "DAT") {
+  // Immediate 1-tap approval when confirm === true (supports ALL options: DAT, DAT_CAM_KET + preselect, HOC_THU, KHONG_DAT)
+  if (confirm && ["DAT", "DAT_CAM_KET", "HOC_THU", "KHONG_DAT", "KHONG_DAT_KTL"].includes(action)) {
     const approverName = await resolveApproverDisplayName(email);
     const oldResult = student.admissionResult || "Chưa duyệt";
-    const newResult = "Đạt";
-    const finalNote = buildUpdatedDirectorNote(student.directorNote, approverName, oldResult, newResult, [], "Phê duyệt Đạt chuẩn trực tiếp qua Email");
+
+    let newResult = "Đạt";
+    let defaultNote = "Phê duyệt Đạt chuẩn trực tiếp qua Email";
+    if (action === "DAT_CAM_KET") {
+      newResult = "Đạt cam kết";
+      defaultNote = "Phê duyệt Đạt cam kết trực tiếp qua Email";
+    } else if (action === "HOC_THU") {
+      newResult = "Học thử";
+      defaultNote = "Phê duyệt Học thử trực tiếp qua Email";
+    } else if (action === "KHONG_DAT" || action === "KHONG_DAT_KTL") {
+      newResult = "Không đạt - Kiểm tra lại";
+      defaultNote = "Phê duyệt Không đạt / Khảo sát lại trực tiếp qua Email";
+    }
+
+    // Parse 1-tap committed subjects (supports comma-separated list & smart merge if already Đạt cam kết)
+    const incomingSubjects = preselect
+      ? preselect.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
+      : [];
+    const mergedSubjects: string[] = [];
+    const seenSubj = new Set<string>();
+    const addSubj = (name: string) => {
+      const clean = name.trim();
+      if (!clean) return;
+      const k = clean.toLowerCase().normalize("NFC").replace(/[–—-]/g, "-").replace(/\s+/g, " ");
+      if (seenSubj.has(k)) return;
+      seenSubj.add(k);
+      mergedSubjects.push(clean);
+    };
+
+    if (action === "DAT_CAM_KET" && oldResult === "Đạt cam kết" && incomingSubjects.length > 0) {
+      const m = String(student.directorNote || "").match(/\[Môn cam kết:\s*([^\]]+)\]/i);
+      if (m?.[1]) {
+        m[1].split(/[,;]+/).forEach(addSubj);
+      }
+    }
+    incomingSubjects.forEach(addSubj);
+
+    const customNote =
+      mergedSubjects.length > 0
+        ? `${defaultNote} (${mergedSubjects.join(", ")})`
+        : defaultNote;
+
+    const finalNote = buildUpdatedDirectorNote(
+      student.directorNote,
+      approverName,
+      oldResult,
+      newResult,
+      mergedSubjects,
+      customNote
+    );
 
     await (prisma as any).inputAssessmentStudent.update({
       where: { id: studentId },
@@ -319,34 +377,36 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    try {
-      await executeEntranceWorkflowAction({
-        action: "CONFIRM",
-        targetScope: "STUDENT",
-        isPreschool: false,
-        periodId: student.periodId || "PERIOD_APPROVAL",
-        batchId: student.batchId || null,
-        studentIds: [student.id],
-        stageNumber: 6,
-        status: "COMPLETED",
-        admissionResult: newResult,
-        note: `GĐCS (${approverName}) phê duyệt qua Email: ${newResult}`,
-        actor: {
-          id: "gdcs_email_approver",
-          fullName: approverName,
-          role: "GDCS",
-          isSuperAdmin: false
-        }
-      });
-    } catch {}
+    if (isOfficiallyApprovedConclusion(newResult)) {
+      try {
+        await executeEntranceWorkflowAction({
+          action: "CONFIRM",
+          targetScope: "STUDENT",
+          isPreschool: false,
+          periodId: student.periodId || "PERIOD_APPROVAL",
+          batchId: student.batchId || null,
+          studentIds: [student.id],
+          stageNumber: 6,
+          status: "COMPLETED",
+          admissionResult: newResult,
+          note: `GĐCS (${approverName}) phê duyệt 1 chạm qua Email: ${newResult}${mergedSubjects.length > 0 ? ` (${mergedSubjects.join(", ")})` : ""}`,
+          actor: {
+            id: "gdcs_email_approver",
+            fullName: approverName,
+            role: "GDCS",
+            isSuperAdmin: false
+          }
+        });
+      } catch {}
+    }
 
     return new NextResponse(
       renderStudentSuccessPage({
         student,
         scores,
         finalResult: newResult,
-        committedSubjects: [],
-        customNote: "Phê duyệt Đạt chuẩn trực tiếp qua Email",
+        committedSubjects: mergedSubjects,
+        customNote,
         approverName,
         baseUrl,
         action,
@@ -365,7 +425,8 @@ export async function GET(req: NextRequest) {
       defaultAction: action,
       email,
       token,
-      baseUrl
+      baseUrl,
+      preselect
     }),
     { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
   );
@@ -493,8 +554,9 @@ function renderInteractiveApprovalForm(p: {
   email: string;
   token: string;
   baseUrl: string;
+  preselect?: string;
 }) {
-  const { student, scores, defaultAction, email, token, baseUrl } = p;
+  const { student, scores, defaultAction, email, token, baseUrl, preselect = "" } = p;
   const dobStr = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "—";
   const genderStr = student.gender === "FEMALE" || student.gender === "Nữ" || student.gender === "F" ? "Nữ" : "Nam";
   const campusLabel = extractCampusShortLabel(student.admissionCampus || student.registeredCampus || student.batch?.name);
@@ -505,6 +567,83 @@ function renderInteractiveApprovalForm(p: {
   else if (defaultAction === "HOC_THU") defaultDecision = "Học thử";
   else if (defaultAction === "KHONG_DAT") defaultDecision = "Không đạt - Kiểm tra lại";
 
+  // Xây dựng danh sách môn khảo sát thực tế của HS để GĐCS chọn môn cam kết / KS lại (loại trừ Định hướng, NLTD & TA vấn đáp không xét KQ)
+  const canonicalizeName = (raw: string) => {
+    const clean = String(raw || "").trim().replace(/\s+/g, " ");
+    const lower = clean.toLowerCase().normalize("NFC").replace(/[–—]/g, "-");
+    if (lower === "toán" || lower === "toán học") return "Toán học";
+    if (lower === "ngữ văn" || lower === "văn") return "Ngữ Văn";
+    if (lower === "tiếng việt") return "Tiếng Việt";
+    if (lower === "tiếng anh (viết)" || lower === "tiếng anh viết" || lower === "ta viết") return "Tiếng Anh (viết)";
+    if (lower.includes("chuẩn phát triển")) return "Bộ chuẩn phát triển trẻ em 5-6 tuổi";
+    if (lower.includes("tâm lý")) return "Tâm lý";
+    return clean;
+  };
+  const selectableSubjects: { name: string; scoreLabel?: string }[] = [];
+  const seenNames = new Set<string>();
+  if (Array.isArray(scores) && scores.length > 0) {
+    for (const sc of scores) {
+      const sub = sc?.subject || {};
+      const subName = String(sub.name || sc.subjectName || "").trim();
+      if (!subName) continue;
+      const lower = subName.toLowerCase().normalize("NFC");
+      const sCode = String(sub.code || "").toLowerCase();
+      if (sCode.includes("pdh") || sCode.includes("orientation") || lower.includes("định hướng")) continue;
+      if (sCode.includes("nltd") || lower.includes("năng lực tư duy")) continue;
+      const isOralNonScoring =
+        (lower.includes("tiếng anh") || sCode === "tavd" || sCode.includes("english_speaking")) &&
+        !sCode.includes("esl") &&
+        !lower.includes("esl") &&
+        (lower.includes("vấn đáp") || lower.includes("nói") || sCode.includes("vd") || sCode.includes("speaking") || sCode.includes("oral"));
+      if (isOralNonScoring) continue;
+      const canonical = canonicalizeName(subName);
+      const canonKey = canonical.toLowerCase().normalize("NFC");
+      if (seenNames.has(canonKey)) continue;
+      seenNames.add(canonKey);
+
+      let scoreLabel = "";
+      try {
+        const parsed = Array.isArray(sc.scores) ? sc.scores : JSON.parse(sc.scores || "[]");
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        const firstVal = arr.find((x: any) => x !== undefined && x !== null && String(x).trim() !== "");
+        if (firstVal !== undefined) scoreLabel = String(firstVal);
+      } catch {
+        if (sc.scores) scoreLabel = String(sc.scores);
+      }
+      selectableSubjects.push({ name: canonical, scoreLabel });
+    }
+  }
+  // Luôn bổ sung đầy đủ các môn chuẩn theo Khối + Hệ + Kỳ để không bị thiếu môn khi HS chưa đủ điểm
+  const gradeNum = parseInt(String(student?.grade || "0").replace(/\D/g, ""), 10) || 1;
+  const sysRaw = `${student?.surveyFormType || ""} ${student?.surveySystem || ""}`.toUpperCase();
+  const isTransfer =
+    !!student?.isChuyenHe ||
+    String(student?.period?.name || "").toLowerCase().normalize("NFC").includes("chuyển hệ") ||
+    String(student?.batch?.name || "").toLowerCase().normalize("NFC").includes("chuyển hệ");
+  const isSystemI = sysRaw.includes("HNG") || sysRaw.includes("SB") || sysRaw.includes("SONG BẰNG") || sysRaw.includes("HỆ I");
+  const defaults = isTransfer
+    ? ["EPT", "ESL (vấn đáp)"]
+    : isSystemI
+    ? gradeNum === 1
+      ? ["Bộ chuẩn phát triển trẻ em 5-6 tuổi", "ESL (vấn đáp)", "Tâm lý"]
+      : gradeNum <= 5
+      ? ["Toán học", "Tiếng Việt", "EPT", "ESL (vấn đáp)"]
+      : ["Toán học", "Ngữ Văn", "EPT", "ESL (vấn đáp)"]
+    : gradeNum === 1
+    ? ["Bộ chuẩn phát triển trẻ em 5-6 tuổi", "Tâm lý"]
+    : gradeNum <= 5
+    ? ["Toán học", "Tiếng Việt", "Tiếng Anh (viết)"]
+    : ["Toán học", "Ngữ Văn", "Tiếng Anh (viết)"];
+  defaults.forEach(name => {
+    const canonKey = canonicalizeName(name).toLowerCase().normalize("NFC");
+    if (!seenNames.has(canonKey)) {
+      seenNames.add(canonKey);
+      selectableSubjects.push({ name: canonicalizeName(name) });
+    }
+  });
+
+  const preselectNorm = preselect.trim().toLowerCase().normalize("NFC");
+  const showSubjectPickerInitially = defaultDecision === "Đạt cam kết" || defaultDecision === "Không đạt - Kiểm tra lại";
   const portalUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=k12&periodId=${encodeURIComponent(student.periodId || "")}&batchId=${encodeURIComponent(student.batchId || "")}&studentId=${encodeURIComponent(student.id)}`;
 
   return renderPageHtml({
@@ -516,6 +655,7 @@ function renderInteractiveApprovalForm(p: {
         <div class="meta-line">${student.period?.name || "Kỳ khảo sát"} &bull; ${student.batch?.name || "Khảo sát lẻ"}</div>
       </div>
 
+      <div class="table-scroll">
       <table class="ledger-table">
         <thead>
           <tr>
@@ -542,6 +682,7 @@ function renderInteractiveApprovalForm(p: {
           </tr>
         </tbody>
       </table>
+      </div>
 
       <div class="section-box">
         <div class="section-label">Kết quả khảo sát các môn</div>
@@ -580,15 +721,18 @@ function renderInteractiveApprovalForm(p: {
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">2. Chọn môn cần Cam kết / Khảo sát lại (nếu có)</label>
+        <div id="commit-subjects-group" class="form-group" style="display: ${showSubjectPickerInitially ? "block" : "none"}; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 14px 16px;">
+          <label class="form-label" style="color: #92400E;">2. Chọn môn Cam kết / Khảo sát lại (theo các môn xét kết quả của HS)</label>
           <div class="checkbox-grid">
-            ${["Toán", "Tiếng Việt / Ngữ văn", "Tiếng Anh", "Năng lực tư duy", "Khoa học tự nhiên", "Tâm lý"].map(sub => `
-              <label class="check-item">
-                <input type="checkbox" name="committedSubjects" value="${sub}" />
-                <span>${sub}</span>
+            ${selectableSubjects.map(sub => {
+              const isChecked = preselectNorm && sub.name.toLowerCase().normalize("NFC") === preselectNorm;
+              return `
+              <label class="check-item" style="background: #FFFFFF; border-color: ${isChecked ? "#D97706" : "#FCD34D"};">
+                <input type="checkbox" name="committedSubjects" value="${sub.name}" ${isChecked ? "checked" : ""} />
+                <span><strong>${sub.name}</strong>${sub.scoreLabel ? ` <span style="color:#00736E;font-weight:700;">(${sub.scoreLabel})</span>` : ""}</span>
               </label>
-            `).join("")}
+            `;
+            }).join("")}
           </div>
         </div>
 
@@ -600,6 +744,21 @@ function renderInteractiveApprovalForm(p: {
         <button type="submit" class="btn-submit">✓ Xác nhận phê duyệt chính thức</button>
         <a href="${portalUrl}" class="btn-secondary">Mở hồ sơ đầy đủ trên SSM Portal &rarr;</a>
       </form>
+      <script>
+        (function() {
+          var radios = document.querySelectorAll('input[name="decision"]');
+          var group = document.getElementById('commit-subjects-group');
+          if (!group || !radios.length) return;
+          function sync() {
+            var checked = document.querySelector('input[name="decision"]:checked');
+            var val = checked ? checked.value : '';
+            var needSubjects = (val === 'Đạt cam kết' || val === 'Không đạt - Kiểm tra lại');
+            group.style.display = needSubjects ? 'block' : 'none';
+          }
+          radios.forEach(function(r) { r.addEventListener('change', sync); });
+          sync();
+        })();
+      </script>
     `
   });
 }
@@ -674,9 +833,12 @@ function renderStudentSuccessPage(p: {
       </table>
 
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
-        <a href="${adjustUrl}" class="btn-secondary" style="margin-top:0;">✎ Điều chỉnh quyết định / Thêm môn cam kết</a>
-        <a href="${portalUrl}" class="btn-primary" style="margin-top:0;">Mở Cổng Xét duyệt SSM &rarr;</a>
+        <button type="button" onclick="window.close()" class="btn-primary" style="margin-top:0;border:none;cursor:pointer;">✓ Đã ghi nhận — Đóng cửa sổ</button>
+        <a href="${adjustUrl}" class="btn-secondary" style="margin-top:0;">✎ Điều chỉnh quyết định / Chọn thêm môn</a>
       </div>
+      <p style="text-align:center;font-size:11.5px;color:#64748B;margin-top:10px;">
+        Kết quả đã được đồng bộ trực tiếp vào hồ sơ khảo sát trên hệ thống SSM. Thầy/Cô có thể đóng tab này ngay.
+      </p>
     `
   });
 }
@@ -949,6 +1111,42 @@ function renderPageHtml(p: { title: string; bodyHtml: string }) {
       font-size: 11.5px;
       color: #64748B;
       text-align: center;
+    }
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 14px 0 18px 0;
+      border-radius: 10px;
+      border: 1px solid #E2E8F0;
+    }
+    .table-scroll .ledger-table {
+      margin: 0;
+      border: none;
+      border-radius: 0;
+      min-width: 560px;
+    }
+    @media (max-width: 640px) {
+      body { padding: 12px 8px !important; }
+      .container { border-radius: 12px !important; }
+      .masthead { padding: 16px !important; }
+      .masthead-title { font-size: 15px !important; line-height: 1.35; }
+      .masthead-sub { font-size: 11.5px !important; margin-top: 4px; }
+      .content { padding: 16px !important; }
+      .student-title { font-size: 17px !important; gap: 6px; }
+      .radio-grid { grid-template-columns: 1fr !important; }
+      .radio-card { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+      .checkbox-grid { display: grid !important; grid-template-columns: 1fr !important; gap: 8px; }
+      .check-item { width: 100%; min-height: 42px; padding: 9px 12px; font-size: 13px; }
+      .btn-submit, .btn-primary, .btn-secondary {
+        display: block !important;
+        width: 100% !important;
+        text-align: center !important;
+        margin: 0 0 10px 0 !important;
+        min-height: 44px;
+        box-sizing: border-box;
+      }
+      .footer { padding: 12px 16px !important; font-size: 11px !important; }
     }
   </style>
 </head>

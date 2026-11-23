@@ -108,7 +108,7 @@ export function buildStudentQuickApproveUrls(params: {
 
     const approveDatUrl = `${cleanBase}/api/admin/quick-approve/preschool?studentId=${encodeURIComponent(studentId)}&action=APPROVE_MIEN_HT&email=${encodeURIComponent(normEmail)}&token=${tokenMienHt}&confirm=1`;
     const approveCamKetOrHocThuUrl = `${cleanBase}/api/admin/quick-approve/preschool?studentId=${encodeURIComponent(studentId)}&action=APPROVE_HOC_THU&email=${encodeURIComponent(normEmail)}&token=${tokenHocThu}&confirm=1`;
-    const approveKhongDatUrl = `${cleanBase}/api/admin/quick-approve/preschool?studentId=${encodeURIComponent(studentId)}&action=KHONG_DAT&email=${encodeURIComponent(normEmail)}&token=${tokenKhongDat}`;
+    const approveKhongDatUrl = `${cleanBase}/api/admin/quick-approve/preschool?studentId=${encodeURIComponent(studentId)}&action=KHONG_DAT&email=${encodeURIComponent(normEmail)}&token=${tokenKhongDat}&confirm=1`;
     const portalUrl = `${cleanBase}/admin/xet-duyet-ket-qua?tab=mam-non${periodId ? `&periodId=${encodeURIComponent(periodId)}` : ""}${batchId ? `&batchId=${encodeURIComponent(batchId)}` : ""}&studentId=${encodeURIComponent(studentId)}&autoOpen=true`;
 
     return {
@@ -127,8 +127,8 @@ export function buildStudentQuickApproveUrls(params: {
   const tokenKhongDat = generateK12ApprovalToken(studentId, "KHONG_DAT", normEmail);
 
   const approveDatUrl = `${cleanBase}/api/admin/quick-approve/k12?studentId=${encodeURIComponent(studentId)}&action=DAT&email=${encodeURIComponent(normEmail)}&token=${tokenDat}&confirm=1`;
-  const approveCamKetOrHocThuUrl = `${cleanBase}/api/admin/quick-approve/k12?studentId=${encodeURIComponent(studentId)}&action=DAT_CAM_KET&email=${encodeURIComponent(normEmail)}&token=${tokenCamKet}`;
-  const approveKhongDatUrl = `${cleanBase}/api/admin/quick-approve/k12?studentId=${encodeURIComponent(studentId)}&action=KHONG_DAT&email=${encodeURIComponent(normEmail)}&token=${tokenKhongDat}`;
+  const approveCamKetOrHocThuUrl = `${cleanBase}/api/admin/quick-approve/k12?studentId=${encodeURIComponent(studentId)}&action=DAT_CAM_KET&email=${encodeURIComponent(normEmail)}&token=${tokenCamKet}&confirm=1`;
+  const approveKhongDatUrl = `${cleanBase}/api/admin/quick-approve/k12?studentId=${encodeURIComponent(studentId)}&action=KHONG_DAT&email=${encodeURIComponent(normEmail)}&token=${tokenKhongDat}&confirm=1`;
   const portalUrl = `${cleanBase}/admin/xet-duyet-ket-qua?tab=k12${periodId ? `&periodId=${encodeURIComponent(periodId)}` : ""}${batchId ? `&batchId=${encodeURIComponent(batchId)}` : ""}&studentId=${encodeURIComponent(studentId)}`;
 
   return {
