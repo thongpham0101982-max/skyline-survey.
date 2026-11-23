@@ -1,5 +1,7 @@
 "use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
+import { formatStandardBatchName, extractMeaningfulBatchNote } from "@/lib/batchNaming"
+import { getCurrentMonthYearKey, getBatchMonthYearKey, getStudentSurveyMonthKey, sortMonthYearKeysDesc } from "@/lib/surveyMonth"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
 import { PreschoolMoveToBatchModal } from "@/app/admin/student-info/PreschoolMoveToBatchModal";
@@ -120,51 +122,7 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: any) {
           <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>Xóa</button>
         </div>
       </div>
-    
-      {/* Floating Action Bar */}
-      {selectedIds && selectedIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-slate-900/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10 w-[90%] md:w-auto overflow-x-auto whitespace-nowrap">
-          <div className="flex items-center gap-3 pr-6 border-r border-slate-700/50">
-            <div className="bg-[#00A19A]/20 text-[#00A19A] w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-              {selectedIds.length}
-            </div>
-            <span className="font-medium">học sinh đang chọn</span>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsMoveBatchModalOpen(true)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
-            >
-              <RefreshCcw className="w-4 h-4" />
-              Chuyển đợt KS
-            </button>
-
-            <button
-              onClick={() => setSelectedIds([])}
-              className="p-2 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition-all"
-              title="Bỏ chọn"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Move to Batch Modal */}
-      {isMoveBatchModalOpen && (
-        <PreschoolMoveToBatchModal
-          selectedIds={selectedIds}
-          onClose={() => setIsMoveBatchModalOpen(false)}
-          onSuccess={() => {
-            setSelectedIds([]);
-            setIsMoveBatchModalOpen(false);
-            window.location.reload();
-          }}
-          periods={periods}
-        />
-      )}
-      </div>
+    </div>
   )
 }
 
@@ -223,7 +181,7 @@ export function PreschoolInputAssessmentsClient({
 
   const userRole = (currentUser?.role || "").toUpperCase();
   const isSystemAdmin = userRole === "ADMIN";
-  const isBGHUser = ["ADMIN", "KT_DBCL", "KTDBCL", "BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole);
+  const isBGHUser = ["ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL", "BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole);
   const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
 
   const showBghSection = true;
@@ -1107,6 +1065,7 @@ export function PreschoolInputAssessmentsClient({
 
   // Batches
   const [bModal, setBModal] = useState(false);
+  const [isNormalizingBatchNames, setIsNormalizingBatchNames] = useState(false);
   const [editB, setEditB] = useState<Batch | null>(null);
   const [bForm, setBForm] = useState({ batchNumber: "1", name: "", startDate: "", endDate: "", status: "ACTIVE", campusId: "", assignedUserId: "" });
   const [targetPeriodId, setTargetPeriodId] = useState("");
@@ -1331,6 +1290,7 @@ export function PreschoolInputAssessmentsClient({
   const [cSearch, setCSearch] = useState("");
   const [cGradeFilter, setCGradeFilter] = useState("");
   const [cCampusFilter, setCCampusFilter] = useState("");
+  const [cMonthFilter, setCMonthFilter] = useState(() => getCurrentMonthYearKey());
   const [childrenCurrentPage, setChildrenCurrentPage] = useState(1);
   const childrenPageSize = 10;
 
@@ -2975,7 +2935,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     const nextNum = period && period.batches && period.batches.length > 0 ? Math.max(...period.batches.map(b => b.batchNumber)) + 1 : 1;
     setBForm({
       batchNumber: String(nextNum),
-      name: "KSĐV_Tất cả _ Đợt " + nextNum,
+      name: "",
       startDate: "",
       endDate: "",
       status: "ACTIVE",
@@ -2987,24 +2947,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   const openEditBatch = (b: Batch) => {
     setTargetPeriodId(b.periodId);
     setEditB(b);
-    let baseName = b.name;
-    const parts = b.name.split(" _ ");
-    if (parts.length >= 6 && parts[3] === "KSĐV") {
-      baseName = parts[4];
-    } else if (parts.length >= 6 && parts[4] === "") {
-      baseName = parts[3];
-    } else if (parts.length === 5) {
-      baseName = parts[3];
-    } else if (parts.length >= 5) {
-      baseName = parts[4];
-    } else {
-      const m = b.name.match(/Đợt \d+ - (.*?) \|/);
-      if (m) baseName = m[1];
-      else {
-        const m2 = b.name.match(/Đợt \d+ - (.*)/);
-        if (m2) baseName = m2[1];
-      }
-    }
+    const baseName = extractMeaningfulBatchNote(b.name);
     setBForm({
       batchNumber: String(b.batchNumber),
       name: baseName,
@@ -3017,22 +2960,53 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setBModal(true);
   };
   const saveBatch = async () => {
-    if (!bForm.name.trim() || !bForm.startDate || !bForm.endDate) return notify("Cần nhập Tên Đợt KS, Ngày bắt đầu và kết thúc", "err");
+    if (!bForm.startDate || !bForm.endDate) return notify("Cần nhập Ngày bắt đầu và Ngày kết thúc", "err");
     const campus = campuses.find(c => c.id === bForm.campusId);
-    const campusName = campus ? (campus.campusCode || campus.campusName) : "Tất cả";
-    const startStr = bForm.startDate.split('-').reverse().join('/');
-    const endStr = bForm.endDate.split('-').reverse().join('/');
     const period = periods.find(p => p.id === targetPeriodId);
-    const periodName = period ? period.name : "Tên đợt";
-    let periodCode = period ? (period.code || period.name) : "";
-    if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
-      periodCode = "KSL";
-    }
-    const fullName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
+    const fullName = formatStandardBatchName({
+      campusCode: campus?.campusCode,
+      campusName: campus?.campusName,
+      periodName: period?.name,
+      periodCode: period?.code,
+      batchNumber: bForm.batchNumber || "1",
+      startDate: bForm.startDate,
+      endDate: bForm.endDate,
+      note: bForm.name.trim(),
+      isPreschool: true
+    });
     const r = await fetch("/api/preschool-input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB ? "Đã cập nhật đợt" : "Đã tạo đợt mới"); } else notify("Lỗi", "err");
   };
   const doDeleteBatch = async (id: string) => { const r = await fetch(`/api/preschool-input-assessments?type=batch&id=${id}`, { method: "DELETE" }); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt"); } };
+  const handleNormalizeBatchNames = async () => {
+    if (isNormalizingBatchNames) return;
+    setIsNormalizingBatchNames(true);
+    try {
+      const r = await fetch("/api/preschool-input-assessments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "NORMALIZE_BATCH_NAMES",
+          data: { academicYearId: yearId || undefined }
+        })
+      });
+      const res = await r.json();
+      if (r.ok && res.success) {
+        await fetchPeriods();
+        notify(
+          res.updatedCount > 0
+            ? `Đã chuẩn hóa tên ${res.updatedCount} / ${res.totalChecked} đợt Mầm non theo quy chuẩn Sky-Line!`
+            : `Tất cả ${res.totalChecked} đợt Mầm non đã đúng quy chuẩn.`
+        );
+      } else {
+        notify(res.error || "Lỗi khi chuẩn hóa tên đợt Mầm non", "err");
+      }
+    } catch {
+      notify("Lỗi kết nối khi chuẩn hóa tên đợt Mầm non", "err");
+    } finally {
+      setIsNormalizingBatchNames(false);
+    }
+  };
 
   // Child actions
   const openAddChild = async () => {
@@ -3140,12 +3114,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     notify("Đã xóa các mục đã chọn");
   };
 
-  const filtChildren = useMemo(() => children.filter(c => {
-    const matchSearch = !cSearch || c.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || c.fullName.toLowerCase().includes(cSearch.toLowerCase());
-    const matchGrade = !cGradeFilter || c.grade === cGradeFilter;
-    const matchCampus = !cCampusFilter || (c.admissionCampus || "").toLowerCase().includes(cCampusFilter.toLowerCase());
-    return matchSearch && matchGrade && matchCampus;
-  }), [children, cSearch, cGradeFilter, cCampusFilter]);
+  const filtChildren = useMemo(() => {
+    const allBatchesPool = periods.flatMap(p => p.batches || []);
+    return children.filter(c => {
+      const matchSearch = !cSearch || c.studentCode.toLowerCase().includes(cSearch.toLowerCase()) || c.fullName.toLowerCase().includes(cSearch.toLowerCase());
+      const matchGrade = !cGradeFilter || c.grade === cGradeFilter;
+      const matchCampus = !cCampusFilter || (c.admissionCampus || "").toLowerCase().includes(cCampusFilter.toLowerCase());
+      const matchMonth = !cMonthFilter || cMonthFilter === "all" || getStudentSurveyMonthKey(c, allBatchesPool) === cMonthFilter;
+      return matchSearch && matchGrade && matchCampus && matchMonth;
+    });
+  }, [children, cSearch, cGradeFilter, cCampusFilter, cMonthFilter, periods]);
 
   const paginatedFiltChildren = useMemo(() => {
     const startIndex = (childrenCurrentPage - 1) * childrenPageSize;
@@ -3255,11 +3233,25 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {/* Tab: Periods */}
       {tab === "periods" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4 text-teal-400" /> Kỳ &amp; Đợt Khảo sát Mầm non</h2>
-            <div className="flex gap-2">
-              <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-none transition-all"><RefreshCw className="w-4 h-4" /></button>
-
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-[#003B3A] flex items-center gap-2 border-l-4 border-[#003B3A] pl-2.5"><Clock className="w-4 h-4 text-[#00736E]" /> Kỳ &amp; Đợt Khảo sát Mầm non</h2>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={isNormalizingBatchNames}
+                onClick={() =>
+                  setConfirm({
+                    msg: "Tự động chuẩn hóa tên toàn bộ các đợt Khảo sát Mầm non theo quy chuẩn Sky-Line ([Cơ sở] · MN #[STT] · [Ngày bắt đầu])? Dữ liệu trẻ và kết quả khảo sát không bị ảnh hưởng.",
+                    fn: handleNormalizeBatchNames
+                  })
+                }
+                className="h-9 px-3 rounded-xl bg-[#F0FDFA] hover:bg-teal-100/80 text-[#005854] border border-[#00A19A]/40 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                title="Tự động chuẩn hóa tên đợt Mầm non: CS4 · MN #05 · 19/11"
+              >
+                {isNormalizingBatchNames ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-[#00736E]" />}
+                <span>{isNormalizingBatchNames ? "Đang chuẩn hóa..." : "Chuẩn hóa tên đợt"}</span>
+              </button>
+              <button onClick={fetchPeriods} className="p-2 text-slate-500 hover:text-[#003B3A] hover:bg-[#F0FDFA] rounded-xl border border-[#E2E8F0] transition-colors cursor-pointer" title="Làm mới"><RefreshCw className="w-4 h-4" /></button>
             </div>
           </div>
           {pLoading ? <Spin /> : periods.length === 0 ? <Empty text="Ch\u01b0a c\u00f3 K\u1ef3 kh\u1ea3o s\u00e1t n\u00e0o" sub="Li\u00ean h\u1ec7 qu\u1ea3n tr\u1ecb vi\u00ean \u0111\u1ec3 t\u1ea1o k\u1ef3 kh\u1ea3o s\u00e1t m\u1edbi" /> : (
@@ -3293,20 +3285,29 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <table className="w-full text-left border-collapse">
                             <thead className="bg-[#003B3A] border-b text-white border-[#003B3A]">
                               <tr className="text-[11px] font-semibold whitespace-nowrap">
-                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">{h}</th>)}
+                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Tháng", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className={`px-4 py-3.5 border-b border-white/15 text-[11px] font-semibold ${h === "Tháng" ? "text-center text-[#5EEAD4]" : ""}`}>{h}</th>)}
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-teal-50">
+                            <tbody className="divide-y divide-teal-50 tabular-nums">
                               {p.batches.map(b => {
                                 const campus = campuses.find(c => c.id === b.campusId);
                                 let baseName = b.name;
                                 const m = b.name.match(/Đợt \d+ - (.*?) \|/); if (m) baseName = m[1]; else { const m2 = b.name.match(/Đợt \d+ - (.*)/); if (m2) baseName = m2[1]; }
+                                const rawBDate = String(b.endDate || b.startDate || "").slice(0, 10);
+                                const bMonthKey = /^\d{4}-\d{2}-\d{2}$/.test(rawBDate) ? `${rawBDate.slice(5, 7)}/${rawBDate.slice(0, 4)}` : "";
+                                const nowPm = new Date();
+                                const curPm = `${String(nowPm.getMonth() + 1).padStart(2, "0")}/${nowPm.getFullYear()}`;
                                 return (
                                   <tr key={b.id} className="hover:bg-[#00A19A]/5/30 transition-colors">
                                     <td className="px-4 py-3 border-b border-slate-100"><span className="inline-flex items-center justify-center w-8 h-8 rounded-none bg-[#00A19A]/5 font-black text-[#00A19A] text-xs">#{b.batchNumber}</span></td>
                                     <td className="px-4 py-3 border-b border-slate-100"><span className="text-sm font-semibold text-slate-700">{baseName}</span></td>
                                     <td className="px-4 py-3 border-b border-slate-100"><span className="text-xs text-slate-500">{campus?.campusName || "Tất cả"}</span></td>
                                     <td className="px-4 py-3 border-b border-slate-100"><span className="text-xs text-slate-500">{b.startDate?.slice(0,10)} → {b.endDate?.slice(0,10)}</span></td>
+                                    <td className="px-4 py-3 border-b border-slate-100 text-center whitespace-nowrap">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${bMonthKey && bMonthKey === curPm ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]" : "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                                        {bMonthKey || "—"}
+                                      </span>
+                                    </td>
                                     <td className="px-4 py-3 border-b border-slate-100 whitespace-nowrap"><div className="flex items-center gap-2">
                                        <select
                                          value={b.status || "ACTIVE"}
@@ -3989,11 +3990,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <th className="py-2.5 px-3 text-center font-semibold">Ngày sinh</th>
                         <th className="py-2.5 px-3 font-semibold">Nhóm tuổi / Lớp</th>
                         <th className="py-2.5 px-3 font-semibold">Hệ KS</th>
+                        <th className="py-2.5 px-3 text-center font-semibold text-[#5EEAD4]">Tháng</th>
                         <th className="py-2.5 px-3 font-semibold">Cơ sở ĐK</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E2E8F0]">
-                      {effectiveHandoverChildren.map((c, idx) => (
+                    <tbody className="divide-y divide-[#E2E8F0] tabular-nums">
+                      {effectiveHandoverChildren.map((c, idx) => {
+                        const bObj = c.batch || (periods.flatMap(p => p.batches || [])).find((b: any) => b.id === (c.batchId || handoverBatchId));
+                        const rawD = String(bObj?.endDate || bObj?.startDate || c.createdAt || "").slice(0, 10);
+                        const mk = /^\d{4}-\d{2}-\d{2}$/.test(rawD) ? `${rawD.slice(5, 7)}/${rawD.slice(0, 4)}` : "";
+                        const nowM = new Date();
+                        const curM = `${String(nowM.getMonth() + 1).padStart(2, "0")}/${nowM.getFullYear()}`;
+                        return (
                         <tr key={c.id}>
                           <td className="py-2 px-3 text-center text-slate-500">{idx + 1}</td>
                           <td className="py-2 px-3 font-mono font-bold text-[#005854]">{c.studentCode || "—"}</td>
@@ -4001,9 +4009,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <td className="py-2 px-3 text-center text-slate-600">{c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                           <td className="py-2 px-3 font-semibold text-teal-800">{c.grade || "—"}</td>
                           <td className="py-2 px-3 text-teal-800 font-semibold">{c.surveyFormType || "—"}</td>
+                          <td className="py-2 px-3 text-center whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${mk && mk === curM ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]" : "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                              {mk || "—"}
+                            </span>
+                          </td>
                           <td className="py-2 px-3 text-slate-600">{resolveCampusDisplay(c.admissionCampus, handoverCampusCode)}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -4156,8 +4170,35 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </select>
               </div>
 
-              <div className="lg:col-span-3">
-                <label className="block text-[11px] font-medium text-slate-600 uppercase tracking-wider mb-1.5">Đợt khảo sát</label>
+              <div className="lg:col-span-2">
+                <label className="block text-[11px] font-medium text-slate-600 mb-1.5">Tháng</label>
+                {(() => {
+                  const curMk = getCurrentMonthYearKey();
+                  const allBatchesPool = periods.flatMap(p => p.batches || []);
+                  const monthKeys = sortMonthYearKeysDesc([
+                    curMk,
+                    ...allBatchesPool.map((b: any) => getBatchMonthYearKey(b)),
+                    ...children.map((ch: any) => getStudentSurveyMonthKey(ch, allBatchesPool))
+                  ]);
+                  return (
+                    <select
+                      value={cMonthFilter}
+                      onChange={e => { setCMonthFilter(e.target.value); setCBatchId(""); }}
+                      className="h-10 w-full px-3 bg-white border border-slate-200 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 rounded-xl text-xs font-medium text-slate-800 outline-none transition-all cursor-pointer tabular-nums"
+                    >
+                      <option value="all">Tất cả Tháng</option>
+                      {monthKeys.map(mk => (
+                        <option key={mk} value={mk}>
+                          Tháng {mk}{mk === curMk ? " (Hiện tại)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()}
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block text-[11px] font-medium text-slate-600 mb-1.5">Đợt khảo sát</label>
                 <select
                   value={cBatchId}
                   onChange={e => setCBatchId(e.target.value)}
@@ -4165,12 +4206,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   className="h-10 w-full px-3 bg-white border border-slate-200 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 rounded-xl text-xs font-medium text-slate-800 outline-none transition-all cursor-pointer disabled:opacity-50"
                 >
                   <option value="">-- Tất cả đợt --</option>
-                  {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  {availableBatches
+                    ?.filter((b: any) => !cMonthFilter || cMonthFilter === "all" || getBatchMonthYearKey(b) === cMonthFilter || b.id === cBatchId)
+                    .map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
 
-              <div className="lg:col-span-2">
-                <label className="block text-[11px] font-medium text-slate-600 uppercase tracking-wider mb-1.5">Nhóm tuổi</label>
+              <div className="lg:col-span-1">
+                <label className="block text-[11px] font-medium text-slate-600 mb-1.5">Nhóm tuổi</label>
                 <select
                   value={cGradeFilter}
                   onChange={e => setCGradeFilter(e.target.value)}
@@ -4241,6 +4284,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <th className="px-4 py-3.5 w-24 text-center font-semibold">Giới tính</th>
                       <th className="px-4 py-3.5 w-28 text-center font-semibold">Nhóm tuổi</th>
                       <th className="px-4 py-3.5 w-28 text-center font-semibold">Cơ sở</th>
+                      <th className="px-3 py-3.5 w-24 text-center font-semibold text-[#5EEAD4]">Tháng</th>
                       <th className="px-4 py-3.5 w-20 text-center font-semibold">Vắng</th>
                       <th className="px-4 py-3.5 w-24 text-center font-semibold">Thao tác</th>
                     </tr>
@@ -4293,6 +4337,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <span className="bg-teal-50 text-[#00736E] border border-teal-200/60 px-2 py-0.5 rounded-md text-[11px] font-bold">
                             {child.admissionCampus || "—"}
                           </span>
+                        </td>
+                        <td className="px-3 py-3 text-center whitespace-nowrap tabular-nums">
+                          {(() => {
+                            const bObj = child.batch || (periods.flatMap(p => p.batches || [])).find((b: any) => b.id === child.batchId);
+                            const rawD = String(bObj?.endDate || bObj?.startDate || child.createdAt || "").slice(0, 10);
+                            const mk = /^\d{4}-\d{2}-\d{2}$/.test(rawD) ? `${rawD.slice(5, 7)}/${rawD.slice(0, 4)}` : "";
+                            const nowM = new Date();
+                            const curM = `${String(nowM.getMonth() + 1).padStart(2, "0")}/${nowM.getFullYear()}`;
+                            return (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${mk && mk === curM ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]" : "bg-slate-50 text-slate-600 border-slate-200"}`}>
+                                {mk || "—"}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
@@ -5966,140 +6024,164 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       </Modal>
 
       {/* Modal: Batch */}
-      <Modal open={bModal} onClose={() => setBModal(false)} title={editB ? "Sửa Đợt" : "Thêm Đợt mới"} footer={<><button onClick={() => setBModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={saveBatch} className="flex-1 py-3.5 bg-[#00A19A] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
+      <Modal
+        open={bModal}
+        onClose={() => setBModal(false)}
+        title={editB ? "Chỉnh sửa Đợt khảo sát Mầm non" : "Thêm mới Đợt khảo sát Mầm non"}
+        size="md"
+        footer={
+          <div className="flex items-center justify-end gap-2.5 w-full">
+            <button
+              type="button"
+              onClick={() => setBModal(false)}
+              className="px-4 py-2.5 rounded-xl border border-[#E2E8F0] text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={saveBatch}
+              className="px-6 py-2.5 bg-[#003B3A] hover:bg-[#005854] rounded-xl text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+            >
+              {editB ? "Lưu thay đổi" : "Tạo đợt"}
+            </button>
+          </div>
+        }
+      >
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Số đợt">
+          {/* Hàng 1: Cơ sở & Người phụ trách */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Field label="Cơ sở khảo sát">
+              <select
+                value={bForm.campusId}
+                onChange={(e) => setBForm(prev => ({ ...prev, campusId: e.target.value }))}
+                className={inp}
+              >
+                <option value="">-- Tất cả cơ sở --</option>
+                {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+              </select>
+            </Field>
+
+            <Field label="Người phụ trách">
+              <select
+                value={bForm.assignedUserId}
+                onChange={e => setBForm(prev => ({ ...prev, assignedUserId: e.target.value }))}
+                className={inp}
+              >
+                <option value="">-- Chưa gán --</option>
+                {giaoVuCSUsers.map((u: any) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
+              </select>
+            </Field>
+          </div>
+
+          {/* Hàng 2: Số thứ tự đợt & Trạng thái */}
+          <div className="grid grid-cols-2 gap-3.5">
+            <Field label="Số thứ tự đợt" required>
               <input
                 type="number"
                 min={1}
                 value={bForm.batchNumber}
-                onChange={(e) => {
-                  const numVal = e.target.value;
-                  setBForm(prev => {
-                    const nextState = { ...prev, batchNumber: numVal };
-                    if (!editB) {
-                      const campus = campuses.find(c => c.id === nextState.campusId);
-                      const campusName = campus ? campus.campusName : "Tất cả";
-                      let formattedDate = "";
-                      if (nextState.startDate) {
-                        const parts = nextState.startDate.split('-');
-                        if (parts.length === 3) formattedDate = `_${parts[2]}/${parts[1]}/${parts[0]}`;
-                      }
-                      nextState.name = `KSĐV_${campusName} _ Đợt ${numVal || "1"}${formattedDate}`;
-                    }
-                    return nextState;
-                  });
-                }}
-                className={inp}
+                onChange={(e) => setBForm(prev => ({ ...prev, batchNumber: e.target.value }))}
+                className={`${inp} tabular-nums`}
+                placeholder="1, 2, 3..."
               />
             </Field>
-                        <Field label="Tên Đợt KS" required>
-              <input
-                value={bForm.name}
-                onChange={e => setBForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="Nhập tên đợt khảo sát (Vd: KSĐV, Học thử...)"
+
+            <Field label="Trạng thái">
+              <select
+                value={bForm.status}
+                onChange={e => setBForm(prev => ({ ...prev, status: e.target.value }))}
                 className={inp}
-              />
-            </Field>
-            <Field label="Tên đợt (Tự động theo cấu trúc)" required>
-              <input
-                 value={(() => {
-                   const campus = campuses.find(c => c.id === bForm.campusId);
-                   const campusName = campus ? (campus.campusCode || campus.campusName) : "Chưa chọn cơ sở";
-                   const period = periods.find(p => p.id === targetPeriodId);
-                   const periodName = period ? period.name : "Tên đợt";
-                   let periodCode = period ? (period.code || period.name) : "Kỳ khảo sát";
-                   if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
-                     periodCode = "KSL";
-                   }
-                   const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-                   return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
-                 })()}
-                 disabled
-                 className={`${inp} bg-slate-100 cursor-not-allowed`}
-               />
-              <div className="mt-1.5 p-3 text-xs font-semibold">
-                <p className="text-[10px] font-black text-[#00A19A] uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
-                <p className="text-xs font-bold text-[#00A19A] truncate">
-                   {(() => {
-                     const campus = campuses.find(c => c.id === bForm.campusId);
-                     const campusName = campus ? (campus.campusCode || campus.campusName) : "Chưa chọn cơ sở";
-                     const period = periods.find(p => p.id === targetPeriodId);
-                     const periodName = period ? period.name : "Tên đợt";
-                     let periodCode = period ? (period.code || period.name) : "Kỳ khảo sát";
-                     if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
-                       periodCode = "KSL";
-                     }
-                     const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-                     return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
-                   })()}
-                 </p>
-              </div>
+              >
+                <option value="ACTIVE">Đang mở</option>
+                <option value="INACTIVE">Đóng</option>
+                <option value="LOCKED">Khóa</option>
+              </select>
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+
+          {/* Hàng 3: Thời gian (Ngày bắt đầu - Ngày kết thúc) */}
+          <div className="grid grid-cols-2 gap-3.5">
             <Field label="Ngày bắt đầu" required>
               <input
                 type="date"
                 value={bForm.startDate}
-                onChange={(e) => {
-                  const dateVal = e.target.value;
-                  setBForm(prev => {
-                    const nextState = { ...prev, startDate: dateVal };
-                    if (!editB) {
-                      const campus = campuses.find(c => c.id === nextState.campusId);
-                      const campusName = campus ? campus.campusName : "Tất cả";
-                      let formattedDate = "";
-                      if (dateVal) {
-                        const parts = dateVal.split('-');
-                        if (parts.length === 3) formattedDate = `_${parts[2]}/${parts[1]}/${parts[0]}`;
-                      }
-                      nextState.name = `KSĐV_${campusName} _ Đợt ${nextState.batchNumber || "1"}${formattedDate}`;
-                    }
-                    return nextState;
-                  });
-                }}
-                className={inp}
+                onChange={(e) => setBForm(prev => ({ ...prev, startDate: e.target.value }))}
+                className={`${inp} tabular-nums`}
               />
             </Field>
             <Field label="Ngày kết thúc" required>
               <input
                 type="date"
                 value={bForm.endDate}
-                onChange={e => setBForm({...bForm, endDate: e.target.value})}
-                className={inp}
+                onChange={e => setBForm(prev => ({ ...prev, endDate: e.target.value }))}
+                className={`${inp} tabular-nums`}
               />
             </Field>
           </div>
-          <Field label="Cơ sở">
-            <select
-              value={bForm.campusId}
-              onChange={(e) => {
-                const campVal = e.target.value;
-                setBForm(prev => {
-                  const nextState = { ...prev, campusId: campVal };
-                  if (!editB) {
-                    const campus = campuses.find(c => c.id === campVal);
-                    const campusName = campus ? campus.campusName : "Tất cả";
-                    let formattedDate = "";
-                    if (nextState.startDate) {
-                      const parts = nextState.startDate.split('-');
-                      if (parts.length === 3) formattedDate = `_${parts[2]}/${parts[1]}/${parts[0]}`;
-                    }
-                    nextState.name = `KSĐV_${campusName} _ Đợt ${nextState.batchNumber || "1"}${formattedDate}`;
-                  }
-                  return nextState;
-                });
-              }}
-              className={inp}
-            >
-              <option value="">-- Tất cả cơ sở --</option>
-              {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-            </select>
+
+          {/* Hàng 4: Ghi chú / Trọng tâm đợt (tùy chọn) + gợi ý chọn nhanh cho Mầm non */}
+          <Field label="Ghi chú / Trọng tâm đợt (tùy chọn)">
+            <div className="space-y-2">
+              <input
+                value={bForm.name}
+                onChange={e => setBForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="Để trống nếu không cần (Vd: Học thử, Trải nghiệm, Đầu năm...)"
+                className={inp}
+              />
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-slate-400">Chọn nhanh:</span>
+                {["Học thử", "Trải nghiệm", "Đầu năm", "OpenDay", "Nhập học mới"].map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setBForm(prev => ({ ...prev, name: prev.name === tag ? "" : tag }))}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-colors cursor-pointer ${
+                      bForm.name === tag
+                        ? "bg-[#00736E] text-white border-[#00736E]"
+                        : "bg-white text-slate-600 border-[#E2E8F0] hover:border-teal-300 hover:bg-[#F0FDFA]"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
           </Field>
-          <Field label="Người phụ trách"><select value={bForm.assignedUserId} onChange={e => setBForm({...bForm, assignedUserId: e.target.value})} className={inp}><option value="">-- Chưa gán --</option>{giaoVuCSUsers.map((u: any) => <option key={u.id} value={u.id}>{u.fullName}</option>)}</select></Field>
-          <Field label="Trạng thái"><select value={bForm.status} onChange={e => setBForm({...bForm, status: e.target.value})} className={inp}><option value="ACTIVE">Đang mở</option><option value="INACTIVE">Đóng</option><option value="LOCKED">Khóa</option></select></Field>
+
+          {/* Hàng 5: Xem trước tên đợt chuẩn Sky-Line (Full width, không bị cắt chữ) */}
+          {(() => {
+            const campus = campuses.find(c => c.id === bForm.campusId);
+            const period = periods.find(p => p.id === targetPeriodId);
+            const generatedName = formatStandardBatchName({
+              campusCode: campus?.campusCode,
+              campusName: campus?.campusName || "Tất cả",
+              periodName: period?.name,
+              periodCode: period?.code,
+              batchNumber: bForm.batchNumber || "1",
+              startDate: bForm.startDate,
+              endDate: bForm.endDate,
+              note: bForm.name.trim(),
+              isPreschool: true
+            });
+            return (
+              <div className="p-3.5 rounded-xl bg-[#F0FDFA]/80 border border-[#00A19A]/30">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-[11px] font-semibold text-[#003B3A] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00736E]" />
+                    Tên đợt tự động theo quy chuẩn Sky-Line
+                  </span>
+                  <span className="text-[10.5px] text-[#00736E] font-medium">Gọn · Khoa học</span>
+                </div>
+                <div className="font-mono text-xs font-bold text-[#003B3A] bg-white px-3 py-2 rounded-lg border border-teal-200/80 shadow-2xs break-all tabular-nums">
+                  {generatedName}
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Cấu trúc chuẩn Mầm non: <strong>[Cơ sở] · MN #[STT] · [Ngày bắt đầu dd/MM]</strong> (+ Trọng tâm nếu có).
+                </p>
+              </div>
+            );
+          })()}
         </div>
       </Modal>
 

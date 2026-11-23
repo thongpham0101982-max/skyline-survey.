@@ -1,324 +1,468 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { verifyPreschoolApprovalToken } from "@/lib/preschool-approval-service";
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
+import {
+  verifyPreschoolApprovalToken,
+  verifyWorkflowQuickApproveToken,
+} from "@/lib/preschool-approval-service"
+import {
+  appendPreschoolAuditLog,
+  ensurePreschoolWorkflowSchema,
+  getWorkflowStudentRow,
+} from "@/lib/preschool-workflow-db"
+import { resolvePreschoolAdmissionResult } from "@/lib/preschool-workflow"
+import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine"
+
+function renderHtmlPage(params: {
+  title: string
+  subtitle?: string
+  tone: "pine" | "emerald" | "amber" | "rose"
+  bodyHtml: string
+  status?: number
+}) {
+  const accent =
+    params.tone === "emerald"
+      ? "#059669"
+      : params.tone === "amber"
+        ? "#D97706"
+        : params.tone === "rose"
+          ? "#E11D48"
+          : "#003B3A"
+
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${params.title} — Sky-Line SSM</title>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F8FAFC; color: #0F172A; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; box-sizing: border-box; }
+    .card { width: 100%; max-width: 520px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(15,23,42,0.08); }
+    .header { background: #003B3A; color: #FFFFFF; padding: 20px 24px; border-bottom: 4px solid ${accent}; }
+    .eyebrow { font-size: 12px; color: #5EEAD4; font-weight: 600; margin-bottom: 4px; }
+    .title { font-size: 18px; font-weight: 700; margin: 0; }
+    .body { padding: 24px; font-size: 14px; line-height: 1.6; }
+    .info-box { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; margin: 14px 0; font-size: 13px; }
+    .row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid #F1F5F9; }
+    .row:last-child { border-bottom: none; }
+    .label { color: #64748B; }
+    .val { font-weight: 600; color: #0F172A; text-align: right; }
+    .btn { display: inline-block; width: 100%; box-sizing: border-box; text-align: center; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; text-decoration: none; color: #FFFFFF; background: ${accent}; }
+    .btn-outline { display: inline-block; width: 100%; box-sizing: border-box; text-align: center; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 13px; border: 1px solid #CBD5E1; color: #334155; background: #FFFFFF; text-decoration: none; margin-top: 10px; }
+    textarea { width: 100%; box-sizing: border-box; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 13px; margin: 8px 0 16px; resize: vertical; min-height: 72px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="eyebrow">Hệ thống Giáo dục Sky-Line · Khảo sát Mầm non 2026</div>
+      <h1 class="title">${params.title}</h1>
+      ${params.subtitle ? `<div style="font-size:12px;color:#CCFBF1;margin-top:4px;">${params.subtitle}</div>` : ""}
+    </div>
+    <div class="body">${params.bodyHtml}</div>
+  </div>
+</body>
+</html>`
+
+  return new NextResponse(html, {
+    status: params.status || 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  })
+}
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const studentId = searchParams.get("studentId") || "";
-  const action = searchParams.get("action") || "";
-  const email = searchParams.get("email") || "";
-  const token = searchParams.get("token") || "";
-  const confirm = searchParams.get("confirm") === "1";
+  try {
+    await ensurePreschoolWorkflowSchema()
+    const { searchParams } = new URL(req.url)
+    const wt = searchParams.get("wt")
 
-  const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
-  const protocol = req.headers.get("x-forwarded-proto") || "https";
-  const baseUrl = `${protocol}://${host}`;
+    if (wt) {
+      const check = verifyWorkflowQuickApproveToken(wt)
+      if (!check.valid) {
+        return renderHtmlPage({
+          title: "Liên kết phê duyệt không hợp lệ",
+          tone: "rose",
+          status: 403,
+          bodyHtml: `<p>${check.reason}</p><a class="btn-outline" href="/admin/khao-sat-mam-non">Mở phân hệ Khảo sát Mầm non</a>`,
+        })
+      }
 
-  // 1. Verify token
-  const isValid = verifyPreschoolApprovalToken(studentId, action, email, token);
-  if (!isValid) {
-    return new NextResponse(
-      renderResultPage({
-        success: false,
-        title: "XÁC THỰC KHÔNG HỢP LỆ",
-        message: "Liên kết phê duyệt không hợp lệ hoặc đã bị thay đổi vì lý do an toàn thông tin.",
-        subMessage: "Kính đề nghị Thầy/Cô đăng nhập trực tiếp vào hệ thống SSM Portal để thực hiện xét duyệt.",
-        baseUrl,
-        studentId
-      }),
-      { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
-    );
-  }
+      const { payload } = check
+      if (!payload.studentId) {
+        return renderHtmlPage({
+          title: "Thiếu thông tin hồ sơ",
+          tone: "rose",
+          status: 400,
+          bodyHtml: `<p>Liên kết không chứa mã hồ sơ hợp lệ.</p>`,
+        })
+      }
 
-  // 2. Fetch student
-  const student = await (prisma as any).preschoolInputAssessmentStudent.findUnique({
-    where: { id: studentId }
-  });
+      const student = await getWorkflowStudentRow(payload.studentId)
+      if (!student) {
+        return renderHtmlPage({
+          title: "Không tìm thấy hồ sơ trẻ",
+          tone: "rose",
+          status: 404,
+          bodyHtml: `<p>Hồ sơ trẻ không còn tồn tại trong hệ thống.</p>`,
+        })
+      }
 
-  if (!student) {
-    return new NextResponse(
-      renderResultPage({
-        success: false,
-        title: "KHÔNG TÌM THẤY HỌC SINH",
-        message: "Hồ sơ học sinh không tồn tại hoặc đã được chuyển khỏi hệ thống.",
-        baseUrl,
-        studentId
-      }),
-      { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } }
-    );
-  }
+      if (payload.step === "B10" && student.finalApprovedOutcome) {
+        const outcomeLabel = student.finalApprovedOutcome === "DAT" ? "Đạt" : "Chưa đạt"
+        return renderHtmlPage({
+          title: "Hồ sơ đã được phê duyệt trước đó",
+          tone: "amber",
+          bodyHtml: `
+            <p>Hồ sơ của bé <strong>${student.fullName}</strong> đã được phê duyệt, hệ thống không ghi đè để bảo toàn dữ liệu.</p>
+            <div class="info-box">
+              <div class="row"><span class="label">Kết quả phê duyệt</span><span class="val">${outcomeLabel}</span></div>
+              <div class="row"><span class="label">Người duyệt</span><span class="val">${student.gdcsApprovalUser || "GĐCS"}</span></div>
+              <div class="row"><span class="label">Trạng thái hiện tại</span><span class="val">${student.workflowStatus}</span></div>
+            </div>
+            <a class="btn-outline" href="/admin/khao-sat-mam-non?studentId=${encodeURIComponent(student.id)}">Mở hồ sơ trên SSM</a>
+          `,
+        })
+      }
 
-  // 3. If confirm === '1', perform approval update
-  if (confirm) {
-    const targetStatus = action === "APPROVE_MIEN_HT" ? "DAT_MIEN_HOC_THU" : (action === "APPROVE_HOC_THU" ? "DAT_HOC_THU" : "KHONG_DAT");
-    const bgh = student.bghApprovalStatus || "";
+      const decisionLabel =
+        payload.decision === "DAT"
+          ? "Phê duyệt Đạt"
+          : payload.decision === "CHUA_DAT"
+            ? "Phê duyệt Chưa đạt"
+            : payload.decision === "DE_XUAT_DAT"
+              ? "Đề xuất Đạt (B6/B9A)"
+              : payload.decision === "DE_XUAT_CHUA_DAT"
+                ? "Đề xuất Chưa đạt (B6/B9A)"
+                : "Chuyển đánh giá tâm lý (B7A)"
 
-    let finalAdmissionResult = "Đạt - Miễn Học Thử";
-    if (targetStatus === "KHONG_DAT" || bgh === "KHONG_DAT") {
-      finalAdmissionResult = "Không đạt";
-    } else if (targetStatus === "DAT_HOC_THU" || bgh === "DAT_HOC_THU") {
-      finalAdmissionResult = "Đạt - Học Thử";
-    } else {
-      finalAdmissionResult = "Đạt - Miễn Học Thử";
+      const tone = payload.decision === "DAT" || payload.decision === "DE_XUAT_DAT" ? "emerald" : "rose"
+
+      return renderHtmlPage({
+        title: `Xác nhận ${decisionLabel}`,
+        subtitle: "Bước xác nhận an toàn 1 chạm — Tự động cập nhật trạng thái trên SSM",
+        tone,
+        bodyHtml: `
+          <div class="info-box">
+            <div class="row"><span class="label">Họ tên trẻ</span><span class="val">${student.fullName} (${student.studentCode})</span></div>
+            <div class="row"><span class="label">Nhóm tuổi / Hệ</span><span class="val">${student.grade || "Mầm non"} · ${student.surveySystem || "Hệ S"}</span></div>
+            <div class="row"><span class="label">Người thực hiện</span><span class="val">${payload.approverName || payload.approverEmail}</span></div>
+            <div class="row"><span class="label">Quyết định</span><span class="val">${decisionLabel}</span></div>
+          </div>
+          <form method="POST" action="/api/admin/quick-approve/preschool">
+            <input type="hidden" name="wt" value="${wt}" />
+            <label for="comment" style="font-size:12px;font-weight:600;color:#334155;">Ý kiến ghi chú (không bắt buộc):</label>
+            <textarea id="comment" name="comment" placeholder="Nhập ý kiến chỉ đạo hoặc lưu ý cho Giáo vụ / Tư vấn..."></textarea>
+            <button type="submit" class="btn">Xác nhận ${decisionLabel}</button>
+          </form>
+          <a class="btn-outline" href="/admin/khao-sat-mam-non?studentId=${encodeURIComponent(student.id)}">Xem đầy đủ hồ sơ trên SSM</a>
+        `,
+      })
     }
 
-    // Resolve approver display name
-    let approverName = "Giám Đốc Cơ sở (Qua Email)";
-    if (email) {
-      const u = await (prisma as any).user.findFirst({
-        where: {
-          OR: [
-            { email: email.trim().toLowerCase() },
-            { email: email.trim() }
-          ]
-        }
-      });
-      if (u?.fullName) {
-        approverName = `${u.fullName} (GĐCS)`;
-      }
+    // Legacy link compatibility (GET renders safe confirmation page instead of mutating DB directly)
+    const studentId = searchParams.get("studentId") || ""
+    const action = searchParams.get("action") || ""
+    const email = searchParams.get("email") || ""
+    const token = searchParams.get("token") || ""
+
+    if (!studentId || !action || !token || !verifyPreschoolApprovalToken(studentId, action, email, token)) {
+      return renderHtmlPage({
+        title: "Liên kết không hợp lệ hoặc đã hết hạn",
+        tone: "rose",
+        status: 403,
+        bodyHtml: `<p>Không thể xác thực liên kết phê duyệt. Vui lòng đăng nhập SSM để thao tác.</p>`,
+      })
     }
 
-    // Update database
-    await (prisma as any).preschoolInputAssessmentStudent.update({
-      where: { id: studentId },
-      data: {
-        gdcsApprovalStatus: targetStatus,
-        gdcsApprovalUser: approverName,
-        gdcsApprovalDate: new Date(),
-        admissionResult: finalAdmissionResult
-      }
-    });
+    const student = await getWorkflowStudentRow(studentId)
+    if (!student) {
+      return renderHtmlPage({
+        title: "Không tìm thấy hồ sơ",
+        tone: "rose",
+        status: 404,
+        bodyHtml: `<p>Hồ sơ học sinh không tồn tại.</p>`,
+      })
+    }
 
-    const statusLabel = targetStatus === "DAT_MIEN_HOC_THU"
-      ? "ĐẠT - MIỄN HỌC THỬ (CHÍNH THỨC)"
-      : (targetStatus === "DAT_HOC_THU" ? "ĐẠT - HỌC THỬ" : "KHÔNG ĐẠT");
+    const actionLabel =
+      action === "APPROVE_MIEN_HT"
+        ? "Đạt - Miễn Học Thử"
+        : action === "APPROVE_HOC_THU"
+          ? "Đạt - Học Thử"
+          : "Chưa đạt"
 
-    return new NextResponse(
-      renderResultPage({
-        success: true,
-        title: "PHÊ DUYỆT THÀNH CÔNG!",
-        message: `Đã hoàn tất phê duyệt kết quả khảo sát cho học sinh <strong>${student.fullName}</strong>.`,
-        studentName: student.fullName,
-        studentCode: student.studentCode,
-        campus: student.admissionCampus || "CS2",
-        statusLabel,
-        admissionResult: finalAdmissionResult,
-        approverName,
-        approvedAt: new Date().toLocaleString("vi-VN"),
-        baseUrl,
-        studentId: student.id,
-        periodId: student.periodId,
-        batchId: student.batchId
-      }),
-      { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-    );
-  }
-
-  // Fallback: If not confirmed yet, show confirmation card
-  const confirmUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${studentId}&action=${action}&email=${encodeURIComponent(email)}&token=${token}&confirm=1`;
-
-  const targetLabel = action === "APPROVE_MIEN_HT" ? "ĐẠT - MIỄN HỌC THỬ (HỌC CHÍNH THỨC)" : (action === "APPROVE_HOC_THU" ? "ĐẠT - HỌC THỬ" : "KHÔNG ĐẠT");
-
-  return new NextResponse(
-    renderConfirmationPage({
-      studentName: student.fullName,
-      studentCode: student.studentCode,
-      campus: student.admissionCampus || "CS2",
-      grade: student.grade || "12 đến 18 tháng",
-      targetLabel,
-      confirmUrl,
-      baseUrl,
-      studentId: student.id
-    }),
-    { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-  );
-}
-
-function renderResultPage(p: {
-  success: boolean;
-  title: string;
-  message: string;
-  subMessage?: string;
-  studentName?: string;
-  studentCode?: string;
-  campus?: string;
-  statusLabel?: string;
-  admissionResult?: string;
-  approverName?: string;
-  approvedAt?: string;
-  baseUrl: string;
-  studentId?: string;
-  periodId?: string;
-  batchId?: string;
-}) {
-  const portalUrl = `${p.baseUrl}/admin/xet-duyet-ket-qua?tab=mam-non&studentId=${p.studentId || ""}&autoOpen=true`;
-
-  return `
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${p.title} - Sky-Line SSM</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 24px 16px; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E293B; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .card { max-width: 540px; width: 100%; background: #FFFFFF; border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; overflow: hidden; text-align: center; }
-    .header { background-color: #003B3A; padding: 26px 20px; color: #FFFFFF; }
-    .badge { display: inline-block; padding: 4px 12px; background: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
-    .body { padding: 32px 28px; }
-    .icon-box { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px auto; font-size: 34px; }
-    .icon-success { background-color: #D1FAE5; color: #059669; border: 3px solid #A7F3D0; }
-    .icon-error { background-color: #FEE2E2; color: #DC2626; border: 3px solid #FECDD3; }
-    .title { margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #003B3A; }
-    .message { font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 22px 0; }
-    .info-table { width: 100%; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px; font-size: 13px; text-align: left; border-collapse: collapse; overflow: hidden; }
-    .info-table td { padding: 10px 14px; border-bottom: 1px solid #EEF2F6; }
-    .info-table tr:last-child td { border-bottom: none; }
-    .info-label { color: #64748B; font-weight: 600; width: 40%; }
-    .info-val { color: #0F172A; font-weight: 700; }
-    .alert-ready { background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #065F46; font-weight: 600; margin-bottom: 24px; text-align: left; }
-    .btn-portal { display: block; width: 100%; padding: 13px 20px; background-color: #00A19A; color: #FFFFFF; font-weight: 800; font-size: 14px; text-decoration: none; border-radius: 10px; margin-bottom: 10px; transition: background-color 0.2s; }
-    .btn-portal:hover { background-color: #008781; }
-    .btn-close { display: block; width: 100%; padding: 10px 20px; background: transparent; color: #64748B; font-weight: 600; font-size: 13px; text-decoration: none; border: none; cursor: pointer; }
-    .footer { background-color: #F8FAFC; padding: 14px 20px; font-size: 11px; color: #94A3B8; border-top: 1px solid #E2E8F0; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="header">
-      <div class="badge">🏫 Hệ Thống Giáo Dục Sky-Line</div>
-      <h2 style="margin: 0; font-size: 17px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">XÉT DUYỆT ĐẦU VÀO MẦM NON</h2>
-    </div>
-    <div class="body">
-      <div class="icon-box ${p.success ? "icon-success" : "icon-error"}">
-        ${p.success ? "✓" : "✕"}
-      </div>
-      <h3 class="title">${p.title}</h3>
-      <div class="message">${p.message}</div>
-
-      ${p.success && p.studentName ? `
-        <table class="info-table">
-          <tr>
-            <td class="info-label">Học sinh:</td>
-            <td class="info-val" style="color: #003B3A; font-size: 14px;">${p.studentName}</td>
-          </tr>
-          <tr>
-            <td class="info-label">Mã học sinh:</td>
-            <td class="info-val" style="color: #0284C7;">${p.studentCode}</td>
-          </tr>
-          <tr>
-            <td class="info-label">Cơ sở tiếp nhận:</td>
-            <td class="info-val">${p.campus}</td>
-          </tr>
-          <tr>
-            <td class="info-label">Quyết định GĐCS:</td>
-            <td class="info-val" style="color: #059669;">${p.statusLabel}</td>
-          </tr>
-          <tr>
-            <td class="info-label">Kết quả Tuyển sinh:</td>
-            <td class="info-val" style="color: #047857; font-weight: 800;">${p.admissionResult}</td>
-          </tr>
-          <tr>
-            <td class="info-label">Cán bộ duyệt:</td>
-            <td class="info-val">${p.approverName} &bull; ${p.approvedAt}</td>
-          </tr>
-        </table>
-
-        <div class="alert-ready">
-          ✅ <strong>Hồ sơ hoàn tất:</strong> Bộ phận Tuyển sinh hiện đã có thể xuất báo cáo kết quả chính thức gửi Quý Phụ huynh.
+    return renderHtmlPage({
+      title: `Xác nhận phê duyệt: ${actionLabel}`,
+      tone: action === "KHONG_DAT" ? "rose" : "emerald",
+      bodyHtml: `
+        <div class="info-box">
+          <div class="row"><span class="label">Họ tên trẻ</span><span class="val">${student.fullName}</span></div>
+          <div class="row"><span class="label">Kết quả chọn</span><span class="val">${actionLabel}</span></div>
         </div>
-      ` : ""}
-
-      <a href="${portalUrl}" class="btn-portal">
-        Mở Hồ Sơ Trên Hệ Thống Portal SSM &rarr;
-      </a>
-      <button class="btn-close" onclick="window.close()">Đóng cửa sổ này</button>
-    </div>
-    <div class="footer">
-      Sky-Line School Management System (SSM) &bull; Ban Khảo Thí &amp; ĐBCL
-    </div>
-  </div>
-</body>
-</html>
-  `;
+        <form method="POST" action="/api/admin/quick-approve/preschool">
+          <input type="hidden" name="studentId" value="${studentId}" />
+          <input type="hidden" name="action" value="${action}" />
+          <input type="hidden" name="email" value="${email}" />
+          <input type="hidden" name="token" value="${token}" />
+          <textarea name="comment" placeholder="Ý kiến ghi chú (không bắt buộc)..."></textarea>
+          <button type="submit" class="btn">Xác nhận phê duyệt</button>
+        </form>
+      `,
+    })
+  } catch (err: any) {
+    return renderHtmlPage({
+      title: "Lỗi hệ thống",
+      tone: "rose",
+      status: 500,
+      bodyHtml: `<p>${err?.message || "Không thể xử lý yêu cầu."}</p>`,
+    })
+  }
 }
 
-function renderConfirmationPage(p: {
-  studentName: string;
-  studentCode: string;
-  campus: string;
-  grade: string;
-  targetLabel: string;
-  confirmUrl: string;
-  baseUrl: string;
-  studentId: string;
-}) {
-  return `
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xác nhận Phê duyệt - ${p.studentName}</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; padding: 24px 16px; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E293B; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .card { max-width: 520px; width: 100%; background: #FFFFFF; border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 59, 58, 0.08); border: 1px solid #CBD5E1; overflow: hidden; text-align: center; }
-    .header { background-color: #003B3A; padding: 24px 20px; color: #FFFFFF; }
-    .body { padding: 32px 28px; }
-    .info-table { width: 100%; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px; font-size: 13px; text-align: left; border-collapse: collapse; overflow: hidden; }
-    .info-table td { padding: 10px 14px; border-bottom: 1px solid #EEF2F6; }
-    .info-label { color: #64748B; font-weight: 600; width: 40%; }
-    .info-val { color: #0F172A; font-weight: 700; }
-    .btn-confirm { display: block; width: 100%; padding: 15px 24px; background-color: #059669; color: #FFFFFF; font-weight: 800; font-size: 15px; text-decoration: none; border-radius: 12px; margin-bottom: 12px; text-transform: uppercase; box-shadow: 0 4px 6px rgba(5,150,105,0.25); }
-    .footer { background-color: #F8FAFC; padding: 14px 20px; font-size: 11px; color: #94A3B8; border-top: 1px solid #E2E8F0; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="header">
-      <div style="font-size: 11px; font-weight: 700; color: #99F6E4; text-transform: uppercase; margin-bottom: 6px;">🏫 Hệ Thống Giáo Dục Sky-Line</div>
-      <h2 style="margin: 0; font-size: 18px; font-weight: 800; text-transform: uppercase;">XÁC NHẬN PHÊ DUYỆT KHẢO SÁT</h2>
-    </div>
-    <div class="body">
-      <p style="margin: 0 0 18px 0; font-size: 14px; color: #475569; line-height: 1.5;">
-        Kính gửi Thầy/Cô Giám Đốc Cơ sở, Thầy/Cô đang tiến hành xác nhận phê duyệt kết quả khảo sát đầu vào:
-      </p>
+export async function POST(req: NextRequest) {
+  try {
+    await ensurePreschoolWorkflowSchema()
+    const contentType = req.headers.get("content-type") || ""
+    let wt = ""
+    let comment = ""
+    let legacyStudentId = ""
+    let legacyAction = ""
+    let legacyEmail = ""
+    let legacyToken = ""
+    const wantsJson = contentType.includes("application/json")
 
-      <table class="info-table">
-        <tr>
-          <td class="info-label">Họ và tên bé:</td>
-          <td class="info-val" style="color: #003B3A; font-size: 14px;">${p.studentName}</td>
-        </tr>
-        <tr>
-          <td class="info-label">Mã số HS:</td>
-          <td class="info-val" style="color: #0284C7;">${p.studentCode}</td>
-        </tr>
-        <tr>
-          <td class="info-label">Cơ sở:</td>
-          <td class="info-val">${p.campus}</td>
-        </tr>
-        <tr>
-          <td class="info-label">Lớp / Độ tuổi:</td>
-          <td class="info-val">${p.grade}</td>
-        </tr>
-        <tr>
-          <td class="info-label">Hành động duyệt:</td>
-          <td class="info-val" style="color: #059669; font-weight: 800;">${p.targetLabel}</td>
-        </tr>
-      </table>
+    if (wantsJson) {
+      const body = await req.json()
+      wt = body.wt || ""
+      comment = String(body.comment || "").trim()
+      legacyStudentId = body.studentId || ""
+      legacyAction = body.action || ""
+      legacyEmail = body.email || ""
+      legacyToken = body.token || ""
+    } else {
+      const formData = await req.formData()
+      wt = String(formData.get("wt") || "")
+      comment = String(formData.get("comment") || "").trim()
+      legacyStudentId = String(formData.get("studentId") || "")
+      legacyAction = String(formData.get("action") || "")
+      legacyEmail = String(formData.get("email") || "")
+      legacyToken = String(formData.get("token") || "")
+    }
 
-      <a href="${p.confirmUrl}" class="btn-confirm">
-        ✓ Bấm Để Xác Nhận Phê Duyệt Ngay &rarr;
-      </a>
-      <button style="background: none; border: none; color: #64748B; font-size: 13px; cursor: pointer;" onclick="window.close()">Hủy bỏ</button>
-    </div>
-    <div class="footer">
-      Sky-Line School Management System (SSM)
-    </div>
-  </div>
-</body>
-</html>
-  `;
+    const nowIso = new Date().toISOString()
+
+    // New B1–B13 signed workflow token
+    if (wt) {
+      const check = verifyWorkflowQuickApproveToken(wt)
+      if (!check.valid) {
+        if (wantsJson) return NextResponse.json({ error: check.reason }, { status: 403 })
+        return renderHtmlPage({ title: "Token không hợp lệ", tone: "rose", status: 403, bodyHtml: `<p>${check.reason}</p>` })
+      }
+
+      const { payload } = check
+      if (!payload.studentId) {
+        if (wantsJson) return NextResponse.json({ error: "Missing studentId" }, { status: 400 })
+        return renderHtmlPage({ title: "Thiếu mã hồ sơ", tone: "rose", status: 400, bodyHtml: `<p>Thiếu studentId.</p>` })
+      }
+
+      const student = await getWorkflowStudentRow(payload.studentId)
+      if (!student) {
+        if (wantsJson) return NextResponse.json({ error: "Not found" }, { status: 404 })
+        return renderHtmlPage({ title: "Không tìm thấy hồ sơ", tone: "rose", status: 404, bodyHtml: `<p>Hồ sơ không tồn tại.</p>` })
+      }
+
+      const approverLabel = payload.approverName || payload.approverEmail || "Giám đốc Điều hành Cơ sở"
+
+      if (payload.step === "B10") {
+        if (student.finalApprovedOutcome) {
+          if (wantsJson) {
+            return NextResponse.json({
+              success: true,
+              alreadyApproved: true,
+              finalApprovedOutcome: student.finalApprovedOutcome,
+              workflowStatus: student.workflowStatus,
+            })
+          }
+          return renderHtmlPage({
+            title: "Hồ sơ đã được duyệt trước đó",
+            tone: "amber",
+            bodyHtml: `<p>Hồ sơ của bé <strong>${student.fullName}</strong> đã có kết quả <strong>${student.finalApprovedOutcome === "DAT" ? "Đạt" : "Chưa đạt"}</strong>.</p><a class="btn-outline" href="/admin/khao-sat-mam-non?studentId=${encodeURIComponent(student.id)}">Mở hồ sơ trên SSM</a>`,
+          })
+        }
+
+        const outcome = payload.decision === "DAT" ? "DAT" : "CHUA_DAT"
+        const legacyGdcs = outcome === "DAT" ? "DAT" : "KHONG_DAT"
+        const admissionResult = outcome === "DAT" ? "Đạt" : "Chưa đạt"
+
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolInputAssessmentStudent"
+           SET "workflowStatus" = 'DA_DUYET',
+               "finalApprovedOutcome" = ?,
+               "gdcsApprovalStatus" = ?,
+               "gdcsApprovalComment" = ?,
+               "gdcsApprovalUser" = ?,
+               "gdcsApprovalDate" = ?,
+               "admissionResult" = ?,
+               "updatedAt" = ?
+           WHERE "id" = ?`,
+          outcome,
+          legacyGdcs,
+          comment || `Phê duyệt 1 chạm qua Email (${approverLabel})`,
+          approverLabel,
+          nowIso,
+          admissionResult,
+          nowIso,
+          student.id
+        )
+
+        if (payload.roundId) {
+          await prisma.$executeRawUnsafe(
+            `UPDATE "PreschoolAssessmentRound"
+             SET "gdcsDecision" = ?,
+                 "gdcsComment" = ?,
+                 "gdcsUserName" = ?,
+                 "gdcsApprovedAt" = ?,
+                 "status" = 'COMPLETED',
+                 "updatedAt" = ?
+             WHERE "id" = ?`,
+            outcome,
+            comment || null,
+            approverLabel,
+            nowIso,
+            nowIso,
+            payload.roundId
+          )
+        }
+
+        await appendPreschoolAuditLog({
+          studentId: student.id,
+          roundId: payload.roundId || null,
+          action: "APPROVE_B10",
+          fromStatus: student.workflowStatus || "CHO_DUYET",
+          toStatus: "DA_DUYET",
+          actorName: approverLabel,
+          actorRole: "GDCS",
+          source: "EMAIL_QUICK_APPROVE",
+          detail: { outcome, comment: comment || null, approverEmail: payload.approverEmail },
+        })
+
+        // Best-effort sync with Entrance Operations Dashboard
+        try {
+          if (student.periodId) {
+            await executeEntranceWorkflowAction({
+              action: "CONFIRM",
+              targetScope: student.batchId ? "BATCH" : "STUDENT",
+              periodId: student.periodId,
+              batchId: student.batchId || null,
+              studentId: student.id,
+              isPreschool: true,
+              stageNumber: 6,
+              status: "COMPLETED",
+              note: `Phê duyệt 1 chạm qua Email cho bé ${student.fullName}: ${admissionResult}`,
+              actor: { id: "email-quick-approve", fullName: approverLabel, role: "GDCS", isSuperAdmin: false },
+            })
+          }
+        } catch {
+          // Non-blocking sync
+        }
+
+        if (wantsJson) {
+          return NextResponse.json({
+            success: true,
+            studentId: student.id,
+            workflowStatus: "DA_DUYET",
+            finalApprovedOutcome: outcome,
+            admissionResult,
+          })
+        }
+
+        const nextStepText =
+          outcome === "DAT"
+            ? "Bộ phận Giáo vụ / Tư vấn đã có thể xuất Thư chúc mừng (BM.KTĐBCL.17) và trả kết quả cho phụ huynh."
+            : "Bộ phận Tư vấn / Giáo vụ sẽ ghi nhận nội dung trao đổi với phụ huynh trước khi xuất Thư cảm ơn (BM.KTĐBCL.04)."
+
+        return renderHtmlPage({
+          title: `Đã phê duyệt: ${admissionResult}`,
+          subtitle: "Trạng thái hồ sơ trên SSM đã được tự động cập nhật sang Đã duyệt",
+          tone: outcome === "DAT" ? "emerald" : "rose",
+          bodyHtml: `
+            <div class="info-box">
+              <div class="row"><span class="label">Họ tên trẻ</span><span class="val">${student.fullName}</span></div>
+              <div class="row"><span class="label">Kết quả phê duyệt</span><span class="val">${admissionResult}</span></div>
+              <div class="row"><span class="label">Tiến độ mới</span><span class="val">Đã duyệt</span></div>
+              <div class="row"><span class="label">Người duyệt</span><span class="val">${approverLabel}</span></div>
+            </div>
+            <p style="font-size:13px;color:#334155;">${nextStepText}</p>
+            <a class="btn-outline" href="/admin/khao-sat-mam-non?studentId=${encodeURIComponent(student.id)}">Mở hồ sơ trên SSM</a>
+          `,
+        })
+      }
+    }
+
+    // Legacy POST approval fallback
+    if (!legacyStudentId || !legacyAction || !legacyToken || !verifyPreschoolApprovalToken(legacyStudentId, legacyAction, legacyEmail, legacyToken)) {
+      if (wantsJson) return NextResponse.json({ error: "Invalid token" }, { status: 403 })
+      return renderHtmlPage({ title: "Token không hợp lệ", tone: "rose", status: 403, bodyHtml: `<p>Xác thực thất bại.</p>` })
+    }
+
+    const student = await getWorkflowStudentRow(legacyStudentId)
+    if (!student) {
+      if (wantsJson) return NextResponse.json({ error: "Not found" }, { status: 404 })
+      return renderHtmlPage({ title: "Không tìm thấy hồ sơ", tone: "rose", status: 404, bodyHtml: `<p>Không tìm thấy hồ sơ.</p>` })
+    }
+
+    const gdcsStatus =
+      legacyAction === "APPROVE_MIEN_HT"
+        ? "DAT_MIEN_HOC_THU"
+        : legacyAction === "APPROVE_HOC_THU"
+          ? "DAT_HOC_THU"
+          : "KHONG_DAT"
+    const finalOutcome = gdcsStatus === "KHONG_DAT" ? "CHUA_DAT" : "DAT"
+    const admissionResult =
+      resolvePreschoolAdmissionResult({ bghStatus: student.bghApprovalStatus, gdcsStatus }) ||
+      (finalOutcome === "DAT" ? "Đạt" : "Chưa đạt")
+
+    await prisma.$executeRawUnsafe(
+      `UPDATE "PreschoolInputAssessmentStudent"
+       SET "workflowStatus" = 'DA_DUYET',
+           "finalApprovedOutcome" = ?,
+           "gdcsApprovalStatus" = ?,
+           "gdcsApprovalComment" = ?,
+           "gdcsApprovalUser" = ?,
+           "gdcsApprovalDate" = ?,
+           "admissionResult" = ?,
+           "updatedAt" = ?
+       WHERE "id" = ?`,
+      finalOutcome,
+      gdcsStatus,
+      comment || `Phê duyệt qua Email (${legacyEmail})`,
+      legacyEmail || "GĐCS",
+      nowIso,
+      admissionResult,
+      nowIso,
+      student.id
+    )
+
+    await appendPreschoolAuditLog({
+      studentId: student.id,
+      action: "APPROVE_B10",
+      fromStatus: student.workflowStatus || "CHO_DUYET",
+      toStatus: "DA_DUYET",
+      actorName: legacyEmail || "GĐCS",
+      actorRole: "GDCS",
+      source: "EMAIL_QUICK_APPROVE",
+      detail: { legacyAction, gdcsStatus, admissionResult, comment: comment || null },
+    })
+
+    if (wantsJson) {
+      return NextResponse.json({ success: true, workflowStatus: "DA_DUYET", admissionResult })
+    }
+
+    return renderHtmlPage({
+      title: `Đã phê duyệt: ${admissionResult}`,
+      tone: finalOutcome === "DAT" ? "emerald" : "rose",
+      bodyHtml: `<p>Trạng thái hồ sơ của bé <strong>${student.fullName}</strong> đã tự động cập nhật sang <strong>Đã duyệt</strong>.</p><a class="btn-outline" href="/admin/khao-sat-mam-non?studentId=${encodeURIComponent(student.id)}">Mở hồ sơ trên SSM</a>`,
+    })
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Internal Server Error" }, { status: 500 })
+  }
 }

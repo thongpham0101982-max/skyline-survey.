@@ -83,7 +83,9 @@ export function XetDuyetKetQuaClient({
                           p.module === "PRESCHOOL_INPUT_ASSESSMENTS"
                         ))
 
-  const defaultTab = tabParam === "preschool" && hasPreschool
+  const isPreschoolParam = tabParam === "preschool" || tabParam === "mam-non"
+
+  const defaultTab = isPreschoolParam && hasPreschool
     ? "preschool"
     : tabParam === "k12" && hasK12
     ? "k12"
@@ -96,7 +98,7 @@ export function XetDuyetKetQuaClient({
   )
 
   useEffect(() => {
-    if (tabParam === "preschool" && hasPreschool && activeTab !== "preschool") {
+    if ((tabParam === "preschool" || tabParam === "mam-non") && hasPreschool && activeTab !== "preschool") {
       setActiveTab("preschool")
     } else if (tabParam === "k12" && hasK12 && activeTab !== "k12") {
       setActiveTab("k12")

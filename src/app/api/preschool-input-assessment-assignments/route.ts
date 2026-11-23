@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { sendEmail } from "@/lib/mail";
 import { getCampusGiaovuEmail } from "@/lib/orientation/service";
+import { requireEntranceOperationsSession } from "@/lib/security-guard";
+import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -68,8 +70,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireEntranceOperationsSession();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await req.json();
@@ -102,8 +104,8 @@ export async function POST(req: NextRequest) {
       let totalCreated = 0;
       let totalDeleted = 0;
 
-      // Restrict assignment to at most 1 teacher per class/grade
-      const finalUserIds = userIds.slice(0, 1);
+      // Allow multi-teacher assignment per grade/age group
+      const finalUserIds = Array.from(new Set(userIds.filter(Boolean)));
 
       for (const g of grades) {
         // Find existing assignments for this period, batch, and grade
@@ -143,8 +145,8 @@ export async function POST(req: NextRequest) {
       try {
         if (totalCreated > 0 && finalUserIds.length > 0 && periodId) {
           const [periodObj, batchObj, preschoolStudents] = await Promise.all([
-            prisma.inputAssessmentPeriod.findUnique({ where: { id: periodId }, select: { name: true } }),
-            normalizedBatchId ? prisma.inputAssessmentBatch.findUnique({ where: { id: normalizedBatchId }, select: { name: true } }) : Promise.resolve(null),
+            (prisma as any).preschoolInputAssessmentPeriod.findUnique({ where: { id: periodId }, select: { name: true } }),
+            normalizedBatchId ? (prisma as any).preschoolInputAssessmentBatch.findUnique({ where: { id: normalizedBatchId }, select: { name: true } }) : Promise.resolve(null),
             (prisma as any).preschoolInputAssessmentStudent.findMany({
               where: {
                 periodId,
@@ -464,6 +466,30 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      if (sentCount > 0 && periodId) {
+        try {
+          const normalizedBatchId = (batchId && batchId !== "all" && batchId !== "null") ? batchId : null;
+          await executeEntranceWorkflowAction({
+            action: "CONFIRM",
+            targetScope: normalizedBatchId ? "BATCH" : "PERIOD",
+            periodId,
+            batchId: normalizedBatchId,
+            isPreschool: true,
+            stageNumber: 3,
+            status: "COMPLETED",
+            note: `Đã gửi thông báo phân công khảo sát Mầm non cho ${sentCount} giáo viên.`,
+            actor: {
+              id: ctx.userId,
+              fullName: ctx.fullName || "Giáo vụ",
+              role: ctx.role,
+              isSuperAdmin: ["ADMIN", "SUPER_ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL"].includes(ctx.role),
+            },
+          });
+        } catch (wfErr) {
+          console.warn("Preschool notify stage 3 workflow update warning:", wfErr);
+        }
+      }
+
       return NextResponse.json({
         success: true,
         sentCount,
@@ -480,8 +506,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await requireEntranceOperationsSession();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const { searchParams } = new URL(req.url);

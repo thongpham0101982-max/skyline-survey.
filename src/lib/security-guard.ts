@@ -173,6 +173,7 @@ export const PRIVILEGED_GRADEBOOK_ROLES = new Set([
   "BAN_GIAM_HIEU",
   "BGH",
   "BGH_MN",
+  "NHOM_TRUONG_MN",
   "GDCS",
   "GĐCS",
   "TB_DHCM",
@@ -183,12 +184,24 @@ export const PRIVILEGED_GRADEBOOK_ROLES = new Set([
 
 export const LEADERSHIP_AND_ADMIN_ROLES = new Set([
   ...PRIVILEGED_GRADEBOOK_ROLES,
-  "TU_VAN_TUYEN_SINH",
-  "TUYENSINH",
-  "GIAO_VU",
-  "GIAOVU",
+  "GD_CS",
+  "GĐ_CS",
+  "BGH_CS",
+  "KHAO_THI",
+  "BAN_DHCM",
   "TRUONG_BAN",
   "DIEU_PHOI",
+])
+
+export const ENTRANCE_OPERATIONS_ROLES = new Set([
+  ...LEADERSHIP_AND_ADMIN_ROLES,
+  "GIAO_VU",
+  "GIAOVU",
+  "GIAO_VU_CS",
+  "TU_VAN_TUYEN_SINH",
+  "TUYENSINH",
+  "TU_VAN",
+  "Y_TE",
 ])
 
 export function isPrivilegedGradebookRole(
@@ -236,7 +249,10 @@ export async function getResolvedAuthContext(): Promise<ResolvedAuthContext | nu
     (roles.includes("PARENT") &&
       !roles.some((r) => r !== "PARENT" && r !== ""))
 
-  const isGDCS = Boolean(user.isGDCS || role === "GDCS" || role === "GĐCS")
+  const isGDCS = Boolean(
+    user.isGDCS ||
+    ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH_CS", "BGH_MN"].includes(role)
+  )
   const allowedCampusIds: string[] = Array.isArray(user.allowedCampusIds)
     ? user.allowedCampusIds
     : []
@@ -268,6 +284,16 @@ export async function requireAdminOrLeadershipSession(): Promise<ResolvedAuthCon
     LEADERSHIP_AND_ADMIN_ROLES.has(ctx.role) ||
     ctx.roles.some((r) => LEADERSHIP_AND_ADMIN_ROLES.has(r))
   if (!hasAdminOrLeadership) return null
+  return ctx
+}
+
+export async function requireEntranceOperationsSession(): Promise<ResolvedAuthContext | null> {
+  const ctx = await getResolvedAuthContext()
+  if (!ctx || ctx.isParent) return null
+  const hasOpsRole =
+    ENTRANCE_OPERATIONS_ROLES.has(ctx.role) ||
+    ctx.roles.some((r) => ENTRANCE_OPERATIONS_ROLES.has(r))
+  if (!hasOpsRole) return null
   return ctx
 }
 

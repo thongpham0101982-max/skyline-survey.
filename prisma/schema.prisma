@@ -1155,9 +1155,133 @@ model PreschoolInputAssessmentStudent {
   enrollmentCode    String?
   enrollmentClass   Class?    @relation("PreschoolEnrollmentClass", fields: [enrollmentClassId], references: [id], onDelete: SetNull)
 
+  // Quy trình Khảo sát đầu vào Mầm non 2026 (B1–B13)
+  registeredCampus       String?
+  ownerUserId            String?
+  ownerUserName          String?
+  intakeMode             String?                         // "KHAO_SAT_MOI" | "HOC_TRAI_NGHIEM"
+  appointmentAt          DateTime?
+  workflowStatus         String                          @default("DA_HEN")
+  finalApprovedOutcome   String?                         // "DAT" | "CHUA_DAT" (chỉ có sau B10)
+  parentConsultationNote String?
+  parentConsultationAt   DateTime?
+  parentConsultationBy   String?
+  resultDeliveredAt      DateTime?
+  resultDeliveredBy      String?
+  resultDeliveryNote     String?
+  archivedAt             DateTime?
+  archivedBy             String?
+  archiveNote            String?
+  rounds                 PreschoolAssessmentRound[]
+  workflowLogs           PreschoolWorkflowAuditLog[]
+
   @@unique([studentCode, periodId, batchId])
   @@index([periodId])
   @@index([batchId])
+  @@index([workflowStatus])
+}
+
+model PreschoolAssessmentRound {
+  id                      String                          @id @default(cuid())
+  studentId               String
+  roundNumber             Int                             @default(1)
+  roundType               String                          @default("KHAO_SAT_MOI") // KHAO_SAT_MOI | HOC_TRAI_NGHIEM | PHONG_VAN_TAM_LY | TRAI_NGHIEM_BO_SUNG
+  status                  String                          @default("SCHEDULED")    // SCHEDULED | IN_PROGRESS | COMPLETED | CANCELLED
+  scheduledAt             DateTime?
+  actualAt                DateTime?
+  campusId                String?
+  campusName              String?
+  assignedTeacherId       String?
+  assignedTeacherName     String?
+  assignedMedicalId       String?
+  assignedMedicalName     String?
+  assignedPsychologistId  String?
+  assignedPsychologistName String?
+
+  // Cấu hình & xác nhận biểu mẫu (BM.KTĐBCL.01–11)
+  suggestedFormCode       String?
+  formCode                String?
+  formVersion             String?                         @default("2026.1")
+  isAgeBoundary           Boolean                         @default(false)
+  ageBoundaryReason       String?
+  formConfirmedBy         String?
+  formConfirmedAt         DateTime?
+
+  // B4A: Y tế - Kiểm tra thể chất
+  heightCm                Float?
+  weightKg                Float?
+  bmi                     Float?
+  physicalStatus          String?                         // "BINH_THUONG" | "CAN_THEO_DOI" | "LUU_Y_DAC_BIET"
+  physicalNote            String?
+  medicalUserId           String?
+  medicalUserName         String?
+  medicalCheckedAt        DateTime?
+
+  // B5 / B4B / B8: Giáo viên đánh giá / Quan sát trải nghiệm
+  criteriaPayloadJson     String?
+  generalComment          String?
+  experienceObservation   String?
+  teacherSubmittedAt      DateTime?
+  teacherSubmittedBy      String?
+
+  // B7A: Đánh giá tâm lý (BM.KTĐBCL.09) & Báo cáo nhanh MS Teams
+  psychologyPayloadJson   String?
+  msTeamsReported         Boolean                         @default(false)
+  msTeamsReportedAt       DateTime?
+  msTeamsReportNote       String?
+  psychologistSubmittedAt DateTime?
+  psychologistSubmittedBy String?
+
+  // B6 / B9A: Rà soát Nhóm trưởng Mầm non
+  reviewDecision          String?                         // DE_XUAT_DAT | DE_XUAT_CHUA_DAT | CAN_TAM_LY | HEN_TRAI_NGHIEM_BO_SUNG
+  reviewComment           String?
+  reviewedBy              String?
+  reviewedByName          String?
+  reviewedAt              DateTime?
+
+  // B10: Phê duyệt Giám đốc Điều hành Cơ sở
+  gdcsDecision            String?                         // DAT | CHUA_DAT
+  gdcsComment             String?
+  gdcsUserId              String?
+  gdcsUserName            String?
+  gdcsApprovedAt          DateTime?
+
+  // B11: Văn bản đã xuất (BM.KTĐBCL.17 / BM.KTĐBCL.04)
+  issuedLetterCode        String?
+  issuedLetterVersion     String?
+  issuedLetterAt          DateTime?
+  issuedLetterBy          String?
+
+  createdAt               DateTime                        @default(now())
+  updatedAt               DateTime                        @updatedAt
+
+  student                 PreschoolInputAssessmentStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, roundNumber])
+  @@index([studentId])
+  @@index([roundType])
+  @@index([scheduledAt])
+}
+
+model PreschoolWorkflowAuditLog {
+  id         String                          @id @default(cuid())
+  studentId  String
+  roundId    String?
+  action     String
+  fromStatus String?
+  toStatus   String?
+  actorId    String?
+  actorName  String?
+  actorRole  String?
+  source     String                          @default("WEB_UI") // WEB_UI | EMAIL_QUICK_APPROVE | SYSTEM
+  detailJson String?
+  createdAt  DateTime                        @default(now())
+
+  student    PreschoolInputAssessmentStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([roundId])
+  @@index([createdAt])
 }
 
 model PreschoolAssessmentConfig {

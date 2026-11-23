@@ -265,6 +265,9 @@ export function isApprovedAdmissionPass(admissionResult?: string | null): {
   if (norm.includes("KHONG DAT") || norm.includes("CHUA DAT") || norm.includes("TU CHOI")) {
     return { isPassed: false, isCommitted: false, isPending: false }
   }
+  if (norm.includes("MIEN HOC THU")) {
+    return { isPassed: true, isCommitted: false, isPending: false }
+  }
   if (norm.includes("CAM KET") || norm.includes("HOC THU")) {
     return { isPassed: true, isCommitted: true, isPending: false }
   }

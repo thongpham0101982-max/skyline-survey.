@@ -1,0 +1,1046 @@
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
+import { requireStaffSession } from "@/lib/security-guard"
+import {
+  appendPreschoolAuditLog,
+  ensurePreschoolWorkflowSchema,
+  generateId,
+  getStudentAuditLogs,
+  getStudentRounds,
+  getWorkflowStudentRow,
+} from "@/lib/preschool-workflow-db"
+import {
+  PRESCHOOL_FORM_REGISTRY,
+  canViewSensitiveHealth,
+  canViewSensitivePsychology,
+  evaluatePreApprovalGate,
+  getNormalizedRoles,
+  sanitizeRoundForViewer,
+  suggestPreschoolForm,
+  validateFollowUpBusinessDays,
+} from "@/lib/preschool-workflow"
+import { generatePreschoolB10ApprovalEmailHtml } from "@/lib/preschool-approval-service"
+import { sendEmail } from "@/lib/mail"
+import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine"
+
+const ADMIN_OR_KT = new Set(["ADMIN", "SUPER_ADMIN", "SUPERADMIN", "KTDBCL", "KT_DBCL", "KHAO_THI"])
+const REVIEWER_ROLES = new Set([...ADMIN_OR_KT, "BGH", "BGH_MN", "NHOM_TRUONG_MN", "GDCS", "BGH_CS"])
+const APPROVER_ROLES = new Set([...ADMIN_OR_KT, "GDCS", "GD_CS", "GĐCS", "GĐ_CS"])
+const GIAOVU_ROLES = new Set([...ADMIN_OR_KT, "GIAO_VU", "GIAOVU", "GIAO_VU_CS", "BGH_MN", "NHOM_TRUONG_MN", "GDCS"])
+const TUVAN_ROLES = new Set([...ADMIN_OR_KT, "TU_VAN", "TU_VAN_TUYEN_SINH", "TUYENSINH", "GIAO_VU", "GIAO_VU_CS"])
+const MEDICAL_ROLES = new Set([...ADMIN_OR_KT, "Y_TE", "BGH_MN", "NHOM_TRUONG_MN", "GDCS"])
+
+function hasAnyRole(roles: string[], allowed: Set<string>): boolean {
+  return roles.some((r) => allowed.has(r))
+}
+
+async function ensureActiveRound(student: any): Promise<any> {
+  const rounds = await getStudentRounds(student.id)
+  if (rounds.length > 0) return rounds[rounds.length - 1]
+
+  const nowIso = new Date().toISOString()
+  const roundId = generateId("ps_rnd")
+  const intakeMode = student.intakeMode === "HOC_TRAI_NGHIEM" ? "HOC_TRAI_NGHIEM" : "KHAO_SAT_MOI"
+  const suggestion = suggestPreschoolForm({
+    dateOfBirth: student.dateOfBirth,
+    surveyDate: student.appointmentAt || student.createdAt,
+    grade: student.grade,
+    surveySystem: student.surveySystem,
+  })
+
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "PreschoolAssessmentRound"
+      ("id", "studentId", "roundNumber", "roundType", "status", "scheduledAt", "campusName",
+       "suggestedFormCode", "formCode", "formVersion", "isAgeBoundary", "ageBoundaryReason",
+       "createdAt", "updatedAt")
+     VALUES (?, ?, 1, ?, 'SCHEDULED', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    roundId,
+    student.id,
+    intakeMode,
+    student.appointmentAt || student.createdAt || nowIso,
+    student.registeredCampus || student.admissionCampus || null,
+    suggestion.suggestedFormCode,
+    suggestion.isAgeBoundary ? null : suggestion.suggestedFormCode,
+    suggestion.formVersion,
+    suggestion.isAgeBoundary ? 1 : 0,
+    suggestion.boundaryReason,
+    nowIso,
+    nowIso
+  )
+
+  const created = await getStudentRounds(student.id)
+  return created[created.length - 1]
+}
+
+export async function GET(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const ctx = await requireStaffSession()
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const { id } = await context.params
+    await ensurePreschoolWorkflowSchema()
+
+    const student = await getWorkflowStudentRow(id)
+    if (!student) {
+      return NextResponse.json({ error: "Không tìm thấy hồ sơ trẻ." }, { status: 404 })
+    }
+
+    const activeRoundRaw = await ensureActiveRound(student)
+    const allRoundsRaw = await getStudentRounds(id)
+    const auditLogs = await getStudentAuditLogs(id)
+    const userRoles = getNormalizedRoles(ctx.role, ctx.roles)
+
+    const rounds = allRoundsRaw.map((r) =>
+      sanitizeRoundForViewer(r, { userId: ctx.userId, role: ctx.role, roles: ctx.roles })
+    )
+    const activeRound = rounds[rounds.length - 1] || null
+    const gate = evaluatePreApprovalGate(activeRoundRaw)
+
+    const suggestion = suggestPreschoolForm({
+      dateOfBirth: student.dateOfBirth,
+      surveyDate: activeRoundRaw?.scheduledAt || student.appointmentAt || student.createdAt,
+      grade: student.grade,
+      surveySystem: student.surveySystem,
+    })
+
+    const canEditHealth =
+      hasAnyRole(userRoles, MEDICAL_ROLES) || activeRoundRaw?.assignedMedicalId === ctx.userId
+    const canEditEvaluation =
+      hasAnyRole(userRoles, REVIEWER_ROLES) ||
+      userRoles.includes("TEACHER") ||
+      activeRoundRaw?.assignedTeacherId === ctx.userId
+    const canEditPsychology =
+      hasAnyRole(userRoles, REVIEWER_ROLES) ||
+      activeRoundRaw?.assignedPsychologistId === ctx.userId ||
+      activeRoundRaw?.assignedTeacherId === ctx.userId
+
+    const viewerPermissions = {
+      canConfirmIntake: hasAnyRole(userRoles, GIAOVU_ROLES) || hasAnyRole(userRoles, TUVAN_ROLES),
+      canAssignStaff: hasAnyRole(userRoles, GIAOVU_ROLES),
+      canViewHealth: canViewSensitiveHealth({
+        userId: ctx.userId,
+        role: ctx.role,
+        roles: ctx.roles,
+        assignedMedicalId: activeRoundRaw?.assignedMedicalId,
+        assignedTeacherId: activeRoundRaw?.assignedTeacherId,
+      }),
+      canEditHealth,
+      canEditEvaluation,
+      canViewPsychology: canViewSensitivePsychology({
+        userId: ctx.userId,
+        role: ctx.role,
+        roles: ctx.roles,
+        assignedPsychologistId: activeRoundRaw?.assignedPsychologistId,
+      }),
+      canEditPsychology,
+      canReviewB6B9A: hasAnyRole(userRoles, REVIEWER_ROLES),
+      canScheduleFollowUp: hasAnyRole(userRoles, TUVAN_ROLES) || hasAnyRole(userRoles, REVIEWER_ROLES),
+      canApproveB10: hasAnyRole(userRoles, APPROVER_ROLES),
+      canIssueLetter: hasAnyRole(userRoles, GIAOVU_ROLES) || hasAnyRole(userRoles, TUVAN_ROLES),
+      canConfirmDelivery: hasAnyRole(userRoles, TUVAN_ROLES),
+      canArchive: hasAnyRole(userRoles, GIAOVU_ROLES) || hasAnyRole(userRoles, ADMIN_OR_KT),
+    }
+
+    return NextResponse.json({
+      student,
+      rounds,
+      activeRound,
+      auditLogs,
+      suggestion,
+      preApprovalGate: gate,
+      viewerPermissions,
+    })
+  } catch (err: any) {
+    console.error("GET /api/preschool-workflow/[id] error:", err)
+    return NextResponse.json({ error: err?.message || "Internal Server Error" }, { status: 500 })
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const ctx = await requireStaffSession()
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const { id } = await context.params
+    await ensurePreschoolWorkflowSchema()
+
+    const student = await getWorkflowStudentRow(id)
+    if (!student) {
+      return NextResponse.json({ error: "Không tìm thấy hồ sơ trẻ." }, { status: 404 })
+    }
+
+    const body = await req.json()
+    const action = String(body.action || "").trim()
+    const userRoles = getNormalizedRoles(ctx.role, ctx.roles)
+    const actorName = ctx.user?.fullName || ctx.user?.name || ctx.userEmail || "Cán bộ SSM"
+    const nowIso = new Date().toISOString()
+
+    const activeRound = await ensureActiveRound(student)
+    const targetRoundId = body.roundId || activeRound.id
+
+    // 1. B3: Xác nhận đón trẻ & hình thức ("KHAO_SAT_MOI" | "HOC_TRAI_NGHIEM")
+    if (action === "CONFIRM_INTAKE") {
+      if (!hasAnyRole(userRoles, GIAOVU_ROLES) && !hasAnyRole(userRoles, TUVAN_ROLES)) {
+        return NextResponse.json({ error: "Bạn không có quyền xác nhận đón trẻ." }, { status: 403 })
+      }
+      const intakeMode = body.intakeMode === "HOC_TRAI_NGHIEM" ? "HOC_TRAI_NGHIEM" : "KHAO_SAT_MOI"
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "intakeMode" = ?, "workflowStatus" = 'DANG_DANH_GIA', "updatedAt" = ?
+         WHERE "id" = ?`,
+        intakeMode,
+        nowIso,
+        id
+      )
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound"
+         SET "roundType" = ?, "status" = 'IN_PROGRESS', "actualAt" = ?, "updatedAt" = ?
+         WHERE "id" = ?`,
+        intakeMode,
+        nowIso,
+        nowIso,
+        targetRoundId
+      )
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: targetRoundId,
+        action: "CONFIRM_INTAKE",
+        fromStatus: student.workflowStatus,
+        toStatus: "DANG_DANH_GIA",
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { intakeMode },
+      })
+      return NextResponse.json({ success: true, workflowStatus: "DANG_DANH_GIA", intakeMode })
+    }
+
+    // 2. Phân công nhân sự (GV, Y tế, Tâm lý, Người phụ trách)
+    if (action === "ASSIGN_STAFF") {
+      if (!hasAnyRole(userRoles, GIAOVU_ROLES)) {
+        return NextResponse.json({ error: "Bạn không có quyền phân công nhân sự khảo sát." }, { status: 403 })
+      }
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound"
+         SET "assignedTeacherId" = ?, "assignedTeacherName" = ?,
+             "assignedMedicalId" = ?, "assignedMedicalName" = ?,
+             "assignedPsychologistId" = ?, "assignedPsychologistName" = ?,
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        body.assignedTeacherId ?? activeRound.assignedTeacherId ?? null,
+        body.assignedTeacherName ?? activeRound.assignedTeacherName ?? null,
+        body.assignedMedicalId ?? activeRound.assignedMedicalId ?? null,
+        body.assignedMedicalName ?? activeRound.assignedMedicalName ?? null,
+        body.assignedPsychologistId ?? activeRound.assignedPsychologistId ?? null,
+        body.assignedPsychologistName ?? activeRound.assignedPsychologistName ?? null,
+        nowIso,
+        targetRoundId
+      )
+      if (body.ownerUserId !== undefined || body.ownerUserName !== undefined) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolInputAssessmentStudent"
+           SET "ownerUserId" = ?, "ownerUserName" = ?, "updatedAt" = ?
+           WHERE "id" = ?`,
+          body.ownerUserId || null,
+          body.ownerUserName || null,
+          nowIso,
+          id
+        )
+      }
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: targetRoundId,
+        action: "ASSIGN_STAFF",
+        fromStatus: student.workflowStatus,
+        toStatus: student.workflowStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: {
+          assignedTeacherName: body.assignedTeacherName,
+          assignedMedicalName: body.assignedMedicalName,
+          assignedPsychologistName: body.assignedPsychologistName,
+        },
+      })
+      return NextResponse.json({ success: true })
+    }
+
+    // 3. B4A: Y tế kiểm tra thể chất
+    if (action === "SAVE_HEALTH_CHECK") {
+      const allowed = hasAnyRole(userRoles, MEDICAL_ROLES) || activeRound.assignedMedicalId === ctx.userId
+      if (!allowed) {
+        return NextResponse.json({ error: "Chỉ bộ phận Y tế hoặc nhân sự được giao mới được nhập thông tin sức khỏe." }, { status: 403 })
+      }
+      const heightCm = body.heightCm !== "" && body.heightCm != null ? Number(body.heightCm) : null
+      const weightKg = body.weightKg !== "" && body.weightKg != null ? Number(body.weightKg) : null
+      if (heightCm == null || weightKg == null || isNaN(heightCm) || isNaN(weightKg) || heightCm <= 0 || weightKg <= 0) {
+        return NextResponse.json({ error: "Vui lòng nhập chiều cao (cm) và cân nặng (kg) hợp lệ." }, { status: 400 })
+      }
+      const heightM = heightCm / 100
+      const bmi = Math.round((weightKg / (heightM * heightM)) * 10) / 10
+      const physicalStatus = String(body.physicalStatus || "BINH_THUONG")
+      const physicalNote = String(body.physicalNote || "").trim() || null
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound"
+         SET "heightCm" = ?, "weightKg" = ?, "bmi" = ?, "physicalStatus" = ?, "physicalNote" = ?,
+             "medicalUserId" = ?, "medicalUserName" = ?, "medicalCheckedAt" = ?, "status" = 'IN_PROGRESS', "updatedAt" = ?
+         WHERE "id" = ?`,
+        heightCm,
+        weightKg,
+        bmi,
+        physicalStatus,
+        physicalNote,
+        ctx.userId,
+        actorName,
+        nowIso,
+        nowIso,
+        targetRoundId
+      )
+
+      const nextStatus = student.workflowStatus === "DA_HEN" ? "DANG_DANH_GIA" : student.workflowStatus
+      if (nextStatus !== student.workflowStatus) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolInputAssessmentStudent" SET "workflowStatus" = ?, "updatedAt" = ? WHERE "id" = ?`,
+          nextStatus,
+          nowIso,
+          id
+        )
+      }
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: targetRoundId,
+        action: "SAVE_HEALTH_CHECK",
+        fromStatus: student.workflowStatus,
+        toStatus: nextStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { heightCm, weightKg, bmi, physicalStatus },
+      })
+      return NextResponse.json({ success: true, bmi, workflowStatus: nextStatus })
+    }
+
+    // 4. Xác nhận mẫu phiếu BM.KTĐBCL (bắt buộc với mốc tuổi giáp ranh)
+    if (action === "CONFIRM_FORM") {
+      const formCode = String(body.formCode || "").trim()
+      const def = PRESCHOOL_FORM_REGISTRY[formCode]
+      if (!def) {
+        return NextResponse.json({ error: `Mã biểu mẫu không hợp lệ: ${formCode}` }, { status: 400 })
+      }
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound"
+         SET "formCode" = ?, "formVersion" = ?, "formConfirmedBy" = ?, "formConfirmedAt" = ?, "updatedAt" = ?
+         WHERE "id" = ?`,
+        def.code,
+        def.version,
+        actorName,
+        nowIso,
+        nowIso,
+        targetRoundId
+      )
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: targetRoundId,
+        action: "CONFIRM_FORM",
+        fromStatus: student.workflowStatus,
+        toStatus: student.workflowStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { formCode: def.code, formVersion: def.version },
+      })
+      return NextResponse.json({ success: true, formCode: def.code, formVersion: def.version })
+    }
+
+    // 5. B5 / B4B / B8: Giáo viên lưu phiếu đánh giá hoặc quan sát học trải nghiệm
+    if (action === "SAVE_EVALUATION") {
+      const allowed =
+        hasAnyRole(userRoles, REVIEWER_ROLES) ||
+        userRoles.includes("TEACHER") ||
+        activeRound.assignedTeacherId === ctx.userId
+      if (!allowed) {
+        return NextResponse.json({ error: "Bạn không có quyền nhập đánh giá khảo sát." }, { status: 403 })
+      }
+      const rt = activeRound.roundType || "KHAO_SAT_MOI"
+      if (rt === "KHAO_SAT_MOI") {
+        const chosenForm = body.formCode || activeRound.formCode
+        if (!chosenForm || !PRESCHOOL_FORM_REGISTRY[chosenForm]) {
+          return NextResponse.json({ error: "Vui lòng chọn và xác nhận mã biểu mẫu (BM.KTĐBCL) trước khi lưu." }, { status: 400 })
+        }
+        if (activeRound.isAgeBoundary && !activeRound.formConfirmedAt && !body.confirmBoundaryNow) {
+          return NextResponse.json({ error: "Hồ sơ thuộc mốc tuổi giáp ranh — vui lòng xác nhận mẫu phiếu trước khi lưu." }, { status: 400 })
+        }
+        const formDef = PRESCHOOL_FORM_REGISTRY[chosenForm]
+        const payload = {
+          formCode: formDef.code,
+          formVersion: formDef.version,
+          criteria: Array.isArray(body.criteria) ? body.criteria : [],
+          teacherConfirmation: actorName,
+          submittedAt: nowIso,
+        }
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolAssessmentRound"
+           SET "formCode" = ?, "formVersion" = ?,
+               "formConfirmedBy" = COALESCE("formConfirmedBy", ?),
+               "formConfirmedAt" = COALESCE("formConfirmedAt", ?),
+               "criteriaPayloadJson" = ?, "generalComment" = ?,
+               "teacherSubmittedAt" = ?, "teacherSubmittedBy" = ?,
+               "status" = 'IN_PROGRESS', "updatedAt" = ?
+           WHERE "id" = ?`,
+          formDef.code,
+          formDef.version,
+          actorName,
+          nowIso,
+          JSON.stringify(payload),
+          String(body.generalComment || "").trim() || null,
+          nowIso,
+          actorName,
+          nowIso,
+          targetRoundId
+        )
+      } else {
+        // B4B (HOC_TRAI_NGHIEM) or B8 (TRAI_NGHIEM_BO_SUNG)
+        const obs = String(body.experienceObservation || "").trim()
+        if (!obs) {
+          return NextResponse.json({ error: "Vui lòng nhập nội dung quan sát tại lớp." }, { status: 400 })
+        }
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolAssessmentRound"
+           SET "experienceObservation" = ?, "generalComment" = ?,
+               "teacherSubmittedAt" = ?, "teacherSubmittedBy" = ?,
+               "status" = 'IN_PROGRESS', "updatedAt" = ?
+           WHERE "id" = ?`,
+          obs,
+          String(body.generalComment || "").trim() || null,
+          nowIso,
+          actorName,
+          nowIso,
+          targetRoundId
+        )
+      }
+
+      const nextStatus =
+        student.workflowStatus === "DA_HEN" || student.workflowStatus === "CHO_TRAI_NGHIEM"
+          ? "DANG_DANH_GIA"
+          : student.workflowStatus
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "workflowStatus" = ?, "devProfessionalComment" = ?, "updatedAt" = ?
+         WHERE "id" = ?`,
+        nextStatus,
+        String(body.generalComment || body.experienceObservation || "").trim() || null,
+        nowIso,
+        id
+      )
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: targetRoundId,
+        action: "SAVE_EVALUATION",
+        fromStatus: student.workflowStatus,
+        toStatus: nextStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { roundType: rt, formCode: body.formCode || activeRound.formCode },
+      })
+      return NextResponse.json({ success: true, workflowStatus: nextStatus })
+    }
+
+    // 6. B7A: Phỏng vấn tâm lý & Lưu BM.KTĐBCL.09 + Báo cáo nhanh MS Teams
+    if (action === "SAVE_PSYCHOLOGY") {
+      const allowed =
+        hasAnyRole(userRoles, REVIEWER_ROLES) ||
+        activeRound.assignedPsychologistId === ctx.userId ||
+        activeRound.assignedTeacherId === ctx.userId
+      if (!allowed) {
+        return NextResponse.json({ error: "Chỉ nhân sự phụ trách đánh giá tâm lý hoặc cấp quản lý mới được nhập BM.KTĐBCL.09." }, { status: 403 })
+      }
+      const msTeamsReported = Boolean(body.msTeamsReported)
+      const msTeamsReportNote = String(body.msTeamsReportNote || "").trim() || null
+      const psyPayload = {
+        formCode: "BM.KTĐBCL.09",
+        formVersion: PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"].version,
+        criteria: Array.isArray(body.criteria) ? body.criteria : [],
+        conclusionNote: String(body.conclusionNote || "").trim(),
+        submittedBy: actorName,
+        submittedAt: nowIso,
+      }
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound"
+         SET "roundType" = 'PHONG_VAN_TAM_LY',
+             "formCode" = 'BM.KTĐBCL.09',
+             "formVersion" = ?,
+             "psychologyPayloadJson" = ?,
+             "msTeamsReported" = ?,
+             "msTeamsReportedAt" = ?,
+             "msTeamsReportNote" = ?,
+             "psychologistSubmittedAt" = ?,
+             "psychologistSubmittedBy" = ?,
+             "status" = 'IN_PROGRESS',
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"].version,
+        JSON.stringify(psyPayload),
+        msTeamsReported ? 1 : 0,
+        msTeamsReported ? nowIso : null,
+        msTeamsReportNote,
+        nowIso,
+        actorName,
+        nowIso,
+        targetRoundId
+      )
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "devPsychologyComment" = ?, "workflowStatus" = 'DANG_DANH_GIA', "updatedAt" = ?
+         WHERE "id" = ?`,
+        psyPayload.conclusionNote || null,
+        nowIso,
+        id
+      )
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: targetRoundId,
+        action: "SAVE_PSYCHOLOGY",
+        fromStatus: student.workflowStatus,
+        toStatus: "DANG_DANH_GIA",
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { formCode: "BM.KTĐBCL.09", msTeamsReported },
+      })
+      return NextResponse.json({ success: true, workflowStatus: "DANG_DANH_GIA" })
+    }
+
+    // 7. B6 / B9A: Nhóm trưởng Mầm non rà soát & chuyển bước
+    if (action === "REVIEW_B6_B9A") {
+      if (!hasAnyRole(userRoles, REVIEWER_ROLES)) {
+        return NextResponse.json({ error: "Chỉ Nhóm trưởng Mầm non / BGH MN / GĐCS mới có quyền rà soát bước B6/B9A." }, { status: 403 })
+      }
+      const reviewDecision = String(body.reviewDecision || "").trim()
+      const reviewComment = String(body.reviewComment || "").trim() || null
+      if (!["DE_XUAT_DAT", "DE_XUAT_CHUA_DAT", "CAN_TAM_LY", "HEN_TRAI_NGHIEM_BO_SUNG"].includes(reviewDecision)) {
+        return NextResponse.json({ error: "Quyết định rà soát không hợp lệ." }, { status: 400 })
+      }
+
+      // If forwarding to GĐCS (CHO_DUYET), validate pre-approval gate with this review applied
+      if (reviewDecision === "DE_XUAT_DAT" || reviewDecision === "DE_XUAT_CHUA_DAT") {
+        const simulated = {
+          ...activeRound,
+          reviewDecision,
+          reviewedAt: nowIso,
+        }
+        const gate = evaluatePreApprovalGate(simulated)
+        if (!gate.ready) {
+          return NextResponse.json(
+            { error: "Chưa đủ điều kiện trình duyệt GĐCS.", missing: gate.missing },
+            { status: 400 }
+          )
+        }
+      }
+
+      let nextStatus = "CHO_DUYET"
+      if (reviewDecision === "CAN_TAM_LY") {
+        nextStatus = "CHO_PHONG_VAN_TAM_LY"
+      } else if (reviewDecision === "HEN_TRAI_NGHIEM_BO_SUNG") {
+        nextStatus = "CHO_TRAI_NGHIEM"
+      }
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound"
+         SET "reviewDecision" = ?, "reviewComment" = ?, "reviewedBy" = ?, "reviewedByName" = ?, "reviewedAt" = ?, "updatedAt" = ?
+         WHERE "id" = ?`,
+        reviewDecision,
+        reviewComment,
+        ctx.userId,
+        actorName,
+        nowIso,
+        nowIso,
+        targetRoundId
+      )
+
+      // If transitioning to immediate psychology interview (B7A), create a dedicated round keeping the previous round intact
+      let createdRoundId: string | null = null
+      if (reviewDecision === "CAN_TAM_LY") {
+        const allRounds = await getStudentRounds(id)
+        const nextRoundNum = (allRounds[allRounds.length - 1]?.roundNumber || 1) + 1
+        createdRoundId = generateId("ps_rnd")
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolAssessmentRound" SET "status" = 'COMPLETED', "updatedAt" = ? WHERE "id" = ?`,
+          nowIso,
+          targetRoundId
+        )
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "PreschoolAssessmentRound"
+            ("id", "studentId", "roundNumber", "roundType", "status", "scheduledAt", "campusName",
+             "assignedPsychologistId", "assignedPsychologistName", "suggestedFormCode", "formCode", "formVersion",
+             "createdAt", "updatedAt")
+           VALUES (?, ?, ?, 'PHONG_VAN_TAM_LY', 'SCHEDULED', ?, ?, ?, ?, 'BM.KTĐBCL.09', 'BM.KTĐBCL.09', ?, ?, ?)`,
+          createdRoundId,
+          id,
+          nextRoundNum,
+          nowIso,
+          activeRound.campusName || student.registeredCampus || null,
+          body.assignedPsychologistId || activeRound.assignedPsychologistId || null,
+          body.assignedPsychologistName || activeRound.assignedPsychologistName || null,
+          PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"].version,
+          nowIso,
+          nowIso
+        )
+      }
+
+      const legacyBgh =
+        reviewDecision === "DE_XUAT_DAT"
+          ? "DAT"
+          : reviewDecision === "DE_XUAT_CHUA_DAT"
+            ? "KHONG_DAT"
+            : null
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "workflowStatus" = ?,
+             "bghApprovalStatus" = COALESCE(?, "bghApprovalStatus"),
+             "bghApprovalComment" = COALESCE(?, "bghApprovalComment"),
+             "bghApprovalUser" = ?,
+             "bghApprovalDate" = ?,
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        nextStatus,
+        legacyBgh,
+        reviewComment,
+        actorName,
+        nowIso,
+        nowIso,
+        id
+      )
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: createdRoundId || targetRoundId,
+        action: "REVIEW_B6_B9A",
+        fromStatus: student.workflowStatus,
+        toStatus: nextStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { reviewDecision, reviewComment, createdRoundId },
+      })
+
+      return NextResponse.json({ success: true, workflowStatus: nextStatus, createdRoundId })
+    }
+
+    // 8. B7B: Hẹn trải nghiệm kết hợp quan sát tâm lý (>= 2 ngày làm việc) — tạo Lần mới giữ nguyên lịch sử
+    if (action === "SCHEDULE_FOLLOWUP") {
+      if (!hasAnyRole(userRoles, TUVAN_ROLES) && !hasAnyRole(userRoles, REVIEWER_ROLES)) {
+        return NextResponse.json({ error: "Bạn không có quyền hẹn lịch trải nghiệm bổ sung." }, { status: 403 })
+      }
+      const scheduledAt = body.scheduledAt
+      const baseDate = activeRound.actualAt || activeRound.scheduledAt || new Date()
+      const check = validateFollowUpBusinessDays(baseDate, scheduledAt, 2)
+      if (!check.valid) {
+        return NextResponse.json(
+          { error: check.message, earliestDate: check.earliestDate.toISOString() },
+          { status: 400 }
+        )
+      }
+
+      const allRounds = await getStudentRounds(id)
+      const nextRoundNum = (allRounds[allRounds.length - 1]?.roundNumber || 1) + 1
+      const newRoundId = generateId("ps_rnd")
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound" SET "status" = 'COMPLETED', "updatedAt" = ? WHERE "id" = ?`,
+        nowIso,
+        activeRound.id
+      )
+
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "PreschoolAssessmentRound"
+          ("id", "studentId", "roundNumber", "roundType", "status", "scheduledAt", "campusName",
+           "assignedTeacherId", "assignedTeacherName", "assignedPsychologistId", "assignedPsychologistName",
+           "suggestedFormCode", "formCode", "formVersion", "createdAt", "updatedAt")
+         VALUES (?, ?, ?, 'TRAI_NGHIEM_BO_SUNG', 'SCHEDULED', ?, ?, ?, ?, ?, ?, 'BM.KTĐBCL.09', 'BM.KTĐBCL.09', ?, ?, ?)`,
+        newRoundId,
+        id,
+        nextRoundNum,
+        new Date(scheduledAt).toISOString(),
+        body.campusName || activeRound.campusName || student.registeredCampus || null,
+        body.assignedTeacherId || null,
+        body.assignedTeacherName || null,
+        body.assignedPsychologistId || null,
+        body.assignedPsychologistName || null,
+        PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"].version,
+        nowIso,
+        nowIso
+      )
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "workflowStatus" = 'CHO_TRAI_NGHIEM', "appointmentAt" = ?, "updatedAt" = ?
+         WHERE "id" = ?`,
+        new Date(scheduledAt).toISOString(),
+        nowIso,
+        id
+      )
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: newRoundId,
+        action: "SCHEDULE_FOLLOWUP",
+        fromStatus: student.workflowStatus,
+        toStatus: "CHO_TRAI_NGHIEM",
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: {
+          roundNumber: nextRoundNum,
+          scheduledAt: new Date(scheduledAt).toISOString(),
+          note: body.note || null,
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        workflowStatus: "CHO_TRAI_NGHIEM",
+        roundId: newRoundId,
+        roundNumber: nextRoundNum,
+      })
+    }
+
+    // 9. Gửi Email trình duyệt 1 chạm tới GĐCS (B10)
+    if (action === "SEND_APPROVAL_EMAIL") {
+      if (!hasAnyRole(userRoles, REVIEWER_ROLES) && !hasAnyRole(userRoles, GIAOVU_ROLES)) {
+        return NextResponse.json({ error: "Bạn không có quyền gửi email trình duyệt." }, { status: 403 })
+      }
+      const gate = evaluatePreApprovalGate(activeRound)
+      if (!gate.ready) {
+        return NextResponse.json(
+          { error: "Chưa đủ điều kiện bắt buộc để trình duyệt GĐCS.", missing: gate.missing },
+          { status: 400 }
+        )
+      }
+      const recipientEmail = String(body.recipientEmail || "").trim()
+      const recipientName = String(body.recipientName || "Giám đốc Điều hành Cơ sở").trim()
+      if (!recipientEmail) {
+        return NextResponse.json({ error: "Vui lòng nhập email Giám đốc Điều hành Cơ sở." }, { status: 400 })
+      }
+
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.NEXTAUTH_URL ||
+        req.nextUrl.origin
+
+      const html = generatePreschoolB10ApprovalEmailHtml({
+        student,
+        round: activeRound,
+        recipientEmail,
+        recipientName,
+        baseUrl,
+      })
+
+      const mailRes = await sendEmail({
+        to: recipientEmail,
+        subject: `[Sky-Line SSM · Mầm non] Trình phê duyệt B10 — Bé ${student.fullName} (${student.studentCode})`,
+        html,
+      })
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: activeRound.id,
+        action: "SEND_APPROVAL_EMAIL",
+        fromStatus: student.workflowStatus,
+        toStatus: student.workflowStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { recipientEmail, recipientName, sent: Boolean(mailRes?.success) },
+      })
+
+      return NextResponse.json({
+        success: Boolean(mailRes?.success),
+        error: mailRes?.success ? undefined : mailRes?.error || "Không thể gửi email SMTP.",
+      })
+    }
+
+    // 10. B10: Giám đốc Điều hành Cơ sở phê duyệt Đạt / Chưa đạt
+    if (action === "APPROVE_B10") {
+      if (!hasAnyRole(userRoles, APPROVER_ROLES)) {
+        return NextResponse.json({ error: "Chỉ Giám đốc Điều hành Cơ sở (GĐCS) / Quản trị mới có quyền phê duyệt B10." }, { status: 403 })
+      }
+      const gate = evaluatePreApprovalGate(activeRound)
+      if (!gate.ready) {
+        return NextResponse.json(
+          { error: "Chưa đủ điều kiện bắt buộc của nhánh hiện tại để phê duyệt.", missing: gate.missing },
+          { status: 400 }
+        )
+      }
+      const decision = body.decision === "DAT" ? "DAT" : body.decision === "CHUA_DAT" ? "CHUA_DAT" : null
+      if (!decision) {
+        return NextResponse.json({ error: "Vui lòng chọn kết luận Đạt hoặc Chưa đạt." }, { status: 400 })
+      }
+      const gdcsComment = String(body.comment || "").trim() || null
+      const legacyGdcs = decision === "DAT" ? "DAT" : "KHONG_DAT"
+      const admissionResult = decision === "DAT" ? "Đạt" : "Chưa đạt"
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound"
+         SET "gdcsDecision" = ?, "gdcsComment" = ?, "gdcsUserId" = ?, "gdcsUserName" = ?, "gdcsApprovedAt" = ?,
+             "status" = 'COMPLETED', "updatedAt" = ?
+         WHERE "id" = ?`,
+        decision,
+        gdcsComment,
+        ctx.userId,
+        actorName,
+        nowIso,
+        nowIso,
+        activeRound.id
+      )
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "workflowStatus" = 'DA_DUYET',
+             "finalApprovedOutcome" = ?,
+             "gdcsApprovalStatus" = ?,
+             "gdcsApprovalComment" = ?,
+             "gdcsApprovalUser" = ?,
+             "gdcsApprovalDate" = ?,
+             "admissionResult" = ?,
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        decision,
+        legacyGdcs,
+        gdcsComment,
+        actorName,
+        nowIso,
+        admissionResult,
+        nowIso,
+        id
+      )
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: activeRound.id,
+        action: "APPROVE_B10",
+        fromStatus: student.workflowStatus,
+        toStatus: "DA_DUYET",
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { decision, comment: gdcsComment },
+      })
+
+      try {
+        if (student.periodId) {
+          await executeEntranceWorkflowAction({
+            action: "CONFIRM",
+            targetScope: student.batchId ? "BATCH" : "STUDENT",
+            periodId: student.periodId,
+            batchId: student.batchId || null,
+            studentId: student.id,
+            isPreschool: true,
+            stageNumber: 6,
+            status: "COMPLETED",
+            note: `GĐCS phê duyệt B10 cho bé ${student.fullName}: ${admissionResult}`,
+            actor: { id: ctx.userId, fullName: actorName, role: ctx.role, isSuperAdmin: hasAnyRole(userRoles, ADMIN_OR_KT) },
+          })
+        }
+      } catch {
+        // Non-blocking sync
+      }
+
+      return NextResponse.json({
+        success: true,
+        workflowStatus: "DA_DUYET",
+        finalApprovedOutcome: decision,
+        admissionResult,
+      })
+    }
+
+    // 11. B11B: Ghi nhận nội dung trao đổi với phụ huynh (bắt buộc khi Chưa đạt trước khi xuất BM.KTĐBCL.04)
+    if (action === "RECORD_PARENT_CONSULTATION") {
+      if (!hasAnyRole(userRoles, TUVAN_ROLES) && !hasAnyRole(userRoles, REVIEWER_ROLES)) {
+        return NextResponse.json({ error: "Bạn không có quyền ghi nhận trao đổi phụ huynh." }, { status: 403 })
+      }
+      const note = String(body.note || "").trim()
+      if (!note) {
+        return NextResponse.json({ error: "Vui lòng ghi nhận nội dung trao đổi với phụ huynh." }, { status: 400 })
+      }
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "parentConsultationNote" = ?, "parentConsultationAt" = ?, "parentConsultationBy" = ?, "updatedAt" = ?
+         WHERE "id" = ?`,
+        note,
+        nowIso,
+        actorName,
+        nowIso,
+        id
+      )
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: activeRound.id,
+        action: "RECORD_PARENT_CONSULTATION",
+        fromStatus: student.workflowStatus,
+        toStatus: student.workflowStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { note },
+      })
+      return NextResponse.json({ success: true })
+    }
+
+    // 12. B11A / B11B: Ghi nhận xuất thư BM.KTĐBCL.17 (Đạt) hoặc BM.KTĐBCL.04 (Chưa đạt)
+    if (action === "ISSUE_LETTER") {
+      if (!hasAnyRole(userRoles, GIAOVU_ROLES) && !hasAnyRole(userRoles, TUVAN_ROLES)) {
+        return NextResponse.json({ error: "Bạn không có quyền xuất thư kết quả." }, { status: 403 })
+      }
+      if (!student.finalApprovedOutcome) {
+        return NextResponse.json({ error: "Hồ sơ chưa được GĐCS phê duyệt (B10)." }, { status: 400 })
+      }
+      const expectedCode = student.finalApprovedOutcome === "DAT" ? "BM.KTĐBCL.17" : "BM.KTĐBCL.04"
+      if (expectedCode === "BM.KTĐBCL.04" && !student.parentConsultationNote?.trim()) {
+        return NextResponse.json(
+          { error: "Bắt buộc ghi nhận nội dung trao đổi với phụ huynh trước khi xuất Thư cảm ơn (BM.KTĐBCL.04)." },
+          { status: 400 }
+        )
+      }
+      const def = PRESCHOOL_FORM_REGISTRY[expectedCode]
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolAssessmentRound"
+         SET "issuedLetterCode" = ?, "issuedLetterVersion" = ?, "issuedLetterAt" = ?, "issuedLetterBy" = ?, "updatedAt" = ?
+         WHERE "id" = ?`,
+        def.code,
+        def.version,
+        nowIso,
+        actorName,
+        nowIso,
+        activeRound.id
+      )
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: activeRound.id,
+        action: "ISSUE_LETTER",
+        fromStatus: student.workflowStatus,
+        toStatus: student.workflowStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { letterCode: def.code, letterVersion: def.version },
+      })
+      return NextResponse.json({ success: true, letterCode: def.code, letterVersion: def.version })
+    }
+
+    // 13. B12: Tư vấn xác nhận đã trả kết quả cho phụ huynh
+    if (action === "CONFIRM_DELIVERY") {
+      if (!hasAnyRole(userRoles, TUVAN_ROLES)) {
+        return NextResponse.json({ error: "Chỉ bộ phận Tư vấn / Quản trị mới được xác nhận đã trả kết quả." }, { status: 403 })
+      }
+      if (!student.finalApprovedOutcome) {
+        return NextResponse.json({ error: "Chỉ xác nhận trả kết quả sau khi hồ sơ đã được phê duyệt." }, { status: 400 })
+      }
+      if (student.finalApprovedOutcome === "CHUA_DAT" && !student.parentConsultationNote?.trim()) {
+        return NextResponse.json({ error: "Hồ sơ Chưa đạt cần ghi nhận trao đổi phụ huynh trước khi trả kết quả." }, { status: 400 })
+      }
+      const deliveryNote = String(body.note || "").trim() || null
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "workflowStatus" = 'DA_TRA_KET_QUA',
+             "resultDeliveredAt" = ?,
+             "resultDeliveredBy" = ?,
+             "resultDeliveryNote" = ?,
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        nowIso,
+        actorName,
+        deliveryNote,
+        nowIso,
+        id
+      )
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: activeRound.id,
+        action: "CONFIRM_DELIVERY",
+        fromStatus: student.workflowStatus,
+        toStatus: "DA_TRA_KET_QUA",
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { note: deliveryNote },
+      })
+      return NextResponse.json({ success: true, workflowStatus: "DA_TRA_KET_QUA" })
+    }
+
+    // 14. B13: Giáo vụ hoặc Khảo thí hoàn tất lưu hồ sơ
+    if (action === "ARCHIVE_RECORD") {
+      if (!hasAnyRole(userRoles, GIAOVU_ROLES) && !hasAnyRole(userRoles, ADMIN_OR_KT)) {
+        return NextResponse.json({ error: "Chỉ Giáo vụ hoặc Khảo thí (KT&ĐBCL) mới được hoàn tất lưu hồ sơ." }, { status: 403 })
+      }
+      if (student.workflowStatus !== "DA_TRA_KET_QUA" && student.workflowStatus !== "DA_LUU_HO_SO") {
+        return NextResponse.json({ error: "Cần Tư vấn xác nhận đã trả kết quả (B12) trước khi lưu hồ sơ (B13)." }, { status: 400 })
+      }
+      const archiveNote = String(body.note || "").trim() || null
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "workflowStatus" = 'DA_LUU_HO_SO',
+             "archivedAt" = ?,
+             "archivedBy" = ?,
+             "archiveNote" = ?,
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        nowIso,
+        actorName,
+        archiveNote,
+        nowIso,
+        id
+      )
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: activeRound.id,
+        action: "ARCHIVE_RECORD",
+        fromStatus: student.workflowStatus,
+        toStatus: "DA_LUU_HO_SO",
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: { note: archiveNote },
+      })
+      return NextResponse.json({ success: true, workflowStatus: "DA_LUU_HO_SO" })
+    }
+
+    return NextResponse.json({ error: `Hành động không hợp lệ: ${action}` }, { status: 400 })
+  } catch (err: any) {
+    console.error("PATCH /api/preschool-workflow/[id] error:", err)
+    return NextResponse.json({ error: err?.message || "Internal Server Error" }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const ctx = await requireStaffSession()
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const userRoles = getNormalizedRoles(ctx.role, ctx.roles)
+    if (!hasAnyRole(userRoles, ADMIN_OR_KT)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+    const { id } = await context.params
+    await ensurePreschoolWorkflowSchema()
+    await prisma.$executeRawUnsafe(`DELETE FROM "PreschoolInputAssessmentStudent" WHERE "id" = ?`, id)
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Internal Server Error" }, { status: 500 })
+  }
+}

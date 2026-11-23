@@ -18,7 +18,9 @@ export function PreschoolMoveToBatchModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const activePeriod = periods.find(p => p.id === selectedPeriodId);
-  const activeBatches = activePeriod?.batches || [];
+  const activeBatches = (activePeriod?.batches || []).filter(
+    (b: any) => b.status !== "COMPLETED" && b.status !== "LOCKED"
+  );
 
   const handleSubmit = async () => {
     if (!selectedPeriodId) {
@@ -34,8 +36,8 @@ export function PreschoolMoveToBatchModal({
         body: JSON.stringify({
           action: "BULK_UPDATE_BATCH",
           ids: selectedIds,
-          periodId: selectedPeriodId,
-          batchId: selectedBatchId || undefined
+          targetPeriodId: selectedPeriodId,
+          targetBatchId: selectedBatchId || undefined
         })
       });
 

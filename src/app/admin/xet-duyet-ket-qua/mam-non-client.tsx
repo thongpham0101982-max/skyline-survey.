@@ -1,5 +1,6 @@
 "use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
+import { getCurrentMonthYearKey, getBatchMonthYearKey, getStudentSurveyMonthKey, sortMonthYearKeysDesc } from "@/lib/surveyMonth"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
@@ -121,7 +122,7 @@ const getCampusFullName = (codeOrName: string) => {
 const getCampusDefaultManager = (campusCodeOrName: string) => {
   const clean = (campusCodeOrName || "").toUpperCase();
   if (clean.includes("CS1") || clean.includes("RIVERSIDE")) return "Tống Thiên Long";
-  if (clean.includes("CS2") || clean.includes("CENTRAL")) return "Lê Thị Hoàng Yến";
+  if (clean.includes("CS2") || clean.includes("CENTRAL")) return "Phạm Thị Khánh";
   if (clean.includes("CS3") || clean.includes("GLOBAL")) return "Trần Thị Thanh";
   if (clean.includes("CS4") || clean.includes("HILL")) return "Cao Thanh Trung";
   if (clean.includes("CS5") || clean.includes("BEACH")) return "Đỗ Quang Trung";
@@ -750,7 +751,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     const activeBatchName = cBatchId ? (periods.flatMap(p => p.batches || []).find(b => b.id === cBatchId)?.name || "Đợt khảo sát") : "Tất cả các đợt";
     const activePeriodName = periods.find(p => p.id === cPeriodId)?.name || "Kỳ khảo sát";
     
-    const targetCampuses = ['CS1', 'CS2', 'CS3', 'CS4'];
+    const targetCampuses = ['CS1', 'CS2', 'CS3', 'CS4', 'CS5'];
     const defaultChecked = {
       tuvan: [...targetCampuses],
       giaovu: [...targetCampuses],
@@ -1253,6 +1254,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [cBatchId, setCBatchId] = useState("");
   const [cCampusFilter, setCCampusFilter] = useState("");
   const [cAgeGroupFilter, setCAgeGroupFilter] = useState("");
+  const [cMonthFilter, setCMonthFilter] = useState(() => getCurrentMonthYearKey());
 
   // Tự động chọn cơ sở phụ trách của GĐCS khi vào trang Mầm non
   useEffect(() => {
@@ -1283,6 +1285,27 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
 
 
+  // Periods (Moved here to avoid TDZ ReferenceError in filteredStudents useMemo below)
+  const [rawPeriods, setRawPeriods] = useState<Period[]>([]);
+  const periods = useMemo(() => {
+    if (tab === "periods") return rawPeriods;
+    return rawPeriods.map(p => {
+      let filteredBatches = (p.batches || []).filter(b => b.status === "ACTIVE");
+      if (isGDCSUser && currentUser) {
+        const userCampusIds = currentUser.campusIds || [];
+        filteredBatches = filteredBatches.filter(b => 
+          !b.campusId || 
+          userCampusIds.includes(b.campusId) || 
+          b.assignedUserId === currentUser.id
+        );
+      }
+      return {
+        ...p,
+        batches: filteredBatches
+      };
+    });
+  }, [rawPeriods, tab, isGDCSUser, currentUser]);
+
   // Summary scores for students list (Moved here to avoid TDZ ReferenceError in useMemo hooks below)
   const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
   const [sumLoading, setSumLoading] = useState(false);
@@ -1300,7 +1323,11 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       );
     }
 
+    const allBatchesPool = periods.flatMap((p: any) => p.batches || []);
     const campusFiltered = baseFiltered.filter(s => {
+      if (cMonthFilter && cMonthFilter !== "all" && !cBatchId) {
+        if (getStudentSurveyMonthKey(s, allBatchesPool) !== cMonthFilter) return false;
+      }
       if (!cCampusFilter) return true;
       return isPreschoolCampusMatch(s.admissionCampus, cCampusFilter, cCampusFilter);
     });
@@ -1356,7 +1383,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
     }
     return [];
-  }, [studentSummaries, devTab, cSearch, approvalFilter, cCampusFilter, cAgeGroupFilter]);
+  }, [studentSummaries, devTab, cSearch, approvalFilter, cCampusFilter, cAgeGroupFilter, cMonthFilter, cBatchId, periods]);
 
   const totalPages = Math.ceil(filteredStudents.length / pageSize);
   const paginatedStudents = useMemo(() => {
@@ -1724,27 +1751,6 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [confirm, setConfirm] = useState<{ msg: string; fn: () => void } | null>(null);
   const [sendingEmailBatchId, setSendingEmailBatchId] = useState<string | null>(null);
   const notify = (msg: string, type = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200); };
-
-  // Periods
-  const [rawPeriods, setRawPeriods] = useState<Period[]>([]);
-  const periods = useMemo(() => {
-    if (tab === "periods") return rawPeriods;
-    return rawPeriods.map(p => {
-      let filteredBatches = (p.batches || []).filter(b => b.status === "ACTIVE");
-      if (isGDCSUser && currentUser) {
-        const userCampusIds = currentUser.campusIds || [];
-        filteredBatches = filteredBatches.filter(b => 
-          !b.campusId || 
-          userCampusIds.includes(b.campusId) || 
-          b.assignedUserId === currentUser.id
-        );
-      }
-      return {
-        ...p,
-        batches: filteredBatches
-      };
-    });
-  }, [rawPeriods, tab, isGDCSUser, currentUser]);
 
   const [latestBatchInfo, setLatestBatchInfo] = useState<any>(null);
 
@@ -3339,7 +3345,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             ? `${s.bghApprovalStatus === "DAT_MIEN_HOC_THU" ? "Đạt - Miễn Học Thử" : s.bghApprovalStatus === "DAT_HOC_THU" ? "Đạt - Học Thử" : s.bghApprovalStatus === "DAT" ? "Đạt" : s.bghApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.bghApprovalComment ? ` - Ý kiến: ${s.bghApprovalComment}` : ""}` 
             : "Chưa duyệt",
           "Duyệt GĐCS": s.gdcsApprovalStatus 
-            ? `${s.gdcsApprovalStatus === "DAT" ? "Đạt" : s.gdcsApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.gdcsApprovalComment ? ` - Ý kiến: ${s.gdcsApprovalComment}` : ""}` 
+            ? `${s.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" ? "Đạt - Miễn Học Thử" : s.gdcsApprovalStatus === "DAT_HOC_THU" ? "Đạt - Học Thử" : s.gdcsApprovalStatus === "DAT" ? "Đạt" : s.gdcsApprovalStatus === "KHONG_DAT" || s.gdcsApprovalStatus === "CHUA_DAT" ? "Không đạt" : "Ý kiến khác"}${s.gdcsApprovalComment ? ` - Ý kiến: ${s.gdcsApprovalComment}` : ""}` 
             : "Chưa duyệt",
           "Kết quả Duyệt": s.generalResult || "Chưa duyệt"
         }));
@@ -5073,7 +5079,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {/* Sub-tab: Duyệt KQĐG */}
           {devTab === "xetDuyet" && (
             <div className="space-y-4">
-              <div className="bg-white p-4 rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03)] border border-slate-200/90 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-end">
+              <div className="bg-white p-4 rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03)] border border-slate-200/90 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 items-end">
                 <div className="w-full">
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kỳ khảo sát</label>
                   <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer">
@@ -5082,10 +5088,38 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </select>
                 </div>
                 <div className="w-full">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tháng</label>
+                  {(() => {
+                    const curMk = getCurrentMonthYearKey();
+                    const allBatchesPool = periods.flatMap((p: any) => p.batches || []);
+                    const monthKeys = sortMonthYearKeysDesc([
+                      curMk,
+                      ...allBatchesPool.map((b: any) => getBatchMonthYearKey(b)),
+                      ...(studentSummaries || []).map((st: any) => getStudentSurveyMonthKey(st, allBatchesPool))
+                    ]);
+                    return (
+                      <select
+                        value={cMonthFilter}
+                        onChange={e => { setCMonthFilter(e.target.value); setCBatchId(""); }}
+                        className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer tabular-nums"
+                      >
+                        <option value="all">Tất cả Tháng</option>
+                        {monthKeys.map(mk => (
+                          <option key={mk} value={mk}>
+                            Tháng {mk}{mk === curMk ? " (Hiện tại)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  })()}
+                </div>
+                <div className="w-full">
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">Đợt khảo sát</label>
                   <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer" disabled={!cPeriodId}>
                     <option value="">Tất cả đợt</option>
-                    {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    {availableBatches
+                      ?.filter((b: any) => !cMonthFilter || cMonthFilter === "all" || getBatchMonthYearKey(b) === cMonthFilter || b.id === cBatchId)
+                      .map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 <div className="w-full">
@@ -5155,7 +5189,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             if (col.id === "gdcsApproval") return showGdcsSection;
                             return true;
                           }).map(col => (
-                            <th key={col.id} className={`px-4 py-3 text-[11px] font-semibold text-slate-600 border-b border-slate-200 ${col.width}`}>
+                            <th key={col.id} className={`px-4 py-3 text-[11px] font-semibold border-b border-[#003B3A] ${col.id === "bghApproval" || col.id === "gdcsApproval" || col.id === "result" ? "text-[#5EEAD4]" : col.id === "fullName" || col.id === "actions" ? "text-white" : "text-teal-100"} ${col.width}`}>
                               {col.label}
                             </th>
                           ))}

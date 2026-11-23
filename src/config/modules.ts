@@ -428,6 +428,12 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         href: "/admin/dieu-hanh-khao-sat"
       },
       {
+        code: "KHAO_SAT_MAM_NON",
+        name: "Mầm non",
+        icon: ClipboardList,
+        href: "/admin/khao-sat-mam-non"
+      },
+      {
         code: "STUDENT_INFO",
         name: "Đợt & Danh sách khảo sát",
         icon: Users2,

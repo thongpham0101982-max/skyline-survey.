@@ -199,13 +199,13 @@ export function renderPreschoolApprovalEmailHtml(params: {
   const bghUser = student.bghApprovalUser || "Ban Giám Hiệu Mầm non";
   const bghDate = student.bghApprovalDate ? new Date(student.bghApprovalDate).toLocaleDateString("vi-VN") : new Date().toLocaleDateString("vi-VN");
 
-  // Generate Direct Action Links
+  // Generate Direct Action Links (safe confirmation page, no GET side-effect)
   const tokenMienHt = generatePreschoolApprovalToken(student.id, "APPROVE_MIEN_HT", recipientEmail);
   const tokenHocThu = generatePreschoolApprovalToken(student.id, "APPROVE_HOC_THU", recipientEmail);
 
-  const approveMienHtUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=APPROVE_MIEN_HT&email=${encodeURIComponent(recipientEmail)}&token=${tokenMienHt}&confirm=1`;
-  const approveHocThuUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=APPROVE_HOC_THU&email=${encodeURIComponent(recipientEmail)}&token=${tokenHocThu}&confirm=1`;
-  const portalUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=mam-non&periodId=${student.periodId}&batchId=${student.batchId || ""}&studentId=${student.id}&autoOpen=true`;
+  const approveMienHtUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=APPROVE_MIEN_HT&email=${encodeURIComponent(recipientEmail)}&token=${tokenMienHt}`;
+  const approveHocThuUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=APPROVE_HOC_THU&email=${encodeURIComponent(recipientEmail)}&token=${tokenHocThu}`;
+  const portalUrl = `${baseUrl}/admin/khao-sat-mam-non?studentId=${student.id}`;
 
   // Render Development Summary Table Rows
   let devTableHtml = "";
@@ -497,6 +497,192 @@ export function renderPreschoolApprovalEmailHtml(params: {
         </table>
       </td>
     </tr>
+  </table>
+</body>
+</html>
+  `;
+}
+
+export interface PreschoolWorkflowQuickApprovePayload {
+  v: 2;
+  studentId?: string;
+  studentIds?: string[];
+  roundId?: string;
+  step: "B6_B9A" | "B10" | "B10_BATCH";
+  decision: "DAT" | "CHUA_DAT" | "DE_XUAT_DAT" | "DE_XUAT_CHUA_DAT" | "CAN_TAM_LY";
+  approverEmail: string;
+  approverName?: string;
+  exp: number; // unix ms
+}
+
+/**
+ * Tạo token ký HMAC-SHA256 có thời hạn (mặc định 7 ngày) cho phê duyệt 1 chạm qua Email (B6/B9A & B10).
+ */
+export function createWorkflowQuickApproveToken(
+  payload: Omit<PreschoolWorkflowQuickApprovePayload, "v" | "exp">,
+  ttlMs = 7 * 24 * 60 * 60 * 1000
+): string {
+  const fullPayload: PreschoolWorkflowQuickApprovePayload = {
+    ...payload,
+    approverEmail: (payload.approverEmail || "").trim().toLowerCase(),
+    v: 2,
+    exp: Date.now() + ttlMs,
+  };
+  const encoded = Buffer.from(JSON.stringify(fullPayload), "utf8").toString("base64url");
+  const sig = crypto.createHmac("sha256", SECRET).update(encoded).digest("base64url");
+  return `${encoded}.${sig}`;
+}
+
+/**
+ * Xác thực token phê duyệt 1 chạm qua Email (kiểm tra chữ ký HMAC + thời hạn).
+ */
+export function verifyWorkflowQuickApproveToken(
+  token: string
+): { valid: true; payload: PreschoolWorkflowQuickApprovePayload } | { valid: false; reason: string } {
+  if (!token || !token.includes(".")) {
+    return { valid: false, reason: "Token không hợp lệ." };
+  }
+  const [encoded, sig] = token.split(".");
+  if (!encoded || !sig) {
+    return { valid: false, reason: "Token bị thiếu thành phần." };
+  }
+  const expectedSig = crypto.createHmac("sha256", SECRET).update(encoded).digest("base64url");
+  try {
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expectedSig);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return { valid: false, reason: "Chữ ký xác thực không hợp lệ." };
+    }
+  } catch {
+    return { valid: false, reason: "Lỗi kiểm tra chữ ký." };
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as PreschoolWorkflowQuickApprovePayload;
+    if (parsed.v !== 2 || !parsed.exp || Date.now() > parsed.exp) {
+      return { valid: false, reason: "Liên kết phê duyệt đã hết hạn (quá 7 ngày). Vui lòng thao tác trực tiếp trên SSM." };
+    }
+    return { valid: true, payload: parsed };
+  } catch {
+    return { valid: false, reason: "Dữ liệu token bị lỗi." };
+  }
+}
+
+/**
+ * Tạo nội dung Email trình duyệt 1 chạm theo Quy trình Mầm non 2026 (B10 — GĐCS).
+ */
+export function generatePreschoolB10ApprovalEmailHtml(params: {
+  student: {
+    id: string;
+    fullName: string;
+    studentCode: string;
+    grade?: string | null;
+    surveySystem?: string | null;
+    registeredCampus?: string | null;
+    admissionCampus?: string | null;
+    intakeMode?: string | null;
+  };
+  round: {
+    id: string;
+    roundNumber: number;
+    roundType: string;
+    formCode?: string | null;
+    formVersion?: string | null;
+    reviewDecision?: string | null;
+    reviewComment?: string | null;
+    reviewedByName?: string | null;
+    generalComment?: string | null;
+    experienceObservation?: string | null;
+  };
+  recipientEmail: string;
+  recipientName: string;
+  baseUrl: string;
+}): string {
+  const { student, round, recipientEmail, recipientName, baseUrl } = params;
+  const tokenDat = createWorkflowQuickApproveToken({
+    studentId: student.id,
+    roundId: round.id,
+    step: "B10",
+    decision: "DAT",
+    approverEmail: recipientEmail,
+    approverName: recipientName,
+  });
+  const tokenChuaDat = createWorkflowQuickApproveToken({
+    studentId: student.id,
+    roundId: round.id,
+    step: "B10",
+    decision: "CHUA_DAT",
+    approverEmail: recipientEmail,
+    approverName: recipientName,
+  });
+
+  const urlDat = `${baseUrl}/api/admin/quick-approve/preschool?wt=${encodeURIComponent(tokenDat)}`;
+  const urlChuaDat = `${baseUrl}/api/admin/quick-approve/preschool?wt=${encodeURIComponent(tokenChuaDat)}`;
+  const portalUrl = `${baseUrl}/admin/khao-sat-mam-non?studentId=${encodeURIComponent(student.id)}`;
+
+  const campusLabel = student.registeredCampus || student.admissionCampus || "Sky-Line";
+  const reviewLabel =
+    round.reviewDecision === "DE_XUAT_DAT"
+      ? "Đề xuất Đạt"
+      : round.reviewDecision === "DE_XUAT_CHUA_DAT"
+        ? "Đề xuất Chưa đạt"
+        : round.reviewDecision || "Chờ kết luận";
+
+  return `
+<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:'Segoe UI',Arial,sans-serif;color:#0F172A;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;">
+        <tr>
+          <td style="background:#003B3A;padding:24px 28px;color:#FFFFFF;">
+            <div style="font-size:12px;color:#5EEAD4;font-weight:600;margin-bottom:4px;">Hệ thống Giáo dục Sky-Line · Quy trình Khảo sát Mầm non 2026</div>
+            <div style="font-size:20px;font-weight:700;">Trình phê duyệt kết quả khảo sát (Bước B10)</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 28px;">
+            <p style="margin:0 0 14px 0;font-size:14px;">Kính gửi <strong>${recipientName}</strong>,</p>
+            <p style="margin:0 0 18px 0;font-size:14px;color:#334155;line-height:1.6;">
+              Hồ sơ khảo sát đầu vào Mầm non dưới đây đã hoàn tất rà soát chuyên môn và sẵn sàng trình Giám đốc Điều hành Cơ sở phê duyệt.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:20px;font-size:13px;">
+              <tr style="background:#F8FAFC;"><td style="padding:10px 14px;color:#475569;width:38%;">Họ tên trẻ</td><td style="padding:10px 14px;font-weight:700;color:#0F172A;">${student.fullName} (${student.studentCode})</td></tr>
+              <tr><td style="padding:10px 14px;color:#475569;border-top:1px solid #F1F5F9;">Cơ sở / Nhóm tuổi / Hệ</td><td style="padding:10px 14px;border-top:1px solid #F1F5F9;">${campusLabel} · ${student.grade || "Mầm non"} · ${student.surveySystem || "Hệ S"}</td></tr>
+              <tr style="background:#F8FAFC;"><td style="padding:10px 14px;color:#475569;border-top:1px solid #F1F5F9;">Lần khảo sát / Biểu mẫu</td><td style="padding:10px 14px;border-top:1px solid #F1F5F9;">Lần ${round.roundNumber} (${round.roundType}) · ${round.formCode || "Chưa gắn mẫu"} (v${round.formVersion || "2026.1"})</td></tr>
+              <tr><td style="padding:10px 14px;color:#475569;border-top:1px solid #F1F5F9;">Rà soát Nhóm trưởng MN</td><td style="padding:10px 14px;border-top:1px solid #F1F5F9;font-weight:700;color:#00736E;">${reviewLabel} ${round.reviewedByName ? `(${round.reviewedByName})` : ""}</td></tr>
+              ${round.reviewComment ? `<tr style="background:#F8FAFC;"><td style="padding:10px 14px;color:#475569;border-top:1px solid #F1F5F9;">Ý kiến rà soát</td><td style="padding:10px 14px;border-top:1px solid #F1F5F9;">${round.reviewComment}</td></tr>` : ""}
+              ${(round.generalComment || round.experienceObservation) ? `<tr><td style="padding:10px 14px;color:#475569;border-top:1px solid #F1F5F9;">Nhận xét GV / Quan sát</td><td style="padding:10px 14px;border-top:1px solid #F1F5F9;">${round.generalComment || round.experienceObservation}</td></tr>` : ""}
+            </table>
+
+            <div style="font-size:13px;font-weight:700;color:#003B3A;margin-bottom:12px;">Phê duyệt nhanh 1 chạm (tự động cập nhật trạng thái trên SSM):</div>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+              <tr>
+                <td width="50%" style="padding-right:6px;">
+                  <a href="${urlDat}" style="display:block;text-align:center;background:#059669;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px;padding:12px 16px;border-radius:10px;">
+                    ✓ Phê duyệt Đạt
+                  </a>
+                </td>
+                <td width="50%" style="padding-left:6px;">
+                  <a href="${urlChuaDat}" style="display:block;text-align:center;background:#E11D48;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px;padding:12px 16px;border-radius:10px;">
+                    ✕ Phê duyệt Chưa đạt
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <div style="text-align:center;">
+              <a href="${portalUrl}" style="display:inline-block;color:#00736E;font-size:13px;font-weight:600;text-decoration:underline;">
+                Mở hồ sơ chi tiết trên SSM →
+              </a>
+            </div>
+            <p style="margin:18px 0 0 0;font-size:11px;color:#64748B;line-height:1.5;">
+              Liên kết phê duyệt có hiệu lực trong 7 ngày. Hệ thống tự động cập nhật tiến độ sang <strong>Đã duyệt</strong>, ghi nhật ký phê duyệt và thông báo cho bộ phận Giáo vụ / Tư vấn thực hiện bước tiếp theo.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
   </table>
 </body>
 </html>

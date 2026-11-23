@@ -186,10 +186,10 @@ export async function GET(req: NextRequest) {
         scoreMap[sc.studentId] = sc._count.id
       }
 
-      // Get total criteria count per ageGroup
+      // Get total criteria count per ageGroup (INPUT only, exclude PROBATION)
       const criteriaCounts = await (prisma as any).preschoolDevCriteria.groupBy({
         by: ["ageGroup"],
-        where: { status: "ACTIVE" },
+        where: { status: "ACTIVE", area: { type: "INPUT", status: "ACTIVE" } },
         _count: { id: true }
       })
       const criteriaMap: Record<string, number> = {}
@@ -258,10 +258,10 @@ export async function GET(req: NextRequest) {
 
         if (bgh && gdcs) {
           if (isApproved(bgh) && isApproved(gdcs)) {
-            if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU" || bgh === "DAT" || gdcs === "DAT") {
-              generalResult = "Đạt - Miễn Học Thử";
-            } else if (bgh === "DAT_HOC_THU" || gdcs === "DAT_HOC_THU") {
+            if (gdcs === "DAT_HOC_THU" || (gdcs === "DAT" && bgh === "DAT_HOC_THU")) {
               generalResult = "Đạt - Học Thử";
+            } else if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU" || bgh === "DAT" || gdcs === "DAT") {
+              generalResult = "Đạt - Miễn Học Thử";
             } else {
               generalResult = "Đạt";
             }
@@ -362,7 +362,7 @@ export async function POST(req: NextRequest) {
     const userRole = (currentUser?.role || "").toUpperCase()
     const userId = currentUser?.id || ""
 
-    const isGlobalAdmin = ["ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole)
+    const isGlobalAdmin = ["ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL"].includes(userRole)
     let isBghRole = isGlobalAdmin || ["BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole)
     const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole)
 
@@ -520,10 +520,10 @@ export async function POST(req: NextRequest) {
 
     if (hasBghOrGdcsStatus) {
       if (isApproved(finalBgh) && isApproved(finalGdcs)) {
-        if (finalBgh === "DAT_MIEN_HOC_THU" || finalGdcs === "DAT_MIEN_HOC_THU" || finalBgh === "DAT" || finalGdcs === "DAT") {
-          finalAdmissionResult = "Đạt - Miễn Học Thử";
-        } else if (finalBgh === "DAT_HOC_THU" || finalGdcs === "DAT_HOC_THU") {
+        if (finalGdcs === "DAT_HOC_THU" || (finalGdcs === "DAT" && finalBgh === "DAT_HOC_THU")) {
           finalAdmissionResult = "Đạt - Học Thử";
+        } else if (finalBgh === "DAT_MIEN_HOC_THU" || finalGdcs === "DAT_MIEN_HOC_THU" || finalBgh === "DAT" || finalGdcs === "DAT") {
+          finalAdmissionResult = "Đạt - Miễn Học Thử";
         } else {
           finalAdmissionResult = "Đạt";
         }
@@ -578,7 +578,7 @@ export async function DELETE(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const currentUser = session?.user as any
   const userRole = (currentUser?.role || "").toUpperCase()
-  const isGlobalAdmin = userRole === "ADMIN" || userRole === "KT_DBCL" || userRole === "BGH MN" || userRole === "BGH_MN"
+  const isGlobalAdmin = userRole === "ADMIN" || ["KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KHAO_THI", "ĐBCL", "DBCL"].includes(userRole) || userRole === "BGH MN" || userRole === "BGH_MN"
   if (!isGlobalAdmin) {
     return NextResponse.json({ error: "Forbidden: Chỉ quản trị viên mới được phép xóa điểm." }, { status: 403 })
   }
