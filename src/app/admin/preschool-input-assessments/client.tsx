@@ -6483,12 +6483,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <option value="">-- Chọn cơ sở --</option>
                       {campuses.map(c => (
                         <option key={c.campusName} value={c.campusName}>
-                          {c.campusCode ? `${c.campusCode} — ${c.campusName}` : c.campusName}
+                          {c.campusCode && c.campusCode !== c.campusName ? `${c.campusCode} — ${c.campusName}` : c.campusName}
                         </option>
                       ))}
                     </select>
                   </Field>
-                  <Field label="Lịch hẹn đón trẻ (tùy chọn)">
+                  <Field label="Lịch khảo sát">
                     <input
                       type="datetime-local"
                       value={cForm.appointmentAt || ""}
