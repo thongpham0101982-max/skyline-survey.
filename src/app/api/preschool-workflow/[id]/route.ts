@@ -83,9 +83,43 @@ export async function GET(
     const { id } = await context.params
     await ensurePreschoolWorkflowSchema()
 
-    const student = await getWorkflowStudentRow(id)
-    if (!student) {
+    const studentRaw = await getWorkflowStudentRow(id)
+    if (!studentRaw) {
       return NextResponse.json({ error: "Không tìm thấy hồ sơ trẻ." }, { status: 404 })
+    }
+
+    // Derive accurate legacy status & approved outcome for pre-existing records
+    const legacyDevScoreRows = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT COUNT(*) as cnt FROM "PreschoolDevScore" WHERE "studentId" = ?`,
+      id
+    ).catch(() => [])
+    const hasLegacyScores = Number(legacyDevScoreRows?.[0]?.cnt || 0) > 0
+    const admNorm = String(studentRaw.admissionResult || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .trim()
+    let derivedOutcome = studentRaw.finalApprovedOutcome || null
+    if (!derivedOutcome && studentRaw.gdcsApprovalStatus) {
+      const g = String(studentRaw.gdcsApprovalStatus).toUpperCase()
+      derivedOutcome = g === "KHONG_DAT" || g === "CHUA_DAT" ? "CHUA_DAT" : "DAT"
+    } else if (!derivedOutcome && admNorm && !admNorm.includes("CHUA DUYET") && !admNorm.includes("CHO DUYET")) {
+      if (admNorm.includes("KHONG DAT") || admNorm.includes("CHUA DAT")) derivedOutcome = "CHUA_DAT"
+      else if (admNorm.includes("DAT") || admNorm.includes("MIEN HOC THU") || admNorm.includes("SAU HOC THU")) derivedOutcome = "DAT"
+    }
+    let derivedStatus = studentRaw.workflowStatus || "DA_HEN"
+    if (derivedStatus === "DA_HEN") {
+      if (studentRaw.archivedAt) derivedStatus = "DA_LUU_HO_SO"
+      else if (studentRaw.resultDeliveredAt) derivedStatus = "DA_TRA_KET_QUA"
+      else if (derivedOutcome) derivedStatus = "DA_DUYET"
+      else if (studentRaw.bghApprovalStatus) derivedStatus = "CHO_DUYET"
+      else if (studentRaw.devAssessmentResult || studentRaw.devProfessionalComment || hasLegacyScores) derivedStatus = "DANG_DANH_GIA"
+    }
+    const student = {
+      ...studentRaw,
+      workflowStatus: derivedStatus,
+      finalApprovedOutcome: derivedOutcome,
+      surveySystem: studentRaw.surveySystem || studentRaw.surveyFormType || "Hệ S",
     }
 
     const activeRoundRaw = await ensureActiveRound(student)
@@ -170,9 +204,43 @@ export async function PATCH(
     const { id } = await context.params
     await ensurePreschoolWorkflowSchema()
 
-    const student = await getWorkflowStudentRow(id)
-    if (!student) {
+    const studentRaw = await getWorkflowStudentRow(id)
+    if (!studentRaw) {
       return NextResponse.json({ error: "Không tìm thấy hồ sơ trẻ." }, { status: 404 })
+    }
+
+    // Derive accurate legacy status & approved outcome for pre-existing records
+    const legacyDevScoreRows = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT COUNT(*) as cnt FROM "PreschoolDevScore" WHERE "studentId" = ?`,
+      id
+    ).catch(() => [])
+    const hasLegacyScores = Number(legacyDevScoreRows?.[0]?.cnt || 0) > 0
+    const admNorm = String(studentRaw.admissionResult || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .trim()
+    let derivedOutcome = studentRaw.finalApprovedOutcome || null
+    if (!derivedOutcome && studentRaw.gdcsApprovalStatus) {
+      const g = String(studentRaw.gdcsApprovalStatus).toUpperCase()
+      derivedOutcome = g === "KHONG_DAT" || g === "CHUA_DAT" ? "CHUA_DAT" : "DAT"
+    } else if (!derivedOutcome && admNorm && !admNorm.includes("CHUA DUYET") && !admNorm.includes("CHO DUYET")) {
+      if (admNorm.includes("KHONG DAT") || admNorm.includes("CHUA DAT")) derivedOutcome = "CHUA_DAT"
+      else if (admNorm.includes("DAT") || admNorm.includes("MIEN HOC THU") || admNorm.includes("SAU HOC THU")) derivedOutcome = "DAT"
+    }
+    let derivedStatus = studentRaw.workflowStatus || "DA_HEN"
+    if (derivedStatus === "DA_HEN") {
+      if (studentRaw.archivedAt) derivedStatus = "DA_LUU_HO_SO"
+      else if (studentRaw.resultDeliveredAt) derivedStatus = "DA_TRA_KET_QUA"
+      else if (derivedOutcome) derivedStatus = "DA_DUYET"
+      else if (studentRaw.bghApprovalStatus) derivedStatus = "CHO_DUYET"
+      else if (studentRaw.devAssessmentResult || studentRaw.devProfessionalComment || hasLegacyScores) derivedStatus = "DANG_DANH_GIA"
+    }
+    const student = {
+      ...studentRaw,
+      workflowStatus: derivedStatus,
+      finalApprovedOutcome: derivedOutcome,
+      surveySystem: studentRaw.surveySystem || studentRaw.surveyFormType || "Hệ S",
     }
 
     const body = await req.json()

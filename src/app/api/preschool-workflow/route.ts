@@ -19,15 +19,44 @@ import {
 
 const SYSTEM_WIDE_ROLES = new Set(["ADMIN", "SUPER_ADMIN", "SUPERADMIN", "KTDBCL", "KT_DBCL", "KHAO_THI"])
 
-function deriveLegacyWorkflowStatus(row: any): string {
-  if (row.workflowStatus && PRESCHOOL_WORKFLOW_STATUSES.includes(row.workflowStatus)) {
+function resolveLegacyApprovedOutcome(row: any): "DAT" | "CHUA_DAT" | null {
+  if (row.finalApprovedOutcome === "DAT" || row.finalApprovedOutcome === "CHUA_DAT") {
+    return row.finalApprovedOutcome
+  }
+  if (row.gdcsApprovalStatus) {
+    const g = String(row.gdcsApprovalStatus).trim().toUpperCase()
+    if (g === "KHONG_DAT" || g === "CHUA_DAT") return "CHUA_DAT"
+    if (g === "DAT" || g === "DAT_MIEN_HOC_THU" || g === "DAT_HOC_THU") return "DAT"
+  }
+  const adm = String(row.admissionResult || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim()
+  if (!adm || adm.includes("CHUA DUYET") || adm.includes("CHO DUYET") || adm === "PENDING") {
+    return null
+  }
+  if (adm.includes("KHONG DAT") || adm.includes("CHUA DAT")) return "CHUA_DAT"
+  if (adm.includes("DAT") || adm.includes("MIEN HOC THU") || adm.includes("SAU HOC THU")) return "DAT"
+  return null
+}
+
+function deriveLegacyWorkflowStatus(row: any, hasDevScores = false): string {
+  // Respect any explicitly advanced workflowStatus (anything past default DA_HEN)
+  if (
+    row.workflowStatus &&
+    row.workflowStatus !== "DA_HEN" &&
+    PRESCHOOL_WORKFLOW_STATUSES.includes(row.workflowStatus)
+  ) {
     return row.workflowStatus
   }
   if (row.archivedAt) return "DA_LUU_HO_SO"
   if (row.resultDeliveredAt) return "DA_TRA_KET_QUA"
-  if (row.finalApprovedOutcome || row.gdcsApprovalStatus) return "DA_DUYET"
+  if (resolveLegacyApprovedOutcome(row)) return "DA_DUYET"
   if (row.bghApprovalStatus) return "CHO_DUYET"
-  if (row.devAssessmentResult || row.devProfessionalComment) return "DANG_DANH_GIA"
+  if (row.devAssessmentResult || row.devProfessionalComment || row.devPsychologyComment || hasDevScores) {
+    return "DANG_DANH_GIA"
+  }
   return "DA_HEN"
 }
 
@@ -72,13 +101,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const [studentsRaw, roundsRaw, periods, staffUsers] = await Promise.all([
+    const [studentsRaw, roundsRaw, devScoreCountsRaw, periods, staffUsers] = await Promise.all([
       prisma.$queryRawUnsafe<any[]>(
         `SELECT * FROM "PreschoolInputAssessmentStudent" ORDER BY "createdAt" DESC LIMIT 500`
       ),
       prisma.$queryRawUnsafe<any[]>(
         `SELECT * FROM "PreschoolAssessmentRound" ORDER BY "roundNumber" ASC`
       ),
+      prisma.$queryRawUnsafe<any[]>(
+        `SELECT "studentId", COUNT(*) as cnt FROM "PreschoolDevScore" GROUP BY "studentId"`
+      ).catch(() => []),
       (prisma as any).preschoolInputAssessmentPeriod.findMany({
         select: { id: true, code: true, name: true, status: true, campusId: true },
         orderBy: { createdAt: "desc" },
@@ -90,6 +122,13 @@ export async function GET(req: NextRequest) {
         take: 300,
       }),
     ])
+
+    const devScoredStudentIds = new Set<string>()
+    for (const row of devScoreCountsRaw || []) {
+      if (row?.studentId && Number(row?.cnt || 0) > 0) {
+        devScoredStudentIds.add(String(row.studentId))
+      }
+    }
 
     const roundsByStudent = new Map<string, any[]>()
     for (const r of roundsRaw) {
@@ -111,8 +150,9 @@ export async function GET(req: NextRequest) {
       .map((s) => {
         const rounds = roundsByStudent.get(s.id) || []
         const latestRound = rounds.length > 0 ? rounds[rounds.length - 1] : null
-        const workflowStatus = deriveLegacyWorkflowStatus(s)
-        const systemNormalized = normalizePreschoolSystem(s.surveySystem)
+        const workflowStatus = deriveLegacyWorkflowStatus(s, devScoredStudentIds.has(s.id))
+        const rawSystem = s.surveySystem || s.surveyFormType
+        const systemNormalized = normalizePreschoolSystem(rawSystem)
         const campusDisplay = s.registeredCampus || s.admissionCampus || latestRound?.campusName || ""
         const appointmentAt = latestRound?.scheduledAt || s.appointmentAt || s.createdAt
 
@@ -121,23 +161,15 @@ export async function GET(req: NextRequest) {
           workflowStatus === "DA_DUYET" ||
           workflowStatus === "DA_TRA_KET_QUA" ||
           workflowStatus === "DA_LUU_HO_SO"
-        let approvedOutcome: "DAT" | "CHUA_DAT" | null = null
-        if (isApprovedStage) {
-          if (s.finalApprovedOutcome === "DAT" || s.finalApprovedOutcome === "CHUA_DAT") {
-            approvedOutcome = s.finalApprovedOutcome
-          } else if (s.gdcsApprovalStatus) {
-            approvedOutcome =
-              s.gdcsApprovalStatus === "KHONG_DAT" || s.gdcsApprovalStatus === "CHUA_DAT"
-                ? "CHUA_DAT"
-                : "DAT"
-          }
-        }
+        const approvedOutcome: "DAT" | "CHUA_DAT" | null = isApprovedStage
+          ? resolveLegacyApprovedOutcome(s)
+          : null
 
         const suggestion = suggestPreschoolForm({
           dateOfBirth: s.dateOfBirth,
           surveyDate: appointmentAt,
           grade: s.grade,
-          surveySystem: s.surveySystem,
+          surveySystem: rawSystem,
         })
 
         return {
@@ -147,7 +179,7 @@ export async function GET(req: NextRequest) {
           dateOfBirth: s.dateOfBirth,
           gender: s.gender,
           grade: s.grade,
-          surveySystem: formatPreschoolSystemLabel(s.surveySystem),
+          surveySystem: formatPreschoolSystemLabel(rawSystem),
           systemCode: systemNormalized,
           campus: campusDisplay,
           periodId: s.periodId,
