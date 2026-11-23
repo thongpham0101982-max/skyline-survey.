@@ -2513,30 +2513,118 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [sendingNotifyId, setSendingNotifyId] = useState<string | null>(null);
+  const [approvalPreviewModal, setApprovalPreviewModal] = useState<{
+    open: boolean;
+    loading: boolean;
+    sending: boolean;
+    studentId: string;
+    studentName: string;
+    studentCode: string;
+    campus: string;
+    subject: string;
+    recipients: Array<{ fullName: string; email: string; role: string; isArchiveCopy: boolean }>;
+    selectedEmails: string[];
+    extraEmails: string;
+    html: string;
+  }>({
+    open: false,
+    loading: false,
+    sending: false,
+    studentId: "",
+    studentName: "",
+    studentCode: "",
+    campus: "",
+    subject: "",
+    recipients: [],
+    selectedEmails: [],
+    extraEmails: "",
+    html: "",
+  });
 
   const sendApprovalNotification = async (studentId: string) => {
     setSendingNotifyId(studentId);
+    setApprovalPreviewModal((prev) => ({
+      ...prev,
+      open: true,
+      loading: true,
+      sending: false,
+      studentId,
+      html: "",
+      recipients: [],
+      selectedEmails: [],
+      extraEmails: "",
+    }));
     try {
       const res = await fetch("/api/preschool-input-assessment-students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "SEND_APPROVAL_NOTIFICATION",
-          studentId
-        })
+          studentId,
+          previewOnly: true,
+        }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        notify(`Đã gửi yêu cầu duyệt tới BGH & GĐCS của cơ sở ${data.campus || "học sinh"} thành công!`);
+      const data = await res.json();
+      if (res.ok && data.preview) {
+        const recipients = Array.isArray(data.recipients) ? data.recipients : [];
+        setApprovalPreviewModal({
+          open: true,
+          loading: false,
+          sending: false,
+          studentId,
+          studentName: data.studentName || "",
+          studentCode: data.studentCode || "",
+          campus: data.campus || "",
+          subject: data.subject || "",
+          recipients,
+          selectedEmails: recipients.map((r: any) => r.email),
+          extraEmails: "",
+          html: data.html || "",
+        });
       } else {
-        const errorData = await res.json();
-        notify(errorData.error || "Gửi yêu cầu thất bại", "err");
+        setApprovalPreviewModal((prev) => ({ ...prev, open: false, loading: false }));
+        notify(data.error || "Không thể tải bản xem trước email", "err");
       }
     } catch (e) {
       console.error(e);
-      notify("Có lỗi xảy ra khi gửi yêu cầu", "err");
+      setApprovalPreviewModal((prev) => ({ ...prev, open: false, loading: false }));
+      notify("Có lỗi xảy ra khi tải bản xem trước email", "err");
     } finally {
       setSendingNotifyId(null);
+    }
+  };
+
+  const confirmSendApprovalNotification = async () => {
+    if (!approvalPreviewModal.studentId) return;
+    if (approvalPreviewModal.selectedEmails.length === 0 && !approvalPreviewModal.extraEmails.trim()) {
+      notify("Vui lòng chọn ít nhất 1 người nhận email.", "err");
+      return;
+    }
+    setApprovalPreviewModal((prev) => ({ ...prev, sending: true }));
+    try {
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_APPROVAL_NOTIFICATION",
+          studentId: approvalPreviewModal.studentId,
+          customSubject: approvalPreviewModal.subject,
+          selectedEmails: approvalPreviewModal.selectedEmails,
+          extraEmails: approvalPreviewModal.extraEmails,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setApprovalPreviewModal((prev) => ({ ...prev, open: false, sending: false }));
+        notify(`Đã gửi ${data.emailsSent || 1} email yêu cầu duyệt tới cơ sở ${data.campus || "học sinh"} thành công!`);
+      } else {
+        setApprovalPreviewModal((prev) => ({ ...prev, sending: false }));
+        notify(data.error || "Gửi yêu cầu thất bại", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      setApprovalPreviewModal((prev) => ({ ...prev, sending: false }));
+      notify("Có lỗi xảy ra khi gửi email", "err");
     }
   };
 
@@ -9390,6 +9478,145 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           </Field>
         </div>
       </Modal>
+
+      {/* Modal Xem trước Email yêu cầu phê duyệt trước khi gửi */}
+      {approvalPreviewModal.open && (
+        <div
+          className="fixed inset-0 z-[9995] flex items-center justify-center bg-slate-900/55 backdrop-blur-xs p-4"
+          onClick={() => !approvalPreviewModal.sending && setApprovalPreviewModal((prev) => ({ ...prev, open: false }))}
+        >
+          <div
+            className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-[#003B3A] text-white px-6 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-medium text-[#5EEAD4]">
+                  Kiểm tra trước khi gửi · Phê duyệt chạm trên Email
+                </p>
+                <h3 className="text-base font-bold mt-0.5 flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-[#5EEAD4]" />
+                  Xem trước Email yêu cầu duyệt — {approvalPreviewModal.studentName || "Học sinh"}
+                  {approvalPreviewModal.studentCode ? ` (${approvalPreviewModal.studentCode})` : ""}
+                </h3>
+              </div>
+              <button
+                type="button"
+                disabled={approvalPreviewModal.sending}
+                onClick={() => setApprovalPreviewModal((prev) => ({ ...prev, open: false }))}
+                className="p-1.5 rounded-lg text-teal-100 hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {approvalPreviewModal.loading ? (
+              <div className="py-16 flex flex-col items-center justify-center gap-2 text-xs text-slate-600">
+                <Loader2 className="w-6 h-6 animate-spin text-[#00A19A]" />
+                <span>Đang tạo bản xem trước email và danh sách người nhận...</span>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#F8FAFC]">
+                <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 space-y-3 text-xs">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Tiêu đề Email</label>
+                    <input
+                      type="text"
+                      value={approvalPreviewModal.subject}
+                      onChange={(e) => setApprovalPreviewModal((prev) => ({ ...prev, subject: e.target.value }))}
+                      className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-xs text-slate-800 focus:border-[#00A19A] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1.5">
+                      Người nhận theo cơ sở {approvalPreviewModal.campus} ({approvalPreviewModal.selectedEmails.length}/{approvalPreviewModal.recipients.length} đã chọn)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {approvalPreviewModal.recipients.map((r) => {
+                        const checked = approvalPreviewModal.selectedEmails.includes(r.email);
+                        return (
+                          <label
+                            key={r.email}
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border cursor-pointer transition-colors ${
+                              checked
+                                ? "bg-[#F0FDFA] border-[#00A19A] text-[#003B3A]"
+                                : "bg-white border-[#E2E8F0] text-slate-500"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                setApprovalPreviewModal((prev) => ({
+                                  ...prev,
+                                  selectedEmails: e.target.checked
+                                    ? [...prev.selectedEmails, r.email]
+                                    : prev.selectedEmails.filter((em) => em !== r.email),
+                                }));
+                              }}
+                              className="rounded border-slate-300"
+                            />
+                            <span className="font-semibold">{r.fullName}</span>
+                            <span className="text-[11px] text-slate-500">({r.email} · {r.role})</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Thêm email nhận bổ sung (tùy chọn, cách nhau bằng dấu phẩy)</label>
+                    <input
+                      type="text"
+                      value={approvalPreviewModal.extraEmails}
+                      onChange={(e) => setApprovalPreviewModal((prev) => ({ ...prev, extraEmails: e.target.value }))}
+                      placeholder="vd: gdcs@skylineschool.edu.vn, bghmn@skylineschool.edu.vn"
+                      className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-xs text-slate-800 focus:border-[#00A19A] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden">
+                  <div className="px-4 py-2 bg-[#003B3A] text-white text-[11px] font-semibold flex items-center justify-between">
+                    <span>Nội dung Email sẽ gửi (bản hiển thị thực tế)</span>
+                    <span className="text-[#5EEAD4]">Chế độ xem trước — chưa gửi</span>
+                  </div>
+                  <iframe
+                    title="Xem trước email phê duyệt Mầm non"
+                    srcDoc={approvalPreviewModal.html}
+                    className="w-full h-[460px] bg-white border-0"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="px-6 py-4 bg-white border-t border-[#E2E8F0] flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={approvalPreviewModal.sending}
+                onClick={() => setApprovalPreviewModal((prev) => ({ ...prev, open: false }))}
+                className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={approvalPreviewModal.loading || approvalPreviewModal.sending}
+                onClick={confirmSendApprovalNotification}
+                className="px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white text-xs font-semibold flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {approvalPreviewModal.sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                )}
+                Xác nhận gửi Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

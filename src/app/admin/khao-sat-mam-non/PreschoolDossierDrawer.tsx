@@ -81,6 +81,12 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
   const [gdcsComment, setGdcsComment] = useState("")
   const [approvalEmailTo, setApprovalEmailTo] = useState("")
   const [approvalEmailName, setApprovalEmailName] = useState("Giám đốc Điều hành Cơ sở")
+  const [emailPreview, setEmailPreview] = useState<{ open: boolean; to: string; subject: string; html: string }>({
+    open: false,
+    to: "",
+    subject: "",
+    html: "",
+  })
 
   // B11–B13
   const [parentConsultNote, setParentConsultNote] = useState("")
@@ -1129,24 +1135,101 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                         placeholder="Họ tên GĐCS"
                         className="rounded-xl border border-[#E2E8F0] px-3 py-2"
                       />
-                      <button
-                        type="button"
-                        disabled={saving || !gate.ready || !approvalEmailTo.trim()}
-                        onClick={() =>
-                          runAction(
-                            {
-                              action: "SEND_APPROVAL_EMAIL",
-                              recipientEmail: approvalEmailTo.trim(),
-                              recipientName: approvalEmailName.trim(),
-                            },
-                            `Đã gửi email phê duyệt chạm tới ${approvalEmailTo.trim()}.`
-                          )
-                        }
-                        className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold disabled:opacity-40 cursor-pointer"
-                      >
-                        Gửi Email duyệt chạm
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={saving || !gate.ready || !approvalEmailTo.trim()}
+                          onClick={async () => {
+                            setSaving(true)
+                            setError(null)
+                            try {
+                              const res = await fetch(`/api/preschool-workflow/${studentId}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  action: "SEND_APPROVAL_EMAIL",
+                                  roundId: viewingRound?.id,
+                                  recipientEmail: approvalEmailTo.trim(),
+                                  recipientName: approvalEmailName.trim(),
+                                  previewOnly: true,
+                                }),
+                              })
+                              const data = await res.json()
+                              if (!res.ok) throw new Error(data.error || "Không thể tạo bản xem trước.")
+                              setEmailPreview({
+                                open: true,
+                                to: data.to || approvalEmailTo.trim(),
+                                subject: data.subject || "",
+                                html: data.html || "",
+                              })
+                            } catch (err: any) {
+                              setError(err?.message || "Lỗi xem trước email.")
+                            } finally {
+                              setSaving(false)
+                            }
+                          }}
+                          className="flex-1 px-3 py-2 rounded-xl border border-[#003B3A] text-[#003B3A] hover:bg-[#F0FDFA] font-semibold disabled:opacity-40 cursor-pointer"
+                        >
+                          Xem trước Email
+                        </button>
+                      </div>
                     </div>
+
+                    {emailPreview.open && (
+                      <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] overflow-hidden space-y-3 p-3.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-[#003B3A]">
+                            Xem trước Email gửi tới: {emailPreview.to}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setEmailPreview((p) => ({ ...p, open: false }))}
+                            className="text-slate-500 hover:text-slate-800 cursor-pointer"
+                          >
+                            Đóng xem trước
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={emailPreview.subject}
+                          onChange={(e) => setEmailPreview((p) => ({ ...p, subject: e.target.value }))}
+                          className="w-full rounded-xl border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs"
+                        />
+                        <iframe
+                          title="Xem trước Email duyệt B10"
+                          srcDoc={emailPreview.html}
+                          className="w-full h-[380px] rounded-xl border border-[#E2E8F0] bg-white"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEmailPreview((p) => ({ ...p, open: false }))}
+                            className="px-3.5 py-1.5 rounded-xl border border-[#E2E8F0] bg-white text-slate-600 font-semibold cursor-pointer"
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={async () => {
+                              await runAction(
+                                {
+                                  action: "SEND_APPROVAL_EMAIL",
+                                  recipientEmail: emailPreview.to,
+                                  recipientName: approvalEmailName.trim(),
+                                  customSubject: emailPreview.subject,
+                                },
+                                `Đã gửi email phê duyệt chạm tới ${emailPreview.to}.`
+                              )
+                              setEmailPreview((p) => ({ ...p, open: false }))
+                            }}
+                            className="px-4 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold cursor-pointer"
+                          >
+                            Xác nhận gửi Email
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

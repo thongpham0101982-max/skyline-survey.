@@ -741,6 +741,10 @@ export async function PATCH(
         process.env.NEXTAUTH_URL ||
         req.nextUrl.origin
 
+      const subject =
+        (typeof body.customSubject === "string" && body.customSubject.trim()) ||
+        `[Sky-Line SSM · Mầm non] Trình phê duyệt B10 — Bé ${student.fullName} (${student.studentCode})`
+
       const html = generatePreschoolB10ApprovalEmailHtml({
         student,
         round: activeRound,
@@ -749,9 +753,19 @@ export async function PATCH(
         baseUrl,
       })
 
+      if (body.previewOnly) {
+        return NextResponse.json({
+          preview: true,
+          to: recipientEmail,
+          recipientName,
+          subject,
+          html,
+        })
+      }
+
       const mailRes = await sendEmail({
         to: recipientEmail,
-        subject: `[Sky-Line SSM · Mầm non] Trình phê duyệt B10 — Bé ${student.fullName} (${student.studentCode})`,
+        subject,
         html,
       })
 

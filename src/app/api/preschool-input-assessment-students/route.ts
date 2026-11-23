@@ -887,7 +887,7 @@ export async function POST(req) {
     }
 
     if (action === "SEND_APPROVAL_NOTIFICATION") {
-      const { studentId } = body;
+      const { studentId, previewOnly, customSubject, selectedEmails, extraEmails } = body;
       if (!studentId) {
         return NextResponse.json({ error: "Missing studentId" }, { status: 400 });
       }
@@ -901,7 +901,7 @@ export async function POST(req) {
         return NextResponse.json({ error: "Student not found" }, { status: 404 });
       }
 
-      const campusName = student.admissionCampus;
+      const campusName = student.admissionCampus || student.registeredCampus;
       if (!campusName) {
         return NextResponse.json({ error: "Học sinh chưa được gán Cơ sở để định tuyến phê duyệt!" }, { status: 400 });
       }
@@ -968,68 +968,118 @@ export async function POST(req) {
 
       // Pre-fetch developmental assessment summary (scores, criteria, areas, percentages)
       const devSummary = await getPreschoolDevelopmentSummary(student.id);
+      const emailSubject =
+        (typeof customSubject === "string" && customSubject.trim()) ||
+        `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`;
 
-      // 1. Send personalized emails to dynamic campus BGH & GĐCS users, and create in-app notifications
+      // Build deduplicated recipient list for both preview & actual send
+      const recipientMap = new Map<string, { id?: string; fullName: string; email: string; role: string; isArchiveCopy: boolean }>();
       for (const u of resolvedUsers) {
-        try {
-          // Insert in-app Notification
-          await (prisma as any).notification.create({
-            data: {
-              userId: u.id,
-              title,
-              message
-            }
-          });
-          notificationCount++;
-
-          // Send Email Alert
-          if (u.email && u.email.includes("@")) {
-            const emailBody = renderPreschoolApprovalEmailHtml({
-              student,
-              campusName,
-              recipientName: u.fullName,
-              recipientEmail: u.email,
+        if (u.email && u.email.includes("@")) {
+          const key = u.email.trim().toLowerCase();
+          if (!recipientMap.has(key)) {
+            recipientMap.set(key, {
+              id: u.id,
+              fullName: u.fullName || u.email,
+              email: u.email.trim(),
+              role: u.role || "BGH/GĐCS",
               isArchiveCopy: false,
-              devSummary,
-              baseUrl
             });
-
-            await sendEmail({
-              to: u.email,
-              subject: `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`,
-              html: emailBody,
-              replyTo: "ktdbcl@skylineschool.edu.vn"
-            });
-            emailSentCount++;
           }
-        } catch (err) {
-          console.error("Lỗi khi gửi thông báo tới user:", u.id, err);
+        }
+      }
+      if (!recipientMap.has("ktdbcl@skylineschool.edu.vn")) {
+        recipientMap.set("ktdbcl@skylineschool.edu.vn", {
+          fullName: "Ban Khảo Thí & ĐBCL",
+          email: "ktdbcl@skylineschool.edu.vn",
+          role: "KT&ĐBCL (Bản sao)",
+          isArchiveCopy: true,
+        });
+      }
+
+      const allRecipients = Array.from(recipientMap.values());
+
+      if (previewOnly) {
+        const primaryRecipient = allRecipients.find((r) => !r.isArchiveCopy) || allRecipients[0];
+        const previewHtml = renderPreschoolApprovalEmailHtml({
+          student,
+          campusName,
+          recipientName: primaryRecipient?.fullName || "Ban Giám Hiệu / GĐCS",
+          recipientEmail: primaryRecipient?.email || "ktdbcl@skylineschool.edu.vn",
+          isArchiveCopy: false,
+          devSummary,
+          baseUrl,
+        });
+
+        return NextResponse.json({
+          preview: true,
+          campus: campusName,
+          studentName: student.fullName,
+          studentCode: student.studentCode,
+          subject: emailSubject,
+          recipients: allRecipients,
+          html: previewHtml,
+        });
+      }
+
+      const selectedSet =
+        Array.isArray(selectedEmails) && selectedEmails.length > 0
+          ? new Set(selectedEmails.map((e: string) => String(e).trim().toLowerCase()))
+          : null;
+
+      // Append any extra custom emails entered in preview modal
+      if (typeof extraEmails === "string" && extraEmails.trim()) {
+        const extras = extraEmails
+          .split(/[,;\n]+/)
+          .map((e: string) => e.trim())
+          .filter((e: string) => e.includes("@"));
+        for (const ex of extras) {
+          const key = ex.toLowerCase();
+          if (!recipientMap.has(key)) {
+            recipientMap.set(key, {
+              fullName: ex,
+              email: ex,
+              role: "Người nhận bổ sung",
+              isArchiveCopy: false,
+            });
+          }
+          if (selectedSet) selectedSet.add(key);
         }
       }
 
-      // 2. Also send a copy to ktdbcl@skylineschool.edu.vn if not already in the resolved list
-      const hasBankKhaoThi = resolvedUsers.some((u) => u.email && u.email.toLowerCase() === "ktdbcl@skylineschool.edu.vn");
-      if (!hasBankKhaoThi) {
+      const finalRecipients = Array.from(recipientMap.values()).filter((r) =>
+        selectedSet ? selectedSet.has(r.email.toLowerCase()) : true
+      );
+
+      // Send personalized emails & in-app notifications
+      for (const r of finalRecipients) {
         try {
+          if (r.id) {
+            await (prisma as any).notification.create({
+              data: { userId: r.id, title, message },
+            });
+            notificationCount++;
+          }
+
           const emailBody = renderPreschoolApprovalEmailHtml({
             student,
             campusName,
-            recipientName: "Ban Khảo Thí & ĐBCL",
-            recipientEmail: "ktdbcl@skylineschool.edu.vn",
-            isArchiveCopy: true,
+            recipientName: r.fullName,
+            recipientEmail: r.email,
+            isArchiveCopy: r.isArchiveCopy,
             devSummary,
-            baseUrl
+            baseUrl,
           });
 
           await sendEmail({
-            to: "ktdbcl@skylineschool.edu.vn",
-            subject: `[Preschool-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Bé ${student.fullName} (${campusName})`,
+            to: r.email,
+            subject: emailSubject,
             html: emailBody,
-            replyTo: "ktdbcl@skylineschool.edu.vn"
+            replyTo: "ktdbcl@skylineschool.edu.vn",
           });
           emailSentCount++;
         } catch (err) {
-          console.error("Lỗi khi gửi email bản sao tới bankhaothi:", err);
+          console.error("Lỗi khi gửi thông báo tới:", r.email, err);
         }
       }
 
