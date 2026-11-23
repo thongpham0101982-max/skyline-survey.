@@ -7,6 +7,7 @@ import * as XLSX from "xlsx"
 import { PreschoolMoveToBatchModal } from "@/app/admin/student-info/PreschoolMoveToBatchModal";
 
 import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
+import { suggestPreschoolForm, PRESCHOOL_FORM_REGISTRY } from "@/lib/preschool-workflow";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
@@ -126,25 +127,39 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: any) {
   )
 }
 
-function Modal({ open, onClose, title, children, footer, size = "md" }: any) {
+function Modal({ open, onClose, title, subtitle, children, footer, size = "md" }: any) {
   if (!open) return null;
   const sizeMap: Record<string, string> = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
   return (
-    <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className={`bg-white rounded-3xl shadow-2xl w-full ${sizeMap[size]} overflow-hidden animate-in zoom-in-95 duration-200`} onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-300">
-          <h3 className="font-black text-slate-800 text-base flex items-center gap-2"><Baby className="w-5 h-5 text-teal-400" />{title}</h3>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
+    <div className="fixed inset-0 z-[9990] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4" onClick={onClose}>
+      <div className={`bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl w-full ${sizeMap[size]} overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]`} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 bg-[#003B3A] text-white border-b border-[#003B3A]">
+          <div>
+            {subtitle && <p className="text-[11px] font-medium text-[#5EEAD4] mb-0.5">{subtitle}</p>}
+            <h3 className="font-bold text-white text-base flex items-center gap-2"><Baby className="w-5 h-5 text-[#5EEAD4]" />{title}</h3>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-teal-100 hover:text-white transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
         </div>
-        <div className="p-6 overflow-y-auto max-h-[70vh]">{children}</div>
-        {footer && <div className="flex gap-3 text-xs font-semibold">{footer}</div>}
+        <div className="p-6 overflow-y-auto flex-1 bg-white">{children}</div>
+        {footer && <div className="flex items-center justify-end gap-3 px-6 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0] text-xs font-semibold">{footer}</div>}
       </div>
     </div>
   );
 }
 
-function Field({ label, required, children }: any) {
-  return <div className="space-y-1.5"><label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest">{label}{required && <span className="text-[#00A19A] ml-1">*</span>}</label>{children}</div>;
+function Field({ label, required, hint, children }: any) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <label className="block text-xs font-semibold text-slate-700">
+          {label}
+          {required && <span className="text-rose-600 ml-0.5">*</span>}
+        </label>
+        {hint && <span className="text-[11px] text-slate-400">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
 }
 
 const xetDuyetCols = [
@@ -1531,7 +1546,7 @@ export function PreschoolInputAssessmentsClient({
   };
   const [cModal, setCModal] = useState(false);
   const [editC, setEditC] = useState<PreschoolChild | null>(null);
-  const [cForm, setCForm] = useState({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: "", surveyFormType: "", batchId: "", admissionResult: "" });
+  const [cForm, setCForm] = useState<any>({ studentCode: "", fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: "", surveySystem: "Hệ S", surveyFormType: "Hệ S", intakeMode: "KHAO_SAT_MOI", appointmentAt: "", periodId: "", batchId: "", admissionResult: "" });
   const [activeAgeGroup, setActiveAgeGroup] = useState("");
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -3018,17 +3033,45 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     const batch = periods.flatMap(p => p.batches || []).find(b => b.id === initBatch);
     const campus = campuses.find(c => c.id === batch?.campusId);
     const initCampus = campus ? campus.campusName : "";
-    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: initCampus, surveyFormType: "", periodId: initPeriod, batchId: initBatch, admissionResult: "" });
+    const defaultSystem = configs.find(c => c.categoryType === "system")?.name || "Hệ S";
+    setCForm({ studentCode: genCode, fullName: "", dateOfBirth: "", gender: "", grade: "", admissionCampus: initCampus, surveySystem: defaultSystem, surveyFormType: defaultSystem, intakeMode: "KHAO_SAT_MOI", appointmentAt: "", periodId: initPeriod, batchId: initBatch, admissionResult: "" });
     setCModal(true);
   };
-  const openEditChild = (child: PreschoolChild) => { setEditC(child); setCForm({ studentCode: child.studentCode, fullName: child.fullName, dateOfBirth: child.dateOfBirth?.slice(0,10) || "", gender: child.gender || "", grade: child.grade || "", admissionCampus: child.admissionCampus || "", surveyFormType: child.surveyFormType || "", periodId: child.periodId || "", batchId: child.batchId || "", admissionResult: child.admissionResult || "" }); setCModal(true); };
+  const openEditChild = (child: any) => {
+    setEditC(child);
+    const sysVal = child.surveySystem || child.surveyFormType || "Hệ S";
+    setCForm({
+      studentCode: child.studentCode,
+      fullName: child.fullName,
+      dateOfBirth: child.dateOfBirth?.slice(0, 10) || "",
+      gender: child.gender || "",
+      grade: child.grade || "",
+      admissionCampus: child.admissionCampus || child.registeredCampus || "",
+      surveySystem: sysVal,
+      surveyFormType: sysVal,
+      intakeMode: child.intakeMode || "KHAO_SAT_MOI",
+      appointmentAt: child.appointmentAt ? new Date(child.appointmentAt).toISOString().slice(0, 16) : "",
+      periodId: child.periodId || "",
+      batchId: child.batchId || "",
+      admissionResult: child.admissionResult || "",
+    });
+    setCModal(true);
+  };
   const saveChild = async () => {
     if (!cForm.studentCode.trim() || !cForm.fullName.trim()) return notify("Cần nhập Mã bé và Họ tên", "err");
     if (!cForm.periodId) return notify("Vui lòng chọn Kỳ khảo sát", "err");
+    const payload = {
+      ...cForm,
+      registeredCampus: cForm.admissionCampus || null,
+      surveySystem: cForm.surveySystem || cForm.surveyFormType || "Hệ S",
+      surveyFormType: cForm.surveyFormType || cForm.surveySystem || "Hệ S",
+      periodId: cForm.periodId,
+      batchId: cForm.batchId || null,
+    };
     const r = editC
-      ? await fetch("/api/preschool-input-assessment-students", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editC.id, data: cForm }) })
-      : await fetch("/api/preschool-input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "CREATE", data: { ...cForm, periodId: cForm.periodId, batchId: cForm.batchId || null } }) });
-    if (r.ok) { setCModal(false); fetchChildren(); notify(editC ? "Đã cập nhật bé" : "Đã thêm bé mới"); } else notify("Lỗi", "err");
+      ? await fetch("/api/preschool-input-assessment-students", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editC.id, data: payload }) })
+      : await fetch("/api/preschool-input-assessment-students", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "CREATE", data: payload }) });
+    if (r.ok) { setCModal(false); fetchChildren(); notify(editC ? "Đã cập nhật hồ sơ trẻ" : "Đã thêm hồ sơ trẻ mới"); } else notify("Không thể lưu hồ sơ trẻ", "err");
   };
   const doDeleteChild = async (id: string) => { await fetch(`/api/preschool-input-assessment-students?id=${id}`, { method: "DELETE" }); fetchChildren(); notify("Đã xóa"); };
   const doDeleteSelected = async () => { await fetch(`/api/preschool-input-assessment-students?ids=${cSelected.join(",")}`, { method: "DELETE" }); setCSelected([]); fetchChildren(); notify(`Đã xóa ${cSelected.length} bé`); };
@@ -6185,110 +6228,278 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         </div>
       </Modal>
 
-      {/* Modal: Child */}
-      <Modal open={cModal} onClose={() => setCModal(false)} title={editC ? "Sửa thông tin Trẻ" : "Thêm Trẻ Mầm non"} size="lg" footer={<><button onClick={() => setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button><button onClick={saveChild} className="flex-1 py-3.5 bg-[#00A19A] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Mã bé" required><input value={cForm.studentCode} disabled className={inp + " bg-slate-150 cursor-not-allowed"} placeholder="MN001" /></Field>
-          <Field label="Họ và tên" required><input value={cForm.fullName} onChange={e => setCForm({...cForm, fullName: e.target.value})} className={inp} placeholder="Họ và tên đầy đủ" /></Field>
-          <Field label="Ngày sinh">
-            <input
-              type="date"
-              value={cForm.dateOfBirth}
-              onChange={e => {
-                const dobVal = e.target.value;
-                setCForm(prev => {
-                  const nextState = { ...prev, dateOfBirth: dobVal };
-                  const info = getMonthsAndSuggestGrade(dobVal, nextState.batchId);
-                  if (info.suggest) {
-                    nextState.grade = info.suggest;
-                  }
-                  return nextState;
-                });
-              }}
-              className={inp}
-            />
-            {ageInfo.months !== null && (
-              <div className="text-[11px] font-black text-[#00A19A] mt-1.5 uppercase tracking-wider bg-[#00A19A]/5/50 rounded-none px-3 py-1.5 border border-slate-300 flex items-center gap-1.5 animate-in fade-in duration-200">
-                <Sparkles className="w-3.5 h-3.5" />
-                Xác minh: {ageInfo.months} tháng tuổi ({ageInfo.surveyDateStr})
-              </div>
-            )}
-          </Field>
-          <Field label="Giới tính"><select value={cForm.gender} onChange={e => setCForm({...cForm, gender: e.target.value})} className={inp}><option value="">-- Chọn --</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
-          <Field label="Nhóm tuổi"><select value={cForm.grade} onChange={e => setCForm({...cForm, grade: e.target.value})} className={inp}><option value="">-- Chọn nhóm tuổi --</option>{grades.map(g => <option key={g} value={g}>{g}</option>)}</select></Field>
-          <Field label="Cơ sở">
-            <select
-              value={cForm.admissionCampus}
-              onChange={e => setCForm({...cForm, admissionCampus: e.target.value})}
-              className={inp}
+      {/* Modal: Child — Chuẩn Sky-Line Academic Ledger & Quy trình Mầm non 2026 */}
+      <Modal
+        open={cModal}
+        onClose={() => setCModal(false)}
+        title={editC ? "Cập nhật hồ sơ Trẻ Mầm non" : "Thêm Trẻ Mầm non"}
+        subtitle="Quy trình Khảo sát đầu vào Mầm non 2026 · Bước B1–B3"
+        size="lg"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setCModal(false)}
+              className="px-4 py-2.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-slate-50 text-xs font-semibold text-slate-600 transition-colors cursor-pointer"
             >
-              <option value="">-- Chọn cơ sở --</option>
-              {campuses.map(c => <option key={c.campusName} value={c.campusName}>{c.campusName}</option>)}
-            </select>
-          </Field>
-                    <Field label="Kỳ Khảo sát" required>
-            <select
-              value={cForm.periodId || ""}
-              onChange={e => {
-                const pIdVal = e.target.value;
-                const newPeriod = periods.find(p => p.id === pIdVal);
-                const defaultBatchId = newPeriod?.batches?.[0]?.id || "";
-                const batch = newPeriod?.batches?.[0];
-                const campus = campuses.find(c => c.id === batch?.campusId);
-                setCForm(prev => ({
-                  ...prev,
-                  periodId: pIdVal,
-                  batchId: defaultBatchId,
-                  admissionCampus: campus ? campus.campusName : ""
-                }));
-              }}
-              className={inp}
+              Đóng
+            </button>
+            <button
+              type="button"
+              onClick={saveChild}
+              className="px-5 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <option value="">-- Chọn Kỳ --</option>
-              {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </Field>
-          <Field label="Đợt KS">
-            <select
-              value={cForm.batchId || ""}
-              onChange={e => {
-                const bIdVal = e.target.value;
-                setCForm(prev => {
-                  const nextState = { ...prev, batchId: bIdVal };
-                  const info = getMonthsAndSuggestGrade(nextState.dateOfBirth, bIdVal);
-                  if (info.suggest) {
-                    nextState.grade = info.suggest;
-                  }
-                  const batch = periods.flatMap(p => p.batches || []).find(b => b.id === bIdVal);
-                  const campus = campuses.find(c => c.id === batch?.campusId);
-                  if (campus) {
-                    nextState.admissionCampus = campus.campusName;
-                  } else {
-                    nextState.admissionCampus = "";
-                  }
-                  return nextState;
-                });
-              }}
-              className={inp}
-            >
-              <option value="">-- Không gán --</option>
-              {periods.find(p => p.id === cForm.periodId)?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-          </Field>
-          <Field label="Hệ KS">
-            <select
-              value={cForm.surveyFormType}
-              onChange={e => setCForm({...cForm, surveyFormType: e.target.value})}
-              className={inp}
-            >
-              <option value="">-- Chọn Hệ KS --</option>
-              {configs.filter(c => c.categoryType === "system").map(c => (
-                <option key={c.code} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-          </Field>
+              <CheckCircle2 className="w-4 h-4 text-[#5EEAD4]" />
+              {editC ? "Lưu thay đổi" : "Lưu hồ sơ trẻ"}
+            </button>
+          </>
+        }
+      >
+        {(() => {
+          const selectedBatchObj = periods.flatMap(p => p.batches || []).find(b => b.id === cForm.batchId);
+          const surveyRefDate = cForm.appointmentAt || selectedBatchObj?.startDate || new Date();
+          const formSuggestion = suggestPreschoolForm({
+            dateOfBirth: cForm.dateOfBirth || null,
+            surveyDate: surveyRefDate,
+            grade: cForm.grade || null,
+            surveySystem: cForm.surveySystem || cForm.surveyFormType || "Hệ S",
+          });
+          const suggestedDef = PRESCHOOL_FORM_REGISTRY[formSuggestion.suggestedFormCode];
+          const systemOptions = (() => {
+            const fromCfg = configs.filter(c => c.categoryType === "system").map(c => c.name);
+            const merged = new Set<string>(["Hệ S", "Hệ Global", ...fromCfg]);
+            return Array.from(merged);
+          })();
+          const ledgerInput = "w-full rounded-xl border border-[#E2E8F0] bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 focus:outline-none transition-all";
 
-        </div>
+          return (
+            <div className="space-y-5">
+              {/* Nhóm 1: Thông tin trẻ */}
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2 pb-1.5 border-b border-[#F1F5F9]">
+                  <span className="w-1.5 h-4 rounded-full bg-[#003B3A]" />
+                  <h4 className="text-xs font-bold text-[#003B3A]">1. Thông tin trẻ</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Mã bé" required hint="Tự động sinh">
+                    <input
+                      value={cForm.studentCode}
+                      disabled
+                      className={`${ledgerInput} bg-[#F8FAFC] text-slate-600 font-semibold tabular-nums cursor-not-allowed`}
+                      placeholder="MN001"
+                    />
+                  </Field>
+                  <Field label="Họ và tên trẻ" required>
+                    <input
+                      value={cForm.fullName}
+                      onChange={e => setCForm({ ...cForm, fullName: e.target.value })}
+                      className={ledgerInput}
+                      placeholder="Nhập họ và tên đầy đủ của bé"
+                    />
+                  </Field>
+                  <Field label="Ngày sinh">
+                    <input
+                      type="date"
+                      value={cForm.dateOfBirth}
+                      onChange={e => {
+                        const dobVal = e.target.value;
+                        setCForm((prev: any) => {
+                          const nextState = { ...prev, dateOfBirth: dobVal };
+                          const info = getMonthsAndSuggestGrade(dobVal, nextState.batchId);
+                          if (info.suggest) {
+                            nextState.grade = info.suggest;
+                          }
+                          return nextState;
+                        });
+                      }}
+                      className={`${ledgerInput} tabular-nums`}
+                    />
+                    {ageInfo.months !== null && (
+                      <div className="text-[11px] font-semibold text-[#00736E] mt-1.5 bg-[#F0FDFA] rounded-lg px-3 py-1.5 border border-teal-200 flex items-center gap-1.5 tabular-nums">
+                        <Sparkles className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
+                        <span>Tuổi tại ngày khảo sát: <strong>{ageInfo.months} tháng</strong> ({ageInfo.surveyDateStr})</span>
+                      </div>
+                    )}
+                  </Field>
+                  <Field label="Giới tính">
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["Nam", "Nữ"] as const).map(g => (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => setCForm({ ...cForm, gender: g })}
+                          className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                            cForm.gender === g
+                              ? "bg-[#003B3A] text-white border-[#003B3A]"
+                              : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Nhóm tuổi / Lớp đăng ký">
+                    <select
+                      value={cForm.grade}
+                      onChange={e => setCForm({ ...cForm, grade: e.target.value })}
+                      className={ledgerInput}
+                    >
+                      <option value="">-- Chọn nhóm tuổi --</option>
+                      {grades.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Hệ đăng ký" required>
+                    <select
+                      value={cForm.surveySystem || cForm.surveyFormType || "Hệ S"}
+                      onChange={e => setCForm({ ...cForm, surveySystem: e.target.value, surveyFormType: e.target.value })}
+                      className={ledgerInput}
+                    >
+                      {systemOptions.map(sys => (
+                        <option key={sys} value={sys}>{sys}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+              </div>
+
+              {/* Nhóm 2: Thông tin khảo sát & Tiếp nhận (B1–B3) */}
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-2 pb-1.5 border-b border-[#F1F5F9]">
+                  <span className="w-1.5 h-4 rounded-full bg-[#00A19A]" />
+                  <h4 className="text-xs font-bold text-[#003B3A]">2. Thông tin khảo sát & Tiếp nhận (B1–B3)</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Kỳ khảo sát" required>
+                    <select
+                      value={cForm.periodId || ""}
+                      onChange={e => {
+                        const pIdVal = e.target.value;
+                        const newPeriod = periods.find(p => p.id === pIdVal);
+                        const defaultBatchId = newPeriod?.batches?.[0]?.id || "";
+                        const batch = newPeriod?.batches?.[0];
+                        const campus = campuses.find(c => c.id === batch?.campusId);
+                        setCForm((prev: any) => ({
+                          ...prev,
+                          periodId: pIdVal,
+                          batchId: defaultBatchId,
+                          admissionCampus: campus ? campus.campusName : prev.admissionCampus
+                        }));
+                      }}
+                      className={ledgerInput}
+                    >
+                      <option value="">-- Chọn Kỳ khảo sát --</option>
+                      {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Đợt khảo sát">
+                    <select
+                      value={cForm.batchId || ""}
+                      onChange={e => {
+                        const bIdVal = e.target.value;
+                        setCForm((prev: any) => {
+                          const nextState = { ...prev, batchId: bIdVal };
+                          const info = getMonthsAndSuggestGrade(nextState.dateOfBirth, bIdVal);
+                          if (info.suggest) {
+                            nextState.grade = info.suggest;
+                          }
+                          const batch = periods.flatMap(p => p.batches || []).find(b => b.id === bIdVal);
+                          const campus = campuses.find(c => c.id === batch?.campusId);
+                          if (campus) {
+                            nextState.admissionCampus = campus.campusName;
+                          }
+                          return nextState;
+                        });
+                      }}
+                      className={ledgerInput}
+                    >
+                      <option value="">-- Chưa xếp đợt --</option>
+                      {periods.find(p => p.id === cForm.periodId)?.batches?.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Cơ sở tiếp nhận">
+                    <select
+                      value={cForm.admissionCampus}
+                      onChange={e => setCForm({ ...cForm, admissionCampus: e.target.value })}
+                      className={ledgerInput}
+                    >
+                      <option value="">-- Chọn cơ sở --</option>
+                      {campuses.map(c => (
+                        <option key={c.campusName} value={c.campusName}>
+                          {c.campusCode ? `${c.campusCode} — ${c.campusName}` : c.campusName}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Lịch hẹn đón trẻ (tùy chọn)">
+                    <input
+                      type="datetime-local"
+                      value={cForm.appointmentAt || ""}
+                      onChange={e => setCForm({ ...cForm, appointmentAt: e.target.value })}
+                      className={`${ledgerInput} tabular-nums`}
+                    />
+                  </Field>
+                  <div className="md:col-span-2">
+                    <Field label="Hình thức khảo sát (B3)">
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setCForm({ ...cForm, intakeMode: "KHAO_SAT_MOI" })}
+                          className={`py-2.5 px-3.5 rounded-xl border text-left text-xs transition-colors cursor-pointer ${
+                            (cForm.intakeMode || "KHAO_SAT_MOI") === "KHAO_SAT_MOI"
+                              ? "bg-[#F0FDFA] text-[#003B3A] border-[#00A19A] font-semibold"
+                              : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                          }`}
+                        >
+                          <div>Khảo sát mới</div>
+                          <div className="text-[11px] font-normal text-slate-500 mt-0.5">Y tế (B4A) + Phiếu BM.KTĐBCL (B5)</div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCForm({ ...cForm, intakeMode: "HOC_TRAI_NGHIEM" })}
+                          className={`py-2.5 px-3.5 rounded-xl border text-left text-xs transition-colors cursor-pointer ${
+                            cForm.intakeMode === "HOC_TRAI_NGHIEM"
+                              ? "bg-[#F0FDFA] text-[#003B3A] border-[#00A19A] font-semibold"
+                              : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                          }`}
+                        >
+                          <div>Học trải nghiệm</div>
+                          <div className="text-[11px] font-normal text-slate-500 mt-0.5">Quan sát tại lớp (B4B) → Rà soát B9A</div>
+                        </button>
+                      </div>
+                    </Field>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gợi ý biểu mẫu tự động theo Quy trình Mầm non 2026 */}
+              <div
+                className={`rounded-xl border px-4 py-3 text-xs ${
+                  formSuggestion.isAgeBoundary
+                    ? "bg-amber-50 border-amber-200 text-amber-900"
+                    : "bg-[#F0FDFA] border-teal-200 text-[#005854]"
+                }`}
+              >
+                <div className="font-semibold flex items-center gap-2">
+                  {formSuggestion.isAgeBoundary ? (
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  ) : (
+                    <ClipboardList className="w-4 h-4 text-[#00A19A] shrink-0" />
+                  )}
+                  <span>
+                    Gợi ý biểu mẫu khảo sát: <strong>{formSuggestion.suggestedFormCode}</strong>
+                    {suggestedDef ? ` — ${suggestedDef.shortTitle}` : ""} (v{formSuggestion.formVersion})
+                  </span>
+                </div>
+                {formSuggestion.boundaryReason && (
+                  <p className="mt-1 text-[11px] leading-relaxed text-amber-800">{formSuggestion.boundaryReason}</p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
 
       {isEmailCongratsModalOpen && emailCongratsStudent && (

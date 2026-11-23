@@ -366,7 +366,54 @@ export async function GET(req) {
       orderBy: { createdAt: 'desc' }
     });
     
-    return NextResponse.json(students);
+    let enrichedStudents = students;
+    try {
+      const studentIds = students.map((s: any) => String(s.id)).filter(Boolean);
+      if (studentIds.length > 0) {
+        const stage7Map = new Map<string, { status: string; sentBy: string; sentAt: string; note: string }>();
+        const chunkSize = 80;
+        for (let i = 0; i < studentIds.length; i += chunkSize) {
+          const chunk = studentIds.slice(i, i + chunkSize);
+          const placeholders = chunk.map(() => "?").join(",");
+          const rows: any[] = await (prisma as any).$queryRawUnsafe(
+            `SELECT "studentId", "status", "deliveryStatus", "confirmedByName", "confirmedAt", "updatedAt", "note"
+             FROM "entrance_workflow_confirmations"
+             WHERE "stageNumber" = 7 AND "studentId" IN (${placeholders})
+             ORDER BY COALESCE("confirmedAt", "updatedAt") DESC`,
+            ...chunk
+          );
+          for (const row of rows || []) {
+            const sid = String(row?.studentId || "");
+            if (!sid || stage7Map.has(sid)) continue;
+            const isSent =
+              String(row?.deliveryStatus || "").toUpperCase() === "SENT" ||
+              String(row?.deliveryStatus || "").toUpperCase() === "READ" ||
+              String(row?.deliveryStatus || "").toUpperCase() === "CONFIRMED" ||
+              String(row?.status || "").toUpperCase() === "COMPLETED";
+            if (isSent) {
+              stage7Map.set(sid, {
+                status: "SENT",
+                sentBy: String(row?.confirmedByName || "").trim(),
+                sentAt: String(row?.confirmedAt || row?.updatedAt || ""),
+                note: String(row?.note || ""),
+              });
+            }
+          }
+        }
+        enrichedStudents = students.map((s: any) => {
+          const s7 = stage7Map.get(String(s.id));
+          return {
+            ...s,
+            resultEmailStatus: s7?.status || "NOT_SENT",
+            resultEmailSentBy: s7?.sentBy || null,
+            resultEmailSentAt: s7?.sentAt || null,
+            resultEmailNote: s7?.note || null,
+          };
+        });
+      }
+    } catch {}
+
+    return NextResponse.json(enrichedStudents);
   } catch (error) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
@@ -1743,8 +1790,11 @@ export async function POST(req) {
            grade: data.grade || null,
            admissionCriteria: null,
            admissionCampus: data.admissionCampus || null,
-           surveySystem: data.surveySystem || null,
-           surveyFormType: data.surveyFormType || null,
+           registeredCampus: data.registeredCampus || data.admissionCampus || null,
+           surveySystem: data.surveySystem || data.surveyFormType || null,
+           surveyFormType: data.surveyFormType || data.surveySystem || null,
+           intakeMode: data.intakeMode || "KHAO_SAT_MOI",
+           appointmentAt: data.appointmentAt ? new Date(data.appointmentAt) : null,
            signatureName: data.signatureName || null,
            periodId: data.periodId,
            batchId: data.batchId || null,
@@ -1841,8 +1891,11 @@ export async function PUT(req) {
          grade: data.grade || null,
          admissionCriteria: null,
          admissionCampus: data.admissionCampus || null,
-         surveySystem: data.surveySystem || null,
-         surveyFormType: data.surveyFormType || null,
+         ...(data.registeredCampus !== undefined && { registeredCampus: data.registeredCampus || null }),
+         surveySystem: data.surveySystem || data.surveyFormType || null,
+         surveyFormType: data.surveyFormType || data.surveySystem || null,
+         ...(data.intakeMode !== undefined && { intakeMode: data.intakeMode || null }),
+         ...(data.appointmentAt !== undefined && { appointmentAt: data.appointmentAt ? new Date(data.appointmentAt) : null }),
          signatureName: data.signatureName || null,
          batchId: data.batchId || null,
          ...(data.admissionResult !== undefined && { admissionResult: data.admissionResult }),
