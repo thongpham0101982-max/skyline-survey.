@@ -4566,8 +4566,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             {([
               { id: "xetDuyet", label: "Duyệt kết quả đánh giá", icon: CheckCircle2 },
               { id: "dgkqHocThu", label: "Duyệt kết quả học thử", icon: ClipboardList },
-              { id: "assess", label: "Giáo viên đánh giá", icon: Users },
-              { id: "xuatThuChucMung", label: "Xuất thư thông báo & Cam kết", icon: GraduationCap },
               { id: "stats", label: "Báo cáo & Thống kê", icon: BarChart3 }
             ] as const).map(item => {
               const Icon = item.icon;

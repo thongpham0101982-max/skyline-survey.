@@ -7,7 +7,13 @@ import * as XLSX from "xlsx"
 import { PreschoolMoveToBatchModal } from "@/app/admin/student-info/PreschoolMoveToBatchModal";
 
 import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
-import { suggestPreschoolForm, PRESCHOOL_FORM_REGISTRY } from "@/lib/preschool-workflow";
+import {
+  suggestPreschoolForm,
+  PRESCHOOL_FORM_REGISTRY,
+  PRESCHOOL_WORKFLOW_STATUS_META,
+  PreschoolWorkflowStatus,
+} from "@/lib/preschool-workflow";
+import { PreschoolDossierDrawer } from "@/app/admin/khao-sat-mam-non/PreschoolDossierDrawer";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
@@ -230,8 +236,33 @@ export function PreschoolInputAssessmentsClient({
   /* isMoveBatchModalOpen state */
   const [tab, setTab] = useState(() => {
     if (mode === "input") return "periods";
-    return isGDCSUser ? "devCriteria" : "periods";
+    return "devCriteria";
   });
+  const [workflowDossierId, setWorkflowDossierId] = useState<string | null>(null);
+  const [workflowById, setWorkflowById] = useState<Record<string, any>>({});
+  const [workflowStaffUsers, setWorkflowStaffUsers] = useState<any[]>([]);
+
+  const loadWorkflowMetadata = useCallback(async () => {
+    try {
+      const res = await fetch("/api/preschool-workflow");
+      if (!res.ok) return;
+      const data = await res.json();
+      const map: Record<string, any> = {};
+      for (const item of data.items || []) {
+        map[item.id] = item;
+      }
+      setWorkflowById(map);
+      if (Array.isArray(data.meta?.staffUsers)) {
+        setWorkflowStaffUsers(data.meta.staffUsers);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (tab === "children") {
+      loadWorkflowMetadata();
+    }
+  }, [tab, loadWorkflowMetadata]);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isInvitation, setIsInvitation] = useState(true);
   const [isCommitment, setIsCommitment] = useState(false);
@@ -3246,27 +3277,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
       {/* Tabs */}
       {mode !== "input" && (
-      <div className="bg-white border-2 border-[#00A19A] shadow-none rounded-none p-1">
-        <div className="flex flex-wrap gap-0.5">
+      <div className="bg-white border border-[#E2E8F0] shadow-xs rounded-2xl p-1.5">
+        <div className="flex flex-wrap gap-1">
           {[
-            { id: "periods", label: "T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t", icon: Clock },
-            { id: "categories", label: "Danh mục", icon: Settings },
-            { id: "children", label: "Danh sách Khảo sát", icon: Users },
-
             { id: "devCriteria", label: "Quản lý Tiêu chí & Lĩnh vực", icon: ClipboardList },
-            { id: "reports", label: "Tổng hợp KQKS", icon: BarChart3 },
+            { id: "categories", label: "Danh mục Hệ & Cấu hình", icon: Settings },
           ].filter(t => {
-            if (mode === "input") {
-              return ["periods", "children"].includes(t.id);
-            }
             if (isGDCSUser) {
-              return ["devCriteria", "reports"].includes(t.id);
+              return ["devCriteria"].includes(t.id);
             }
-            return t.id !== "children";
+            return true;
           }).map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-none text-[11px] font-bold transition-all duration-200 ${tab === t.id ? "bg-[#00A19A] text-white shadow-none" : "text-slate-500 hover:bg-[#00A19A]/5 hover:text-[#00A19A]"}`}>
-              <t.icon className={`w-4 h-4 ${tab === t.id ? "text-white" : "text-slate-400"}`} />
-              <span className="hidden sm:inline">{t.label}</span>
+            <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${tab === t.id ? "bg-[#003B3A] text-white" : "text-slate-600 hover:bg-slate-100 hover:text-[#003B3A]"}`}>
+              <t.icon className={`w-4 h-4 ${tab === t.id ? "text-[#5EEAD4]" : "text-slate-400"}`} />
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
@@ -4326,14 +4350,25 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <th className="px-4 py-3.5 w-24 text-center font-semibold">Ngày sinh</th>
                       <th className="px-4 py-3.5 w-24 text-center font-semibold">Giới tính</th>
                       <th className="px-4 py-3.5 w-28 text-center font-semibold">Nhóm tuổi</th>
-                      <th className="px-4 py-3.5 w-28 text-center font-semibold">Cơ sở</th>
+                      <th className="px-4 py-3.5 w-28 text-center font-semibold text-teal-100">Cơ sở</th>
                       <th className="px-3 py-3.5 w-24 text-center font-semibold text-[#5EEAD4]">Tháng</th>
-                      <th className="px-4 py-3.5 w-20 text-center font-semibold">Vắng</th>
-                      <th className="px-4 py-3.5 w-24 text-center font-semibold">Thao tác</th>
+                      <th className="px-3 py-3.5 w-28 text-center font-semibold text-[#5EEAD4]">Tiến độ</th>
+                      <th className="px-3 py-3.5 w-24 text-center font-semibold text-[#5EEAD4]">Kết quả</th>
+                      <th className="px-4 py-3.5 w-16 text-center font-semibold text-teal-100">Vắng</th>
+                      <th className="px-4 py-3.5 w-40 text-center font-semibold text-white">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
-                    {paginatedFiltChildren.map((child, i) => (
+                  <tbody className="divide-y divide-[#E2E8F0] tabular-nums">
+                    {paginatedFiltChildren.map((child, i) => {
+                      const wfItem = workflowById[child.id];
+                      const wfStatusKey = (wfItem?.workflowStatus || "DA_HEN") as PreschoolWorkflowStatus;
+                      const wfMeta = PRESCHOOL_WORKFLOW_STATUS_META[wfStatusKey] || PRESCHOOL_WORKFLOW_STATUS_META.DA_HEN;
+                      const bmCode = wfItem?.suggestedFormCode || suggestPreschoolForm({
+                        dateOfBirth: child.dateOfBirth || null,
+                        grade: child.grade || null,
+                        surveySystem: (child as any).surveySystem || child.surveyFormType || "Hệ S",
+                      }).suggestedFormCode;
+                      return (
                       <tr
                         key={child.id}
                         className={`hover:bg-teal-50/40 transition-colors ${cSelected.includes(child.id) ? "bg-teal-50/60" : i % 2 === 1 ? "bg-slate-50/30" : "bg-white"}`}
@@ -4352,8 +4387,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             {child.studentCode}
                           </span>
                         </td>
-                        <td className="px-4 py-3 font-bold text-slate-800 text-xs">
-                          {child.fullName}
+                        <td className="px-4 py-3">
+                          <div className="font-bold text-slate-800 text-xs">{child.fullName}</div>
+                          {bmCode && (
+                            <div className="mt-0.5">
+                              <span className="inline-flex px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px] font-semibold">
+                                {bmCode}
+                              </span>
+                              {wfItem?.roundCount > 1 && (
+                                <span className="ml-1 inline-flex px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-semibold">
+                                  {wfItem.roundCount} lần
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-center text-slate-600 font-medium">
                           {child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}
@@ -4395,6 +4442,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             );
                           })()}
                         </td>
+                        <td className="px-3 py-3 text-center whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold border ${wfMeta.badgeClass}`}>
+                            {wfMeta.shortLabel}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-center whitespace-nowrap">
+                          {wfItem?.approvedOutcome === "DAT" ? (
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Đạt
+                            </span>
+                          ) : wfItem?.approvedOutcome === "CHUA_DAT" ? (
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                              Chưa đạt
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
@@ -4408,6 +4473,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setWorkflowDossierId(child.id)}
+                              className="px-2.5 py-1 rounded-lg bg-[#003B3A] hover:bg-[#005854] text-white text-[11px] font-semibold transition-colors cursor-pointer"
+                              title="Mở điều phối hồ sơ B1–B13 (Y tế, Phiếu BM, Tâm lý, Phê duyệt)"
+                            >
+                              Xử lý hồ sơ
+                            </button>
                             <button
                               onClick={() => openEditChild(child)}
                               className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
@@ -4425,7 +4498,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -9102,6 +9176,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           </div>
         </div>
       </Modal>
+
+      {/* Drawer Điều phối hồ sơ Mầm non B1–B13 (hợp nhất trực tiếp trong Tab 2) */}
+      <PreschoolDossierDrawer
+        studentId={workflowDossierId}
+        onClose={() => setWorkflowDossierId(null)}
+        onUpdated={() => {
+          fetchChildren();
+          loadWorkflowMetadata();
+        }}
+        staffUsers={workflowStaffUsers}
+      />
     </div>
   );
 }

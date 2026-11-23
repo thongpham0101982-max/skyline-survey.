@@ -335,6 +335,7 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
           { code: "SPEC_SUB_GDGT", name: "6. Giám sát GD Giới tính (6–9)", href: "/admin/special-subjects/monitor?subject=GDGT" },
           { code: "SPEC_SUB_FIN_EDU", name: "7. Giám sát GD Tài chính (1–9)", href: "/admin/special-subjects/monitor?subject=FIN_EDU" },
           { code: "SPEC_SUB_GDHN", name: "8. Giám sát GD Hướng nghiệp (6–12)", href: "/admin/special-subjects/monitor?subject=GDHN" },
+          { code: "SPEC_SUB_FIN_GAME_REPORT", name: "9. Báo cáo Game GD Tài chính", href: "/admin/special-subjects/fin-game-report" },
         ]
       }
     ]
@@ -446,12 +447,6 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         href: "/admin/dieu-hanh-khao-sat"
       },
       {
-        code: "KHAO_SAT_MAM_NON",
-        name: "Điều phối Khảo sát Mầm non",
-        icon: ClipboardList,
-        href: "/admin/khao-sat-mam-non"
-      },
-      {
         code: "STUDENT_INFO",
         name: "Đợt & Danh sách khảo sát",
         icon: Users2,
@@ -474,13 +469,9 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
       },
       {
         code: "KET_QUA_KHAO_SAT",
-        name: "Kết quả & Định hướng",
+        name: "Kết quả & Định hướng (K-12)",
         icon: Award,
-        href: "/admin/ket-qua-khao-sat",
-        subModules: [
-          { code: "KQKS_K12", name: "Phổ thông K-12", href: "/admin/ket-qua-khao-sat?tab=general" },
-          { code: "KQKS_MAM_NON", name: "Mầm non", href: "/admin/ket-qua-khao-sat?tab=preschool" }
-        ]
+        href: "/admin/ket-qua-khao-sat?tab=general"
       },
       {
         code: "XET_DUYET_KET_QUA",
