@@ -1091,20 +1091,6 @@ export async function POST(req) {
         }
       }
 
-      if (ktdbclEnabled) {
-        for (const ktEmail of configuredKtdbclEmails) {
-          const key = ktEmail.toLowerCase();
-          if (!recipientMap.has(key)) {
-            recipientMap.set(key, {
-              fullName: ktEmail.split("@")[0],
-              email: ktEmail,
-              role: "Nhóm Khảo thí / KT&ĐBCL",
-              isArchiveCopy: true,
-            });
-          }
-        }
-      }
-
       const allRecipients = Array.from(recipientMap.values());
 
       const effectiveEmailRole: "BGH_MN" | "GDCS" = targetRole === "BGH_MN" ? "BGH_MN" : "GDCS";
@@ -1241,7 +1227,6 @@ export async function POST(req) {
       };
 
       const recipientMap = new Map<string, { id?: string; fullName: string; email: string; role: string; isArchiveCopy: boolean }>();
-      let ktdbclEmails: string[] = ["ktdbcl@skylineschool.edu.vn"];
 
       try {
         const savedCfg = await (prisma as any).assessmentConfig.findFirst({
@@ -1253,9 +1238,6 @@ export async function POST(req) {
               ? parsed?.campuses?.[campusCode]?.bghmn || DEFAULT_PRESCHOOL_CAMPUS_EMAILS[campusCode]?.bghmn
               : parsed?.campuses?.[campusCode]?.gdcs || DEFAULT_PRESCHOOL_CAMPUS_EMAILS[campusCode]?.gdcs)
           : "";
-        if (parsed?.ktdbclEmails) {
-          ktdbclEmails = String(parsed.ktdbclEmails).split(/[,;\n]+/).map((s: string) => s.trim()).filter((s: string) => s.includes("@"));
-        }
         for (const rawEmail of String(configuredStr || "").split(/[,;\n]+/)) {
           const e = rawEmail.trim().toLowerCase();
           if (!e.includes("@")) continue;
@@ -1269,18 +1251,6 @@ export async function POST(req) {
           });
         }
       } catch {}
-
-      for (const ke of ktdbclEmails) {
-        const kLow = ke.toLowerCase();
-        if (!recipientMap.has(kLow)) {
-          recipientMap.set(kLow, {
-            fullName: kLow.split("@")[0],
-            email: kLow,
-            role: "Nhóm Khảo thí / KT&ĐBCL",
-            isArchiveCopy: true,
-          });
-        }
-      }
 
       const studentItems = await Promise.all(
         students.map(async (st: any) => ({

@@ -1279,7 +1279,6 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
           addEmails(cObj?.giaoVu, `Giáo vụ ${campusCode}`);
           addEmails(cObj?.bgh, `BGH ${campusCode}`);
         }
-        if (parsed?.ktdbclEmails) addEmails(parsed.ktdbclEmails, "Nhóm Khảo thí / KT&ĐBCL", true);
       } catch {}
     }
   } catch {}
@@ -1325,7 +1324,6 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
   if (campusCode && DEFAULT_BGH_MN[campusCode]) {
     addEmails(DEFAULT_BGH_MN[campusCode], `BGH / NT Mầm non ${campusCode}`);
   }
-  addEmails("ktdbcl@skylineschool.edu.vn", "Nhóm Khảo thí / KT&ĐBCL", true);
 
   return { campusStr, campusCode, recipients: Array.from(recMap.values()) };
 }
