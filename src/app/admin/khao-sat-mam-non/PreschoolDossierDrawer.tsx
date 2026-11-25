@@ -1793,6 +1793,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
         docType={printDoc || "LETTER_17"}
         student={student}
         round={viewingRound}
+        legacyDevSummary={dossier?.legacyDevSummary}
       />
     </>
   )

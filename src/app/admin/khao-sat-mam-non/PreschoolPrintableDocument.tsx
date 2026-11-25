@@ -9,9 +9,10 @@ interface Props {
   docType: "LETTER_17" | "LETTER_04" | "EVALUATION_FORM" | "PSYCHOLOGY_09"
   student: any
   round: any
+  legacyDevSummary?: any
 }
 
-export function PreschoolPrintableDocument({ open, onClose, docType, student, round }: Props) {
+export function PreschoolPrintableDocument({ open, onClose, docType, student, round, legacyDevSummary }: Props) {
   if (!open || !student) return null
 
   const todayStr = new Date().toLocaleDateString("vi-VN")
@@ -44,6 +45,36 @@ export function PreschoolPrintableDocument({ open, onClose, docType, student, ro
       if (Array.isArray(parsed?.criteria)) parsedCriteria = parsed.criteria
     }
   } catch {}
+
+  // Fallback sang điểm thực tế từ PreschoolDevScore (legacyDevSummary) khi lần khảo sát chưa có criteriaPayloadJson riêng
+  if (docType === "EVALUATION_FORM" && parsedCriteria.length === 0 && Array.isArray(legacyDevSummary?.scores) && legacyDevSummary.scores.length > 0) {
+    parsedCriteria = legacyDevSummary.scores.map((sc: any) => ({
+      code: sc.criteriaCode || "",
+      area: sc.areaName || "Đánh giá phát triển",
+      name: sc.criteriaName || "—",
+      result: sc.result === "DAT" ? "Đạt" : sc.result === "KHONG_DAT" ? "Không đạt" : "Chưa thể hiện",
+      note: sc.note ? String(sc.note).replace(/\|/g, " — ") : "",
+    }))
+  }
+
+  const effTeacherName =
+    round?.assignedTeacherName ||
+    round?.teacherUserName ||
+    (legacyDevSummary?.assignedTeachersFromBatch?.length ? legacyDevSummary.assignedTeachersFromBatch.join(", ") : "") ||
+    "—"
+  const effMedicalName =
+    round?.assignedMedicalName ||
+    round?.medicalUserName ||
+    (legacyDevSummary?.assignedMedicalFromBatch?.length ? legacyDevSummary.assignedMedicalFromBatch.join(", ") : "") ||
+    "—"
+  const effHeight = round?.heightCm ?? legacyDevSummary?.heightCm ?? null
+  const effWeight = round?.weightKg ?? legacyDevSummary?.weightKg ?? null
+  const effBmi = effHeight && effWeight ? (Number(effWeight) / Math.pow(Number(effHeight) / 100, 2)).toFixed(1) : null
+  const totalCrit = parsedCriteria.length
+  const datCrit = parsedCriteria.filter((c) => c.result === "Đạt" || c.result === "DAT").length
+  const khongDatCrit = parsedCriteria.filter((c) => c.result === "Không đạt" || c.result === "KHONG_DAT").length
+  const cthCrit = totalCrit - datCrit - khongDatCrit
+  const generalCommentText = round?.generalComment || student?.devProfessionalComment || ""
 
   const handlePrint = () => {
     const el = document.getElementById("preschool-print-a4-content")
@@ -125,6 +156,11 @@ export function PreschoolPrintableDocument({ open, onClose, docType, student, ro
               <div><strong>Nhóm tuổi / Hệ:</strong> {student.grade || "Mầm non"} · {student.surveySystem || "Hệ S"}</div>
               <div><strong>Cơ sở:</strong> {campus}</div>
               <div><strong>Lần khảo sát:</strong> Lần {round?.roundNumber || 1}</div>
+              <div><strong>GV đánh giá:</strong> {effTeacherName}</div>
+              <div>
+                <strong>Y tế (B4A):</strong> {effMedicalName}
+                {effHeight && effWeight ? ` (${effHeight} cm · ${effWeight} kg${effBmi ? ` · BMI ${effBmi}` : ""})` : ""}
+              </div>
             </div>
 
             {docType === "LETTER_17" && (
@@ -166,32 +202,70 @@ export function PreschoolPrintableDocument({ open, onClose, docType, student, ro
             {(docType === "EVALUATION_FORM" || docType === "PSYCHOLOGY_09") && (
               <div className="space-y-3">
                 {parsedCriteria.length > 0 ? (
-                  <table className="w-full border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-[#003B3A] text-white">
-                        <th className="p-2 border border-[#003B3A] text-left">Lĩnh vực</th>
-                        <th className="p-2 border border-[#003B3A] text-left">Tiêu chí</th>
-                        <th className="p-2 border border-[#003B3A] text-left">Kết quả</th>
-                        <th className="p-2 border border-[#003B3A] text-left">Ghi chú</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parsedCriteria.map((c, idx) => (
-                        <tr key={idx}>
-                          <td className="p-2 border border-slate-200 font-medium">{c.area}</td>
-                          <td className="p-2 border border-slate-200">{c.name}</td>
-                          <td className="p-2 border border-slate-200 font-semibold">{c.result || "—"}</td>
-                          <td className="p-2 border border-slate-200">{c.note || ""}</td>
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-teal-200 bg-[#F0FDFA] px-3 py-2 text-xs tabular-nums">
+                      <strong className="text-[#003B3A]">Tổng hợp kết quả ({totalCrit} tiêu chí):</strong>
+                      <span className="font-semibold text-slate-700">
+                        <span className="text-emerald-700">{datCrit} Đạt ({totalCrit > 0 ? Math.round((datCrit / totalCrit) * 100) : 0}%)</span>
+                        {" · "}
+                        <span className="text-amber-700">{cthCrit} Chưa thể hiện</span>
+                        {khongDatCrit > 0 && (
+                          <>
+                            {" · "}
+                            <span className="text-rose-700">{khongDatCrit} Không đạt</span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+                    <table className="w-full border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-[#003B3A] text-white">
+                          <th className="p-2 border border-[#003B3A] text-center w-8">#</th>
+                          <th className="p-2 border border-[#003B3A] text-left">Lĩnh vực</th>
+                          <th className="p-2 border border-[#003B3A] text-left">Tiêu chí</th>
+                          <th className="p-2 border border-[#003B3A] text-center w-28">Kết quả</th>
+                          <th className="p-2 border border-[#003B3A] text-left">Ghi chú</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {parsedCriteria.map((c, idx) => (
+                          <tr key={idx}>
+                            <td className="p-2 border border-slate-200 text-center text-slate-500 tabular-nums">{idx + 1}</td>
+                            <td className="p-2 border border-slate-200 font-medium text-slate-700">{c.area}</td>
+                            <td className="p-2 border border-slate-200 text-slate-800">{c.name}</td>
+                            <td
+                              className={`p-2 border border-slate-200 text-center font-semibold ${
+                                c.result === "Đạt"
+                                  ? "text-emerald-700"
+                                  : c.result === "Không đạt"
+                                    ? "text-rose-700"
+                                    : "text-amber-700"
+                              }`}
+                            >
+                              {c.result || "—"}
+                            </td>
+                            <td className="p-2 border border-slate-200 text-slate-600">{c.note || ""}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
                 ) : (
                   <p className="text-xs text-slate-500 italic">Chưa có chi tiết tiêu chí được lưu trong lần khảo sát này.</p>
                 )}
-                {round?.generalComment && (
+                {generalCommentText && (
                   <div className="box rounded-lg border border-slate-200 p-3 text-xs">
-                    <strong>Nhận xét chuyên môn:</strong> {round.generalComment}
+                    <strong>Nhận xét chuyên môn:</strong> {generalCommentText}
+                  </div>
+                )}
+                {student?.devPsychologyComment && (
+                  <div className="box rounded-lg border border-slate-200 p-3 text-xs">
+                    <strong>Nhận xét tâm lý:</strong> {student.devPsychologyComment}
+                  </div>
+                )}
+                {student?.devImportantNote && (
+                  <div className="box rounded-lg border border-amber-200 bg-amber-50/40 p-3 text-xs">
+                    <strong>Lưu ý đặc biệt:</strong> {student.devImportantNote}
                   </div>
                 )}
                 {docType === "PSYCHOLOGY_09" && (
@@ -208,7 +282,7 @@ export function PreschoolPrintableDocument({ open, onClose, docType, student, ro
               <div className="sign-col w-2/5">
                 <div className="font-semibold">Người thực hiện / Nhóm trưởng MN</div>
                 <div className="text-slate-500 mt-1">(Ký và ghi rõ họ tên)</div>
-                <div className="mt-12 font-semibold text-slate-800">{round?.reviewedByName || round?.teacherSubmittedBy || ""}</div>
+                <div className="mt-12 font-semibold text-slate-800">{round?.reviewedByName || student.bghApprovalUser || (effTeacherName !== "—" ? effTeacherName : "")}</div>
               </div>
               <div className="sign-col w-2/5">
                 <div className="font-semibold">Giám đốc Điều hành Cơ sở</div>
