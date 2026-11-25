@@ -1167,6 +1167,204 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                             </div>
                           )
                         })()}
+
+                        {/* B6 / B9A: Nhóm trưởng Mầm non rà soát & định tuyến (Bước 1) */}
+                        {(() => {
+                          const b6Map: Record<string, string> = {
+                            DE_XUAT_DAT: "Đề xuất Đạt → B10",
+                            DE_XUAT_CHUA_DAT: "Đề xuất Chưa đạt → B10",
+                            HEN_TRAI_NGHIEM_BO_SUNG: "Hẹn trải nghiệm (B7B)",
+                            HEN_TRAI_NGHIEM: "Hẹn trải nghiệm (B7B)",
+                            DAT: "Đề xuất Đạt → B10",
+                            DAT_MIEN_HOC_THU: "Đề xuất Đạt → B10",
+                            KHONG_DAT: "Đề xuất Chưa đạt → B10",
+                          }
+                          const effB6 = viewingRound?.reviewDecision || student.bghApprovalStatus || ""
+                          const b6Done = Boolean(viewingRound?.reviewedAt || effB6)
+                          const b6Reviewer = viewingRound?.reviewedByName || student.bghApprovalUser || ""
+                          const b6Time = viewingRound?.reviewedAt || student.bghApprovalDate || null
+                          const minFollowUpIso = addBusinessDays(new Date(), 2).toISOString().slice(0, 16)
+
+                          return (
+                            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 space-y-3 border-l-4 border-l-[#003B3A]">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#F1F5F9]">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded-full bg-[#003B3A] text-white text-[10px] font-bold">
+                                    Bước 1
+                                  </span>
+                                  <h4 className="text-xs font-bold text-[#003B3A]">
+                                    B6 / B9A: Nhóm trưởng Mầm non rà soát &amp; định tuyến
+                                  </h4>
+                                </div>
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                    b6Done
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : "bg-amber-50 text-amber-700 border-amber-200"
+                                  }`}
+                                >
+                                  {b6Done ? b6Map[effB6] || effB6 : "Chờ rà soát Bước 1"}
+                                </span>
+                              </div>
+
+                              {(b6Reviewer || b6Time) && (
+                                <div className="text-[11px] text-slate-600 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-1.5 flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
+                                  {b6Reviewer && (
+                                    <span>Người rà soát: <strong className="text-[#003B3A]">{b6Reviewer}</strong></span>
+                                  )}
+                                  {b6Time && (
+                                    <span>Thời gian: <strong className="text-slate-800">{new Date(b6Time).toLocaleString("vi-VN")}</strong></span>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {[
+                                  { k: "DE_XUAT_DAT", label: "Đề xuất Đạt → B10", active: "bg-emerald-600 text-white border-emerald-600", idle: "text-emerald-700 border-emerald-200 hover:bg-emerald-50" },
+                                  { k: "DE_XUAT_CHUA_DAT", label: "Đề xuất Chưa đạt → B10", active: "bg-rose-600 text-white border-rose-600", idle: "text-rose-700 border-rose-200 hover:bg-rose-50" },
+                                  { k: "HEN_TRAI_NGHIEM_BO_SUNG", label: "Hẹn trải nghiệm (B7B)", active: "bg-[#008B85] text-white border-[#008B85]", idle: "text-[#00736E] border-teal-200 hover:bg-[#F0FDFA]" },
+                                ].map((opt) => (
+                                  <button
+                                    key={opt.k}
+                                    type="button"
+                                    onClick={() => setReviewDecision(opt.k)}
+                                    className={`px-3 py-2.5 rounded-xl border text-xs font-semibold text-center cursor-pointer transition-colors ${
+                                      reviewDecision === opt.k ? opt.active : `bg-white ${opt.idle}`
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              {reviewDecision === "HEN_TRAI_NGHIEM_BO_SUNG" && (
+                                <div className="rounded-xl border border-teal-200 bg-[#F0FDFA] p-3.5 space-y-2.5 text-xs">
+                                  <div>
+                                    <div className="font-bold text-[#003B3A]">
+                                      B7B: Hẹn trải nghiệm kết hợp quan sát tâm lý (≥ 2 ngày làm việc)
+                                    </div>
+                                    <p className="text-[11px] text-slate-600 mt-0.5">
+                                      Tạo <strong>Lần khảo sát mới</strong> trên cùng hồ sơ này (giữ nguyên toàn bộ lịch sử và kết quả các lần trước).
+                                    </p>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                        Lớp trải nghiệm <span className="text-rose-600">*</span>
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={trialClass}
+                                        onChange={(e) => setTrialClass(e.target.value)}
+                                        placeholder="VD: ROOTS - C1, SEEDS - A2..."
+                                        className="w-full rounded-lg border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                        GV phụ trách trải nghiệm <span className="text-rose-600">*</span>
+                                      </label>
+                                      <select
+                                        value={trialTeacher}
+                                        onChange={(e) => setTrialTeacher(e.target.value)}
+                                        className="w-full rounded-lg border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs"
+                                      >
+                                        <option value="">-- Chọn Giáo viên --</option>
+                                        {trialTeacher && !allDirectoryUsers.some((u) => u.fullName === trialTeacher) && (
+                                          <option value={trialTeacher}>{trialTeacher}</option>
+                                        )}
+                                        {allDirectoryUsers.map((u) => (
+                                          <option key={u.id} value={u.fullName}>
+                                            {formatStaffOptionLabel(u)}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                        Thời gian hẹn mới (≥ 2 ngày làm việc) <span className="text-rose-600">*</span>
+                                      </label>
+                                      <input
+                                        type="datetime-local"
+                                        min={minFollowUpIso}
+                                        value={followUpDate}
+                                        onChange={(e) => setFollowUpDate(e.target.value)}
+                                        className="w-full rounded-lg border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs tabular-nums"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                        Ghi chú thống nhất với phụ huynh
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={followUpNote}
+                                        onChange={(e) => setFollowUpNote(e.target.value)}
+                                        placeholder="Nội dung thống nhất với Phụ huynh..."
+                                        className="w-full rounded-lg border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              <textarea
+                                rows={2}
+                                value={reviewComment}
+                                onChange={(e) => setReviewComment(e.target.value)}
+                                placeholder="Ý kiến rà soát & định tuyến của Nhóm trưởng / BGH Mầm non..."
+                                className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-xs"
+                              />
+
+                              {perms.canReviewB6B9A && isViewingLatest && (
+                                <button
+                                  type="button"
+                                  disabled={saving}
+                                  onClick={async () => {
+                                    if (reviewDecision === "HEN_TRAI_NGHIEM_BO_SUNG") {
+                                      if (!trialClass.trim() || !trialTeacher.trim() || !followUpDate) {
+                                        setError("Vui lòng chọn đủ Lớp trải nghiệm, GV phụ trách và Thời gian hẹn mới (≥ 2 ngày làm việc).")
+                                        return
+                                      }
+                                      await runAction(
+                                        { action: "REVIEW_B6_B9A", reviewDecision, reviewComment },
+                                        "Đã lưu định tuyến Hẹn trải nghiệm (B7B)."
+                                      )
+                                      await fetch(`/api/preschool-workflow/${studentId}`, {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                          action: "SAVE_TRIAL_WORKFLOW",
+                                          probationaryClass: trialClass.trim(),
+                                          probationaryTeacher: trialTeacher.trim(),
+                                          probationaryPeriod: new Date(followUpDate).toLocaleString("vi-VN"),
+                                          probationaryComment: followUpNote.trim() || reviewComment,
+                                        }),
+                                      }).catch(() => {})
+                                      await runAction(
+                                        {
+                                          action: "SCHEDULE_FOLLOWUP",
+                                          scheduledAt: followUpDate,
+                                          assignedTeacherName: trialTeacher.trim(),
+                                          note: followUpNote.trim() || `Lớp: ${trialClass.trim()} · GV: ${trialTeacher.trim()}`,
+                                        },
+                                        `Đã tạo Lần khảo sát mới B7B (${trialClass.trim()} · ${trialTeacher.trim()}).`
+                                      )
+                                      return
+                                    }
+                                    await runAction(
+                                      { action: "REVIEW_B6_B9A", reviewDecision, reviewComment },
+                                      "Đã xác nhận rà soát B6/B9A (Bước 1) và chuyển sang Bước 2 (GĐCS duyệt B10)."
+                                    )
+                                  }}
+                                  className="px-4 py-2 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                                >
+                                  {saving ? "Đang lưu..." : "Xác nhận rà soát B6/B9A (Bước 1)"}
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </div>
                     )
                   }
