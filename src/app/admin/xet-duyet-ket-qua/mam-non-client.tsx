@@ -213,7 +213,7 @@ const xetDuyetCols = [
   { id: "bghApproval", label: "NT Mầm non / BGH", width: "w-[158px] min-w-[158px] whitespace-normal" },
   { id: "b6Trial", label: "B6 Học trải nghiệm", width: "w-[152px] min-w-[152px] whitespace-normal" },
   { id: "b7Psych", label: "B7 Khảo sát tâm lý", width: "w-[162px] min-w-[162px] whitespace-normal" },
-  { id: "gdcsApproval", label: "GĐCS", width: "w-[158px] min-w-[158px] whitespace-normal" }
+  { id: "gdcsApproval", label: "B6/B9A/B10 Duyệt", width: "w-[164px] min-w-[164px] whitespace-normal" }
 ];
 
 const assessCols = [
@@ -5718,7 +5718,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </span>
                 <span className="text-slate-300">→</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-[#003B3A]">
-                  GĐCS
+                  B6/B9A/B10 Duyệt
                 </span>
                 <span className="text-slate-300">|</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
@@ -6169,9 +6169,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   })()}
                                 </td>
 
-                                {/* B6/B9A/B10 Duyệt — Cột 2: GĐCS */}
+                                {/* B6/B9A/B10 Duyệt — map trực tiếp tab B6/B9A/B10 Duyệt */}
                                 {showGdcsSection && (
-                                  <td className="w-[158px] min-w-[158px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                  <td className="w-[164px] min-w-[164px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                     {(() => {
                                       const wf = getPreschoolRowWorkflowState(s);
                                       const gdcsDone = Boolean(wf.gdcsRaw);
@@ -6184,7 +6184,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                           <div className="flex items-center gap-1.5">
                                             <button
                                               type="button"
-                                              onClick={() => openEvaluation(s)}
+                                              onClick={() => openDossierTab(s.id, "review")}
                                               className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
                                                 gdcsDone
                                                   ? isFinalPass
@@ -6192,6 +6192,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                                     : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
                                                   : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
                                               }`}
+                                              title="Mở tab B6/B9A/B10 Duyệt"
                                             >
                                               {gdcsDone ? "✓ Hoàn thành" : "● Đợi"}
                                             </button>
@@ -6210,10 +6211,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                           {gdcsDone ? (
                                             <div className="flex flex-col items-start gap-1">
                                               <span className={`text-[10px] font-bold ${isFinalPass ? "text-emerald-700" : "text-rose-700"}`}>
-                                                {isFinalPass ? "Đạt" : "Chưa đạt"}
+                                                GĐCS: {isFinalPass ? "Đạt" : "Chưa đạt"}
                                               </span>
                                               {s.gdcsApprovalUser && (
-                                                <div className="text-[10px] text-slate-500 truncate max-w-[144px]" title={`GĐCS duyệt: ${s.gdcsApprovalUser}`}>
+                                                <div className="text-[10px] text-slate-500 truncate max-w-[148px]" title={`GĐCS duyệt: ${s.gdcsApprovalUser}`}>
                                                   <span className="text-slate-400">Duyệt:</span> <strong className="text-slate-700">{s.gdcsApprovalUser}</strong>
                                                 </div>
                                               )}
@@ -6230,10 +6231,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                           ) : wf.canGdcsApprove ? (
                                             <button
                                               type="button"
-                                              onClick={() => openEvaluation(s)}
+                                              onClick={() => openDossierTab(s.id, "review")}
                                               className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#003B3A] hover:bg-[#005854] text-white cursor-pointer"
                                             >
-                                              Phê duyệt
+                                              Phê duyệt B10
                                             </button>
                                           ) : (
                                             <span className="text-[10px] text-slate-400">Chờ NT MN/BGH</span>

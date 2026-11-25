@@ -2468,7 +2468,7 @@ export function PreschoolDossierDrawer({ studentId, initialTab, onClose, onUpdat
                   )}
                 </div>
 
-                {/* Bước 1 — B6 / B9A Review */}
+                {/* Bước 1 — Tổng hợp tự động từ NT Mầm non / BGH, B6 Học trải nghiệm & B7 Khảo sát tâm lý */}
                 <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#F1F5F9]">
                     <div className="flex items-center gap-2">
@@ -2476,7 +2476,7 @@ export function PreschoolDossierDrawer({ studentId, initialTab, onClose, onUpdat
                         Bước 1
                       </span>
                       <h3 className="text-sm font-bold text-[#003B3A]">
-                        B6 / B9A: Nhóm trưởng Mầm non rà soát & định tuyến
+                        B6 / B9A: Kết quả rà soát &amp; định tuyến (NT Mầm non / BGH · Học trải nghiệm · Tâm lý)
                       </h3>
                     </div>
                     <span
@@ -2488,63 +2488,117 @@ export function PreschoolDossierDrawer({ studentId, initialTab, onClose, onUpdat
                     >
                       {b6ReviewDone
                         ? `Đã định tuyến: ${b6DecisionLabels[effectiveB6Decision] || effectiveB6Decision}`
-                        : "Chờ phê duyệt Bước 1"}
+                        : "Chờ hoàn tất Bước 1"}
                     </span>
                   </div>
-                  {(b6ReviewerName || b6ReviewedAt) && (
-                    <div className="text-[11px] text-slate-600 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
-                      <span>GV đánh giá B5/B4B: <strong className="text-[#003B3A]">{effectiveTeacherName}</strong></span>
+
+                  {/* 3 mục đồng bộ tự động từ NT Mầm non / BGH, B6 Học trải nghiệm, B7 Khảo sát tâm lý */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[11px] tabular-nums">
+                    {/* 1. NT Mầm non / BGH */}
+                    <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-bold text-[#003B3A]">NT Mầm non / BGH</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            b6ReviewDone
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}
+                        >
+                          {b6ReviewDone ? "✓ Hoàn thành" : "● Đợi"}
+                        </span>
+                      </div>
+                      <div className="text-slate-700 font-semibold">
+                        {b6ReviewDone ? b6DecisionLabels[effectiveB6Decision] || effectiveB6Decision : "Chưa rà soát"}
+                      </div>
                       {b6ReviewerName && (
-                        <span>Người rà soát B6/B9A: <strong className="text-slate-800">{b6ReviewerName}</strong></span>
+                        <div className="text-slate-500">
+                          Duyệt: <strong className="text-slate-700">{b6ReviewerName}</strong>
+                          {b6ReviewedAt ? ` · ${new Date(b6ReviewedAt).toLocaleDateString("vi-VN")}` : ""}
+                        </div>
                       )}
-                      {b6ReviewedAt && (
-                        <span>Thời gian: <strong className="text-slate-800">{new Date(b6ReviewedAt).toLocaleString("vi-VN")}</strong></span>
+                      {(viewingRound?.reviewComment || student.bghApprovalComment) && (
+                        <div className="text-slate-600 line-clamp-2 pt-1 border-t border-slate-200/70">
+                          “{viewingRound?.reviewComment || student.bghApprovalComment}”
+                        </div>
                       )}
                     </div>
-                  )}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {[
-                      { k: "DE_XUAT_DAT", label: "Đề xuất Đạt → Trình B10" },
-                      { k: "DE_XUAT_CHUA_DAT", label: "Đề xuất Chưa đạt → B10" },
-                      { k: "CAN_TAM_LY", label: "Cần PV tâm lý (B7A)" },
-                      { k: "HEN_TRAI_NGHIEM_BO_SUNG", label: "Hẹn trải nghiệm (B7B)" },
-                    ].map((opt) => (
-                      <button
-                        key={opt.k}
-                        type="button"
-                        onClick={() => setReviewDecision(opt.k)}
-                        className={`p-2.5 rounded-xl border font-semibold text-left cursor-pointer ${
-                          reviewDecision === opt.k
-                            ? "bg-[#003B3A] text-white border-[#003B3A]"
-                            : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-slate-50"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    rows={2}
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="Ý kiến rà soát của Nhóm trưởng Mầm non..."
-                    className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
-                  />
-                  {perms.canReviewB6B9A && isViewingLatest && (
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={() =>
-                        runAction(
-                          { action: "REVIEW_B6_B9A", reviewDecision, reviewComment },
-                          "Đã lưu kết quả rà soát B6/B9A và chuyển bước."
-                        )
-                      }
-                      className="px-4 py-2 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white font-semibold cursor-pointer"
+
+                    {/* 2. B6 Học trải nghiệm */}
+                    <div
+                      onClick={() => setActiveTab("trial")}
+                      className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#00A19A] p-3 space-y-1 cursor-pointer transition-colors"
                     >
-                      Xác nhận rà soát B6/B9A (Bước 1)
-                    </button>
-                  )}
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-bold text-[#003B3A]">B6 Học trải nghiệm</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            !hasTrialInfo
+                              ? "bg-slate-100 text-slate-600 border-slate-200"
+                              : student.probationaryBghStatus
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}
+                        >
+                          {!hasTrialInfo ? "Không KS" : student.probationaryBghStatus ? "✓ Hoàn thành" : "● Đợi"}
+                        </span>
+                      </div>
+                      {hasTrialInfo ? (
+                        <>
+                          {student.probationaryResult && (
+                            <div className="text-slate-700">
+                              GV ĐG: <strong className={student.probationaryResult === "DAT" ? "text-emerald-700" : "text-rose-700"}>{student.probationaryResult === "DAT" ? "Đạt" : "Chưa đạt"}</strong>
+                            </div>
+                          )}
+                          <div className="text-slate-700">
+                            BGH duyệt:{" "}
+                            <strong className={student.probationaryBghStatus === "DAT" ? "text-emerald-700" : student.probationaryBghStatus === "KHONG_DAT" ? "text-rose-700" : "text-slate-500"}>
+                              {student.probationaryBghStatus === "DAT"
+                                ? "Đạt"
+                                : student.probationaryBghStatus === "KHONG_DAT"
+                                  ? "Không đạt"
+                                  : student.probationaryBghStatus === "Y_KIEN_KHAC"
+                                    ? "Ý kiến khác"
+                                    : "Chờ BGH MN duyệt"}
+                            </strong>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-slate-500">Không phát sinh học trải nghiệm</div>
+                      )}
+                    </div>
+
+                    {/* 3. B7 Khảo sát tâm lý */}
+                    <div
+                      onClick={() => setActiveTab("psychology")}
+                      className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#00A19A] p-3 space-y-1 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-bold text-[#003B3A]">B7 Khảo sát tâm lý</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${psyStatusClass}`}>
+                          {!hasPsyNeeded ? "Không KS" : psyStatusLabel}
+                        </span>
+                      </div>
+                      {hasPsyNeeded ? (
+                        <>
+                          <div className="text-slate-700 truncate">
+                            GV phụ trách: <strong>{student.trialPsychologistName || viewingRound?.assignedPsychologistName || "Chưa phân công"}</strong>
+                          </div>
+                          <div className="text-slate-600 line-clamp-2">
+                            {student.trialPsychologyConclusion === "BINH_THUONG"
+                              ? "KQ: Phát triển tâm lý bình thường"
+                              : student.trialPsychologyConclusion === "CAN_THEO_DOI"
+                                ? "KQ: Cần theo dõi thêm"
+                                : student.trialPsychologyConclusion === "CAN_CAN_THIEP"
+                                  ? "KQ: Cần hỗ trợ / can thiệp"
+                                  : student.trialPsychologyFeedback || psyConclusion || "Chưa có kết luận"}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-slate-500">Không phát sinh khảo sát tâm lý</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Bước 2 — B10 GĐCS Approval + 1-Tap Email Approval */}
