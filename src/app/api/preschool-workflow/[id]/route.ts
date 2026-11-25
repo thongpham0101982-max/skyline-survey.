@@ -367,11 +367,62 @@ export async function GET(
       (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     )
 
-    const rounds = allRoundsRaw.map((r) =>
-      sanitizeRoundForViewer(r, { userId: ctx.userId, role: ctx.role, roles: ctx.roles })
+    const hasTrial = Boolean(
+      student.probationaryClass ||
+        student.probationaryTeacher ||
+        student.probationaryResult ||
+        student.probationaryBghStatus
     )
+    const hasPsychology = Boolean(
+      Number(student.trialPsychologyScreening || 0) === 1 ||
+        student.trialPsychologistName ||
+        student.trialPsychologyStatus ||
+        activeRoundRaw?.psychologyRequired ||
+        activeRoundRaw?.psychologistSubmittedAt ||
+        activeRoundRaw?.psychologyPayloadJson
+    )
+
+    // Đồng bộ fallback kết quả B6/B9A & B10 từ hồ sơ student (nếu đã lưu từ Phiếu đánh giá phát triển)
+    const mapStudentBghToReview = (s?: string | null) => {
+      const v = String(s || "").toUpperCase().trim()
+      if (v === "DE_XUAT_DAT" || v === "DAT" || v === "DAT_MIEN_HOC_THU") return "DE_XUAT_DAT"
+      if (v === "DE_XUAT_CHUA_DAT" || v === "KHONG_DAT" || v === "CHUA_DAT") return "DE_XUAT_CHUA_DAT"
+      if (v === "HEN_TRAI_NGHIEM" || v === "DAT_HOC_THU") return "HEN_TRAI_NGHIEM_BO_SUNG"
+      return null
+    }
+    const mapStudentGdcsToDecision = (s?: string | null) => {
+      const v = String(s || "").toUpperCase().trim()
+      if (v === "DAT" || v === "DAT_MIEN_HOC_THU" || v === "DAT_HOC_THU") return "DAT"
+      if (v === "KHONG_DAT" || v === "CHUA_DAT") return "CHUA_DAT"
+      return null
+    }
+
+    const enrichedActiveRoundRaw = activeRoundRaw
+      ? {
+          ...activeRoundRaw,
+          reviewDecision: activeRoundRaw.reviewDecision || mapStudentBghToReview(student.bghApprovalStatus),
+          reviewComment: activeRoundRaw.reviewComment || student.bghApprovalComment || null,
+          reviewedByName: activeRoundRaw.reviewedByName || student.bghApprovalUser || null,
+          reviewedAt: activeRoundRaw.reviewedAt || student.bghApprovalDate || null,
+          gdcsDecision: activeRoundRaw.gdcsDecision || mapStudentGdcsToDecision(student.gdcsApprovalStatus),
+          gdcsComment: activeRoundRaw.gdcsComment || student.gdcsApprovalComment || null,
+          gdcsUserName: activeRoundRaw.gdcsUserName || student.gdcsApprovalUser || null,
+          gdcsApprovedAt: activeRoundRaw.gdcsApprovedAt || student.gdcsApprovalDate || null,
+        }
+      : null
+
+    const rounds = allRoundsRaw.map((r) => {
+      const merged =
+        enrichedActiveRoundRaw && r.id === enrichedActiveRoundRaw.id ? enrichedActiveRoundRaw : r
+      return sanitizeRoundForViewer(merged, { userId: ctx.userId, role: ctx.role, roles: ctx.roles })
+    })
     const activeRound = rounds[rounds.length - 1] || null
-    const gate = evaluatePreApprovalGate(activeRoundRaw)
+    const gate = evaluatePreApprovalGate(enrichedActiveRoundRaw, {
+      hasLegacyScores,
+      hasTrial,
+      hasPsychology,
+      studentBghStatus: student.bghApprovalStatus,
+    })
 
     const suggestion = suggestPreschoolForm({
       dateOfBirth: student.dateOfBirth,
@@ -1080,10 +1131,12 @@ export async function PATCH(
 
       const legacyBgh =
         reviewDecision === "DE_XUAT_DAT"
-          ? "DAT"
+          ? "DE_XUAT_DAT"
           : reviewDecision === "DE_XUAT_CHUA_DAT"
-            ? "KHONG_DAT"
-            : null
+            ? "DE_XUAT_CHUA_DAT"
+            : reviewDecision === "HEN_TRAI_NGHIEM_BO_SUNG"
+              ? "HEN_TRAI_NGHIEM"
+              : null
 
       await prisma.$executeRawUnsafe(
         `UPDATE "PreschoolInputAssessmentStudent"
@@ -1119,7 +1172,7 @@ export async function PATCH(
     }
 
     // 8. B7B: Hẹn trải nghiệm kết hợp quan sát tâm lý (>= 2 ngày làm việc) — tạo Lần mới giữ nguyên lịch sử
-    if (action === "SCHEDULE_FOLLOWUP") {
+    if (action === "SCHEDULE_FOLLOWUP" || action === "SCHEDULE_FOLLOW_UP") {
       if (!hasAnyRole(userRoles, TUVAN_ROLES) && !hasAnyRole(userRoles, REVIEWER_ROLES)) {
         return NextResponse.json({ error: "Bạn không có quyền hẹn lịch trải nghiệm bổ sung." }, { status: 403 })
       }
@@ -1201,7 +1254,26 @@ export async function PATCH(
       if (!hasAnyRole(userRoles, REVIEWER_ROLES) && !hasAnyRole(userRoles, GIAOVU_ROLES)) {
         return NextResponse.json({ error: "Bạn không có quyền gửi email trình duyệt." }, { status: 403 })
       }
-      const gate = evaluatePreApprovalGate(activeRound)
+      const hasTrialFlag = Boolean(
+        student.probationaryClass ||
+          student.probationaryTeacher ||
+          student.probationaryResult ||
+          student.probationaryBghStatus
+      )
+      const hasPsyFlag = Boolean(
+        Number(student.trialPsychologyScreening || 0) === 1 ||
+          student.trialPsychologistName ||
+          student.trialPsychologyStatus ||
+          activeRound?.psychologyRequired ||
+          activeRound?.psychologistSubmittedAt ||
+          activeRound?.psychologyPayloadJson
+      )
+      const gate = evaluatePreApprovalGate(activeRound, {
+        hasLegacyScores,
+        hasTrial: hasTrialFlag,
+        hasPsychology: hasPsyFlag,
+        studentBghStatus: student.bghApprovalStatus,
+      })
       if (!gate.ready) {
         return NextResponse.json(
           { error: "Chưa đủ điều kiện bắt buộc để trình duyệt GĐCS.", missing: gate.missing },
@@ -1270,7 +1342,26 @@ export async function PATCH(
       if (!hasAnyRole(userRoles, APPROVER_ROLES)) {
         return NextResponse.json({ error: "Chỉ Giám đốc Điều hành Cơ sở (GĐCS) / Quản trị mới có quyền phê duyệt B10." }, { status: 403 })
       }
-      const gate = evaluatePreApprovalGate(activeRound)
+      const hasTrialFlag = Boolean(
+        student.probationaryClass ||
+          student.probationaryTeacher ||
+          student.probationaryResult ||
+          student.probationaryBghStatus
+      )
+      const hasPsyFlag = Boolean(
+        Number(student.trialPsychologyScreening || 0) === 1 ||
+          student.trialPsychologistName ||
+          student.trialPsychologyStatus ||
+          activeRound?.psychologyRequired ||
+          activeRound?.psychologistSubmittedAt ||
+          activeRound?.psychologyPayloadJson
+      )
+      const gate = evaluatePreApprovalGate(activeRound, {
+        hasLegacyScores,
+        hasTrial: hasTrialFlag,
+        hasPsychology: hasPsyFlag,
+        studentBghStatus: student.bghApprovalStatus,
+      })
       if (!gate.ready) {
         return NextResponse.json(
           { error: "Chưa đủ điều kiện bắt buộc của nhánh hiện tại để phê duyệt.", missing: gate.missing },

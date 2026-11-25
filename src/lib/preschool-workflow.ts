@@ -609,57 +609,88 @@ export function validateFollowUpBusinessDays(
 /**
  * Kiểm tra cổng điều kiện bắt buộc trước khi mở bước Trình duyệt GĐCS (B10).
  */
-export function evaluatePreApprovalGate(round: {
-  roundType?: string | null
-  formCode?: string | null
-  isAgeBoundary?: boolean
-  formConfirmedAt?: Date | string | null
-  heightCm?: number | null
-  weightKg?: number | null
-  physicalStatus?: string | null
-  medicalCheckedAt?: Date | string | null
-  criteriaPayloadJson?: string | null
-  experienceObservation?: string | null
-  teacherSubmittedAt?: Date | string | null
-  psychologyPayloadJson?: string | null
-  msTeamsReported?: boolean
-  psychologistSubmittedAt?: Date | string | null
-  reviewDecision?: string | null
-  reviewedAt?: Date | string | null
-} | null): { ready: boolean; missing: string[] } {
+export function evaluatePreApprovalGate(
+  round: {
+    roundType?: string | null
+    formCode?: string | null
+    isAgeBoundary?: boolean
+    formConfirmedAt?: Date | string | null
+    heightCm?: number | null
+    weightKg?: number | null
+    physicalStatus?: string | null
+    medicalCheckedAt?: Date | string | null
+    criteriaPayloadJson?: string | null
+    experienceObservation?: string | null
+    teacherSubmittedAt?: Date | string | null
+    psychologyPayloadJson?: string | null
+    msTeamsReported?: boolean
+    psychologistSubmittedAt?: Date | string | null
+    reviewDecision?: string | null
+    reviewedAt?: Date | string | null
+  } | null,
+  opts?: {
+    hasLegacyScores?: boolean
+    hasTrial?: boolean
+    hasPsychology?: boolean
+    studentBghStatus?: string | null
+  }
+): { ready: boolean; missing: string[]; warnings?: string[]; autoSkipToGdcs?: boolean } {
   if (!round) {
-    return { ready: false, missing: ["Chưa có lần khảo sát / trải nghiệm nào được tạo."] }
+    return { ready: false, missing: ["Chưa có lần khảo sát / trải nghiệm nào được tạo."], warnings: [] }
   }
 
   const missing: string[] = []
+  const warnings: string[] = []
   const rt = round.roundType || "KHAO_SAT_MOI"
+  const hasEval = Boolean(round.teacherSubmittedAt || round.criteriaPayloadJson || opts?.hasLegacyScores)
+  const normBgh = String(opts?.studentBghStatus || "").toUpperCase().trim()
+  const bghProposesB10 = ["DE_XUAT_DAT", "DE_XUAT_CHUA_DAT", "DAT", "DAT_MIEN_HOC_THU", "KHONG_DAT", "CHUA_DAT"].includes(normBgh)
+  const effectiveReviewDecision =
+    round.reviewDecision ||
+    (normBgh === "DE_XUAT_DAT" || normBgh === "DAT" || normBgh === "DAT_MIEN_HOC_THU"
+      ? "DE_XUAT_DAT"
+      : normBgh === "DE_XUAT_CHUA_DAT" || normBgh === "KHONG_DAT" || normBgh === "CHUA_DAT"
+        ? "DE_XUAT_CHUA_DAT"
+        : normBgh === "HEN_TRAI_NGHIEM" || normBgh === "DAT_HOC_THU"
+          ? "HEN_TRAI_NGHIEM_BO_SUNG"
+          : null)
+  const hasReview = Boolean((round.reviewedAt && round.reviewDecision) || bghProposesB10)
+  const noTrialAndNoPsy =
+    !opts?.hasTrial &&
+    !opts?.hasPsychology &&
+    effectiveReviewDecision !== "CAN_TAM_LY" &&
+    effectiveReviewDecision !== "HEN_TRAI_NGHIEM_BO_SUNG"
 
   if (rt === "KHAO_SAT_MOI") {
     if (!round.medicalCheckedAt && (round.heightCm == null || round.weightKg == null)) {
-      missing.push("B4A: Y tế chưa ghi nhận chiều cao, cân nặng và kiểm tra thể chất.")
+      if (noTrialAndNoPsy && hasEval) {
+        warnings.push("B4A: Y tế chưa ghi nhận chiều cao, cân nặng (không chặn phê duyệt B10 khi không có Học trải nghiệm & Tâm lý).")
+      } else {
+        missing.push("B4A: Y tế chưa ghi nhận chiều cao, cân nặng và kiểm tra thể chất.")
+      }
     }
-    if (!round.formCode) {
+    if (!round.formCode && !hasEval) {
       missing.push("B5: Chưa chọn mã biểu mẫu khảo sát (BM.KTĐBCL).")
-    } else if (round.isAgeBoundary && !round.formConfirmedAt) {
+    } else if (round.isAgeBoundary && !round.formConfirmedAt && !hasEval) {
       missing.push("B5: Mốc tuổi giáp ranh chưa được người phụ trách xác nhận mẫu phiếu.")
     }
-    if (!round.teacherSubmittedAt && !round.criteriaPayloadJson) {
+    if (!hasEval) {
       missing.push("B5: Giáo viên chưa ghi nhận kết quả đánh giá theo phiếu.")
     }
-    if (!round.reviewedAt || !round.reviewDecision) {
-      missing.push("B6: Nhóm trưởng Mầm non chưa rà soát kết quả.")
-    } else if (round.reviewDecision === "CAN_TAM_LY" || round.reviewDecision === "HEN_TRAI_NGHIEM_BO_SUNG") {
+    if (!hasReview) {
+      missing.push("B6: Nhóm trưởng Mầm non chưa rà soát kết quả (Bước 1).")
+    } else if (effectiveReviewDecision === "CAN_TAM_LY" || effectiveReviewDecision === "HEN_TRAI_NGHIEM_BO_SUNG") {
       missing.push("B6: Hồ sơ đang ở nhánh đánh giá tâm lý / trải nghiệm bổ sung — cần hoàn tất nhánh bổ sung trước khi trình duyệt.")
     }
   } else if (rt === "HOC_TRAI_NGHIEM" || rt === "TRAI_NGHIEM_BO_SUNG") {
-    if (!round.experienceObservation?.trim()) {
+    if (!round.experienceObservation?.trim() && !opts?.hasTrial) {
       missing.push(
         rt === "HOC_TRAI_NGHIEM"
           ? "B4B: Giáo viên chưa ghi nhận kết quả quan sát học trải nghiệm tại lớp."
           : "B8: Chưa ghi nhận kết quả quan sát buổi trải nghiệm kết hợp tâm lý."
       )
     }
-    if (!round.reviewedAt || !round.reviewDecision) {
+    if (!hasReview) {
       missing.push("B9A: Nhóm trưởng Mầm non chưa rà soát kết luận sau trải nghiệm.")
     }
   } else if (rt === "PHONG_VAN_TAM_LY") {
@@ -669,12 +700,12 @@ export function evaluatePreApprovalGate(round: {
     if (!round.msTeamsReported) {
       missing.push("B7A: Chưa ghi nhận đã báo cáo nhanh qua MS Teams theo lưu đồ.")
     }
-    if (!round.reviewedAt || !round.reviewDecision) {
+    if (!hasReview) {
       missing.push("B9A: Nhóm trưởng Mầm non chưa rà soát kết luận sau phỏng vấn tâm lý.")
     }
   }
 
-  return { ready: missing.length === 0, missing }
+  return { ready: missing.length === 0, missing, warnings, autoSkipToGdcs: noTrialAndNoPsy }
 }
 
 /**

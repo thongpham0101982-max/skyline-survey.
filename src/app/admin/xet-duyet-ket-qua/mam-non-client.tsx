@@ -3730,7 +3730,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  action: "SCHEDULE_FOLLOW_UP",
+                  action: "SCHEDULE_FOLLOWUP",
                   scheduledAt: evalTrialPeriod,
                   note: evalTrialParentNote.trim() || `Lớp: ${evalTrialClass.trim()} · GV: ${evalTrialTeacher.trim()}`,
                 }),
@@ -9401,6 +9401,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className={`space-y-3.5 bg-white p-5 rounded-2xl border transition-all ${canApproveBGH ? 'border-[#008B85]/30 shadow-2xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
                       <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
                         <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-full bg-[#003B3A] text-white text-[10px] font-bold">Bước 1</span>
                           <span className="text-xs font-bold text-[#003B3A]">B6 / B9A · Nhóm trưởng / BGH Mầm non</span>
                           {getStatusBadge(bghApprovalStatus)}
                         </div>
@@ -9408,6 +9409,45 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           {canApproveBGH ? "Quyền định tuyến" : "Chỉ đọc"}
                         </span>
                       </div>
+
+                      {/* Thông tin B5/B4B, Họ tên GV đánh giá & tuyến tự động */}
+                      {(() => {
+                        const scoreValues = Object.values(studentScores || {});
+                        const totalScored = scoreValues.filter((v: any) => v?.result).length;
+                        const datCnt = scoreValues.filter((v: any) => v?.result === "DAT").length;
+                        const khongDatCnt = scoreValues.filter((v: any) => v?.result === "KHONG_DAT").length;
+                        const chuaThCnt = scoreValues.filter((v: any) => v?.result === "CHUA_THE_HIEN").length;
+                        const pctDat = totalScored > 0 ? Math.round((datCnt / totalScored) * 100) : 0;
+                        const evalTeacherName =
+                          (Array.isArray(evalStudent?.assignedTeachers) && evalStudent.assignedTeachers.length > 0
+                            ? evalStudent.assignedTeachers.join(", ")
+                            : evalStudent?.assignedTeacherName || evalStudent?.teacherName || "") || "Chưa phân công";
+                        const autoSkipTrialPsy = !evalNeedPsyB7A && bghApprovalStatus !== "HEN_TRAI_NGHIEM";
+
+                        return (
+                          <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-1.5 text-[11px] tabular-nums">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-slate-600">
+                                GV đánh giá (B5/B4B): <strong className="text-[#003B3A]">{evalTeacherName}</strong>
+                              </span>
+                              {totalScored > 0 ? (
+                                <span className="font-semibold text-emerald-700">
+                                  {datCnt}/{totalScored} Đạt ({pctDat}%)
+                                  {chuaThCnt > 0 ? ` · ${chuaThCnt} Chưa thể hiện` : ""}
+                                  {khongDatCnt > 0 ? ` · ${khongDatCnt} Không đạt` : ""}
+                                </span>
+                              ) : (
+                                <span className="text-amber-700 font-medium">Chưa chấm tiêu chí B5/B4B</span>
+                              )}
+                            </div>
+                            {autoSkipTrialPsy && (
+                              <div className="text-[11px] text-[#00736E] bg-[#F0FDFA] border border-teal-200/80 rounded-lg px-2.5 py-1 font-medium">
+                                Không phát sinh Học trải nghiệm &amp; Tâm lý → Tự động bỏ qua, chuyển thẳng sang Bước 2 (GĐCS phê duyệt B10).
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {isBGHUser && !hasCampusMatch && evalStudent?.admissionCampus && (
                         <div className="text-[11px] font-medium text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 leading-relaxed">
@@ -9595,6 +9635,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className={`space-y-3.5 bg-white p-5 rounded-2xl border transition-all ${canApproveGDCS ? 'border-[#003B3A]/30 shadow-2xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
                       <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
                         <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-full bg-[#00A19A] text-white text-[10px] font-bold">Bước 2</span>
                           <span className="text-xs font-bold text-[#003B3A]">
                             B10 · {getGdcsLabel(evalStudent?.admissionCampus)}
                           </span>

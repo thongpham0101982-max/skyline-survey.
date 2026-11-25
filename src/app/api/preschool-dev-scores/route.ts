@@ -602,7 +602,8 @@ export async function POST(req: NextRequest) {
     // Recalculate final admissionResult
     const finalBgh = updatedBghStatus || "";
     const finalGdcs = updatedGdcsStatus || "";
-    const isApproved = (s: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
+    const isApproved = (s: string) =>
+      s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU" || s === "DE_XUAT_DAT";
 
     let finalAdmissionResult = undefined;
     const hasBghOrGdcsStatus = Boolean(finalBgh || finalGdcs);
@@ -611,13 +612,13 @@ export async function POST(req: NextRequest) {
       if (isApproved(finalBgh) && isApproved(finalGdcs)) {
         if (finalGdcs === "DAT_HOC_THU" || (finalGdcs === "DAT" && finalBgh === "DAT_HOC_THU")) {
           finalAdmissionResult = "Đạt - Học Thử";
-        } else if (finalBgh === "DAT_MIEN_HOC_THU" || finalGdcs === "DAT_MIEN_HOC_THU" || finalBgh === "DAT" || finalGdcs === "DAT") {
+        } else if (finalBgh === "DAT_MIEN_HOC_THU" || finalGdcs === "DAT_MIEN_HOC_THU" || finalBgh === "DAT" || finalGdcs === "DAT" || finalBgh === "DE_XUAT_DAT") {
           finalAdmissionResult = "Đạt - Miễn Học Thử";
         } else {
           finalAdmissionResult = "Đạt";
         }
-      } else if (finalBgh === "KHONG_DAT" || finalGdcs === "KHONG_DAT") {
-        finalAdmissionResult = "Không đạt";
+      } else if (finalGdcs === "KHONG_DAT" || finalGdcs === "CHUA_DAT" || finalBgh === "KHONG_DAT" || finalBgh === "DE_XUAT_CHUA_DAT") {
+        finalAdmissionResult = finalGdcs ? "Không đạt" : "Chưa duyệt";
       } else if (finalBgh === "Y_KIEN_KHAC" || finalGdcs === "Y_KIEN_KHAC") {
         finalAdmissionResult = "Ý kiến khác";
       } else {
@@ -655,6 +656,88 @@ export async function POST(req: NextRequest) {
         gdcsApprovalDate: finalGdcsDate,
       }
     })
+
+    // Đồng bộ 2 chiều sang PreschoolAssessmentRound & workflowStatus (B6/B9A & B10)
+    try {
+      const nowIso = new Date().toISOString();
+      const mappedReviewDecision =
+        updatedBghStatus === "DE_XUAT_DAT" || updatedBghStatus === "DAT" || updatedBghStatus === "DAT_MIEN_HOC_THU"
+          ? "DE_XUAT_DAT"
+          : updatedBghStatus === "DE_XUAT_CHUA_DAT" || updatedBghStatus === "KHONG_DAT"
+            ? "DE_XUAT_CHUA_DAT"
+            : updatedBghStatus === "HEN_TRAI_NGHIEM" || updatedBghStatus === "DAT_HOC_THU"
+              ? "HEN_TRAI_NGHIEM_BO_SUNG"
+              : null;
+
+      const mappedGdcsDecision =
+        updatedGdcsStatus === "DAT" || updatedGdcsStatus === "DAT_MIEN_HOC_THU"
+          ? "DAT"
+          : updatedGdcsStatus === "KHONG_DAT" || updatedGdcsStatus === "CHUA_DAT"
+            ? "CHUA_DAT"
+            : null;
+
+      let nextWfStatus: string | null = null;
+      if (mappedGdcsDecision) {
+        nextWfStatus = "DA_DUYET";
+      } else if (mappedReviewDecision === "HEN_TRAI_NGHIEM_BO_SUNG") {
+        nextWfStatus = "CHO_TRAI_NGHIEM";
+      } else if (mappedReviewDecision === "DE_XUAT_DAT" || mappedReviewDecision === "DE_XUAT_CHUA_DAT") {
+        nextWfStatus = "CHO_DUYET";
+      }
+
+      if (nextWfStatus || mappedGdcsDecision) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolInputAssessmentStudent"
+           SET "workflowStatus" = COALESCE(?, "workflowStatus"),
+               "finalApprovedOutcome" = COALESCE(?, "finalApprovedOutcome"),
+               "updatedAt" = ?
+           WHERE "id" = ?`,
+          nextWfStatus,
+          mappedGdcsDecision,
+          nowIso,
+          studentId
+        );
+      }
+
+      const roundRows = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT "id" FROM "PreschoolAssessmentRound" WHERE "studentId" = ? ORDER BY "roundNumber" DESC LIMIT 1`,
+        studentId
+      );
+      const latestRoundId = roundRows?.[0]?.id;
+      if (latestRoundId) {
+        if (mappedReviewDecision && canApproveBGH && bghApprovalStatus !== undefined) {
+          await prisma.$executeRawUnsafe(
+            `UPDATE "PreschoolAssessmentRound"
+             SET "reviewDecision" = ?, "reviewComment" = ?, "reviewedBy" = ?, "reviewedByName" = ?, "reviewedAt" = ?, "updatedAt" = ?
+             WHERE "id" = ?`,
+            mappedReviewDecision,
+            updatedBghComment || null,
+            userId || null,
+            finalBghUser || approverName,
+            (finalBghDate instanceof Date ? finalBghDate.toISOString() : nowIso),
+            nowIso,
+            latestRoundId
+          );
+        }
+        if (mappedGdcsDecision && canApproveGDCS && gdcsApprovalStatus !== undefined) {
+          await prisma.$executeRawUnsafe(
+            `UPDATE "PreschoolAssessmentRound"
+             SET "gdcsDecision" = ?, "gdcsComment" = ?, "gdcsUserId" = ?, "gdcsUserName" = ?, "gdcsApprovedAt" = ?, "status" = 'COMPLETED', "updatedAt" = ?
+             WHERE "id" = ?`,
+            mappedGdcsDecision,
+            updatedGdcsComment || null,
+            userId || null,
+            finalGdcsUser || approverName,
+            (finalGdcsDate instanceof Date ? finalGdcsDate.toISOString() : nowIso),
+            nowIso,
+            latestRoundId
+          );
+        }
+      }
+    } catch (syncRoundErr) {
+      console.error("Sync PreschoolAssessmentRound error:", syncRoundErr);
+    }
+
     return NextResponse.json({ success: true, count: changedScores.length })
   } catch (e: any) {
     console.error("Preschool Dev Scores POST error:", e);

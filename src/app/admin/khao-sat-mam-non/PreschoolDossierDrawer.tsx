@@ -169,9 +169,23 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
     setMsTeamsReported(Boolean(round?.msTeamsReported))
     setMsTeamsReportNote(round?.msTeamsReportNote || "")
 
-    setReviewDecision(round?.reviewDecision || "DE_XUAT_DAT")
-    setReviewComment(round?.reviewComment || "")
-    setGdcsComment(round?.gdcsComment || "")
+    const fallbackReviewDecision =
+      round?.reviewDecision ||
+      (student?.bghApprovalStatus === "DE_XUAT_DAT" ||
+      student?.bghApprovalStatus === "DAT" ||
+      student?.bghApprovalStatus === "DAT_MIEN_HOC_THU"
+        ? "DE_XUAT_DAT"
+        : student?.bghApprovalStatus === "DE_XUAT_CHUA_DAT" ||
+            student?.bghApprovalStatus === "KHONG_DAT" ||
+            student?.bghApprovalStatus === "CHUA_DAT"
+          ? "DE_XUAT_CHUA_DAT"
+          : student?.bghApprovalStatus === "HEN_TRAI_NGHIEM" || student?.bghApprovalStatus === "DAT_HOC_THU"
+            ? "HEN_TRAI_NGHIEM_BO_SUNG"
+            : "DE_XUAT_DAT")
+
+    setReviewDecision(fallbackReviewDecision)
+    setReviewComment(round?.reviewComment || student?.bghApprovalComment || "")
+    setGdcsComment(round?.gdcsComment || student?.gdcsApprovalComment || "")
     setParentConsultNote(student?.parentConsultationNote || "")
     setDeliveryNote(student?.resultDeliveryNote || "")
     setArchiveNote(student?.archiveNote || "")
@@ -1786,15 +1800,30 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                       ? "bg-amber-50 text-amber-700 border-amber-200"
                       : "bg-slate-100 text-slate-600 border-slate-200"
 
-              const b6ReviewDone = Boolean(viewingRound?.reviewedAt || (viewingRound?.reviewDecision && viewingRound.reviewDecision !== ""))
               const b6DecisionLabels: Record<string, string> = {
                 DE_XUAT_DAT: "Đề xuất Đạt → Trình B10",
                 DE_XUAT_CHUA_DAT: "Đề xuất Chưa đạt → B10",
                 CAN_TAM_LY: "Cần PV tâm lý (B7A)",
                 HEN_TRAI_NGHIEM_BO_SUNG: "Hẹn trải nghiệm (B7B)",
+                HEN_TRAI_NGHIEM: "Hẹn trải nghiệm (B7B)",
+                DAT: "Đề xuất Đạt → Trình B10",
+                DAT_MIEN_HOC_THU: "Đề xuất Đạt → Trình B10",
+                KHONG_DAT: "Đề xuất Chưa đạt → B10",
               }
+              const effectiveB6Decision = viewingRound?.reviewDecision || student.bghApprovalStatus || ""
+              const b6ReviewDone = Boolean(viewingRound?.reviewedAt || effectiveB6Decision)
+              const b6ReviewerName = viewingRound?.reviewedByName || student.bghApprovalUser || ""
+              const b6ReviewedAt = viewingRound?.reviewedAt || student.bghApprovalDate || null
               const b10Outcome = student.finalApprovedOutcome || viewingRound?.gdcsDecision || ""
               const b10Done = Boolean(b10Outcome)
+              const b10ApproverName = viewingRound?.gdcsUserName || student.gdcsApprovalUser || ""
+              const b10ApprovedAt = viewingRound?.gdcsApprovedAt || student.gdcsApprovalDate || null
+              const autoSkipToGdcs = !hasTrialInfo && !hasPsyNeeded && effectiveB6Decision !== "CAN_TAM_LY" && effectiveB6Decision !== "HEN_TRAI_NGHIEM_BO_SUNG" && effectiveB6Decision !== "HEN_TRAI_NGHIEM"
+              const approvalAuditLogs = (dossier?.auditLogs || []).filter((l: any) =>
+                ["SUBMIT_EVALUATION", "REVIEW_B6_B9A", "ASSIGN_TRIAL", "BGH_TRIAL_APPROVE", "APPROVE_B10", "SEND_APPROVAL_EMAIL"].includes(
+                  String(l.action || "").toUpperCase()
+                )
+              )
 
               return (
               <div className="space-y-4 text-xs">
@@ -1965,7 +1994,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
 
                 {/* Pre-Approval Gate Checklist */}
                 <div
-                  className={`rounded-2xl border p-4 ${
+                  className={`rounded-2xl border p-4 space-y-2 ${
                     gate.ready
                       ? "bg-emerald-50 border-emerald-200 text-emerald-900"
                       : "bg-amber-50 border-amber-200 text-amber-900"
@@ -1973,20 +2002,32 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                 >
                   <div className="font-bold flex items-center gap-2">
                     {gate.ready ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     ) : (
-                      <ShieldAlert className="w-4 h-4 text-amber-600" />
+                      <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
                     )}
                     {gate.ready
-                      ? "Hồ sơ đã đủ điều kiện bắt buộc của nhánh hiện tại để trình duyệt GĐCS (B10)."
+                      ? autoSkipToGdcs
+                        ? "Không phát sinh Học trải nghiệm & Tâm lý — Hồ sơ tự động bỏ qua và chuyển thẳng sang Bước 2 (GĐCS phê duyệt B10)."
+                        : "Hồ sơ đã đủ điều kiện bắt buộc của nhánh hiện tại để trình duyệt GĐCS (B10)."
                       : "Chưa mở phê duyệt B10 — còn thiếu nội dung bắt buộc:"}
                   </div>
                   {!gate.ready && gate.missing.length > 0 && (
-                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                    <ul className="list-disc pl-5 space-y-1">
                       {gate.missing.map((m: string, i: number) => (
                         <li key={i}>{m}</li>
                       ))}
                     </ul>
+                  )}
+                  {!gate.ready && autoSkipToGdcs && (
+                    <div className="text-[11px] text-[#00736E] bg-white/80 border border-teal-200 rounded-lg px-2.5 py-1.5 font-medium">
+                      Lưu ý: Hồ sơ không có Học trải nghiệm &amp; Tâm lý — sau khi Nhóm trưởng Mầm non xác nhận <strong>Bước 1 (Đề xuất Đạt / Chưa đạt)</strong>, hệ thống sẽ tự động bỏ qua B6 Học trải nghiệm &amp; B7 Tâm lý để mở ngay <strong>Bước 2 (GĐCS phê duyệt B10)</strong>.
+                    </div>
+                  )}
+                  {Array.isArray(gate.warnings) && gate.warnings.length > 0 && (
+                    <div className="text-[11px] text-amber-800 bg-amber-100/60 border border-amber-200/80 rounded-lg px-2.5 py-1.5">
+                      {gate.warnings.join(" ")}
+                    </div>
                   )}
                 </div>
 
@@ -2009,10 +2050,21 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                       }`}
                     >
                       {b6ReviewDone
-                        ? `Đã định tuyến: ${b6DecisionLabels[viewingRound?.reviewDecision] || viewingRound?.reviewDecision}`
+                        ? `Đã định tuyến: ${b6DecisionLabels[effectiveB6Decision] || effectiveB6Decision}`
                         : "Chờ phê duyệt Bước 1"}
                     </span>
                   </div>
+                  {(b6ReviewerName || b6ReviewedAt) && (
+                    <div className="text-[11px] text-slate-600 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
+                      <span>GV đánh giá B5/B4B: <strong className="text-[#003B3A]">{effectiveTeacherName}</strong></span>
+                      {b6ReviewerName && (
+                        <span>Người rà soát B6/B9A: <strong className="text-slate-800">{b6ReviewerName}</strong></span>
+                      )}
+                      {b6ReviewedAt && (
+                        <span>Thời gian: <strong className="text-slate-800">{new Date(b6ReviewedAt).toLocaleString("vi-VN")}</strong></span>
+                      )}
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {[
                       { k: "DE_XUAT_DAT", label: "Đề xuất Đạt → Trình B10" },
@@ -2242,6 +2294,60 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                       </div>
                     )}
                   </div>
+                  {(b10ApproverName || b10ApprovedAt) && (
+                    <div className="text-[11px] text-slate-600 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
+                      {b10ApproverName && (
+                        <span>Người phê duyệt B10: <strong className="text-[#003B3A]">{b10ApproverName}</strong></span>
+                      )}
+                      {b10ApprovedAt && (
+                        <span>Thời gian: <strong className="text-slate-800">{new Date(b10ApprovedAt).toLocaleString("vi-VN")}</strong></span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Nhật ký đánh giá & phê duyệt */}
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-[#003B3A]">Nhật ký đánh giá & phê duyệt</h4>
+                    <span className="text-[11px] text-slate-500 tabular-nums">
+                      {approvalAuditLogs.length} ghi nhận
+                    </span>
+                  </div>
+                  {approvalAuditLogs.length === 0 ? (
+                    <div className="text-[11px] text-slate-500 italic">Chưa có nhật ký phê duyệt nào.</div>
+                  ) : (
+                    <div className="divide-y divide-[#F1F5F9] text-[11px] tabular-nums">
+                      {approvalAuditLogs.map((log: any) => (
+                        <div key={log.id} className="py-2 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
+                          <div className="space-y-0.5">
+                            <div className="font-semibold text-[#003B3A]">
+                              {log.actorName || "Cán bộ SSM"}{" "}
+                              <span className="font-normal text-slate-500">
+                                ({log.action === "SUBMIT_EVALUATION"
+                                  ? "GV đánh giá B5/B4B"
+                                  : log.action === "REVIEW_B6_B9A"
+                                    ? "Nhóm trưởng / BGH Mầm non (Bước 1)"
+                                    : log.action === "APPROVE_B10"
+                                      ? "GĐCS phê duyệt (Bước 2)"
+                                      : log.action === "SEND_APPROVAL_EMAIL"
+                                        ? "Gửi email trình duyệt B10"
+                                        : log.action === "ASSIGN_TRIAL"
+                                          ? "Phân lớp học trải nghiệm"
+                                          : "BGH duyệt học trải nghiệm"})
+                              </span>
+                            </div>
+                            {log.detailText && <div className="text-slate-600">{log.detailText}</div>}
+                          </div>
+                          {log.createdAt && (
+                            <span className="text-slate-400 whitespace-nowrap shrink-0">
+                              {new Date(log.createdAt).toLocaleString("vi-VN")}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               )
