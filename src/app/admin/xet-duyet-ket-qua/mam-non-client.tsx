@@ -2672,11 +2672,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   const [sendingNotifyId, setSendingNotifyId] = useState<string | null>(null);
   const [workflowDrawerStudentId, setWorkflowDrawerStudentId] = useState<string | null>(null);
   const [workflowDrawerTab, setWorkflowDrawerTab] = useState<"intake" | "health" | "evaluation" | "trial" | "psychology" | "review" | "letters" | "history">("intake");
+  const [workflowDrawerSingleTab, setWorkflowDrawerSingleTab] = useState(false);
   const openDossierTab = (
     studentId: string,
-    tab: "intake" | "health" | "evaluation" | "trial" | "psychology" | "review" | "letters" | "history" = "intake"
+    tab: "intake" | "health" | "evaluation" | "trial" | "psychology" | "review" | "letters" | "history" = "intake",
+    singleTab = false
   ) => {
     setWorkflowDrawerTab(tab);
+    setWorkflowDrawerSingleTab(singleTab);
     setWorkflowDrawerStudentId(studentId);
   };
   const [approvalPreviewModal, setApprovalPreviewModal] = useState<{
@@ -6056,7 +6059,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       return (
                                         <button
                                           type="button"
-                                          onClick={() => openDossierTab(s.id, "trial")}
+                                          onClick={() => openDossierTab(s.id, "trial", true)}
                                           className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200/70 cursor-pointer"
                                           title="Mở tab B6 Học trải nghiệm"
                                         >
@@ -6083,7 +6086,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       <div className="flex flex-col items-start gap-1">
                                         <button
                                           type="button"
-                                          onClick={() => openDossierTab(s.id, "trial")}
+                                          onClick={() => openDossierTab(s.id, "trial", true)}
                                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
                                             bghTrialDone
                                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
@@ -6118,7 +6121,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       return (
                                         <button
                                           type="button"
-                                          onClick={() => openDossierTab(s.id, "psychology")}
+                                          onClick={() => openDossierTab(s.id, "psychology", true)}
                                           className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200/70 cursor-pointer"
                                           title="Mở tab B7 Khảo sát tâm lý"
                                         >
@@ -6145,7 +6148,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       <div className="flex flex-col items-start gap-1">
                                         <button
                                           type="button"
-                                          onClick={() => openDossierTab(s.id, "psychology")}
+                                          onClick={() => openDossierTab(s.id, "psychology", true)}
                                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
                                             psyDone
                                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
@@ -11204,6 +11207,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       <PreschoolDossierDrawer
         studentId={workflowDrawerStudentId}
         initialTab={workflowDrawerTab}
+        singleTabOnly={workflowDrawerSingleTab}
         onClose={() => setWorkflowDrawerStudentId(null)}
         onUpdated={() => {
           fetchStudentSummaries();

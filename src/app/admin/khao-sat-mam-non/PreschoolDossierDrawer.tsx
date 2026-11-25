@@ -31,6 +31,7 @@ import { PreschoolPrintableDocument } from "./PreschoolPrintableDocument"
 interface Props {
   studentId: string | null
   initialTab?: DrawerTab
+  singleTabOnly?: boolean
   onClose: () => void
   onUpdated: () => void
   staffUsers: Array<{ id: string; fullName: string; email: string; role: string }>
@@ -38,7 +39,7 @@ interface Props {
 
 type DrawerTab = "intake" | "health" | "evaluation" | "trial" | "psychology" | "review" | "letters" | "history"
 
-export function PreschoolDossierDrawer({ studentId, initialTab, onClose, onUpdated, staffUsers }: Props) {
+export function PreschoolDossierDrawer({ studentId, initialTab, singleTabOnly = false, onClose, onUpdated, staffUsers }: Props) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -503,8 +504,8 @@ export function PreschoolDossierDrawer({ studentId, initialTab, onClose, onUpdat
             </div>
           </div>
 
-          {/* Round Timeline Strip */}
-          {rounds.length > 0 && (
+          {/* Round Timeline Strip (ẩn khi mở chế độ chỉ xem 1 tab riêng B6/B7) */}
+          {!singleTabOnly && rounds.length > 0 && (
             <div className="bg-white border-b border-[#E2E8F0] px-6 py-2.5 flex items-center gap-2 overflow-x-auto">
               <span className="text-xs font-semibold text-slate-500 shrink-0">Lịch sử các lần:</span>
               {rounds.map((r) => (
@@ -528,40 +529,55 @@ export function PreschoolDossierDrawer({ studentId, initialTab, onClose, onUpdat
             </div>
           )}
 
-          {/* Navigation Tabs with Completion / Waiting Indicators */}
-          <div className="bg-white border-b border-[#E2E8F0] px-4 flex items-center gap-1 overflow-x-auto">
-            {tabs.map((t) => {
-              const Icon = t.icon
-              const active = activeTab === t.id
-              const st = stepStatusMap[t.id]
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setActiveTab(t.id)}
-                  className={`px-3 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
-                    active
-                      ? "border-[#003B3A] text-[#003B3A]"
-                      : "border-transparent text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{t.label}</span>
-                  {t.id !== "history" && st.status === "done" && (
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold" title="Đã hoàn thành">
-                      ✓
-                    </span>
-                  )}
-                  {t.id !== "history" && st.status === "waiting" && (
-                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500" title={st.label} />
-                  )}
-                </button>
-              )
-            })}
-          </div>
+          {/* Navigation Tabs (chỉ hiển thị đúng 1 tab khi singleTabOnly=true) */}
+          {singleTabOnly ? (
+            <div className="bg-white border-b border-[#E2E8F0] px-6 py-2.5 flex items-center justify-between gap-2">
+              {(() => {
+                const curTab = tabs.find((t) => t.id === activeTab)
+                const Icon = curTab?.icon
+                return (
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#003B3A]">
+                    {Icon && <Icon className="w-4 h-4 text-[#00A19A]" />}
+                    <span>{curTab?.label || activeTab}</span>
+                  </div>
+                )
+              })()}
+            </div>
+          ) : (
+            <div className="bg-white border-b border-[#E2E8F0] px-4 flex items-center gap-1 overflow-x-auto">
+              {tabs.map((t) => {
+                const Icon = t.icon
+                const active = activeTab === t.id
+                const st = stepStatusMap[t.id]
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setActiveTab(t.id)}
+                    className={`px-3 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-1.5 whitespace-nowrap transition-colors cursor-pointer ${
+                      active
+                        ? "border-[#003B3A] text-[#003B3A]"
+                        : "border-transparent text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{t.label}</span>
+                    {t.id !== "history" && st.status === "done" && (
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold" title="Đã hoàn thành">
+                        ✓
+                      </span>
+                    )}
+                    {t.id !== "history" && st.status === "waiting" && (
+                      <span className="inline-block w-2 h-2 rounded-full bg-amber-500" title={st.label} />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           {/* Workflow Progress Summary Strip */}
-          {!loading && student && (
+          {!singleTabOnly && !loading && student && (
             <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] px-6 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
               <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
