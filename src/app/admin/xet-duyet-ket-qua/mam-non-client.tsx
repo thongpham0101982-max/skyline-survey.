@@ -2689,7 +2689,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     studentId: string;
     studentIds?: string[];
     batchName?: string;
-    targetRole?: "BGH_MN" | "GDCS";
+    targetRole?: "BGH_MN" | "GDCS" | "RESULT_NOTIFY";
+    previewOnlyMode?: boolean;
+    viewport?: "desktop" | "mobile";
+    resultOutcome?: "DAT" | "CHUA_DAT";
     studentName: string;
     studentCode: string;
     campus: string;
@@ -2706,6 +2709,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     studentIds: undefined,
     batchName: undefined,
     targetRole: "GDCS",
+    previewOnlyMode: false,
+    viewport: "desktop",
+    resultOutcome: "DAT",
     studentName: "",
     studentCode: "",
     campus: "",
@@ -2744,6 +2750,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       studentIds: undefined,
       batchName: undefined,
       targetRole,
+      previewOnlyMode: false,
       html: "",
       recipients: [],
       selectedEmails: [],
@@ -2805,6 +2812,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       studentIds,
       batchName: batchLabel,
       targetRole,
+      previewOnlyMode: false,
       html: "",
       recipients: [],
       selectedEmails: [],
@@ -2852,6 +2860,92 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       notify("Có lỗi xảy ra khi tải bản xem trước email theo đợt", "err");
     } finally {
       setSendingNotifyId(null);
+    }
+  };
+
+  const openBatchEmailPreviewMode = async (
+    role: "BGH_MN" | "GDCS" | "RESULT_NOTIFY" = "BGH_MN",
+    outcome: "DAT" | "CHUA_DAT" = "DAT",
+    isReadOnlyPreview = true
+  ) => {
+    const sourceStudents = filteredStudents.length > 0 ? filteredStudents : studentSummaries;
+    if (!sourceStudents.length) {
+      notify("Chưa có hồ sơ học sinh nào trong danh sách để xem trước email.", "err");
+      return;
+    }
+    const ids = sourceStudents.map((st: any) => st.id);
+    const currentBatchObj = availableBatches.find((b: any) => b.id === cBatchId);
+    const batchLabel = currentBatchObj?.name || selPeriod?.name || "Đợt khảo sát Mầm non";
+
+    setApprovalPreviewModal((prev) => ({
+      ...prev,
+      open: true,
+      loading: true,
+      sending: false,
+      studentId: role === "RESULT_NOTIFY" ? ids[0] : "",
+      studentIds: ids,
+      batchName: batchLabel,
+      targetRole: role,
+      previewOnlyMode: role === "RESULT_NOTIFY" ? true : isReadOnlyPreview,
+      resultOutcome: outcome,
+      viewport: prev.viewport || "desktop",
+      html: "",
+      recipients: [],
+      selectedEmails: [],
+      extraEmails: "",
+    }));
+
+    try {
+      const payload =
+        role === "RESULT_NOTIFY"
+          ? {
+              action: "PREVIEW_GDCS_RESULT_NOTIFICATION",
+              studentId: ids[0],
+              outcome,
+            }
+          : {
+              action: "SEND_BATCH_APPROVAL_NOTIFICATION",
+              studentIds: ids,
+              targetRole: role,
+              batchName: batchLabel,
+              previewOnly: true,
+            };
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.preview) {
+        const recipients = Array.isArray(data.recipients) ? data.recipients : [];
+        setApprovalPreviewModal((prev) => ({
+          ...prev,
+          open: true,
+          loading: false,
+          sending: false,
+          studentId: role === "RESULT_NOTIFY" ? ids[0] : "",
+          studentIds: ids,
+          batchName: batchLabel,
+          targetRole: role,
+          previewOnlyMode: role === "RESULT_NOTIFY" ? true : isReadOnlyPreview,
+          resultOutcome: outcome,
+          studentName: data.studentName || `${ids.length} học sinh`,
+          studentCode: data.studentCode || `${ids.length} HS`,
+          campus: data.campus || "",
+          subject: data.subject || "",
+          recipients,
+          selectedEmails: recipients.map((r: any) => r.email),
+          extraEmails: "",
+          html: data.html || "",
+        }));
+      } else {
+        setApprovalPreviewModal((prev) => ({ ...prev, open: false, loading: false }));
+        notify(data.error || "Không thể tạo bản xem trước email", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      setApprovalPreviewModal((prev) => ({ ...prev, open: false, loading: false }));
+      notify("Có lỗi xảy ra khi tải bản xem trước email", "err");
     }
   };
 
@@ -5103,15 +5197,26 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </button>
               );
             })}
-            <button
-              type="button"
-              onClick={() => setIsPreschoolEmailConfigOpen(true)}
-              className="ml-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#99F6E4] bg-[#F0FDFA] text-[#003B3A] hover:bg-[#CCFBF1] transition-colors cursor-pointer"
-              title="Cấu hình danh sách email BGH Mầm non & GĐCS nhận thông báo xét duyệt theo từng cơ sở"
-            >
-              <Settings className="w-3.5 h-3.5 text-[#008B85]" />
-              <span>Cấu hình Email BGHMN & GĐCS</span>
-            </button>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => openBatchEmailPreviewMode("BGH_MN", "DAT", true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#E2E8F0] bg-white text-[#003B3A] hover:bg-[#F0FDFA] hover:border-[#00A19A] transition-colors cursor-pointer"
+                title="Xem trước 3 mẫu Email (Theo đợt NT MN/BGH · Theo đợt GĐCS B10 · Tự động TB kết quả sau khi GĐCS duyệt)"
+              >
+                <Eye className="w-3.5 h-3.5 text-[#008B85]" />
+                <span>Xem trước Email</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPreschoolEmailConfigOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#99F6E4] bg-[#F0FDFA] text-[#003B3A] hover:bg-[#CCFBF1] transition-colors cursor-pointer"
+                title="Cấu hình danh sách email BGH Mầm non & GĐCS nhận thông báo xét duyệt theo từng cơ sở"
+              >
+                <Settings className="w-3.5 h-3.5 text-[#008B85]" />
+                <span>Cấu hình Email BGHMN & GĐCS</span>
+              </button>
+            </div>
           </div>
 
           {/* Sub-tab: Thống kê Phân tích */}
@@ -5841,9 +5946,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           disabled={sendingNotifyId === "BATCH_BGH_MN"}
                           onClick={() => sendBatchApprovalNotification(pendingBgh.map((st: any) => st.id), "BGH_MN")}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#008B85] hover:bg-[#00736E] text-white shadow-2xs cursor-pointer transition-colors disabled:opacity-50"
+                          title="Mở chế độ xem trước nội dung email và danh sách người nhận trước khi gửi"
                         >
-                          <Mail className="w-3.5 h-3.5" />
-                          Gửi Email theo đợt → NT Mầm non / BGH ({pendingBgh.length} HS)
+                          <Eye className="w-3.5 h-3.5" />
+                          Xem trước &amp; Gửi Email đợt → NT Mầm non / BGH ({pendingBgh.length} HS)
                         </button>
                       )}
                       {allBghReadyForGdcs && pendingGdcs.length > 0 && (
@@ -5852,9 +5958,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           disabled={sendingNotifyId === "BATCH_GDCS"}
                           onClick={() => sendBatchApprovalNotification(pendingGdcs.map((st: any) => st.id), "GDCS")}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs cursor-pointer transition-colors disabled:opacity-50"
+                          title="Mở chế độ xem trước nội dung email và danh sách người nhận trước khi gửi"
                         >
-                          <Mail className="w-3.5 h-3.5 text-[#5EEAD4]" />
-                          Gửi Email theo đợt → GĐCS duyệt B10 ({pendingGdcs.length} HS)
+                          <Eye className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                          Xem trước &amp; Gửi Email đợt → GĐCS duyệt B10 ({pendingGdcs.length} HS)
                         </button>
                       )}
                       {!allB5Done && (
@@ -11203,17 +11310,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="bg-[#003B3A] text-white px-6 py-4 flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-medium text-[#5EEAD4]">
-                  Kiểm tra trước khi gửi · Phê duyệt chạm trên Email
+                  {approvalPreviewModal.targetRole === "RESULT_NOTIFY"
+                    ? "Chế độ xem trước · Tự động gửi sau khi GĐCS phê duyệt B10"
+                    : "Chế độ xem trước · Kiểm tra nội dung & người nhận trước khi gửi"}
                 </p>
                 <h3 className="text-base font-bold mt-0.5 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-[#5EEAD4]" />
-                  Xem trước Email yêu cầu{" "}
-                  {approvalPreviewModal.targetRole === "BGH_MN"
-                    ? "BGH Mầm non duyệt"
-                    : approvalPreviewModal.targetRole === "GDCS"
-                      ? "GĐCS duyệt"
-                      : "duyệt"}{" "}
-                  — {approvalPreviewModal.studentName || "Học sinh"}
+                  <Eye className="w-4 h-4 text-[#5EEAD4]" />
+                  {approvalPreviewModal.targetRole === "RESULT_NOTIFY"
+                    ? "Xem trước Email thông báo KQ GĐCS duyệt → Tư vấn, Giáo vụ, BGH"
+                    : approvalPreviewModal.targetRole === "BGH_MN"
+                      ? "Xem trước Email yêu cầu NT Mầm non / BGH duyệt"
+                      : "Xem trước Email yêu cầu GĐCS duyệt B10"}
+                  {" — "}
+                  {approvalPreviewModal.studentName || "Học sinh"}
                   {approvalPreviewModal.studentCode ? ` (${approvalPreviewModal.studentCode})` : ""}
                 </h3>
               </div>
@@ -11226,6 +11335,71 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Thanh chuyển đổi 3 mẫu Email khi ở chế độ Xem trước theo đợt */}
+            {Array.isArray(approvalPreviewModal.studentIds) && approvalPreviewModal.studentIds.length > 0 && (
+              <div className="px-5 py-2.5 bg-[#F0FDFA] border-b border-[#CCFBF1] flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {(
+                    [
+                      { key: "BGH_MN", label: "1. Email đợt → NT MN / BGH" },
+                      { key: "GDCS", label: "2. Email đợt → GĐCS duyệt B10" },
+                      { key: "RESULT_NOTIFY", label: "3. TB kết quả GĐCS → Tư vấn · Giáo vụ · BGH" },
+                    ] as const
+                  ).map((t) => {
+                    const active = approvalPreviewModal.targetRole === t.key;
+                    return (
+                      <button
+                        key={t.key}
+                        type="button"
+                        disabled={approvalPreviewModal.loading || approvalPreviewModal.sending}
+                        onClick={() =>
+                          openBatchEmailPreviewMode(
+                            t.key,
+                            approvalPreviewModal.resultOutcome || "DAT",
+                            t.key === "RESULT_NOTIFY" ? true : Boolean(approvalPreviewModal.previewOnlyMode)
+                          )
+                        }
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                          active
+                            ? "bg-[#003B3A] text-white shadow-2xs"
+                            : "bg-white text-slate-600 border border-[#E2E8F0] hover:border-[#00A19A] hover:text-[#003B3A]"
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {approvalPreviewModal.targetRole === "RESULT_NOTIFY" && (
+                  <div className="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-[#E2E8F0]">
+                    <button
+                      type="button"
+                      onClick={() => openBatchEmailPreviewMode("RESULT_NOTIFY", "DAT", true)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold cursor-pointer transition-colors ${
+                        (approvalPreviewModal.resultOutcome || "DAT") === "DAT"
+                          ? "bg-emerald-600 text-white"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      Mẫu Đạt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openBatchEmailPreviewMode("RESULT_NOTIFY", "CHUA_DAT", true)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold cursor-pointer transition-colors ${
+                        approvalPreviewModal.resultOutcome === "CHUA_DAT"
+                          ? "bg-rose-600 text-white"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      Mẫu Chưa đạt
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {approvalPreviewModal.loading ? (
               <div className="py-16 flex flex-col items-center justify-center gap-2 text-xs text-slate-600">
@@ -11295,41 +11469,82 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
 
                 <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden">
-                  <div className="px-4 py-2 bg-[#003B3A] text-white text-[11px] font-semibold flex items-center justify-between">
+                  <div className="px-4 py-2 bg-[#003B3A] text-white text-[11px] font-semibold flex flex-wrap items-center justify-between gap-2">
                     <span>Nội dung Email sẽ gửi (bản hiển thị thực tế)</span>
-                    <span className="text-[#5EEAD4]">Chế độ xem trước — chưa gửi</span>
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex items-center rounded-lg bg-white/10 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setApprovalPreviewModal((prev) => ({ ...prev, viewport: "desktop" }))}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-semibold cursor-pointer transition-colors ${
+                            (approvalPreviewModal.viewport || "desktop") === "desktop"
+                              ? "bg-[#00A19A] text-white"
+                              : "text-teal-100 hover:text-white"
+                          }`}
+                        >
+                          Máy tính
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setApprovalPreviewModal((prev) => ({ ...prev, viewport: "mobile" }))}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-semibold cursor-pointer transition-colors ${
+                            approvalPreviewModal.viewport === "mobile"
+                              ? "bg-[#00A19A] text-white"
+                              : "text-teal-100 hover:text-white"
+                          }`}
+                        >
+                          Điện thoại (390px)
+                        </button>
+                      </div>
+                      <span className="text-[#5EEAD4]">Chế độ xem trước — chưa gửi</span>
+                    </div>
                   </div>
-                  <iframe
-                    title="Xem trước email phê duyệt Mầm non"
-                    srcDoc={approvalPreviewModal.html}
-                    className="w-full h-[460px] bg-white border-0"
-                  />
+                  <div className="bg-slate-100/70 flex justify-center p-2">
+                    <iframe
+                      title="Xem trước email phê duyệt Mầm non"
+                      srcDoc={approvalPreviewModal.html}
+                      className={`h-[480px] bg-white border border-slate-200 rounded-lg transition-all ${
+                        approvalPreviewModal.viewport === "mobile" ? "w-[390px] max-w-full shadow-md" : "w-full"
+                      }`}
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
-            <div className="px-6 py-4 bg-white border-t border-[#E2E8F0] flex items-center justify-end gap-3">
-              <button
-                type="button"
-                disabled={approvalPreviewModal.sending}
-                onClick={() => setApprovalPreviewModal((prev) => ({ ...prev, open: false }))}
-                className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={approvalPreviewModal.loading || approvalPreviewModal.sending}
-                onClick={confirmSendApprovalNotification}
-                className="px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white text-xs font-semibold flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-              >
-                {approvalPreviewModal.sending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+            <div className="px-6 py-4 bg-white border-t border-[#E2E8F0] flex items-center justify-between gap-3">
+              <div className="text-[11px] text-slate-500">
+                {approvalPreviewModal.targetRole === "RESULT_NOTIFY"
+                  ? "Email này được hệ thống tự động gửi ngay khi GĐCS hoàn tất phê duyệt B10."
+                  : approvalPreviewModal.previewOnlyMode
+                    ? "Đang ở chế độ chỉ xem trước. Bấm nút gửi theo đợt trên thanh Luồng xét duyệt khi đủ điều kiện để gửi thật."
+                    : "Vui lòng kiểm tra danh sách người nhận & nội dung trước khi xác nhận gửi."}
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  disabled={approvalPreviewModal.sending}
+                  onClick={() => setApprovalPreviewModal((prev) => ({ ...prev, open: false }))}
+                  className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  {approvalPreviewModal.previewOnlyMode || approvalPreviewModal.targetRole === "RESULT_NOTIFY" ? "Đóng" : "Hủy"}
+                </button>
+                {!approvalPreviewModal.previewOnlyMode && approvalPreviewModal.targetRole !== "RESULT_NOTIFY" && (
+                  <button
+                    type="button"
+                    disabled={approvalPreviewModal.loading || approvalPreviewModal.sending}
+                    onClick={confirmSendApprovalNotification}
+                    className="px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white text-xs font-semibold flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    {approvalPreviewModal.sending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                    )}
+                    Xác nhận gửi Email
+                  </button>
                 )}
-                Xác nhận gửi Email
-              </button>
+              </div>
             </div>
           </div>
         </div>

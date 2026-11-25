@@ -1229,18 +1229,13 @@ export function renderPreschoolBatchApprovalEmailHtml(params: {
 }
 
 /**
- * Tự động gửi email thông báo kết quả phê duyệt GĐCS (B10) đến:
- * Tư vấn tuyển sinh cơ sở, Giáo vụ cơ sở, và BGH / Nhóm trưởng Mầm non cơ sở.
+ * Lấy danh sách email Tư vấn tuyển sinh, Giáo vụ cơ sở, và BGH / Nhóm trưởng Mầm non cơ sở.
  */
-export async function notifyPreschoolGdcsResultToStakeholders(params: {
-  student: any;
-  outcome: "DAT" | "CHUA_DAT";
-  admissionResult: string;
-  approverName: string;
-  comment?: string | null;
-  baseUrl?: string;
-}): Promise<{ emailsSent: number; recipients: string[] }> {
-  const { student, outcome, admissionResult, approverName, comment, baseUrl = "https://ssm.skylineschool.edu.vn" } = params;
+export async function resolvePreschoolStakeholderRecipients(student: any): Promise<{
+  campusStr: string;
+  campusCode: string;
+  recipients: Array<{ fullName: string; email: string; role: string; isArchiveCopy: boolean }>;
+}> {
   const campusStr = String(student?.admissionCampus || student?.registeredCampus || "").trim();
   const cUp = campusStr.toUpperCase();
   const campusCode =
@@ -1251,12 +1246,19 @@ export async function notifyPreschoolGdcsResultToStakeholders(params: {
     : cUp.includes("CS5") || cUp.includes("BEACH") ? "CS5"
     : "";
 
-  const recipientEmails = new Set<string>();
-  const addEmails = (raw?: string | null) => {
+  const recMap = new Map<string, { fullName: string; email: string; role: string; isArchiveCopy: boolean }>();
+  const addEmails = (raw?: string | null, roleLabel = "Cán bộ cơ sở", isArchiveCopy = false) => {
     if (!raw) return;
     for (const part of String(raw).split(/[,;\n]+/)) {
       const e = part.trim().toLowerCase();
-      if (e.includes("@") && e !== "admin@skyline.edu") recipientEmails.add(e);
+      if (e.includes("@") && e !== "admin@skyline.edu" && !recMap.has(e)) {
+        recMap.set(e, {
+          fullName: e.split("@")[0],
+          email: e,
+          role: roleLabel,
+          isArchiveCopy,
+        });
+      }
     }
   };
 
@@ -1269,15 +1271,15 @@ export async function notifyPreschoolGdcsResultToStakeholders(params: {
       try {
         const parsed = JSON.parse(cfg.content || "{}");
         if (cfg.name === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
-          addEmails(parsed?.campuses?.[campusCode]?.bghmn);
+          addEmails(parsed?.campuses?.[campusCode]?.bghmn, `BGH / NT Mầm non ${campusCode}`);
         }
         if (cfg.name === "EMAIL_ROUTING_V1" && campusCode) {
           const cObj = parsed?.campuses?.[campusCode];
-          addEmails(cObj?.tuVan);
-          addEmails(cObj?.giaoVu);
-          addEmails(cObj?.bgh);
+          addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
+          addEmails(cObj?.giaoVu, `Giáo vụ ${campusCode}`);
+          addEmails(cObj?.bgh, `BGH ${campusCode}`);
         }
-        if (parsed?.ktdbclEmails) addEmails(parsed.ktdbclEmails);
+        if (parsed?.ktdbclEmails) addEmails(parsed.ktdbclEmails, "Nhóm Khảo thí / KT&ĐBCL", true);
       } catch {}
     }
   } catch {}
@@ -1288,16 +1290,27 @@ export async function notifyPreschoolGdcsResultToStakeholders(params: {
       ? await (prisma as any).campus.findFirst({ where: { OR: [{ campusCode }, { campusName: campusStr }] } })
       : null;
     if (campusObj) {
-      addEmails(campusObj.admissionEmail);
+      addEmails(campusObj.admissionEmail, `Tư vấn tuyển sinh ${campusCode}`);
       const staff = await (prisma as any).user.findMany({
         where: {
           isActive: true,
           role: { in: ["TU_VAN", "TU_VAN_CS", "GIAO_VU", "GIAO_VU_CS", "BGH_MN", "NHOM_TRUONG_MN", "BGH_CS"] },
           OR: [{ campusId: campusObj.id }, { teacher: { campusId: campusObj.id } }],
         },
-        select: { email: true },
+        select: { email: true, fullName: true, role: true },
       });
-      for (const u of staff || []) addEmails(u.email);
+      for (const u of staff || []) {
+        const e = String(u.email || "").trim().toLowerCase();
+        if (e.includes("@") && e !== "admin@skyline.edu") {
+          const existing = recMap.get(e);
+          recMap.set(e, {
+            fullName: u.fullName || existing?.fullName || e.split("@")[0],
+            email: e,
+            role: existing?.role || u.role || `Nhân sự ${campusCode}`,
+            isArchiveCopy: existing?.isArchiveCopy || false,
+          });
+        }
+      }
     }
   } catch {}
 
@@ -1309,12 +1322,37 @@ export async function notifyPreschoolGdcsResultToStakeholders(params: {
     CS4: "quyenlth@skylineschool.edu.vn, chault@skylineschool.edu.vn",
     CS5: "monghatn@skylineschool.edu.vn, ngocltb@skylineschool.edu.vn",
   };
-  if (campusCode && DEFAULT_BGH_MN[campusCode]) addEmails(DEFAULT_BGH_MN[campusCode]);
-  addEmails("ktdbcl@skylineschool.edu.vn");
+  if (campusCode && DEFAULT_BGH_MN[campusCode]) {
+    addEmails(DEFAULT_BGH_MN[campusCode], `BGH / NT Mầm non ${campusCode}`);
+  }
+  addEmails("ktdbcl@skylineschool.edu.vn", "Nhóm Khảo thí / KT&ĐBCL", true);
 
-  const list = Array.from(recipientEmails);
-  if (list.length === 0) return { emailsSent: 0, recipients: [] };
+  return { campusStr, campusCode, recipients: Array.from(recMap.values()) };
+}
 
+/**
+ * Render HTML email thông báo kết quả phê duyệt GĐCS (B10) gửi Tư vấn, Giáo vụ, BGH / Nhóm trưởng cơ sở.
+ */
+export function renderPreschoolGdcsResultNotificationEmailHtml(params: {
+  student: any;
+  outcome: "DAT" | "CHUA_DAT";
+  admissionResult: string;
+  approverName: string;
+  comment?: string | null;
+  campusStr?: string;
+  campusCode?: string;
+  baseUrl?: string;
+}): { subject: string; html: string } {
+  const {
+    student,
+    outcome,
+    admissionResult,
+    approverName,
+    comment,
+    campusStr = String(student?.admissionCampus || student?.registeredCampus || "").trim(),
+    campusCode = "",
+    baseUrl = "https://ssm.skylineschool.edu.vn",
+  } = params;
   const isPass = outcome === "DAT";
   const badgeBg = isPass ? "#D1FAE5" : "#FFE4E6";
   const badgeColor = isPass ? "#065F46" : "#9F1239";
@@ -1364,6 +1402,36 @@ export async function notifyPreschoolGdcsResultToStakeholders(params: {
 </body>
 </html>
   `;
+  return { subject, html };
+}
+
+/**
+ * Tự động gửi email thông báo kết quả phê duyệt GĐCS (B10) đến:
+ * Tư vấn tuyển sinh cơ sở, Giáo vụ cơ sở, và BGH / Nhóm trưởng Mầm non cơ sở.
+ */
+export async function notifyPreschoolGdcsResultToStakeholders(params: {
+  student: any;
+  outcome: "DAT" | "CHUA_DAT";
+  admissionResult: string;
+  approverName: string;
+  comment?: string | null;
+  baseUrl?: string;
+}): Promise<{ emailsSent: number; recipients: string[] }> {
+  const { student, outcome, admissionResult, approverName, comment, baseUrl = "https://ssm.skylineschool.edu.vn" } = params;
+  const { campusStr, campusCode, recipients } = await resolvePreschoolStakeholderRecipients(student);
+  const list = recipients.map((r) => r.email);
+  if (list.length === 0) return { emailsSent: 0, recipients: [] };
+
+  const { subject, html } = renderPreschoolGdcsResultNotificationEmailHtml({
+    student,
+    outcome,
+    admissionResult,
+    approverName,
+    comment,
+    campusStr,
+    campusCode,
+    baseUrl,
+  });
 
   let sent = 0;
   for (const to of list) {

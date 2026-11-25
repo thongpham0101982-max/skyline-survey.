@@ -16,7 +16,13 @@ function parseSmartDate(d: any): Date | null {
 }
 
 import { sendEmail } from "@/lib/mail"
-import { getPreschoolDevelopmentSummary, renderPreschoolApprovalEmailHtml, renderPreschoolBatchApprovalEmailHtml } from "@/lib/preschool-approval-service"
+import {
+  getPreschoolDevelopmentSummary,
+  renderPreschoolApprovalEmailHtml,
+  renderPreschoolBatchApprovalEmailHtml,
+  renderPreschoolGdcsResultNotificationEmailHtml,
+  resolvePreschoolStakeholderRecipients,
+} from "@/lib/preschool-approval-service"
 
 function buildPreschoolLetterHtmlServer(student: any, config: any, isCommitmentFlag: boolean = false, isInvitationFlag: boolean = false) {
   const rawGrade = student?.grade || "Nát";
@@ -1365,6 +1371,41 @@ export async function POST(req) {
         emailsSent: emailSentCount,
         campus: campusName,
         studentCount: students.length,
+      });
+    }
+
+    if (action === "PREVIEW_GDCS_RESULT_NOTIFICATION") {
+      const { studentId, outcome: reqOutcome } = body;
+      const student = studentId
+        ? await (prisma as any).preschoolInputAssessmentStudent.findUnique({ where: { id: studentId } })
+        : await (prisma as any).preschoolInputAssessmentStudent.findFirst({ orderBy: { createdAt: "desc" } });
+      if (!student) {
+        return NextResponse.json({ error: "Không tìm thấy hồ sơ học sinh để xem trước." }, { status: 404 });
+      }
+      const outcome: "DAT" | "CHUA_DAT" = reqOutcome === "CHUA_DAT" ? "CHUA_DAT" : "DAT";
+      const admissionResult = outcome === "DAT" ? "Đạt" : "Chưa đạt";
+      const { campusStr, campusCode, recipients } = await resolvePreschoolStakeholderRecipients(student);
+      const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
+      const protocol = req.headers.get("x-forwarded-proto") || "https";
+      const baseUrl = `${protocol}://${host}`;
+      const { subject, html } = renderPreschoolGdcsResultNotificationEmailHtml({
+        student,
+        outcome,
+        admissionResult,
+        approverName: student.gdcsApprovalUser || "Giám đốc Điều hành Cơ sở",
+        comment: student.gdcsApprovalComment || (outcome === "DAT" ? "Đồng ý tiếp nhận theo đề xuất của BGH Mầm non." : "Cần trao đổi thêm với Phụ huynh."),
+        campusStr,
+        campusCode,
+        baseUrl,
+      });
+      return NextResponse.json({
+        preview: true,
+        campus: campusStr || campusCode || "Sky-Line",
+        studentName: student.fullName,
+        studentCode: student.studentCode,
+        subject,
+        recipients,
+        html,
       });
     }
 
