@@ -212,7 +212,7 @@ const xetDuyetCols = [
   { id: "b5Eval", label: "B5/B4B Đánh giá", width: "w-[168px] min-w-[168px] whitespace-normal" },
   { id: "bghApproval", label: "NT Mầm non / BGH", width: "w-[158px] min-w-[158px] whitespace-normal" },
   { id: "b6Trial", label: "B6 Học trải nghiệm", width: "w-[152px] min-w-[152px] whitespace-normal" },
-  { id: "b7Psych", label: "B7 Tâm lý (khi cần)", width: "w-[152px] min-w-[152px] whitespace-normal" },
+  { id: "b7Psych", label: "B7 Khảo sát tâm lý", width: "w-[162px] min-w-[162px] whitespace-normal" },
   { id: "gdcsApproval", label: "GĐCS", width: "w-[158px] min-w-[158px] whitespace-normal" }
 ];
 
@@ -2671,6 +2671,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [sendingNotifyId, setSendingNotifyId] = useState<string | null>(null);
   const [workflowDrawerStudentId, setWorkflowDrawerStudentId] = useState<string | null>(null);
+  const [workflowDrawerTab, setWorkflowDrawerTab] = useState<"intake" | "health" | "evaluation" | "trial" | "psychology" | "review" | "letters" | "history">("intake");
+  const openDossierTab = (
+    studentId: string,
+    tab: "intake" | "health" | "evaluation" | "trial" | "psychology" | "review" | "letters" | "history" = "intake"
+  ) => {
+    setWorkflowDrawerTab(tab);
+    setWorkflowDrawerStudentId(studentId);
+  };
   const [approvalPreviewModal, setApprovalPreviewModal] = useState<{
     open: boolean;
     loading: boolean;
@@ -5706,7 +5714,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </span>
                 <span className="text-slate-300">→</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
-                  B7 Tâm lý (khi cần)
+                  B7 Khảo sát tâm lý
                 </span>
                 <span className="text-slate-300">→</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-[#003B3A]">
@@ -5919,7 +5927,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-[126px] min-w-[126px] p-3 align-middle text-center bg-inherit border border-slate-100">
                                   <button
                                     type="button"
-                                    onClick={() => setWorkflowDrawerStudentId(s.id)}
+                                    onClick={() => openDossierTab(s.id, "intake")}
                                     className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
                                     title="Mở Hồ sơ B1–B13 (Y tế B4A / Đánh giá B5 / Tâm lý BM.09 / Hẹn trải nghiệm / Xuất thư)"
                                   >
@@ -6035,7 +6043,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </td>
                                 )}
 
-                                {/* B6 Học trải nghiệm */}
+                                {/* B6 Học trải nghiệm — map trực tiếp tag B6 Học trải nghiệm, chỉ hiện KQ BGH Mầm non xét duyệt */}
                                 <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
                                     const wf = getPreschoolRowWorkflowState(s);
@@ -6046,47 +6054,49 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     );
                                     if (!needTrial || wf.isExemptTrial) {
                                       return (
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                        <button
+                                          type="button"
+                                          onClick={() => openDossierTab(s.id, "trial")}
+                                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200/70 cursor-pointer"
+                                          title="Mở tab B6 Học trải nghiệm"
+                                        >
                                           Không KS
-                                        </span>
+                                        </button>
                                       );
                                     }
-                                    const trialDone = Boolean(wf.probRes || wf.probBgh);
+                                    const bghTrialDone = Boolean(wf.probBgh);
+                                    const bghTrialLabel =
+                                      wf.probBgh === "DAT"
+                                        ? { text: "BGH duyệt: Đạt", cls: "text-emerald-700" }
+                                        : wf.probBgh === "KHONG_DAT"
+                                          ? { text: "BGH duyệt: Không đạt", cls: "text-rose-700" }
+                                          : wf.probBgh === "Y_KIEN_KHAC"
+                                            ? { text: "BGH duyệt: Ý kiến khác", cls: "text-amber-700" }
+                                            : { text: "Chờ BGH MN duyệt", cls: "text-slate-400" };
                                     return (
                                       <div className="flex flex-col items-start gap-1">
                                         <button
                                           type="button"
-                                          onClick={() => openAssignModal(s)}
+                                          onClick={() => openDossierTab(s.id, "trial")}
                                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
-                                            trialDone
+                                            bghTrialDone
                                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                                               : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
                                           }`}
+                                          title="Mở tab B6 Học trải nghiệm"
                                         >
-                                          {trialDone ? "✓ Hoàn thành" : "● Đợi"}
+                                          {bghTrialDone ? "✓ Hoàn thành" : "● Đợi"}
                                         </button>
-                                        {s.probationaryTeacher && (
-                                          <div className="text-[10px] text-slate-600 leading-snug truncate max-w-[138px]" title={`GV trải nghiệm: ${s.probationaryTeacher}`}>
-                                            <span className="text-slate-400">GV:</span> <strong className="text-[#003B3A]">{s.probationaryTeacher}</strong>
-                                          </div>
-                                        )}
-                                        {s.probationaryClass && (
-                                          <div className="text-[10px] text-slate-500 leading-snug truncate max-w-[138px]">
-                                            Lớp: <strong className="text-slate-700">{s.probationaryClass}</strong>
-                                          </div>
-                                        )}
-                                        {wf.probRes && (
-                                          <span className={`text-[10px] font-semibold ${wf.probRes === "DAT" ? "text-emerald-700" : "text-rose-700"}`}>
-                                            KQ: {wf.probRes === "DAT" ? "Đạt" : "Chưa đạt"}
-                                          </span>
-                                        )}
+                                        <span className={`text-[10px] font-semibold leading-snug ${bghTrialLabel.cls}`}>
+                                          {bghTrialLabel.text}
+                                        </span>
                                       </div>
                                     );
                                   })()}
                                 </td>
 
-                                {/* B7 Tâm lý (khi cần) */}
-                                <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                {/* B7 Khảo sát tâm lý — map trực tiếp tag B7 Khảo sát tâm lý: Kết quả khảo sát tâm lý & GV phụ trách */}
+                                <td className="w-[162px] min-w-[162px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
                                     const needPsy = Boolean(
                                       s.trialPsychologyScreening ||
@@ -6095,32 +6105,54 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     );
                                     if (!needPsy) {
                                       return (
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                        <button
+                                          type="button"
+                                          onClick={() => openDossierTab(s.id, "psychology")}
+                                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200/70 cursor-pointer"
+                                          title="Mở tab B7 Khảo sát tâm lý"
+                                        >
                                           Không KS
-                                        </span>
+                                        </button>
                                       );
                                     }
                                     const psyDone =
                                       s.trialPsychologyStatus === "COMPLETED" ||
                                       s.trialPsychologyStatus === "EVALUATED";
+                                    const psyResultText =
+                                      s.trialPsychologyConclusion === "BINH_THUONG"
+                                        ? { text: "KQ: Bình thường", cls: "text-emerald-700" }
+                                        : s.trialPsychologyConclusion === "CAN_THEO_DOI"
+                                          ? { text: "KQ: Cần theo dõi", cls: "text-amber-700" }
+                                          : s.trialPsychologyConclusion === "CAN_CAN_THIEP"
+                                            ? { text: "KQ: Cần can thiệp", cls: "text-rose-700" }
+                                            : psyDone
+                                              ? { text: "KQ: Đã đánh giá", cls: "text-emerald-700" }
+                                              : s.trialPsychologyStatus === "CONFIRMED"
+                                                ? { text: "Đã xác nhận", cls: "text-[#00736E]" }
+                                                : { text: "Chờ GV Tâm lý", cls: "text-slate-400" };
                                     return (
                                       <div className="flex flex-col items-start gap-1">
                                         <button
                                           type="button"
-                                          onClick={() => setWorkflowDrawerStudentId(s.id)}
+                                          onClick={() => openDossierTab(s.id, "psychology")}
                                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
                                             psyDone
                                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                                               : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
                                           }`}
+                                          title="Mở tab B7 Khảo sát tâm lý"
                                         >
                                           {psyDone ? "✓ Hoàn thành" : "● Đợi"}
                                         </button>
-                                        {s.trialPsychologistName && (
-                                          <div className="text-[10px] text-slate-600 leading-snug truncate max-w-[138px]" title={`GV Tâm lý: ${s.trialPsychologistName}`}>
-                                            <span className="text-slate-400">GV:</span> <strong className="text-[#003B3A]">{s.trialPsychologistName}</strong>
-                                          </div>
-                                        )}
+                                        <span className={`text-[10px] font-semibold leading-snug ${psyResultText.cls}`}>
+                                          {psyResultText.text}
+                                        </span>
+                                        <div className="text-[10px] text-slate-600 leading-snug truncate max-w-[146px]" title={`GV phụ trách: ${s.trialPsychologistName || "Chưa phân công"}`}>
+                                          <span className="text-slate-400">GV:</span>{" "}
+                                          <strong className={s.trialPsychologistName ? "text-[#003B3A]" : "text-slate-400 font-normal italic"}>
+                                            {s.trialPsychologistName || "Chưa phân công"}
+                                          </strong>
+                                        </div>
                                       </div>
                                     );
                                   })()}
@@ -11159,6 +11191,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {/* Drawer Điều phối hồ sơ Mầm non B1–B13 (Tâm lý BM.09, Hẹn trải nghiệm, Xuất thư BM.17/04) */}
       <PreschoolDossierDrawer
         studentId={workflowDrawerStudentId}
+        initialTab={workflowDrawerTab}
         onClose={() => setWorkflowDrawerStudentId(null)}
         onUpdated={() => {
           fetchStudentSummaries();

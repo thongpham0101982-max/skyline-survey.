@@ -30,6 +30,7 @@ import { PreschoolPrintableDocument } from "./PreschoolPrintableDocument"
 
 interface Props {
   studentId: string | null
+  initialTab?: DrawerTab
   onClose: () => void
   onUpdated: () => void
   staffUsers: Array<{ id: string; fullName: string; email: string; role: string }>
@@ -37,7 +38,7 @@ interface Props {
 
 type DrawerTab = "intake" | "health" | "evaluation" | "trial" | "psychology" | "review" | "letters" | "history"
 
-export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUsers }: Props) {
+export function PreschoolDossierDrawer({ studentId, initialTab, onClose, onUpdated, staffUsers }: Props) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -251,10 +252,10 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
   useEffect(() => {
     if (studentId) {
       setNotice(null)
-      setActiveTab("intake")
+      setActiveTab(initialTab || "intake")
       fetchDossier(studentId)
     }
-  }, [studentId])
+  }, [studentId, initialTab])
 
   if (!studentId) return null
 
@@ -434,7 +435,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
     { id: "health", label: "B4A Y tế", icon: Stethoscope },
     { id: "evaluation", label: "B5/B4B Đánh giá", icon: FileText },
     { id: "trial", label: "B6 Học trải nghiệm", icon: CalendarPlus },
-    { id: "psychology", label: "B7 Tâm lý (khi cần)", icon: Brain },
+    { id: "psychology", label: "B7 Khảo sát tâm lý", icon: Brain },
     { id: "review", label: "B6/B9A/B10 Duyệt", icon: CheckCircle2 },
     { id: "letters", label: "B11–B13 Thư & Lưu", icon: Archive },
     { id: "history", label: "Lịch sử", icon: History },
