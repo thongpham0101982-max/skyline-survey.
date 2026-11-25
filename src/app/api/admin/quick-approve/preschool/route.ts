@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import {
+  notifyPreschoolBghReviewResultToStakeholders,
   notifyPreschoolGdcsResultToStakeholders,
   verifyPreschoolApprovalToken,
   verifyWorkflowQuickApproveToken,
@@ -868,6 +869,22 @@ export async function POST(req: NextRequest) {
           },
         })
 
+        // Tự động gửi email thông báo kết quả BGH/NT MN duyệt đến Tư vấn, Giáo vụ, Khảo thí tổng hợp & email BGH duyệt
+        notifyPreschoolBghReviewResultToStakeholders({
+          student,
+          decision: "HEN_TRAI_NGHIEM_BO_SUNG",
+          approverName: actorDisplay,
+          approverEmail: legacyEmail || null,
+          comment: combinedComment,
+          trialInfo: {
+            grade: trialGrade,
+            className: trialClass,
+            teacherName: trialTeacher,
+            period: formattedPeriod,
+          },
+          baseUrl: req.nextUrl.origin,
+        }).catch(() => {})
+
         if (wantsJson) {
           return NextResponse.json({
             success: true,
@@ -947,6 +964,16 @@ export async function POST(req: NextRequest) {
         source: "EMAIL_QUICK_APPROVE",
         detail: { reviewDecision: bghDecision, comment: comment || null },
       })
+
+      // Tự động gửi email thông báo kết quả BGH/NT MN duyệt đến Tư vấn, Giáo vụ, Khảo thí tổng hợp & email BGH duyệt
+      notifyPreschoolBghReviewResultToStakeholders({
+        student,
+        decision: bghDecision,
+        approverName: actorDisplay,
+        approverEmail: legacyEmail || null,
+        comment: comment || null,
+        baseUrl: req.nextUrl.origin,
+      }).catch(() => {})
 
       if (wantsJson) {
         return NextResponse.json({ success: true, workflowStatus: "CHO_DUYET", bghApprovalStatus: bghDecision })

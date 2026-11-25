@@ -2689,10 +2689,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     studentId: string;
     studentIds?: string[];
     batchName?: string;
-    targetRole?: "BGH_MN" | "GDCS" | "RESULT_NOTIFY";
+    targetRole?: "BGH_MN" | "BGH_RESULT_NOTIFY" | "GDCS" | "RESULT_NOTIFY";
     previewOnlyMode?: boolean;
     viewport?: "desktop" | "mobile";
     resultOutcome?: "DAT" | "CHUA_DAT";
+    bghDecision?: "DE_XUAT_DAT" | "DE_XUAT_CHUA_DAT" | "HEN_TRAI_NGHIEM_BO_SUNG";
     studentName: string;
     studentCode: string;
     campus: string;
@@ -2864,9 +2865,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   };
 
   const openBatchEmailPreviewMode = async (
-    role: "BGH_MN" | "GDCS" | "RESULT_NOTIFY" = "BGH_MN",
+    role: "BGH_MN" | "BGH_RESULT_NOTIFY" | "GDCS" | "RESULT_NOTIFY" = "BGH_MN",
     outcome: "DAT" | "CHUA_DAT" = "DAT",
-    isReadOnlyPreview = true
+    isReadOnlyPreview = true,
+    bghDecision: "DE_XUAT_DAT" | "DE_XUAT_CHUA_DAT" | "HEN_TRAI_NGHIEM_BO_SUNG" = "DE_XUAT_DAT"
   ) => {
     const sourceStudents = filteredStudents.length > 0 ? filteredStudents : studentSummaries;
     if (!sourceStudents.length) {
@@ -2876,18 +2878,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     const ids = sourceStudents.map((st: any) => st.id);
     const currentBatchObj = availableBatches.find((b: any) => b.id === cBatchId);
     const batchLabel = currentBatchObj?.name || selPeriod?.name || "Đợt khảo sát Mầm non";
+    const isAutoNotifyTab = role === "RESULT_NOTIFY" || role === "BGH_RESULT_NOTIFY";
 
     setApprovalPreviewModal((prev) => ({
       ...prev,
       open: true,
       loading: true,
       sending: false,
-      studentId: role === "RESULT_NOTIFY" ? ids[0] : "",
+      studentId: isAutoNotifyTab ? ids[0] : "",
       studentIds: ids,
       batchName: batchLabel,
       targetRole: role,
-      previewOnlyMode: role === "RESULT_NOTIFY" ? true : isReadOnlyPreview,
+      previewOnlyMode: isAutoNotifyTab ? true : isReadOnlyPreview,
       resultOutcome: outcome,
+      bghDecision,
       viewport: prev.viewport || "desktop",
       html: "",
       recipients: [],
@@ -2903,13 +2907,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               studentId: ids[0],
               outcome,
             }
-          : {
-              action: "SEND_BATCH_APPROVAL_NOTIFICATION",
-              studentIds: ids,
-              targetRole: role,
-              batchName: batchLabel,
-              previewOnly: true,
-            };
+          : role === "BGH_RESULT_NOTIFY"
+            ? {
+                action: "PREVIEW_BGH_REVIEW_NOTIFICATION",
+                studentId: ids[0],
+                decision: bghDecision,
+              }
+            : {
+                action: "SEND_BATCH_APPROVAL_NOTIFICATION",
+                studentIds: ids,
+                targetRole: role,
+                batchName: batchLabel,
+                previewOnly: true,
+              };
       const res = await fetch("/api/preschool-input-assessment-students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -2923,12 +2933,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           open: true,
           loading: false,
           sending: false,
-          studentId: role === "RESULT_NOTIFY" ? ids[0] : "",
+          studentId: isAutoNotifyTab ? ids[0] : "",
           studentIds: ids,
           batchName: batchLabel,
           targetRole: role,
-          previewOnlyMode: role === "RESULT_NOTIFY" ? true : isReadOnlyPreview,
+          previewOnlyMode: isAutoNotifyTab ? true : isReadOnlyPreview,
           resultOutcome: outcome,
+          bghDecision,
           studentName: data.studentName || `${ids.length} học sinh`,
           studentCode: data.studentCode || `${ids.length} HS`,
           campus: data.campus || "",
@@ -11312,15 +11323,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <p className="text-[11px] font-medium text-[#5EEAD4]">
                   {approvalPreviewModal.targetRole === "RESULT_NOTIFY"
                     ? "Chế độ xem trước · Tự động gửi sau khi GĐCS phê duyệt B10"
-                    : "Chế độ xem trước · Kiểm tra nội dung & người nhận trước khi gửi"}
+                    : approvalPreviewModal.targetRole === "BGH_RESULT_NOTIFY"
+                      ? "Chế độ xem trước · Tự động gửi sau khi BGH / NT Mầm non duyệt B6/B9A"
+                      : "Chế độ xem trước · Kiểm tra nội dung & người nhận trước khi gửi"}
                 </p>
                 <h3 className="text-base font-bold mt-0.5 flex items-center gap-2">
                   <Eye className="w-4 h-4 text-[#5EEAD4]" />
                   {approvalPreviewModal.targetRole === "RESULT_NOTIFY"
-                    ? "Xem trước Email thông báo KQ GĐCS duyệt → Tư vấn, Giáo vụ, BGH"
-                    : approvalPreviewModal.targetRole === "BGH_MN"
-                      ? "Xem trước Email yêu cầu NT Mầm non / BGH duyệt"
-                      : "Xem trước Email yêu cầu GĐCS duyệt B10"}
+                    ? "Xem trước Email TB kết quả GĐCS duyệt → Tư vấn, Giáo vụ, BGH"
+                    : approvalPreviewModal.targetRole === "BGH_RESULT_NOTIFY"
+                      ? "Xem trước Email TB kết quả BGH/NT MN duyệt → TV, Giáo vụ, Khảo thí, BGH"
+                      : approvalPreviewModal.targetRole === "BGH_MN"
+                        ? "Xem trước Email yêu cầu NT Mầm non / BGH duyệt"
+                        : "Xem trước Email yêu cầu GĐCS duyệt B10"}
                   {" — "}
                   {approvalPreviewModal.studentName || "Học sinh"}
                   {approvalPreviewModal.studentCode ? ` (${approvalPreviewModal.studentCode})` : ""}
@@ -11336,18 +11351,20 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </button>
             </div>
 
-            {/* Thanh chuyển đổi 3 mẫu Email khi ở chế độ Xem trước theo đợt */}
+            {/* Thanh chuyển đổi 4 mẫu Email khi ở chế độ Xem trước theo đợt */}
             {Array.isArray(approvalPreviewModal.studentIds) && approvalPreviewModal.studentIds.length > 0 && (
               <div className="px-5 py-2.5 bg-[#F0FDFA] border-b border-[#CCFBF1] flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {(
                     [
                       { key: "BGH_MN", label: "1. Email đợt → NT MN / BGH" },
-                      { key: "GDCS", label: "2. Email đợt → GĐCS duyệt B10" },
-                      { key: "RESULT_NOTIFY", label: "3. TB kết quả GĐCS → Tư vấn · Giáo vụ · BGH" },
+                      { key: "BGH_RESULT_NOTIFY", label: "2. TB KQ NT MN/BGH → TV · GVụ · Khảo thí · BGH" },
+                      { key: "GDCS", label: "3. Email đợt → GĐCS duyệt B10" },
+                      { key: "RESULT_NOTIFY", label: "4. TB KQ GĐCS → Tư vấn · Giáo vụ · BGH" },
                     ] as const
                   ).map((t) => {
                     const active = approvalPreviewModal.targetRole === t.key;
+                    const isAutoTab = t.key === "RESULT_NOTIFY" || t.key === "BGH_RESULT_NOTIFY";
                     return (
                       <button
                         key={t.key}
@@ -11357,7 +11374,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           openBatchEmailPreviewMode(
                             t.key,
                             approvalPreviewModal.resultOutcome || "DAT",
-                            t.key === "RESULT_NOTIFY" ? true : Boolean(approvalPreviewModal.previewOnlyMode)
+                            isAutoTab ? true : Boolean(approvalPreviewModal.previewOnlyMode),
+                            approvalPreviewModal.bghDecision || "DE_XUAT_DAT"
                           )
                         }
                         className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
@@ -11371,6 +11389,31 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     );
                   })}
                 </div>
+
+                {approvalPreviewModal.targetRole === "BGH_RESULT_NOTIFY" && (
+                  <div className="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-[#E2E8F0]">
+                    {(
+                      [
+                        { key: "DE_XUAT_DAT", label: "Đề xuất Đạt", cls: "bg-emerald-600 text-white" },
+                        { key: "DE_XUAT_CHUA_DAT", label: "Chưa đạt", cls: "bg-rose-600 text-white" },
+                        { key: "HEN_TRAI_NGHIEM_BO_SUNG", label: "Hẹn TN (B7B)", cls: "bg-[#008B85] text-white" },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => openBatchEmailPreviewMode("BGH_RESULT_NOTIFY", "DAT", true, opt.key)}
+                        className={`px-2 py-1 rounded-md text-[11px] font-semibold cursor-pointer transition-colors ${
+                          (approvalPreviewModal.bghDecision || "DE_XUAT_DAT") === opt.key
+                            ? opt.cls
+                            : "text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {approvalPreviewModal.targetRole === "RESULT_NOTIFY" && (
                   <div className="inline-flex items-center gap-1 bg-white p-0.5 rounded-lg border border-[#E2E8F0]">
@@ -11516,9 +11559,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <div className="text-[11px] text-slate-500">
                 {approvalPreviewModal.targetRole === "RESULT_NOTIFY"
                   ? "Email này được hệ thống tự động gửi ngay khi GĐCS hoàn tất phê duyệt B10."
-                  : approvalPreviewModal.previewOnlyMode
-                    ? "Đang ở chế độ chỉ xem trước. Bấm nút gửi theo đợt trên thanh Luồng xét duyệt khi đủ điều kiện để gửi thật."
-                    : "Vui lòng kiểm tra danh sách người nhận & nội dung trước khi xác nhận gửi."}
+                  : approvalPreviewModal.targetRole === "BGH_RESULT_NOTIFY"
+                    ? "Email này được hệ thống tự động gửi ngay khi BGH / Nhóm trưởng Mầm non xét duyệt B6/B9A."
+                    : approvalPreviewModal.previewOnlyMode
+                      ? "Đang ở chế độ chỉ xem trước. Bấm nút gửi theo đợt trên thanh Luồng xét duyệt khi đủ điều kiện để gửi thật."
+                      : "Vui lòng kiểm tra danh sách người nhận & nội dung trước khi xác nhận gửi."}
               </div>
               <div className="flex items-center gap-2.5 shrink-0">
                 <button
@@ -11527,9 +11572,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   onClick={() => setApprovalPreviewModal((prev) => ({ ...prev, open: false }))}
                   className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
-                  {approvalPreviewModal.previewOnlyMode || approvalPreviewModal.targetRole === "RESULT_NOTIFY" ? "Đóng" : "Hủy"}
+                  {approvalPreviewModal.previewOnlyMode ||
+                  approvalPreviewModal.targetRole === "RESULT_NOTIFY" ||
+                  approvalPreviewModal.targetRole === "BGH_RESULT_NOTIFY"
+                    ? "Đóng"
+                    : "Hủy"}
                 </button>
-                {!approvalPreviewModal.previewOnlyMode && approvalPreviewModal.targetRole !== "RESULT_NOTIFY" && (
+                {!approvalPreviewModal.previewOnlyMode &&
+                  approvalPreviewModal.targetRole !== "RESULT_NOTIFY" &&
+                  approvalPreviewModal.targetRole !== "BGH_RESULT_NOTIFY" && (
                   <button
                     type="button"
                     disabled={approvalPreviewModal.loading || approvalPreviewModal.sending}

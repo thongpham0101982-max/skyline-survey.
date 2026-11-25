@@ -20,7 +20,9 @@ import {
   getPreschoolDevelopmentSummary,
   renderPreschoolApprovalEmailHtml,
   renderPreschoolBatchApprovalEmailHtml,
+  renderPreschoolBghReviewNotificationEmailHtml,
   renderPreschoolGdcsResultNotificationEmailHtml,
+  resolvePreschoolBghReviewRecipients,
   resolvePreschoolStakeholderRecipients,
 } from "@/lib/preschool-approval-service"
 
@@ -1364,6 +1366,57 @@ export async function POST(req) {
         admissionResult,
         approverName: student.gdcsApprovalUser || "Giám đốc Điều hành Cơ sở",
         comment: student.gdcsApprovalComment || (outcome === "DAT" ? "Đồng ý tiếp nhận theo đề xuất của BGH Mầm non." : "Cần trao đổi thêm với Phụ huynh."),
+        campusStr,
+        campusCode,
+        baseUrl,
+      });
+      return NextResponse.json({
+        preview: true,
+        campus: campusStr || campusCode || "Sky-Line",
+        studentName: student.fullName,
+        studentCode: student.studentCode,
+        subject,
+        recipients,
+        html,
+      });
+    }
+
+    if (action === "PREVIEW_BGH_REVIEW_NOTIFICATION") {
+      const { studentId, decision: reqDecision } = body;
+      const student = studentId
+        ? await (prisma as any).preschoolInputAssessmentStudent.findUnique({ where: { id: studentId } })
+        : await (prisma as any).preschoolInputAssessmentStudent.findFirst({ orderBy: { createdAt: "desc" } });
+      if (!student) {
+        return NextResponse.json({ error: "Không tìm thấy hồ sơ học sinh để xem trước." }, { status: 404 });
+      }
+      const decision =
+        reqDecision === "DE_XUAT_CHUA_DAT" || reqDecision === "HEN_TRAI_NGHIEM_BO_SUNG" || reqDecision === "CAN_TAM_LY"
+          ? reqDecision
+          : "DE_XUAT_DAT";
+      const { campusStr, campusCode, recipients } = await resolvePreschoolBghReviewRecipients(student, null);
+      const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
+      const protocol = req.headers.get("x-forwarded-proto") || "https";
+      const baseUrl = `${protocol}://${host}`;
+      const { subject, html } = renderPreschoolBghReviewNotificationEmailHtml({
+        student,
+        decision,
+        approverName: student.bghApprovalUser || "BGH / Nhóm trưởng Mầm non",
+        comment:
+          student.bghApprovalComment ||
+          (decision === "DE_XUAT_DAT"
+            ? "Trẻ đáp ứng tiêu chí phát triển theo độ tuổi, đề xuất Đạt trình GĐCS duyệt B10."
+            : decision === "HEN_TRAI_NGHIEM_BO_SUNG"
+              ? "Đề nghị cho trẻ tham gia Học trải nghiệm để đánh giá thêm khả năng hòa nhập."
+              : "Cần trao đổi thêm cùng phụ huynh."),
+        trialInfo:
+          decision === "HEN_TRAI_NGHIEM_BO_SUNG"
+            ? {
+                grade: student.grade,
+                className: student.probationaryClass || "Lớp trải nghiệm Mầm non",
+                teacherName: student.probationaryTeacher || "GV Phụ trách lớp",
+                period: student.probationaryPeriod || "Sau 2 ngày làm việc",
+              }
+            : null,
         campusStr,
         campusCode,
         baseUrl,

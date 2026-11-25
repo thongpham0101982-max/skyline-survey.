@@ -21,6 +21,7 @@ import {
 } from "@/lib/preschool-workflow"
 import {
   generatePreschoolB10ApprovalEmailHtml,
+  notifyPreschoolBghReviewResultToStakeholders,
   notifyPreschoolGdcsResultToStakeholders,
   renderPreschoolPsychologyScreeningEmailHtml,
 } from "@/lib/preschool-approval-service"
@@ -1241,6 +1242,23 @@ export async function PATCH(
         actorRole: ctx.role,
         detail: { reviewDecision, reviewComment, createdRoundId },
       })
+
+      // Tự động gửi email thông báo kết quả BGH/NT MN duyệt đến Tư vấn, Giáo vụ, Khảo thí tổng hợp & email BGH duyệt
+      ;(async () => {
+        try {
+          const actorUser = ctx.userId
+            ? await (prisma as any).user.findUnique({ where: { id: ctx.userId }, select: { email: true } }).catch(() => null)
+            : null
+          await notifyPreschoolBghReviewResultToStakeholders({
+            student,
+            decision: reviewDecision,
+            approverName: actorName,
+            approverEmail: actorUser?.email || null,
+            comment: reviewComment,
+            baseUrl: req.nextUrl.origin,
+          })
+        } catch {}
+      })()
 
       return NextResponse.json({ success: true, workflowStatus: nextStatus, createdRoundId })
     }
