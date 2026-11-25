@@ -16,6 +16,7 @@ import ChildDevStandardForm from "./ChildDevStandardForm";
 import ThinkingSkillsForm from "./ThinkingSkillsForm";
 import PreschoolEvaluationForm from "./PreschoolEvaluationForm";
 import PreschoolPsychologyForm from "./PreschoolPsychologyForm";
+import PreschoolHealthForm from "./PreschoolHealthForm";
 import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner";
 import ReportExportDrawer from "@/components/testing/ReportExportDrawer";
 import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
@@ -97,9 +98,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         }
 
         const typeFilteredAssignments = urlType === "preschool"
-            ? assignments.filter(a => a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation" || a.subjectId === "preschool-psychology")
+            ? assignments.filter(a => a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation" || a.subjectId === "preschool-psychology" || a.subjectId === "preschool-health")
             : urlType === "general"
-                ? assignments.filter(a => !(a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation" || a.subjectId === "preschool-psychology"))
+                ? assignments.filter(a => !(a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation" || a.subjectId === "preschool-psychology" || a.subjectId === "preschool-health"))
                 : assignments;
         const pool = typeFilteredAssignments.length > 0 ? typeFilteredAssignments : assignments;
 
@@ -411,6 +412,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 const key = a.subjectId;
                 if (!unique.has(key)) {
                     unique.set(key, { ...a, overrideSystemLabel: "", overrideSystemCode: "", grade: "" });
+                }
+            } else if (a.isPreschoolHealth || a.subjectId === "preschool-health") {
+                const key = "preschool-health";
+                if (!unique.has(key)) {
+                    unique.set(key, { ...a, id: "preschool-health-all", grade: "", overrideSystemLabel: "", subject: { ...a.subject, name: "B4A: Y tế kiểm tra thể chất (Mầm non)" } });
                 }
             } else if (a.isPreschoolPsychology || a.subjectId === "preschool-psychology") {
                 const key = "preschool-psychology";
@@ -1197,7 +1203,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     const formBadge =
                         subjId === "preschool"
                             ? "BM.KTĐBCL.03/08"
-                            : subjId === "preschool-psychology"
+                            : subjId === "preschool-health"
+                              ? "B4A · Y tế thể chất"
+                              : subjId === "preschool-psychology"
                               ? "BM.KTĐBCL.09"
                               : subjId === "preschool-probation"
                                 ? "Phiếu Học trải nghiệm"
@@ -2998,7 +3006,28 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             {/* Preschool Evaluation / Psychology Modal */}
             {isPreschoolSubject && activePreschoolStudent && isPreschoolModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-white overflow-y-auto animate-in fade-in">
-                    {activePreschoolStudent.isPreschoolPsychology ? (
+                    {activePreschoolStudent.isPreschoolHealth ? (
+                        <PreschoolHealthForm
+                            student={activePreschoolStudent}
+                            onSaved={async () => {
+                                const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+                                if (assignment) {
+                                    const gradeParam = selectedGrade !== "all" ? selectedGrade : "";
+                                    const systemParam = selectedSystemCode !== "all" ? selectedSystemCode : "";
+                                    setLoading(true);
+                                    const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
+                                    const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${encodeURIComponent(gradeParam)}&systemCode=${encodeURIComponent(systemParam)}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}&_t=${Date.now()}`, { cache: "no-store" });
+                                    if (response.ok) {
+                                        const data = await response.json();
+                                        if (Array.isArray(data)) setStudents(data);
+                                    }
+                                    setLoading(false);
+                                }
+                            }}
+                            onClose={() => setIsPreschoolModalOpen(false)}
+                            isLocked={isLocked}
+                        />
+                    ) : activePreschoolStudent.isPreschoolPsychology ? (
                         <PreschoolPsychologyForm
                             student={activePreschoolStudent}
                             user={user}

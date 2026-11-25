@@ -868,7 +868,24 @@ export async function PATCH(
 
     // 3. B4A: Y tế kiểm tra thể chất
     if (action === "SAVE_HEALTH_CHECK") {
-      const allowed = hasAnyRole(userRoles, MEDICAL_ROLES) || activeRound.assignedMedicalId === ctx.userId
+      let assignedViaBatchMedical = false
+      if (ctx.userId && student.periodId) {
+        const medAssign = await (prisma as any).preschoolInputAssessmentTeacherAssignment
+          .findFirst({
+            where: {
+              userId: ctx.userId,
+              periodId: student.periodId,
+              grade: { in: ["Y_TE_B4A", "Y tế (B4A)", "Y tế"] },
+            },
+            select: { id: true },
+          })
+          .catch(() => null)
+        if (medAssign) assignedViaBatchMedical = true
+      }
+      const allowed =
+        hasAnyRole(userRoles, MEDICAL_ROLES) ||
+        activeRound.assignedMedicalId === ctx.userId ||
+        assignedViaBatchMedical
       if (!allowed) {
         return NextResponse.json({ error: "Chỉ bộ phận Y tế hoặc nhân sự được giao mới được nhập thông tin sức khỏe." }, { status: 403 })
       }

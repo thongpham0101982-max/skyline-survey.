@@ -365,30 +365,44 @@ export async function GET(req: any) {
         }) : [];
 
         const mappedPreschool = preschoolAssignments.map((a: any) => {
-            const isProbation = a.grade === "Mẫu phiếu học thử" || a.grade === "Học thử" || a.grade === "Học trải nghiệm";
+            const rawGradeUp = String(a.grade || "").trim().toUpperCase();
+            const isHealthB4A = rawGradeUp === "Y_TE_B4A" || rawGradeUp.includes("Y_TE") || String(a.grade || "").toLowerCase().includes("y tế");
+            const isProbation = !isHealthB4A && (a.grade === "Mẫu phiếu học thử" || a.grade === "Học thử" || a.grade === "Học trải nghiệm");
             const studentCount = preschoolStudents.filter((st: any) => {
                 if (st.periodId !== a.periodId) return false;
                 if (a.batchId && st.batchId !== a.batchId) return false;
+                if (isHealthB4A) return true;
                 if (isProbation) {
                     return st.admissionResult === "Học thử" || st.probationaryTeacher === currentTeacherForAss?.teacherName;
                 }
                 return matchesPreschoolGrade(st.grade || "", a.grade);
             }).length;
 
+            const resolvedSubjId = isHealthB4A
+                ? "preschool-health"
+                : isProbation
+                  ? "preschool-probation"
+                  : "preschool";
+
             return {
                 id: a.id,
                 periodId: a.periodId,
                 batchId: a.batchId,
                 userId: a.userId,
-                subjectId: isProbation ? "preschool-probation" : "preschool",
-                grade: isProbation ? "Học trải nghiệm" : a.grade,
+                subjectId: resolvedSubjId,
+                grade: isHealthB4A ? "Y tế (B4A)" : isProbation ? "Học trải nghiệm" : a.grade,
                 isPreschool: true,
+                isPreschoolHealth: isHealthB4A ? true : undefined,
                 isPreschoolProbation: isProbation ? true : undefined,
                 studentCount,
                 subject: {
-                    id: isProbation ? "preschool-probation" : "preschool",
-                    name: isProbation ? "Đánh giá Học trải nghiệm (Mầm non)" : "Đánh giá Mầm non",
-                    code: isProbation ? "PRESCHOOL_PROBATION" : "PRESCHOOL",
+                    id: resolvedSubjId,
+                    name: isHealthB4A
+                        ? "B4A: Y tế kiểm tra thể chất (Mầm non)"
+                        : isProbation
+                          ? "Đánh giá Học trải nghiệm (Mầm non)"
+                          : "Đánh giá Mầm non",
+                    code: isHealthB4A ? "B4A_YTE" : isProbation ? "PRESCHOOL_PROBATION" : "PRESCHOOL",
                     scoreColumns: 1,
                     commentColumns: 1,
                 },
@@ -1289,6 +1303,58 @@ export async function GET(req: any) {
             } catch (err: any) {
                 console.error("Error fetching probationary students:", err);
                 return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
+            }
+        }
+
+        if (subjectId === "preschool-health") {
+            try {
+                const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                    where: {
+                        periodId,
+                        ...(batchId && batchId !== "all" && batchId !== "null" ? { batchId } : {}),
+                    },
+                    orderBy: { fullName: "asc" },
+                });
+
+                const stIds = (students || []).map((s: any) => s.id);
+                const roundMap = new Map<string, any>();
+                if (stIds.length > 0) {
+                    try {
+                        const placeholders = stIds.map(() => "?").join(",");
+                        const rounds = await prisma.$queryRawUnsafe<any[]>(
+                            `SELECT "studentId", "heightCm", "weightKg", "physicalStatus", "physicalCheckedAt"
+                             FROM "PreschoolAssessmentRound"
+                             WHERE "studentId" IN (${placeholders})
+                             ORDER BY "roundNumber" ASC`,
+                            ...stIds
+                        );
+                        for (const r of rounds || []) {
+                            roundMap.set(r.studentId, r);
+                        }
+                    } catch {}
+                }
+
+                const enriched = (students || []).map((s: any) => {
+                    const r = roundMap.get(s.id);
+                    const hasHealth = Boolean((r?.heightCm && r?.weightKg) || r?.physicalCheckedAt);
+                    return {
+                        ...s,
+                        scoredCount: hasHealth ? 1 : 0,
+                        totalCriteria: 1,
+                        isPreschool: true,
+                        isPreschoolHealth: true,
+                        resolvedAgeGroup: "B4A · Y tế thể chất",
+                        healthHeightCm: r?.heightCm ?? null,
+                        healthWeightKg: r?.weightKg ?? null,
+                        healthStatus: r?.physicalStatus ?? null,
+                        scoreVals: [],
+                    };
+                });
+
+                return NextResponse.json(enriched);
+            } catch (err: any) {
+                console.error("Error fetching preschool health (B4A) students:", err);
+                return NextResponse.json({ error: err?.message || "Internal Server Error" }, { status: 500 });
             }
         }
 
