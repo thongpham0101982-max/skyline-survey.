@@ -27,32 +27,32 @@ export const DEFAULT_PRESCHOOL_APPROVAL_EMAIL_CONFIG: PreschoolApprovalEmailConf
     CS1: {
       bghmn: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
       gdcs: "longtt@skylineschool.edu.vn",
-      tuVan: "tuyensinh.cs1@skylineschool.edu.vn",
-      giaoVu: "",
+      tuVan: "thuongttn@skylineschool.edu.vn",
+      giaoVu: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn",
     },
     CS2: {
       bghmn: "yenlth@skylineschool.edu.vn, thanhmaitt@skylineschool.edu.vn",
       gdcs: "khanhpt@skylineschool.edu.vn",
-      tuVan: "tuyensinh.cs2@skylineschool.edu.vn",
-      giaoVu: "",
+      tuVan: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn",
+      giaoVu: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn",
     },
     CS3: {
       bghmn: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
       gdcs: "thanhtt@skylineschool.edu.vn",
-      tuVan: "tuyensinh.cs3@skylineschool.edu.vn",
-      giaoVu: "",
+      tuVan: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn",
+      giaoVu: "thuda@skylineschool.edu.vn",
     },
     CS4: {
       bghmn: "quyenlth@skylineschool.edu.vn, chault@skylineschool.edu.vn",
       gdcs: "trungct@skylineschool.edu.vn",
-      tuVan: "tuyensinh.cs4@skylineschool.edu.vn",
-      giaoVu: "",
+      tuVan: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn",
+      giaoVu: "bichtramtt@skylineschool.edu.vn",
     },
     CS5: {
       bghmn: "monghatn@skylineschool.edu.vn, ngocltb@skylineschool.edu.vn",
       gdcs: "trungdq1@skylineschool.edu.vn, oanhntk@skylineschool.edu.vn",
-      tuVan: "tuyensinh.cs5@skylineschool.edu.vn",
-      giaoVu: "",
+      tuVan: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn",
+      giaoVu: "dunglp@skylineschool.edu.vn",
     },
   },
 }
@@ -110,6 +110,28 @@ export function parseSavedPreschoolApprovalEmailConfig(
     JSON.stringify(DEFAULT_PRESCHOOL_APPROVAL_EMAIL_CONFIG)
   )
   if (!Array.isArray(configs)) return base
+
+  // Đồng bộ trước danh sách Tư vấn & Giáo vụ từ cấu hình Phổ thông (EMAIL_ROUTING_V1) nếu đã lưu
+  const k12Found = configs.find(
+    (c: any) => c.categoryType === "APPROVAL_EMAIL_CONFIG" && c.code === "EMAIL_ROUTING_V1"
+  )
+  if (k12Found?.name) {
+    try {
+      const k12Parsed = JSON.parse(k12Found.name)
+      if (k12Parsed?.campuses) {
+        for (const cs of CAMPUS_KEYS) {
+          const kc = k12Parsed.campuses[cs]
+          if (kc) {
+            const k12TuVan = String(kc.tuvan || kc.tuVan || "").trim()
+            const k12GiaoVu = String(kc.giaovu || kc.giaoVu || "").trim()
+            if (k12TuVan) base.campuses[cs].tuVan = k12TuVan
+            if (k12GiaoVu) base.campuses[cs].giaoVu = k12GiaoVu
+          }
+        }
+      }
+    } catch {}
+  }
+
   const found = configs.find(
     (c: any) =>
       c.categoryType === "APPROVAL_EMAIL_CONFIG" && c.code === "PRESCHOOL_APPROVAL_ROUTING_V1"
@@ -123,6 +145,8 @@ export function parseSavedPreschoolApprovalEmailConfig(
     if (parsed.campuses) {
       for (const cs of CAMPUS_KEYS) {
         if (parsed.campuses[cs]) {
+          const savedTuVan = String(parsed.campuses[cs].tuVan || parsed.campuses[cs].tuvan || "").trim()
+          const savedGiaoVu = String(parsed.campuses[cs].giaoVu || parsed.campuses[cs].giaovu || "").trim()
           base.campuses[cs] = {
             bghmn:
               typeof parsed.campuses[cs].bghmn === "string"
@@ -132,14 +156,10 @@ export function parseSavedPreschoolApprovalEmailConfig(
               typeof parsed.campuses[cs].gdcs === "string"
                 ? parsed.campuses[cs].gdcs
                 : base.campuses[cs].gdcs,
-            tuVan:
-              typeof parsed.campuses[cs].tuVan === "string"
-                ? parsed.campuses[cs].tuVan
-                : base.campuses[cs].tuVan,
-            giaoVu:
-              typeof parsed.campuses[cs].giaoVu === "string"
-                ? parsed.campuses[cs].giaoVu
-                : base.campuses[cs].giaoVu,
+            tuVan: savedTuVan && !/^tuyensinh\.cs\d+@skylineschool\.edu\.vn$/i.test(savedTuVan)
+              ? savedTuVan
+              : base.campuses[cs].tuVan,
+            giaoVu: savedGiaoVu ? savedGiaoVu : base.campuses[cs].giaoVu,
           }
         }
       }

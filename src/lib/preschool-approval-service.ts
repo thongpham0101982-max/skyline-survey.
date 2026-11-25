@@ -1262,7 +1262,7 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
     }
   };
 
-  // 1. Load configured PRESCHOOL_APPROVAL_ROUTING_V1 (BGH MN, Tư vấn, Giáo vụ) & EMAIL_ROUTING_V1
+  // 1. Load configured PRESCHOOL_APPROVAL_ROUTING_V1 & EMAIL_ROUTING_V1 (đồng bộ Phổ thông)
   try {
     const configs = await (prisma as any).assessmentConfig.findMany({
       where: {
@@ -1276,13 +1276,13 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
         if (cfg.code === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
           const cObj = parsed?.campuses?.[campusCode];
           addEmails(cObj?.bghmn, `BGH / NT Mầm non ${campusCode}`);
-          addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
-          addEmails(cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
+          addEmails(cObj?.tuVan || cObj?.tuvan, `Tư vấn tuyển sinh ${campusCode}`);
+          addEmails(cObj?.giaoVu || cObj?.giaovu, `Giáo vụ cơ sở ${campusCode}`);
         }
         if (cfg.code === "EMAIL_ROUTING_V1" && campusCode) {
           const cObj = parsed?.campuses?.[campusCode];
-          addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
-          addEmails(cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
+          addEmails(cObj?.tuvan || cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
+          addEmails(cObj?.giaovu || cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
           addEmails(cObj?.bgh, `BGH ${campusCode}`);
         }
       } catch {}
@@ -1327,13 +1327,20 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
     }
   } catch {}
 
-  // 3. Default Tư vấn & BGH MN fallback by campus if not yet present
+  // 3. Default Tư vấn, Giáo vụ (đồng bộ Phổ thông) & BGH MN fallback by campus if not yet present
   const DEFAULT_TUVAN_BY_CAMPUS: Record<string, string> = {
-    CS1: "tuyensinh.cs1@skylineschool.edu.vn",
-    CS2: "tuyensinh.cs2@skylineschool.edu.vn",
-    CS3: "tuyensinh.cs3@skylineschool.edu.vn",
-    CS4: "tuyensinh.cs4@skylineschool.edu.vn",
-    CS5: "tuyensinh.cs5@skylineschool.edu.vn",
+    CS1: "thuongttn@skylineschool.edu.vn",
+    CS2: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn",
+    CS3: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn",
+    CS4: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn",
+    CS5: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn",
+  };
+  const DEFAULT_GIAOVU_BY_CAMPUS: Record<string, string> = {
+    CS1: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn",
+    CS2: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn",
+    CS3: "thuda@skylineschool.edu.vn",
+    CS4: "bichtramtt@skylineschool.edu.vn",
+    CS5: "dunglp@skylineschool.edu.vn",
   };
   const DEFAULT_BGH_MN: Record<string, string> = {
     CS1: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
@@ -1345,6 +1352,10 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
   const hasTuVanAlready = Array.from(recMap.values()).some((r) => r.role.toLowerCase().includes("tư vấn"));
   if (!hasTuVanAlready && campusCode && DEFAULT_TUVAN_BY_CAMPUS[campusCode]) {
     addEmails(DEFAULT_TUVAN_BY_CAMPUS[campusCode], `Tư vấn tuyển sinh ${campusCode}`);
+  }
+  const hasGiaoVuAlready = Array.from(recMap.values()).some((r) => r.role.toLowerCase().includes("giáo vụ"));
+  if (!hasGiaoVuAlready && campusCode && DEFAULT_GIAOVU_BY_CAMPUS[campusCode]) {
+    addEmails(DEFAULT_GIAOVU_BY_CAMPUS[campusCode], `Giáo vụ cơ sở ${campusCode}`);
   }
   if (campusCode && DEFAULT_BGH_MN[campusCode]) {
     addEmails(DEFAULT_BGH_MN[campusCode], `BGH / NT Mầm non ${campusCode}`);
@@ -1524,13 +1535,13 @@ export async function resolvePreschoolBghReviewRecipients(
         if (cfg.code === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
           const cObj = parsed?.campuses?.[campusCode];
           if (!approverEmail) addEmails(cObj?.bghmn, `BGH / NT Mầm non ${campusCode}`);
-          addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
-          addEmails(cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
+          addEmails(cObj?.tuVan || cObj?.tuvan, `Tư vấn tuyển sinh ${campusCode}`);
+          addEmails(cObj?.giaoVu || cObj?.giaovu, `Giáo vụ cơ sở ${campusCode}`);
         }
         if (cfg.code === "EMAIL_ROUTING_V1" && campusCode) {
           const cObj = parsed?.campuses?.[campusCode];
-          addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
-          addEmails(cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
+          addEmails(cObj?.tuvan || cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
+          addEmails(cObj?.giaovu || cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
         }
         if (parsed?.ktdbclEmails) {
           addEmails(parsed.ktdbclEmails, "Khảo thí tổng hợp", true);
@@ -1582,17 +1593,28 @@ export async function resolvePreschoolBghReviewRecipients(
     }
   }
 
-  // Fallback Tư vấn tuyển sinh & BGH MN theo cơ sở nếu chưa có
+  // Fallback Tư vấn tuyển sinh, Giáo vụ (đồng bộ Phổ thông) & BGH MN theo cơ sở nếu chưa có
   const DEFAULT_TUVAN_BY_CAMPUS: Record<string, string> = {
-    CS1: "tuyensinh.cs1@skylineschool.edu.vn",
-    CS2: "tuyensinh.cs2@skylineschool.edu.vn",
-    CS3: "tuyensinh.cs3@skylineschool.edu.vn",
-    CS4: "tuyensinh.cs4@skylineschool.edu.vn",
-    CS5: "tuyensinh.cs5@skylineschool.edu.vn",
+    CS1: "thuongttn@skylineschool.edu.vn",
+    CS2: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn",
+    CS3: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn",
+    CS4: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn",
+    CS5: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn",
+  };
+  const DEFAULT_GIAOVU_BY_CAMPUS: Record<string, string> = {
+    CS1: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn",
+    CS2: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn",
+    CS3: "thuda@skylineschool.edu.vn",
+    CS4: "bichtramtt@skylineschool.edu.vn",
+    CS5: "dunglp@skylineschool.edu.vn",
   };
   const hasTuVanAlready = Array.from(recMap.values()).some((r) => r.role.toLowerCase().includes("tư vấn"));
   if (!hasTuVanAlready && campusCode && DEFAULT_TUVAN_BY_CAMPUS[campusCode]) {
     addEmails(DEFAULT_TUVAN_BY_CAMPUS[campusCode], `Tư vấn tuyển sinh ${campusCode}`);
+  }
+  const hasGiaoVuAlready = Array.from(recMap.values()).some((r) => r.role.toLowerCase().includes("giáo vụ"));
+  if (!hasGiaoVuAlready && campusCode && DEFAULT_GIAOVU_BY_CAMPUS[campusCode]) {
+    addEmails(DEFAULT_GIAOVU_BY_CAMPUS[campusCode], `Giáo vụ cơ sở ${campusCode}`);
   }
   const DEFAULT_BGH_MN: Record<string, string> = {
     CS1: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
