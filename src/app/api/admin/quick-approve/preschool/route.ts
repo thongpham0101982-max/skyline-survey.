@@ -8,9 +8,16 @@ import {
 import {
   appendPreschoolAuditLog,
   ensurePreschoolWorkflowSchema,
+  generateId,
+  getStudentRounds,
   getWorkflowStudentRow,
 } from "@/lib/preschool-workflow-db"
-import { resolvePreschoolAdmissionResult } from "@/lib/preschool-workflow"
+import {
+  addBusinessDays,
+  PRESCHOOL_FORM_REGISTRY,
+  resolvePreschoolAdmissionResult,
+  validateFollowUpBusinessDays,
+} from "@/lib/preschool-workflow"
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine"
 
 function renderHtmlPage(params: {
@@ -246,20 +253,154 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    // BGH Mầm non: Hẹn trải nghiệm kết hợp quan sát tâm lý (B7B) — form chọn Khối, Lớp, GV & lịch hẹn (>= 2 ngày làm việc)
+    if (action === "BGH_HEN_TRAI_NGHIEM") {
+      const campusStr = String(student.admissionCampus || student.registeredCampus || "").trim()
+      const campusObj = campusStr
+        ? await (prisma as any).campus.findFirst({
+            where: { OR: [{ campusCode: campusStr }, { campusName: campusStr }] },
+          }).catch(() => null)
+        : null
+
+      const rawClasses = await (prisma as any).class.findMany({
+        where: campusObj ? { campusId: campusObj.id } : {},
+        select: { id: true, className: true, grade: true, homeroomTeacherId: true },
+        orderBy: [{ grade: "asc" }, { className: "asc" }],
+      }).catch(() => [])
+
+      const rawTeachers = await (prisma as any).teacher.findMany({
+        select: { id: true, teacherName: true, departmentRel: { select: { name: true } }, user: { select: { id: true } } },
+        orderBy: { teacherName: "asc" },
+      }).catch(() => [])
+
+      const grades = Array.from(new Set((rawClasses || []).map((c: any) => c.grade).filter(Boolean))).sort() as string[]
+      const minFollowUpIso = addBusinessDays(new Date(), 2).toISOString().slice(0, 16)
+      const classesJson = JSON.stringify(
+        (rawClasses || []).map((c: any) => ({
+          className: c.className,
+          grade: c.grade || "",
+          homeroomTeacherId: c.homeroomTeacherId || "",
+        }))
+      ).replace(/</g, "\\u003c")
+      const teachersJson = JSON.stringify(
+        (rawTeachers || []).map((t: any) => ({
+          id: t.id,
+          userId: t.user?.id || "",
+          teacherName: t.teacherName,
+          dept: t.departmentRel?.name || "",
+        }))
+      ).replace(/</g, "\\u003c")
+
+      const gradeOptions = grades
+        .map((g) => `<option value="${String(g).replace(/"/g, "&quot;")}">${String(g).replace(/</g, "&lt;")}</option>`)
+        .join("")
+      const classOptions = (rawClasses || [])
+        .map(
+          (c: any) =>
+            `<option value="${String(c.className).replace(/"/g, "&quot;")}">${String(c.className).replace(/</g, "&lt;")}${c.grade ? ` (${String(c.grade).replace(/</g, "&lt;")})` : ""}</option>`
+        )
+        .join("")
+      const teacherOptions = (rawTeachers || [])
+        .map(
+          (t: any) =>
+            `<option value="${String(t.teacherName).replace(/"/g, "&quot;")}">${String(t.teacherName).replace(/</g, "&lt;")}${t.departmentRel?.name ? ` (${String(t.departmentRel.name).replace(/</g, "&lt;")})` : ""}</option>`
+        )
+        .join("")
+
+      return renderHtmlPage({
+        title: "B7B: Hẹn trải nghiệm kết hợp quan sát tâm lý (≥ 2 ngày làm việc)",
+        subtitle: "Tạo Lần khảo sát mới trên cùng hồ sơ này (giữ nguyên toàn bộ lịch sử và kết quả các lần trước)",
+        tone: "pine",
+        bodyHtml: `
+          <div class="info-box">
+            <div class="row"><span class="label">Họ tên trẻ</span><span class="val">${student.fullName} (${student.studentCode})</span></div>
+            <div class="row"><span class="label">Nhóm tuổi / Cơ sở</span><span class="val">${student.grade || "Mầm non"} · ${campusStr || "Sky-Line"}</span></div>
+            <div class="row"><span class="label">Người thực hiện</span><span class="val">${email || "NT Mầm non / BGH"}</span></div>
+          </div>
+          <form method="POST" action="/api/admin/quick-approve/preschool">
+            <input type="hidden" name="studentId" value="${studentId}" />
+            <input type="hidden" name="action" value="${action}" />
+            <input type="hidden" name="email" value="${email}" />
+            <input type="hidden" name="token" value="${token}" />
+
+            <label for="trialGrade" style="display:block;font-size:12px;font-weight:700;color:#003B3A;margin-bottom:4px;">Khối <span style="color:#E11D48">*</span></label>
+            <select id="trialGrade" name="trialGrade" required style="width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;background:#fff;">
+              <option value="">-- Chọn Khối --</option>
+              ${gradeOptions}
+            </select>
+
+            <label for="trialClass" style="display:block;font-size:12px;font-weight:700;color:#003B3A;margin-bottom:4px;">Lớp trải nghiệm <span style="color:#E11D48">*</span></label>
+            <select id="trialClass" name="trialClass" required style="width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;background:#fff;">
+              <option value="">-- Chọn Lớp --</option>
+              ${classOptions}
+            </select>
+
+            <label for="trialTeacher" style="display:block;font-size:12px;font-weight:700;color:#003B3A;margin-bottom:4px;">Tên GV phụ trách <span style="color:#E11D48">*</span></label>
+            <select id="trialTeacher" name="trialTeacher" required style="width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;background:#fff;">
+              <option value="">-- Chọn Giáo viên --</option>
+              ${teacherOptions}
+            </select>
+
+            <label for="trialPeriod" style="display:block;font-size:12px;font-weight:700;color:#003B3A;margin-bottom:4px;">Thời gian hẹn mới (tối thiểu sau 2 ngày làm việc) <span style="color:#E11D48">*</span></label>
+            <input id="trialPeriod" type="datetime-local" name="trialPeriod" min="${minFollowUpIso}" value="${minFollowUpIso}" required style="width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;background:#fff;" />
+
+            <label for="parentNote" style="display:block;font-size:12px;font-weight:700;color:#003B3A;">Ghi chú thống nhất với phụ huynh</label>
+            <textarea id="parentNote" name="parentNote" placeholder="Ghi nhận nội dung đã thống nhất với Phụ huynh về thời gian, lớp trải nghiệm & quan sát tâm lý..."></textarea>
+
+            <label for="comment" style="display:block;font-size:12px;font-weight:700;color:#334155;">Ý kiến rà soát của NT Mầm non / BGH (không bắt buộc)</label>
+            <textarea id="comment" name="comment" placeholder="Ý kiến định tuyến của Nhóm trưởng / BGH Mầm non..."></textarea>
+
+            <button type="submit" class="btn" style="background:#008B85;">Xác nhận Hẹn trải nghiệm (B7B)</button>
+          </form>
+          <a class="btn-outline" href="/admin/xet-duyet-ket-qua?tab=preschool">Mở bảng Xét duyệt trên SSM</a>
+          <script>
+            (function(){
+              var classes = ${classesJson};
+              var teachers = ${teachersJson};
+              var gSel = document.getElementById('trialGrade');
+              var cSel = document.getElementById('trialClass');
+              var tSel = document.getElementById('trialTeacher');
+              if (!gSel || !cSel || !tSel) return;
+              gSel.addEventListener('change', function(){
+                var g = gSel.value;
+                var list = g ? classes.filter(function(c){ return c.grade === g; }) : classes;
+                cSel.innerHTML = '<option value="">-- Chọn Lớp --</option>' + list.map(function(c){
+                  return '<option value="' + c.className.replace(/"/g,'&quot;') + '">' + c.className + '</option>';
+                }).join('');
+              });
+              cSel.addEventListener('change', function(){
+                var chosen = classes.find(function(c){ return c.className === cSel.value; });
+                if (chosen && chosen.homeroomTeacherId) {
+                  var fid = String(chosen.homeroomTeacherId).split(',')[0].trim();
+                  var hr = teachers.find(function(t){ return t.id === fid || t.userId === fid; });
+                  if (hr && hr.teacherName) tSel.value = hr.teacherName;
+                }
+              });
+            })();
+          </script>
+        `,
+      })
+    }
+
     const actionLabel =
-      action === "APPROVE_MIEN_HT"
-        ? "Đạt - Miễn Học Trải Nghiệm"
-        : action === "APPROVE_HOC_THU"
-          ? "Đạt - Học Trải Nghiệm"
-          : "Chưa đạt"
+      action === "BGH_DE_XUAT_DAT"
+        ? "Đề xuất Đạt → Trình B10 (Bước 1)"
+        : action === "BGH_DE_XUAT_CHUA_DAT"
+          ? "Đề xuất Chưa đạt → B10 (Bước 1)"
+          : action === "APPROVE_MIEN_HT"
+            ? "Phê duyệt Đạt (B10)"
+            : action === "APPROVE_HOC_THU"
+              ? "Đạt - Học Trải Nghiệm"
+              : "Phê duyệt Chưa đạt (B10)"
 
     return renderHtmlPage({
-      title: `Xác nhận phê duyệt: ${actionLabel}`,
-      tone: action === "KHONG_DAT" ? "rose" : "emerald",
+      title: `Xác nhận: ${actionLabel}`,
+      tone: action === "KHONG_DAT" || action === "BGH_DE_XUAT_CHUA_DAT" ? "rose" : "emerald",
       bodyHtml: `
         <div class="info-box">
-          <div class="row"><span class="label">Họ tên trẻ</span><span class="val">${student.fullName}</span></div>
-          <div class="row"><span class="label">Kết quả chọn</span><span class="val">${actionLabel}</span></div>
+          <div class="row"><span class="label">Họ tên trẻ</span><span class="val">${student.fullName} (${student.studentCode})</span></div>
+          <div class="row"><span class="label">Người thực hiện</span><span class="val">${email || "Cán bộ duyệt"}</span></div>
+          <div class="row"><span class="label">Quyết định</span><span class="val">${actionLabel}</span></div>
         </div>
         <form method="POST" action="/api/admin/quick-approve/preschool">
           <input type="hidden" name="studentId" value="${studentId}" />
@@ -267,7 +408,7 @@ export async function GET(req: NextRequest) {
           <input type="hidden" name="email" value="${email}" />
           <input type="hidden" name="token" value="${token}" />
           <textarea name="comment" placeholder="Ý kiến ghi chú (không bắt buộc)..."></textarea>
-          <button type="submit" class="btn">Xác nhận phê duyệt</button>
+          <button type="submit" class="btn">Xác nhận ${actionLabel}</button>
         </form>
       `,
     })
@@ -295,6 +436,11 @@ export async function POST(req: NextRequest) {
     let legacyAction = ""
     let legacyEmail = ""
     let legacyToken = ""
+    let trialGrade = ""
+    let trialClass = ""
+    let trialTeacher = ""
+    let trialPeriod = ""
+    let parentNote = ""
     const wantsJson = contentType.includes("application/json")
 
     if (wantsJson) {
@@ -309,6 +455,11 @@ export async function POST(req: NextRequest) {
       legacyAction = body.action || ""
       legacyEmail = body.email || ""
       legacyToken = body.token || ""
+      trialGrade = String(body.trialGrade || "").trim()
+      trialClass = String(body.trialClass || "").trim()
+      trialTeacher = String(body.trialTeacher || "").trim()
+      trialPeriod = String(body.trialPeriod || "").trim()
+      parentNote = String(body.parentNote || "").trim()
     } else {
       const formData = await req.formData()
       pt = String(formData.get("pt") || "")
@@ -321,6 +472,11 @@ export async function POST(req: NextRequest) {
       legacyAction = String(formData.get("action") || "")
       legacyEmail = String(formData.get("email") || "")
       legacyToken = String(formData.get("token") || "")
+      trialGrade = String(formData.get("trialGrade") || "").trim()
+      trialClass = String(formData.get("trialClass") || "").trim()
+      trialTeacher = String(formData.get("trialTeacher") || "").trim()
+      trialPeriod = String(formData.get("trialPeriod") || "").trim()
+      parentNote = String(formData.get("parentNote") || "").trim()
     }
 
     const nowIso = new Date().toISOString()
@@ -574,6 +730,230 @@ export async function POST(req: NextRequest) {
     if (!student) {
       if (wantsJson) return NextResponse.json({ error: "Not found" }, { status: 404 })
       return renderHtmlPage({ title: "Không tìm thấy hồ sơ", tone: "rose", status: 404, bodyHtml: `<p>Không tìm thấy hồ sơ.</p>` })
+    }
+
+    // Bước 1 (B6 / B9A): NT Mầm non / BGH rà soát & định tuyến qua Email (Đề xuất Đạt / Chưa đạt / Hẹn trải nghiệm B7B)
+    if (
+      legacyAction === "BGH_DE_XUAT_DAT" ||
+      legacyAction === "BGH_DE_XUAT_CHUA_DAT" ||
+      legacyAction === "BGH_HEN_TRAI_NGHIEM"
+    ) {
+      const emailUser = legacyEmail
+        ? await (prisma as any).user.findFirst({
+            where: { email: legacyEmail },
+            select: { id: true, fullName: true },
+          }).catch(() => null)
+        : null
+      const actorDisplay = emailUser?.fullName || legacyEmail || "NT Mầm non / BGH"
+
+      if (legacyAction === "BGH_HEN_TRAI_NGHIEM") {
+        if (!trialClass || !trialTeacher || !trialPeriod) {
+          const msg = "Vui lòng chọn đủ Khối, Lớp trải nghiệm, Tên GV phụ trách và Thời gian hẹn mới."
+          if (wantsJson) return NextResponse.json({ error: msg }, { status: 400 })
+          return renderHtmlPage({
+            title: "Thiếu thông tin Hẹn trải nghiệm (B7B)",
+            tone: "rose",
+            status: 400,
+            bodyHtml: `<p>${msg}</p><a class="btn-outline" href="javascript:history.back()">Quay lại điền đầy đủ</a>`,
+          })
+        }
+        const dateCheck = validateFollowUpBusinessDays(new Date(), trialPeriod, 2)
+        if (!dateCheck.valid) {
+          const msg = dateCheck.message || "Thời gian hẹn trải nghiệm (B7B) phải tối thiểu sau 2 ngày làm việc."
+          if (wantsJson) return NextResponse.json({ error: msg }, { status: 400 })
+          return renderHtmlPage({
+            title: "Thời gian hẹn chưa hợp lệ",
+            tone: "amber",
+            status: 400,
+            bodyHtml: `<p>${msg}</p><a class="btn-outline" href="javascript:history.back()">Quay lại chọn lại thời gian</a>`,
+          })
+        }
+
+        const formattedPeriod = new Date(trialPeriod).toLocaleString("vi-VN")
+        const combinedComment = parentNote || comment || `Hẹn trải nghiệm B7B qua Email (${actorDisplay})`
+
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolInputAssessmentStudent"
+           SET "bghApprovalStatus" = 'HEN_TRAI_NGHIEM',
+               "bghApprovalComment" = ?,
+               "bghApprovalUser" = ?,
+               "bghApprovalDate" = ?,
+               "probationaryClass" = ?,
+               "probationaryTeacher" = ?,
+               "probationaryPeriod" = ?,
+               "probationaryComment" = ?,
+               "workflowStatus" = 'CHO_TRAI_NGHIEM',
+               "appointmentAt" = ?,
+               "updatedAt" = ?
+           WHERE "id" = ?`,
+          comment || combinedComment,
+          actorDisplay,
+          nowIso,
+          trialClass,
+          trialTeacher,
+          formattedPeriod,
+          combinedComment,
+          new Date(trialPeriod).toISOString(),
+          nowIso,
+          student.id
+        )
+
+        const existingRounds = await getStudentRounds(student.id)
+        const latestRound = existingRounds[existingRounds.length - 1]
+        if (latestRound?.id) {
+          await prisma.$executeRawUnsafe(
+            `UPDATE "PreschoolAssessmentRound"
+             SET "reviewDecision" = 'HEN_TRAI_NGHIEM_BO_SUNG',
+                 "reviewComment" = ?,
+                 "reviewedByName" = ?,
+                 "reviewedAt" = ?,
+                 "status" = 'COMPLETED',
+                 "updatedAt" = ?
+             WHERE "id" = ?`,
+            comment || combinedComment,
+            actorDisplay,
+            nowIso,
+            nowIso,
+            latestRound.id
+          )
+        }
+
+        const nextRoundNum = (latestRound?.roundNumber || 1) + 1
+        const newRoundId = generateId("ps_rnd")
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "PreschoolAssessmentRound"
+            ("id", "studentId", "roundNumber", "roundType", "status", "scheduledAt", "campusName",
+             "assignedTeacherName", "suggestedFormCode", "formCode", "formVersion", "createdAt", "updatedAt")
+           VALUES (?, ?, ?, 'TRAI_NGHIEM_BO_SUNG', 'SCHEDULED', ?, ?, ?, 'BM.KTĐBCL.09', 'BM.KTĐBCL.09', ?, ?, ?)`,
+          newRoundId,
+          student.id,
+          nextRoundNum,
+          new Date(trialPeriod).toISOString(),
+          student.admissionCampus || student.registeredCampus || null,
+          trialTeacher,
+          PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"].version,
+          nowIso,
+          nowIso
+        )
+
+        await appendPreschoolAuditLog({
+          studentId: student.id,
+          roundId: newRoundId,
+          action: "REVIEW_B6_B9A",
+          fromStatus: student.workflowStatus || "DANG_DANH_GIA",
+          toStatus: "CHO_TRAI_NGHIEM",
+          actorName: actorDisplay,
+          actorRole: "BGH_MN",
+          source: "EMAIL_QUICK_APPROVE",
+          detail: {
+            reviewDecision: "HEN_TRAI_NGHIEM_BO_SUNG",
+            trialGrade,
+            trialClass,
+            trialTeacher,
+            scheduledAt: new Date(trialPeriod).toISOString(),
+            parentNote: parentNote || null,
+            comment: comment || null,
+            roundNumber: nextRoundNum,
+          },
+        })
+
+        if (wantsJson) {
+          return NextResponse.json({
+            success: true,
+            workflowStatus: "CHO_TRAI_NGHIEM",
+            roundId: newRoundId,
+            roundNumber: nextRoundNum,
+          })
+        }
+
+        return renderHtmlPage({
+          title: "Đã tạo lịch Hẹn trải nghiệm (B7B)",
+          subtitle: `Đã tạo Lần khảo sát mới (Lần ${nextRoundNum}) và bảo toàn toàn bộ lịch sử trước đó`,
+          tone: "emerald",
+          bodyHtml: `
+            <div class="info-box">
+              <div class="row"><span class="label">Họ tên trẻ</span><span class="val">${student.fullName} (${student.studentCode})</span></div>
+              <div class="row"><span class="label">Khối / Lớp trải nghiệm</span><span class="val">${trialGrade ? `${trialGrade} · ` : ""}${trialClass}</span></div>
+              <div class="row"><span class="label">GV phụ trách</span><span class="val">${trialTeacher}</span></div>
+              <div class="row"><span class="label">Thời gian hẹn mới</span><span class="val">${formattedPeriod}</span></div>
+              ${parentNote ? `<div class="row"><span class="label">Ghi chú phụ huynh</span><span class="val">${parentNote.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span></div>` : ""}
+              <div class="row"><span class="label">Người định tuyến</span><span class="val">${actorDisplay}</span></div>
+            </div>
+            <a class="btn-outline" href="/admin/xet-duyet-ket-qua?tab=preschool">Mở bảng Xét duyệt trên SSM</a>
+          `,
+        })
+      }
+
+      // BGH_DE_XUAT_DAT hoặc BGH_DE_XUAT_CHUA_DAT → Trình thẳng GĐCS (B10)
+      const bghDecision = legacyAction === "BGH_DE_XUAT_DAT" ? "DE_XUAT_DAT" : "DE_XUAT_CHUA_DAT"
+      const bghLabel = bghDecision === "DE_XUAT_DAT" ? "Đề xuất Đạt → Trình B10" : "Đề xuất Chưa đạt → B10"
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "bghApprovalStatus" = ?,
+             "bghApprovalComment" = ?,
+             "bghApprovalUser" = ?,
+             "bghApprovalDate" = ?,
+             "workflowStatus" = 'CHO_DUYET',
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        bghDecision,
+        comment || `Định tuyến 1 chạm qua Email (${actorDisplay})`,
+        actorDisplay,
+        nowIso,
+        nowIso,
+        student.id
+      )
+
+      const existingRounds = await getStudentRounds(student.id)
+      const latestRound = existingRounds[existingRounds.length - 1]
+      if (latestRound?.id) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolAssessmentRound"
+           SET "reviewDecision" = ?,
+               "reviewComment" = ?,
+               "reviewedByName" = ?,
+               "reviewedAt" = ?,
+               "updatedAt" = ?
+           WHERE "id" = ?`,
+          bghDecision,
+          comment || null,
+          actorDisplay,
+          nowIso,
+          nowIso,
+          latestRound.id
+        )
+      }
+
+      await appendPreschoolAuditLog({
+        studentId: student.id,
+        roundId: latestRound?.id || null,
+        action: "REVIEW_B6_B9A",
+        fromStatus: student.workflowStatus || "DANG_DANH_GIA",
+        toStatus: "CHO_DUYET",
+        actorName: actorDisplay,
+        actorRole: "BGH_MN",
+        source: "EMAIL_QUICK_APPROVE",
+        detail: { reviewDecision: bghDecision, comment: comment || null },
+      })
+
+      if (wantsJson) {
+        return NextResponse.json({ success: true, workflowStatus: "CHO_DUYET", bghApprovalStatus: bghDecision })
+      }
+
+      return renderHtmlPage({
+        title: `Đã xác nhận: ${bghLabel}`,
+        subtitle: "Hồ sơ đã tự động chuyển sang Bước 2 (Chờ GĐCS phê duyệt B10)",
+        tone: bghDecision === "DE_XUAT_DAT" ? "emerald" : "rose",
+        bodyHtml: `
+          <div class="info-box">
+            <div class="row"><span class="label">Họ tên trẻ</span><span class="val">${student.fullName} (${student.studentCode})</span></div>
+            <div class="row"><span class="label">Kết quả Bước 1 (B6/B9A)</span><span class="val">${bghLabel}</span></div>
+            <div class="row"><span class="label">Người định tuyến</span><span class="val">${actorDisplay}</span></div>
+          </div>
+          <a class="btn-outline" href="/admin/xet-duyet-ket-qua?tab=preschool">Mở bảng Xét duyệt trên SSM</a>
+        `,
+      })
     }
 
     const gdcsStatus =

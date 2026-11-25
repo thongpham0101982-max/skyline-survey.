@@ -1101,14 +1101,17 @@ export async function POST(req) {
 
       const allRecipients = Array.from(recipientMap.values());
 
+      const effectiveEmailRole: "BGH_MN" | "GDCS" = targetRole === "BGH_MN" ? "BGH_MN" : "GDCS";
+
       if (previewOnly) {
         const primaryRecipient = allRecipients.find((r) => !r.isArchiveCopy) || allRecipients[0];
         const previewHtml = renderPreschoolApprovalEmailHtml({
           student,
           campusName,
-          recipientName: primaryRecipient?.fullName || "Ban Giám Hiệu / GĐCS",
+          recipientName: primaryRecipient?.fullName || (effectiveEmailRole === "BGH_MN" ? "Ban Giám Hiệu Mầm non" : "Giám đốc Cơ sở"),
           recipientEmail: primaryRecipient?.email || "ktdbcl@skylineschool.edu.vn",
           isArchiveCopy: false,
+          targetRole: effectiveEmailRole,
           devSummary,
           baseUrl,
         });
@@ -1169,6 +1172,7 @@ export async function POST(req) {
             recipientName: r.fullName,
             recipientEmail: r.email,
             isArchiveCopy: r.isArchiveCopy,
+            targetRole: effectiveEmailRole,
             devSummary,
             baseUrl,
           });

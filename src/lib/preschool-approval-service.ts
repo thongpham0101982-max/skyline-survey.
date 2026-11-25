@@ -121,6 +121,7 @@ export function renderPreschoolApprovalEmailHtml(params: {
   recipientName: string;
   recipientEmail: string;
   isArchiveCopy?: boolean;
+  targetRole?: "BGH_MN" | "GDCS";
   devSummary?: {
     totalCriteria: number;
     totalPassed: number;
@@ -141,6 +142,7 @@ export function renderPreschoolApprovalEmailHtml(params: {
     recipientName,
     recipientEmail,
     isArchiveCopy = false,
+    targetRole = "GDCS",
     devSummary,
     baseUrl
   } = params;
@@ -178,16 +180,16 @@ export function renderPreschoolApprovalEmailHtml(params: {
   let bghStatusText = "Chưa phê duyệt";
   let bghStatusBg = "#F1F5F9";
   let bghStatusColor = "#475569";
-  if (bghStatus === "DAT_MIEN_HOC_THU" || bghStatus === "DAT") {
-    bghStatusText = "ĐẠT - MIỄN HỌC TRẢI NGHIỆM (HỌC CHÍNH THỨC)";
+  if (bghStatus === "DE_XUAT_DAT" || bghStatus === "DAT_MIEN_HOC_THU" || bghStatus === "DAT") {
+    bghStatusText = "ĐỀ XUẤT ĐẠT → TRÌNH B10";
     bghStatusBg = "#D1FAE5";
     bghStatusColor = "#065F46";
-  } else if (bghStatus === "DAT_HOC_THU") {
-    bghStatusText = "ĐẠT - HỌC TRẢI NGHIỆM";
-    bghStatusBg = "#E0E7FF";
-    bghStatusColor = "#3730A3";
-  } else if (bghStatus === "KHONG_DAT") {
-    bghStatusText = "KHÔNG ĐẠT";
+  } else if (bghStatus === "HEN_TRAI_NGHIEM" || bghStatus === "DAT_HOC_THU") {
+    bghStatusText = "HẸN TRẢI NGHIỆM (B7B)";
+    bghStatusBg = "#CCFBF1";
+    bghStatusColor = "#005854";
+  } else if (bghStatus === "DE_XUAT_CHUA_DAT" || bghStatus === "KHONG_DAT") {
+    bghStatusText = "ĐỀ XUẤT CHƯA ĐẠT → B10";
     bghStatusBg = "#FEE2E2";
     bghStatusColor = "#991B1B";
   } else if (bghStatus === "Y_KIEN_KHAC") {
@@ -200,12 +202,19 @@ export function renderPreschoolApprovalEmailHtml(params: {
   const bghDate = student.bghApprovalDate ? new Date(student.bghApprovalDate).toLocaleDateString("vi-VN") : new Date().toLocaleDateString("vi-VN");
 
   // Generate Direct Action Links (safe confirmation page, no GET side-effect)
-  const tokenMienHt = generatePreschoolApprovalToken(student.id, "APPROVE_MIEN_HT", recipientEmail);
-  const tokenHocThu = generatePreschoolApprovalToken(student.id, "APPROVE_HOC_THU", recipientEmail);
+  const isBghMnEmail = targetRole === "BGH_MN";
+  const tokenBghDat = generatePreschoolApprovalToken(student.id, "BGH_DE_XUAT_DAT", recipientEmail);
+  const tokenBghChuaDat = generatePreschoolApprovalToken(student.id, "BGH_DE_XUAT_CHUA_DAT", recipientEmail);
+  const tokenBghHenTn = generatePreschoolApprovalToken(student.id, "BGH_HEN_TRAI_NGHIEM", recipientEmail);
+  const tokenGdcsDat = generatePreschoolApprovalToken(student.id, "APPROVE_MIEN_HT", recipientEmail);
+  const tokenGdcsChuaDat = generatePreschoolApprovalToken(student.id, "KHONG_DAT", recipientEmail);
 
-  const approveMienHtUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=APPROVE_MIEN_HT&email=${encodeURIComponent(recipientEmail)}&token=${tokenMienHt}`;
-  const approveHocThuUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=APPROVE_HOC_THU&email=${encodeURIComponent(recipientEmail)}&token=${tokenHocThu}`;
-  const portalUrl = `${baseUrl}/admin/khao-sat-mam-non?studentId=${student.id}`;
+  const bghDatUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=BGH_DE_XUAT_DAT&email=${encodeURIComponent(recipientEmail)}&token=${tokenBghDat}`;
+  const bghChuaDatUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=BGH_DE_XUAT_CHUA_DAT&email=${encodeURIComponent(recipientEmail)}&token=${tokenBghChuaDat}`;
+  const bghHenTnUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=BGH_HEN_TRAI_NGHIEM&email=${encodeURIComponent(recipientEmail)}&token=${tokenBghHenTn}`;
+  const gdcsDatUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=APPROVE_MIEN_HT&email=${encodeURIComponent(recipientEmail)}&token=${tokenGdcsDat}`;
+  const gdcsChuaDatUrl = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=KHONG_DAT&email=${encodeURIComponent(recipientEmail)}&token=${tokenGdcsChuaDat}`;
+  const portalUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=preschool`;
 
   // Render Development Summary Table Rows
   let devTableHtml = "";
@@ -422,7 +431,11 @@ export function renderPreschoolApprovalEmailHtml(params: {
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FEF2F2; border-left: 4px solid #EF4444; border-radius: 0 8px 8px 0; border-top: 1px solid #FEE2E2; border-right: 1px solid #FEE2E2; border-bottom: 1px solid #FEE2E2;">
                 <tr>
                   <td style="padding: 12px 16px; font-size: 13px; color: #991B1B; line-height: 1.5; font-weight: 600;">
-                    ⚠️ <strong>Kính đề xuất Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến</strong> để Bộ phận Tuyển sinh có thể kịp thời xuất báo cáo kết quả chính thức gửi Quý Phụ huynh.
+                    ${
+                      isBghMnEmail
+                        ? `⚠️ <strong>Kính đề xuất Nhóm trưởng / BGH Mầm non tiến hành rà soát &amp; định tuyến trực tuyến (Bước 1 — B6 / B9A)</strong> để chuyển trình Giám Đốc Cơ sở (B10) hoặc bố trí Hẹn trải nghiệm kết hợp quan sát tâm lý (B7B).`
+                        : `⚠️ <strong>Kính đề xuất Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến (Bước 2 — B10)</strong> để Bộ phận Tuyển sinh có thể kịp thời xuất báo cáo kết quả chính thức gửi Quý Phụ huynh.`
+                    }
                   </td>
                 </tr>
               </table>
@@ -434,32 +447,75 @@ export function renderPreschoolApprovalEmailHtml(params: {
             <td align="center" style="padding: 6px 28px 28px 28px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
               
               <div style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
-                ⚡ THAO TÁC XÉT DUYỆT TRỰC TIẾP DÀNH CHO GĐCS
+                ${
+                  isBghMnEmail
+                    ? "⚡ THAO TÁC RÀ SOÁT &amp; ĐỊNH TUYẾN B6 / B9A — NT MẦM NON / BGH"
+                    : "⚡ THAO TÁC PHÊ DUYỆT B10 TRỰC TIẾP DÀNH CHO GĐCS"
+                }
               </div>
 
-              <!-- Button 1: Đồng thuận duyệt Miễn học trải nghiệm -->
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 12px auto; width: 100%; max-width: 480px;">
+              ${
+                isBghMnEmail
+                  ? `
+              <!-- BGH Button 1: Đề xuất Đạt -> B10 -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 10px auto; width: 100%; max-width: 480px;">
                 <tr>
-                  <td align="center" bgcolor="#059669" style="background-color: #059669; border-radius: 10px; box-shadow: 0 4px 6px rgba(5, 150, 105, 0.25);">
-                    <a href="${approveMienHtUrl}" target="_blank" style="display: block; padding: 14px 24px; font-size: 14px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px; text-transform: uppercase;">
-                      ✓ ĐỒNG THUẬN PHÊ DUYỆT: MIỄN HỌC TRẢI NGHIỆM &rarr;
+                  <td align="center" bgcolor="#059669" style="background-color: #059669; border-radius: 10px;">
+                    <a href="${bghDatUrl}" target="_blank" style="display: block; padding: 13px 24px; font-size: 14px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                      ✓ Đề xuất Đạt &rarr; B10
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- Button 2: Duyệt Học Trải Nghiệm -->
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 12px auto; width: 100%; max-width: 480px;">
+              <!-- BGH Button 2: Đề xuất Chưa đạt -> B10 -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 10px auto; width: 100%; max-width: 480px;">
                 <tr>
-                  <td align="center" bgcolor="#0284C7" style="background-color: #0284C7; border-radius: 10px;">
-                    <a href="${approveHocThuUrl}" target="_blank" style="display: block; padding: 12px 24px; font-size: 13px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
-                      ✦ PHÊ DUYỆT: ĐẠT - HỌC TRẢI NGHIỆM
+                  <td align="center" bgcolor="#E11D48" style="background-color: #E11D48; border-radius: 10px;">
+                    <a href="${bghChuaDatUrl}" target="_blank" style="display: block; padding: 13px 24px; font-size: 14px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                      ✕ Đề xuất Chưa đạt &rarr; B10
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- Button 3: Xem chi tiết trên SSM Portal -->
+              <!-- BGH Button 3: Hẹn trải nghiệm (B7B) -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 12px auto; width: 100%; max-width: 480px;">
+                <tr>
+                  <td align="center" bgcolor="#008B85" style="background-color: #008B85; border-radius: 10px;">
+                    <a href="${bghHenTnUrl}" target="_blank" style="display: block; padding: 13px 24px; font-size: 13px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                      📅 Hẹn trải nghiệm (B7B) — Chọn Khối, Lớp, GV &amp; lịch hẹn (&ge; 2 ngày làm việc)
+                    </a>
+                  </td>
+                </tr>
+              </table>
+                  `
+                  : `
+              <!-- GDCS Button 1: Phê duyệt Đạt -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 10px auto; width: 100%; max-width: 480px;">
+                <tr>
+                  <td align="center" bgcolor="#059669" style="background-color: #059669; border-radius: 10px;">
+                    <a href="${gdcsDatUrl}" target="_blank" style="display: block; padding: 14px 24px; font-size: 14px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                      ✓ Phê duyệt Đạt (B10) &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- GDCS Button 2: Phê duyệt Chưa đạt -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 12px auto; width: 100%; max-width: 480px;">
+                <tr>
+                  <td align="center" bgcolor="#E11D48" style="background-color: #E11D48; border-radius: 10px;">
+                    <a href="${gdcsChuaDatUrl}" target="_blank" style="display: block; padding: 13px 24px; font-size: 14px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px;">
+                      ✕ Phê duyệt Chưa đạt (B10)
+                    </a>
+                  </td>
+                </tr>
+              </table>
+                  `
+              }
+
+              <!-- Portal link -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; width: 100%; max-width: 480px;">
                 <tr>
                   <td align="center" bgcolor="#FFFFFF" style="background-color: #FFFFFF; border-radius: 10px; border: 2px solid #003B3A;">
@@ -471,7 +527,7 @@ export function renderPreschoolApprovalEmailHtml(params: {
               </table>
 
               <p style="margin: 14px 0 0 0; font-size: 11px; color: #64748B;">
-                * Thầy/Cô có thể bấm duyệt trực tiếp ngay trên email bằng các nút phía trên mà không cần đăng nhập lại.
+                * Thầy/Cô có thể bấm thao tác trực tiếp ngay trên email bằng các nút phía trên mà không cần đăng nhập lại.
               </p>
             </td>
           </tr>
