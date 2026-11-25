@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { sendEmail } from "@/lib/mail"
+import {
+  ensurePreschoolWorkflowSchema,
+  appendPreschoolAuditLog,
+} from "@/lib/preschool-workflow-db"
+import { renderPreschoolPsychologyScreeningEmailHtml } from "@/lib/preschool-approval-service"
 
 function isPreschoolCampusMatch(effCampus: string | null | undefined, cCode: string | null | undefined, cName: string | null | undefined): boolean {
   if (!effCampus) return false;
@@ -30,6 +36,8 @@ export async function GET(req: NextRequest) {
   try {
     const session = await auth()
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    await ensurePreschoolWorkflowSchema()
 
     const { searchParams } = new URL(req.url)
     const studentId = searchParams.get("studentId")
@@ -65,6 +73,32 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Student not found" }, { status: 404 })
     }
 
+    let psyExtra: any = {}
+    try {
+      const psyRows = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT "trialPsychologyScreening", "trialPsychologistId", "trialPsychologistName",
+                "trialPsychologistEmail", "trialPsychologyEmailSentAt", "trialPsychologyStatus",
+                "trialPsychologyConfirmedAt", "trialPsychologyFeedback", "trialPsychologyConclusion",
+                "trialPsychologyCriteriaJson"
+         FROM "PreschoolInputAssessmentStudent" WHERE "id" = ? LIMIT 1`,
+        studentId
+      )
+      if (psyRows && psyRows[0]) {
+        psyExtra = {
+          trialPsychologyScreening: Boolean(Number(psyRows[0].trialPsychologyScreening || 0)),
+          trialPsychologistId: psyRows[0].trialPsychologistId || "",
+          trialPsychologistName: psyRows[0].trialPsychologistName || "",
+          trialPsychologistEmail: psyRows[0].trialPsychologistEmail || "",
+          trialPsychologyEmailSentAt: psyRows[0].trialPsychologyEmailSentAt || null,
+          trialPsychologyStatus: psyRows[0].trialPsychologyStatus || "",
+          trialPsychologyConfirmedAt: psyRows[0].trialPsychologyConfirmedAt || null,
+          trialPsychologyFeedback: psyRows[0].trialPsychologyFeedback || "",
+          trialPsychologyConclusion: psyRows[0].trialPsychologyConclusion || "",
+          trialPsychologyCriteriaJson: psyRows[0].trialPsychologyCriteriaJson || "",
+        }
+      }
+    } catch {}
+
     const currentUser = session?.user as any;
     const userRole = (currentUser?.role || "").toUpperCase();
     const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
@@ -83,7 +117,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json(student)
+    return NextResponse.json({ ...student, ...psyExtra })
   } catch (error: any) {
     console.error("Preschool probationary assessment GET error:", error)
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 })
@@ -95,6 +129,8 @@ export async function POST(req: NextRequest) {
     const session = await auth()
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+    await ensurePreschoolWorkflowSchema()
+
     const body = await req.json()
     const {
       studentId,
@@ -105,7 +141,15 @@ export async function POST(req: NextRequest) {
       probationaryClass,
       probationaryTeacher,
       probationaryBghStatus,
-      probationaryBghComment
+      probationaryBghComment,
+      trialPsychologyScreening,
+      trialPsychologistId,
+      trialPsychologistName,
+      trialPsychologistEmail,
+      trialPsychologyCriteriaJson,
+      flaggedCriteriaNames,
+      sendPsychologyEmail,
+      psychologyNote,
     } = body
 
     if (!studentId) {
@@ -122,7 +166,7 @@ export async function POST(req: NextRequest) {
 
     const currentUser = session?.user as any
     const userRole = (currentUser?.role || "").toUpperCase()
-    let isBghRole = ["ADMIN", "KT_DBCL", "KTDBCL", "BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole)
+    let isBghRole = ["ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL", "BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole)
     if (!isBghRole && userRole) {
       try {
         const dbPerms = await prisma.permission.findMany({
@@ -238,7 +282,150 @@ export async function POST(req: NextRequest) {
       data: dataToUpdate
     })
 
-    return NextResponse.json({ success: true, studentId: updated.id })
+    // Save additive trial psychology screening fields & optionally send confirmation email to psychologist
+    let emailSent = false
+    let emailError = ""
+    let resolvedPsyEmail = (trialPsychologistEmail || "").trim()
+    let resolvedPsyName = (trialPsychologistName || "").trim()
+
+    if (trialPsychologyScreening !== undefined || trialPsychologistId !== undefined || trialPsychologyCriteriaJson !== undefined) {
+      // Resolve psychologist name/email from Teacher & User tables if ID provided
+      if (trialPsychologistId) {
+        const teacherRec = await prisma.teacher
+          .findFirst({
+            where: {
+              OR: [{ id: trialPsychologistId }, { userId: trialPsychologistId }],
+            },
+            include: { user: { select: { email: true, fullName: true } } },
+          })
+          .catch(() => null)
+        if (teacherRec) {
+          if (!resolvedPsyName) resolvedPsyName = teacherRec.teacherName || teacherRec.user?.fullName || ""
+          if (!resolvedPsyEmail) resolvedPsyEmail = (teacherRec.email || teacherRec.user?.email || "").trim()
+        }
+      }
+
+      // Check existing psychology row so we don't clobber an already-confirmed status unless psychologist changed
+      let existingPsy: any = null
+      try {
+        const rows = await prisma.$queryRawUnsafe<any[]>(
+          `SELECT "trialPsychologistId", "trialPsychologyStatus", "trialPsychologyEmailSentAt"
+           FROM "PreschoolInputAssessmentStudent" WHERE "id" = ? LIMIT 1`,
+          studentId
+        )
+        existingPsy = rows?.[0] || null
+      } catch {}
+
+      const isScreeningEnabled = Boolean(trialPsychologyScreening)
+      const psychologistChanged = Boolean(
+        trialPsychologistId && existingPsy?.trialPsychologistId && existingPsy.trialPsychologistId !== trialPsychologistId
+      )
+
+      let nextStatus = existingPsy?.trialPsychologyStatus || ""
+      let nextSentAt = existingPsy?.trialPsychologyEmailSentAt || null
+
+      if (!isScreeningEnabled) {
+        nextStatus = ""
+      } else if (!nextStatus || psychologistChanged) {
+        nextStatus = "PENDING"
+      }
+
+      const shouldSendEmail = Boolean(
+        isScreeningEnabled &&
+        resolvedPsyEmail &&
+        (sendPsychologyEmail === true || (sendPsychologyEmail !== false && (!existingPsy?.trialPsychologyEmailSentAt || psychologistChanged)))
+      )
+
+      if (shouldSendEmail) {
+        const originUrl = String(
+          process.env.NEXTAUTH_URL ||
+            process.env.NEXT_PUBLIC_APP_URL ||
+            req.headers.get("origin") ||
+            "https://ssm.skylineschool.edu.vn"
+        ).replace(/\/+$/, "")
+
+        const html = renderPreschoolPsychologyScreeningEmailHtml({
+          student: {
+            id: updated.id,
+            fullName: updated.fullName,
+            studentCode: updated.studentCode,
+            grade: updated.grade,
+            admissionCampus: updated.admissionCampus,
+            probationaryClass: updated.probationaryClass,
+            probationaryTeacher: updated.probationaryTeacher,
+            probationaryPeriod: updated.probationaryPeriod,
+          },
+          psychologistId: trialPsychologistId || undefined,
+          psychologistName: resolvedPsyName || "Giáo viên Tâm lý",
+          psychologistEmail: resolvedPsyEmail,
+          flaggedCriteriaNames: Array.isArray(flaggedCriteriaNames) ? flaggedCriteriaNames : [],
+          note: psychologyNote || probationaryComment || "",
+          assignedByName: currentUser?.name || currentUser?.email || "Ban Giám Hiệu Mầm non",
+          baseUrl: originUrl,
+        })
+
+        const mailRes = await sendEmail({
+          to: resolvedPsyEmail,
+          subject: `[Sky-Line SSM] Yêu cầu Sàng lọc tâm lý học thử - Bé ${updated.fullName} (${updated.studentCode})`,
+          html,
+        }).catch((err: any) => ({ success: false, error: err?.message || "Lỗi gửi email" }))
+
+        if (mailRes?.success) {
+          emailSent = true
+          nextSentAt = new Date().toISOString()
+          if (!nextStatus || psychologistChanged) nextStatus = "PENDING"
+        } else {
+          emailError = (mailRes as any)?.error || "Không thể gửi email tới GV Tâm lý"
+        }
+      }
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "trialPsychologyScreening" = ?,
+             "trialPsychologistId" = ?,
+             "trialPsychologistName" = ?,
+             "trialPsychologistEmail" = ?,
+             "trialPsychologyEmailSentAt" = ?,
+             "trialPsychologyStatus" = ?,
+             "trialPsychologyCriteriaJson" = ?
+         WHERE "id" = ?`,
+        isScreeningEnabled ? 1 : 0,
+        isScreeningEnabled ? (trialPsychologistId || null) : null,
+        isScreeningEnabled ? (resolvedPsyName || null) : null,
+        isScreeningEnabled ? (resolvedPsyEmail || null) : null,
+        nextSentAt,
+        nextStatus || null,
+        trialPsychologyCriteriaJson !== undefined ? trialPsychologyCriteriaJson : null,
+        studentId
+      ).catch(err => console.error("Update trial psychology columns error:", err))
+
+      if (isScreeningEnabled) {
+        await appendPreschoolAuditLog({
+          studentId,
+          action: emailSent ? "TRIAL_PSYCHOLOGY_EMAIL_SENT" : "TRIAL_PSYCHOLOGY_ASSIGNED",
+          actorId: currentUser?.id || null,
+          actorName: currentUser?.name || currentUser?.email || "Admin",
+          actorRole: currentUser?.role || "ADMIN",
+          source: "WEB_UI",
+          detail: {
+            assignedPsychologistName: resolvedPsyName,
+            psychologistEmail: resolvedPsyEmail,
+            emailSent,
+            probationaryClass: updated.probationaryClass,
+            probationaryTeacher: updated.probationaryTeacher,
+          },
+        }).catch(() => {})
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      studentId: updated.id,
+      emailSent,
+      emailError,
+      psychologistEmail: resolvedPsyEmail,
+      psychologistName: resolvedPsyName,
+    })
   } catch (error: any) {
     console.error("Preschool probationary assessment POST error:", error)
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 })

@@ -1189,7 +1189,8 @@ function AdminAdvisoryDashboardContent() {
       {activeTab === "progress_matrix" && (
         <UnifiedStudentProgressMatrix
           role="ADMIN"
-          schoolYear={selectedAcademicYearId || "2025-2026"}
+          academicYearId={selectedAcademicYearId}
+          schoolYear={academicYears.find((y: any) => y.id === selectedAcademicYearId)?.name || ""}
           semester="HK1"
           defaultCampusId={selectedCampusId || "ALL"}
           campusesList={campuses.map((cp: any) => ({

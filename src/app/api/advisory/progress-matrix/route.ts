@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { ensureTriPartyTables } from "@/lib/advisory/triparty-sync"
 import {
   resolveAdvisoryCaller,
@@ -16,6 +17,37 @@ function jsonResponse(data: any, status = 200) {
   return res
 }
 
+function normalizeGradeToken(value?: string | null, className?: string | null): string {
+  const raw = String(value || "").trim()
+  const digits = raw.replace(/[^0-9]/g, "")
+  if (digits) return String(Number(digits))
+  if (className) {
+    const m = String(className).trim().match(/^(\d+)/)
+    if (m) return String(Number(m[1]))
+  }
+  return raw.toUpperCase()
+}
+
+async function queryRawInChunks(
+  buildSql: (placeholders: string) => string,
+  ids: string[],
+  chunkSize = 200
+): Promise<any[]> {
+  if (!ids.length) return []
+  const results: any[] = []
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const chunk = ids.slice(i, i + chunkSize)
+    const placeholders = chunk.map(() => "?").join(",")
+    const rows = await prisma
+      .$queryRawUnsafe<any[]>(buildSql(placeholders), ...chunk)
+      .catch(() => [])
+    if (Array.isArray(rows) && rows.length > 0) {
+      results.push(...rows)
+    }
+  }
+  return results
+}
+
 export async function GET(req: Request) {
   try {
     await ensureTriPartyTables()
@@ -25,59 +57,162 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url)
-    const academicYearId = searchParams.get("academicYearId") || ""
+    const rawAcademicYear = (
+      searchParams.get("academicYearId") ||
+      searchParams.get("schoolYear") ||
+      ""
+    ).trim()
     const term = searchParams.get("term") || "HK1"
-    const campusId = searchParams.get("campusId") || "ALL"
-    const gradeLevel = searchParams.get("gradeLevel") || "ALL"
-    const classId = searchParams.get("classId") || "ALL"
+    const rawCampusId = (searchParams.get("campusId") || "ALL").trim()
+    const gradeLevel = (searchParams.get("gradeLevel") || "ALL").trim()
+    const classId = (searchParams.get("classId") || "ALL").trim()
+
+    // Resolve academicYearId (supports both AcademicYear.id and AcademicYear.name, with active-year fallback)
+    let resolvedAcademicYearId = ""
+    if (rawAcademicYear && rawAcademicYear !== "ALL") {
+      const matchedYear = await prisma.academicYear
+        .findFirst({
+          where: {
+            OR: [{ id: rawAcademicYear }, { name: rawAcademicYear }]
+          },
+          select: { id: true }
+        })
+        .catch(() => null)
+      if (matchedYear?.id) {
+        resolvedAcademicYearId = matchedYear.id
+      }
+    }
+    if (!resolvedAcademicYearId) {
+      const defaultYear = await getDefaultAcademicYear(prisma).catch(() => null)
+      if (defaultYear?.id) {
+        resolvedAcademicYearId = defaultYear.id
+      }
+    }
+
+    // Resolve campusId (supports both Campus.id and Campus.campusCode)
+    let resolvedCampusId = "ALL"
+    if (rawCampusId && rawCampusId !== "ALL") {
+      const matchedCampus = await prisma.campus
+        .findFirst({
+          where: {
+            OR: [{ id: rawCampusId }, { campusCode: rawCampusId }]
+          },
+          select: { id: true }
+        })
+        .catch(() => null)
+      resolvedCampusId = matchedCampus?.id || rawCampusId
+    }
 
     const isManager = caller.actorRole === "ADMIN" || isManagementRole(caller.rawRole)
     let allowedClassIds: string[] | null = null
 
     if (!isManager) {
-      allowedClassIds = await resolveTeacherAssignedClassIds(caller)
+      allowedClassIds = await resolveTeacherAssignedClassIds(caller, resolvedAcademicYearId || undefined)
+      if (allowedClassIds.length === 0) {
+        // Fallback without academicYearId filter in case teacher assignment spans years
+        allowedClassIds = await resolveTeacherAssignedClassIds(caller)
+      }
       if (allowedClassIds.length === 0) {
         return jsonResponse({
           rows: [],
+          availableClasses: [],
           hierarchySummary: { campuses: [], grades: [], classes: [] },
           reportSummary: {}
         })
       }
     }
 
-    const classWhere: any = {}
-    if (academicYearId) classWhere.academicYearId = academicYearId
-    if (campusId && campusId !== "ALL") classWhere.campusId = campusId
-    if (gradeLevel && gradeLevel !== "ALL") classWhere.grade = gradeLevel
-    if (classId && classId !== "ALL") {
-      if (allowedClassIds && !allowedClassIds.includes(classId)) {
-        return jsonResponse({ error: "Bạn không được phân công phụ trách lớp này" }, 403)
-      }
-      classWhere.id = classId
-    } else if (allowedClassIds) {
-      classWhere.id = { in: allowedClassIds }
+    // Build scope for available classes dropdown (filtered by academicYear + campus + RBAC, NOT by classId/gradeLevel)
+    const availableClassWhere: any = {}
+    if (resolvedAcademicYearId) availableClassWhere.academicYearId = resolvedAcademicYearId
+    if (resolvedCampusId && resolvedCampusId !== "ALL") {
+      availableClassWhere.campusId = resolvedCampusId
+    } else if (isManager && !caller.isFullAdmin && caller.campusIds.length > 0) {
+      availableClassWhere.campusId = { in: caller.campusIds }
+    }
+    if (allowedClassIds) {
+      availableClassWhere.id = { in: allowedClassIds }
     }
 
-    const classes = await prisma.class
+    const allScopedClasses = await prisma.class
       .findMany({
-        where: classWhere,
+        where: availableClassWhere,
         include: {
           campus: { select: { id: true, campusName: true, campusCode: true } },
           teachers: {
             include: {
               teacher: { select: { id: true, teacherName: true, teacherCode: true } }
             }
+          },
+          _count: {
+            select: {
+              students: { where: { status: { not: "TRANSFERRED_OUT" } } }
+            }
           }
         },
-        orderBy: { className: "asc" },
-        take: isManager && classId === "ALL" ? 60 : 30
+        orderBy: [{ className: "asc" }]
       })
-      .catch(() => [])
+      .catch(err => {
+        console.error("[advisory/progress-matrix] prisma.class.findMany error:", err)
+        return [] as any[]
+      })
+
+    const sortedScopedClasses = [...allScopedClasses].sort((a, b) => {
+      const gA = parseInt(normalizeGradeToken(a.grade, a.className), 10)
+      const gB = parseInt(normalizeGradeToken(b.grade, b.className), 10)
+      if (!isNaN(gA) && !isNaN(gB) && gA !== gB) return gA - gB
+      if (!isNaN(gA) && isNaN(gB)) return -1
+      if (isNaN(gA) && !isNaN(gB)) return 1
+      return String(a.className || "").localeCompare(String(b.className || ""), "vi")
+    })
+
+    const availableClasses = sortedScopedClasses.map(c => ({
+      id: c.id,
+      className: c.className,
+      gradeLevel: normalizeGradeToken(c.grade, c.className) || c.grade || "",
+      campusId: c.campusId,
+      campusName: c.campus?.campusName || "Sky-Line",
+      campusCode: c.campus?.campusCode || "",
+      studentCount: c._count?.students ?? 0
+    }))
+
+    // Determine target classes for student rows
+    let classes = sortedScopedClasses
+    if (classId && classId !== "ALL") {
+      if (allowedClassIds && !allowedClassIds.includes(classId)) {
+        return jsonResponse({ error: "Bạn không được phân công phụ trách lớp này" }, 403)
+      }
+      const inScoped = sortedScopedClasses.filter(c => c.id === classId)
+      if (inScoped.length > 0) {
+        classes = inScoped
+      } else {
+        const directClass = await prisma.class
+          .findUnique({
+            where: { id: classId },
+            include: {
+              campus: { select: { id: true, campusName: true, campusCode: true } },
+              teachers: {
+                include: {
+                  teacher: { select: { id: true, teacherName: true, teacherCode: true } }
+                }
+              }
+            }
+          })
+          .catch(() => null)
+        classes = directClass ? [directClass] : []
+      }
+    } else if (gradeLevel && gradeLevel !== "ALL") {
+      const targetGrade = normalizeGradeToken(gradeLevel)
+      classes = sortedScopedClasses.filter(
+        c => normalizeGradeToken(c.grade, c.className) === targetGrade || c.grade === gradeLevel
+      )
+    }
 
     const targetClassIds = classes.map(c => c.id)
     if (targetClassIds.length === 0) {
       return jsonResponse({
         rows: [],
+        availableClasses,
         hierarchySummary: { campuses: [], grades: [], classes: [] },
         reportSummary: {}
       })
@@ -85,32 +220,42 @@ export async function GET(req: Request) {
 
     // Resolve homeroom teachers for classes
     const hmIds = Array.from(
-      new Set(classes.map((c: any) => c.homeroomTeacherId).filter(Boolean))
+      new Set(
+        classes
+          .flatMap((c: any) => String(c.homeroomTeacherId || "").split(","))
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+      )
     ) as string[]
     const hmTeachers =
       hmIds.length > 0
         ? await prisma.teacher
             .findMany({
               where: {
-                OR: [{ id: { in: hmIds } }, { teacherCode: { in: hmIds } }]
+                OR: [{ id: { in: hmIds } }, { userId: { in: hmIds } }, { teacherCode: { in: hmIds } }]
               },
-              select: { id: true, teacherCode: true, teacherName: true }
+              select: { id: true, userId: true, teacherCode: true, teacherName: true }
             })
             .catch(() => [])
         : []
     const hmMap = new Map<string, string>()
     for (const t of hmTeachers) {
       hmMap.set(t.id, t.teacherName)
+      if (t.userId) hmMap.set(t.userId, t.teacherName)
       if (t.teacherCode) hmMap.set(t.teacherCode, t.teacherName)
     }
 
     const classMap = new Map<string, any>()
     for (const c of classes) {
-      const hmAssignment = c.teachers?.find((ta: any) => ta.isHomeroom && ta.teacher?.teacherName)
-      const hmName =
-        (c.homeroomTeacherId && hmMap.get(c.homeroomTeacherId)) ||
-        hmAssignment?.teacher?.teacherName ||
-        "GVCN phụ trách"
+      const hmAssignment = c.teachers?.find(
+        (ta: any) => (ta.roleInClass === "GVCN" || ta.isHomeroom) && ta.teacher?.teacherName
+      )
+      const hmRawTokens = String(c.homeroomTeacherId || "")
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+      const hmFromId = hmRawTokens.map(tok => hmMap.get(tok)).find(Boolean)
+      const hmName = hmFromId || hmAssignment?.teacher?.teacherName || "GVCN phụ trách"
       classMap.set(c.id, {
         ...c,
         homeroomTeacherName: hmName,
@@ -130,21 +275,22 @@ export async function GET(req: Request) {
           studentName: true,
           classId: true
         },
-        orderBy: { studentName: "asc" },
-        take: 450
+        orderBy: [{ classId: "asc" }, { studentName: "asc" }]
       })
-      .catch(() => [])
+      .catch(err => {
+        console.error("[advisory/progress-matrix] prisma.student.findMany error:", err)
+        return [] as any[]
+      })
 
     const studentIds = students.map(s => s.id)
     if (studentIds.length === 0) {
       return jsonResponse({
         rows: [],
+        availableClasses,
         hierarchySummary: { campuses: [], grades: [], classes: [] },
         reportSummary: {}
       })
     }
-
-    const placeholders = studentIds.map(() => "?").join(",")
 
     const [
       goals,
@@ -164,12 +310,10 @@ export async function GET(req: Request) {
           orderBy: { createdAt: "asc" }
         })
         .catch(() => []),
-      prisma
-        .$queryRawUnsafe<any[]>(
-          `SELECT * FROM "StudentGoalMeta" WHERE "studentId" IN (${placeholders})`,
-          ...studentIds
-        )
-        .catch(() => []),
+      queryRawInChunks(
+        ph => `SELECT * FROM "StudentGoalMeta" WHERE "studentId" IN (${ph})`,
+        studentIds
+      ),
       prisma.academicConsultationLog
         .findMany({
           where: { studentId: { in: studentIds } },
@@ -177,48 +321,38 @@ export async function GET(req: Request) {
           orderBy: { meetingDate: "desc" }
         })
         .catch(() => []),
-      prisma
-        .$queryRawUnsafe<any[]>(
-          `SELECT * FROM "AdvisoryConsultationMeta" WHERE "studentId" IN (${placeholders})`,
-          ...studentIds
-        )
-        .catch(() => []),
-      prisma
-        .$queryRawUnsafe<any[]>(
-          `SELECT * FROM "StudentAdvisoryFeedback" WHERE "studentId" IN (${placeholders}) ORDER BY "createdAt" DESC`,
-          ...studentIds
-        )
-        .catch(() => []),
+      queryRawInChunks(
+        ph => `SELECT * FROM "AdvisoryConsultationMeta" WHERE "studentId" IN (${ph})`,
+        studentIds
+      ),
+      queryRawInChunks(
+        ph => `SELECT * FROM "StudentAdvisoryFeedback" WHERE "studentId" IN (${ph}) ORDER BY "createdAt" DESC`,
+        studentIds
+      ),
       prisma.studentReflection
         .findMany({
           where: { studentId: { in: studentIds } },
           orderBy: { createdAt: "desc" }
         })
         .catch(() => []),
-      prisma
-        .$queryRawUnsafe<any[]>(
-          `SELECT * FROM "SubjectTeacherAdvisoryTask" WHERE "studentId" IN (${placeholders}) ORDER BY "createdAt" DESC`,
-          ...studentIds
-        )
-        .catch(() => []),
-      prisma
-        .$queryRawUnsafe<any[]>(
-          `SELECT * FROM "OrientationAdvisoryRecord" WHERE "studentId" IN (${placeholders})`,
-          ...studentIds
-        )
-        .catch(() => []),
-      prisma.advisoryTermEvaluation
+      queryRawInChunks(
+        ph => `SELECT * FROM "SubjectTeacherAdvisoryTask" WHERE "studentId" IN (${ph}) ORDER BY "createdAt" DESC`,
+        studentIds
+      ),
+      queryRawInChunks(
+        ph => `SELECT * FROM "OrientationAdvisoryRecord" WHERE "studentId" IN (${ph})`,
+        studentIds
+      ),
+      prisma.studentTermEvaluation
         .findMany({
           where: { studentId: { in: studentIds } },
           orderBy: { updatedAt: "desc" }
         })
         .catch(() => []),
-      prisma
-        .$queryRawUnsafe<any[]>(
-          `SELECT * FROM "AdvisoryAuditLog" WHERE "studentId" IN (${placeholders}) ORDER BY "createdAt" DESC LIMIT 400`,
-          ...studentIds
-        )
-        .catch(() => [])
+      queryRawInChunks(
+        ph => `SELECT * FROM "AdvisoryAuditLog" WHERE "studentId" IN (${ph}) ORDER BY "createdAt" DESC LIMIT 400`,
+        studentIds
+      )
     ])
 
     // Index data by studentId
@@ -532,10 +666,11 @@ export async function GET(req: Request) {
     const classSummaryMap = new Map<string, any>()
 
     for (const r of rows) {
-      const cKey = r.campusName || "Sky-Line"
+      const cKey = r.campusId || r.campusName || "Sky-Line"
       if (!campusMap.has(cKey)) {
         campusMap.set(cKey, {
-          campusName: cKey,
+          campusId: r.campusId || "",
+          campusName: r.campusName || "Sky-Line",
           totalStudents: 0,
           withGoals: 0,
           consulted: 0,
@@ -623,6 +758,7 @@ export async function GET(req: Request) {
 
     return jsonResponse({
       rows,
+      availableClasses,
       hierarchySummary: {
         campuses: Array.from(campusMap.values()),
         grades: Array.from(gradeMap.values()),

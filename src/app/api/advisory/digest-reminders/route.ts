@@ -43,7 +43,11 @@ export async function GET(req: NextRequest) {
       where: classWhere,
       include: {
         campus: true,
-        homeroomTeacher: true,
+        teachers: {
+          include: {
+            teacher: { select: { id: true, email: true, teacherName: true } }
+          }
+        },
       },
     });
 
@@ -54,8 +58,9 @@ export async function GET(req: NextRequest) {
       }
       if (isAdmin) return true;
       if (classId && classId !== 'ALL' && c.id === classId) return true;
-      const hrEmail = (c.homeroomTeacher?.email || '').toLowerCase();
-      return hrEmail && hrEmail === userEmail;
+      return (c.teachers || []).some(
+        (ta: any) => (ta.teacher?.email || '').toLowerCase() === userEmail
+      );
     });
 
     const classIds = authorizedClasses.map(c => c.id);
@@ -143,6 +148,11 @@ export async function GET(req: NextRequest) {
       targetTab: string;
     }> = [];
 
+    const getClassHomeroomTeacher = (cls: any) =>
+      (cls?.teachers || []).find((ta: any) => ta.roleInClass === 'GVCN')?.teacher ||
+      cls?.teachers?.[0]?.teacher ||
+      null;
+
     // 3a. Holland completed but unassigned to TLHN
     const orientByStudent = new Map<string, any>();
     scopedOrientations.forEach(o => {
@@ -159,6 +169,7 @@ export async function GET(req: NextRequest) {
       if (!oRec || oRec.status === 'DA_KHAO_SAT' || oRec.status === 'CHO_PHAN_CONG') {
         const st = students.find(s => s.id === h.studentId || s.studentCode === h.studentCode || s.studentCode === h.studentId);
         const cls = st ? classMap.get(st.classId) : undefined;
+        const hrTeacher = getClassHomeroomTeacher(cls);
         digestItems.push({
           id: `DIGEST_HOLLAND_${key}`,
           category: 'HOLLAND_UNASSIGNED',
@@ -168,8 +179,8 @@ export async function GET(req: NextRequest) {
           studentName: st?.studentName || key,
           className: cls?.className || '',
           title: `Học sinh đã hoàn thành khảo sát Holland (${h.topCode || 'RIASEC'}) — Chờ phân công GV Tổ TLHN tư vấn định hướng`,
-          assigneeName: cls?.homeroomTeacher?.teacherName || 'GVCN / Điều phối TLHN',
-          assigneeEmail: cls?.homeroomTeacher?.email || '',
+          assigneeName: hrTeacher?.teacherName || 'GVCN / Điều phối TLHN',
+          assigneeEmail: hrTeacher?.email || '',
           dueDate: todayIso,
           targetTab: 'companion_support',
         });
@@ -179,6 +190,7 @@ export async function GET(req: NextRequest) {
     // 3b. Companion Tasks (Pending Accept, Overdue, Pending Confirm)
     scopedTasks.forEach(t => {
       const cls = classMap.get(t.classId);
+      const hrTeacher = getClassHomeroomTeacher(cls);
       const isOverdue =
         t.dueDate &&
         t.dueDate.slice(0, 10) < todayIso &&
@@ -211,8 +223,8 @@ export async function GET(req: NextRequest) {
           studentName: t.studentName || t.studentId,
           className: t.className || cls?.className || '',
           title: `${t.assignedToName || 'GV đồng hành'} đã gửi báo cáo kết quả hỗ trợ (${t.subjectName}) — Chờ GVCN xác nhận`,
-          assigneeName: cls?.homeroomTeacher?.teacherName || t.assignedByName || 'GVCN / CVHT',
-          assigneeEmail: cls?.homeroomTeacher?.email || t.assignedByEmail || '',
+          assigneeName: hrTeacher?.teacherName || t.assignedByName || 'GVCN / CVHT',
+          assigneeEmail: hrTeacher?.email || t.assignedByEmail || '',
           dueDate: todayIso,
           targetTab: 'companion_support',
         });
@@ -239,6 +251,7 @@ export async function GET(req: NextRequest) {
       if (fb.advisorStatus !== 'CONFIRMED') {
         const st = students.find(s => s.id === fb.studentId || s.studentCode === fb.studentCode);
         const cls = st ? classMap.get(st.classId) : classMap.get(fb.classId);
+        const hrTeacher = getClassHomeroomTeacher(cls);
         digestItems.push({
           id: `DIGEST_FB_${fb.id}`,
           category: 'STUDENT_FEEDBACK_ATTENTION',
@@ -250,8 +263,8 @@ export async function GET(req: NextRequest) {
           title: fb.feedbackType === 'POST_CONSULTATION'
             ? `Phản hồi sau tư vấn: "${(fb.feelingAfter || fb.supportRequestText || 'Cần GVCN xem xét').slice(0, 90)}"`
             : `Tự đánh giá mục tiêu: "${(fb.difficultiesText || fb.supportNeededText || fb.actionsTaken || 'Chờ phản hồi').slice(0, 90)}"`,
-          assigneeName: cls?.homeroomTeacher?.teacherName || 'GVCN / CVHT',
-          assigneeEmail: cls?.homeroomTeacher?.email || '',
+          assigneeName: hrTeacher?.teacherName || 'GVCN / CVHT',
+          assigneeEmail: hrTeacher?.email || '',
           dueDate: (fb.createdAt || todayIso).slice(0, 10),
           targetTab: 'student_feedback',
         });

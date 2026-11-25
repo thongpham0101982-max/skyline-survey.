@@ -22,7 +22,8 @@ import {
   X,
   Building2,
   Layers,
-  Users
+  Users,
+  TrendingUp
 } from "lucide-react"
 
 interface UnifiedStudentProgressMatrixProps {
@@ -33,7 +34,15 @@ interface UnifiedStudentProgressMatrixProps {
   defaultCampusId?: string
   defaultClassId?: string
   campusesList?: Array<{ id: string; campusName: string; campusCode?: string }>
-  classesList?: Array<{ id: string; className: string; gradeLevel?: string; campusId?: string }>
+  classesList?: Array<{
+    id: string
+    className: string
+    gradeLevel?: string
+    campusId?: string
+    campusName?: string
+    campusCode?: string
+    studentCount?: number
+  }>
   onNavigateToStudentTab?: (studentId: string, tabKey: string) => void
   onNavigateStudentAction?: (studentId: string, studentCode: string, targetTab: string) => void
 }
@@ -81,15 +90,27 @@ export default function UnifiedStudentProgressMatrix({
   onNavigateToStudentTab,
   onNavigateStudentAction
 }: UnifiedStudentProgressMatrixProps) {
-  const effectiveYear = academicYearId || schoolYear || "2025-2026"
+  const effectiveYearId = academicYearId || ""
+  const effectiveSchoolYear = schoolYear || ""
   const [term, setTerm] = useState<"HK1" | "HK2">((semester === "HK2" ? "HK2" : "HK1"))
   const [campusId, setCampusId] = useState<string>(defaultCampusId || "ALL")
   const [gradeFilter, setGradeFilter] = useState<string>("ALL")
   const [classId, setClassId] = useState<string>(defaultClassId || "ALL")
+  const [availableClasses, setAvailableClasses] = useState<
+    Array<{
+      id: string
+      className: string
+      gradeLevel?: string
+      campusId?: string
+      campusName?: string
+      campusCode?: string
+      studentCount?: number
+    }>
+  >([])
   const [digestData, setDigestData] = useState<any>(null)
   const [dispatchingDigest, setDispatchingDigest] = useState<boolean>(false)
   const [digestToast, setDigestToast] = useState<string>("")
-  const [showDigestDrawer, setShowDigestDrawer] = useState<boolean>(false)
+  const [showDigestPanel, setShowDigestPanel] = useState<boolean>(false)
 
   const [studentSearch, setStudentSearch] = useState<string>("")
   const [gvcnSearch, setGvcnSearch] = useState<string>("")
@@ -128,18 +149,56 @@ export default function UnifiedStudentProgressMatrix({
   } | null>(null)
 
   useEffect(() => {
+    if (defaultCampusId !== undefined) {
+      const nextCampus = defaultCampusId || "ALL"
+      setCampusId(prev => {
+        if (prev !== nextCampus) {
+          setGradeFilter("ALL")
+          if (!defaultClassId || defaultClassId === "ALL") {
+            setClassId("ALL")
+          }
+          return nextCampus
+        }
+        return prev
+      })
+    }
+  }, [defaultCampusId, defaultClassId])
+
+  useEffect(() => {
     if (defaultClassId && defaultClassId !== "ALL") {
       setClassId(defaultClassId)
     }
   }, [defaultClassId])
 
+  const classOptions = useMemo(() => {
+    if (availableClasses.length > 0) {
+      return availableClasses
+    }
+    if (classesList.length > 0) {
+      return classesList.filter(c => {
+        if (!campusId || campusId === "ALL") return true
+        if (!c.campusId) return true
+        return c.campusId === campusId
+      })
+    }
+    return []
+  }, [availableClasses, classesList, campusId])
+
+  const handleCampusChange = (nextCampusId: string) => {
+    setCampusId(nextCampusId)
+    setGradeFilter("ALL")
+    setClassId("ALL")
+  }
+
   const loadMatrix = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (effectiveYear) {
-        params.set("academicYearId", effectiveYear)
-        params.set("schoolYear", effectiveYear)
+      if (effectiveYearId) {
+        params.set("academicYearId", effectiveYearId)
+      }
+      if (effectiveSchoolYear) {
+        params.set("schoolYear", effectiveSchoolYear)
       }
       params.set("term", term)
       if (campusId && campusId !== "ALL") params.set("campusId", campusId)
@@ -157,6 +216,9 @@ export default function UnifiedStudentProgressMatrix({
       if (res.ok) {
         const data = await res.json()
         setRows(Array.isArray(data.rows) ? data.rows : [])
+        if (Array.isArray(data.availableClasses)) {
+          setAvailableClasses(data.availableClasses)
+        }
         setHierarchySummary(data.hierarchySummary || { campuses: [], grades: [], classes: [] })
         setReportSummary(data.reportSummary || {})
       }
@@ -169,7 +231,7 @@ export default function UnifiedStudentProgressMatrix({
     } finally {
       setLoading(false)
     }
-  }, [effectiveYear, term, campusId, gradeFilter, classId])
+  }, [effectiveYearId, effectiveSchoolYear, term, campusId, gradeFilter, classId])
 
   useEffect(() => {
     loadMatrix()
@@ -448,22 +510,42 @@ export default function UnifiedStudentProgressMatrix({
                 <span className="text-[11px] text-slate-500">Bấm chọn cơ sở để lọc</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 tabular-nums">
-                {hierarchySummary.campuses.map((c: any) => (
-                  <div
-                    key={c.campusName}
-                    className="p-2.5 rounded-lg bg-white border border-slate-200 text-xs flex items-center justify-between"
-                  >
-                    <div>
-                      <span className="font-bold text-slate-800 block">{c.campusName}</span>
-                      <span className="text-[11px] text-slate-500">
-                        Mục tiêu: {c.withGoals}/{c.totalStudents} • Tư vấn: {c.consulted}/{c.totalStudents}
+                {hierarchySummary.campuses.map((c: any) => {
+                  const isActiveCampus = Boolean(c.campusId) && campusId === c.campusId
+                  return (
+                    <button
+                      key={c.campusId || c.campusName}
+                      type="button"
+                      onClick={() => {
+                        if (!c.campusId) return
+                        handleCampusChange(isActiveCampus ? "ALL" : c.campusId)
+                      }}
+                      className={`p-2.5 rounded-lg border text-xs flex items-center justify-between text-left transition-all cursor-pointer ${
+                        isActiveCampus
+                          ? "bg-[#003B3A] text-white border-[#003B3A]"
+                          : "bg-white border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      <div>
+                        <span className={`font-bold block ${isActiveCampus ? "text-white" : "text-slate-800"}`}>
+                          {c.campusName}
+                        </span>
+                        <span className={`text-[11px] ${isActiveCampus ? "text-teal-100" : "text-slate-500"}`}>
+                          Mục tiêu: {c.withGoals}/{c.totalStudents} • Tư vấn: {c.consulted}/{c.totalStudents}
+                        </span>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded-md border font-bold text-[11px] ${
+                          isActiveCampus
+                            ? "bg-white/15 text-teal-100 border-white/25"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        }`}
+                      >
+                        Tiến bộ: {c.withProgress}
                       </span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
-                      Tiến bộ: {c.withProgress}
-                    </span>
-                  </div>
-                ))}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -762,7 +844,7 @@ export default function UnifiedStudentProgressMatrix({
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">Cơ sở</label>
               <select
                 value={campusId}
-                onChange={e => setCampusId(e.target.value)}
+                onChange={e => handleCampusChange(e.target.value)}
                 className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium bg-white"
               >
                 <option value="ALL">Tất cả cơ sở</option>
@@ -776,16 +858,28 @@ export default function UnifiedStudentProgressMatrix({
           )}
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-600 mb-1">Lớp học</label>
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+              Lớp học {classOptions.length > 0 ? `(${classOptions.length})` : ""}
+            </label>
             <select
               value={classId}
               onChange={e => setClassId(e.target.value)}
               className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-medium bg-white"
             >
-              <option value="ALL">Tất cả lớp phụ trách</option>
-              {classesList.map(c => (
+              <option value="ALL">
+                {role === "ADMIN"
+                  ? campusId !== "ALL"
+                    ? "Tất cả lớp trong cơ sở"
+                    : "Tất cả lớp"
+                  : "Tất cả lớp phụ trách"}
+              </option>
+              {classOptions.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.className}
+                  {campusId === "ALL" && role === "ADMIN" && c.campusCode
+                    ? ` (${c.campusCode})`
+                    : ""}
+                  {typeof c.studentCount === "number" ? ` — ${c.studentCount} HS` : ""}
                 </option>
               ))}
             </select>

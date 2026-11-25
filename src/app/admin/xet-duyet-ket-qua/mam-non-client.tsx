@@ -9060,227 +9060,386 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             );
           })()}
 
-          {devLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 className="w-8 h-8 text-[#00A19A] animate-spin" />
-              <span className="text-slate-500 font-semibold text-xs">Đang tải tiêu chí theo biểu mẫu...</span>
-            </div>
-          ) : devAreas.length === 0 ? (
-            <div className="text-center text-slate-500 font-semibold text-xs py-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
-              Chưa cấu hình tiêu chí nào cho nhóm tuổi: {evalStudent?.grade}
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {devAreas.map(area => (
-                <div key={area.id} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
-                  
-                  {/* Area Title Bar */}
-                  <div className="flex items-center justify-between gap-4 px-5 py-3.5 bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: area.color || "#00A19A" }} />
-                      <h4 className="font-bold text-[#003B3A] text-xs">{area.name}</h4>
-                    </div>
-                    {(area.code === "THE_CHAT" || area.name?.toLowerCase().includes("thể chất")) && (() => {
+          {(() => {
+            const isSurveyReadOnly = devTab === "xetDuyet" || isAssessmentLocked;
+            return (
+              <>
+                {devLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <Loader2 className="w-7 h-7 text-[#00A19A] animate-spin" />
+                    <span className="text-slate-500 font-semibold text-xs">Đang tải thông tin kết quả khảo sát...</span>
+                  </div>
+                ) : devAreas.length === 0 ? (
+                  <div className="text-center text-slate-500 font-semibold text-xs py-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                    Chưa cấu hình tiêu chí nào cho nhóm tuổi: {evalStudent?.grade}
+                  </div>
+                ) : isSurveyReadOnly ? (
+                  /* CHẾ ĐỘ XÉT DUYỆT: CHỈ HIỆN THÔNG TIN KẾT QUẢ KHẢO SÁT (CHỈ ĐỌC, KHÔNG HIỆN BẢN CHO SỬA) */
+                  <div className="space-y-4">
+                    {(() => {
+                      const allCriteria = devAreas.flatMap(a => a.criteria || []);
+                      const nonPhysicalCriteria = devAreas.flatMap(area => {
+                        const isTheChat = area.code === "THE_CHAT" || area.code?.includes("THE_CHAT") || area.name?.toLowerCase().includes("thể chất");
+                        return (area.criteria || []).filter(crit => {
+                          const isH = isTheChat && (crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao"));
+                          const isW = isTheChat && (crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng"));
+                          return !isH && !isW;
+                        });
+                      });
+                      const scoredCount = nonPhysicalCriteria.filter(c => studentScores[c.id]?.result).length;
+                      const datTotal = nonPhysicalCriteria.filter(c => studentScores[c.id]?.result === "DAT").length;
+                      const khongDatTotal = nonPhysicalCriteria.filter(c => studentScores[c.id]?.result === "KHONG_DAT").length;
+                      const chuaThTotal = nonPhysicalCriteria.filter(c => studentScores[c.id]?.result === "CHUA_THE_HIEN").length;
+                      const pct = scoredCount > 0 ? Math.round((datTotal / scoredCount) * 100) : 0;
                       const bmiVal = calculateBMI();
                       const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
-                      if (!bmiVal || !bmiClass) return null;
+
                       return (
-                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-semibold tabular-nums ${bmiClass.color}`}>
-                          <div className={`w-2 h-2 rounded-full ${bmiClass.dot}`} />
-                          <span>BMI: {bmiVal.toFixed(1)} ({bmiClass.label})</span>
+                        <div className="bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] p-4 flex flex-wrap items-center justify-between gap-3 tabular-nums">
+                          <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-5 rounded-full bg-[#003B3A]" />
+                            <div>
+                              <h4 className="text-xs font-bold text-[#003B3A]">Thông tin kết quả khảo sát (chỉ đọc)</h4>
+                              <p className="text-[11px] text-slate-500">
+                                Tổng {allCriteria.length} tiêu chí · Đã chấm {scoredCount}/{nonPhysicalCriteria.length} tiêu chí phát triển
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                              Đạt: {datTotal}/{scoredCount || nonPhysicalCriteria.length} ({pct}%)
+                            </span>
+                            {chuaThTotal > 0 && (
+                              <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 font-semibold">
+                                Chưa thể hiện: {chuaThTotal}
+                              </span>
+                            )}
+                            {khongDatTotal > 0 && (
+                              <span className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
+                                Không đạt: {khongDatTotal}
+                              </span>
+                            )}
+                            {bmiVal && bmiClass && (
+                              <span className={`px-2.5 py-1 rounded-lg border font-semibold ${bmiClass.color}`}>
+                                BMI: {bmiVal.toFixed(1)} ({bmiClass.label})
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     })()}
+
+                    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto max-h-[340px] overflow-y-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-[#003B3A] border-b border-[#003B3A] sticky top-0 z-10">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="py-2.5 px-3 text-white w-[22%]">Lĩnh vực</th>
+                              <th className="py-2.5 px-3 text-white w-[42%]">Tiêu chí khảo sát</th>
+                              <th className="py-2.5 px-3 text-[#5EEAD4] w-[16%] text-center">Kết quả</th>
+                              <th className="py-2.5 px-3 text-teal-100 w-[20%]">Ghi chú quan sát</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                            {devAreas.flatMap(area => {
+                              const isTheChat = area.code === "THE_CHAT" || area.code?.includes("THE_CHAT") || area.name?.toLowerCase().includes("thể chất");
+                              return (area.criteria || []).map((crit, idx) => {
+                                const isHeight = isTheChat && (crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao"));
+                                const isWeight = isTheChat && (crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng"));
+                                const isPhysical = isHeight || isWeight;
+                                const sc = studentScores[crit.id];
+                                const rawNote = sc?.note || "";
+                                const pipeIdx = rawNote.indexOf("|");
+                                const measureVal = pipeIdx >= 0 ? rawNote.substring(0, pipeIdx).trim() : (isPhysical ? rawNote.trim() : "");
+                                const obsVal = pipeIdx >= 0 ? rawNote.substring(pipeIdx + 1).trim() : (isPhysical ? "" : rawNote.trim());
+
+                                return (
+                                  <tr key={crit.id} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                                    <td className="py-2.5 px-3 font-semibold text-[#003B3A] align-middle">
+                                      {idx === 0 ? area.name : <span className="text-slate-300">↳</span>}
+                                    </td>
+                                    <td className="py-2.5 px-3 text-slate-700 align-middle leading-snug">
+                                      <span className="text-slate-400 mr-1.5 font-semibold">{idx + 1}.</span>
+                                      {crit.name}
+                                    </td>
+                                    <td className="py-2.5 px-3 text-center align-middle">
+                                      {isPhysical ? (
+                                        <span className="inline-flex px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-[11px] font-semibold">
+                                          {measureVal || "Chưa đo"}
+                                        </span>
+                                      ) : sc?.result === "DAT" ? (
+                                        <span className="inline-flex px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold">
+                                          Đạt
+                                        </span>
+                                      ) : sc?.result === "KHONG_DAT" ? (
+                                        <span className="inline-flex px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-semibold">
+                                          Không đạt
+                                        </span>
+                                      ) : sc?.result === "CHUA_THE_HIEN" ? (
+                                        <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold">
+                                          Chưa thể hiện
+                                        </span>
+                                      ) : (
+                                        <span className="text-[11px] text-slate-400">—</span>
+                                      )}
+                                    </td>
+                                    <td className="py-2.5 px-3 text-slate-600 align-middle">
+                                      {obsVal || <span className="text-slate-300">—</span>}
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Đánh giá chung (chỉ đọc) */}
+                    <div className="bg-[#F8FAFC] p-4 rounded-2xl border border-[#E2E8F0] space-y-3">
+                      <div className="flex items-center gap-2 border-b border-[#E2E8F0] pb-2">
+                        <ClipboardList className="w-4 h-4 text-[#003B3A]" />
+                        <h4 className="text-xs font-bold text-[#003B3A]">Nhận xét &amp; Đánh giá chung của GV khảo sát</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                        <div className="bg-white rounded-xl border border-[#E2E8F0] p-3">
+                          <span className="block text-[11px] font-semibold text-slate-500 mb-1">Đánh giá chuyên môn</span>
+                          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                            {devProfComment || <span className="text-slate-400 italic">Chưa có nhận xét</span>}
+                          </p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-[#E2E8F0] p-3">
+                          <span className="block text-[11px] font-semibold text-slate-500 mb-1">Đánh giá tâm lý</span>
+                          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                            {devPsyComment || <span className="text-slate-400 italic">Chưa có nhận xét</span>}
+                          </p>
+                        </div>
+                        <div className="bg-amber-50/50 rounded-xl border border-amber-200/70 p-3">
+                          <span className="block text-[11px] font-semibold text-amber-800 mb-1">Lưu ý quan trọng</span>
+                          <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                            {devNote || <span className="text-slate-400 italic">Không có lưu ý đặc biệt</span>}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-
-                  {/* Criteria Items List */}
-                  <div className="divide-y divide-slate-100 px-6">
-                    {area.criteria.map((crit, idx) => {
-                      const isTheChat = area.code === "THE_CHAT" || area.code?.includes("THE_CHAT") || area.name?.toLowerCase().includes("thể chất");
-                      const isHeight = isTheChat && (crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao"));
-                      const isWeight = isTheChat && (crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng"));
-                      const isPhysical = isHeight || isWeight;
-                      const unit = isHeight ? "cm" : "kg";
-
-                      const rawNote = studentScores[crit.id]?.note || "";
-                      const pipeIdx = rawNote.indexOf("|");
-                      const rawMeasure = pipeIdx >= 0 ? rawNote.substring(0, pipeIdx) : rawNote;
-                      const rawObs = pipeIdx >= 0 ? rawNote.substring(pipeIdx + 1) : "";
-                      const parsedNum = parseFloat(rawMeasure.replace(/[^\d.]/g, ""));
-                      const numStr = (isPhysical && !isNaN(parsedNum) && parsedNum > 0) ? String(parsedNum) : "";
-
-                      const updatePhysical = (newNum: string, newObs: string) => {
-                        let combined = "";
-                        if (newNum && newObs) combined = `${newNum} ${unit}|${newObs}`;
-                        else if (newNum) combined = `${newNum} ${unit}`;
-                        else if (newObs) combined = `|${newObs}`;
-                        setStudentScores(prev => ({
-                          ...prev,
-                          [crit.id]: { result: newNum ? "DAT" : (prev[crit.id]?.result || "CHUA_THE_HIEN"), note: combined }
-                        }));
-                      };
-
-                      const radioOpts = [
-                        { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:border-slate-350 border-slate-200 text-slate-500 hover:bg-slate-50/50" },
-                        { key: "DAT", label: "Đạt", color: "peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-emerald-500 border-slate-200 text-emerald-600 hover:bg-emerald-50/50 hover:text-slate-800 hover:border-emerald-200" },
-                        { key: "KHONG_DAT", label: "Không đạt", color: "peer-checked:bg-rose-500 peer-checked:text-white peer-checked:border-rose-500 border-slate-200 text-rose-600 hover:bg-rose-50/50 hover:text-slate-800 hover:border-rose-200" }
-                      ];
-
-                      return (
-                        <div key={crit.id} className="py-5 flex flex-col gap-3">
+                ) : (
+                  <>
+                    <div className="space-y-5">
+                      {devAreas.map(area => (
+                        <div key={area.id} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
                           
-                          {/* Criterion Row Layout (Responsive flex) */}
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <p className="text-xs font-bold text-slate-700 flex items-start gap-2.5 leading-relaxed flex-1">
-                              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black flex items-center justify-center border border-slate-200/50">
-                                {idx + 1}
-                              </span>
-                              {crit.name}
-                            </p>
-
-                            {/* Options choices group — ẩn trên dòng chỉ số đo Y tế B4A (Chiều cao / Cân nặng) */}
-                            {isPhysical ? (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#F0FDFA] border border-teal-200 text-[#00736E] text-[11px] font-semibold shrink-0">
-                                B4A · Chỉ số Y tế
-                              </span>
-                            ) : (
-                              <div className="flex flex-wrap gap-2 shrink-0 md:self-center">
-                                {radioOpts.map(opt => (
-                                  <label key={opt.key} className={`relative flex items-center ${isAssessmentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
-                                    <input
-                                      type="radio"
-                                      name={`crit-${crit.id}`}
-                                      checked={studentScores[crit.id]?.result === opt.key}
-                                      onChange={() => setStudentScores(prev => ({
-                                        ...prev,
-                                        [crit.id]: { result: opt.key, note: prev[crit.id]?.note || "" }
-                                      }))}
-                                      disabled={isAssessmentLocked}
-                                      className="sr-only peer"
-                                    />
-                                    <span className={`px-3.5 py-1.5 rounded-full border text-[11px] font-semibold transition-all peer-checked:ring-2 peer-checked:ring-slate-500/15 ${opt.color}`}>
-                                      {opt.label}
-                                    </span>
-                                  </label>
-                                ))}
-                              </div>
-                            )}
+                          {/* Area Title Bar */}
+                          <div className="flex items-center justify-between gap-4 px-5 py-3.5 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: area.color || "#00A19A" }} />
+                              <h4 className="font-bold text-[#003B3A] text-xs">{area.name}</h4>
+                            </div>
+                            {(area.code === "THE_CHAT" || area.name?.toLowerCase().includes("thể chất")) && (() => {
+                              const bmiVal = calculateBMI();
+                              const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
+                              if (!bmiVal || !bmiClass) return null;
+                              return (
+                                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-semibold tabular-nums ${bmiClass.color}`}>
+                                  <div className={`w-2 h-2 rounded-full ${bmiClass.dot}`} />
+                                  <span>BMI: {bmiVal.toFixed(1)} ({bmiClass.label})</span>
+                                </div>
+                              );
+                            })()}
                           </div>
 
-                          {/* Suffix inputs for Thể chất (Chiều cao, Cân nặng, BMI) */}
-                          {isPhysical && (
-                            <div className="flex flex-wrap items-center gap-3 pl-8">
-                              <div className="flex items-center bg-[#F8FAFC] border border-slate-200 rounded-2xl overflow-hidden focus-within:border-[#48BFE3] focus-within:ring-4 focus-within:ring-[#48BFE3]/10 transition-all shadow-xs">
-                                <input
-                                  type="number"
-                                  step={isHeight ? "1" : "0.1"}
-                                  min="0"
-                                  max={isHeight ? "250" : "150"}
-                                  value={numStr}
-                                  onChange={e => updatePhysical(e.target.value, rawObs)}
-                                  placeholder={isHeight ? "0" : "0.0"}
-                                  disabled={isAssessmentLocked}
-                                  className="w-16 text-sm font-black text-slate-800 outline-none bg-transparent text-center px-2 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:text-slate-400 disabled:cursor-not-allowed"
-                                />
-                                <div className="text-[10px] font-black text-slate-400 select-none min-w-[36px] text-center bg-slate-100/80 border-l border-slate-200 py-2.5">
-                                  {unit}
-                                </div>
-                              </div>
+                          {/* Criteria Items List */}
+                          <div className="divide-y divide-slate-100 px-6">
+                            {area.criteria.map((crit, idx) => {
+                              const isTheChat = area.code === "THE_CHAT" || area.code?.includes("THE_CHAT") || area.name?.toLowerCase().includes("thể chất");
+                              const isHeight = isTheChat && (crit.code?.endsWith("_01") || crit.name?.toLowerCase().includes("chiều cao"));
+                              const isWeight = isTheChat && (crit.code?.endsWith("_02") || crit.name?.toLowerCase().includes("cân nặng"));
+                              const isPhysical = isHeight || isWeight;
+                              const unit = isHeight ? "cm" : "kg";
 
-                              {isWeight && (() => {
-                                const bmiVal = calculateBMI();
-                                const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
-                                if (!bmiVal || !bmiClass) {
-                                  return (
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-450 bg-[#F8FAFC] px-3 py-2.5 rounded-2xl border border-slate-200/50">
-                                      <span className="font-black text-slate-400 uppercase tracking-wider">BMI:</span>
-                                      <span className="font-mono text-slate-450">— (nhập chiều cao trước)</span>
-                                    </div>
-                                  );
-                                }
-                                return (
-                                  <div className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border font-black animate-in fade-in zoom-in-95 ${bmiClass.color}`}>
-                                    <div className={`w-2 h-2 rounded-full animate-pulse flex-shrink-0 ${bmiClass.dot}`} />
-                                    <span className="text-[9px] uppercase tracking-wider">BMI:</span>
-                                    <span className="text-xs font-mono">{bmiVal.toFixed(1)}</span>
-                                    <span className="text-[9px] opacity-85">— {bmiClass.label}</span>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          )}
+                              const rawNote = studentScores[crit.id]?.note || "";
+                              const pipeIdx = rawNote.indexOf("|");
+                              const rawMeasure = pipeIdx >= 0 ? rawNote.substring(0, pipeIdx) : rawNote;
+                              const rawObs = pipeIdx >= 0 ? rawNote.substring(pipeIdx + 1) : "";
+                              const parsedNum = parseFloat(rawMeasure.replace(/[^\d.]/g, ""));
+                              const numStr = (isPhysical && !isNaN(parsedNum) && parsedNum > 0) ? String(parsedNum) : "";
 
-                          {/* Observer Observation Note input */}
-                          <div className="pl-8">
-                            <input
-                              type="text"
-                              value={isPhysical ? rawObs : rawNote}
-                              onChange={e => {
-                                if (isPhysical) updatePhysical(numStr, e.target.value);
-                                else setStudentScores(prev => ({
+                              const updatePhysical = (newNum: string, newObs: string) => {
+                                let combined = "";
+                                if (newNum && newObs) combined = `${newNum} ${unit}|${newObs}`;
+                                else if (newNum) combined = `${newNum} ${unit}`;
+                                else if (newObs) combined = `|${newObs}`;
+                                setStudentScores(prev => ({
                                   ...prev,
-                                  [crit.id]: { result: prev[crit.id]?.result || "CHUA_THE_HIEN", note: e.target.value }
+                                  [crit.id]: { result: newNum ? "DAT" : (prev[crit.id]?.result || "CHUA_THE_HIEN"), note: combined }
                                 }));
-                              }}
-                              placeholder={isAssessmentLocked ? "Không có ghi chú" : "Nhập ghi chú quan sát..."}
-                              disabled={isAssessmentLocked}
-                              className="w-full text-xs font-semibold outline-none border border-slate-200 focus:border-[#48BFE3] focus:bg-white focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl px-3 py-2 bg-[#F8FAFC] transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-450"
-                            />
+                              };
+
+                              const radioOpts = [
+                                { key: "CHUA_THE_HIEN", label: "Chưa thể hiện", color: "peer-checked:bg-slate-100 peer-checked:text-slate-700 peer-checked:border-slate-350 border-slate-200 text-slate-500 hover:bg-slate-50/50" },
+                                { key: "DAT", label: "Đạt", color: "peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-emerald-500 border-slate-200 text-emerald-600 hover:bg-emerald-50/50 hover:text-slate-800 hover:border-emerald-200" },
+                                { key: "KHONG_DAT", label: "Không đạt", color: "peer-checked:bg-rose-500 peer-checked:text-white peer-checked:border-rose-500 border-slate-200 text-rose-600 hover:bg-rose-50/50 hover:text-slate-800 hover:border-rose-200" }
+                              ];
+
+                              return (
+                                <div key={crit.id} className="py-5 flex flex-col gap-3">
+                                  
+                                  {/* Criterion Row Layout (Responsive flex) */}
+                                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <p className="text-xs font-bold text-slate-700 flex items-start gap-2.5 leading-relaxed flex-1">
+                                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black flex items-center justify-center border border-slate-200/50">
+                                        {idx + 1}
+                                      </span>
+                                      {crit.name}
+                                    </p>
+
+                                    {/* Options choices group — ẩn trên dòng chỉ số đo Y tế B4A (Chiều cao / Cân nặng) */}
+                                    {isPhysical ? (
+                                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#F0FDFA] border border-teal-200 text-[#00736E] text-[11px] font-semibold shrink-0">
+                                        B4A · Chỉ số Y tế
+                                      </span>
+                                    ) : (
+                                      <div className="flex flex-wrap gap-2 shrink-0 md:self-center">
+                                        {radioOpts.map(opt => (
+                                          <label key={opt.key} className={`relative flex items-center ${isAssessmentLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                                            <input
+                                              type="radio"
+                                              name={`crit-${crit.id}`}
+                                              checked={studentScores[crit.id]?.result === opt.key}
+                                              onChange={() => setStudentScores(prev => ({
+                                                ...prev,
+                                                [crit.id]: { result: opt.key, note: prev[crit.id]?.note || "" }
+                                              }))}
+                                              disabled={isAssessmentLocked}
+                                              className="sr-only peer"
+                                            />
+                                            <span className={`px-3.5 py-1.5 rounded-full border text-[11px] font-semibold transition-all peer-checked:ring-2 peer-checked:ring-slate-500/15 ${opt.color}`}>
+                                              {opt.label}
+                                            </span>
+                                          </label>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Suffix inputs for Thể chất (Chiều cao, Cân nặng, BMI) */}
+                                  {isPhysical && (
+                                    <div className="flex flex-wrap items-center gap-3 pl-8">
+                                      <div className="flex items-center bg-[#F8FAFC] border border-slate-200 rounded-2xl overflow-hidden focus-within:border-[#48BFE3] focus-within:ring-4 focus-within:ring-[#48BFE3]/10 transition-all shadow-xs">
+                                        <input
+                                          type="number"
+                                          step={isHeight ? "1" : "0.1"}
+                                          min="0"
+                                          max={isHeight ? "250" : "150"}
+                                          value={numStr}
+                                          onChange={e => updatePhysical(e.target.value, rawObs)}
+                                          placeholder={isHeight ? "0" : "0.0"}
+                                          disabled={isAssessmentLocked}
+                                          className="w-16 text-sm font-black text-slate-800 outline-none bg-transparent text-center px-2 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:text-slate-400 disabled:cursor-not-allowed"
+                                        />
+                                        <div className="text-[10px] font-black text-slate-400 select-none min-w-[36px] text-center bg-slate-100/80 border-l border-slate-200 py-2.5">
+                                          {unit}
+                                        </div>
+                                      </div>
+
+                                      {isWeight && (() => {
+                                        const bmiVal = calculateBMI();
+                                        const bmiClass = bmiVal ? getBMIClassification(bmiVal) : null;
+                                        if (!bmiVal || !bmiClass) {
+                                          return (
+                                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-450 bg-[#F8FAFC] px-3 py-2.5 rounded-2xl border border-slate-200/50">
+                                              <span className="font-black text-slate-400 uppercase tracking-wider">BMI:</span>
+                                              <span className="font-mono text-slate-450">— (nhập chiều cao trước)</span>
+                                            </div>
+                                          );
+                                        }
+                                        return (
+                                          <div className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border font-black animate-in fade-in zoom-in-95 ${bmiClass.color}`}>
+                                            <div className={`w-2 h-2 rounded-full animate-pulse flex-shrink-0 ${bmiClass.dot}`} />
+                                            <span className="text-[9px] uppercase tracking-wider">BMI:</span>
+                                            <span className="text-xs font-mono">{bmiVal.toFixed(1)}</span>
+                                            <span className="text-[9px] opacity-85">— {bmiClass.label}</span>
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
+                                  )}
+
+                                  {/* Observer Observation Note input */}
+                                  <div className="pl-8">
+                                    <input
+                                      type="text"
+                                      value={isPhysical ? rawObs : rawNote}
+                                      onChange={e => {
+                                        if (isPhysical) updatePhysical(numStr, e.target.value);
+                                        else setStudentScores(prev => ({
+                                          ...prev,
+                                          [crit.id]: { result: prev[crit.id]?.result || "CHUA_THE_HIEN", note: e.target.value }
+                                        }));
+                                      }}
+                                      placeholder={isAssessmentLocked ? "Không có ghi chú" : "Nhập ghi chú quan sát..."}
+                                      disabled={isAssessmentLocked}
+                                      className="w-full text-xs font-semibold outline-none border border-slate-200 focus:border-[#48BFE3] focus:bg-white focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl px-3 py-2 bg-[#F8FAFC] transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-450"
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                      ))}
+                    </div>
 
-          {/* ĐÁNH GIÁ CHUNG CARD */}
-          <div className="bg-slate-50/60 p-6 rounded-3xl border border-slate-200/80 space-y-5">
-            <div className="flex items-center gap-2 border-b border-slate-200/60 pb-3 mb-1">
-              <ClipboardList className="w-4 h-4 text-slate-800" />
-              <h4 className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Đánh giá chung</h4>
-            </div>
+                    {/* ĐÁNH GIÁ CHUNG CARD */}
+                    <div className="bg-slate-50/60 p-6 rounded-3xl border border-slate-200/80 space-y-5">
+                      <div className="flex items-center gap-2 border-b border-slate-200/60 pb-3 mb-1">
+                        <ClipboardList className="w-4 h-4 text-slate-800" />
+                        <h4 className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Đánh giá chung</h4>
+                      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Đánh giá chuyên môn</label>
-                <textarea
-                  value={devProfComment}
-                  onChange={e => setDevProfComment(e.target.value)}
-                  rows={3}
-                  placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về sự phát triển chuyên môn của trẻ..."}
-                  disabled={isAssessmentLocked}
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
-                />
-              </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Đánh giá chuyên môn</label>
+                          <textarea
+                            value={devProfComment}
+                            onChange={e => setDevProfComment(e.target.value)}
+                            rows={3}
+                            placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về sự phát triển chuyên môn của trẻ..."}
+                            disabled={isAssessmentLocked}
+                            className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
+                          />
+                        </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Đánh giá tâm lý</label>
-                <textarea
-                  value={devPsyComment}
-                  onChange={e => setDevPsyComment(e.target.value)}
-                  rows={3}
-                  placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."}
-                  disabled={isAssessmentLocked}
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
-                />
-              </div>
-            </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Đánh giá tâm lý</label>
+                          <textarea
+                            value={devPsyComment}
+                            onChange={e => setDevPsyComment(e.target.value)}
+                            rows={3}
+                            placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."}
+                            disabled={isAssessmentLocked}
+                            className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
+                          />
+                        </div>
+                      </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-slate-800">Lưu ý quan trọng</label>
-              <textarea
-                value={devNote}
-                onChange={e => setDevNote(e.target.value)}
-                rows={2}
-                placeholder={isAssessmentLocked ? "Không có lưu ý đặc biệt" : "Những điểm cần lưu ý đặc biệt..."}
-                disabled={isAssessmentLocked}
-                className="w-full bg-[#FCFBF8] border border-[#F59E0B]/30 focus:border-[#F59E0B] focus:ring-4 focus:ring-[#F59E0B]/10 rounded-2xl px-4 py-3 text-xs font-semibold outline-none transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 shadow-xs"
-              />
-            </div>
-          </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-slate-800">Lưu ý quan trọng</label>
+                        <textarea
+                          value={devNote}
+                          onChange={e => setDevNote(e.target.value)}
+                          rows={2}
+                          placeholder={isAssessmentLocked ? "Không có lưu ý đặc biệt" : "Những điểm cần lưu ý đặc biệt..."}
+                          disabled={isAssessmentLocked}
+                          className="w-full bg-[#FCFBF8] border border-[#F59E0B]/30 focus:border-[#F59E0B] focus:ring-4 focus:ring-[#F59E0B]/10 rounded-2xl px-4 py-3 text-xs font-semibold outline-none transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500 shadow-xs"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            );
+          })()}
 
           {/* B6 / B9A: NHÓM TRƯỞNG MẦM NON RÀ SOÁT & ĐỊNH TUYẾN → B10: GĐCS PHÊ DUYỆT */}
           {(() => {
@@ -9367,25 +9526,34 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             (Tích chọn khi phát hiện dấu hiệu cần Tổ Tâm lý phỏng vấn &amp; đánh giá)
                           </span>
                         </label>
-                        {evalNeedPsyB7A && (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                            psyStatus === "COMPLETED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : psyStatus === "CONFIRMED"
-                                ? "bg-teal-50 text-[#00736E] border-teal-200"
-                                : evalStudent?.trialPsychologyEmailSentAt
-                                  ? "bg-amber-100 text-amber-900 border-amber-300"
-                                  : "bg-white text-amber-800 border-amber-200"
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                            evalNeedPsyB7A
+                              ? "bg-amber-100 text-amber-900 border-amber-300"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-200"
                           }`}>
-                            {psyStatus === "COMPLETED"
-                              ? "✓ GV Tâm lý đã hoàn tất đánh giá"
-                              : psyStatus === "CONFIRMED"
-                                ? "✓ GV Tâm lý đã xác nhận tiếp nhận"
-                                : evalStudent?.trialPsychologyEmailSentAt
-                                  ? "Đã gửi email — Chờ GV Tâm lý xác nhận"
-                                  : "Sẽ tự động gửi email khi lưu"}
+                            Trạng thái: {evalNeedPsyB7A ? "Có — Cần PV tâm lý" : "Không — Không cần PV tâm lý"}
                           </span>
-                        )}
+                          {evalNeedPsyB7A && (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                              psyStatus === "COMPLETED" || psyStatus === "EVALUATED"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : psyStatus === "CONFIRMED"
+                                  ? "bg-teal-50 text-[#00736E] border-teal-200"
+                                  : evalStudent?.trialPsychologyEmailSentAt
+                                    ? "bg-amber-100 text-amber-900 border-amber-300"
+                                    : "bg-white text-amber-800 border-amber-200"
+                            }`}>
+                              {psyStatus === "COMPLETED" || psyStatus === "EVALUATED"
+                                ? "✓ GV Tâm lý đã hoàn tất đánh giá"
+                                : psyStatus === "CONFIRMED"
+                                  ? "✓ GV Tâm lý đã xác nhận tiếp nhận"
+                                  : evalStudent?.trialPsychologyEmailSentAt
+                                    ? "Đã gửi email — Chờ GV Tâm lý xác nhận"
+                                    : "Sẽ tự động gửi email khi lưu"}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {evalNeedPsyB7A && (
@@ -9475,7 +9643,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         const evalTeacherName =
                           (Array.isArray(evalStudent?.assignedTeachers) && evalStudent.assignedTeachers.length > 0
                             ? evalStudent.assignedTeachers.join(", ")
-                            : evalStudent?.assignedTeacherName || evalStudent?.teacherName || "") || "Chưa phân công";
+                            : typeof evalStudent?.assignedTeachers === "string" && evalStudent.assignedTeachers.trim()
+                              ? evalStudent.assignedTeachers
+                              : evalStudent?.assignedTeacherName || evalStudent?.teacherName || assignedTeachers || "") || "Chưa phân công";
                         const autoSkipTrialPsy = !evalNeedPsyB7A && bghApprovalStatus !== "HEN_TRAI_NGHIEM";
 
                         return (
@@ -9493,6 +9663,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               ) : (
                                 <span className="text-amber-700 font-medium">Chưa chấm tiêu chí B5/B4B</span>
                               )}
+                            </div>
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/70">
+                              <span className="text-slate-600">
+                                Cần phỏng vấn tâm lý (B7A):
+                              </span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-bold border ${
+                                evalNeedPsyB7A
+                                  ? "bg-amber-50 text-amber-900 border-amber-300"
+                                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              }`}>
+                                {evalNeedPsyB7A ? "Có" : "Không"}
+                              </span>
                             </div>
                             {autoSkipTrialPsy && (
                               <div className="text-[11px] text-[#00736E] bg-[#F0FDFA] border border-teal-200/80 rounded-lg px-2.5 py-1 font-medium">
