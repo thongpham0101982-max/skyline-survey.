@@ -1017,10 +1017,11 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
 
                     return (
                       <div className="space-y-4">
+                        {/* Bảng kết quả khảo sát phát triển (chỉ đọc, không cho sửa) */}
                         <div className="rounded-xl border border-teal-200/80 bg-[#F0FDFA]/40 p-3.5 space-y-2.5">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="text-xs font-bold text-[#003B3A]">
-                              Phiếu đánh giá phát triển ({devCriteriaRows.length} tiêu chí)
+                              Kết quả Phiếu đánh giá phát triển ({devCriteriaRows.length} tiêu chí)
                             </span>
                             <div className="flex flex-wrap items-center gap-2 text-[11px] tabular-nums">
                               <span className="font-semibold text-emerald-700">
@@ -1032,80 +1033,48 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                               <span className="text-amber-700 font-medium">{liveChuaTh} Chưa thể hiện</span>
                             </div>
                           </div>
-                          <div className="max-h-[420px] overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white">
+                          <div className="max-h-[360px] overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white">
                             <table className="w-full text-left border-collapse text-[11px] tabular-nums">
                               <thead className="bg-[#003B3A] text-white sticky top-0 z-10">
                                 <tr>
                                   <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Lĩnh vực</th>
                                   <th className="py-2.5 px-2.5 text-white font-semibold">Tiêu chí</th>
-                                  <th className="py-2.5 px-2.5 text-[#5EEAD4] font-semibold w-[142px]">Kết quả</th>
-                                  <th className="py-2.5 px-2.5 text-teal-100 font-semibold w-[190px]">Ghi chú</th>
+                                  <th className="py-2.5 px-2.5 text-[#5EEAD4] font-semibold w-[124px]">Kết quả</th>
+                                  <th className="py-2.5 px-2.5 text-teal-100 font-semibold w-[180px]">Ghi chú</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-[#E2E8F0]">
                                 {devCriteriaRows.map((sc: any) => {
                                   const cid = sc.criteriaId || sc.id
-                                  const cur = devScoresMap[cid] || { result: sc.result || "", note: sc.note || "" }
+                                  const resVal = sc.result || devScoresMap[cid]?.result || ""
+                                  const noteVal = sc.note || devScoresMap[cid]?.note || ""
                                   return (
                                     <tr key={cid} className="hover:bg-[#F8FAFC]">
                                       <td className="py-2 px-2.5 text-slate-600 align-middle">{sc.areaName || "—"}</td>
                                       <td className="py-2 px-2.5 text-slate-800 align-middle">{sc.criteriaName}</td>
-                                      <td className="py-2 px-2.5 align-middle">
-                                        {perms.canEditEvaluation && isViewingLatest ? (
-                                          <select
-                                            value={cur.result}
-                                            onChange={(e) =>
-                                              setDevScoresMap((prev) => ({
-                                                ...prev,
-                                                [cid]: { ...cur, result: e.target.value },
-                                              }))
-                                            }
-                                            className={`w-full rounded-lg border px-2 py-1 text-[11px] font-semibold bg-white outline-none ${
-                                              cur.result === "DAT"
-                                                ? "border-emerald-300 text-emerald-700"
-                                                : cur.result === "KHONG_DAT"
-                                                  ? "border-rose-300 text-rose-700"
-                                                  : cur.result === "CHUA_THE_HIEN"
-                                                    ? "border-amber-300 text-amber-700"
-                                                    : "border-[#E2E8F0] text-slate-500"
-                                            }`}
-                                          >
-                                            <option value="">-- Chọn --</option>
-                                            <option value="DAT">Đạt</option>
-                                            <option value="CHUA_THE_HIEN">Chưa thể hiện</option>
-                                            <option value="KHONG_DAT">Không đạt</option>
-                                          </select>
-                                        ) : (
-                                          <span
-                                            className={
-                                              cur.result === "DAT"
-                                                ? "font-semibold text-emerald-700"
-                                                : cur.result === "KHONG_DAT"
-                                                  ? "font-semibold text-rose-700"
-                                                  : "font-semibold text-amber-700"
-                                            }
-                                          >
-                                            {cur.result === "DAT" ? "Đạt" : cur.result === "KHONG_DAT" ? "Không đạt" : cur.result === "CHUA_THE_HIEN" ? "Chưa thể hiện" : "—"}
-                                          </span>
-                                        )}
+                                      <td className="py-2 px-2.5 align-middle whitespace-nowrap">
+                                        <span
+                                          className={
+                                            resVal === "DAT"
+                                              ? "font-semibold text-emerald-700"
+                                              : resVal === "KHONG_DAT"
+                                                ? "font-semibold text-rose-700"
+                                                : resVal === "CHUA_THE_HIEN"
+                                                  ? "font-semibold text-amber-700"
+                                                  : "text-slate-400"
+                                          }
+                                        >
+                                          {resVal === "DAT"
+                                            ? "Đạt"
+                                            : resVal === "KHONG_DAT"
+                                              ? "Không đạt"
+                                              : resVal === "CHUA_THE_HIEN"
+                                                ? "Chưa thể hiện"
+                                                : "Chưa đánh giá"}
+                                        </span>
                                       </td>
-                                      <td className="py-2 px-2.5 align-middle">
-                                        {perms.canEditEvaluation && isViewingLatest ? (
-                                          <input
-                                            type="text"
-                                            value={cur.note}
-                                            onChange={(e) =>
-                                              setDevScoresMap((prev) => ({
-                                                ...prev,
-                                                [cid]: { ...cur, note: e.target.value },
-                                              }))
-                                            }
-                                            placeholder="Ghi chú..."
-                                            className="w-full rounded-lg border border-[#E2E8F0] px-2 py-1 text-[11px] bg-white"
-                                          />
-                                        ) : (
-                                          <span className="text-slate-500">{cur.note ? String(cur.note).replace(/\|/g, " — ") : "—"}</span>
-                                        )}
+                                      <td className="py-2 px-2.5 text-slate-500 align-middle">
+                                        {noteVal ? String(noteVal).replace(/\|/g, " — ") : "—"}
                                       </td>
                                     </tr>
                                   )
@@ -1115,131 +1084,268 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                           </div>
                         </div>
 
-                        {/* Nhận xét chuyên môn, tâm lý & lưu ý quan trọng từ Phiếu đánh giá phát triển */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-[11px] font-bold text-[#003B3A] mb-1">
+                        {/* Nhận xét chuyên môn, tâm lý & lưu ý quan trọng (chỉ đọc) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                          <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-1">
+                            <span className="block text-[11px] font-bold text-[#003B3A]">
                               Nhận xét chuyên môn (Phát triển của trẻ)
-                            </label>
-                            <textarea
-                              rows={3}
-                              value={devProfComment}
-                              onChange={(e) => setDevProfComment(e.target.value)}
-                              disabled={!perms.canEditEvaluation || !isViewingLatest}
-                              placeholder="Nhận xét về sự phát triển chuyên môn của trẻ..."
-                              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-xs bg-white disabled:bg-slate-50"
-                            />
+                            </span>
+                            <p className="text-slate-700 leading-relaxed">
+                              {student.devProfessionalComment || generalComment || (
+                                <span className="text-slate-400 italic">Chưa có nhận xét chuyên môn.</span>
+                              )}
+                            </p>
                           </div>
-                          <div>
-                            <label className="block text-[11px] font-bold text-[#003B3A] mb-1">
+                          <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-1">
+                            <span className="block text-[11px] font-bold text-[#003B3A]">
                               Nhận xét tâm lý, cảm xúc của trẻ
-                            </label>
-                            <textarea
-                              rows={3}
-                              value={devPsyComment}
-                              onChange={(e) => setDevPsyComment(e.target.value)}
-                              disabled={!perms.canEditEvaluation || !isViewingLatest}
-                              placeholder="Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."
-                              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-xs bg-white disabled:bg-slate-50"
-                            />
+                            </span>
+                            <p className="text-slate-700 leading-relaxed">
+                              {student.devPsychologyComment || (
+                                <span className="text-slate-400 italic">Chưa có nhận xét tâm lý, cảm xúc.</span>
+                              )}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3">
-                          <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 text-xs space-y-1">
+                          <span className="block text-[11px] font-bold text-amber-900">
                             Lưu ý quan trọng (Dị ứng, sức khỏe, thói quen...)
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={devImportantNote}
-                            onChange={(e) => setDevImportantNote(e.target.value)}
-                            disabled={!perms.canEditEvaluation || !isViewingLatest}
-                            placeholder="Ghi nhận dị ứng thực phẩm hoặc lưu ý quan trọng của trẻ..."
-                            className="w-full rounded-lg border border-amber-200/80 bg-white px-3 py-1.5 text-xs disabled:bg-slate-50"
-                          />
+                          </span>
+                          <p className="text-amber-950/80 leading-relaxed">
+                            {student.devImportantNote || (
+                              <span className="text-amber-800/60 italic">Chưa ghi nhận lưu ý đặc biệt.</span>
+                            )}
+                          </p>
                         </div>
 
-                        {perms.canEditEvaluation && isViewingLatest && (
-                          <button
-                            type="button"
-                            disabled={saving}
-                            onClick={async () => {
-                              setSaving(true)
-                              setError(null)
-                              setNotice(null)
-                              try {
-                                const scoresPayload = devCriteriaRows
-                                  .map((r) => {
-                                    const cid = r.criteriaId || r.id
-                                    const val = devScoresMap[cid]
-                                    return val?.result
-                                      ? { criteriaId: cid, result: val.result, note: val.note || "" }
-                                      : null
-                                  })
-                                  .filter(Boolean)
+                        {/* Trạng thái: Cần phỏng vấn tâm lý (Có / Không) */}
+                        {(() => {
+                          const needPsy = Boolean(
+                            hasPsyResult ||
+                              Number(student.trialPsychologyScreening || 0) === 1 ||
+                              student.trialPsychologistName ||
+                              student.trialPsychologyStatus ||
+                              viewingRound?.psychologyRequired ||
+                              viewingRound?.assignedPsychologistName
+                          )
+                          return (
+                            <div
+                              className={`rounded-xl border p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs ${
+                                needPsy
+                                  ? "border-amber-200 bg-amber-50/70"
+                                  : "border-emerald-200/80 bg-emerald-50/50"
+                              }`}
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-bold text-[#003B3A]">Cần phỏng vấn tâm lý (B7A):</span>
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                                    needPsy
+                                      ? "bg-amber-100 text-amber-900 border-amber-300"
+                                      : "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                  }`}
+                                >
+                                  {needPsy ? "Có" : "Không"}
+                                </span>
+                                {needPsy && (student.trialPsychologistName || viewingRound?.assignedPsychologistName) && (
+                                  <span className="text-slate-700">
+                                    · GV Tâm lý:{" "}
+                                    <strong>{student.trialPsychologistName || viewingRound?.assignedPsychologistName}</strong>
+                                  </span>
+                                )}
+                              </div>
+                              {needPsy && (
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveTab("psychology")}
+                                  className="text-[11px] font-semibold text-[#00736E] hover:underline cursor-pointer"
+                                >
+                                  Xem chi tiết B7 Tâm lý →
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })()}
 
-                                const devRes = await fetch("/api/preschool-dev-scores", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    studentId,
-                                    scores: scoresPayload,
-                                    devProfessionalComment: devProfComment,
-                                    devPsychologyComment: devPsyComment,
-                                    devImportantNote,
-                                  }),
-                                })
-                                if (!devRes.ok) {
-                                  const errD = await devRes.json().catch(() => ({}))
-                                  throw new Error(errD?.error || "Không thể lưu Phiếu đánh giá phát triển.")
-                                }
+                        {/* Tích hợp B6 / B9A: Nhóm trưởng Mầm non rà soát & định tuyến → B10: GĐCS phê duyệt */}
+                        {(() => {
+                          const b6Map: Record<string, string> = {
+                            DE_XUAT_DAT: "Đề xuất Đạt → Trình B10",
+                            DE_XUAT_CHUA_DAT: "Đề xuất Chưa đạt → B10",
+                            CAN_TAM_LY: "Cần PV tâm lý (B7A)",
+                            HEN_TRAI_NGHIEM_BO_SUNG: "Hẹn trải nghiệm (B7B)",
+                            HEN_TRAI_NGHIEM: "Hẹn trải nghiệm (B7B)",
+                            DAT: "Đề xuất Đạt → Trình B10",
+                            DAT_MIEN_HOC_THU: "Đề xuất Đạt → Trình B10",
+                            KHONG_DAT: "Đề xuất Chưa đạt → B10",
+                          }
+                          const effB6 = viewingRound?.reviewDecision || student.bghApprovalStatus || ""
+                          const b6Done = Boolean(viewingRound?.reviewedAt || effB6)
+                          const b10Out = student.finalApprovedOutcome || viewingRound?.gdcsDecision || ""
+                          const b10Done = Boolean(b10Out)
 
-                                // Đồng bộ sang PreschoolAssessmentRound (B5/B4B)
-                                const roundCriteria = devCriteriaRows.map((r) => {
-                                  const cid = r.criteriaId || r.id
-                                  const val = devScoresMap[cid] || { result: "", note: "" }
-                                  return {
-                                    code: r.criteriaCode || cid,
-                                    area: r.areaName || "",
-                                    name: r.criteriaName || "",
-                                    result:
-                                      val.result === "DAT"
-                                        ? "Đạt"
-                                        : val.result === "KHONG_DAT"
-                                          ? "Không đạt"
-                                          : val.result === "CHUA_THE_HIEN"
-                                            ? "Chưa thể hiện"
-                                            : "",
-                                    note: val.note || "",
-                                  }
-                                })
-                                await fetch(`/api/preschool-workflow/${studentId}`, {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    action: "SAVE_EVALUATION",
-                                    roundId: viewingRound?.id,
-                                    formCode: selectedFormCode,
-                                    criteria: roundCriteria,
-                                    generalComment: devProfComment,
-                                    experienceObservation,
-                                  }),
-                                })
+                          return (
+                            <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-4">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E2E8F0]">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-1.5 h-4 rounded-full bg-[#003B3A]" />
+                                  <h4 className="text-xs font-bold text-[#003B3A]">
+                                    B6 / B9A: Nhóm trưởng Mầm non rà soát &amp; định tuyến → B10: GĐCS phê duyệt
+                                  </h4>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveTab("review")}
+                                  className="text-[11px] font-semibold text-[#00736E] hover:underline cursor-pointer"
+                                >
+                                  Mở toàn màn hình Duyệt / Gửi Email B10 →
+                                </button>
+                              </div>
 
-                                setNotice("Đã lưu Phiếu đánh giá phát triển (B5/B4B) thành công.")
-                                await fetchDossier(studentId!)
-                                onUpdated()
-                              } catch (err: any) {
-                                setError(err?.message || "Lỗi khi lưu Phiếu đánh giá phát triển.")
-                              } finally {
-                                setSaving(false)
-                              }
-                            }}
-                            className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold cursor-pointer disabled:opacity-50"
-                          >
-                            {saving ? "Đang lưu..." : "Lưu Phiếu đánh giá phát triển (B5/B4B)"}
-                          </button>
-                        )}
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+                                {/* Bước 1: B6 / B9A */}
+                                <div className="bg-white rounded-xl border border-[#E2E8F0] p-3.5 space-y-2.5">
+                                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="px-2 py-0.5 rounded-full bg-[#003B3A] text-white text-[10px] font-bold">
+                                        Bước 1
+                                      </span>
+                                      <span className="font-bold text-[#003B3A]">B6 / B9A · Nhóm trưởng / BGH MN</span>
+                                    </div>
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                        b6Done
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          : "bg-amber-50 text-amber-700 border-amber-200"
+                                      }`}
+                                    >
+                                      {b6Done ? b6Map[effB6] || effB6 : "Chờ Bước 1"}
+                                    </span>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-1.5">
+                                    {[
+                                      { k: "DE_XUAT_DAT", label: "Đề xuất Đạt → B10" },
+                                      { k: "DE_XUAT_CHUA_DAT", label: "Đề xuất Chưa đạt → B10" },
+                                      { k: "CAN_TAM_LY", label: "Cần PV tâm lý (B7A)" },
+                                      { k: "HEN_TRAI_NGHIEM_BO_SUNG", label: "Hẹn trải nghiệm (B7B)" },
+                                    ].map((opt) => (
+                                      <button
+                                        key={opt.k}
+                                        type="button"
+                                        onClick={() => setReviewDecision(opt.k)}
+                                        className={`px-2.5 py-2 rounded-lg border text-[11px] font-semibold text-left cursor-pointer ${
+                                          reviewDecision === opt.k
+                                            ? "bg-[#003B3A] text-white border-[#003B3A]"
+                                            : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-slate-50"
+                                        }`}
+                                      >
+                                        {opt.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <textarea
+                                    rows={2}
+                                    value={reviewComment}
+                                    onChange={(e) => setReviewComment(e.target.value)}
+                                    placeholder="Ý kiến rà soát của Nhóm trưởng / BGH Mầm non..."
+                                    className="w-full rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-xs"
+                                  />
+                                  {perms.canReviewB6B9A && isViewingLatest && (
+                                    <button
+                                      type="button"
+                                      disabled={saving}
+                                      onClick={() =>
+                                        runAction(
+                                          { action: "REVIEW_B6_B9A", reviewDecision, reviewComment },
+                                          "Đã lưu kết quả rà soát B6/B9A (Bước 1)."
+                                        )
+                                      }
+                                      className="px-3.5 py-1.5 rounded-lg bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                                    >
+                                      Xác nhận rà soát B6/B9A (Bước 1)
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Bước 2: B10 GĐCS phê duyệt */}
+                                <div className="bg-white rounded-xl border border-[#E2E8F0] p-3.5 space-y-2.5">
+                                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="px-2 py-0.5 rounded-full bg-[#00A19A] text-white text-[10px] font-bold">
+                                        Bước 2
+                                      </span>
+                                      <span className="font-bold text-[#003B3A]">B10 · GĐCS phê duyệt</span>
+                                    </div>
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                        b10Done
+                                          ? b10Out === "DAT"
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                            : "bg-rose-50 text-rose-700 border-rose-200"
+                                          : gate.ready
+                                            ? "bg-teal-50 text-[#00736E] border-teal-200"
+                                            : "bg-amber-50 text-amber-700 border-amber-200"
+                                      }`}
+                                    >
+                                      {b10Done
+                                        ? `Đã duyệt: ${b10Out === "DAT" ? "Đạt" : "Chưa đạt"}`
+                                        : gate.ready
+                                          ? "Sẵn sàng phê duyệt"
+                                          : "Chờ Bước 1"}
+                                    </span>
+                                  </div>
+
+                                  {!gate.ready && gate.missing.length > 0 && (
+                                    <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                                      {gate.missing.join(" ")}
+                                    </div>
+                                  )}
+
+                                  <textarea
+                                    rows={2}
+                                    value={gdcsComment}
+                                    onChange={(e) => setGdcsComment(e.target.value)}
+                                    placeholder="Ý kiến phê duyệt của Giám đốc Điều hành Cơ sở (nếu có)..."
+                                    className="w-full rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-xs"
+                                  />
+
+                                  {perms.canApproveB10 && isViewingLatest && (
+                                    <div className="flex flex-wrap gap-2">
+                                      <button
+                                        type="button"
+                                        disabled={saving || !gate.ready}
+                                        onClick={() =>
+                                          runAction(
+                                            { action: "APPROVE_B10", decision: "DAT", comment: gdcsComment },
+                                            "Đã phê duyệt Đạt (B10)."
+                                          )
+                                        }
+                                        className="flex-1 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold disabled:opacity-40 cursor-pointer"
+                                      >
+                                        ✓ Phê duyệt Đạt
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={saving || !gate.ready}
+                                        onClick={() =>
+                                          runAction(
+                                            { action: "APPROVE_B10", decision: "CHUA_DAT", comment: gdcsComment },
+                                            "Đã phê duyệt Chưa đạt (B10)."
+                                          )
+                                        }
+                                        className="flex-1 px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold disabled:opacity-40 cursor-pointer"
+                                      >
+                                        ✕ Phê duyệt Chưa đạt
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })()}
                       </div>
                     )
                   }
