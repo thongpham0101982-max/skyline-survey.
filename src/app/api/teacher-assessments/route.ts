@@ -366,23 +366,31 @@ export async function GET(req: any) {
 
         const mappedPreschool = preschoolAssignments.map((a: any) => {
             const rawGradeUp = String(a.grade || "").trim().toUpperCase();
-            const isHealthB4A = rawGradeUp === "Y_TE_B4A" || rawGradeUp.includes("Y_TE") || String(a.grade || "").toLowerCase().includes("y tế");
-            const isProbation = !isHealthB4A && (a.grade === "Mẫu phiếu học thử" || a.grade === "Học thử" || a.grade === "Học trải nghiệm");
+            const rawGradeLow = String(a.grade || "").trim().toLowerCase();
+            const isHealthB4A = rawGradeUp === "Y_TE_B4A" || rawGradeUp.includes("Y_TE") || rawGradeLow.includes("y tế");
+            const isPsychologyB7 = !isHealthB4A && (rawGradeUp === "TAM_LY_B7" || rawGradeUp === "B7_TAM_LY" || rawGradeLow.includes("tâm lý"));
+            const isProbation = !isHealthB4A && !isPsychologyB7 && (
+                rawGradeUp === "HOC_TRAI_NGHIEM_B6" ||
+                rawGradeUp === "HOC_TRAI_NGHIEM" ||
+                a.grade === "Mẫu phiếu học thử" ||
+                a.grade === "Học thử" ||
+                a.grade === "Học trải nghiệm" ||
+                rawGradeLow.includes("trải nghiệm")
+            );
             const studentCount = preschoolStudents.filter((st: any) => {
                 if (st.periodId !== a.periodId) return false;
                 if (a.batchId && st.batchId !== a.batchId) return false;
-                if (isHealthB4A) return true;
-                if (isProbation) {
-                    return st.admissionResult === "Học thử" || st.probationaryTeacher === currentTeacherForAss?.teacherName;
-                }
+                if (isHealthB4A || isPsychologyB7 || isProbation) return true;
                 return matchesPreschoolGrade(st.grade || "", a.grade);
             }).length;
 
             const resolvedSubjId = isHealthB4A
                 ? "preschool-health"
-                : isProbation
-                  ? "preschool-probation"
-                  : "preschool";
+                : isPsychologyB7
+                  ? "preschool-psychology"
+                  : isProbation
+                    ? "preschool-probation"
+                    : "preschool";
 
             return {
                 id: a.id,
@@ -390,19 +398,34 @@ export async function GET(req: any) {
                 batchId: a.batchId,
                 userId: a.userId,
                 subjectId: resolvedSubjId,
-                grade: isHealthB4A ? "Y tế (B4A)" : isProbation ? "Học trải nghiệm" : a.grade,
+                grade: isHealthB4A
+                    ? "Y tế (B4A)"
+                    : isPsychologyB7
+                      ? "Tâm lý (B7)"
+                      : isProbation
+                        ? "Học trải nghiệm (B6)"
+                        : a.grade,
                 isPreschool: true,
                 isPreschoolHealth: isHealthB4A ? true : undefined,
+                isPreschoolPsychology: isPsychologyB7 ? true : undefined,
                 isPreschoolProbation: isProbation ? true : undefined,
                 studentCount,
                 subject: {
                     id: resolvedSubjId,
                     name: isHealthB4A
                         ? "B4A: Y tế kiểm tra thể chất (Mầm non)"
-                        : isProbation
-                          ? "Đánh giá Học trải nghiệm (Mầm non)"
-                          : "Đánh giá Mầm non",
-                    code: isHealthB4A ? "B4A_YTE" : isProbation ? "PRESCHOOL_PROBATION" : "PRESCHOOL",
+                        : isPsychologyB7
+                          ? "B7: Khảo sát Tâm lý (Mầm non · BM.KTĐBCL.09)"
+                          : isProbation
+                            ? "B6: Đánh giá Học trải nghiệm (Mầm non)"
+                            : "Đánh giá Mầm non",
+                    code: isHealthB4A
+                        ? "B4A_YTE"
+                        : isPsychologyB7
+                          ? "BM.KTĐBCL.09"
+                          : isProbation
+                            ? "PRESCHOOL_PROBATION"
+                            : "PRESCHOOL",
                     scoreColumns: 1,
                     commentColumns: 1,
                 },
@@ -1200,12 +1223,12 @@ export async function GET(req: any) {
                     return NextResponse.json([]);
                 }
 
-                // Check if teacher has an assignment for "Mẫu phiếu học thử" / "Học trải nghiệm"
+                // Check if teacher has an assignment for "Mẫu phiếu học thử" / "Học trải nghiệm" / "HOC_TRAI_NGHIEM_B6"
                 const hasProbationAssignment = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findFirst({
                     where: {
                         periodId: periodId,
                         userId: session.user.id,
-                        grade: { in: ["Mẫu phiếu học thử", "Học thử", "Học trải nghiệm"] },
+                        grade: { in: ["HOC_TRAI_NGHIEM_B6", "HOC_TRAI_NGHIEM", "Mẫu phiếu học thử", "Học thử", "Học trải nghiệm"] },
                         ...(batchId && batchId !== "all" && batchId !== "null" ? { batchId } : {})
                     }
                 });
@@ -1217,7 +1240,9 @@ export async function GET(req: any) {
                     } : {})
                 };
 
-                if (isAdminViewer || hasProbationAssignment) {
+                if (hasProbationAssignment) {
+                    // Đã được phân công trực tiếp B6 Học trải nghiệm cho kỳ/đợt → hiển thị đầy đủ trẻ trong đợt
+                } else if (isAdminViewer) {
                     whereClause.OR = [
                         { admissionResult: { in: ["Học thử", "Học trải nghiệm"] } },
                         { bghApprovalStatus: { in: ["HEN_TRAI_NGHIEM", "DAT_HOC_THU"] } },
@@ -1370,17 +1395,39 @@ export async function GET(req: any) {
                 ) as string[];
                 const currentEmail = String((session.user as any)?.email || "").trim().toLowerCase();
 
+                const psyBatchAssign = await (prisma as any).preschoolInputAssessmentTeacherAssignment
+                    .findFirst({
+                        where: {
+                            periodId,
+                            userId: session.user.id,
+                            grade: { in: ["TAM_LY_B7", "B7_TAM_LY", "Tâm lý", "Khảo sát tâm lý"] },
+                            ...(batchId && batchId !== "all" && batchId !== "null" ? { batchId } : {}),
+                        },
+                        select: { id: true, batchId: true },
+                    })
+                    .catch(() => null);
+
                 const rawRows = await prisma.$queryRawUnsafe<any[]>(
-                    `SELECT s."id", s."studentCode", s."fullName", s."grade", s."gender", s."dateOfBirth",
-                            s."admissionCampus", s."batchId", s."periodId", s."surveyFormType",
-                            s."probationaryClass", s."probationaryTeacher", s."probationaryPeriod",
-                            s."devPsychologyComment",
-                            s."trialPsychologyScreening", s."trialPsychologistId", s."trialPsychologistName",
-                            s."trialPsychologistEmail", s."trialPsychologyStatus", s."trialPsychologyConclusion",
-                            s."trialPsychologyFeedback"
-                     FROM "PreschoolInputAssessmentStudent" s
-                     WHERE s."periodId" = ?
-                       AND (s."trialPsychologyScreening" = 1 OR s."trialPsychologistId" IS NOT NULL OR s."trialPsychologistName" IS NOT NULL)`,
+                    psyBatchAssign
+                        ? `SELECT s."id", s."studentCode", s."fullName", s."grade", s."gender", s."dateOfBirth",
+                                s."admissionCampus", s."batchId", s."periodId", s."surveyFormType",
+                                s."probationaryClass", s."probationaryTeacher", s."probationaryPeriod",
+                                s."devPsychologyComment",
+                                s."trialPsychologyScreening", s."trialPsychologistId", s."trialPsychologistName",
+                                s."trialPsychologistEmail", s."trialPsychologyStatus", s."trialPsychologyConclusion",
+                                s."trialPsychologyFeedback"
+                           FROM "PreschoolInputAssessmentStudent" s
+                           WHERE s."periodId" = ?`
+                        : `SELECT s."id", s."studentCode", s."fullName", s."grade", s."gender", s."dateOfBirth",
+                                s."admissionCampus", s."batchId", s."periodId", s."surveyFormType",
+                                s."probationaryClass", s."probationaryTeacher", s."probationaryPeriod",
+                                s."devPsychologyComment",
+                                s."trialPsychologyScreening", s."trialPsychologistId", s."trialPsychologistName",
+                                s."trialPsychologistEmail", s."trialPsychologyStatus", s."trialPsychologyConclusion",
+                                s."trialPsychologyFeedback"
+                           FROM "PreschoolInputAssessmentStudent" s
+                           WHERE s."periodId" = ?
+                             AND (s."trialPsychologyScreening" = 1 OR s."trialPsychologistId" IS NOT NULL OR s."trialPsychologistName" IS NOT NULL)`,
                     periodId
                 );
 
@@ -1388,7 +1435,7 @@ export async function GET(req: any) {
                     if (batchId && batchId !== "all" && batchId !== "null" && r.batchId && r.batchId !== batchId) {
                         return false;
                     }
-                    if (isAdminViewer) return true;
+                    if (isAdminViewer || psyBatchAssign) return true;
                     const emailMatch = currentEmail && String(r.trialPsychologistEmail || "").trim().toLowerCase() === currentEmail;
                     const idMatch = r.trialPsychologistId && r.trialPsychologistId === session.user.id;
                     const nameMatch = r.trialPsychologistName && candidateNames.includes(String(r.trialPsychologistName).trim());

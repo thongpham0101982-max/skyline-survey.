@@ -156,7 +156,7 @@ export function PhanCongMamNonClient({
   // ─── Assignment State ───
   const [aPeriodId, setAPeriodId] = useState("")
   const [aBatchId, setABatchId] = useState("")
-  const [aRoleMode, setARoleMode] = useState<"TEACHER" | "MEDICAL_B4A">("TEACHER")
+  const [aRoleMode, setARoleMode] = useState<"TEACHER" | "MEDICAL_B4A" | "TRIAL_B6" | "PSYCHOLOGY_B7">("TEACHER")
   const [aGrades, setAGrades] = useState<string[]>([])
   const [aDeptId, setADeptId] = useState("")
   const [aSelectedTeachers, setASelectedTeachers] = useState<string[]>([])
@@ -486,7 +486,8 @@ export function PhanCongMamNonClient({
   }
 
   // ─── Save / Notify / Delete Actions ───
-  const switchRoleMode = (mode: "TEACHER" | "MEDICAL_B4A") => {
+  const SPECIAL_PRESCHOOL_TAGS = ["Y_TE_B4A", "HOC_TRAI_NGHIEM_B6", "TAM_LY_B7"]
+  const switchRoleMode = (mode: "TEACHER" | "MEDICAL_B4A" | "TRIAL_B6" | "PSYCHOLOGY_B7") => {
     setARoleMode(mode)
     if (mode === "MEDICAL_B4A") {
       setAGrades(["Y_TE_B4A"])
@@ -495,20 +496,40 @@ export function PhanCongMamNonClient({
         return n.includes("y tế") || n.includes("y te") || n.includes("sức khỏe")
       })
       if (medicalDept) setADeptId(medicalDept.id)
+    } else if (mode === "TRIAL_B6") {
+      setAGrades(["HOC_TRAI_NGHIEM_B6"])
+    } else if (mode === "PSYCHOLOGY_B7") {
+      setAGrades(["TAM_LY_B7"])
+      const psyDept = departments.find((d: any) => {
+        const n = String(d.name || "").toLowerCase().normalize("NFC")
+        return n.includes("tâm lý") || n.includes("tam ly") || n.includes("học đường")
+      })
+      if (psyDept) setADeptId(psyDept.id)
     } else {
-      setAGrades((prev) => prev.filter((g) => g !== "Y_TE_B4A"))
+      setAGrades((prev) => prev.filter((g) => !SPECIAL_PRESCHOOL_TAGS.includes(g)))
     }
   }
 
   const saveAssignments = async () => {
     if (!aPeriodId) return notify("Vui lòng chọn Kỳ khảo sát", "err")
-    const effectiveGrades = aRoleMode === "MEDICAL_B4A" ? ["Y_TE_B4A"] : aGrades.filter((g) => g !== "Y_TE_B4A")
+    const effectiveGrades =
+      aRoleMode === "MEDICAL_B4A"
+        ? ["Y_TE_B4A"]
+        : aRoleMode === "TRIAL_B6"
+          ? ["HOC_TRAI_NGHIEM_B6"]
+          : aRoleMode === "PSYCHOLOGY_B7"
+            ? ["TAM_LY_B7"]
+            : aGrades.filter((g) => !SPECIAL_PRESCHOOL_TAGS.includes(g))
     if (effectiveGrades.length === 0) return notify("Vui lòng chọn Nhóm tuổi/Khối học cần phân công", "err")
     if (aSelectedTeachers.length === 0) {
       return notify(
         aRoleMode === "MEDICAL_B4A"
           ? "Vui lòng chọn ít nhất một nhân sự Tổ Y tế để phân công"
-          : "Vui lòng chọn ít nhất một Giáo viên để phân công",
+          : aRoleMode === "PSYCHOLOGY_B7"
+            ? "Vui lòng chọn ít nhất một GV Tâm lý để phân công"
+            : aRoleMode === "TRIAL_B6"
+              ? "Vui lòng chọn ít nhất một GV phụ trách Học trải nghiệm"
+              : "Vui lòng chọn ít nhất một Giáo viên để phân công",
         "err"
       )
     }
@@ -963,25 +984,25 @@ export function PhanCongMamNonClient({
               </div>
             ) : (
               <>
-                {/* Chọn vai trò phân công: GV đánh giá (B5/B4B) hoặc Tổ Y tế (B4A) */}
+                {/* Chọn vai trò phân công: GV đánh giá chuẩn (B5/B4B), Tổ Y tế (B4A), Học trải nghiệm (B6), Tâm lý (B7) */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#003B3A] block">Vai trò nhân sự phân công</label>
-                  <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl border border-[#E2E8F0]">
+                  <label className="text-xs font-semibold text-[#003B3A] block">Vai trò &amp; Mẫu phiếu phân công</label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-[#E2E8F0]">
                     <button
                       type="button"
                       onClick={() => switchRoleMode("TEACHER")}
-                      className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      className={`py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         aRoleMode === "TEACHER"
                           ? "bg-[#003B3A] text-white shadow-2xs"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
-                      GV đánh giá (B5/B4B)
+                      Đánh giá MN chuẩn (B5/B4B)
                     </button>
                     <button
                       type="button"
                       onClick={() => switchRoleMode("MEDICAL_B4A")}
-                      className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      className={`py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         aRoleMode === "MEDICAL_B4A"
                           ? "bg-[#008B85] text-white shadow-2xs"
                           : "text-slate-600 hover:text-slate-900"
@@ -989,22 +1010,60 @@ export function PhanCongMamNonClient({
                     >
                       Tổ Y tế (B4A · Thể chất)
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => switchRoleMode("TRIAL_B6")}
+                      className={`py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        aRoleMode === "TRIAL_B6"
+                          ? "bg-[#00736E] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Học trải nghiệm (B6)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchRoleMode("PSYCHOLOGY_B7")}
+                      className={`py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        aRoleMode === "PSYCHOLOGY_B7"
+                          ? "bg-[#003B3A] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Khảo sát Tâm lý (B7 · BM.09)
+                    </button>
                   </div>
                 </div>
 
-                {aRoleMode === "MEDICAL_B4A" ? (
+                {aRoleMode === "MEDICAL_B4A" || aRoleMode === "TRIAL_B6" || aRoleMode === "PSYCHOLOGY_B7" ? (
                   <div className="p-4 bg-[#F0FDFA] border border-teal-200 rounded-xl space-y-2.5 text-xs">
-                    <div className="font-bold text-[#003B3A] flex items-center justify-between">
-                      <span>Phân công Tổ Y tế (Bước B4A)</span>
+                    <div className="font-bold text-[#003B3A] flex items-center justify-between gap-2">
+                      <span>
+                        {aRoleMode === "MEDICAL_B4A"
+                          ? "Phân công Tổ Y tế (Bước B4A)"
+                          : aRoleMode === "TRIAL_B6"
+                            ? "Phân công Học trải nghiệm (Bước B6)"
+                            : "Phân công Khảo sát Tâm lý (Bước B7)"}
+                      </span>
                       <span className="px-2 py-0.5 rounded-full bg-white text-[#00736E] border border-teal-200 text-[10px] font-semibold">
-                        Chiều cao · Cân nặng · BMI
+                        {aRoleMode === "MEDICAL_B4A"
+                          ? "Chiều cao · Cân nặng · BMI"
+                          : aRoleMode === "TRIAL_B6"
+                            ? "Phiếu Học trải nghiệm"
+                            : "Mẫu BM.KTĐBCL.09"}
                       </span>
                     </div>
                     <p className="text-slate-600 leading-relaxed">
-                      Nhân sự <strong>Tổ Y tế</strong> được phân công tại đây sẽ phụ trách cập nhật <strong>Chiều cao (cm), Cân nặng (kg), BMI &amp; lưu ý sức khỏe (B4A)</strong> cho toàn bộ trẻ trong kỳ/đợt đã chọn và tự động đồng bộ sang Hồ sơ B1–B13 &amp; Phiếu đánh giá phát triển.
+                      {aRoleMode === "MEDICAL_B4A" ? (
+                        <>Nhân sự <strong>Tổ Y tế</strong> được phân công sẽ mở đúng phiếu <strong>B4A: Y tế kiểm tra thể chất</strong> trên Cổng GV, nhập Chiều cao, Cân nặng, BMI &amp; ký số đồng bộ về Hồ sơ Mầm non.</>
+                      ) : aRoleMode === "TRIAL_B6" ? (
+                        <>Giáo viên phụ trách <strong>B6 Học trải nghiệm</strong> sẽ mở đúng <strong>Phiếu đánh giá Học trải nghiệm (Mầm non)</strong> trên Cổng GV cho toàn bộ trẻ trong đợt đã chọn và xác nhận ký số hoàn thành.</>
+                      ) : (
+                        <>Giáo viên <strong>Tâm lý</strong> được phân công sẽ mở đúng <strong>Phiếu sàng lọc &amp; phỏng vấn tâm lý (BM.KTĐBCL.09)</strong> trên Cổng GV và xác nhận ký số đồng bộ về tab B7 Hồ sơ Mầm non.</>
+                      )}
                     </p>
                     <p className="text-[11px] text-[#00736E] font-medium">
-                      → Chọn nhân sự Tổ Y tế ở cột bên phải rồi bấm <strong>Xác nhận &amp; Lưu phân công</strong>.
+                      → Chọn nhân sự ở cột bên phải rồi bấm <strong>Xác nhận &amp; Lưu phân công</strong>.
                     </p>
                   </div>
                 ) : (
@@ -1305,7 +1364,15 @@ export function PhanCongMamNonClient({
                       <td className="px-4 py-2.5">
                         {assign.grade === "Y_TE_B4A" ? (
                           <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            Y tế (B4A) · Chiều cao &amp; Cân nặng
+                            B4A · Y tế (Chiều cao &amp; Cân nặng)
+                          </span>
+                        ) : assign.grade === "HOC_TRAI_NGHIEM_B6" || assign.grade === "Học trải nghiệm" ? (
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-teal-50 text-[#00736E] border border-teal-200">
+                            B6 · Học trải nghiệm
+                          </span>
+                        ) : assign.grade === "TAM_LY_B7" || assign.grade === "Tâm lý" ? (
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                            B7 · Khảo sát Tâm lý (BM.09)
                           </span>
                         ) : (
                           <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-teal-50 text-[#005854] border border-teal-200/70">

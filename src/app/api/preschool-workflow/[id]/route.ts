@@ -1096,12 +1096,27 @@ export async function PATCH(
 
     // 6. B7: Cập nhật kết quả khảo sát tâm lý từ GV Tâm lý (BM.KTĐBCL.09)
     if (action === "SAVE_PSYCHOLOGY") {
+      let assignedViaBatchPsy = false
+      if (ctx.userId && student.periodId) {
+        const psyAssign = await (prisma as any).preschoolInputAssessmentTeacherAssignment
+          .findFirst({
+            where: {
+              userId: ctx.userId,
+              periodId: student.periodId,
+              grade: { in: ["TAM_LY_B7", "B7_TAM_LY", "Tâm lý", "Khảo sát tâm lý"] },
+            },
+            select: { id: true },
+          })
+          .catch(() => null)
+        if (psyAssign) assignedViaBatchPsy = true
+      }
       const allowed =
         hasAnyRole(userRoles, REVIEWER_ROLES) ||
         userRoles.includes("TAM_LY") ||
         activeRound.assignedPsychologistId === ctx.userId ||
         student.trialPsychologistId === ctx.userId ||
-        activeRound.assignedTeacherId === ctx.userId
+        activeRound.assignedTeacherId === ctx.userId ||
+        assignedViaBatchPsy
       if (!allowed) {
         return NextResponse.json({ error: "Chỉ GV Tâm lý phụ trách hoặc cấp quản lý mới được cập nhật kết quả khảo sát tâm lý." }, { status: 403 })
       }
