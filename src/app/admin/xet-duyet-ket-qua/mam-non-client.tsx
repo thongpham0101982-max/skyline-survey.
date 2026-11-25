@@ -6043,8 +6043,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </td>
                                 )}
 
-                                {/* B6 Học trải nghiệm — map trực tiếp tag B6 Học trải nghiệm, chỉ hiện KQ BGH Mầm non xét duyệt */}
-                                <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                {/* B6 Học trải nghiệm — map trực tiếp tag B6 Học trải nghiệm, cập nhật từ Kết quả học trải nghiệm & BGH Mầm non duyệt */}
+                                <td className="w-[158px] min-w-[158px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
                                     const wf = getPreschoolRowWorkflowState(s);
                                     const needTrial = Boolean(
@@ -6065,6 +6065,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       );
                                     }
                                     const bghTrialDone = Boolean(wf.probBgh);
+                                    const gvTrialLabel =
+                                      wf.probRes === "DAT"
+                                        ? { text: "GV ĐG: Đạt", cls: "text-emerald-700" }
+                                        : wf.probRes === "CHUA_DAT" || wf.probRes === "KHONG_DAT"
+                                          ? { text: "GV ĐG: Chưa đạt", cls: "text-rose-700" }
+                                          : null;
                                     const bghTrialLabel =
                                       wf.probBgh === "DAT"
                                         ? { text: "BGH duyệt: Đạt", cls: "text-emerald-700" }
@@ -6083,10 +6089,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                               ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                                               : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
                                           }`}
-                                          title="Mở tab B6 Học trải nghiệm"
+                                          title="Mở tab B6 Học trải nghiệm để cập nhật kết quả & BGH duyệt"
                                         >
                                           {bghTrialDone ? "✓ Hoàn thành" : "● Đợi"}
                                         </button>
+                                        {gvTrialLabel && (
+                                          <span className={`text-[10px] font-semibold leading-snug ${gvTrialLabel.cls}`}>
+                                            {gvTrialLabel.text}
+                                          </span>
+                                        )}
                                         <span className={`text-[10px] font-semibold leading-snug ${bghTrialLabel.cls}`}>
                                           {bghTrialLabel.text}
                                         </span>

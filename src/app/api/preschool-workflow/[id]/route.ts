@@ -1585,6 +1585,14 @@ export async function PATCH(
         if (!nextPsyStatus || nextPsyStatus === "NONE") nextPsyStatus = "PENDING"
       }
 
+      const nextWfAfterTrial =
+        (probationaryBghStatus === "DAT" || probationaryBghStatus === "KHONG_DAT") &&
+        student.workflowStatus !== "DA_DUYET" &&
+        student.workflowStatus !== "DA_TRA_KET_QUA" &&
+        student.workflowStatus !== "DA_LUU_HO_SO"
+          ? "CHO_DUYET"
+          : student.workflowStatus || "DANG_DANH_GIA"
+
       await prisma.$executeRawUnsafe(
         `UPDATE "PreschoolInputAssessmentStudent"
          SET "probationaryClass" = ?,
@@ -1603,6 +1611,7 @@ export async function PATCH(
              "trialPsychologyEmailSentAt" = ?,
              "trialPsychologyStatus" = ?,
              "trialPsychologyCriteriaJson" = ?,
+             "workflowStatus" = ?,
              "updatedAt" = ?
          WHERE "id" = ?`,
         probationaryClass,
@@ -1621,6 +1630,7 @@ export async function PATCH(
         emailSentAt,
         nextPsyStatus,
         trialPsychologyCriteriaJson,
+        nextWfAfterTrial,
         nowIso,
         id
       )
