@@ -8,6 +8,8 @@ export type PreschoolCampusCode = "CS1" | "CS2" | "CS3" | "CS4" | "CS5"
 export interface PreschoolCampusApprovalEmails {
   bghmn: string
   gdcs: string
+  tuVan: string
+  giaoVu: string
 }
 
 export interface PreschoolApprovalEmailConfigData {
@@ -25,22 +27,32 @@ export const DEFAULT_PRESCHOOL_APPROVAL_EMAIL_CONFIG: PreschoolApprovalEmailConf
     CS1: {
       bghmn: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
       gdcs: "longtt@skylineschool.edu.vn",
+      tuVan: "",
+      giaoVu: "",
     },
     CS2: {
       bghmn: "yenlth@skylineschool.edu.vn, thanhmaitt@skylineschool.edu.vn",
       gdcs: "khanhpt@skylineschool.edu.vn",
+      tuVan: "",
+      giaoVu: "",
     },
     CS3: {
       bghmn: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
       gdcs: "thanhtt@skylineschool.edu.vn",
+      tuVan: "",
+      giaoVu: "",
     },
     CS4: {
       bghmn: "quyenlth@skylineschool.edu.vn, chault@skylineschool.edu.vn",
       gdcs: "trungct@skylineschool.edu.vn",
+      tuVan: "",
+      giaoVu: "",
     },
     CS5: {
       bghmn: "monghatn@skylineschool.edu.vn, ngocltb@skylineschool.edu.vn",
       gdcs: "trungdq1@skylineschool.edu.vn, oanhntk@skylineschool.edu.vn",
+      tuVan: "",
+      giaoVu: "",
     },
   },
 }
@@ -120,6 +132,14 @@ export function parseSavedPreschoolApprovalEmailConfig(
               typeof parsed.campuses[cs].gdcs === "string"
                 ? parsed.campuses[cs].gdcs
                 : base.campuses[cs].gdcs,
+            tuVan:
+              typeof parsed.campuses[cs].tuVan === "string"
+                ? parsed.campuses[cs].tuVan
+                : base.campuses[cs].tuVan,
+            giaoVu:
+              typeof parsed.campuses[cs].giaoVu === "string"
+                ? parsed.campuses[cs].giaoVu
+                : base.campuses[cs].giaoVu,
           }
         }
       }
@@ -219,10 +239,10 @@ export function PreschoolApprovalEmailConfigModal({ isOpen, onClose, config, onS
             <Mail className="h-5 w-5 text-[#5EEAD4]" />
             <div>
               <h3 className="text-sm font-semibold">
-                Cấu hình Email BGHMN & GĐCS xét duyệt (Mầm non)
+                Cấu hình Email BGHMN, GĐCS, Tư vấn &amp; Giáo vụ (Mầm non)
               </h3>
               <p className="text-[11px] text-teal-100 mt-0.5">
-                Định tuyến email nhận thông báo yêu cầu xét duyệt kết quả khảo sát đầu vào Mầm non theo từng cơ sở.
+                Định tuyến email xét duyệt và thông báo kết quả khảo sát đầu vào Mầm non theo từng cơ sở.
               </p>
             </div>
           </div>
@@ -241,6 +261,8 @@ export function PreschoolApprovalEmailConfigModal({ isOpen, onClose, config, onS
           {CAMPUS_KEYS.map((cs) => {
             const bghCount = splitEmails(draft.campuses[cs].bghmn).length
             const gdcsCount = splitEmails(draft.campuses[cs].gdcs).length
+            const tuVanCount = splitEmails(draft.campuses[cs].tuVan || "").length
+            const giaoVuCount = splitEmails(draft.campuses[cs].giaoVu || "").length
             const active = activeTab === cs
             return (
               <button
@@ -260,7 +282,7 @@ export function PreschoolApprovalEmailConfigModal({ isOpen, onClose, config, onS
                     active ? "bg-[#00A19A] text-white" : "bg-slate-100 text-slate-600"
                   }`}
                 >
-                  {bghCount + gdcsCount}
+                  {bghCount + gdcsCount + tuVanCount + giaoVuCount}
                 </span>
               </button>
             )
@@ -420,6 +442,68 @@ export function PreschoolApprovalEmailConfigModal({ isOpen, onClose, config, onS
                     )
                   })}
                 </div>
+              </div>
+
+              {/* Tư vấn tuyển sinh cơ sở */}
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-[#003B3A] flex items-center gap-1.5">
+                    <Mail className="h-4 w-4 text-[#00A19A]" />
+                    Email Tư vấn tuyển sinh — {activeTab}
+                  </label>
+                  <span className="text-[11px] text-slate-500 tabular-nums">
+                    {splitEmails(currentCampus.tuVan || "").length} email
+                  </span>
+                </div>
+                <textarea
+                  rows={2}
+                  value={currentCampus.tuVan || ""}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      campuses: {
+                        ...prev.campuses,
+                        [activeTab]: { ...prev.campuses[activeTab], tuVan: e.target.value },
+                      },
+                    }))
+                  }
+                  placeholder="Nhập các email Tư vấn tuyển sinh cơ sở cách nhau bằng dấu phẩy (vd: tuvan.cs2@skylineschool.edu.vn)..."
+                  className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs text-slate-800 focus:border-[#00A19A] focus:outline-none"
+                />
+                <p className="text-[11px] text-slate-500">
+                  Nhận thông báo tự động ngay khi BGH / Nhóm trưởng Mầm non xét duyệt (B6/B9A) và khi GĐCS phê duyệt (B10).
+                </p>
+              </div>
+
+              {/* Giáo vụ cơ sở */}
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-[#003B3A] flex items-center gap-1.5">
+                    <Mail className="h-4 w-4 text-[#00A19A]" />
+                    Email Giáo vụ cơ sở — {activeTab}
+                  </label>
+                  <span className="text-[11px] text-slate-500 tabular-nums">
+                    {splitEmails(currentCampus.giaoVu || "").length} email
+                  </span>
+                </div>
+                <textarea
+                  rows={2}
+                  value={currentCampus.giaoVu || ""}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      campuses: {
+                        ...prev.campuses,
+                        [activeTab]: { ...prev.campuses[activeTab], giaoVu: e.target.value },
+                      },
+                    }))
+                  }
+                  placeholder="Nhập các email Giáo vụ cơ sở cách nhau bằng dấu phẩy (vd: giaovu.cs2@skylineschool.edu.vn)..."
+                  className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs text-slate-800 focus:border-[#00A19A] focus:outline-none"
+                />
+                <p className="text-[11px] text-slate-500">
+                  Nhận thông báo tự động khi BGH / NT Mầm non duyệt (B6/B9A) và khi GĐCS phê duyệt kết quả (B10) để xuất thư.
+                </p>
               </div>
             </div>
           ) : (

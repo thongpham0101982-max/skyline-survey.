@@ -1262,21 +1262,27 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
     }
   };
 
-  // 1. Load configured PRESCHOOL_APPROVAL_ROUTING_V1 (BGH MN) & EMAIL_ROUTING_V1 (Tư vấn, Giáo vụ, BGH)
+  // 1. Load configured PRESCHOOL_APPROVAL_ROUTING_V1 (BGH MN, Tư vấn, Giáo vụ) & EMAIL_ROUTING_V1
   try {
     const configs = await (prisma as any).assessmentConfig.findMany({
-      where: { categoryType: "APPROVAL_EMAIL_CONFIG", name: { in: ["PRESCHOOL_APPROVAL_ROUTING_V1", "EMAIL_ROUTING_V1"] } },
+      where: {
+        categoryType: "APPROVAL_EMAIL_CONFIG",
+        code: { in: ["PRESCHOOL_APPROVAL_ROUTING_V1", "EMAIL_ROUTING_V1"] },
+      },
     });
     for (const cfg of configs || []) {
       try {
-        const parsed = JSON.parse(cfg.content || "{}");
-        if (cfg.name === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
-          addEmails(parsed?.campuses?.[campusCode]?.bghmn, `BGH / NT Mầm non ${campusCode}`);
+        const parsed = JSON.parse(cfg.name || cfg.content || "{}");
+        if (cfg.code === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
+          const cObj = parsed?.campuses?.[campusCode];
+          addEmails(cObj?.bghmn, `BGH / NT Mầm non ${campusCode}`);
+          addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
+          addEmails(cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
         }
-        if (cfg.name === "EMAIL_ROUTING_V1" && campusCode) {
+        if (cfg.code === "EMAIL_ROUTING_V1" && campusCode) {
           const cObj = parsed?.campuses?.[campusCode];
           addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
-          addEmails(cObj?.giaoVu, `Giáo vụ ${campusCode}`);
+          addEmails(cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
           addEmails(cObj?.bgh, `BGH ${campusCode}`);
         }
       } catch {}
@@ -1484,19 +1490,25 @@ export async function resolvePreschoolBghReviewRecipients(
     addEmails(approverEmail, `BGH / NT Mầm non duyệt ${campusCode}`.trim(), false);
   }
 
-  // 2. Cấu hình EMAIL_ROUTING_V1 (Tư vấn, Giáo vụ, Khảo thí tổng hợp) & PRESCHOOL_APPROVAL_ROUTING_V1 (BGH MN & Khảo thí tổng hợp)
+  // 2. Cấu hình PRESCHOOL_APPROVAL_ROUTING_V1 (BGH MN, Tư vấn, Giáo vụ, Khảo thí tổng hợp) & EMAIL_ROUTING_V1
   let foundKtdbcl = false;
   try {
     const configs = await (prisma as any).assessmentConfig.findMany({
-      where: { categoryType: "APPROVAL_EMAIL_CONFIG", name: { in: ["PRESCHOOL_APPROVAL_ROUTING_V1", "EMAIL_ROUTING_V1"] } },
+      where: {
+        categoryType: "APPROVAL_EMAIL_CONFIG",
+        code: { in: ["PRESCHOOL_APPROVAL_ROUTING_V1", "EMAIL_ROUTING_V1"] },
+      },
     });
     for (const cfg of configs || []) {
       try {
-        const parsed = JSON.parse(cfg.content || "{}");
-        if (cfg.name === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode && !approverEmail) {
-          addEmails(parsed?.campuses?.[campusCode]?.bghmn, `BGH / NT Mầm non ${campusCode}`);
+        const parsed = JSON.parse(cfg.name || cfg.content || "{}");
+        if (cfg.code === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
+          const cObj = parsed?.campuses?.[campusCode];
+          if (!approverEmail) addEmails(cObj?.bghmn, `BGH / NT Mầm non ${campusCode}`);
+          addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
+          addEmails(cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
         }
-        if (cfg.name === "EMAIL_ROUTING_V1" && campusCode) {
+        if (cfg.code === "EMAIL_ROUTING_V1" && campusCode) {
           const cObj = parsed?.campuses?.[campusCode];
           addEmails(cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
           addEmails(cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);

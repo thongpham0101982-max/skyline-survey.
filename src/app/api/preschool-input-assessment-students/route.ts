@@ -1232,9 +1232,9 @@ export async function POST(req) {
 
       try {
         const savedCfg = await (prisma as any).assessmentConfig.findFirst({
-          where: { categoryType: "APPROVAL_EMAIL_CONFIG", name: "PRESCHOOL_APPROVAL_ROUTING_V1" },
+          where: { categoryType: "APPROVAL_EMAIL_CONFIG", code: "PRESCHOOL_APPROVAL_ROUTING_V1" },
         });
-        const parsed = savedCfg?.content ? JSON.parse(savedCfg.content) : null;
+        const parsed = savedCfg?.name || savedCfg?.content ? JSON.parse(savedCfg.name || savedCfg.content) : null;
         const configuredStr = campusCode
           ? (effectiveEmailRole === "BGH_MN"
               ? parsed?.campuses?.[campusCode]?.bghmn || DEFAULT_PRESCHOOL_CAMPUS_EMAILS[campusCode]?.bghmn
