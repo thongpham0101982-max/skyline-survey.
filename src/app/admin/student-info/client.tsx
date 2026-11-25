@@ -1218,7 +1218,37 @@ export function StudentInfoClient({
     const pills: { key: string; label: string; value: string; tone: "emerald" | "teal" | "amber" | "rose" | "slate" }[] = [];
 
     if (activeTab === "preschool") {
-      if (student?.devAssessmentResult) {
+      const summary = student?.devScoreSummary;
+      if (summary?.formCode) {
+        pills.push({
+          key: "ps-form",
+          label: summary.formCode,
+          value: summary.formTitle || summary.formCode,
+          tone: "teal",
+        });
+      }
+      if (summary && summary.totalScored > 0) {
+        pills.push({
+          key: "ps-dat",
+          label: "Đạt",
+          value: `${summary.datCount}/${summary.totalScored}`,
+          tone: "emerald",
+        });
+        pills.push({
+          key: "ps-cth",
+          label: "Chưa thể hiện",
+          value: `${summary.chuaTheHienCount}`,
+          tone: summary.chuaTheHienCount > 0 ? "amber" : "slate",
+        });
+        if (summary.khongDatCount > 0) {
+          pills.push({
+            key: "ps-kdat",
+            label: "Không đạt",
+            value: `${summary.khongDatCount}`,
+            tone: "rose",
+          });
+        }
+      } else if (student?.devAssessmentResult) {
         const res = String(student.devAssessmentResult).trim();
         const isPass = res.toLowerCase().includes("đạt") && !res.toLowerCase().includes("không");
         const isFail = res.toLowerCase().includes("không đạt") || res.toLowerCase().includes("chưa đạt");
@@ -1226,7 +1256,7 @@ export function StudentInfoClient({
           key: "dev-res",
           label: "Đánh giá KS",
           value: res,
-          tone: isPass ? "emerald" : isFail ? "rose" : "teal"
+          tone: isPass ? "emerald" : isFail ? "rose" : "teal",
         });
       }
       if (student?.probationaryResult) {
@@ -1234,27 +1264,8 @@ export function StudentInfoClient({
           key: "prob-res",
           label: "Học thử",
           value: String(student.probationaryResult),
-          tone: "teal"
+          tone: "teal",
         });
-      }
-      if (student?.bghApprovalStatus) {
-        pills.push({
-          key: "bgh-status",
-          label: "BGH",
-          value: getApprovalStatusText(student.bghApprovalStatus),
-          tone: student.bghApprovalStatus.includes("DAT") && !student.bghApprovalStatus.includes("KHONG") ? "emerald" : "amber"
-        });
-      }
-      if (student?.devProfessionalComment) {
-        const cleanComment = String(student.devProfessionalComment).trim();
-        if (cleanComment) {
-          pills.push({
-            key: "prof-cmt",
-            label: "Chuyên môn",
-            value: cleanComment.length > 22 ? cleanComment.slice(0, 20) + "…" : cleanComment,
-            tone: "slate"
-          });
-        }
       }
       return pills;
     }
@@ -3688,19 +3699,31 @@ export function StudentInfoClient({
                         {/* 9. Kết quả khảo sát */}
                         <td className="py-3 px-3.5">
                           {surveyPills.length > 0 ? (
-                            <div className="flex flex-wrap items-center gap-1.5 text-left">
-                              {surveyPills.slice(0, 4).map((p) => (
-                                <span
-                                  key={p.key}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] hover:border-[#008B85]/60 transition-colors"
-                                >
-                                  <span className="text-slate-500 font-medium">{p.label}:</span>
-                                  <strong className="font-bold text-[#003B3A]">{p.value}</strong>
-                                </span>
-                              ))}
+                            <div className="flex flex-wrap items-center gap-1.5 text-left tabular-nums">
+                              {surveyPills.slice(0, 4).map((p) => {
+                                const toneClass =
+                                  p.tone === "emerald"
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+                                    : p.tone === "amber"
+                                    ? "bg-amber-50 text-amber-800 border-amber-200/80"
+                                    : p.tone === "rose"
+                                    ? "bg-rose-50 text-rose-800 border-rose-200/80"
+                                    : p.tone === "teal"
+                                    ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]"
+                                    : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0]";
+                                return (
+                                  <span
+                                    key={p.key}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border transition-colors ${toneClass}`}
+                                  >
+                                    <span className="opacity-80 font-medium">{p.label}:</span>
+                                    <strong className="font-bold">{p.value}</strong>
+                                  </span>
+                                );
+                              })}
                               {surveyPills.length > 4 && (
                                 <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
-                                  +{surveyPills.length - 4} môn
+                                  +{surveyPills.length - 4}
                                 </span>
                               )}
                             </div>
@@ -4278,19 +4301,31 @@ export function StudentInfoClient({
                         {/* 9. Kết quả khảo sát */}
                         <td className="py-3 px-3.5">
                           {surveyPills.length > 0 ? (
-                            <div className="flex flex-wrap items-center gap-1.5 text-left">
-                              {surveyPills.slice(0, 3).map((p) => (
-                                <span
-                                  key={p.key}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0]"
-                                >
-                                  <span className="text-slate-500 font-medium">{p.label}:</span>
-                                  <strong className="font-bold text-[#003B3A]">{p.value}</strong>
-                                </span>
-                              ))}
-                              {surveyPills.length > 3 && (
+                            <div className="flex flex-wrap items-center gap-1.5 text-left tabular-nums">
+                              {surveyPills.slice(0, 4).map((p) => {
+                                const toneClass =
+                                  p.tone === "emerald"
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+                                    : p.tone === "amber"
+                                    ? "bg-amber-50 text-amber-800 border-amber-200/80"
+                                    : p.tone === "rose"
+                                    ? "bg-rose-50 text-rose-800 border-rose-200/80"
+                                    : p.tone === "teal"
+                                    ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]"
+                                    : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0]";
+                                return (
+                                  <span
+                                    key={p.key}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border ${toneClass}`}
+                                  >
+                                    <span className="opacity-80 font-medium">{p.label}:</span>
+                                    <strong className="font-bold">{p.value}</strong>
+                                  </span>
+                                );
+                              })}
+                              {surveyPills.length > 4 && (
                                 <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
-                                  +{surveyPills.length - 3}
+                                  +{surveyPills.length - 4}
                                 </span>
                               )}
                             </div>

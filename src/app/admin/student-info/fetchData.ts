@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/db"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { auth } from "@/lib/auth"
+import { suggestPreschoolForm, PRESCHOOL_FORM_REGISTRY } from "@/lib/preschool-workflow"
 
-export async function fetchStudentInfoPageData() {
+export async function fetchStudentInfoPageData(options?: {
+  pageMode?: "danh-sach" | "ket-qua";
+}) {
+  const isKetQuaMode = options?.pageMode === "ket-qua";
+  const isDanhSachMode = options?.pageMode === "danh-sach";
   let session: any = null;
   try {
     session = await auth();
@@ -26,6 +31,7 @@ export async function fetchStudentInfoPageData() {
   let examBoardUsers: any[] = [];
   let gdcsUsers: any[] = [];
   let subjects: any[] = [];
+  let allSubjects: any[] = [];
   let eduSystems: any[] = [];
   let grades: string[] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
   let configs: any[] = [];
@@ -57,7 +63,7 @@ export async function fetchStudentInfoPageData() {
 
       const activeYearId = activeYear ? activeYear.id : null;
 
-      // Trigger all fetches in parallel
+      // Trigger metadata fetches in parallel (skip unused lookups in ket-qua mode to reduce DB load & RSC payload)
       const [
         dbAssignments,
         academicYearsResult,
@@ -67,7 +73,7 @@ export async function fetchStudentInfoPageData() {
         teachersResult,
         examBoardUsersResult,
         gdcsUsersResult,
-        subjectsResult,
+        allSubjectsResult,
         configsResult,
         preschoolConfigsResult,
         eduSystemsResult,
@@ -79,31 +85,48 @@ export async function fetchStudentInfoPageData() {
         pAny.academicYear ? pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []) : Promise.resolve([]),
         pAny.campus ? pAny.campus.findMany({
           where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" },
-          include: { manager: true },
+          include: {
+            manager: { select: { id: true, fullName: true, email: true } }
+          },
           orderBy: { campusName: "asc" }
         }).catch(() => []) : Promise.resolve([]),
-        pAny.user ? pAny.user.findMany({
+        !isKetQuaMode && pAny.user ? pAny.user.findMany({
           where: { role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] } },
           select: { id: true, fullName: true }
         }).catch(() => []) : Promise.resolve([]),
-        pAny.department ? pAny.department.findMany({
+        !isKetQuaMode && pAny.department ? pAny.department.findMany({
           where: { status: "ACTIVE" }, orderBy: { name: "asc" }
         }).catch(() => []) : Promise.resolve([]),
-        pAny.teacher ? pAny.teacher.findMany({
+        !isKetQuaMode && pAny.teacher ? pAny.teacher.findMany({
           where: { status: "ACTIVE" },
-          include: { departmentRel: true, campus: true, user: true },
+          select: {
+            id: true,
+            teacherCode: true,
+            teacherName: true,
+            email: true,
+            phone: true,
+            position: true,
+            positions: true,
+            campusId: true,
+            departmentId: true,
+            userId: true,
+            status: true,
+            departmentRel: { select: { id: true, name: true } },
+            campus: { select: { id: true, campusName: true, campusCode: true } },
+            user: { select: { id: true, fullName: true, email: true, role: true } }
+          },
           orderBy: { teacherName: "asc" }
         }).catch(() => []) : Promise.resolve([]),
-        pAny.user ? pAny.user.findMany({
-          where: { role: { in: ["KT_DBCL", "ADMIN"] } },
+        !isKetQuaMode && pAny.user ? pAny.user.findMany({
+          where: { role: { in: ["KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "ADMIN"] } },
           select: { id: true, fullName: true }
         }).catch(() => []) : Promise.resolve([]),
-        pAny.user ? pAny.user.findMany({
+        !isKetQuaMode && pAny.user ? pAny.user.findMany({
           where: { OR: [{ role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "gdcs", "gđcs", "gđ_cs", "gd_cs"] } }, { teacher: { position: { in: ["GĐCS", "GDCS", "GĐ_CS", "GD_CS"] } } }, { teacher: { positions: { contains: "GĐCS" } } }, { teacher: { positions: { contains: "GDCS" } } }] },
           select: { id: true, fullName: true, email: true }
         }).catch(() => []) : Promise.resolve([]),
         pAny.assessmentSubject ? pAny.assessmentSubject.findMany({
-          where: { status: "ACTIVE" }, orderBy: { sortOrder: "asc" }
+          orderBy: { sortOrder: "asc" }
         }).catch(() => []) : Promise.resolve([]),
         pAny.assessmentConfig ? pAny.assessmentConfig.findMany({
           orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }]
@@ -122,12 +145,12 @@ export async function fetchStudentInfoPageData() {
         import("@/lib/permissions").then(m => m.getRolePermissions(roleCode)).catch(() => []),
         pAny.inputAssessmentPeriod ? pAny.inputAssessmentPeriod.findMany({
           where: activeYearId ? { academicYearId: activeYearId } : {},
-          include: { batches: { select: { id: true, name: true, status: true, campusId: true, startDate: true } } },
+          include: { batches: { select: { id: true, name: true, status: true, campusId: true, startDate: true, endDate: true } } },
           orderBy: { name: 'asc' }
         }).catch(() => []) : Promise.resolve([]),
         pAny.preschoolInputAssessmentPeriod ? pAny.preschoolInputAssessmentPeriod.findMany({
           where: activeYearId ? { academicYearId: activeYearId } : {},
-          include: { batches: { select: { id: true, name: true, status: true, campusId: true, startDate: true } } },
+          include: { batches: { select: { id: true, name: true, status: true, campusId: true, startDate: true, endDate: true } } },
           orderBy: { name: 'asc' }
         }).catch(() => []) : Promise.resolve([])
       ]);
@@ -139,7 +162,8 @@ export async function fetchStudentInfoPageData() {
       teachers = teachersResult;
       examBoardUsers = examBoardUsersResult;
       gdcsUsers = gdcsUsersResult;
-      subjects = subjectsResult;
+      allSubjects = allSubjectsResult;
+      subjects = allSubjectsResult.filter((s: any) => s.status === "ACTIVE");
       configs = configsResult;
       preschoolConfigs = preschoolConfigsResult;
       eduSystems = eduSystemsResult;
@@ -153,34 +177,134 @@ export async function fetchStudentInfoPageData() {
 
       if (activeYearId) {
         [generalStudents, preschoolStudents] = await Promise.all([
-          pAny.inputAssessmentStudent.findMany({
-            where: {
-              period: { academicYearId: activeYearId }
-            },
-            include: {
-              period: { select: { id: true, name: true, academicYearId: true, campusId: true } },
-              batch: { select: { id: true, name: true, startDate: true, campusId: true } },
-              enrollmentClass: { select: { className: true } },
-              scores: {
+          isDanhSachMode
+            ? pAny.inputAssessmentStudent.findMany({
+                where: {
+                  period: { academicYearId: activeYearId }
+                },
+                select: {
+                  id: true,
+                  periodId: true,
+                  batchId: true,
+                  className: true,
+                  admissionCriteria: true,
+                  surveySystem: true,
+                  surveyFormType: true,
+                  targetType: true,
+                  grade: true,
+                  registeredCampus: true,
+                  admissionCampus: true
+                },
+                orderBy: { createdAt: 'desc' }
+              })
+            : pAny.inputAssessmentStudent.findMany({
+                where: {
+                  period: { academicYearId: activeYearId }
+                },
                 include: {
-                  subject: true
-                }
-              }
-            },
-            orderBy: { createdAt: 'desc' }
-          }),
-          pAny.preschoolInputAssessmentStudent.findMany({
-            where: {
-              period: { academicYearId: activeYearId }
-            },
-            include: {
-              period: { select: { id: true, name: true, academicYearId: true, campusId: true } },
-              batch: { select: { id: true, name: true, startDate: true, campusId: true } },
-              enrollmentClass: { select: { className: true } }
-            },
-            orderBy: { createdAt: 'desc' }
-          })
+                  enrollmentClass: { select: { className: true } },
+                  scores: {
+                    select: {
+                      id: true,
+                      studentId: true,
+                      subjectId: true,
+                      scores: true,
+                      comments: true,
+                      updatedAt: true,
+                      teacherId: true,
+                      teacherName: true
+                    }
+                  }
+                },
+                orderBy: { createdAt: 'desc' }
+              }),
+          isDanhSachMode
+            ? pAny.preschoolInputAssessmentStudent.findMany({
+                where: {
+                  period: { academicYearId: activeYearId }
+                },
+                select: {
+                  id: true,
+                  periodId: true,
+                  batchId: true
+                },
+                orderBy: { createdAt: 'desc' }
+              })
+            : pAny.preschoolInputAssessmentStudent.findMany({
+                where: {
+                  period: { academicYearId: activeYearId }
+                },
+                include: {
+                  enrollmentClass: { select: { className: true } }
+                },
+                orderBy: { createdAt: 'desc' }
+              })
         ]);
+
+        // Enrich preschoolStudents with Tên biểu mẫu khảo sát & tiêu chí Đạt / Chưa thể hiện / Không đạt
+        if (!isDanhSachMode && preschoolStudents.length > 0) {
+          const psIds = preschoolStudents.map((s: any) => s.id);
+          const [psDevScores, psRoundRows] = await Promise.all([
+            pAny.preschoolDevScore
+              ? pAny.preschoolDevScore.findMany({
+                  where: { studentId: { in: psIds } },
+                  select: { studentId: true, result: true },
+                }).catch(() => [])
+              : Promise.resolve([]),
+            (async () => {
+              try {
+                const placeholders = psIds.map(() => "?").join(",");
+                return await prisma.$queryRawUnsafe<any[]>(
+                  `SELECT "studentId", "roundNumber", "formCode", "suggestedFormCode"
+                   FROM "PreschoolAssessmentRound"
+                   WHERE "studentId" IN (${placeholders})
+                   ORDER BY "roundNumber" ASC`,
+                  ...psIds
+                );
+              } catch {
+                return [];
+              }
+            })(),
+          ]);
+
+          const scoreAggByStudent: Record<string, { total: number; dat: number; chuaTheHien: number; khongDat: number }> = {};
+          for (const sc of psDevScores || []) {
+            const agg = scoreAggByStudent[sc.studentId] || { total: 0, dat: 0, chuaTheHien: 0, khongDat: 0 };
+            agg.total += 1;
+            if (sc.result === "DAT") agg.dat += 1;
+            else if (sc.result === "KHONG_DAT") agg.khongDat += 1;
+            else agg.chuaTheHien += 1;
+            scoreAggByStudent[sc.studentId] = agg;
+          }
+
+          const roundByStudent: Record<string, any> = {};
+          for (const r of psRoundRows || []) {
+            roundByStudent[r.studentId] = r;
+          }
+
+          preschoolStudents = preschoolStudents.map((s: any) => {
+            const agg = scoreAggByStudent[s.id] || { total: 0, dat: 0, chuaTheHien: 0, khongDat: 0 };
+            const rnd = roundByStudent[s.id] || null;
+            const sug = suggestPreschoolForm({
+              dateOfBirth: s.dateOfBirth,
+              grade: s.grade,
+              surveySystem: s.surveySystem || s.surveyFormType || "Hệ S",
+            });
+            const formCode = rnd?.formCode || rnd?.suggestedFormCode || sug.suggestedFormCode;
+            const formDef = PRESCHOOL_FORM_REGISTRY[formCode];
+            return {
+              ...s,
+              devScoreSummary: {
+                totalScored: agg.total,
+                datCount: agg.dat,
+                chuaTheHienCount: agg.chuaTheHien,
+                khongDatCount: agg.khongDat,
+                formCode,
+                formTitle: formDef?.shortTitle || formCode,
+              },
+            };
+          });
+        }
 
         if (pAny.class) {
           const uniqueGrades = await pAny.class.findMany({
@@ -245,6 +369,7 @@ export async function fetchStudentInfoPageData() {
     giaoVuCSUsers: safeJson(giaoVuCSUsers),
     gdcsUsers: safeJson(gdcsUsers),
     subjects: safeJson(subjects),
+    allSubjects: safeJson(allSubjects),
     teachers: safeJson(teachers),
     departments: safeJson(departments),
     currentUser,
