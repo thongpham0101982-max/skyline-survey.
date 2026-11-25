@@ -1479,11 +1479,11 @@ export async function notifyPreschoolGdcsResultToStakeholders(params: {
 
 /**
  * Lấy danh sách email thông báo khi BGH / NT Mầm non xét duyệt (B6/B9A):
- * Tư vấn tuyển sinh, Giáo vụ cơ sở, Khảo thí tổng hợp, và Email của BGH duyệt.
+ * Chỉ gửi đến Bộ phận Khảo thí tổng hợp (KT&ĐBCL).
  */
 export async function resolvePreschoolBghReviewRecipients(
   student: any,
-  approverEmail?: string | null
+  _approverEmail?: string | null
 ): Promise<{
   campusStr: string;
   campusCode: string;
@@ -1500,7 +1500,7 @@ export async function resolvePreschoolBghReviewRecipients(
     : "";
 
   const recMap = new Map<string, { fullName: string; email: string; role: string; isArchiveCopy: boolean }>();
-  const addEmails = (raw?: string | null, roleLabel = "Cán bộ cơ sở", isArchiveCopy = false) => {
+  const addEmails = (raw?: string | null, roleLabel = "Khảo thí tổng hợp") => {
     if (!raw) return;
     for (const part of String(raw).split(/[,;\n]+/)) {
       const e = part.trim().toLowerCase();
@@ -1509,18 +1509,13 @@ export async function resolvePreschoolBghReviewRecipients(
           fullName: e.split("@")[0],
           email: e,
           role: roleLabel,
-          isArchiveCopy,
+          isArchiveCopy: false,
         });
       }
     }
   };
 
-  // 1. Email của BGH / NT Mầm non trực tiếp duyệt
-  if (approverEmail) {
-    addEmails(approverEmail, `BGH / NT Mầm non duyệt ${campusCode}`.trim(), false);
-  }
-
-  // 2. Cấu hình PRESCHOOL_APPROVAL_ROUTING_V1 (BGH MN, Tư vấn, Giáo vụ, Khảo thí tổng hợp) & EMAIL_ROUTING_V1
+  // Chỉ lấy danh sách email Khảo thí tổng hợp từ cấu hình
   let foundKtdbcl = false;
   try {
     const configs = await (prisma as any).assessmentConfig.findMany({
@@ -1532,99 +1527,16 @@ export async function resolvePreschoolBghReviewRecipients(
     for (const cfg of configs || []) {
       try {
         const parsed = JSON.parse(cfg.name || cfg.content || "{}");
-        if (cfg.code === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
-          const cObj = parsed?.campuses?.[campusCode];
-          if (!approverEmail) addEmails(cObj?.bghmn, `BGH / NT Mầm non ${campusCode}`);
-          addEmails(cObj?.tuVan || cObj?.tuvan, `Tư vấn tuyển sinh ${campusCode}`);
-          addEmails(cObj?.giaoVu || cObj?.giaovu, `Giáo vụ cơ sở ${campusCode}`);
-        }
-        if (cfg.code === "EMAIL_ROUTING_V1" && campusCode) {
-          const cObj = parsed?.campuses?.[campusCode];
-          addEmails(cObj?.tuvan || cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
-          addEmails(cObj?.giaovu || cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
-        }
         if (parsed?.ktdbclEmails) {
-          addEmails(parsed.ktdbclEmails, "Khảo thí tổng hợp", true);
+          addEmails(parsed.ktdbclEmails, "Khảo thí tổng hợp");
           foundKtdbcl = true;
         }
       } catch {}
     }
   } catch {}
 
-  // 3. Fallback DB users cho Tư vấn, Giáo vụ cơ sở (qua UserCampusAssignment) & Khảo thí tổng hợp
-  try {
-    const campusObj = campusCode
-      ? await (prisma as any).campus.findFirst({ where: { OR: [{ campusCode }, { campusName: campusStr }] } })
-      : null;
-    if (campusObj) {
-      addEmails(campusObj.admissionEmail, `Tư vấn tuyển sinh ${campusCode}`);
-      const assignments = await (prisma as any).userCampusAssignment.findMany({
-        where: { campusId: campusObj.id },
-        include: { user: { select: { email: true, fullName: true, role: true, isActive: true } } },
-      });
-      for (const a of assignments || []) {
-        const u = a?.user;
-        if (!u || u.isActive === false) continue;
-        const roleUp = String(u.role || "").toUpperCase();
-        const isTuVan = ["TU_VAN", "TU_VAN_CS", "TVCS", "TU_VAN_TS", "TU_VAN_TUYEN_SINH"].includes(roleUp);
-        const isGiaoVu = ["GIAO_VU", "GIAO_VU_CS", "GVCS", "GIAOVU"].includes(roleUp);
-        if (!isTuVan && !isGiaoVu) continue;
-        const e = String(u.email || "").trim().toLowerCase();
-        if (e.includes("@") && e !== "admin@skyline.edu") {
-          const existing = recMap.get(e);
-          const roleLabel = isTuVan
-            ? `Tư vấn tuyển sinh ${campusCode}`
-            : `Giáo vụ cơ sở ${campusCode}`;
-          recMap.set(e, {
-            fullName: u.fullName || existing?.fullName || e.split("@")[0],
-            email: e,
-            role: existing?.role || roleLabel,
-            isArchiveCopy: existing?.isArchiveCopy || false,
-          });
-        }
-      }
-    }
-    if (!foundKtdbcl) {
-      addEmails("ktdbcl@skylineschool.edu.vn", "Khảo thí tổng hợp", true);
-    }
-  } catch {
-    if (!foundKtdbcl) {
-      addEmails("ktdbcl@skylineschool.edu.vn", "Khảo thí tổng hợp", true);
-    }
-  }
-
-  // Fallback Tư vấn tuyển sinh, Giáo vụ (đồng bộ Phổ thông) & BGH MN theo cơ sở nếu chưa có
-  const DEFAULT_TUVAN_BY_CAMPUS: Record<string, string> = {
-    CS1: "thuongttn@skylineschool.edu.vn",
-    CS2: "hoaipt@skylineschool.edu.vn, dinhnth@skylineschool.edu.vn, doanhtt@skylineschool.edu.vn, huyennt@skylineschool.edu.vn",
-    CS3: "thungatt@skylineschool.edu.vn, hapvy@skylineschool.edu.vn",
-    CS4: "senttt@skylineschool.edu.vn, anhntm@skylineschool.edu.vn",
-    CS5: "linhnmh@skylineschool.edu.vn, quyenttx@skylineschool.edu.vn",
-  };
-  const DEFAULT_GIAOVU_BY_CAMPUS: Record<string, string> = {
-    CS1: "phuongvt@skylineschool.edu.vn, thuda@skylineschool.edu.vn",
-    CS2: "thuda@skylineschool.edu.vn, dunglp@skylineschool.edu.vn",
-    CS3: "thuda@skylineschool.edu.vn",
-    CS4: "bichtramtt@skylineschool.edu.vn",
-    CS5: "dunglp@skylineschool.edu.vn",
-  };
-  const hasTuVanAlready = Array.from(recMap.values()).some((r) => r.role.toLowerCase().includes("tư vấn"));
-  if (!hasTuVanAlready && campusCode && DEFAULT_TUVAN_BY_CAMPUS[campusCode]) {
-    addEmails(DEFAULT_TUVAN_BY_CAMPUS[campusCode], `Tư vấn tuyển sinh ${campusCode}`);
-  }
-  const hasGiaoVuAlready = Array.from(recMap.values()).some((r) => r.role.toLowerCase().includes("giáo vụ"));
-  if (!hasGiaoVuAlready && campusCode && DEFAULT_GIAOVU_BY_CAMPUS[campusCode]) {
-    addEmails(DEFAULT_GIAOVU_BY_CAMPUS[campusCode], `Giáo vụ cơ sở ${campusCode}`);
-  }
-  const DEFAULT_BGH_MN: Record<string, string> = {
-    CS1: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
-    CS2: "yenlth@skylineschool.edu.vn, thanhmaitt@skylineschool.edu.vn",
-    CS3: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
-    CS4: "quyenlth@skylineschool.edu.vn, chault@skylineschool.edu.vn",
-    CS5: "monghatn@skylineschool.edu.vn, ngocltb@skylineschool.edu.vn",
-  };
-  if (!approverEmail && campusCode && DEFAULT_BGH_MN[campusCode]) {
-    addEmails(DEFAULT_BGH_MN[campusCode], `BGH / NT Mầm non ${campusCode}`);
+  if (!foundKtdbcl || recMap.size === 0) {
+    addEmails("ktdbcl@skylineschool.edu.vn", "Khảo thí tổng hợp");
   }
 
   return { campusStr, campusCode, recipients: Array.from(recMap.values()) };
@@ -1722,7 +1634,7 @@ export function renderPreschoolBghReviewNotificationEmailHtml(params: {
         </tr>
         <tr>
           <td style="padding:22px 26px;font-size:13.5px;line-height:1.6;">
-            <p style="margin:0 0 12px 0;">Kính gửi Bộ phận <strong>Tư vấn tuyển sinh</strong>, <strong>Giáo vụ cơ sở ${campusStr || campusCode}</strong>, <strong>Khảo thí tổng hợp</strong> và <strong>${approverName}</strong>,</p>
+            <p style="margin:0 0 12px 0;">Kính gửi Bộ phận <strong>Khảo thí tổng hợp (KT&amp;ĐBCL)</strong>,</p>
             <p style="margin:0 0 14px 0;color:#334155;">BGH / Nhóm trưởng Mầm non vừa hoàn tất rà soát &amp; định tuyến (Bước 1 — B6/B9A) cho hồ sơ khảo sát đầu vào sau:</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;font-size:13px;margin-bottom:16px;">
               <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#64748B;width:36%;">Học sinh</td><td style="padding:9px 14px;font-weight:700;color:#003B3A;">${student.fullName} (${student.studentCode})</td></tr>
