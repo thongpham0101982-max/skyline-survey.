@@ -83,6 +83,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
   const [trialPsyId, setTrialPsyId] = useState("")
   const [trialPsyNote, setTrialPsyNote] = useState("")
   const [trialCriteriaMap, setTrialCriteriaMap] = useState<Record<string, { trialResult: string; evaluator: string; psyFlag: boolean }>>({})
+  const [trialFilterMode, setTrialFilterMode] = useState<"ALL" | "ATTENTION">("ALL")
 
   // B7A Psychology (BM.KTĐBCL.09)
   const [psyRatings, setPsyRatings] = useState<Record<string, { result: string; note: string }>>({})
@@ -1486,13 +1487,52 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
               const selectedPsyUser = allDirectoryUsers.find((u) => u.id === trialPsyId)
               const psyStatus = String(student.trialPsychologyStatus || "").toUpperCase()
               const psyStatusBadge =
-                psyStatus === "COMPLETED"
+                psyStatus === "COMPLETED" || psyStatus === "EVALUATED"
                   ? { label: "✓ GV Tâm lý đã hoàn tất đánh giá", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" }
                   : psyStatus === "CONFIRMED"
                     ? { label: "✓ GV Tâm lý đã xác nhận tiếp nhận", cls: "bg-teal-50 text-[#00736E] border-teal-200" }
                     : student.trialPsychologyEmailSentAt
                       ? { label: "● Đã gửi email — Chờ GV Tâm lý xác nhận", cls: "bg-amber-50 text-amber-800 border-amber-200" }
                       : null
+
+              const isB7AActive = Boolean(
+                trialPsyScreening ||
+                  Number(student.trialPsychologyScreening || 0) === 1 ||
+                  student.trialPsychologistName ||
+                  viewingRound?.psychologyRequired ||
+                  hasPsyResult
+              )
+              const isB7BActive = Boolean(
+                student.bghApprovalStatus === "HEN_TRAI_NGHIEM" ||
+                  student.bghApprovalStatus === "DAT_HOC_THU" ||
+                  viewingRound?.reviewDecision === "HEN_TRAI_NGHIEM_BO_SUNG" ||
+                  trialClass ||
+                  trialTeacher ||
+                  trialPeriod
+              )
+              const trialDatCount = trialCriteriaRows.filter((r) => trialCriteriaMap[r.key]?.trialResult === "DAT").length
+              const trialChuaDatCount = trialCriteriaRows.filter((r) => trialCriteriaMap[r.key]?.trialResult === "CHUA_DAT").length
+              const trialChuaThCount = trialCriteriaRows.filter((r) => trialCriteriaMap[r.key]?.trialResult === "CHUA_THE_HIEN").length
+              const trialScoredCount = trialDatCount + trialChuaDatCount + trialChuaThCount
+              const trialFlaggedCount = trialCriteriaRows.filter((r) => trialCriteriaMap[r.key]?.psyFlag).length
+              const trialProgressPct = trialCriteriaRows.length > 0 ? Math.round((trialScoredCount / trialCriteriaRows.length) * 100) : 0
+              const visibleTrialRows =
+                trialFilterMode === "ATTENTION"
+                  ? trialCriteriaRows.filter(
+                      (r) =>
+                        r.initialResult !== "Đạt" ||
+                        trialCriteriaMap[r.key]?.psyFlag ||
+                        (trialCriteriaMap[r.key]?.trialResult && trialCriteriaMap[r.key]?.trialResult !== "DAT")
+                    )
+                  : trialCriteriaRows
+
+              const psyConclusionMap: Record<string, { label: string; cls: string }> = {
+                BINH_THUONG: { label: "Phát triển tâm lý bình thường", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+                CAN_THEO_DOI: { label: "Cần theo dõi thêm", cls: "bg-amber-50 text-amber-800 border-amber-200" },
+                CAN_CAN_THIEP: { label: "Cần hỗ trợ / can thiệp chuyên sâu", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+              }
+              const psyConcKey = String(student.trialPsychologyConclusion || "").toUpperCase()
+              const psyConcInfo = psyConclusionMap[psyConcKey] || null
 
               const saveTrial = (sendEmailFlag: boolean) => {
                 const flaggedNames = trialCriteriaRows
@@ -1525,6 +1565,124 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
 
               return (
                 <div className="space-y-4 text-xs">
+                  {/* 0. Tổng quan trực quan nhánh B7B (Học trải nghiệm kết hợp quan sát tâm lý) & B7A (Tâm lý) */}
+                  <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 space-y-3 border-l-4 border-l-[#003B3A] tabular-nums">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#003B3A] text-white text-[11px] font-bold">
+                          {isB7BActive && isB7AActive
+                            ? "B7B · Trải nghiệm kết hợp quan sát tâm lý (≥ 2 ngày làm việc)"
+                            : isB7BActive
+                              ? "B6 / B7B · Học trải nghiệm tại lớp"
+                              : isB7AActive
+                                ? "B7A · Cần phỏng vấn tâm lý"
+                                : "B6 · Chưa phát sinh Học trải nghiệm / Tâm lý"}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        Tiến độ đánh giá: <strong className="text-[#003B3A]">{trialScoredCount}/{trialCriteriaRows.length} tiêu chí ({trialProgressPct}%)</strong>
+                      </span>
+                    </div>
+
+                    {/* 2 thẻ song song: Hoạt động trải nghiệm & Kết quả khảo sát tâm lý */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Thẻ trái: Hoạt động trải nghiệm */}
+                      <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-[#003B3A]">1. Đánh giá hoạt động trải nghiệm</span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                              trialResult === "DAT" || student.probationaryBghStatus === "DAT"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : trialResult === "CHUA_DAT"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  : isB7BActive
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : "bg-slate-100 text-slate-600 border-slate-200"
+                            }`}
+                          >
+                            {student.probationaryBghStatus === "DAT"
+                              ? "✓ BGH duyệt Đạt"
+                              : trialResult === "DAT"
+                                ? "✓ GV đánh giá Đạt"
+                                : trialResult === "CHUA_DAT"
+                                  ? "✕ Chưa đạt"
+                                  : isB7BActive
+                                    ? "● Đang thực hiện"
+                                    : "Không KS"}
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                          <div
+                            className="h-full bg-[#00A19A] transition-all duration-300"
+                            style={{ width: `${trialProgressPct}%` }}
+                          />
+                        </div>
+                        <div className="text-[11px] text-slate-600 flex flex-wrap gap-x-3 gap-y-0.5">
+                          <span>Lớp: <strong className="text-slate-800">{trialClass || "—"}</strong></span>
+                          <span>GV: <strong className="text-slate-800">{trialTeacher || "—"}</strong></span>
+                          {trialPeriod && <span>Lịch hẹn: <strong className="text-[#00736E]">{trialPeriod}</strong></span>}
+                        </div>
+                      </div>
+
+                      {/* Thẻ phải: Kết quả khảo sát tâm lý (B7A / B7B) */}
+                      <div className={`rounded-xl border p-3 space-y-2 ${isB7AActive ? "border-amber-200 bg-amber-50/40" : "border-[#E2E8F0] bg-[#F8FAFC]"}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-[#003B3A]">2. Kết quả khảo sát tâm lý (B7A)</span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                              psyStatus === "COMPLETED" || psyStatus === "EVALUATED" || hasPsyResult
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : psyStatus === "CONFIRMED"
+                                  ? "bg-teal-50 text-[#00736E] border-teal-200"
+                                  : isB7AActive
+                                    ? "bg-amber-50 text-amber-800 border-amber-200"
+                                    : "bg-slate-100 text-slate-600 border-slate-200"
+                            }`}
+                          >
+                            {psyStatus === "COMPLETED" || psyStatus === "EVALUATED" || hasPsyResult
+                              ? "✓ Đã có kết quả"
+                              : psyStatus === "CONFIRMED"
+                                ? "✓ GV TL đã xác nhận"
+                                : isB7AActive
+                                  ? "● Chờ GV Tâm lý"
+                                  : "Không KS"}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+                          <span>
+                            GV Tâm lý:{" "}
+                            <strong className="text-slate-800">
+                              {student.trialPsychologistName || selectedPsyUser?.fullName || viewingRound?.assignedPsychologistName || "—"}
+                            </strong>
+                          </span>
+                          {isB7AActive && (
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab("psychology")}
+                              className="text-[11px] font-semibold text-[#00736E] hover:underline cursor-pointer"
+                            >
+                              Cập nhật phiếu B7 Tâm lý →
+                            </button>
+                          )}
+                        </div>
+                        {psyConcInfo ? (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${psyConcInfo.cls}`}>
+                            Kết luận: {psyConcInfo.label}
+                          </span>
+                        ) : student.trialPsychologyFeedback || psyConclusion ? (
+                          <p className="text-[11px] text-slate-700 line-clamp-2">
+                            “{student.trialPsychologyFeedback || psyConclusion}”
+                          </p>
+                        ) : (
+                          <div className="text-[11px] text-slate-400 italic">
+                            {isB7AActive ? "Chưa có kết quả đánh giá từ GV Tâm lý." : "Không yêu cầu đánh giá tâm lý."}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* 1. Phân công học trải nghiệm */}
                   <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1687,15 +1845,49 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                     </div>
                   </div>
 
-                  {/* 2. Phiếu đánh giá phát triển kèm cột Học trải nghiệm & GV đánh giá */}
+                  {/* 2. Phiếu đánh giá phát triển kèm cột Học trải nghiệm */}
                   <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h4 className="text-sm font-bold text-[#003B3A]">
-                        Phiếu theo dõi đánh giá Học trải nghiệm ({trialCriteriaRows.length} tiêu chí)
-                      </h4>
-                      <span className="text-[11px] text-slate-500">
-                        Tick <strong>Sàng lọc tâm lý</strong> ở cột Học trải nghiệm nếu phát hiện dấu hiệu cần đánh giá tâm lý
-                      </span>
+                      <div>
+                        <h4 className="text-sm font-bold text-[#003B3A]">
+                          Phiếu theo dõi đánh giá hoạt động trải nghiệm ({trialCriteriaRows.length} tiêu chí)
+                        </h4>
+                        <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] tabular-nums">
+                          <span className="font-semibold text-emerald-700">{trialDatCount} Đạt</span>
+                          <span className="text-slate-300">·</span>
+                          <span className="font-semibold text-rose-700">{trialChuaDatCount} Chưa đạt</span>
+                          <span className="text-slate-300">·</span>
+                          <span className="font-semibold text-amber-700">{trialChuaThCount} Chưa thể hiện</span>
+                          {trialFlaggedCount > 0 && (
+                            <>
+                              <span className="text-slate-300">·</span>
+                              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-semibold">
+                                {trialFlaggedCount} tiêu chí gắn cờ Tâm lý
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="inline-flex rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-0.5 text-[11px] font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => setTrialFilterMode("ALL")}
+                          className={`px-2.5 py-1 rounded-lg cursor-pointer transition-colors ${
+                            trialFilterMode === "ALL" ? "bg-[#003B3A] text-white" : "text-slate-600 hover:text-[#003B3A]"
+                          }`}
+                        >
+                          Tất cả ({trialCriteriaRows.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTrialFilterMode("ATTENTION")}
+                          className={`px-2.5 py-1 rounded-lg cursor-pointer transition-colors ${
+                            trialFilterMode === "ATTENTION" ? "bg-amber-600 text-white" : "text-slate-600 hover:text-amber-700"
+                          }`}
+                        >
+                          Cần chú ý / Tâm lý
+                        </button>
+                      </div>
                     </div>
                     <div className="max-h-[340px] overflow-y-auto rounded-xl border border-[#E2E8F0]">
                       <table className="w-full text-left border-collapse text-[11px] tabular-nums">
@@ -1708,14 +1900,14 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#E2E8F0] bg-white">
-                          {trialCriteriaRows.map((row) => {
+                          {visibleTrialRows.map((row) => {
                             const entry = trialCriteriaMap[row.key] || {
                               trialResult: "",
                               evaluator: trialTeacher || "",
                               psyFlag: false,
                             }
                             return (
-                              <tr key={row.key} className="hover:bg-[#F8FAFC]">
+                              <tr key={row.key} className={entry.psyFlag ? "bg-amber-50/40 hover:bg-amber-50/70" : "hover:bg-[#F8FAFC]"}>
                                 <td className="py-2 px-2.5 text-slate-600 align-middle">{row.area}</td>
                                 <td className="py-2 px-2.5 text-slate-800 align-middle">{row.name}</td>
                                 <td className="py-2 px-2.5 font-semibold whitespace-nowrap align-middle">
@@ -1741,7 +1933,15 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                                           [row.key]: { ...entry, trialResult: e.target.value },
                                         }))
                                       }
-                                      className="rounded-lg border border-[#E2E8F0] px-2 py-1 bg-white text-[11px]"
+                                      className={`rounded-lg border px-2 py-1 bg-white text-[11px] font-semibold ${
+                                        entry.trialResult === "DAT"
+                                          ? "border-emerald-300 text-emerald-700"
+                                          : entry.trialResult === "CHUA_DAT"
+                                            ? "border-rose-300 text-rose-700"
+                                            : entry.trialResult === "CHUA_THE_HIEN"
+                                              ? "border-amber-300 text-amber-700"
+                                              : "border-[#E2E8F0] text-slate-600"
+                                      }`}
                                     >
                                       <option value="">-- Chọn --</option>
                                       <option value="DAT">Đạt</option>
