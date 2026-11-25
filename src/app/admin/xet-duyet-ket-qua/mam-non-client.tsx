@@ -10,6 +10,8 @@ import {
   PRESCHOOL_FORM_REGISTRY,
   formatPreschoolSystemLabel,
   resolvePreschoolAdmissionResult,
+  addBusinessDays,
+  validateFollowUpBusinessDays,
 } from "@/lib/preschool-workflow";
 import { PreschoolDossierDrawer } from "@/app/admin/khao-sat-mam-non/PreschoolDossierDrawer";
 import {
@@ -566,7 +568,8 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [evalTrialGrade, setEvalTrialGrade] = useState("");
   const [evalTrialTeacher, setEvalTrialTeacher] = useState("");
   const [evalTrialClass, setEvalTrialClass] = useState("");
-  const [evalTrialPeriod, setEvalTrialPeriod] = useState("");
+  const [evalTrialPeriod, setEvalTrialPeriod] = useState(() => addBusinessDays(new Date(), 2).toISOString().slice(0, 16));
+  const [evalTrialParentNote, setEvalTrialParentNote] = useState("");
 
   // States for 'PCGV ĐG Học thử' Modal (kèm mẫu phiếu đánh giá, KQ học thử & Sàng lọc tâm lý)
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -2860,7 +2863,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setEvalTrialGrade(matchedTrialCls?.grade || "");
     setEvalTrialTeacher(student.probationaryTeacher || "");
     setEvalTrialClass(student.probationaryClass || "");
-    setEvalTrialPeriod(student.probationaryPeriod || "");
+    const defaultMinFollowUp = addBusinessDays(new Date(), 2).toISOString().slice(0, 16);
+    setEvalTrialPeriod(
+      student.probationaryPeriod && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(student.probationaryPeriod)
+        ? student.probationaryPeriod.slice(0, 16)
+        : defaultMinFollowUp
+    );
+    setEvalTrialParentNote(student.probationaryComment || "");
     setHistoryList([]);
     setExpandedHistoryId(null);
     if (student.studentCode) {
@@ -3644,7 +3653,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     }
     if (bghApprovalStatus === "HEN_TRAI_NGHIEM") {
       if (!evalTrialTeacher.trim() || !evalTrialClass.trim() || !evalTrialPeriod.trim()) {
-        notify("Trường hợp Hẹn trải nghiệm (B7B) bắt buộc chọn đủ Khối, Lớp trải nghiệm, Tên GV và Thời gian trải nghiệm.", "err");
+        notify("Trường hợp B7B bắt buộc chọn đủ Khối, Lớp trải nghiệm, Tên GV và Thời gian hẹn mới.", "err");
+        return;
+      }
+      const b7bCheck = validateFollowUpBusinessDays(new Date(), evalTrialPeriod);
+      if (!b7bCheck.valid) {
+        notify(b7bCheck.reason || "Thời gian hẹn trải nghiệm (B7B) phải tối thiểu sau 2 ngày làm việc.", "err");
         return;
       }
     }
@@ -3690,8 +3704,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   ? {
                       probationaryTeacher: evalTrialTeacher.trim(),
                       probationaryClass: evalTrialClass.trim(),
-                      probationaryPeriod: evalTrialPeriod.trim(),
-                      probationaryComment: bghApprovalComment || "",
+                      probationaryPeriod: new Date(evalTrialPeriod).toLocaleString("vi-VN"),
+                      probationaryComment: evalTrialParentNote.trim() || bghApprovalComment || "",
                     }
                   : {}),
                 trialPsychologyScreening: evalNeedPsyB7A,
@@ -3711,7 +3725,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               );
             }
             if (bghApprovalStatus === "HEN_TRAI_NGHIEM") {
-              extraMsgs.push(`Đã lưu lịch trải nghiệm (${evalTrialClass.trim()} · ${evalTrialTeacher.trim()} · ${evalTrialPeriod.trim()}).`);
+              // Tạo Lần khảo sát mới (B7B) trên cùng hồ sơ, giữ nguyên toàn bộ lịch sử & kết quả các lần trước
+              await fetch(`/api/preschool-workflow/${evalStudent.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "SCHEDULE_FOLLOW_UP",
+                  scheduledAt: evalTrialPeriod,
+                  note: evalTrialParentNote.trim() || `Lớp: ${evalTrialClass.trim()} · GV: ${evalTrialTeacher.trim()}`,
+                }),
+              }).catch(() => {});
+              extraMsgs.push(`Đã tạo Lần khảo sát mới B7B (${evalTrialClass.trim()} · ${evalTrialTeacher.trim()} · ${new Date(evalTrialPeriod).toLocaleString("vi-VN")}).`);
             }
           } catch {}
         }
@@ -9432,10 +9456,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           ? baseClasses.filter((c: any) => c.grade === evalTrialGrade)
                           : baseClasses;
 
+                        const minFollowUpIso = addBusinessDays(new Date(), 2).toISOString().slice(0, 16);
                         return (
                           <div className="rounded-xl border border-teal-200 bg-[#F0FDFA] p-3.5 space-y-2.5 text-xs">
-                            <div className="font-bold text-[#003B3A]">
-                              Thông tin Hẹn trải nghiệm / Học thử (B7B) — Bắt buộc chọn đủ
+                            <div>
+                              <div className="font-bold text-[#003B3A]">
+                                B7B: Hẹn trải nghiệm kết hợp quan sát tâm lý (≥ 2 ngày làm việc)
+                              </div>
+                              <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
+                                Khi chưa thể phỏng vấn tâm lý ngay, tạo <strong>Lần khảo sát mới</strong> trên cùng hồ sơ này (giữ nguyên toàn bộ lịch sử và kết quả các lần trước).
+                              </p>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div>
@@ -9508,17 +9538,30 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               </div>
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                                  Thời gian trải nghiệm <span className="text-rose-600">*</span>
+                                  Thời gian hẹn mới (tối thiểu sau 2 ngày làm việc) <span className="text-rose-600">*</span>
                                 </label>
                                 <input
-                                  type="text"
+                                  type="datetime-local"
+                                  min={minFollowUpIso}
                                   value={evalTrialPeriod}
                                   onChange={(e) => setEvalTrialPeriod(e.target.value)}
                                   disabled={!canApproveBGH || isAssessmentLocked}
-                                  placeholder="VD: 27/11/2026 - 29/11/2026"
-                                  className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                                  className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85] tabular-nums"
                                 />
                               </div>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                Ghi chú thống nhất với phụ huynh
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={evalTrialParentNote}
+                                onChange={(e) => setEvalTrialParentNote(e.target.value)}
+                                disabled={!canApproveBGH || isAssessmentLocked}
+                                placeholder="Ghi nhận nội dung đã thống nhất với Phụ huynh về thời gian, lớp trải nghiệm & quan sát tâm lý..."
+                                className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85] resize-none"
+                              />
                             </div>
                           </div>
                         );
