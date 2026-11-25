@@ -208,13 +208,12 @@ const xetDuyetCols = [
   { id: "fullName", label: "Họ và tên", width: "w-[170px] min-w-[170px] max-w-[170px] sticky left-10 z-20 whitespace-normal" },
   { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
   { id: "admissionCampus", label: "Cơ sở", width: "w-20 min-w-[80px]" },
-  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[164px] min-w-[164px] whitespace-normal" },
   { id: "dossierB1B13", label: "Mở Hồ sơ B1–B13", width: "w-[126px] min-w-[126px] text-center" },
-  { id: "b5Eval", label: "B5/B4B Đánh giá", width: "w-[132px] min-w-[132px] whitespace-normal" },
-  { id: "b6Trial", label: "B6 Học trải nghiệm", width: "w-[144px] min-w-[144px] whitespace-normal" },
-  { id: "b7Psych", label: "B7 Tâm lý (khi cần)", width: "w-[144px] min-w-[144px] whitespace-normal" },
-  { id: "bghApproval", label: "NT Mầm non / BGH", width: "w-[152px] min-w-[152px] whitespace-normal" },
-  { id: "gdcsApproval", label: "GĐCS", width: "w-[152px] min-w-[152px] whitespace-normal" }
+  { id: "b5Eval", label: "B5/B4B Đánh giá", width: "w-[168px] min-w-[168px] whitespace-normal" },
+  { id: "b6Trial", label: "B6 Học trải nghiệm", width: "w-[152px] min-w-[152px] whitespace-normal" },
+  { id: "b7Psych", label: "B7 Tâm lý (khi cần)", width: "w-[152px] min-w-[152px] whitespace-normal" },
+  { id: "bghApproval", label: "NT Mầm non / BGH", width: "w-[158px] min-w-[158px] whitespace-normal" },
+  { id: "gdcsApproval", label: "GĐCS", width: "w-[158px] min-w-[158px] whitespace-normal" }
 ];
 
 const assessCols = [
@@ -5912,23 +5911,41 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   {s.admissionCampus || "—"}
                                 </td>
 
-                                {/* KQGV DG cell — hiển thị Trạng thái + Tên GV đánh giá + Y tế B4A */}
-                                <td className="w-[172px] min-w-[172px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                {/* Mở Hồ sơ B1–B13 */}
+                                <td className="w-[126px] min-w-[126px] p-3 align-middle text-center bg-inherit border border-slate-100">
+                                  <button
+                                    type="button"
+                                    onClick={() => setWorkflowDrawerStudentId(s.id)}
+                                    className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+                                    title="Mở Hồ sơ B1–B13 (Y tế B4A / Đánh giá B5 / Tâm lý BM.09 / Hẹn trải nghiệm / Xuất thư)"
+                                  >
+                                    <ClipboardList className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                    Hồ sơ B1–B13
+                                  </button>
+                                </td>
+
+                                {/* B5/B4B Đánh giá */}
+                                <td className="w-[168px] min-w-[168px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   <div className="flex flex-col items-start gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => openEvaluation(s)}
-                                      className="inline-flex items-center gap-1.5 cursor-pointer hover:opacity-85 transition-opacity"
-                                      title="Bấm để xem phiếu đánh giá phát triển của Giáo viên"
-                                    >
-                                      {getStatusBadge(s.scoredCount > 0 ? "DA_DANH_GIA" : "CHUA_DANH_GIA")}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <button
+                                        type="button"
+                                        onClick={() => openEvaluation(s)}
+                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
+                                          s.scoredCount > 0
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                            : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                        }`}
+                                      >
+                                        {s.scoredCount > 0 ? "✓ Hoàn thành" : "● Đợi"}
+                                      </button>
                                       {s.scoredCount > 0 && (
-                                        <span className="text-[10px] font-semibold text-slate-500 tabular-nums">
+                                        <span className="text-[10px] text-slate-600 font-semibold tabular-nums">
                                           {s.datCount ?? 0}/{s.scoredCount} Đạt
                                         </span>
                                       )}
-                                    </button>
-                                    <div className="text-[10px] leading-snug text-slate-600 truncate max-w-[156px]" title={`GV đánh giá: ${s.assignedTeachers || "Chưa phân công"}`}>
+                                    </div>
+                                    <div className="text-[10px] leading-snug text-slate-600 truncate max-w-[152px]" title={`GV đánh giá: ${s.assignedTeachers || "Chưa phân công"}`}>
                                       <span className="text-slate-400">GV:</span>{" "}
                                       <strong className={s.assignedTeachers && s.assignedTeachers !== "Chưa phân công" ? "text-[#003B3A]" : "text-slate-400 font-normal italic"}>
                                         {s.assignedTeachers || "Chưa phân công"}
@@ -5936,7 +5953,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     </div>
                                     {(s.assignedMedicalStaff || (s.b4aHealth?.heightCm && s.b4aHealth?.weightKg)) && (
                                       <div
-                                        className="text-[10px] leading-snug text-[#00736E] truncate max-w-[156px]"
+                                        className="text-[10px] leading-snug text-[#00736E] truncate max-w-[152px]"
                                         title={`Y tế (B4A): ${s.assignedMedicalStaff || "Tổ Y tế"}${s.b4aHealth?.heightCm && s.b4aHealth?.weightKg ? ` · ${s.b4aHealth.heightCm}cm / ${s.b4aHealth.weightKg}kg` : ""}`}
                                       >
                                         <span className="text-slate-400">Y tế:</span>{" "}
@@ -5950,47 +5967,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </div>
                                 </td>
 
-                                {/* Mở Hồ sơ B1–B13 */}
-                                <td className="w-[128px] min-w-[128px] p-3 align-middle text-center bg-inherit border border-slate-100">
-                                  <button
-                                    type="button"
-                                    onClick={() => setWorkflowDrawerStudentId(s.id)}
-                                    className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
-                                    title="Mở Hồ sơ B1–B13 (Y tế B4A / Đánh giá B5 / Tâm lý BM.09 / Hẹn trải nghiệm / Xuất thư)"
-                                  >
-                                    <ClipboardList className="w-3.5 h-3.5 text-[#5EEAD4]" />
-                                    Hồ sơ B1–B13
-                                  </button>
-                                </td>
-
-                                {/* B5/B4B Đánh giá */}
-                                <td className="w-[132px] min-w-[132px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                  {s.scoredCount > 0 ? (
-                                    <div className="flex flex-col items-start gap-1">
-                                      <button
-                                        type="button"
-                                        onClick={() => openEvaluation(s)}
-                                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
-                                      >
-                                        ✓ Hoàn thành
-                                      </button>
-                                      <span className="text-[10px] text-slate-500 font-medium tabular-nums">
-                                        {s.datCount ?? 0}/{s.scoredCount} Đạt
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => openEvaluation(s)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 cursor-pointer"
-                                    >
-                                      ● Đợi
-                                    </button>
-                                  )}
-                                </td>
-
                                 {/* B6 Học trải nghiệm */}
-                                <td className="w-[144px] min-w-[144px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
                                     const wf = getPreschoolRowWorkflowState(s);
                                     const needTrial = Boolean(
@@ -6019,10 +5997,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                         >
                                           {trialDone ? "✓ Hoàn thành" : "● Đợi"}
                                         </button>
-                                        {(s.probationaryClass || s.probationaryTeacher) && (
-                                          <span className="text-[10px] text-slate-600 leading-snug truncate max-w-[130px]" title={`${s.probationaryClass || ""} · ${s.probationaryTeacher || ""}`}>
-                                            {s.probationaryClass || s.probationaryTeacher}
-                                          </span>
+                                        {s.probationaryTeacher && (
+                                          <div className="text-[10px] text-slate-600 leading-snug truncate max-w-[138px]" title={`GV trải nghiệm: ${s.probationaryTeacher}`}>
+                                            <span className="text-slate-400">GV:</span> <strong className="text-[#003B3A]">{s.probationaryTeacher}</strong>
+                                          </div>
+                                        )}
+                                        {s.probationaryClass && (
+                                          <div className="text-[10px] text-slate-500 leading-snug truncate max-w-[138px]">
+                                            Lớp: <strong className="text-slate-700">{s.probationaryClass}</strong>
+                                          </div>
                                         )}
                                         {wf.probRes && (
                                           <span className={`text-[10px] font-semibold ${wf.probRes === "DAT" ? "text-emerald-700" : "text-rose-700"}`}>
@@ -6035,7 +6018,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 </td>
 
                                 {/* B7 Tâm lý (khi cần) */}
-                                <td className="w-[144px] min-w-[144px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
                                     const needPsy = Boolean(
                                       s.trialPsychologyScreening ||
@@ -6066,9 +6049,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                           {psyDone ? "✓ Hoàn thành" : "● Đợi"}
                                         </button>
                                         {s.trialPsychologistName && (
-                                          <span className="text-[10px] text-slate-600 truncate max-w-[130px]" title={`GV Tâm lý: ${s.trialPsychologistName}`}>
-                                            {s.trialPsychologistName}
-                                          </span>
+                                          <div className="text-[10px] text-slate-600 leading-snug truncate max-w-[138px]" title={`GV Tâm lý: ${s.trialPsychologistName}`}>
+                                            <span className="text-slate-400">GV:</span> <strong className="text-[#003B3A]">{s.trialPsychologistName}</strong>
+                                          </div>
                                         )}
                                       </div>
                                     );
@@ -6077,7 +6060,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                                 {/* B6/B9A/B10 Duyệt — Cột 1: NT Mầm non / BGH */}
                                 {showBghSection && (
-                                  <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                  <td className="w-[158px] min-w-[158px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                     {(() => {
                                       const bghDone = Boolean(s.bghApprovalStatus);
                                       const bghLabelMap: Record<string, string> = {
@@ -6090,7 +6073,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                         DAT_HOC_THU: "Học trải nghiệm",
                                       };
                                       return (
-                                        <div className="flex flex-col items-start gap-1.5">
+                                        <div className="flex flex-col items-start gap-1">
                                           <div className="flex items-center gap-1.5">
                                             <button
                                               type="button"
@@ -6114,9 +6097,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                             </button>
                                           </div>
                                           {bghDone ? (
-                                            <span className="text-[10px] font-semibold text-slate-700 leading-snug">
-                                              {bghLabelMap[s.bghApprovalStatus] || s.bghApprovalStatus}
-                                            </span>
+                                            <>
+                                              <span className="text-[10px] font-semibold text-slate-700 leading-snug">
+                                                {bghLabelMap[s.bghApprovalStatus] || s.bghApprovalStatus}
+                                              </span>
+                                              {s.bghApprovalUser && (
+                                                <div className="text-[10px] text-slate-500 truncate max-w-[144px]" title={`Người duyệt: ${s.bghApprovalUser}`}>
+                                                  <span className="text-slate-400">Duyệt:</span> <strong className="text-slate-700">{s.bghApprovalUser}</strong>
+                                                </div>
+                                              )}
+                                            </>
                                           ) : (
                                             <button
                                               type="button"
@@ -6134,7 +6124,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                                 {/* B6/B9A/B10 Duyệt — Cột 2: GĐCS */}
                                 {showGdcsSection && (
-                                  <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                  <td className="w-[158px] min-w-[158px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                     {(() => {
                                       const wf = getPreschoolRowWorkflowState(s);
                                       const gdcsDone = Boolean(wf.gdcsRaw);
@@ -6143,7 +6133,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                         wf.gdcsRaw === "DAT_MIEN_HOC_THU" ||
                                         wf.isTrialPassed;
                                       return (
-                                        <div className="flex flex-col items-start gap-1.5">
+                                        <div className="flex flex-col items-start gap-1">
                                           <div className="flex items-center gap-1.5">
                                             <button
                                               type="button"
@@ -6175,6 +6165,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                               <span className={`text-[10px] font-bold ${isFinalPass ? "text-emerald-700" : "text-rose-700"}`}>
                                                 {isFinalPass ? "Đạt" : "Chưa đạt"}
                                               </span>
+                                              {s.gdcsApprovalUser && (
+                                                <div className="text-[10px] text-slate-500 truncate max-w-[144px]" title={`GĐCS duyệt: ${s.gdcsApprovalUser}`}>
+                                                  <span className="text-slate-400">Duyệt:</span> <strong className="text-slate-700">{s.gdcsApprovalUser}</strong>
+                                                </div>
+                                              )}
                                               {isFinalPass && (
                                                 <button
                                                   type="button"
