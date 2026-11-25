@@ -210,9 +210,9 @@ const xetDuyetCols = [
   { id: "admissionCampus", label: "Cơ sở", width: "w-20 min-w-[80px]" },
   { id: "dossierB1B13", label: "Mở Hồ sơ B1–B13", width: "w-[126px] min-w-[126px] text-center" },
   { id: "b5Eval", label: "B5/B4B Đánh giá", width: "w-[168px] min-w-[168px] whitespace-normal" },
+  { id: "bghApproval", label: "NT Mầm non / BGH", width: "w-[158px] min-w-[158px] whitespace-normal" },
   { id: "b6Trial", label: "B6 Học trải nghiệm", width: "w-[152px] min-w-[152px] whitespace-normal" },
   { id: "b7Psych", label: "B7 Tâm lý (khi cần)", width: "w-[152px] min-w-[152px] whitespace-normal" },
-  { id: "bghApproval", label: "NT Mầm non / BGH", width: "w-[158px] min-w-[158px] whitespace-normal" },
   { id: "gdcsApproval", label: "GĐCS", width: "w-[158px] min-w-[158px] whitespace-normal" }
 ];
 
@@ -5697,6 +5697,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   B5/B4B Đánh giá
                 </span>
                 <span className="text-slate-300">→</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-[#003B3A]">
+                  NT Mầm non / BGH
+                </span>
+                <span className="text-slate-300">→</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
                   B6 Học trải nghiệm
                 </span>
@@ -5706,7 +5710,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </span>
                 <span className="text-slate-300">→</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-[#003B3A]">
-                  B6/B9A/B10 Duyệt (NT Mầm non / BGH → GĐCS)
+                  GĐCS
                 </span>
                 <span className="text-slate-300">|</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
@@ -5967,6 +5971,70 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </div>
                                 </td>
 
+                                {/* Bước 1: NT Mầm non / BGH (sau B5/B4B Đánh giá) */}
+                                {showBghSection && (
+                                  <td className="w-[158px] min-w-[158px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                    {(() => {
+                                      const bghDone = Boolean(s.bghApprovalStatus);
+                                      const bghLabelMap: Record<string, string> = {
+                                        DE_XUAT_DAT: "Đề xuất Đạt",
+                                        DAT: "Đề xuất Đạt",
+                                        DAT_MIEN_HOC_THU: "Đạt · Miễn HTN",
+                                        DE_XUAT_CHUA_DAT: "Đề xuất Chưa đạt",
+                                        KHONG_DAT: "Chưa đạt",
+                                        HEN_TRAI_NGHIEM: "Hẹn trải nghiệm",
+                                        DAT_HOC_THU: "Học trải nghiệm",
+                                      };
+                                      return (
+                                        <div className="flex flex-col items-start gap-1">
+                                          <div className="flex items-center gap-1.5">
+                                            <button
+                                              type="button"
+                                              onClick={() => openEvaluation(s)}
+                                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
+                                                bghDone
+                                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                              }`}
+                                            >
+                                              {bghDone ? "✓ Hoàn thành" : "● Đợi"}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => sendApprovalNotification(s.id, "BGH_MN")}
+                                              disabled={sendingNotifyId === s.id}
+                                              title="Gửi email nhắc duyệt tới Nhóm trưởng / BGH Mầm non"
+                                              className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-[#F0FDFA] hover:border-[#008B85] text-slate-500 hover:text-[#00736E] cursor-pointer transition-colors"
+                                            >
+                                              <Mail className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                          {bghDone ? (
+                                            <>
+                                              <span className="text-[10px] font-semibold text-slate-700 leading-snug">
+                                                {bghLabelMap[s.bghApprovalStatus] || s.bghApprovalStatus}
+                                              </span>
+                                              {s.bghApprovalUser && (
+                                                <div className="text-[10px] text-slate-500 truncate max-w-[144px]" title={`Người duyệt: ${s.bghApprovalUser}`}>
+                                                  <span className="text-slate-400">Duyệt:</span> <strong className="text-slate-700">{s.bghApprovalUser}</strong>
+                                                </div>
+                                              )}
+                                            </>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => openEvaluation(s)}
+                                              className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#008B85] hover:bg-[#00736E] text-white cursor-pointer"
+                                            >
+                                              Xét duyệt
+                                            </button>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
+                                  </td>
+                                )}
+
                                 {/* B6 Học trải nghiệm */}
                                 <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
@@ -6057,70 +6125,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     );
                                   })()}
                                 </td>
-
-                                {/* B6/B9A/B10 Duyệt — Cột 1: NT Mầm non / BGH */}
-                                {showBghSection && (
-                                  <td className="w-[158px] min-w-[158px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                    {(() => {
-                                      const bghDone = Boolean(s.bghApprovalStatus);
-                                      const bghLabelMap: Record<string, string> = {
-                                        DE_XUAT_DAT: "Đề xuất Đạt",
-                                        DAT: "Đề xuất Đạt",
-                                        DAT_MIEN_HOC_THU: "Đạt · Miễn HTN",
-                                        DE_XUAT_CHUA_DAT: "Đề xuất Chưa đạt",
-                                        KHONG_DAT: "Chưa đạt",
-                                        HEN_TRAI_NGHIEM: "Hẹn trải nghiệm",
-                                        DAT_HOC_THU: "Học trải nghiệm",
-                                      };
-                                      return (
-                                        <div className="flex flex-col items-start gap-1">
-                                          <div className="flex items-center gap-1.5">
-                                            <button
-                                              type="button"
-                                              onClick={() => openEvaluation(s)}
-                                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
-                                                bghDone
-                                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                                              }`}
-                                            >
-                                              {bghDone ? "✓ Hoàn thành" : "● Đợi"}
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => sendApprovalNotification(s.id, "BGH_MN")}
-                                              disabled={sendingNotifyId === s.id}
-                                              title="Gửi email nhắc duyệt tới Nhóm trưởng / BGH Mầm non"
-                                              className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-[#F0FDFA] hover:border-[#008B85] text-slate-500 hover:text-[#00736E] cursor-pointer transition-colors"
-                                            >
-                                              <Mail className="w-3 h-3" />
-                                            </button>
-                                          </div>
-                                          {bghDone ? (
-                                            <>
-                                              <span className="text-[10px] font-semibold text-slate-700 leading-snug">
-                                                {bghLabelMap[s.bghApprovalStatus] || s.bghApprovalStatus}
-                                              </span>
-                                              {s.bghApprovalUser && (
-                                                <div className="text-[10px] text-slate-500 truncate max-w-[144px]" title={`Người duyệt: ${s.bghApprovalUser}`}>
-                                                  <span className="text-slate-400">Duyệt:</span> <strong className="text-slate-700">{s.bghApprovalUser}</strong>
-                                                </div>
-                                              )}
-                                            </>
-                                          ) : (
-                                            <button
-                                              type="button"
-                                              onClick={() => openEvaluation(s)}
-                                              className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#008B85] hover:bg-[#00736E] text-white cursor-pointer"
-                                            >
-                                              Xét duyệt
-                                            </button>
-                                          )}
-                                        </div>
-                                      );
-                                    })()}
-                                  </td>
-                                )}
 
                                 {/* B6/B9A/B10 Duyệt — Cột 2: GĐCS */}
                                 {showGdcsSection && (
