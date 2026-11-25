@@ -1434,7 +1434,6 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                             <th className="py-2 px-2.5 text-white font-semibold">Tiêu chí</th>
                             <th className="py-2 px-2.5 text-teal-100 font-semibold whitespace-nowrap">KQ Đánh giá</th>
                             <th className="py-2 px-2.5 text-[#5EEAD4] font-semibold">Học trải nghiệm</th>
-                            <th className="py-2 px-2.5 text-white font-semibold">GV đánh giá</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#E2E8F0] bg-white">
@@ -1495,20 +1494,6 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                                       Sàng lọc tâm lý
                                     </label>
                                   </div>
-                                </td>
-                                <td className="py-2 px-2.5 align-middle">
-                                  <input
-                                    type="text"
-                                    value={entry.evaluator}
-                                    onChange={(e) =>
-                                      setTrialCriteriaMap((prev) => ({
-                                        ...prev,
-                                        [row.key]: { ...entry, evaluator: e.target.value },
-                                      }))
-                                    }
-                                    placeholder={trialTeacher || "Tên GV..."}
-                                    className="w-full min-w-[110px] rounded-lg border border-[#E2E8F0] px-2 py-1 text-[11px]"
-                                  />
                                 </td>
                               </tr>
                             )
