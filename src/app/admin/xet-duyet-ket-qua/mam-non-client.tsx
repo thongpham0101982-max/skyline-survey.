@@ -559,7 +559,8 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [isCommitment, setIsCommitment] = useState(false);
   const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
 
-  // States for B6/B9A Routing inside Evaluation Modal (B7A Tâm lý & B7B Hẹn trải nghiệm)
+  // States for B6/B9A Routing & standalone B7A Psychology Screening inside Evaluation Modal
+  const [evalNeedPsyB7A, setEvalNeedPsyB7A] = useState(false);
   const [evalPsyDeptId, setEvalPsyDeptId] = useState("");
   const [evalPsyTeacherId, setEvalPsyTeacherId] = useState("");
   const [evalTrialGrade, setEvalTrialGrade] = useState("");
@@ -2850,8 +2851,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setGdcsApprovalDate(student.gdcsApprovalDate || "");
     const defaultPsyDept = (departments || []).find((d: any) => {
       const n = String(d.name || "").toLowerCase().normalize("NFC");
-      return n.includes("tâm lý") || n.includes("tam ly") || n.includes("tham vấn");
+      return n.includes("tâm lý") || n.includes("tam ly") || n.includes("tlhn") || n.includes("tham vấn");
     });
+    setEvalNeedPsyB7A(Boolean(student.trialPsychologyScreening) || student.bghApprovalStatus === "CAN_PV_TAM_LY");
     setEvalPsyDeptId(defaultPsyDept?.id || "");
     setEvalPsyTeacherId(student.trialPsychologistId || "");
     const matchedTrialCls = (classes || []).find((c: any) => c.className === student.probationaryClass);
@@ -3636,13 +3638,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
   const saveEvaluation = async () => {
     if (!evalStudent) return;
-    if (bghApprovalStatus === "CAN_PV_TAM_LY" && !evalPsyTeacherId) {
-      notify("Vui lòng chọn GV Tâm lý được phân công để gửi email phỏng vấn tâm lý (B7A).", "err");
+    if (evalNeedPsyB7A && !evalPsyTeacherId) {
+      notify("Vui lòng chọn GV Tâm lý được phân công cho mục Cần PV tâm lý (B7A).", "err");
       return;
     }
     if (bghApprovalStatus === "HEN_TRAI_NGHIEM") {
       if (!evalTrialTeacher.trim() || !evalTrialClass.trim() || !evalTrialPeriod.trim()) {
-        notify("Trường hợp Hẹn trải nghiệm (B7B) bắt buộc chọn đủ GV phân công, Lớp trải nghiệm và Thời gian trải nghiệm.", "err");
+        notify("Trường hợp Hẹn trải nghiệm (B7B) bắt buộc chọn đủ Khối, Lớp trải nghiệm, Tên GV và Thời gian trải nghiệm.", "err");
         return;
       }
     }
@@ -3670,11 +3672,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         })
       });
       if (r.ok) {
-        let extraMsg = "";
-        // Tự động gửi email đến GV Tâm lý khi chọn Cần PV tâm lý (B7A)
-        if (bghApprovalStatus === "CAN_PV_TAM_LY" && evalPsyTeacherId) {
-          const psyTeacher = (teachers || []).find((t: any) => (t.user?.id || t.id) === evalPsyTeacherId);
-          const psyName = psyTeacher?.teacherName || psyTeacher?.user?.fullName || "GV Tâm lý";
+        const extraMsgs: string[] = [];
+        // Đồng bộ B7A Cần PV tâm lý (tự động gửi email GV Tâm lý) và/hoặc B7B Hẹn trải nghiệm
+        if (evalNeedPsyB7A || bghApprovalStatus === "HEN_TRAI_NGHIEM") {
+          const psyTeacher = evalNeedPsyB7A
+            ? (teachers || []).find((t: any) => (t.user?.id || t.id) === evalPsyTeacherId)
+            : null;
+          const psyName = psyTeacher?.teacherName || psyTeacher?.user?.fullName || "";
           const psyEmail = psyTeacher?.email || psyTeacher?.user?.email || "";
           try {
             const wfRes = await fetch(`/api/preschool-workflow/${evalStudent.id}`, {
@@ -3682,43 +3686,39 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 action: "SAVE_TRIAL_WORKFLOW",
-                trialPsychologyScreening: true,
-                trialPsychologistId: psyTeacher?.user?.id || evalPsyTeacherId,
-                trialPsychologistName: psyName,
-                trialPsychologistEmail: psyEmail,
-                psychologyNote: bghApprovalComment || devPsyComment || "Cần phỏng vấn / sàng lọc tâm lý (B7A)",
-                sendPsychologyEmail: Boolean(psyEmail),
+                ...(bghApprovalStatus === "HEN_TRAI_NGHIEM"
+                  ? {
+                      probationaryTeacher: evalTrialTeacher.trim(),
+                      probationaryClass: evalTrialClass.trim(),
+                      probationaryPeriod: evalTrialPeriod.trim(),
+                      probationaryComment: bghApprovalComment || "",
+                    }
+                  : {}),
+                trialPsychologyScreening: evalNeedPsyB7A,
+                trialPsychologistId: evalNeedPsyB7A ? (psyTeacher?.user?.id || evalPsyTeacherId || null) : null,
+                trialPsychologistName: evalNeedPsyB7A ? (psyName || null) : null,
+                trialPsychologistEmail: evalNeedPsyB7A ? (psyEmail || null) : null,
+                psychologyNote: devPsyComment || bghApprovalComment || "Cần phỏng vấn / sàng lọc tâm lý (B7A)",
+                sendPsychologyEmail: Boolean(evalNeedPsyB7A && psyEmail),
               }),
             });
             const wfData = await wfRes.json().catch(() => ({}));
-            extraMsg = wfData?.emailSent
-              ? ` Đã tự động gửi email tới GV Tâm lý (${psyName}).`
-              : ` Đã phân công GV Tâm lý (${psyName}).`;
-          } catch {}
-        }
-
-        // Lưu GV phân công, Lớp trải nghiệm & Thời gian trải nghiệm khi chọn Hẹn trải nghiệm (B7B)
-        if (bghApprovalStatus === "HEN_TRAI_NGHIEM") {
-          try {
-            await fetch(`/api/preschool-workflow/${evalStudent.id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                action: "SAVE_TRIAL_WORKFLOW",
-                probationaryTeacher: evalTrialTeacher.trim(),
-                probationaryClass: evalTrialClass.trim(),
-                probationaryPeriod: evalTrialPeriod.trim(),
-                probationaryComment: bghApprovalComment || "",
-                trialPsychologyScreening: Boolean(evalStudent.trialPsychologyScreening),
-              }),
-            });
-            extraMsg = ` Đã lưu lịch trải nghiệm (${evalTrialClass.trim()} · ${evalTrialTeacher.trim()} · ${evalTrialPeriod.trim()}).`;
+            if (evalNeedPsyB7A && psyName) {
+              extraMsgs.push(
+                wfData?.emailSent
+                  ? `Đã gửi email PV tâm lý (B7A) tới ${psyName}.`
+                  : `Đã phân công GV Tâm lý (${psyName}).`
+              );
+            }
+            if (bghApprovalStatus === "HEN_TRAI_NGHIEM") {
+              extraMsgs.push(`Đã lưu lịch trải nghiệm (${evalTrialClass.trim()} · ${evalTrialTeacher.trim()} · ${evalTrialPeriod.trim()}).`);
+            }
           } catch {}
         }
 
         setEvalModal(false);
         fetchStudentSummaries();
-        notify(`Đã lưu kết quả đánh giá & định tuyến B6/B9A thành công!${extraMsg}`, "ok");
+        notify(`Đã lưu kết quả đánh giá & định tuyến thành công!${extraMsgs.length ? " " + extraMsgs.join(" ") : ""}`, "ok");
 
         // Gửi email kết quả xét duyệt Mầm non tới GĐCS, Tư vấn Cơ sở & Ban KT&ĐBCL
         if (gdcsApprovalStatus) {
@@ -9263,6 +9263,98 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             };
 
             return (
+              <div className="space-y-4">
+                {/* MỤC RIÊNG (*): CẦN PV TÂM LÝ (B7A) — ĐỘC LẬP TRÊN PHIẾU */}
+                {(() => {
+                  const filteredPsyTeachers = evalPsyDeptId
+                    ? (teachers || []).filter((t: any) => t.departmentId === evalPsyDeptId || t.departmentRel?.id === evalPsyDeptId)
+                    : (psyTeachers.length > 0 ? psyTeachers : (teachers || []));
+                  const psyStatus = String(evalStudent?.trialPsychologyStatus || "").toUpperCase();
+                  return (
+                    <div className={`rounded-2xl border p-4 space-y-3 transition-all ${evalNeedPsyB7A ? "bg-amber-50/70 border-amber-300" : "bg-white border-[#E2E8F0]"}`}>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={evalNeedPsyB7A}
+                            disabled={!canApproveBGH || isAssessmentLocked}
+                            onChange={(e) => setEvalNeedPsyB7A(e.target.checked)}
+                            className="w-4 h-4 rounded accent-amber-600 cursor-pointer"
+                          />
+                          <span className="text-xs font-bold text-[#003B3A]">
+                            <span className="text-rose-600 mr-1">*</span>
+                            Cần PV tâm lý (B7A)
+                          </span>
+                          <span className="text-[11px] font-medium text-slate-500">
+                            (Tích chọn khi phát hiện dấu hiệu cần Tổ Tâm lý phỏng vấn &amp; đánh giá)
+                          </span>
+                        </label>
+                        {evalNeedPsyB7A && (
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                            psyStatus === "COMPLETED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : psyStatus === "CONFIRMED"
+                                ? "bg-teal-50 text-[#00736E] border-teal-200"
+                                : evalStudent?.trialPsychologyEmailSentAt
+                                  ? "bg-amber-100 text-amber-900 border-amber-300"
+                                  : "bg-white text-amber-800 border-amber-200"
+                          }`}>
+                            {psyStatus === "COMPLETED"
+                              ? "✓ GV Tâm lý đã hoàn tất đánh giá"
+                              : psyStatus === "CONFIRMED"
+                                ? "✓ GV Tâm lý đã xác nhận tiếp nhận"
+                                : evalStudent?.trialPsychologyEmailSentAt
+                                  ? "Đã gửi email — Chờ GV Tâm lý xác nhận"
+                                  : "Sẽ tự động gửi email khi lưu"}
+                          </span>
+                        )}
+                      </div>
+
+                      {evalNeedPsyB7A && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2.5 border-t border-amber-200/80 text-xs">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-amber-900 mb-1">
+                              Tổ chuyên môn (Tổ Tâm lý) <span className="text-rose-600">*</span>
+                            </label>
+                            <select
+                              value={evalPsyDeptId}
+                              onChange={(e) => {
+                                setEvalPsyDeptId(e.target.value);
+                                setEvalPsyTeacherId("");
+                              }}
+                              disabled={!canApproveBGH || isAssessmentLocked}
+                              className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                            >
+                              <option value="">-- Tự động lọc Tổ Tâm lý --</option>
+                              {(departments || []).map((d: any) => (
+                                <option key={d.id} value={d.id}>{d.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-amber-900 mb-1">
+                              Tên GV Tâm lý được phân công <span className="text-rose-600">*</span>
+                            </label>
+                            <select
+                              value={evalPsyTeacherId}
+                              onChange={(e) => setEvalPsyTeacherId(e.target.value)}
+                              disabled={!canApproveBGH || isAssessmentLocked}
+                              className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                            >
+                              <option value="">-- Chọn GV Tâm lý --</option>
+                              {filteredPsyTeachers.map((t: any) => (
+                                <option key={t.id} value={t.user?.id || t.id}>
+                                  {t.teacherName} ({t.email || t.user?.email || "Chưa có email"})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
               <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-5 rounded-2xl space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3.5">
                   <div className="flex items-center gap-2">
@@ -9299,11 +9391,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {[
-                          { status: "DE_XUAT_DAT", label: "Đề xuất Đạt → Trình B10", color: "text-emerald-700 border-emerald-200 hover:bg-emerald-50", activeColor: "bg-emerald-600 text-white border-emerald-600 shadow-2xs" },
+                          { status: "DE_XUAT_DAT", label: "Đề xuất Đạt → B10", color: "text-emerald-700 border-emerald-200 hover:bg-emerald-50", activeColor: "bg-emerald-600 text-white border-emerald-600 shadow-2xs" },
                           { status: "DE_XUAT_CHUA_DAT", label: "Đề xuất Chưa đạt → B10", color: "text-rose-700 border-rose-200 hover:bg-rose-50", activeColor: "bg-rose-600 text-white border-rose-600 shadow-2xs" },
-                          { status: "CAN_PV_TAM_LY", label: "Cần PV tâm lý (B7A)", color: "text-amber-800 border-amber-200 hover:bg-amber-50", activeColor: "bg-amber-600 text-white border-amber-600 shadow-2xs" },
                           { status: "HEN_TRAI_NGHIEM", label: "Hẹn trải nghiệm (B7B)", color: "text-[#00736E] border-teal-200 hover:bg-[#F0FDFA]", activeColor: "bg-[#008B85] text-white border-[#008B85] shadow-2xs" }
                         ].map(opt => {
                           const isSelected =
@@ -9317,7 +9408,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               type="button"
                               disabled={!canApproveBGH || isAssessmentLocked}
                               onClick={() => setBghApprovalStatus(isSelected ? "" : opt.status)}
-                              className={`px-3 py-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+                              className={`px-3 py-2.5 rounded-xl border text-xs font-semibold text-center transition-all cursor-pointer ${
                                 isSelected ? opt.activeColor : `bg-white ${opt.color}`
                               } ${(!canApproveBGH || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : ''}`}
                             >
@@ -9326,62 +9417,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           );
                         })}
                       </div>
-
-                      {/* Khung tự động gửi email GV Tâm lý khi chọn Cần PV tâm lý (B7A) */}
-                      {bghApprovalStatus === "CAN_PV_TAM_LY" && (() => {
-                        const filteredPsyTeachers = evalPsyDeptId
-                          ? (teachers || []).filter((t: any) => t.departmentId === evalPsyDeptId || t.departmentRel?.id === evalPsyDeptId)
-                          : (psyTeachers.length > 0 ? psyTeachers : (teachers || []));
-                        return (
-                          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 space-y-2.5 text-xs">
-                            <div className="font-bold text-amber-900">
-                              Phân công Tổ Tâm lý &amp; GV Tâm lý phỏng vấn (B7A) <span className="text-rose-600">*</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[11px] font-semibold text-amber-900 mb-1">
-                                  Tổ chuyên môn <span className="text-rose-600">*</span>
-                                </label>
-                                <select
-                                  value={evalPsyDeptId}
-                                  onChange={(e) => {
-                                    setEvalPsyDeptId(e.target.value);
-                                    setEvalPsyTeacherId("");
-                                  }}
-                                  disabled={!canApproveBGH || isAssessmentLocked}
-                                  className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
-                                >
-                                  <option value="">-- Tự động lọc Tổ Tâm lý --</option>
-                                  {(departments || []).map((d: any) => (
-                                    <option key={d.id} value={d.id}>{d.name}</option>
-                                  ))}
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-[11px] font-semibold text-amber-900 mb-1">
-                                  Tên GV Tâm lý <span className="text-rose-600">*</span>
-                                </label>
-                                <select
-                                  value={evalPsyTeacherId}
-                                  onChange={(e) => setEvalPsyTeacherId(e.target.value)}
-                                  disabled={!canApproveBGH || isAssessmentLocked}
-                                  className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
-                                >
-                                  <option value="">-- Chọn GV Tâm lý --</option>
-                                  {filteredPsyTeachers.map((t: any) => (
-                                    <option key={t.id} value={t.user?.id || t.id}>
-                                      {t.teacherName} ({t.email || t.user?.email || "Chưa có email"})
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                            <p className="text-[11px] text-amber-800 leading-snug">
-                              Khi bấm <strong>Lưu đánh giá &amp; phê duyệt</strong>, hệ thống sẽ <strong>tự động gửi email</strong> kèm liên kết phản hồi xác nhận đến GV Tâm lý được chọn.
-                            </p>
-                          </div>
-                        );
-                      })()}
 
                       {/* Khung bắt buộc chọn Khối, Lớp, Tên GV & Thời gian trải nghiệm khi chọn Hẹn trải nghiệm (B7B) */}
                       {bghApprovalStatus === "HEN_TRAI_NGHIEM" && (() => {
@@ -9579,6 +9614,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </div>
                   )}
                 </div>
+              </div>
               </div>
             );
           })()}
