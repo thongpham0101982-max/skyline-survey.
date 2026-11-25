@@ -35,7 +35,7 @@ interface Props {
   staffUsers: Array<{ id: string; fullName: string; email: string; role: string }>
 }
 
-type DrawerTab = "intake" | "health" | "evaluation" | "psychology" | "review" | "letters" | "history"
+type DrawerTab = "intake" | "health" | "evaluation" | "trial" | "psychology" | "review" | "letters" | "history"
 
 export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUsers }: Props) {
   const [loading, setLoading] = useState(false)
@@ -64,6 +64,19 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
   const [criteriaRatings, setCriteriaRatings] = useState<Record<string, { result: string; note: string }>>({})
   const [generalComment, setGeneralComment] = useState("")
   const [experienceObservation, setExperienceObservation] = useState("")
+
+  // B6 Trial (Phân công học thử, Kết quả học thử & Sàng lọc tâm lý)
+  const [trialClass, setTrialClass] = useState("")
+  const [trialTeacher, setTrialTeacher] = useState("")
+  const [trialPeriod, setTrialPeriod] = useState("")
+  const [trialResult, setTrialResult] = useState("")
+  const [trialComment, setTrialComment] = useState("")
+  const [trialBghStatus, setTrialBghStatus] = useState("")
+  const [trialBghComment, setTrialBghComment] = useState("")
+  const [trialPsyScreening, setTrialPsyScreening] = useState(false)
+  const [trialPsyId, setTrialPsyId] = useState("")
+  const [trialPsyNote, setTrialPsyNote] = useState("")
+  const [trialCriteriaMap, setTrialCriteriaMap] = useState<Record<string, { trialResult: string; evaluator: string; psyFlag: boolean }>>({})
 
   // B7A Psychology (BM.KTĐBCL.09)
   const [psyRatings, setPsyRatings] = useState<Record<string, { result: string; note: string }>>({})
@@ -162,6 +175,38 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
     setParentConsultNote(student?.parentConsultationNote || "")
     setDeliveryNote(student?.resultDeliveryNote || "")
     setArchiveNote(student?.archiveNote || "")
+
+    // Hydrate B6 Trial & Psychology Screening
+    setTrialClass(student?.probationaryClass || "")
+    setTrialTeacher(student?.probationaryTeacher || "")
+    setTrialPeriod(student?.probationaryPeriod || "")
+    setTrialResult(student?.probationaryResult || "")
+    setTrialComment(student?.probationaryComment || "")
+    setTrialBghStatus(student?.probationaryBghStatus || "")
+    setTrialBghComment(student?.probationaryBghComment || "")
+    setTrialPsyScreening(Boolean(Number(student?.trialPsychologyScreening || 0)))
+    setTrialPsyId(student?.trialPsychologistId || round?.assignedPsychologistId || "")
+    setTrialPsyNote(student?.trialPsychologyFeedback || "")
+    const parsedTrialMap: Record<string, { trialResult: string; evaluator: string; psyFlag: boolean }> = {}
+    try {
+      if (student?.trialPsychologyCriteriaJson) {
+        const raw = JSON.parse(student.trialPsychologyCriteriaJson)
+        if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+          for (const [k, v] of Object.entries(raw as Record<string, any>)) {
+            if (typeof v === "boolean") {
+              parsedTrialMap[k] = { trialResult: "", evaluator: student?.probationaryTeacher || "", psyFlag: v }
+            } else if (v && typeof v === "object") {
+              parsedTrialMap[k] = {
+                trialResult: String(v.trialResult || ""),
+                evaluator: String(v.evaluator || student?.probationaryTeacher || ""),
+                psyFlag: Boolean(v.psyFlag),
+              }
+            }
+          }
+        }
+      }
+    } catch {}
+    setTrialCriteriaMap(parsedTrialMap)
   }
 
   useEffect(() => {
@@ -321,6 +366,12 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
     evaluation: hasEvalResult
       ? { status: "done", label: "Đã hoàn thành" }
       : { status: "waiting", label: "Đang đợi GV đánh giá" },
+    trial:
+      student?.probationaryBghStatus || student?.probationaryResult
+        ? { status: "done", label: "Đã có KQ học thử" }
+        : student?.probationaryTeacher || student?.probationaryClass || String(student?.bghApprovalStatus || "").includes("HOC_THU")
+          ? { status: "waiting", label: "Đang học thử" }
+          : { status: "optional", label: "Khi học thử" },
     psychology: hasPsyResult
       ? { status: "done", label: "Đã hoàn thành" }
       : wfStatus === "CHO_PHONG_VAN_TAM_LY"
@@ -343,6 +394,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
     { id: "intake", label: "B1–B3 Tiếp nhận", icon: ClipboardCheck },
     { id: "health", label: "B4A Y tế", icon: Stethoscope },
     { id: "evaluation", label: "B5/B4B Đánh giá", icon: FileText },
+    { id: "trial", label: "B6 Học thử", icon: CalendarPlus },
     { id: "psychology", label: "B7 Tâm lý (khi cần)", icon: Brain },
     { id: "review", label: "B6/B9A/B10 Duyệt", icon: CheckCircle2 },
     { id: "letters", label: "B11–B13 Thư & Lưu", icon: Archive },
@@ -909,55 +961,62 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                   </div>
                 </div>
 
-                {/* Bảng đối chiếu nhanh điểm thực tế GV đã chấm trên Phiếu đánh giá phát triển */}
-                {legacyDev && legacyDev.totalScored > 0 && (
-                  <div className="rounded-xl border border-teal-200/80 bg-[#F0FDFA]/50 p-3.5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#003B3A]">
-                        Dữ liệu GV đã chấm trên Phiếu đánh giá phát triển ({legacyDev.totalScored} tiêu chí)
-                      </span>
-                      <span className="text-[11px] font-semibold text-emerald-700 tabular-nums">
-                        {legacyDev.datCount} Đạt · {legacyDev.khongDatCount} Không đạt · {legacyDev.chuaTheHienCount} Chưa thể hiện
-                      </span>
-                    </div>
-                    <div className="max-h-44 overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white">
-                      <table className="w-full text-left border-collapse text-[11px] tabular-nums">
-                        <thead className="bg-[#003B3A] text-white sticky top-0">
-                          <tr>
-                            <th className="py-1.5 px-2.5 text-teal-100 font-semibold">Lĩnh vực</th>
-                            <th className="py-1.5 px-2.5 text-white font-semibold">Tiêu chí</th>
-                            <th className="py-1.5 px-2.5 text-[#5EEAD4] font-semibold">Kết quả</th>
-                            <th className="py-1.5 px-2.5 text-teal-100 font-semibold">Ghi chú</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E2E8F0]">
-                          {legacyDev.scores.map((sc: any) => (
-                            <tr key={sc.id} className="hover:bg-[#F8FAFC]">
-                              <td className="py-1.5 px-2.5 text-slate-600">{sc.areaName || "—"}</td>
-                              <td className="py-1.5 px-2.5 text-slate-800">{sc.criteriaName}</td>
-                              <td className="py-1.5 px-2.5 font-semibold">
-                                <span
-                                  className={
-                                    sc.result === "DAT"
-                                      ? "text-emerald-700"
-                                      : sc.result === "KHONG_DAT"
-                                        ? "text-rose-700"
-                                        : "text-slate-500"
-                                  }
-                                >
-                                  {sc.result === "DAT" ? "Đạt" : sc.result === "KHONG_DAT" ? "Không đạt" : "Chưa thể hiện"}
-                                </span>
-                              </td>
-                              <td className="py-1.5 px-2.5 text-slate-500">{sc.note || "—"}</td>
+                {/* Bảng kết quả đánh giá thực tế GV đã chấm (chỉ hiện kết quả, không lặp lại mẫu trống) */}
+                {legacyDev && legacyDev.totalScored > 0 ? (
+                  <div className="space-y-3">
+                    <div className="rounded-xl border border-teal-200/80 bg-[#F0FDFA]/50 p-3.5 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-[#003B3A]">
+                          Kết quả đánh giá phát triển ({legacyDev.totalScored} tiêu chí)
+                        </span>
+                        <span className="text-[11px] font-semibold text-emerald-700 tabular-nums">
+                          {legacyDev.datCount} Đạt · {legacyDev.khongDatCount} Không đạt · {legacyDev.chuaTheHienCount} Chưa thể hiện
+                        </span>
+                      </div>
+                      <div className="max-h-[420px] overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white">
+                        <table className="w-full text-left border-collapse text-[11px] tabular-nums">
+                          <thead className="bg-[#003B3A] text-white sticky top-0">
+                            <tr>
+                              <th className="py-2 px-2.5 text-teal-100 font-semibold">Lĩnh vực</th>
+                              <th className="py-2 px-2.5 text-white font-semibold">Tiêu chí</th>
+                              <th className="py-2 px-2.5 text-[#5EEAD4] font-semibold">Kết quả</th>
+                              <th className="py-2 px-2.5 text-teal-100 font-semibold">Ghi chú</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-[#E2E8F0]">
+                            {legacyDev.scores.map((sc: any) => (
+                              <tr key={sc.id} className="hover:bg-[#F8FAFC]">
+                                <td className="py-2 px-2.5 text-slate-600">{sc.areaName || "—"}</td>
+                                <td className="py-2 px-2.5 text-slate-800">{sc.criteriaName}</td>
+                                <td className="py-2 px-2.5 font-semibold whitespace-nowrap">
+                                  <span
+                                    className={
+                                      sc.result === "DAT"
+                                        ? "text-emerald-700"
+                                        : sc.result === "KHONG_DAT"
+                                          ? "text-rose-700"
+                                          : "text-amber-700"
+                                    }
+                                  >
+                                    {sc.result === "DAT" ? "Đạt" : sc.result === "KHONG_DAT" ? "Không đạt" : "Chưa thể hiện"}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-2.5 text-slate-500">{sc.note ? String(sc.note).replace(/\|/g, " — ") : "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                )}
 
-                {viewingRound?.roundType === "KHAO_SAT_MOI" ? (
+                    {(student.devProfessionalComment || generalComment) && (
+                      <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3.5 text-xs">
+                        <span className="font-bold text-[#003B3A] block mb-1">Nhận xét tổng hợp của Giáo viên</span>
+                        <p className="text-slate-700 leading-relaxed">{student.devProfessionalComment || generalComment}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : viewingRound?.roundType === "KHAO_SAT_MOI" ? (
                   <>
                     {/* Form Selection & Age Boundary Confirmation */}
                     <div
@@ -1134,6 +1193,398 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                 )}
               </div>
             )}
+
+            {/* TAB 3B: B6 PHÂN CÔNG HỌC THỬ, KẾT QUẢ HỌC THỬ & SÀNG LỌC TÂM LÝ */}
+            {!loading && student && activeTab === "trial" && (() => {
+              const trialCriteriaRows: Array<{ key: string; area: string; name: string; initialResult: string }> =
+                legacyDev && legacyDev.scores?.length > 0
+                  ? legacyDev.scores.map((sc: any) => ({
+                      key: sc.criteriaCode || sc.id || sc.criteriaName,
+                      area: sc.areaName || "Đánh giá phát triển",
+                      name: sc.criteriaName || "—",
+                      initialResult:
+                        sc.result === "DAT" ? "Đạt" : sc.result === "KHONG_DAT" ? "Không đạt" : "Chưa thể hiện",
+                    }))
+                  : activeFormDef.defaultCriteria.map((c) => ({
+                      key: c.code,
+                      area: c.area,
+                      name: c.name,
+                      initialResult: criteriaRatings[c.code]?.result || "—",
+                    }))
+
+              const selectedPsyUser = allDirectoryUsers.find((u) => u.id === trialPsyId)
+              const psyStatus = String(student.trialPsychologyStatus || "").toUpperCase()
+              const psyStatusBadge =
+                psyStatus === "COMPLETED"
+                  ? { label: "✓ GV Tâm lý đã hoàn tất đánh giá", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" }
+                  : psyStatus === "CONFIRMED"
+                    ? { label: "✓ GV Tâm lý đã xác nhận tiếp nhận", cls: "bg-teal-50 text-[#00736E] border-teal-200" }
+                    : student.trialPsychologyEmailSentAt
+                      ? { label: "● Đã gửi email — Chờ GV Tâm lý xác nhận", cls: "bg-amber-50 text-amber-800 border-amber-200" }
+                      : null
+
+              const saveTrial = (sendEmailFlag: boolean) => {
+                const flaggedNames = trialCriteriaRows
+                  .filter((r) => trialCriteriaMap[r.key]?.psyFlag)
+                  .map((r) => r.name)
+                runAction(
+                  {
+                    action: "SAVE_TRIAL_WORKFLOW",
+                    probationaryClass: trialClass,
+                    probationaryTeacher: trialTeacher,
+                    probationaryPeriod: trialPeriod,
+                    probationaryResult: trialResult,
+                    probationaryComment: trialComment,
+                    probationaryBghStatus: trialBghStatus,
+                    probationaryBghComment: trialBghComment,
+                    trialPsychologyScreening: trialPsyScreening,
+                    trialPsychologistId: trialPsyScreening ? (selectedPsyUser?.id || trialPsyId || null) : null,
+                    trialPsychologistName: trialPsyScreening ? (selectedPsyUser?.fullName || student.trialPsychologistName || null) : null,
+                    trialPsychologistEmail: trialPsyScreening ? (selectedPsyUser?.email || student.trialPsychologistEmail || null) : null,
+                    trialCriteriaPayload: trialCriteriaMap,
+                    flaggedCriteriaNames: flaggedNames,
+                    psychologyNote: trialPsyNote,
+                    sendPsychologyEmail: sendEmailFlag,
+                  },
+                  sendEmailFlag
+                    ? "Đã lưu B6 Học thử và gửi email yêu cầu xác nhận tới GV Tâm lý."
+                    : "Đã lưu phân công & kết quả học thử (B6)."
+                )
+              }
+
+              return (
+                <div className="space-y-4 text-xs">
+                  {/* 1. Phân công học thử */}
+                  <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h3 className="text-sm font-bold text-[#003B3A]">B6: Phân công học thử &amp; Kết quả học thử</h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Ghi nhận phân công lớp/GV học thử, đánh giá lại theo mẫu phiếu và sàng lọc tâm lý (khi cần).
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                          student.probationaryBghStatus === "DAT" || student.probationaryResult === "DAT"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : trialTeacher || trialClass
+                              ? "bg-amber-50 text-amber-800 border-amber-200"
+                              : "bg-slate-100 text-slate-600 border-slate-200"
+                        }`}
+                      >
+                        {student.probationaryBghStatus === "DAT"
+                          ? "✓ BGH đã duyệt Đạt sau học thử"
+                          : trialResult === "DAT"
+                            ? "GV học thử: Đạt"
+                            : trialTeacher || trialClass
+                              ? "● Đang học thử"
+                              : "Chưa phân công học thử"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Lớp học thử</label>
+                        <input
+                          type="text"
+                          value={trialClass}
+                          onChange={(e) => setTrialClass(e.target.value)}
+                          placeholder="VD: ROOTS - C1, SEEDS - A2..."
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">GV đánh giá học thử</label>
+                        <input
+                          type="text"
+                          list="preschool-trial-teachers-list"
+                          value={trialTeacher}
+                          onChange={(e) => setTrialTeacher(e.target.value)}
+                          placeholder="Chọn hoặc nhập tên GV..."
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 bg-white"
+                        />
+                        <datalist id="preschool-trial-teachers-list">
+                          {(staffDir?.homeroomTeachers || allDirectoryUsers).map((u: any) => (
+                            <option key={u.id} value={u.fullName} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Thời gian học thử</label>
+                        <input
+                          type="text"
+                          value={trialPeriod}
+                          onChange={(e) => setTrialPeriod(e.target.value)}
+                          placeholder="VD: 01/12/2026 - 05/12/2026"
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Khối Sàng lọc tâm lý */}
+                    <div className={`rounded-xl border p-4 space-y-3 ${trialPsyScreening ? "bg-amber-50/60 border-amber-200" : "bg-[#F8FAFC] border-[#E2E8F0]"}`}>
+                      <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={trialPsyScreening}
+                          onChange={(e) => setTrialPsyScreening(e.target.checked)}
+                          className="w-4 h-4 rounded accent-[#003B3A] cursor-pointer"
+                        />
+                        <span className="font-bold text-[#003B3A]">
+                          Sàng lọc tâm lý (trẻ có dấu hiệu / vấn đề tâm lý cần GV Tâm lý đánh giá)
+                        </span>
+                      </label>
+
+                      {trialPsyScreening && (
+                        <div className="space-y-3 pt-2 border-t border-amber-200/70">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block font-semibold text-slate-700 mb-1">
+                                Chọn GV Tâm lý đánh giá <span className="text-rose-600">*</span>
+                              </label>
+                              <select
+                                value={trialPsyId}
+                                onChange={(e) => setTrialPsyId(e.target.value)}
+                                className="w-full rounded-xl border border-[#E2E8F0] px-2.5 py-2 bg-white"
+                              >
+                                <option value="">-- Chọn chuyên viên Tổ Tâm lý --</option>
+                                {staffDir?.psychologyStaff?.length > 0 && (
+                                  <optgroup label="Tổ Tâm lý học đường">
+                                    {staffDir.psychologyStaff.map((u: any) => (
+                                      <option key={u.id} value={u.id}>{formatStaffOptionLabel(u)}</option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                                {staffDir?.otherStaff?.length > 0 && (
+                                  <optgroup label="Nhân sự khác">
+                                    {staffDir.otherStaff.map((u: any) => (
+                                      <option key={u.id} value={u.id}>{formatStaffOptionLabel(u)}</option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block font-semibold text-slate-700 mb-1">Ghi chú gửi GV Tâm lý</label>
+                              <input
+                                type="text"
+                                value={trialPsyNote}
+                                onChange={(e) => setTrialPsyNote(e.target.value)}
+                                placeholder="Mô tả dấu hiệu cần sàng lọc tâm lý..."
+                                className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 bg-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {psyStatusBadge && (
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${psyStatusBadge.cls}`}>
+                                  {psyStatusBadge.label}
+                                </span>
+                              )}
+                              {student.trialPsychologyConfirmedAt && (
+                                <span className="text-[11px] text-slate-500 tabular-nums">
+                                  Xác nhận lúc: {new Date(student.trialPsychologyConfirmedAt).toLocaleString("vi-VN")}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              disabled={saving || !trialPsyId}
+                              onClick={() => saveTrial(true)}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold disabled:opacity-50 cursor-pointer"
+                            >
+                              <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                              Lưu &amp; Gửi email cho GV Tâm lý
+                            </button>
+                          </div>
+
+                          {(student.trialPsychologyConclusion || student.trialPsychologyFeedback) && (
+                            <div className="rounded-xl border border-teal-200 bg-white p-3 space-y-1">
+                              <div className="font-bold text-[#003B3A]">Phản hồi từ GV Tâm lý ({student.trialPsychologistName || "Tổ Tâm lý"}):</div>
+                              {student.trialPsychologyConclusion && (
+                                <div className="text-slate-700"><strong>Kết luận:</strong> {student.trialPsychologyConclusion}</div>
+                              )}
+                              {student.trialPsychologyFeedback && (
+                                <div className="text-slate-600"><strong>Nhận xét:</strong> {student.trialPsychologyFeedback}</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 2. Phiếu đánh giá phát triển kèm cột Học thử & GV đánh giá */}
+                  <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="text-sm font-bold text-[#003B3A]">
+                        Phiếu theo dõi đánh giá Học thử ({trialCriteriaRows.length} tiêu chí)
+                      </h4>
+                      <span className="text-[11px] text-slate-500">
+                        Tick <strong>Sàng lọc tâm lý</strong> ở cột Học thử nếu phát hiện dấu hiệu cần đánh giá tâm lý
+                      </span>
+                    </div>
+                    <div className="max-h-[340px] overflow-y-auto rounded-xl border border-[#E2E8F0]">
+                      <table className="w-full text-left border-collapse text-[11px] tabular-nums">
+                        <thead className="bg-[#003B3A] text-white sticky top-0 z-10">
+                          <tr>
+                            <th className="py-2 px-2.5 text-teal-100 font-semibold">Lĩnh vực</th>
+                            <th className="py-2 px-2.5 text-white font-semibold">Tiêu chí</th>
+                            <th className="py-2 px-2.5 text-teal-100 font-semibold whitespace-nowrap">KQ Đánh giá</th>
+                            <th className="py-2 px-2.5 text-[#5EEAD4] font-semibold">Học thử</th>
+                            <th className="py-2 px-2.5 text-white font-semibold">GV đánh giá</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                          {trialCriteriaRows.map((row) => {
+                            const entry = trialCriteriaMap[row.key] || {
+                              trialResult: "",
+                              evaluator: trialTeacher || "",
+                              psyFlag: false,
+                            }
+                            return (
+                              <tr key={row.key} className="hover:bg-[#F8FAFC]">
+                                <td className="py-2 px-2.5 text-slate-600 align-middle">{row.area}</td>
+                                <td className="py-2 px-2.5 text-slate-800 align-middle">{row.name}</td>
+                                <td className="py-2 px-2.5 font-semibold whitespace-nowrap align-middle">
+                                  <span
+                                    className={
+                                      row.initialResult === "Đạt"
+                                        ? "text-emerald-700"
+                                        : row.initialResult === "Không đạt"
+                                          ? "text-rose-700"
+                                          : "text-amber-700"
+                                    }
+                                  >
+                                    {row.initialResult}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-2.5 align-middle">
+                                  <div className="flex flex-col gap-1">
+                                    <select
+                                      value={entry.trialResult}
+                                      onChange={(e) =>
+                                        setTrialCriteriaMap((prev) => ({
+                                          ...prev,
+                                          [row.key]: { ...entry, trialResult: e.target.value },
+                                        }))
+                                      }
+                                      className="rounded-lg border border-[#E2E8F0] px-2 py-1 bg-white text-[11px]"
+                                    >
+                                      <option value="">-- Chọn --</option>
+                                      <option value="DAT">Đạt</option>
+                                      <option value="CHUA_DAT">Chưa đạt</option>
+                                      <option value="CHUA_THE_HIEN">Chưa thể hiện</option>
+                                    </select>
+                                    <label className="inline-flex items-center gap-1 text-[10px] text-amber-800 cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={entry.psyFlag}
+                                        onChange={(e) => {
+                                          const checked = e.target.checked
+                                          setTrialCriteriaMap((prev) => ({
+                                            ...prev,
+                                            [row.key]: { ...entry, psyFlag: checked },
+                                          }))
+                                          if (checked && !trialPsyScreening) setTrialPsyScreening(true)
+                                        }}
+                                        className="w-3.5 h-3.5 rounded accent-amber-600 cursor-pointer"
+                                      />
+                                      Sàng lọc tâm lý
+                                    </label>
+                                  </div>
+                                </td>
+                                <td className="py-2 px-2.5 align-middle">
+                                  <input
+                                    type="text"
+                                    value={entry.evaluator}
+                                    onChange={(e) =>
+                                      setTrialCriteriaMap((prev) => ({
+                                        ...prev,
+                                        [row.key]: { ...entry, evaluator: e.target.value },
+                                      }))
+                                    }
+                                    placeholder={trialTeacher || "Tên GV..."}
+                                    className="w-full min-w-[110px] rounded-lg border border-[#E2E8F0] px-2 py-1 text-[11px]"
+                                  />
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* 3. Kết quả đánh giá học thử & BGH duyệt KQ học thử */}
+                  <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-4">
+                    <h4 className="text-sm font-bold text-[#003B3A]">Kết quả học thử &amp; BGH Mầm non duyệt kết quả học thử</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Kết quả GV đánh giá học thử</label>
+                        <select
+                          value={trialResult}
+                          onChange={(e) => setTrialResult(e.target.value)}
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 bg-white"
+                        >
+                          <option value="">Chưa đánh giá</option>
+                          <option value="DAT">Đạt</option>
+                          <option value="CHUA_DAT">Chưa đạt</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">BGH Mầm non duyệt kết quả học thử</label>
+                        <select
+                          value={trialBghStatus}
+                          onChange={(e) => setTrialBghStatus(e.target.value)}
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 bg-white"
+                        >
+                          <option value="">Chưa duyệt</option>
+                          <option value="DAT">Đạt (chuyển GĐCS xét duyệt)</option>
+                          <option value="KHONG_DAT">Không đạt</option>
+                          <option value="Y_KIEN_KHAC">Ý kiến khác</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Nhận xét kết quả học thử</label>
+                      <textarea
+                        rows={2}
+                        value={trialComment}
+                        onChange={(e) => setTrialComment(e.target.value)}
+                        placeholder="Ghi nhận khả năng hòa nhập, vận động, ngôn ngữ, tâm lý trong thời gian học thử..."
+                        className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => saveTrial(false)}
+                        className="px-4 py-2 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white font-semibold cursor-pointer disabled:opacity-50"
+                      >
+                        Lưu phân công &amp; Kết quả học thử (B6)
+                      </button>
+                      {trialPsyScreening && trialPsyId && (
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => saveTrial(true)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold cursor-pointer disabled:opacity-50"
+                        >
+                          <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                          Lưu &amp; Gửi email GV Tâm lý
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* TAB 4: B7A PSYCHOLOGY (BM.KTĐBCL.09) & B7B FOLLOW-UP */}
             {!loading && student && activeTab === "psychology" && (

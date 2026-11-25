@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import {
   verifyPreschoolApprovalToken,
   verifyWorkflowQuickApproveToken,
+  verifyPreschoolPsychologyToken,
 } from "@/lib/preschool-approval-service"
 import {
   appendPreschoolAuditLog,
@@ -73,7 +74,69 @@ export async function GET(req: NextRequest) {
   try {
     await ensurePreschoolWorkflowSchema()
     const { searchParams } = new URL(req.url)
+    const pt = searchParams.get("pt")
     const wt = searchParams.get("wt")
+
+    // Psychologist trial screening confirmation link (?pt=...)
+    if (pt) {
+      const check = verifyPreschoolPsychologyToken(pt)
+      if (!check.valid) {
+        return renderHtmlPage({
+          title: "Liên kết xác nhận không hợp lệ",
+          tone: "rose",
+          status: 403,
+          bodyHtml: `<p>${check.reason}</p><a class="btn-outline" href="/admin/xet-duyet-ket-qua?tab=preschool">Mở trang Xét duyệt Mầm non</a>`,
+        })
+      }
+
+      const { payload } = check
+      const student = await getWorkflowStudentRow(payload.studentId)
+      if (!student) {
+        return renderHtmlPage({
+          title: "Không tìm thấy hồ sơ trẻ",
+          tone: "rose",
+          status: 404,
+          bodyHtml: `<p>Hồ sơ trẻ không còn tồn tại trong hệ thống.</p>`,
+        })
+      }
+
+      const currentStatus = String(student.trialPsychologyStatus || "PENDING")
+      const currentConclusion = String(student.trialPsychologyConclusion || "")
+      const currentFeedback = String(student.trialPsychologyFeedback || "")
+
+      return renderHtmlPage({
+        title: "Phản hồi xác nhận Sàng lọc tâm lý",
+        subtitle: "Học thử Mầm non — Tự động đồng bộ trực tiếp vào phiếu trên SSM",
+        tone: "pine",
+        bodyHtml: `
+          <div class="info-box">
+            <div class="row"><span class="label">Họ và tên trẻ</span><span class="val">${student.fullName} (${student.studentCode})</span></div>
+            <div class="row"><span class="label">Nhóm tuổi / Cơ sở</span><span class="val">${student.grade || "Mầm non"} · ${student.admissionCampus || "Sky-Line"}</span></div>
+            <div class="row"><span class="label">Lớp học thử / GV học thử</span><span class="val">${student.probationaryClass || "—"} · ${student.probationaryTeacher || "—"}</span></div>
+            <div class="row"><span class="label">GV Tâm lý phụ trách</span><span class="val">${payload.psychologistName}</span></div>
+          </div>
+          <form method="POST" action="/api/admin/quick-approve/preschool">
+            <input type="hidden" name="pt" value="${pt}" />
+            <label for="psychologyStatus" style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;">Trạng thái xác nhận:</label>
+            <select id="psychologyStatus" name="psychologyStatus" style="width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px;background:#fff;">
+              <option value="CONFIRMED" ${currentStatus === "CONFIRMED" || currentStatus === "PENDING" ? "selected" : ""}>Xác nhận tiếp nhận đánh giá tâm lý</option>
+              <option value="EVALUATED" ${currentStatus === "EVALUATED" ? "selected" : ""}>Đã hoàn thành đánh giá sàng lọc tâm lý</option>
+            </select>
+            <label for="psychologyConclusion" style="display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:6px;">Kết luận sàng lọc tâm lý (nếu đã đánh giá):</label>
+            <select id="psychologyConclusion" name="psychologyConclusion" style="width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px;background:#fff;">
+              <option value="" ${!currentConclusion ? "selected" : ""}>-- Chưa kết luận / Đang theo dõi --</option>
+              <option value="BINH_THUONG" ${currentConclusion === "BINH_THUONG" ? "selected" : ""}>Phát triển tâm lý bình thường</option>
+              <option value="CAN_THEO_DOI" ${currentConclusion === "CAN_THEO_DOI" ? "selected" : ""}>Cần theo dõi thêm trong quá trình học thử</option>
+              <option value="CAN_CAN_THIEP" ${currentConclusion === "CAN_CAN_THIEP" ? "selected" : ""}>Cần hỗ trợ / can thiệp chuyên sâu</option>
+            </select>
+            <label for="psychologyFeedback" style="display:block;font-size:12px;font-weight:600;color:#334155;">Ý kiến phản hồi / Nhận xét đánh giá tâm lý:</label>
+            <textarea id="psychologyFeedback" name="psychologyFeedback" placeholder="Nhập lịch dự kiến tiếp nhận hoặc kết quả quan sát, nhận xét tâm lý của trẻ...">${currentFeedback.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+            <button type="submit" class="btn">Gửi phản hồi xác nhận</button>
+          </form>
+          <a class="btn-outline" href="/admin/xet-duyet-ket-qua?tab=preschool">Mở trang Xét duyệt trên SSM</a>
+        `,
+      })
+    }
 
     if (wt) {
       const check = verifyWorkflowQuickApproveToken(wt)
@@ -222,6 +285,10 @@ export async function POST(req: NextRequest) {
   try {
     await ensurePreschoolWorkflowSchema()
     const contentType = req.headers.get("content-type") || ""
+    let pt = ""
+    let psychologyStatus = ""
+    let psychologyConclusion = ""
+    let psychologyFeedback = ""
     let wt = ""
     let comment = ""
     let legacyStudentId = ""
@@ -232,6 +299,10 @@ export async function POST(req: NextRequest) {
 
     if (wantsJson) {
       const body = await req.json()
+      pt = body.pt || ""
+      psychologyStatus = String(body.psychologyStatus || "CONFIRMED").trim()
+      psychologyConclusion = String(body.psychologyConclusion || "").trim()
+      psychologyFeedback = String(body.psychologyFeedback || body.comment || "").trim()
       wt = body.wt || ""
       comment = String(body.comment || "").trim()
       legacyStudentId = body.studentId || ""
@@ -240,6 +311,10 @@ export async function POST(req: NextRequest) {
       legacyToken = body.token || ""
     } else {
       const formData = await req.formData()
+      pt = String(formData.get("pt") || "")
+      psychologyStatus = String(formData.get("psychologyStatus") || "CONFIRMED").trim()
+      psychologyConclusion = String(formData.get("psychologyConclusion") || "").trim()
+      psychologyFeedback = String(formData.get("psychologyFeedback") || formData.get("comment") || "").trim()
       wt = String(formData.get("wt") || "")
       comment = String(formData.get("comment") || "").trim()
       legacyStudentId = String(formData.get("studentId") || "")
@@ -249,6 +324,97 @@ export async function POST(req: NextRequest) {
     }
 
     const nowIso = new Date().toISOString()
+
+    // Psychologist trial screening confirmation submission
+    if (pt) {
+      const check = verifyPreschoolPsychologyToken(pt)
+      if (!check.valid) {
+        if (wantsJson) return NextResponse.json({ error: check.reason }, { status: 403 })
+        return renderHtmlPage({ title: "Liên kết không hợp lệ", tone: "rose", status: 403, bodyHtml: `<p>${check.reason}</p>` })
+      }
+
+      const { payload } = check
+      const student = await getWorkflowStudentRow(payload.studentId)
+      if (!student) {
+        if (wantsJson) return NextResponse.json({ error: "Not found" }, { status: 404 })
+        return renderHtmlPage({ title: "Không tìm thấy hồ sơ", tone: "rose", status: 404, bodyHtml: `<p>Hồ sơ trẻ không tồn tại.</p>` })
+      }
+
+      const finalStatus = psychologyStatus === "EVALUATED" ? "EVALUATED" : "CONFIRMED"
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "trialPsychologyScreening" = 1,
+             "trialPsychologyStatus" = ?,
+             "trialPsychologyConfirmedAt" = ?,
+             "trialPsychologyFeedback" = ?,
+             "trialPsychologyConclusion" = ?,
+             "devPsychologyComment" = CASE
+               WHEN ? != '' THEN ?
+               ELSE "devPsychologyComment"
+             END,
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        finalStatus,
+        nowIso,
+        psychologyFeedback || null,
+        psychologyConclusion || null,
+        psychologyFeedback,
+        psychologyFeedback,
+        nowIso,
+        student.id
+      )
+
+      await appendPreschoolAuditLog({
+        studentId: student.id,
+        action: finalStatus === "EVALUATED" ? "TRIAL_PSYCHOLOGY_EVALUATED" : "TRIAL_PSYCHOLOGY_CONFIRMED",
+        actorName: payload.psychologistName || payload.psychologistEmail,
+        actorRole: "PSYCHOLOGIST",
+        source: "EMAIL_QUICK_APPROVE",
+        detail: {
+          status: finalStatus,
+          conclusion: psychologyConclusion,
+          feedback: psychologyFeedback,
+          psychologistEmail: payload.psychologistEmail,
+        },
+      }).catch(() => {})
+
+      if (wantsJson) {
+        return NextResponse.json({
+          success: true,
+          studentId: student.id,
+          trialPsychologyStatus: finalStatus,
+          trialPsychologyConclusion: psychologyConclusion,
+          trialPsychologyFeedback: psychologyFeedback,
+        })
+      }
+
+      const statusLabel = finalStatus === "EVALUATED" ? "Đã hoàn thành đánh giá sàng lọc tâm lý" : "Đã xác nhận tiếp nhận đánh giá tâm lý"
+      const conclusionLabel =
+        psychologyConclusion === "BINH_THUONG"
+          ? "Phát triển tâm lý bình thường"
+          : psychologyConclusion === "CAN_THEO_DOI"
+            ? "Cần theo dõi thêm trong quá trình học thử"
+            : psychologyConclusion === "CAN_CAN_THIEP"
+              ? "Cần hỗ trợ / can thiệp chuyên sâu"
+              : "Chưa kết luận"
+
+      return renderHtmlPage({
+        title: "Đã ghi nhận phản hồi xác nhận",
+        subtitle: "Kết quả đã được đồng bộ trực tiếp vào hệ thống Sky-Line SSM",
+        tone: "emerald",
+        bodyHtml: `
+          <div class="info-box">
+            <div class="row"><span class="label">Họ và tên trẻ</span><span class="val">${student.fullName} (${student.studentCode})</span></div>
+            <div class="row"><span class="label">GV Tâm lý</span><span class="val">${payload.psychologistName}</span></div>
+            <div class="row"><span class="label">Trạng thái</span><span class="val">${statusLabel}</span></div>
+            <div class="row"><span class="label">Kết luận sàng lọc</span><span class="val">${conclusionLabel}</span></div>
+            ${psychologyFeedback ? `<div class="row"><span class="label">Ý kiến phản hồi</span><span class="val">${psychologyFeedback.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span></div>` : ""}
+          </div>
+          <p style="font-size:13px;color:#334155;">Cảm ơn Cô/Thầy đã phản hồi. Ban Giám Hiệu Mầm non và GV học thử có thể xem ngay trạng thái xác nhận trên bảng Xét duyệt kết quả.</p>
+          <a class="btn" href="/admin/xet-duyet-ket-qua?tab=preschool">Mở bảng Xét duyệt trên SSM</a>
+        `,
+      })
+    }
 
     // New B1–B13 signed workflow token
     if (wt) {

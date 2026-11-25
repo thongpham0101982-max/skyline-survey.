@@ -548,13 +548,35 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [isCommitment, setIsCommitment] = useState(false);
   const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
 
-  // States for 'PCGV ĐG Học thử' Modal
+  // States for 'PCGV ĐG Học thử' Modal (kèm mẫu phiếu đánh giá, KQ học thử & Sàng lọc tâm lý)
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignStudent, setAssignStudent] = useState<any>(null);
   const [assignCampusId, setAssignCampusId] = useState("");
   const [assignGrade, setAssignGrade] = useState("");
   const [assignClassId, setAssignClassId] = useState("");
   const [assignTeacherId, setAssignTeacherId] = useState("");
+  const [assignPeriod, setAssignPeriod] = useState("");
+  const [assignLoadingForm, setAssignLoadingForm] = useState(false);
+  const [assignDevAreas, setAssignDevAreas] = useState<DevArea[]>([]);
+  const [assignInitialScores, setAssignInitialScores] = useState<Record<string, { result: string; note: string }>>({});
+  const [assignTrialScores, setAssignTrialScores] = useState<Record<string, { result: string; note: string }>>({});
+  const [assignTrialResult, setAssignTrialResult] = useState("");
+  const [assignTrialComment, setAssignTrialComment] = useState("");
+  const [assignTrialBghStatus, setAssignTrialBghStatus] = useState("");
+  const [assignTrialBghComment, setAssignTrialBghComment] = useState("");
+  const [assignPsyScreening, setAssignPsyScreening] = useState(false);
+  const [assignPsychologistId, setAssignPsychologistId] = useState("");
+  const [assignPsyCriteriaMap, setAssignPsyCriteriaMap] = useState<Record<string, boolean>>({});
+  const [assignSendPsyEmail, setAssignSendPsyEmail] = useState(true);
+  const [assignPsyMeta, setAssignPsyMeta] = useState<{
+    emailSentAt?: string | null;
+    status?: string;
+    confirmedAt?: string | null;
+    feedback?: string;
+    conclusion?: string;
+    psychologistEmail?: string;
+    psychologistName?: string;
+  }>({});
   const [savingAssignment, setSavingAssignment] = useState(false);
 
   // States for Email Congrats Checklist modal
@@ -3301,15 +3323,123 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     });
   }, [classes, assignCampusId, assignGrade]);
 
-  const openAssignModal = (student: any) => {
+  const psychologistTeachers = useMemo(() => {
+    const isPsy = (t: any) => {
+      const hay = `${t.departmentRel?.name || ""} ${t.department || ""} ${t.position || ""} ${t.role || ""} ${t.specialization || ""} ${t.teacherName || ""}`.toLowerCase();
+      return hay.includes("tâm lý") || hay.includes("tam ly") || hay.includes("tlhn") || hay.includes("psych") || hay.includes("tham vấn");
+    };
+    const primary = teachers.filter(isPsy);
+    const others = teachers.filter(t => !isPsy(t));
+    return { primary, others };
+  }, [teachers]);
+
+  const openAssignModal = async (student: any) => {
     setAssignStudent(student);
-    // Try to pre-select campus based on student's current admission campus name matching campus
-    const matchedCampus = campuses.find((c: any) => c.campusName === student.admissionCampus || c.id === student.admissionCampus);
-    setAssignCampusId(matchedCampus ? matchedCampus.id : (campuses[0]?.id || ""));
-    setAssignGrade("");
-    setAssignClassId("");
-    setAssignTeacherId("");
+    const matchedCampus = campuses.find((c: any) =>
+      isPreschoolCampusMatch(student.admissionCampus, c.campusCode, c.campusName) ||
+      c.campusName === student.admissionCampus ||
+      c.id === student.admissionCampus
+    );
+    const matchedClass = student.probationaryClass
+      ? classes.find((c: any) => c.className === student.probationaryClass)
+      : null;
+    const matchedTeacher = student.probationaryTeacher
+      ? teachers.find((t: any) => t.teacherName === student.probationaryTeacher)
+      : null;
+
+    setAssignCampusId(matchedClass?.campusId || (matchedCampus ? matchedCampus.id : (campuses[0]?.id || "")));
+    setAssignGrade(matchedClass?.grade || "");
+    setAssignClassId(matchedClass?.id || "");
+    setAssignTeacherId(matchedTeacher?.id || "");
+    setAssignPeriod(student.probationaryPeriod || "");
+    setAssignTrialResult(student.probationaryResult || "");
+    setAssignTrialComment(student.probationaryComment || "");
+    setAssignTrialBghStatus(student.probationaryBghStatus || "");
+    setAssignTrialBghComment(student.probationaryBghComment || "");
+    setAssignPsyScreening(Boolean(student.trialPsychologyScreening));
+    setAssignPsychologistId(student.trialPsychologistId || "");
+    setAssignSendPsyEmail(!student.trialPsychologyEmailSentAt);
+    setAssignPsyMeta({
+      emailSentAt: student.trialPsychologyEmailSentAt || null,
+      status: student.trialPsychologyStatus || "",
+      confirmedAt: student.trialPsychologyConfirmedAt || null,
+      feedback: student.trialPsychologyFeedback || "",
+      conclusion: student.trialPsychologyConclusion || "",
+      psychologistEmail: student.trialPsychologistEmail || "",
+      psychologistName: student.trialPsychologistName || "",
+    });
+    setAssignInitialScores({});
+    setAssignTrialScores({});
+    setAssignPsyCriteriaMap({});
+    setAssignDevAreas([]);
     setIsAssignModalOpen(true);
+    setAssignLoadingForm(true);
+
+    try {
+      const inputAgeGroup = getSurveyFormAgeGroup(student.grade);
+      const [areasRes, initScoresRes, probRes] = await Promise.all([
+        fetch(`/api/preschool-dev-areas?type=INPUT&ageGroup=${encodeURIComponent(inputAgeGroup)}`),
+        fetch(`/api/preschool-dev-scores?studentId=${encodeURIComponent(student.id)}`),
+        fetch(`/api/preschool-probationary-assessment?studentId=${encodeURIComponent(student.id)}`)
+      ]);
+
+      if (areasRes.ok) {
+        const areasData = await areasRes.json();
+        setAssignDevAreas(Array.isArray(areasData) ? areasData : []);
+      }
+
+      if (initScoresRes.ok) {
+        const scList = await initScoresRes.json();
+        const map: Record<string, { result: string; note: string }> = {};
+        if (Array.isArray(scList)) {
+          scList.forEach((sc: any) => {
+            map[sc.criteriaId] = { result: sc.result || "", note: sc.note || "" };
+          });
+        }
+        setAssignInitialScores(map);
+      }
+
+      if (probRes.ok) {
+        const pData = await probRes.json();
+        if (pData.probationaryPeriod) setAssignPeriod(pData.probationaryPeriod);
+        if (pData.probationaryResult !== undefined) setAssignTrialResult(pData.probationaryResult || "");
+        if (pData.probationaryComment !== undefined) setAssignTrialComment(pData.probationaryComment || "");
+        if (pData.probationaryBghStatus !== undefined) setAssignTrialBghStatus(pData.probationaryBghStatus || "");
+        if (pData.probationaryBghComment !== undefined) setAssignTrialBghComment(pData.probationaryBghComment || "");
+        if (pData.probationaryScoreText) {
+          try {
+            const parsed = JSON.parse(pData.probationaryScoreText);
+            if (parsed && typeof parsed === "object") setAssignTrialScores(parsed);
+          } catch {}
+        }
+        if (pData.trialPsychologyScreening !== undefined) {
+          setAssignPsyScreening(Boolean(pData.trialPsychologyScreening));
+        }
+        if (pData.trialPsychologistId) {
+          setAssignPsychologistId(pData.trialPsychologistId);
+        }
+        if (pData.trialPsychologyCriteriaJson) {
+          try {
+            const parsedPsy = JSON.parse(pData.trialPsychologyCriteriaJson);
+            if (parsedPsy && typeof parsedPsy === "object") setAssignPsyCriteriaMap(parsedPsy);
+          } catch {}
+        }
+        setAssignSendPsyEmail(!pData.trialPsychologyEmailSentAt);
+        setAssignPsyMeta({
+          emailSentAt: pData.trialPsychologyEmailSentAt || null,
+          status: pData.trialPsychologyStatus || "",
+          confirmedAt: pData.trialPsychologyConfirmedAt || null,
+          feedback: pData.trialPsychologyFeedback || "",
+          conclusion: pData.trialPsychologyConclusion || "",
+          psychologistEmail: pData.trialPsychologistEmail || "",
+          psychologistName: pData.trialPsychologistName || "",
+        });
+      }
+    } catch (e) {
+      console.error("openAssignModal load error:", e);
+    } finally {
+      setAssignLoadingForm(false);
+    }
   };
 
   const handleAssignClassChange = (classId: string) => {
@@ -3324,39 +3454,75 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     }
   };
 
-  const saveAssignment = async () => {
+  const saveAssignment = async (forceResendPsyEmail = false) => {
     if (!assignStudent) return;
-    if (!assignClassId) {
-      notify("Vui lòng chọn Tên lớp", "err");
+    const chosenClass = classes.find((c: any) => c.id === assignClassId);
+    const chosenTeacher = teachers.find((t: any) => t.id === assignTeacherId);
+    const effectiveClassName = chosenClass ? chosenClass.className : (assignStudent.probationaryClass || "");
+    const effectiveTeacherName = chosenTeacher ? chosenTeacher.teacherName : (assignStudent.probationaryTeacher || "");
+
+    if (!effectiveClassName) {
+      notify("Vui lòng chọn Tên lớp học thử", "err");
       return;
     }
-    if (!assignTeacherId) {
-      notify("Vui lòng chọn Giáo viên Đánh giá", "err");
+    if (!effectiveTeacherName) {
+      notify("Vui lòng chọn Giáo viên đánh giá học thử", "err");
       return;
     }
+    if (assignPsyScreening && !assignPsychologistId) {
+      notify("Vui lòng chọn GV Tâm lý để đánh giá sàng lọc tâm lý", "err");
+      return;
+    }
+
+    const chosenPsychologist = teachers.find((t: any) => t.id === assignPsychologistId);
+    const flaggedCriteriaNames: string[] = [];
+    assignDevAreas.forEach(area => {
+      (area.criteria || []).forEach(crit => {
+        if (assignPsyCriteriaMap[crit.id]) {
+          flaggedCriteriaNames.push(`[${area.name}] ${crit.name}`);
+        }
+      });
+    });
 
     setSavingAssignment(true);
     try {
-      const chosenClass = classes.find((c: any) => c.id === assignClassId);
-      const chosenTeacher = teachers.find((t: any) => t.id === assignTeacherId);
-
       const r = await fetch("/api/preschool-probationary-assessment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId: assignStudent.id,
-          probationaryClass: chosenClass ? chosenClass.className : "",
-          probationaryTeacher: chosenTeacher ? chosenTeacher.teacherName : ""
+          probationaryClass: effectiveClassName,
+          probationaryTeacher: effectiveTeacherName,
+          probationaryPeriod: assignPeriod,
+          probationaryScoreText: JSON.stringify(assignTrialScores),
+          probationaryResult: assignTrialResult,
+          probationaryComment: assignTrialComment,
+          probationaryBghStatus: assignTrialBghStatus,
+          probationaryBghComment: assignTrialBghComment,
+          trialPsychologyScreening: assignPsyScreening,
+          trialPsychologistId: assignPsyScreening ? assignPsychologistId : "",
+          trialPsychologistName: assignPsyScreening ? (chosenPsychologist?.teacherName || assignPsyMeta.psychologistName || "") : "",
+          trialPsychologistEmail: assignPsyScreening ? (chosenPsychologist?.email || chosenPsychologist?.user?.email || assignPsyMeta.psychologistEmail || "") : "",
+          trialPsychologyCriteriaJson: JSON.stringify(assignPsyCriteriaMap),
+          flaggedCriteriaNames,
+          sendPsychologyEmail: assignPsyScreening && (forceResendPsyEmail || assignSendPsyEmail),
+          psychologyNote: assignTrialComment,
         })
       });
 
+      const resData = await r.json().catch(() => ({}));
       if (r.ok) {
         setIsAssignModalOpen(false);
         fetchStudentSummaries();
-        notify("Phân công giáo viên đánh giá học thử thành công!");
+        if (assignPsyScreening && resData.emailSent) {
+          notify(`Đã lưu phiếu học thử & gửi email xác nhận tới GV Tâm lý (${resData.psychologistEmail || ""})!`);
+        } else if (assignPsyScreening && resData.emailError) {
+          notify(`Đã lưu phiếu học thử, nhưng gửi email GV Tâm lý lỗi: ${resData.emailError}`, "err");
+        } else {
+          notify("Đã lưu phân công & kết quả đánh giá học thử thành công!");
+        }
       } else {
-        const errData = await r.json().catch(() => ({}));
-        notify("Lỗi khi phân công: " + (errData?.error || "Vui lòng thử lại"), "err");
+        notify("Lỗi khi lưu phân công học thử: " + (resData?.error || "Vui lòng thử lại"), "err");
       }
     } catch (e) {
       console.error(e);
@@ -5701,6 +5867,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     if (!wf.hasTrialData) {
                                       return <span className="text-[11px] text-slate-300 font-medium">—</span>;
                                     }
+                                    const psyStatusBadge =
+                                      s.trialPsychologyStatus === "EVALUATED"
+                                        ? { text: "TL: Đã đánh giá", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" }
+                                        : s.trialPsychologyStatus === "CONFIRMED"
+                                          ? { text: "TL: Đã xác nhận", cls: "bg-teal-50 text-[#00736E] border-teal-200" }
+                                          : { text: "TL: Chờ xác nhận", cls: "bg-amber-50 text-amber-800 border-amber-200" };
+
                                     return (
                                       <div className="flex flex-col gap-1.5 w-full items-start">
                                         {s.probationaryTeacher || s.probationaryClass ? (
@@ -5711,12 +5884,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                             {s.probationaryClass && (
                                               <span className="text-[10px] text-slate-500 font-medium">{s.probationaryClass}</span>
                                             )}
+                                            {s.trialPsychologyScreening && (
+                                              <div className="flex flex-col gap-0.5 pt-0.5 w-full">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border w-fit ${psyStatusBadge.cls}`}>
+                                                  {psyStatusBadge.text}
+                                                </span>
+                                                {s.trialPsychologistName && (
+                                                  <span className="text-[10px] text-slate-500 truncate max-w-[144px]" title={`GV Tâm lý: ${s.trialPsychologistName}`}>
+                                                    GV TL: <strong className="text-slate-700">{s.trialPsychologistName}</strong>
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
                                             <button
                                               type="button"
                                               onClick={() => openAssignModal(s)}
                                               className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-[#003B3A] bg-[#F0FDFA] hover:bg-[#CCFBF1] active:scale-[0.98] rounded-lg border border-[#99F6E4] transition-all cursor-pointer"
                                             >
-                                              Phân công lại
+                                              Mở phiếu &amp; Phân công
                                             </button>
                                           </div>
                                         ) : (
@@ -5759,6 +5944,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                             ? { text: "BGH: Ý kiến khác", cls: "bg-amber-50 text-amber-800 border-amber-200" }
                                             : { text: "BGH: Chưa duyệt", cls: "bg-amber-50/70 text-amber-700 border-amber-200/70" };
 
+                                    const psyConclusionBadge = s.trialPsychologyScreening
+                                      ? s.trialPsychologyConclusion === "BINH_THUONG"
+                                        ? { text: "TL: Bình thường", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" }
+                                        : s.trialPsychologyConclusion === "CAN_THEO_DOI"
+                                          ? { text: "TL: Cần theo dõi", cls: "bg-amber-50 text-amber-800 border-amber-200" }
+                                          : s.trialPsychologyConclusion === "CAN_CAN_THIEP"
+                                            ? { text: "TL: Cần can thiệp", cls: "bg-rose-50 text-rose-700 border-rose-200" }
+                                            : null
+                                      : null;
+
                                     return (
                                       <div className="flex flex-col gap-1.5 items-start w-full">
                                         <div className="flex flex-wrap items-center gap-1">
@@ -5768,10 +5963,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                           <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${bghHtLabel.cls}`}>
                                             {bghHtLabel.text}
                                           </span>
+                                          {psyConclusionBadge && (
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${psyConclusionBadge.cls}`}>
+                                              {psyConclusionBadge.text}
+                                            </span>
+                                          )}
                                         </div>
                                         <button
                                           type="button"
-                                          onClick={() => openProbationary(s)}
+                                          onClick={() => openAssignModal(s)}
                                           className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-[#003B3A] bg-white hover:bg-[#F0FDFA] rounded-lg border border-slate-200 hover:border-[#008B85] transition-all cursor-pointer"
                                         >
                                           <ClipboardList className="w-3 h-3 text-[#008B85]" />
@@ -9672,120 +9872,539 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         </div>
       </Modal>
 
-      {/* Modal: Phân công Giáo viên Đánh giá Học thử */}
+      {/* Modal: Phân công & Mẫu phiếu đánh giá Học thử (kèm Sàng lọc tâm lý & Kết quả học thử) */}
       <Modal
         open={isAssignModalOpen}
         onClose={() => setIsAssignModalOpen(false)}
-        title="Phân công GVCN đánh giá Học thử"
+        title={`Phân công & Phiếu đánh giá Học thử: ${assignStudent?.fullName || ""}`}
+        size="xl"
         footer={
-          <div className="flex items-center justify-end gap-3 w-full px-6 py-4 bg-slate-50 border-t border-slate-200/60 -mx-6 -mb-6 mt-6 rounded-b-3xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 w-full">
             <button
+              type="button"
               onClick={() => setIsAssignModalOpen(false)}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200/80 active:scale-95 text-slate-500 font-extrabold rounded-2xl transition-all cursor-pointer border-none text-[11px] tracking-wider uppercase"
+              className="px-4 py-2 bg-white hover:bg-slate-50 border border-[#E2E8F0] text-slate-600 font-semibold rounded-xl transition-colors cursor-pointer text-xs"
             >
-              Hủy
+              Đóng
             </button>
-            <button
-              onClick={saveAssignment}
-              disabled={savingAssignment}
-              className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#008075] hover:from-[#008075] hover:to-[#007067] text-white font-black rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer border-none text-[11px] tracking-wider uppercase shadow-md shadow-[#48BFE3]/15"
-            >
-              {savingAssignment ? "Đang lưu..." : "Xác nhận Phân công"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {assignPsyScreening && assignPsychologistId && (
+                <button
+                  type="button"
+                  onClick={() => saveAssignment(true)}
+                  disabled={savingAssignment}
+                  className="px-4 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer text-xs inline-flex items-center gap-1.5"
+                >
+                  <Mail className="w-3.5 h-3.5 text-amber-700" />
+                  {assignPsyMeta.emailSentAt ? "Lưu & Gửi lại email GV Tâm lý" : "Lưu & Gửi email GV Tâm lý"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => saveAssignment(false)}
+                disabled={savingAssignment}
+                className="px-5 py-2 bg-[#003B3A] hover:bg-[#005854] text-white font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer text-xs inline-flex items-center gap-1.5 shadow-2xs"
+              >
+                {savingAssignment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 text-[#5EEAD4]" />}
+                {savingAssignment ? "Đang lưu..." : "Lưu phân công & Kết quả học thử"}
+              </button>
+            </div>
           </div>
         }
       >
-        <div className="space-y-5 py-1">
-          <Field label="Bậc học">
-            <input
-              type="text"
-              value="Mầm non"
-              disabled
-              className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-xs font-bold bg-slate-50 text-slate-400 cursor-not-allowed outline-none select-none"
-            />
-          </Field>
+        {(() => {
+          const selectedTrialTeacherName =
+            teachers.find((t: any) => t.id === assignTeacherId)?.teacherName ||
+            assignStudent?.probationaryTeacher ||
+            "Chưa chọn GV";
+          const selectedPsychologist = teachers.find((t: any) => t.id === assignPsychologistId);
+          const selectedPsychologistName =
+            selectedPsychologist?.teacherName || assignPsyMeta.psychologistName || "";
+          const selectedPsychologistEmail =
+            selectedPsychologist?.email || selectedPsychologist?.user?.email || assignPsyMeta.psychologistEmail || "";
 
-          <Field label="Cơ sở" required>
-            <div className="relative group">
-              <select
-                value={assignCampusId}
-                onChange={e => {
-                  setAssignCampusId(e.target.value);
-                  setAssignClassId("");
-                  setAssignTeacherId("");
-                }}
-                className="w-full px-4 py-3 border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
-              >
-                <option value="">-- Chọn Cơ sở --</option>
-                {filteredCampuses.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.campusName}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+          const userCampuses = campuses.filter((c: any) => currentUser?.campusIds?.includes(c.id));
+          const hasCampusMatch =
+            !currentUser?.campusIds?.length ||
+            userCampuses.some((c: any) =>
+              isPreschoolCampusMatch(assignStudent?.admissionCampus, c.campusCode, c.campusName)
+            );
+          const canApproveTrialBgh = (isSystemAdmin || isBGHUser) && hasCampusMatch;
+
+          return (
+            <div className="space-y-5">
+              {/* Header thông tin bé */}
+              <div className="bg-[#F8FAFC] p-4 rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] flex flex-wrap items-center justify-between gap-4 tabular-nums">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#003B3A] text-[#5EEAD4] flex items-center justify-center shrink-0">
+                    <Baby className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold text-[#00736E]">Phiếu phân công &amp; đánh giá Học thử Mầm non</p>
+                    <h4 className="text-sm font-bold text-[#003B3A]">{assignStudent?.fullName}</h4>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E2E8F0] font-semibold text-slate-700">
+                    Mã bé: {assignStudent?.studentCode}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E2E8F0] font-semibold text-slate-700">
+                    {assignStudent?.grade || "Mầm non"}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-teal-50 border border-teal-200 font-semibold text-[#00736E]">
+                    Cơ sở: {assignStudent?.admissionCampus || "—"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Khối 1: Thông tin phân công lớp & GV đánh giá học thử */}
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 space-y-4">
+                <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-2.5">
+                  <h4 className="text-xs font-bold text-[#003B3A]">1. Thông tin phân công học thử</h4>
+                  <span className="text-[11px] text-slate-500">Chọn lớp học thử &amp; GV đánh giá trực tiếp</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                  <Field label="Cơ sở" required>
+                    <select
+                      value={assignCampusId}
+                      onChange={e => {
+                        setAssignCampusId(e.target.value);
+                        setAssignClassId("");
+                        setAssignTeacherId("");
+                      }}
+                      className={inp}
+                    >
+                      <option value="">-- Chọn Cơ sở --</option>
+                      {filteredCampuses.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.campusName}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Khối">
+                    <select
+                      value={assignGrade}
+                      onChange={e => {
+                        setAssignGrade(e.target.value);
+                        setAssignClassId("");
+                        setAssignTeacherId("");
+                      }}
+                      className={inp}
+                    >
+                      <option value="">-- Tất cả Khối --</option>
+                      {uniquePreschoolClassGrades.map((g: string) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Lớp học thử" required>
+                    <select
+                      value={assignClassId}
+                      onChange={e => handleAssignClassChange(e.target.value)}
+                      disabled={!assignCampusId}
+                      className={`${inp} disabled:opacity-50`}
+                    >
+                      <option value="">-- Chọn Lớp --</option>
+                      {filteredClassesForAssign.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.className}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="GV đánh giá học thử" required>
+                    <select
+                      value={assignTeacherId}
+                      onChange={e => setAssignTeacherId(e.target.value)}
+                      className={inp}
+                    >
+                      <option value="">-- Chọn Giáo viên --</option>
+                      {teachers.map((t: any) => (
+                        <option key={t.id} value={t.id}>
+                          {t.teacherName} ({t.campus?.campusCode || "N/A"})
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Thời gian học thử">
+                    <input
+                      type="text"
+                      value={assignPeriod}
+                      onChange={e => setAssignPeriod(e.target.value)}
+                      placeholder="VD: 25/11 ~ 02/12/2026"
+                      className={inp}
+                    />
+                  </Field>
+                </div>
+
+                {/* Khối Sàng lọc tâm lý */}
+                <div
+                  className={`rounded-xl border p-3.5 space-y-3 transition-colors ${
+                    assignPsyScreening
+                      ? "bg-amber-50/70 border-amber-300"
+                      : "bg-[#F8FAFC] border-[#E2E8F0]"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="inline-flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={assignPsyScreening}
+                        onChange={e => setAssignPsyScreening(e.target.checked)}
+                        className="w-4 h-4 rounded border-slate-300 accent-[#003B3A] cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-[#003B3A]">
+                        Sàng lọc tâm lý (trẻ có dấu hiệu / vấn đề tâm lý cần GV Tâm lý đánh giá)
+                      </span>
+                    </label>
+                    {assignPsyScreening && assignPsyMeta.status && (
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                          assignPsyMeta.status === "EVALUATED"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : assignPsyMeta.status === "CONFIRMED"
+                              ? "bg-teal-50 text-[#00736E] border-teal-200"
+                              : "bg-amber-100/80 text-amber-900 border-amber-300"
+                        }`}
+                      >
+                        {assignPsyMeta.status === "EVALUATED"
+                          ? "GV Tâm lý đã hoàn thành đánh giá"
+                          : assignPsyMeta.status === "CONFIRMED"
+                            ? "GV Tâm lý đã xác nhận tiếp nhận"
+                            : "Đã gửi email · Chờ GV Tâm lý xác nhận"}
+                      </span>
+                    )}
+                  </div>
+
+                  {assignPsyScreening && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                      <Field label="Chọn GV Tâm lý đánh giá" required>
+                        <select
+                          value={assignPsychologistId}
+                          onChange={e => setAssignPsychologistId(e.target.value)}
+                          className={inp}
+                        >
+                          <option value="">-- Chọn GV Tâm lý --</option>
+                          {psychologistTeachers.primary.length > 0 && (
+                            <optgroup label="Chuyên viên / GV Tâm lý">
+                              {psychologistTeachers.primary.map((t: any) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.teacherName}
+                                  {t.email || t.user?.email ? ` (${t.email || t.user?.email})` : ""}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                          <optgroup label="Giáo viên / Chuyên viên khác">
+                            {psychologistTeachers.others.map((t: any) => (
+                              <option key={t.id} value={t.id}>
+                                {t.teacherName} ({t.campus?.campusCode || "N/A"})
+                                {t.email || t.user?.email ? ` — ${t.email || t.user?.email}` : ""}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </select>
+                      </Field>
+
+                      <div className="flex flex-col justify-end space-y-1.5">
+                        <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={assignSendPsyEmail}
+                            onChange={e => setAssignSendPsyEmail(e.target.checked)}
+                            className="w-4 h-4 rounded border-slate-300 accent-[#008B85] cursor-pointer"
+                          />
+                          <span>Tự động gửi email yêu cầu GV Tâm lý đánh giá &amp; phản hồi xác nhận</span>
+                        </label>
+                        {selectedPsychologistEmail ? (
+                          <p className="text-[11px] text-[#00736E]">
+                            Email nhận: <strong>{selectedPsychologistEmail}</strong>
+                            {assignPsyMeta.emailSentAt && (
+                              <span className="text-slate-500 ml-2">
+                                (Đã gửi lúc {new Date(assignPsyMeta.emailSentAt).toLocaleString("vi-VN")})
+                              </span>
+                            )}
+                          </p>
+                        ) : assignPsychologistId ? (
+                          <p className="text-[11px] text-rose-600 font-medium">
+                            Cảnh báo: GV Tâm lý được chọn chưa có địa chỉ email trong hồ sơ nhân sự.
+                          </p>
+                        ) : null}
+                      </div>
+
+                      {(assignPsyMeta.confirmedAt || assignPsyMeta.feedback || assignPsyMeta.conclusion) && (
+                        <div className="md:col-span-2 rounded-xl bg-white border border-teal-200 p-3 text-xs space-y-1">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="font-bold text-[#003B3A]">
+                              Phản hồi xác nhận từ GV Tâm lý ({selectedPsychologistName || "GV Tâm lý"})
+                            </span>
+                            {assignPsyMeta.confirmedAt && (
+                              <span className="text-[11px] text-slate-500 tabular-nums">
+                                Lúc {new Date(assignPsyMeta.confirmedAt).toLocaleString("vi-VN")}
+                              </span>
+                            )}
+                          </div>
+                          {assignPsyMeta.conclusion && (
+                            <p className="text-xs text-slate-700">
+                              Kết luận sàng lọc:{" "}
+                              <strong className="text-[#00736E]">
+                                {assignPsyMeta.conclusion === "BINH_THUONG"
+                                  ? "Phát triển tâm lý bình thường"
+                                  : assignPsyMeta.conclusion === "CAN_THEO_DOI"
+                                    ? "Cần theo dõi thêm trong quá trình học thử"
+                                    : assignPsyMeta.conclusion === "CAN_CAN_THIEP"
+                                      ? "Cần hỗ trợ / can thiệp chuyên sâu"
+                                      : assignPsyMeta.conclusion}
+                              </strong>
+                            </p>
+                          )}
+                          {assignPsyMeta.feedback && (
+                            <p className="text-xs text-slate-600 italic">"{assignPsyMeta.feedback}"</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Khối 2: Mẫu phiếu đánh giá phát triển (bổ sung cột Học thử & GV đánh giá) */}
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-xs font-bold text-[#003B3A]">
+                    2. Mẫu phiếu đánh giá phát triển (bổ sung cột Học thử &amp; GV đánh giá)
+                  </h4>
+                  <span className="text-[11px] text-slate-500">
+                    Tick <strong>Sàng lọc tâm lý</strong> tại cột Học thử nếu phát hiện dấu hiệu cần GV Tâm lý đánh giá
+                  </span>
+                </div>
+
+                {assignLoadingForm ? (
+                  <div className="flex items-center justify-center gap-2 py-10 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] text-xs text-slate-500 font-medium">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#008B85]" />
+                    <span>Đang tải mẫu phiếu đánh giá của bé...</span>
+                  </div>
+                ) : assignDevAreas.length === 0 ? (
+                  <div className="text-center py-8 bg-[#F8FAFC] rounded-2xl border border-dashed border-[#E2E8F0] text-xs text-slate-500">
+                    Chưa có cấu hình tiêu chí phiếu đánh giá cho nhóm tuổi: <strong>{assignStudent?.grade}</strong>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {assignDevAreas.map(area => (
+                      <div key={area.id} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: area.color || "#00A19A" }} />
+                            <span className="text-xs font-bold text-[#003B3A]">{area.name}</span>
+                          </div>
+                          <span className="text-[11px] text-slate-500 tabular-nums">
+                            {area.criteria?.length || 0} tiêu chí
+                          </span>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                <th className="py-2.5 px-3 text-white w-[34%]">Tiêu chí đánh giá</th>
+                                <th className="py-2.5 px-3 text-teal-100 w-[18%]">KQ khảo sát ban đầu</th>
+                                <th className="py-2.5 px-3 text-[#5EEAD4] w-[32%]">Học thử</th>
+                                <th className="py-2.5 px-3 text-white w-[16%]">GV đánh giá</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                              {(area.criteria || []).map((crit, idx) => {
+                                const initSc = assignInitialScores[crit.id];
+                                const trialSc = assignTrialScores[crit.id] || { result: "", note: "" };
+                                const isPsyFlagged = Boolean(assignPsyCriteriaMap[crit.id]);
+
+                                const initBadge =
+                                  initSc?.result === "DAT"
+                                    ? { label: "Đạt", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" }
+                                    : initSc?.result === "KHONG_DAT"
+                                      ? { label: "Không đạt", cls: "bg-rose-50 text-rose-700 border-rose-200" }
+                                      : initSc?.result === "CHUA_THE_HIEN"
+                                        ? { label: "Chưa thể hiện", cls: "bg-slate-100 text-slate-600 border-slate-200" }
+                                        : null;
+
+                                return (
+                                  <tr key={crit.id} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                                    <td className="py-3 px-3 align-top text-slate-800 font-medium leading-relaxed">
+                                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold mr-2 border border-slate-200">
+                                        {idx + 1}
+                                      </span>
+                                      {crit.name}
+                                    </td>
+                                    <td className="py-3 px-3 align-top">
+                                      {initBadge ? (
+                                        <div className="space-y-1">
+                                          <span className={`inline-flex px-2 py-0.5 rounded-md border text-[10px] font-semibold ${initBadge.cls}`}>
+                                            {initBadge.label}
+                                          </span>
+                                          {initSc?.note && (
+                                            <p className="text-[11px] text-slate-500 leading-snug">{initSc.note.replace("|", " · ")}</p>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span className="text-[11px] text-slate-400">Chưa đánh giá</span>
+                                      )}
+                                    </td>
+                                    <td className="py-3 px-3 align-top space-y-2">
+                                      <div className="flex flex-wrap gap-1">
+                                        {[
+                                          { val: "CHUA_THE_HIEN", label: "Chưa thể hiện", active: "bg-amber-600 text-white border-amber-600", idle: "bg-white text-slate-600 border-slate-200 hover:bg-amber-50" },
+                                          { val: "BAT_DAU_THE_HIEN", label: "Bắt đầu thể hiện", active: "bg-[#008B85] text-white border-[#008B85]", idle: "bg-white text-slate-600 border-slate-200 hover:bg-teal-50" },
+                                          { val: "THE_HIEN_TOT", label: "Thể hiện tốt", active: "bg-emerald-600 text-white border-emerald-600", idle: "bg-white text-slate-600 border-slate-200 hover:bg-emerald-50" },
+                                        ].map(opt => (
+                                          <button
+                                            key={opt.val}
+                                            type="button"
+                                            onClick={() =>
+                                              setAssignTrialScores(prev => ({
+                                                ...prev,
+                                                [crit.id]: {
+                                                  ...trialSc,
+                                                  result: trialSc.result === opt.val ? "" : opt.val,
+                                                },
+                                              }))
+                                            }
+                                            className={`px-2 py-1 rounded-lg border text-[10px] font-semibold transition-colors cursor-pointer ${
+                                              trialSc.result === opt.val ? opt.active : opt.idle
+                                            }`}
+                                          >
+                                            {opt.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={trialSc.note || ""}
+                                        onChange={e =>
+                                          setAssignTrialScores(prev => ({
+                                            ...prev,
+                                            [crit.id]: { ...trialSc, note: e.target.value },
+                                          }))
+                                        }
+                                        placeholder="Ghi chú quan sát học thử..."
+                                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] bg-white outline-none focus:border-[#008B85]"
+                                      />
+                                      <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                                        <input
+                                          type="checkbox"
+                                          checked={isPsyFlagged}
+                                          onChange={e => {
+                                            const checked = e.target.checked;
+                                            setAssignPsyCriteriaMap(prev => ({ ...prev, [crit.id]: checked }));
+                                            if (checked) setAssignPsyScreening(true);
+                                          }}
+                                          className="w-3.5 h-3.5 rounded border-amber-400 accent-amber-600 cursor-pointer"
+                                        />
+                                        <span className={`text-[11px] font-semibold ${isPsyFlagged ? "text-amber-800" : "text-slate-500"}`}>
+                                          Sàng lọc tâm lý
+                                        </span>
+                                      </label>
+                                    </td>
+                                    <td className="py-3 px-3 align-top space-y-1">
+                                      <div className="text-xs font-semibold text-[#003B3A]">
+                                        {selectedTrialTeacherName}
+                                      </div>
+                                      {isPsyFlagged && (
+                                        <div className="inline-flex flex-col px-2 py-1 rounded-md bg-amber-50 border border-amber-200 text-[10px] text-amber-900">
+                                          <span className="font-semibold">GV Tâm lý:</span>
+                                          <span>{selectedPsychologistName || "Chưa chọn"}</span>
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Khối 3: Kết quả học thử & Kết quả đánh giá học thử */}
+              <div className="bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] p-4 space-y-4">
+                <h4 className="text-xs font-bold text-[#003B3A] border-b border-[#E2E8F0] pb-2">
+                  3. Kết quả học thử &amp; Kết quả đánh giá học thử
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Kết quả học thử (GV đánh giá) */}
+                  <div className="bg-white rounded-xl border border-[#E2E8F0] p-3.5 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-800">Kết quả học thử (GV đánh giá)</span>
+                      <div className="flex gap-1.5">
+                        {[
+                          { val: "DAT", label: "Đạt", active: "bg-emerald-600 text-white border-emerald-600", idle: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
+                          { val: "CHUA_DAT", label: "Chưa đạt", active: "bg-rose-600 text-white border-rose-600", idle: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100" },
+                        ].map(opt => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            onClick={() => setAssignTrialResult(assignTrialResult === opt.val ? "" : opt.val)}
+                            className={`px-3 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
+                              assignTrialResult === opt.val ? opt.active : opt.idle
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <textarea
+                      value={assignTrialComment}
+                      onChange={e => setAssignTrialComment(e.target.value)}
+                      rows={2}
+                      placeholder="Nhập nhận xét của giáo viên sau quá trình học thử..."
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#008B85] bg-white"
+                    />
+                  </div>
+
+                  {/* Kết quả đánh giá học thử (BGH MN duyệt) */}
+                  <div className="bg-white rounded-xl border border-[#E2E8F0] p-3.5 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-[#003B3A]">Kết quả đánh giá học thử (BGH MN)</span>
+                      <div className="flex gap-1.5">
+                        {[
+                          { val: "DAT", label: "Đạt", active: "bg-emerald-600 text-white border-emerald-600", idle: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
+                          { val: "KHONG_DAT", label: "Không đạt", active: "bg-rose-600 text-white border-rose-600", idle: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100" },
+                          { val: "Y_KIEN_KHAC", label: "Ý kiến khác", active: "bg-amber-600 text-white border-amber-600", idle: "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100" },
+                        ].map(opt => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            disabled={!canApproveTrialBgh}
+                            onClick={() => setAssignTrialBghStatus(assignTrialBghStatus === opt.val ? "" : opt.val)}
+                            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                              assignTrialBghStatus === opt.val ? opt.active : opt.idle
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <textarea
+                      value={assignTrialBghComment}
+                      onChange={e => setAssignTrialBghComment(e.target.value)}
+                      disabled={!canApproveTrialBgh}
+                      rows={2}
+                      placeholder={canApproveTrialBgh ? "Nhập ý kiến phê duyệt kết quả đánh giá học thử của BGH..." : "Chỉ BGH Mầm non mới có quyền phê duyệt"}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#008B85] bg-white disabled:bg-slate-50 disabled:text-slate-500"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </Field>
-
-          <Field label="Khối" required>
-            <div className="relative group">
-              <select
-                value={assignGrade}
-                onChange={e => {
-                  setAssignGrade(e.target.value);
-                  setAssignClassId("");
-                  setAssignTeacherId("");
-                }}
-                className="w-full px-4 py-3 border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
-              >
-                <option value="">-- Tất cả Khối --</option>
-                {uniquePreschoolClassGrades.map((g: string) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-              </div>
-            </div>
-          </Field>
-
-          <Field label="Tên lớp" required>
-            <div className="relative group">
-              <select
-                value={assignClassId}
-                onChange={e => handleAssignClassChange(e.target.value)}
-                disabled={!assignCampusId}
-                className="w-full px-4 py-3 border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">-- Chọn Lớp --</option>
-                {filteredClassesForAssign.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.className}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-              </div>
-            </div>
-          </Field>
-
-          <Field label="Giáo viên Đánh giá (GVCN bám sát)" required>
-            <div className="relative group">
-              <select
-                value={assignTeacherId}
-                onChange={e => setAssignTeacherId(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
-              >
-                <option value="">-- Chọn Giáo viên --</option>
-                {teachers.map((t: any) => (
-                  <option key={t.id} value={t.id}>{t.teacherName} ({t.campus?.campusCode || "N/A"})</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-slate-800 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-              </div>
-            </div>
-          </Field>
-        </div>
+          );
+        })()}
       </Modal>
       
       {/* Modal: Criteria */}

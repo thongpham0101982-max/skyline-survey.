@@ -688,3 +688,177 @@ export function generatePreschoolB10ApprovalEmailHtml(params: {
 </html>
   `;
 }
+
+export interface PreschoolPsychologyConfirmPayload {
+  v: 1;
+  studentId: string;
+  psychologistId?: string;
+  psychologistName: string;
+  psychologistEmail: string;
+  exp: number;
+}
+
+/**
+ * Tạo token ký HMAC-SHA256 (hiệu lực 14 ngày) để GV Tâm lý xác nhận tiếp nhận & gửi phản hồi sàng lọc tâm lý học thử.
+ */
+export function createPreschoolPsychologyToken(
+  payload: Omit<PreschoolPsychologyConfirmPayload, "v" | "exp">,
+  ttlMs = 14 * 24 * 60 * 60 * 1000
+): string {
+  const fullPayload: PreschoolPsychologyConfirmPayload = {
+    ...payload,
+    psychologistEmail: (payload.psychologistEmail || "").trim().toLowerCase(),
+    v: 1,
+    exp: Date.now() + ttlMs,
+  };
+  const encoded = Buffer.from(JSON.stringify(fullPayload), "utf8").toString("base64url");
+  const sig = crypto.createHmac("sha256", SECRET).update(`psy:${encoded}`).digest("base64url");
+  return `${encoded}.${sig}`;
+}
+
+/**
+ * Xác thực token phản hồi xác nhận sàng lọc tâm lý từ Email.
+ */
+export function verifyPreschoolPsychologyToken(
+  token: string
+): { valid: true; payload: PreschoolPsychologyConfirmPayload } | { valid: false; reason: string } {
+  if (!token || !token.includes(".")) {
+    return { valid: false, reason: "Liên kết xác nhận không hợp lệ." };
+  }
+  const [encoded, sig] = token.split(".");
+  if (!encoded || !sig) {
+    return { valid: false, reason: "Liên kết xác nhận bị thiếu thành phần." };
+  }
+  const expectedSig = crypto.createHmac("sha256", SECRET).update(`psy:${encoded}`).digest("base64url");
+  try {
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expectedSig);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return { valid: false, reason: "Chữ ký xác thực không hợp lệ." };
+    }
+  } catch {
+    return { valid: false, reason: "Lỗi kiểm tra chữ ký xác thực." };
+  }
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(encoded, "base64url").toString("utf8")
+    ) as PreschoolPsychologyConfirmPayload;
+    if (parsed.v !== 1 || !parsed.exp || Date.now() > parsed.exp) {
+      return {
+        valid: false,
+        reason: "Liên kết xác nhận đã hết hạn (quá 14 ngày). Vui lòng liên hệ Giáo vụ / BGH Mầm non để gửi lại.",
+      };
+    }
+    return { valid: true, payload: parsed };
+  } catch {
+    return { valid: false, reason: "Dữ liệu liên kết xác nhận bị lỗi." };
+  }
+}
+
+/**
+ * Tạo nội dung Email mời GV Tâm lý đánh giá sàng lọc tâm lý & phản hồi xác nhận (giai đoạn Học thử Mầm non).
+ */
+export function renderPreschoolPsychologyScreeningEmailHtml(params: {
+  student: {
+    id: string;
+    fullName: string;
+    studentCode: string;
+    grade?: string | null;
+    admissionCampus?: string | null;
+    probationaryClass?: string | null;
+    probationaryTeacher?: string | null;
+    probationaryPeriod?: string | null;
+  };
+  psychologistId?: string;
+  psychologistName: string;
+  psychologistEmail: string;
+  flaggedCriteriaNames?: string[];
+  note?: string;
+  assignedByName?: string;
+  baseUrl: string;
+}): string {
+  const {
+    student,
+    psychologistId,
+    psychologistName,
+    psychologistEmail,
+    flaggedCriteriaNames = [],
+    note = "",
+    assignedByName = "Ban Giám Hiệu Mầm non",
+    baseUrl,
+  } = params;
+
+  const token = createPreschoolPsychologyToken({
+    studentId: student.id,
+    psychologistId,
+    psychologistName,
+    psychologistEmail,
+  });
+
+  const confirmUrl = `${baseUrl}/api/admin/quick-approve/preschool?pt=${encodeURIComponent(token)}`;
+  const portalUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=preschool`;
+
+  const criteriaHtml =
+    flaggedCriteriaNames.length > 0
+      ? `<div style="margin:14px 0;padding:12px 14px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;">
+           <div style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:6px;">Tiêu chí cần lưu ý sàng lọc tâm lý:</div>
+           <ul style="margin:0;padding-left:18px;font-size:12.5px;color:#78350F;line-height:1.5;">
+             ${flaggedCriteriaNames.map(c => `<li>${c}</li>`).join("")}
+           </ul>
+         </div>`
+      : "";
+
+  return `
+<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:'Segoe UI',Arial,sans-serif;color:#0F172A;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;">
+        <tr>
+          <td style="background:#003B3A;padding:22px 28px;color:#FFFFFF;border-bottom:4px solid #00A19A;">
+            <div style="font-size:12px;color:#5EEAD4;font-weight:600;margin-bottom:4px;">Hệ thống Giáo dục Sky-Line · Khảo sát &amp; Học thử Mầm non</div>
+            <div style="font-size:19px;font-weight:700;">Yêu cầu Sàng lọc tâm lý &amp; Phản hồi xác nhận</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:24px 28px;">
+            <p style="margin:0 0 12px 0;font-size:14px;">Kính gửi Cô/Thầy <strong>${psychologistName}</strong>,</p>
+            <p style="margin:0 0 16px 0;font-size:13.5px;color:#334155;line-height:1.6;">
+              Trong quá trình phân công học thử Mầm non, bộ phận chuyên môn (${assignedByName}) ghi nhận trẻ dưới đây cần được <strong>Sàng lọc tâm lý</strong> và phân công Cô/Thầy thực hiện đánh giá, đồng thời phản hồi xác nhận trên hệ thống SSM.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:16px;font-size:13px;">
+              <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#475569;width:38%;">Họ và tên trẻ</td><td style="padding:9px 14px;font-weight:700;color:#0F172A;">${student.fullName} (${student.studentCode})</td></tr>
+              <tr><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Nhóm tuổi / Cơ sở</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.grade || "Mầm non"} · ${student.admissionCampus || "Sky-Line"}</td></tr>
+              <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Lớp học thử</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;font-weight:600;color:#003B3A;">${student.probationaryClass || "Đang sắp xếp"}</td></tr>
+              <tr><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">GV đánh giá học thử</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.probationaryTeacher || "Chưa phân công"}</td></tr>
+              ${student.probationaryPeriod ? `<tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Thời gian học thử</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.probationaryPeriod}</td></tr>` : ""}
+              ${note ? `<tr><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Ghi chú chuyên môn</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;color:#334155;">${note}</td></tr>` : ""}
+            </table>
+
+            ${criteriaHtml}
+
+            <div style="text-align:center;margin:20px 0 14px 0;">
+              <a href="${confirmUrl}" style="display:inline-block;background:#003B3A;color:#FFFFFF;text-decoration:none;font-weight:700;font-size:14px;padding:13px 26px;border-radius:10px;">
+                Xác nhận tiếp nhận &amp; Gửi phản hồi đánh giá tâm lý
+              </a>
+            </div>
+
+            <div style="text-align:center;">
+              <a href="${portalUrl}" style="display:inline-block;color:#00736E;font-size:12.5px;font-weight:600;text-decoration:underline;">
+                Mở trang Xét duyệt kết quả Mầm non trên SSM →
+              </a>
+            </div>
+            <p style="margin:18px 0 0 0;font-size:11px;color:#64748B;line-height:1.5;">
+              Liên kết xác nhận có hiệu lực trong 14 ngày. Sau khi Cô/Thầy gửi phản hồi xác nhận, kết quả sẽ tự động đồng bộ trực tiếp vào phiếu Phân công học thử &amp; Xét duyệt trên hệ thống SSM.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+  `;
+}

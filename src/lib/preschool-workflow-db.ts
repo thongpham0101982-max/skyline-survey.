@@ -27,6 +27,16 @@ export async function ensurePreschoolWorkflowSchema(): Promise<void> {
     `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "archivedAt" DATETIME`,
     `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "archivedBy" TEXT`,
     `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "archiveNote" TEXT`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologyScreening" BOOLEAN NOT NULL DEFAULT false`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologistId" TEXT`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologistName" TEXT`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologistEmail" TEXT`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologyEmailSentAt" DATETIME`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologyStatus" TEXT`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologyConfirmedAt" DATETIME`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologyFeedback" TEXT`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologyConclusion" TEXT`,
+    `ALTER TABLE "PreschoolInputAssessmentStudent" ADD COLUMN "trialPsychologyCriteriaJson" TEXT`,
   ]
 
   for (const sql of studentAlterColumns) {

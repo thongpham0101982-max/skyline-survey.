@@ -19,7 +19,10 @@ import {
   suggestPreschoolForm,
   validateFollowUpBusinessDays,
 } from "@/lib/preschool-workflow"
-import { generatePreschoolB10ApprovalEmailHtml } from "@/lib/preschool-approval-service"
+import {
+  generatePreschoolB10ApprovalEmailHtml,
+  renderPreschoolPsychologyScreeningEmailHtml,
+} from "@/lib/preschool-approval-service"
 import { sendEmail } from "@/lib/mail"
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine"
 
@@ -1354,6 +1357,144 @@ export async function PATCH(
         finalApprovedOutcome: decision,
         admissionResult,
       })
+    }
+
+    // 11. B6: Lưu phân công học thử, kết quả đánh giá học thử & Sàng lọc tâm lý (gửi email GV Tâm lý)
+    if (action === "SAVE_TRIAL_WORKFLOW") {
+      if (!hasAnyRole(userRoles, GIAOVU_ROLES) && !hasAnyRole(userRoles, REVIEWER_ROLES) && !userRoles.includes("TEACHER")) {
+        return NextResponse.json({ error: "Bạn không có quyền cập nhật thông tin học thử." }, { status: 403 })
+      }
+
+      const probationaryClass = body.probationaryClass !== undefined ? (String(body.probationaryClass || "").trim() || null) : student.probationaryClass || null
+      const probationaryTeacher = body.probationaryTeacher !== undefined ? (String(body.probationaryTeacher || "").trim() || null) : student.probationaryTeacher || null
+      const probationaryPeriod = body.probationaryPeriod !== undefined ? (String(body.probationaryPeriod || "").trim() || null) : student.probationaryPeriod || null
+      const probationaryResult = body.probationaryResult !== undefined ? (String(body.probationaryResult || "").trim() || null) : student.probationaryResult || null
+      const probationaryComment = body.probationaryComment !== undefined ? (String(body.probationaryComment || "").trim() || null) : student.probationaryComment || null
+      const probationaryBghStatus = body.probationaryBghStatus !== undefined ? (String(body.probationaryBghStatus || "").trim() || null) : student.probationaryBghStatus || null
+      const probationaryBghComment = body.probationaryBghComment !== undefined ? (String(body.probationaryBghComment || "").trim() || null) : student.probationaryBghComment || null
+
+      const trialPsychologyScreening = Boolean(body.trialPsychologyScreening)
+      const trialPsychologistId = trialPsychologyScreening ? (String(body.trialPsychologistId || "").trim() || null) : null
+      const trialPsychologistName = trialPsychologyScreening ? (String(body.trialPsychologistName || "").trim() || null) : null
+      const trialPsychologistEmail = trialPsychologyScreening ? (String(body.trialPsychologistEmail || "").trim() || null) : null
+      const trialPsychologyCriteriaJson =
+        body.trialCriteriaPayload !== undefined
+          ? JSON.stringify(body.trialCriteriaPayload)
+          : student.trialPsychologyCriteriaJson || null
+
+      const bghChanged = body.probationaryBghStatus !== undefined && body.probationaryBghStatus !== student.probationaryBghStatus
+      let emailSent = false
+      let emailSentAt = student.trialPsychologyEmailSentAt || null
+      let nextPsyStatus = student.trialPsychologyStatus || (trialPsychologyScreening ? "PENDING" : null)
+
+      if (trialPsychologyScreening && body.sendPsychologyEmail && trialPsychologistEmail && trialPsychologistEmail.includes("@")) {
+        const host = req.headers.get("host") || "ssm.skylineschool.edu.vn"
+        const protocol = req.headers.get("x-forwarded-proto") || "https"
+        const baseUrl = `${protocol}://${host}`
+        const flaggedNames: string[] = Array.isArray(body.flaggedCriteriaNames) ? body.flaggedCriteriaNames : []
+        const html = renderPreschoolPsychologyScreeningEmailHtml({
+          student: {
+            id: student.id,
+            fullName: student.fullName,
+            studentCode: student.studentCode,
+            grade: student.grade,
+            admissionCampus: student.admissionCampus || student.registeredCampus,
+            probationaryClass,
+            probationaryTeacher,
+            probationaryPeriod,
+          },
+          psychologistId: trialPsychologistId || undefined,
+          psychologistName: trialPsychologistName || trialPsychologistEmail,
+          psychologistEmail: trialPsychologistEmail,
+          flaggedCriteriaNames: flaggedNames,
+          note: String(body.psychologyNote || probationaryComment || ""),
+          assignedByName: actorName,
+          baseUrl,
+        })
+        await sendEmail({
+          to: trialPsychologistEmail,
+          subject: `[Sky-Line SSM] Yêu cầu Sàng lọc tâm lý (Học thử Mầm non) — Bé ${student.fullName} (${student.studentCode})`,
+          html,
+          replyTo: "ktdbcl@skylineschool.edu.vn",
+        })
+        emailSent = true
+        emailSentAt = nowIso
+        if (!nextPsyStatus || nextPsyStatus === "NONE") nextPsyStatus = "PENDING"
+      }
+
+      await prisma.$executeRawUnsafe(
+        `UPDATE "PreschoolInputAssessmentStudent"
+         SET "probationaryClass" = ?,
+             "probationaryTeacher" = ?,
+             "probationaryPeriod" = ?,
+             "probationaryResult" = ?,
+             "probationaryComment" = ?,
+             "probationaryBghStatus" = ?,
+             "probationaryBghComment" = ?,
+             "probationaryBghUser" = ?,
+             "probationaryBghDate" = ?,
+             "trialPsychologyScreening" = ?,
+             "trialPsychologistId" = ?,
+             "trialPsychologistName" = ?,
+             "trialPsychologistEmail" = ?,
+             "trialPsychologyEmailSentAt" = ?,
+             "trialPsychologyStatus" = ?,
+             "trialPsychologyCriteriaJson" = ?,
+             "updatedAt" = ?
+         WHERE "id" = ?`,
+        probationaryClass,
+        probationaryTeacher,
+        probationaryPeriod,
+        probationaryResult,
+        probationaryComment,
+        probationaryBghStatus,
+        probationaryBghComment,
+        bghChanged ? actorName : student.probationaryBghUser || null,
+        bghChanged ? nowIso : student.probationaryBghDate || null,
+        trialPsychologyScreening ? 1 : 0,
+        trialPsychologistId,
+        trialPsychologistName,
+        trialPsychologistEmail,
+        emailSentAt,
+        nextPsyStatus,
+        trialPsychologyCriteriaJson,
+        nowIso,
+        id
+      )
+
+      if (trialPsychologyScreening && trialPsychologistId) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE "PreschoolAssessmentRound"
+           SET "assignedPsychologistId" = ?, "assignedPsychologistName" = ?, "updatedAt" = ?
+           WHERE "id" = ?`,
+          trialPsychologistId,
+          trialPsychologistName,
+          nowIso,
+          targetRoundId
+        )
+      }
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: targetRoundId,
+        action: emailSent ? "SEND_PSYCHOLOGY_SCREENING_EMAIL" : "ASSIGN_TRIAL",
+        fromStatus: student.workflowStatus,
+        toStatus: student.workflowStatus,
+        actorId: ctx.userId,
+        actorName,
+        actorRole: ctx.role,
+        detail: {
+          probationaryClass,
+          probationaryTeacher,
+          probationaryResult,
+          probationaryBghStatus,
+          trialPsychologyScreening,
+          trialPsychologistName,
+          emailSent,
+        },
+      })
+
+      return NextResponse.json({ success: true, emailSent, trialPsychologyStatus: nextPsyStatus })
     }
 
     // 11. B11B: Ghi nhận nội dung trao đổi với phụ huynh (bắt buộc khi Chưa đạt trước khi xuất BM.KTĐBCL.04)

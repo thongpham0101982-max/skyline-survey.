@@ -208,8 +208,9 @@ export async function GET(req: NextRequest) {
         }
       })
 
-      // Fetch latest PreschoolAssessmentRound per student for assignedTeacherName, assignedMedicalName & B4A health data
+      // Fetch latest PreschoolAssessmentRound & trial psychology screening columns per student
       const latestRoundByStudent: Record<string, any> = {}
+      const trialPsyByStudent: Record<string, any> = {}
       if (studentIds.length > 0) {
         try {
           const placeholders = studentIds.map(() => "?").join(",")
@@ -224,6 +225,33 @@ export async function GET(req: NextRequest) {
           )
           for (const r of roundRows || []) {
             latestRoundByStudent[r.studentId] = r
+          }
+        } catch {}
+
+        try {
+          const placeholders = studentIds.map(() => "?").join(",")
+          const psyRows = await prisma.$queryRawUnsafe<any[]>(
+            `SELECT "id", "trialPsychologyScreening", "trialPsychologistId", "trialPsychologistName",
+                    "trialPsychologistEmail", "trialPsychologyEmailSentAt", "trialPsychologyStatus",
+                    "trialPsychologyConfirmedAt", "trialPsychologyFeedback", "trialPsychologyConclusion",
+                    "trialPsychologyCriteriaJson"
+             FROM "PreschoolInputAssessmentStudent"
+             WHERE "id" IN (${placeholders})`,
+            ...studentIds
+          )
+          for (const pr of psyRows || []) {
+            trialPsyByStudent[pr.id] = {
+              trialPsychologyScreening: Boolean(Number(pr.trialPsychologyScreening || 0)),
+              trialPsychologistId: pr.trialPsychologistId || "",
+              trialPsychologistName: pr.trialPsychologistName || "",
+              trialPsychologistEmail: pr.trialPsychologistEmail || "",
+              trialPsychologyEmailSentAt: pr.trialPsychologyEmailSentAt || null,
+              trialPsychologyStatus: pr.trialPsychologyStatus || "",
+              trialPsychologyConfirmedAt: pr.trialPsychologyConfirmedAt || null,
+              trialPsychologyFeedback: pr.trialPsychologyFeedback || "",
+              trialPsychologyConclusion: pr.trialPsychologyConclusion || "",
+              trialPsychologyCriteriaJson: pr.trialPsychologyCriteriaJson || "",
+            }
           }
         } catch {}
       }
@@ -335,8 +363,11 @@ export async function GET(req: NextRequest) {
         const datCount = studentScoresList.filter((sc: any) => sc.result === "DAT").length;
         const khongDatCount = studentScoresList.filter((sc: any) => sc.result === "KHONG_DAT").length;
 
+        const trialPsy = trialPsyByStudent[s.id] || {};
+
         return {
           ...s,
+          ...trialPsy,
           assignedTeachers,
           assignedMedicalStaff,
           b4aHealth: latestRound
