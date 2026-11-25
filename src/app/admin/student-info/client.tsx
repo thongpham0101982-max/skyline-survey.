@@ -3,6 +3,8 @@
 import { sortVietnameseStudents } from "@/lib/vietnameseSort";
 import { getCurrentMonthYearKey, getBatchMonthYearKey, getStudentSurveyMonthKey, sortMonthYearKeysDesc } from "@/lib/surveyMonth";
 import TciResultReviewPanel from "@/components/tci/TciResultReviewPanel";
+import { PreschoolDossierDrawer } from "@/app/admin/khao-sat-mam-non/PreschoolDossierDrawer";
+import { useRouter } from "next/navigation";
 import { useState, useMemo, useRef, useEffect, Fragment, useCallback } from "react";
 import { 
   Search, 
@@ -425,17 +427,24 @@ export function StudentInfoClient({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Selected student for details modal
+  // Selected student for details modal / Preschool B1–B13 Dossier Drawer
+  const router = useRouter();
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [dossierStudentId, setDossierStudentId] = useState<string | null>(null);
   const [detailsSubTab, setDetailsSubTab] = useState<"results" | "admin" | "academic">("results");
 
-  // Reset details subtab to overview when modal opens
+  // Reset details subtab to overview when modal opens (and route Preschool directly to B1–B13 Dossier Drawer)
   useEffect(() => {
     if (isDetailsOpen) {
+      if (activeTab === "preschool" && selectedStudent?.id) {
+        setIsDetailsOpen(false);
+        setDossierStudentId(selectedStudent.id);
+        return;
+      }
       setDetailsSubTab("results");
     }
-  }, [isDetailsOpen]);
+  }, [isDetailsOpen, activeTab, selectedStudent]);
 
 
 
@@ -3812,14 +3821,31 @@ export function StudentInfoClient({
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedStudent(s);
-                                setIsDetailsOpen(true);
+                                if (activeTab === "preschool") {
+                                  setDossierStudentId(s.id);
+                                } else {
+                                  setSelectedStudent(s);
+                                  setIsDetailsOpen(true);
+                                }
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs cursor-pointer transition-colors"
-                              title="Xem chi tiết kết quả khảo sát"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs cursor-pointer transition-colors whitespace-nowrap"
+                              title={
+                                activeTab === "preschool"
+                                  ? "Mở Hồ sơ B1–B13 (Tâm lý BM.09 / Hẹn trải nghiệm / Xuất thư)"
+                                  : "Xem chi tiết kết quả khảo sát"
+                              }
                             >
-                              <Eye className="w-3.5 h-3.5" />
-                              Chi tiết
+                              {activeTab === "preschool" ? (
+                                <>
+                                  <FileText className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                  Hồ sơ B1–B13
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  Chi tiết
+                                </>
+                              )}
                             </button>
                           </div>
                         </td>
@@ -4095,14 +4121,31 @@ export function StudentInfoClient({
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedStudent(s);
-                                setIsDetailsOpen(true);
+                                if (activeTab === "preschool") {
+                                  setDossierStudentId(s.id);
+                                } else {
+                                  setSelectedStudent(s);
+                                  setIsDetailsOpen(true);
+                                }
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs cursor-pointer transition-colors"
-                              title="Xem chi tiết kết quả khảo sát"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs cursor-pointer transition-colors whitespace-nowrap"
+                              title={
+                                activeTab === "preschool"
+                                  ? "Mở Hồ sơ B1–B13 (Tâm lý BM.09 / Hẹn trải nghiệm / Xuất thư)"
+                                  : "Xem chi tiết kết quả khảo sát"
+                              }
                             >
-                              <Eye className="w-3.5 h-3.5" />
-                              Chi tiết
+                              {activeTab === "preschool" ? (
+                                <>
+                                  <FileText className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                  Hồ sơ B1–B13
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  Chi tiết
+                                </>
+                              )}
                             </button>
                           </div>
                         </td>
@@ -4537,14 +4580,31 @@ export function StudentInfoClient({
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedStudent(s);
-                                setIsDetailsOpen(true);
+                                if (activeTab === "preschool") {
+                                  setDossierStudentId(s.id);
+                                } else {
+                                  setSelectedStudent(s);
+                                  setIsDetailsOpen(true);
+                                }
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs cursor-pointer transition-colors"
-                              title="Xem chi tiết kết quả khảo sát"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs cursor-pointer transition-colors whitespace-nowrap"
+                              title={
+                                activeTab === "preschool"
+                                  ? "Mở Hồ sơ B1–B13 (Tâm lý BM.09 / Hẹn trải nghiệm / Xuất thư)"
+                                  : "Xem chi tiết kết quả khảo sát"
+                              }
                             >
-                              <Eye className="w-3.5 h-3.5" />
-                              Chi tiết
+                              {activeTab === "preschool" ? (
+                                <>
+                                  <FileText className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                  Hồ sơ B1–B13
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  Chi tiết
+                                </>
+                              )}
                             </button>
                           </div>
                         </td>
@@ -6906,6 +6966,19 @@ export function StudentInfoClient({
           </div>
         </div>
       )}
+      <PreschoolDossierDrawer
+        studentId={dossierStudentId}
+        onClose={() => setDossierStudentId(null)}
+        onUpdated={() => router.refresh()}
+        staffUsers={(teachers || [])
+          .filter((t: any) => t?.user?.id)
+          .map((t: any) => ({
+            id: t.user.id,
+            fullName: t.teacherName || t.user.fullName || t.email || "Giáo viên",
+            email: t.email || t.user.email || "",
+            role: t.user.role || "TEACHER",
+          }))}
+      />
       {/* Dialog Form: Đăng ký Khảo sát lại */}
       {retestStudent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
