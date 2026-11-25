@@ -1275,7 +1275,7 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
         const parsed = JSON.parse(cfg.name || cfg.content || "{}");
         if (cfg.code === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
           const cObj = parsed?.campuses?.[campusCode];
-          addEmails(cObj?.bghmn, `BGH / NT Mầm non ${campusCode}`);
+          addEmails(cObj?.bghmn, `Nhóm trưởng chuyên môn / BGH MN ${campusCode}`);
           addEmails(cObj?.tuVan || cObj?.tuvan, `Tư vấn tuyển sinh ${campusCode}`);
           addEmails(cObj?.giaoVu || cObj?.giaovu, `Giáo vụ cơ sở ${campusCode}`);
         }
@@ -1283,7 +1283,7 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
           const cObj = parsed?.campuses?.[campusCode];
           addEmails(cObj?.tuvan || cObj?.tuVan, `Tư vấn tuyển sinh ${campusCode}`);
           addEmails(cObj?.giaovu || cObj?.giaoVu, `Giáo vụ cơ sở ${campusCode}`);
-          addEmails(cObj?.bgh, `BGH ${campusCode}`);
+          addEmails(cObj?.bghmn, `Nhóm trưởng chuyên môn / BGH MN ${campusCode}`);
         }
       } catch {}
     }
@@ -1306,8 +1306,8 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
         const roleUp = String(u.role || "").toUpperCase();
         const isTuVan = ["TU_VAN", "TU_VAN_CS", "TVCS", "TU_VAN_TS", "TU_VAN_TUYEN_SINH"].includes(roleUp);
         const isGiaoVu = ["GIAO_VU", "GIAO_VU_CS", "GVCS", "GIAOVU"].includes(roleUp);
-        const isBgh = ["BGH_MN", "NHOM_TRUONG_MN", "BGH_CS", "BGH MN", "BGH"].includes(roleUp);
-        if (!isTuVan && !isGiaoVu && !isBgh) continue;
+        const isNtcm = ["BGH_MN", "NHOM_TRUONG_MN", "NHOM_TRUONG_CM", "TTCM", "TO_TRUONG_CM", "BGH MN"].includes(roleUp);
+        if (!isTuVan && !isGiaoVu && !isNtcm) continue;
         const e = String(u.email || "").trim().toLowerCase();
         if (e.includes("@") && e !== "admin@skyline.edu") {
           const existing = recMap.get(e);
@@ -1315,7 +1315,7 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
             ? `Tư vấn tuyển sinh ${campusCode}`
             : isGiaoVu
               ? `Giáo vụ cơ sở ${campusCode}`
-              : `BGH / NT Mầm non ${campusCode}`;
+              : `Nhóm trưởng chuyên môn / BGH MN ${campusCode}`;
           recMap.set(e, {
             fullName: u.fullName || existing?.fullName || e.split("@")[0],
             email: e,
@@ -1358,7 +1358,7 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
     addEmails(DEFAULT_GIAOVU_BY_CAMPUS[campusCode], `Giáo vụ cơ sở ${campusCode}`);
   }
   if (campusCode && DEFAULT_BGH_MN[campusCode]) {
-    addEmails(DEFAULT_BGH_MN[campusCode], `BGH / NT Mầm non ${campusCode}`);
+    addEmails(DEFAULT_BGH_MN[campusCode], `Nhóm trưởng chuyên môn / BGH MN ${campusCode}`);
   }
 
   return { campusStr, campusCode, recipients: Array.from(recMap.values()) };
@@ -1407,7 +1407,7 @@ export function renderPreschoolGdcsResultNotificationEmailHtml(params: {
         </tr>
         <tr>
           <td style="padding:22px 26px;font-size:13.5px;line-height:1.6;">
-            <p style="margin:0 0 12px 0;">Kính gửi Bộ phận <strong>Tư vấn tuyển sinh</strong>, <strong>Giáo vụ cơ sở</strong> và <strong>BGH / Nhóm trưởng Mầm non ${campusStr || campusCode}</strong>,</p>
+            <p style="margin:0 0 12px 0;">Kính gửi Bộ phận <strong>Giáo vụ cơ sở</strong>, <strong>Tư vấn tuyển sinh</strong> và <strong>Nhóm trưởng chuyên môn Mầm non ${campusStr || campusCode}</strong>,</p>
             <p style="margin:0 0 14px 0;color:#334155;">Giám đốc Điều hành Cơ sở đã hoàn tất phê duyệt kết quả khảo sát đầu vào cho học sinh dưới đây:</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;font-size:13px;margin-bottom:16px;">
               <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#64748B;width:36%;">Học sinh</td><td style="padding:9px 14px;font-weight:700;color:#003B3A;">${student.fullName} (${student.studentCode})</td></tr>

@@ -343,7 +343,7 @@ export function PreschoolApprovalEmailConfigModal({ isOpen, onClose, config, onS
                 <div className="flex items-center justify-between">
                   <label className="font-semibold text-[#003B3A] flex items-center gap-1.5">
                     <Users className="h-4 w-4 text-[#00A19A]" />
-                    Email Ban Giám hiệu Mầm non (BGHMN) — {activeTab}
+                    Email Nhóm trưởng chuyên môn / BGH Mầm non — {activeTab}
                   </label>
                   <span className="text-[11px] text-slate-500 tabular-nums">
                     {splitEmails(currentCampus.bghmn).length} email

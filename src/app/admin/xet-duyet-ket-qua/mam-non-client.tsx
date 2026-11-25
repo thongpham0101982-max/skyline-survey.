@@ -11330,7 +11330,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <h3 className="text-base font-bold mt-0.5 flex items-center gap-2">
                   <Eye className="w-4 h-4 text-[#5EEAD4]" />
                   {approvalPreviewModal.targetRole === "RESULT_NOTIFY"
-                    ? "Xem trước Email TB kết quả GĐCS duyệt → Tư vấn, Giáo vụ, BGH"
+                    ? "Xem trước Email TB kết quả GĐCS duyệt → Giáo vụ, Tư vấn, Nhóm trưởng chuyên môn"
                     : approvalPreviewModal.targetRole === "BGH_RESULT_NOTIFY"
                       ? "Xem trước Email TB kết quả BGH/NT MN duyệt → TV, Giáo vụ, Khảo thí, BGH"
                       : approvalPreviewModal.targetRole === "BGH_MN"
@@ -11360,7 +11360,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       { key: "BGH_MN", label: "1. Email đợt → NT MN / BGH" },
                       { key: "BGH_RESULT_NOTIFY", label: "2. TB KQ NT MN/BGH → TV · GVụ · Khảo thí · BGH" },
                       { key: "GDCS", label: "3. Email đợt → GĐCS duyệt B10" },
-                      { key: "RESULT_NOTIFY", label: "4. TB KQ GĐCS → Tư vấn · Giáo vụ · BGH" },
+                      { key: "RESULT_NOTIFY", label: "4. TB KQ GĐCS → Giáo vụ · Tư vấn · NT Chuyên môn" },
                     ] as const
                   ).map((t) => {
                     const active = approvalPreviewModal.targetRole === t.key;
