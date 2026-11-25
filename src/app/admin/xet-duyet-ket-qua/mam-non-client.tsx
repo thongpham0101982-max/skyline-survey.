@@ -203,6 +203,7 @@ const xetDuyetCols = [
   { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
   { id: "admissionCampus", label: "Cơ sở", width: "w-20 min-w-[80px]" },
   { id: "kqgvDg", label: "KQGV ĐG", width: "w-[172px] min-w-[172px] whitespace-normal" },
+  { id: "dossierB1B13", label: "Mở Hồ sơ B1–B13", width: "w-[128px] min-w-[128px] text-center" },
   { id: "bghApproval", label: "1. BGH MN duyệt", width: "w-[156px] min-w-[156px] whitespace-normal" },
   { id: "trialAssign", label: "2. Phân công học thử", width: "w-[162px] min-w-[162px] whitespace-normal" },
   { id: "trialResult", label: "2. Kết quả học thử", width: "w-[172px] min-w-[172px] whitespace-normal" },
@@ -5666,6 +5667,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </div>
                                 </td>
 
+                                {/* Mở Hồ sơ B1–B13 */}
+                                <td className="w-[128px] min-w-[128px] p-3 align-middle text-center bg-inherit border border-slate-100">
+                                  <button
+                                    type="button"
+                                    onClick={() => setWorkflowDrawerStudentId(s.id)}
+                                    className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+                                    title="Mở Hồ sơ B1–B13 (Y tế B4A / Đánh giá B5 / Tâm lý BM.09 / Hẹn trải nghiệm / Xuất thư)"
+                                  >
+                                    <ClipboardList className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                    Hồ sơ B1–B13
+                                  </button>
+                                </td>
+
                                 {/* 1. BGH MN duyệt */}
                                 {showBghSection && (
                                   <td className="w-[156px] min-w-[156px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
@@ -9975,7 +9989,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         studentId={workflowDrawerStudentId}
         onClose={() => setWorkflowDrawerStudentId(null)}
         onUpdated={() => {
-          fetchDevStudents();
+          fetchStudentSummaries();
         }}
         staffUsers={[]}
       />
