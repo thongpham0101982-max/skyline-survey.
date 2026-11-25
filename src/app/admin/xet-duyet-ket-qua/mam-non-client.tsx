@@ -560,7 +560,9 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
 
   // States for B6/B9A Routing inside Evaluation Modal (B7A Tâm lý & B7B Hẹn trải nghiệm)
+  const [evalPsyDeptId, setEvalPsyDeptId] = useState("");
   const [evalPsyTeacherId, setEvalPsyTeacherId] = useState("");
+  const [evalTrialGrade, setEvalTrialGrade] = useState("");
   const [evalTrialTeacher, setEvalTrialTeacher] = useState("");
   const [evalTrialClass, setEvalTrialClass] = useState("");
   const [evalTrialPeriod, setEvalTrialPeriod] = useState("");
@@ -2846,7 +2848,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setBghApprovalDate(student.bghApprovalDate || "");
     setGdcsApprovalUser(student.gdcsApprovalUser || "");
     setGdcsApprovalDate(student.gdcsApprovalDate || "");
+    const defaultPsyDept = (departments || []).find((d: any) => {
+      const n = String(d.name || "").toLowerCase().normalize("NFC");
+      return n.includes("tâm lý") || n.includes("tam ly") || n.includes("tham vấn");
+    });
+    setEvalPsyDeptId(defaultPsyDept?.id || "");
     setEvalPsyTeacherId(student.trialPsychologistId || "");
+    const matchedTrialCls = (classes || []).find((c: any) => c.className === student.probationaryClass);
+    setEvalTrialGrade(matchedTrialCls?.grade || "");
     setEvalTrialTeacher(student.probationaryTeacher || "");
     setEvalTrialClass(student.probationaryClass || "");
     setEvalTrialPeriod(student.probationaryPeriod || "");
@@ -9319,88 +9328,148 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       </div>
 
                       {/* Khung tự động gửi email GV Tâm lý khi chọn Cần PV tâm lý (B7A) */}
-                      {bghApprovalStatus === "CAN_PV_TAM_LY" && (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 space-y-2.5 text-xs">
-                          <div className="font-bold text-amber-900">
-                            Phân công GV Tâm lý phỏng vấn (B7A) <span className="text-rose-600">*</span>
+                      {bghApprovalStatus === "CAN_PV_TAM_LY" && (() => {
+                        const filteredPsyTeachers = evalPsyDeptId
+                          ? (teachers || []).filter((t: any) => t.departmentId === evalPsyDeptId || t.departmentRel?.id === evalPsyDeptId)
+                          : (psyTeachers.length > 0 ? psyTeachers : (teachers || []));
+                        return (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 space-y-2.5 text-xs">
+                            <div className="font-bold text-amber-900">
+                              Phân công Tổ Tâm lý &amp; GV Tâm lý phỏng vấn (B7A) <span className="text-rose-600">*</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-amber-900 mb-1">
+                                  Tổ chuyên môn <span className="text-rose-600">*</span>
+                                </label>
+                                <select
+                                  value={evalPsyDeptId}
+                                  onChange={(e) => {
+                                    setEvalPsyDeptId(e.target.value);
+                                    setEvalPsyTeacherId("");
+                                  }}
+                                  disabled={!canApproveBGH || isAssessmentLocked}
+                                  className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                                >
+                                  <option value="">-- Tự động lọc Tổ Tâm lý --</option>
+                                  {(departments || []).map((d: any) => (
+                                    <option key={d.id} value={d.id}>{d.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-amber-900 mb-1">
+                                  Tên GV Tâm lý <span className="text-rose-600">*</span>
+                                </label>
+                                <select
+                                  value={evalPsyTeacherId}
+                                  onChange={(e) => setEvalPsyTeacherId(e.target.value)}
+                                  disabled={!canApproveBGH || isAssessmentLocked}
+                                  className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                                >
+                                  <option value="">-- Chọn GV Tâm lý --</option>
+                                  {filteredPsyTeachers.map((t: any) => (
+                                    <option key={t.id} value={t.user?.id || t.id}>
+                                      {t.teacherName} ({t.email || t.user?.email || "Chưa có email"})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-amber-800 leading-snug">
+                              Khi bấm <strong>Lưu đánh giá &amp; phê duyệt</strong>, hệ thống sẽ <strong>tự động gửi email</strong> kèm liên kết phản hồi xác nhận đến GV Tâm lý được chọn.
+                            </p>
                           </div>
-                          <select
-                            value={evalPsyTeacherId}
-                            onChange={(e) => setEvalPsyTeacherId(e.target.value)}
-                            disabled={!canApproveBGH || isAssessmentLocked}
-                            className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
-                          >
-                            <option value="">-- Chọn GV Tâm lý được phân công --</option>
-                            {psyTeachers.length > 0 && (
-                              <optgroup label="Tổ Tâm lý học đường">
-                                {psyTeachers.map((t: any) => (
-                                  <option key={t.id} value={t.user?.id || t.id}>
-                                    {t.teacherName} ({t.email || t.user?.email || "Chưa có email"})
-                                  </option>
-                                ))}
-                              </optgroup>
-                            )}
-                            {otherTeachers.length > 0 && (
-                              <optgroup label="Nhân sự khác">
-                                {otherTeachers.map((t: any) => (
-                                  <option key={t.id} value={t.user?.id || t.id}>
-                                    {t.teacherName} {t.departmentRel?.name ? `(${t.departmentRel.name})` : ""}
-                                  </option>
-                                ))}
-                              </optgroup>
-                            )}
-                          </select>
-                          <p className="text-[11px] text-amber-800 leading-snug">
-                            Khi bấm <strong>Lưu đánh giá &amp; phê duyệt</strong>, hệ thống sẽ <strong>tự động gửi email</strong> kèm liên kết phản hồi xác nhận đến GV Tâm lý được chọn.
-                          </p>
-                        </div>
-                      )}
+                        );
+                      })()}
 
-                      {/* Khung bắt buộc chọn GV, Lớp & Thời gian trải nghiệm khi chọn Hẹn trải nghiệm (B7B) */}
-                      {bghApprovalStatus === "HEN_TRAI_NGHIEM" && (
-                        <div className="rounded-xl border border-teal-200 bg-[#F0FDFA] p-3.5 space-y-2.5 text-xs">
-                          <div className="font-bold text-[#003B3A]">
-                            Thông tin Hẹn trải nghiệm / Học thử (B7B) — Bắt buộc nhập đủ
-                          </div>
-                          <div className="space-y-2">
-                            <div>
-                              <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                                GV phân công trải nghiệm <span className="text-rose-600">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                list="eval-b7b-teachers-list"
-                                value={evalTrialTeacher}
-                                onChange={(e) => setEvalTrialTeacher(e.target.value)}
-                                disabled={!canApproveBGH || isAssessmentLocked}
-                                placeholder="Chọn hoặc nhập tên GV phụ trách..."
-                                className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
-                              />
-                              <datalist id="eval-b7b-teachers-list">
-                                {(teachers || []).map((t: any) => (
-                                  <option key={t.id} value={t.teacherName} />
-                                ))}
-                              </datalist>
+                      {/* Khung bắt buộc chọn Khối, Lớp, Tên GV & Thời gian trải nghiệm khi chọn Hẹn trải nghiệm (B7B) */}
+                      {bghApprovalStatus === "HEN_TRAI_NGHIEM" && (() => {
+                        const matchedCampusObj = (campuses || []).find((c: any) =>
+                          isPreschoolCampusMatch(evalStudent?.admissionCampus, c.campusCode, c.campusName)
+                        );
+                        const campusClasses = matchedCampusObj
+                          ? (classes || []).filter((c: any) => c.campusId === matchedCampusObj.id)
+                          : (classes || []);
+                        const baseClasses = campusClasses.length > 0 ? campusClasses : (classes || []);
+                        const uniqueGrades = Array.from(new Set(baseClasses.map((c: any) => c.grade).filter(Boolean))).sort();
+                        const filteredClasses = evalTrialGrade
+                          ? baseClasses.filter((c: any) => c.grade === evalTrialGrade)
+                          : baseClasses;
+
+                        return (
+                          <div className="rounded-xl border border-teal-200 bg-[#F0FDFA] p-3.5 space-y-2.5 text-xs">
+                            <div className="font-bold text-[#003B3A]">
+                              Thông tin Hẹn trải nghiệm / Học thử (B7B) — Bắt buộc chọn đủ
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                  Khối <span className="text-rose-600">*</span>
+                                </label>
+                                <select
+                                  value={evalTrialGrade}
+                                  onChange={(e) => {
+                                    setEvalTrialGrade(e.target.value);
+                                    setEvalTrialClass("");
+                                  }}
+                                  disabled={!canApproveBGH || isAssessmentLocked}
+                                  className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                                >
+                                  <option value="">-- Chọn Khối --</option>
+                                  {uniqueGrades.map((g: any) => (
+                                    <option key={g} value={g}>{g}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                                   Lớp trải nghiệm <span className="text-rose-600">*</span>
                                 </label>
-                                <input
-                                  type="text"
-                                  list="eval-b7b-classes-list"
+                                <select
                                   value={evalTrialClass}
-                                  onChange={(e) => setEvalTrialClass(e.target.value)}
+                                  onChange={(e) => {
+                                    const clsName = e.target.value;
+                                    setEvalTrialClass(clsName);
+                                    const chosenCls = filteredClasses.find((c: any) => c.className === clsName);
+                                    if (chosenCls?.homeroomTeacherId) {
+                                      const firstId = String(chosenCls.homeroomTeacherId).split(",")[0].trim();
+                                      const hrTeacher = (teachers || []).find((t: any) => t.id === firstId || t.user?.id === firstId);
+                                      if (hrTeacher?.teacherName) setEvalTrialTeacher(hrTeacher.teacherName);
+                                    }
+                                  }}
                                   disabled={!canApproveBGH || isAssessmentLocked}
-                                  placeholder="VD: ROOTS - C1..."
                                   className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
-                                />
-                                <datalist id="eval-b7b-classes-list">
-                                  {(classes || []).map((cl: any) => (
-                                    <option key={cl.id} value={cl.className} />
+                                >
+                                  <option value="">-- Chọn Lớp --</option>
+                                  {evalTrialClass && !filteredClasses.some((c: any) => c.className === evalTrialClass) && (
+                                    <option value={evalTrialClass}>{evalTrialClass}</option>
+                                  )}
+                                  {filteredClasses.map((cl: any) => (
+                                    <option key={cl.id} value={cl.className}>{cl.className}</option>
                                   ))}
-                                </datalist>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                  Tên GV phụ trách <span className="text-rose-600">*</span>
+                                </label>
+                                <select
+                                  value={evalTrialTeacher}
+                                  onChange={(e) => setEvalTrialTeacher(e.target.value)}
+                                  disabled={!canApproveBGH || isAssessmentLocked}
+                                  className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                                >
+                                  <option value="">-- Chọn Giáo viên --</option>
+                                  {evalTrialTeacher && !(teachers || []).some((t: any) => t.teacherName === evalTrialTeacher) && (
+                                    <option value={evalTrialTeacher}>{evalTrialTeacher}</option>
+                                  )}
+                                  {(teachers || []).map((t: any) => (
+                                    <option key={t.id} value={t.teacherName}>
+                                      {t.teacherName}{t.departmentRel?.name ? ` (${t.departmentRel.name})` : ""}
+                                    </option>
+                                  ))}
+                                </select>
                               </div>
                               <div>
                                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">
@@ -9417,8 +9486,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       <textarea
                         value={bghApprovalComment}
