@@ -1751,8 +1751,218 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
             )}
 
             {/* TAB 5: B6 / B9A REVIEW & B10 APPROVAL */}
-            {!loading && student && activeTab === "review" && (
+            {!loading && student && activeTab === "review" && (() => {
+              const hasTrialInfo = Boolean(
+                student.probationaryClass ||
+                  student.probationaryTeacher ||
+                  student.probationaryPeriod ||
+                  student.probationaryResult ||
+                  student.probationaryBghStatus ||
+                  student.probationaryComment
+              )
+              const hasPsyNeeded = Boolean(
+                hasPsyResult ||
+                  Number(student.trialPsychologyScreening || 0) === 1 ||
+                  student.trialPsychologyStatus ||
+                  student.trialPsychologistName ||
+                  viewingRound?.psychologyRequired ||
+                  viewingRound?.assignedPsychologistName ||
+                  psyConclusion
+              )
+              const psyStatusLabel =
+                hasPsyResult || student.trialPsychologyStatus === "COMPLETED"
+                  ? "Đã hoàn thành"
+                  : student.trialPsychologyStatus === "CONFIRMED"
+                    ? "GV Tâm lý đã xác nhận"
+                    : hasPsyNeeded
+                      ? "Đang chờ đánh giá"
+                      : "Không yêu cầu"
+              const psyStatusClass =
+                hasPsyResult || student.trialPsychologyStatus === "COMPLETED"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : student.trialPsychologyStatus === "CONFIRMED"
+                    ? "bg-teal-50 text-[#00736E] border-teal-200"
+                    : hasPsyNeeded
+                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                      : "bg-slate-100 text-slate-600 border-slate-200"
+
+              const b6ReviewDone = Boolean(viewingRound?.reviewedAt || (viewingRound?.reviewDecision && viewingRound.reviewDecision !== ""))
+              const b6DecisionLabels: Record<string, string> = {
+                DE_XUAT_DAT: "Đề xuất Đạt → Trình B10",
+                DE_XUAT_CHUA_DAT: "Đề xuất Chưa đạt → B10",
+                CAN_TAM_LY: "Cần PV tâm lý (B7A)",
+                HEN_TRAI_NGHIEM_BO_SUNG: "Hẹn trải nghiệm (B7B)",
+              }
+              const b10Outcome = student.finalApprovedOutcome || viewingRound?.gdcsDecision || ""
+              const b10Done = Boolean(b10Outcome)
+
+              return (
               <div className="space-y-4 text-xs">
+                {/* Tổng quan kết quả B5/B4B · Học trải nghiệm · B7 Tâm lý */}
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 space-y-3 border-l-4 border-l-[#003B3A]">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-bold text-[#003B3A]">
+                      Tổng quan kết quả trước khi phê duyệt
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("health")}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border cursor-pointer tabular-nums ${
+                        hasHealthResult
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                          : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                      }`}
+                    >
+                      B4A Y tế:{" "}
+                      {hasHealthResult
+                        ? `${heightCm || viewingRound?.heightCm || legacyDev?.heightCm || "—"} cm · ${weightKg || viewingRound?.weightKg || legacyDev?.weightKg || "—"} kg`
+                        : "Chưa ghi nhận"}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 tabular-nums">
+                    {/* Card 1: B5/B4B Đánh giá phát triển */}
+                    <div
+                      onClick={() => setActiveTab("evaluation")}
+                      className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#00A19A] p-3 space-y-1.5 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="font-bold text-[#003B3A]">B5/B4B · Đánh giá</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            hasEvalResult
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}
+                        >
+                          {hasEvalResult ? "Đã đánh giá" : "Chưa đánh giá"}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-600">
+                        Mẫu: <strong className="text-slate-800">{viewingRound?.formCode || selectedFormCode}</strong>
+                      </div>
+                      <div className="text-[11px] text-slate-600 truncate">
+                        GV: <strong className="text-slate-800">{effectiveTeacherName}</strong>
+                      </div>
+                      {(legacyDev?.totalScored || 0) > 0 ? (
+                        <div className="pt-1 flex flex-wrap gap-1.5 text-[11px]">
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-100/80 text-emerald-800 font-semibold">
+                            {legacyDev.datCount}/{legacyDev.totalScored} Đạt ({legacyDev.pctDat}%)
+                          </span>
+                          {legacyDev.chuaTheHienCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100/80 text-amber-800 font-medium">
+                              {legacyDev.chuaTheHienCount} Chưa thể hiện
+                            </span>
+                          )}
+                          {legacyDev.khongDatCount > 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-rose-100/80 text-rose-800 font-semibold">
+                              {legacyDev.khongDatCount} Không đạt
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-slate-500 italic">Chưa có điểm tiêu chí B5</div>
+                      )}
+                      {(student.devProfessionalComment || generalComment || experienceObservation) && (
+                        <p className="text-[11px] text-slate-600 line-clamp-2 pt-1 border-t border-slate-200/70">
+                          “{student.devProfessionalComment || generalComment || experienceObservation}”
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Card 2: B6 Học trải nghiệm */}
+                    <div
+                      onClick={() => setActiveTab("trial")}
+                      className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#00A19A] p-3 space-y-1.5 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="font-bold text-[#003B3A]">Học trải nghiệm</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            student.probationaryResult === "Đạt" || student.probationaryResult === "DAT"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : student.probationaryResult === "Chưa đạt" || student.probationaryResult === "KHONG_DAT" || student.probationaryResult === "CHUA_DAT"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : hasTrialInfo
+                                  ? "bg-teal-50 text-[#00736E] border-teal-200"
+                                  : "bg-slate-100 text-slate-600 border-slate-200"
+                          }`}
+                        >
+                          {student.probationaryResult
+                            ? student.probationaryResult
+                            : hasTrialInfo
+                              ? "Đã phân công"
+                              : "Không phát sinh"}
+                        </span>
+                      </div>
+                      {hasTrialInfo ? (
+                        <>
+                          <div className="text-[11px] text-slate-600 truncate">
+                            Lớp: <strong className="text-slate-800">{student.probationaryClass || "—"}</strong>
+                            {student.probationaryPeriod ? ` · ${student.probationaryPeriod}` : ""}
+                          </div>
+                          <div className="text-[11px] text-slate-600 truncate">
+                            GV phụ trách: <strong className="text-slate-800">{student.probationaryTeacher || "—"}</strong>
+                          </div>
+                          {student.probationaryBghStatus && (
+                            <div className="text-[11px] text-slate-600">
+                              BGH duyệt KQ: <strong className="text-[#00736E]">{student.probationaryBghStatus}</strong>
+                            </div>
+                          )}
+                          {(student.probationaryComment || student.probationaryBghComment) && (
+                            <p className="text-[11px] text-slate-600 line-clamp-2 pt-1 border-t border-slate-200/70">
+                              “{student.probationaryComment || student.probationaryBghComment}”
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-[11px] text-slate-500 pt-1">
+                          Chưa có phân công hoặc kết quả học trải nghiệm.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card 3: B7 Tâm lý */}
+                    <div
+                      onClick={() => setActiveTab("psychology")}
+                      className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#00A19A] p-3 space-y-1.5 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="font-bold text-[#003B3A]">B7 · Tâm lý</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${psyStatusClass}`}>
+                          {psyStatusLabel}
+                        </span>
+                      </div>
+                      {hasPsyNeeded ? (
+                        <>
+                          <div className="text-[11px] text-slate-600 truncate">
+                            GV Tâm lý:{" "}
+                            <strong className="text-slate-800">
+                              {student.trialPsychologistName || viewingRound?.assignedPsychologistName || "Chưa phân công"}
+                            </strong>
+                          </div>
+                          {student.trialPsychologyConfirmedAt && (
+                            <div className="text-[11px] text-emerald-700 font-medium">
+                              Đã xác nhận ({new Date(student.trialPsychologyConfirmedAt).toLocaleDateString("vi-VN")})
+                            </div>
+                          )}
+                          {(student.trialPsychologyFeedback || psyConclusion || student.devPsychComment) ? (
+                            <p className="text-[11px] text-slate-600 line-clamp-2 pt-1 border-t border-slate-200/70">
+                              “{student.trialPsychologyFeedback || psyConclusion || student.devPsychComment}”
+                            </p>
+                          ) : (
+                            <div className="text-[11px] text-slate-500 italic">Chưa có kết luận từ GV Tâm lý</div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-[11px] text-slate-500 pt-1">
+                          Không phát sinh yêu cầu phỏng vấn tâm lý (BM.KTĐBCL.09).
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Pre-Approval Gate Checklist */}
                 <div
                   className={`rounded-2xl border p-4 ${
@@ -1780,9 +1990,29 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                   )}
                 </div>
 
-                {/* B6 / B9A Review */}
+                {/* Bước 1 — B6 / B9A Review */}
                 <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-3">
-                  <h3 className="text-sm font-bold text-[#003B3A]">B6 / B9A: Nhóm trưởng Mầm non rà soát & định tuyến</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#F1F5F9]">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#003B3A] text-white text-[11px] font-bold">
+                        Bước 1
+                      </span>
+                      <h3 className="text-sm font-bold text-[#003B3A]">
+                        B6 / B9A: Nhóm trưởng Mầm non rà soát & định tuyến
+                      </h3>
+                    </div>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                        b6ReviewDone
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
+                    >
+                      {b6ReviewDone
+                        ? `Đã định tuyến: ${b6DecisionLabels[viewingRound?.reviewDecision] || viewingRound?.reviewDecision}`
+                        : "Chờ phê duyệt Bước 1"}
+                    </span>
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {[
                       { k: "DE_XUAT_DAT", label: "Đề xuất Đạt → Trình B10" },
@@ -1823,14 +2053,40 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                       }
                       className="px-4 py-2 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white font-semibold cursor-pointer"
                     >
-                      Xác nhận rà soát B6/B9A
+                      Xác nhận rà soát B6/B9A (Bước 1)
                     </button>
                   )}
                 </div>
 
-                {/* B10 GĐCS Approval + 1-Tap Email Approval */}
+                {/* Bước 2 — B10 GĐCS Approval + 1-Tap Email Approval */}
                 <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-4">
-                  <h3 className="text-sm font-bold text-[#003B3A]">B10: Giám đốc Điều hành Cơ sở phê duyệt</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#F1F5F9]">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#00A19A] text-white text-[11px] font-bold">
+                        Bước 2
+                      </span>
+                      <h3 className="text-sm font-bold text-[#003B3A]">
+                        B10: Giám đốc Điều hành Cơ sở phê duyệt
+                      </h3>
+                    </div>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                        b10Done
+                          ? b10Outcome === "DAT"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : "bg-rose-50 text-rose-700 border-rose-200"
+                          : gate.ready
+                            ? "bg-teal-50 text-[#00736E] border-teal-200"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                      }`}
+                    >
+                      {b10Done
+                        ? `Đã phê duyệt: ${b10Outcome === "DAT" ? "Đạt" : "Chưa đạt"}`
+                        : gate.ready
+                          ? "Sẵn sàng phê duyệt Bước 2"
+                          : "Chờ hoàn tất điều kiện Bước 1"}
+                    </span>
+                  </div>
                   <textarea
                     rows={2}
                     value={gdcsComment}
@@ -1988,7 +2244,8 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                   </div>
                 </div>
               </div>
-            )}
+              )
+            })()}
 
             {/* TAB 6: B11–B13 LETTERS, DELIVERY & ARCHIVE */}
             {!loading && student && activeTab === "letters" && (
