@@ -65,6 +65,12 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
   const [generalComment, setGeneralComment] = useState("")
   const [experienceObservation, setExperienceObservation] = useState("")
 
+  // B5/B4B Integrated Phiếu đánh giá phát triển
+  const [devScoresMap, setDevScoresMap] = useState<Record<string, { result: string; note: string }>>({})
+  const [devProfComment, setDevProfComment] = useState("")
+  const [devPsyComment, setDevPsyComment] = useState("")
+  const [devImportantNote, setDevImportantNote] = useState("")
+
   // B6 Trial (Phân công học trải nghiệm, Kết quả học trải nghiệm & Sàng lọc tâm lý)
   const [trialClass, setTrialClass] = useState("")
   const [trialTeacher, setTrialTeacher] = useState("")
@@ -141,6 +147,24 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
     setSelectedFormCode(fCode)
     setGeneralComment(round?.generalComment || "")
     setExperienceObservation(round?.experienceObservation || "")
+
+    // Hydrate integrated Phiếu đánh giá phát triển (B5/B4B)
+    const nextDevMap: Record<string, { result: string; note: string }> = {}
+    const devRows: any[] =
+      Array.isArray(legacyDev?.availableCriteria) && legacyDev.availableCriteria.length > 0
+        ? legacyDev.availableCriteria
+        : Array.isArray(legacyDev?.scores)
+          ? legacyDev.scores
+          : []
+    for (const row of devRows) {
+      const cid = row.criteriaId || row.id
+      if (!cid) continue
+      nextDevMap[cid] = { result: row.result || "", note: row.note || "" }
+    }
+    setDevScoresMap(nextDevMap)
+    setDevProfComment(student?.devProfessionalComment || round?.generalComment || "")
+    setDevPsyComment(student?.devPsychologyComment || "")
+    setDevImportantNote(student?.devImportantNote || "")
 
     const parsedCrit: Record<string, { result: string; note: string }> = {}
     try {
@@ -975,236 +999,448 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                   </div>
                 </div>
 
-                {/* Bảng kết quả đánh giá thực tế GV đã chấm (chỉ hiện kết quả, không lặp lại mẫu trống) */}
-                {legacyDev && legacyDev.totalScored > 0 ? (
-                  <div className="space-y-3">
-                    <div className="rounded-xl border border-teal-200/80 bg-[#F0FDFA]/50 p-3.5 space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-[#003B3A]">
-                          Kết quả đánh giá phát triển ({legacyDev.totalScored} tiêu chí)
-                        </span>
-                        <span className="text-[11px] font-semibold text-emerald-700 tabular-nums">
-                          {legacyDev.datCount} Đạt · {legacyDev.khongDatCount} Không đạt · {legacyDev.chuaTheHienCount} Chưa thể hiện
-                        </span>
+                {/* Phiếu đánh giá phát triển tích hợp trực tiếp vào B5/B4B */}
+                {(() => {
+                  const devCriteriaRows: any[] =
+                    Array.isArray(legacyDev?.availableCriteria) && legacyDev.availableCriteria.length > 0
+                      ? legacyDev.availableCriteria
+                      : Array.isArray(legacyDev?.scores) && legacyDev.scores.length > 0
+                        ? legacyDev.scores
+                        : []
+
+                  if (devCriteriaRows.length > 0) {
+                    const liveDat = devCriteriaRows.filter((r) => (devScoresMap[r.criteriaId || r.id]?.result || "") === "DAT").length
+                    const liveKhongDat = devCriteriaRows.filter((r) => (devScoresMap[r.criteriaId || r.id]?.result || "") === "KHONG_DAT").length
+                    const liveChuaTh = devCriteriaRows.filter((r) => (devScoresMap[r.criteriaId || r.id]?.result || "") === "CHUA_THE_HIEN").length
+                    const liveScored = liveDat + liveKhongDat + liveChuaTh
+                    const livePct = liveScored > 0 ? Math.round((liveDat / liveScored) * 100) : 0
+
+                    return (
+                      <div className="space-y-4">
+                        <div className="rounded-xl border border-teal-200/80 bg-[#F0FDFA]/40 p-3.5 space-y-2.5">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-[#003B3A]">
+                              Phiếu đánh giá phát triển ({devCriteriaRows.length} tiêu chí)
+                            </span>
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] tabular-nums">
+                              <span className="font-semibold text-emerald-700">
+                                {liveDat}/{devCriteriaRows.length} Đạt ({livePct}%)
+                              </span>
+                              <span className="text-slate-300">·</span>
+                              <span className="text-rose-700 font-medium">{liveKhongDat} Không đạt</span>
+                              <span className="text-slate-300">·</span>
+                              <span className="text-amber-700 font-medium">{liveChuaTh} Chưa thể hiện</span>
+                            </div>
+                          </div>
+                          <div className="max-h-[420px] overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white">
+                            <table className="w-full text-left border-collapse text-[11px] tabular-nums">
+                              <thead className="bg-[#003B3A] text-white sticky top-0 z-10">
+                                <tr>
+                                  <th className="py-2.5 px-2.5 text-teal-100 font-semibold">Lĩnh vực</th>
+                                  <th className="py-2.5 px-2.5 text-white font-semibold">Tiêu chí</th>
+                                  <th className="py-2.5 px-2.5 text-[#5EEAD4] font-semibold w-[142px]">Kết quả</th>
+                                  <th className="py-2.5 px-2.5 text-teal-100 font-semibold w-[190px]">Ghi chú</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[#E2E8F0]">
+                                {devCriteriaRows.map((sc: any) => {
+                                  const cid = sc.criteriaId || sc.id
+                                  const cur = devScoresMap[cid] || { result: sc.result || "", note: sc.note || "" }
+                                  return (
+                                    <tr key={cid} className="hover:bg-[#F8FAFC]">
+                                      <td className="py-2 px-2.5 text-slate-600 align-middle">{sc.areaName || "—"}</td>
+                                      <td className="py-2 px-2.5 text-slate-800 align-middle">{sc.criteriaName}</td>
+                                      <td className="py-2 px-2.5 align-middle">
+                                        {perms.canEditEvaluation && isViewingLatest ? (
+                                          <select
+                                            value={cur.result}
+                                            onChange={(e) =>
+                                              setDevScoresMap((prev) => ({
+                                                ...prev,
+                                                [cid]: { ...cur, result: e.target.value },
+                                              }))
+                                            }
+                                            className={`w-full rounded-lg border px-2 py-1 text-[11px] font-semibold bg-white outline-none ${
+                                              cur.result === "DAT"
+                                                ? "border-emerald-300 text-emerald-700"
+                                                : cur.result === "KHONG_DAT"
+                                                  ? "border-rose-300 text-rose-700"
+                                                  : cur.result === "CHUA_THE_HIEN"
+                                                    ? "border-amber-300 text-amber-700"
+                                                    : "border-[#E2E8F0] text-slate-500"
+                                            }`}
+                                          >
+                                            <option value="">-- Chọn --</option>
+                                            <option value="DAT">Đạt</option>
+                                            <option value="CHUA_THE_HIEN">Chưa thể hiện</option>
+                                            <option value="KHONG_DAT">Không đạt</option>
+                                          </select>
+                                        ) : (
+                                          <span
+                                            className={
+                                              cur.result === "DAT"
+                                                ? "font-semibold text-emerald-700"
+                                                : cur.result === "KHONG_DAT"
+                                                  ? "font-semibold text-rose-700"
+                                                  : "font-semibold text-amber-700"
+                                            }
+                                          >
+                                            {cur.result === "DAT" ? "Đạt" : cur.result === "KHONG_DAT" ? "Không đạt" : cur.result === "CHUA_THE_HIEN" ? "Chưa thể hiện" : "—"}
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="py-2 px-2.5 align-middle">
+                                        {perms.canEditEvaluation && isViewingLatest ? (
+                                          <input
+                                            type="text"
+                                            value={cur.note}
+                                            onChange={(e) =>
+                                              setDevScoresMap((prev) => ({
+                                                ...prev,
+                                                [cid]: { ...cur, note: e.target.value },
+                                              }))
+                                            }
+                                            placeholder="Ghi chú..."
+                                            className="w-full rounded-lg border border-[#E2E8F0] px-2 py-1 text-[11px] bg-white"
+                                          />
+                                        ) : (
+                                          <span className="text-slate-500">{cur.note ? String(cur.note).replace(/\|/g, " — ") : "—"}</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Nhận xét chuyên môn, tâm lý & lưu ý quan trọng từ Phiếu đánh giá phát triển */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#003B3A] mb-1">
+                              Nhận xét chuyên môn (Phát triển của trẻ)
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={devProfComment}
+                              onChange={(e) => setDevProfComment(e.target.value)}
+                              disabled={!perms.canEditEvaluation || !isViewingLatest}
+                              placeholder="Nhận xét về sự phát triển chuyên môn của trẻ..."
+                              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-xs bg-white disabled:bg-slate-50"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-[#003B3A] mb-1">
+                              Nhận xét tâm lý, cảm xúc của trẻ
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={devPsyComment}
+                              onChange={(e) => setDevPsyComment(e.target.value)}
+                              disabled={!perms.canEditEvaluation || !isViewingLatest}
+                              placeholder="Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."
+                              className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-xs bg-white disabled:bg-slate-50"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3">
+                          <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                            Lưu ý quan trọng (Dị ứng, sức khỏe, thói quen...)
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={devImportantNote}
+                            onChange={(e) => setDevImportantNote(e.target.value)}
+                            disabled={!perms.canEditEvaluation || !isViewingLatest}
+                            placeholder="Ghi nhận dị ứng thực phẩm hoặc lưu ý quan trọng của trẻ..."
+                            className="w-full rounded-lg border border-amber-200/80 bg-white px-3 py-1.5 text-xs disabled:bg-slate-50"
+                          />
+                        </div>
+
+                        {perms.canEditEvaluation && isViewingLatest && (
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={async () => {
+                              setSaving(true)
+                              setError(null)
+                              setNotice(null)
+                              try {
+                                const scoresPayload = devCriteriaRows
+                                  .map((r) => {
+                                    const cid = r.criteriaId || r.id
+                                    const val = devScoresMap[cid]
+                                    return val?.result
+                                      ? { criteriaId: cid, result: val.result, note: val.note || "" }
+                                      : null
+                                  })
+                                  .filter(Boolean)
+
+                                const devRes = await fetch("/api/preschool-dev-scores", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    studentId,
+                                    scores: scoresPayload,
+                                    devProfessionalComment: devProfComment,
+                                    devPsychologyComment: devPsyComment,
+                                    devImportantNote,
+                                  }),
+                                })
+                                if (!devRes.ok) {
+                                  const errD = await devRes.json().catch(() => ({}))
+                                  throw new Error(errD?.error || "Không thể lưu Phiếu đánh giá phát triển.")
+                                }
+
+                                // Đồng bộ sang PreschoolAssessmentRound (B5/B4B)
+                                const roundCriteria = devCriteriaRows.map((r) => {
+                                  const cid = r.criteriaId || r.id
+                                  const val = devScoresMap[cid] || { result: "", note: "" }
+                                  return {
+                                    code: r.criteriaCode || cid,
+                                    area: r.areaName || "",
+                                    name: r.criteriaName || "",
+                                    result:
+                                      val.result === "DAT"
+                                        ? "Đạt"
+                                        : val.result === "KHONG_DAT"
+                                          ? "Không đạt"
+                                          : val.result === "CHUA_THE_HIEN"
+                                            ? "Chưa thể hiện"
+                                            : "",
+                                    note: val.note || "",
+                                  }
+                                })
+                                await fetch(`/api/preschool-workflow/${studentId}`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    action: "SAVE_EVALUATION",
+                                    roundId: viewingRound?.id,
+                                    formCode: selectedFormCode,
+                                    criteria: roundCriteria,
+                                    generalComment: devProfComment,
+                                    experienceObservation,
+                                  }),
+                                })
+
+                                setNotice("Đã lưu Phiếu đánh giá phát triển (B5/B4B) thành công.")
+                                await fetchDossier(studentId!)
+                                onUpdated()
+                              } catch (err: any) {
+                                setError(err?.message || "Lỗi khi lưu Phiếu đánh giá phát triển.")
+                              } finally {
+                                setSaving(false)
+                              }
+                            }}
+                            className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold cursor-pointer disabled:opacity-50"
+                          >
+                            {saving ? "Đang lưu..." : "Lưu Phiếu đánh giá phát triển (B5/B4B)"}
+                          </button>
+                        )}
                       </div>
-                      <div className="max-h-[420px] overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white">
-                        <table className="w-full text-left border-collapse text-[11px] tabular-nums">
-                          <thead className="bg-[#003B3A] text-white sticky top-0">
+                    )
+                  }
+
+                  return viewingRound?.roundType === "KHAO_SAT_MOI" ? (
+                    <>
+                      {/* Form Selection & Age Boundary Confirmation */}
+                      <div
+                        className={`rounded-xl border p-3.5 space-y-2 ${
+                          viewingRound.isAgeBoundary && !viewingRound.formConfirmedAt
+                            ? "bg-amber-50 border-amber-300 text-amber-900"
+                            : "bg-[#F0FDFA] border-teal-200 text-[#005854]"
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="font-semibold flex items-center gap-1.5">
+                            {viewingRound.isAgeBoundary && !viewingRound.formConfirmedAt && (
+                              <AlertTriangle className="w-4 h-4 text-amber-600" />
+                            )}
+                            <span>
+                              Gợi ý: {viewingRound.suggestedFormCode || suggestion?.suggestedFormCode} ·{" "}
+                              {viewingRound.formConfirmedAt ? `Đã xác nhận (${viewingRound.formConfirmedBy})` : "Chưa xác nhận mẫu"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={selectedFormCode}
+                              onChange={(e) => setSelectedFormCode(e.target.value)}
+                              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800"
+                            >
+                              {EVALUATION_FORM_CODES.map((code) => (
+                                <option key={code} value={code}>
+                                  {code} — {PRESCHOOL_FORM_REGISTRY[code].shortTitle}
+                                </option>
+                              ))}
+                            </select>
+                            {isViewingLatest && (
+                              <button
+                                type="button"
+                                disabled={saving}
+                                onClick={() =>
+                                  runAction(
+                                    { action: "CONFIRM_FORM", formCode: selectedFormCode },
+                                    `Đã xác nhận sử dụng mẫu ${selectedFormCode}.`
+                                  )
+                                }
+                                className="px-3 py-1 rounded-lg bg-[#003B3A] text-white font-semibold cursor-pointer"
+                              >
+                                Xác nhận mẫu
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {viewingRound.ageBoundaryReason && (
+                          <p className="text-[11px]">{viewingRound.ageBoundaryReason}</p>
+                        )}
+                      </div>
+
+                      {/* Criteria Table */}
+                      <div className="rounded-2xl border border-[#E2E8F0] overflow-hidden">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-[#003B3A] text-white text-[11px] font-semibold">
                             <tr>
-                              <th className="py-2 px-2.5 text-teal-100 font-semibold">Lĩnh vực</th>
-                              <th className="py-2 px-2.5 text-white font-semibold">Tiêu chí</th>
-                              <th className="py-2 px-2.5 text-[#5EEAD4] font-semibold">Kết quả</th>
-                              <th className="py-2 px-2.5 text-teal-100 font-semibold">Ghi chú</th>
+                              <th className="py-2.5 px-3 text-teal-100">Lĩnh vực</th>
+                              <th className="py-2.5 px-3 text-white">Tiêu chí ({activeFormDef.code})</th>
+                              <th className="py-2.5 px-3 text-[#5EEAD4]">Đánh giá</th>
+                              <th className="py-2.5 px-3 text-teal-100">Ghi chú</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-[#E2E8F0]">
-                            {legacyDev.scores.map((sc: any) => (
-                              <tr key={sc.id} className="hover:bg-[#F8FAFC]">
-                                <td className="py-2 px-2.5 text-slate-600">{sc.areaName || "—"}</td>
-                                <td className="py-2 px-2.5 text-slate-800">{sc.criteriaName}</td>
-                                <td className="py-2 px-2.5 font-semibold whitespace-nowrap">
-                                  <span
-                                    className={
-                                      sc.result === "DAT"
-                                        ? "text-emerald-700"
-                                        : sc.result === "KHONG_DAT"
-                                          ? "text-rose-700"
-                                          : "text-amber-700"
-                                    }
-                                  >
-                                    {sc.result === "DAT" ? "Đạt" : sc.result === "KHONG_DAT" ? "Không đạt" : "Chưa thể hiện"}
-                                  </span>
-                                </td>
-                                <td className="py-2 px-2.5 text-slate-500">{sc.note ? String(sc.note).replace(/\|/g, " — ") : "—"}</td>
-                              </tr>
-                            ))}
+                          <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                            {activeFormDef.defaultCriteria.map((c) => {
+                              const cur = criteriaRatings[c.code] || { result: "", note: "" }
+                              return (
+                                <tr key={c.code} className="hover:bg-[#F8FAFC]">
+                                  <td className="py-2.5 px-3 font-medium text-slate-600 align-middle">{c.area}</td>
+                                  <td className="py-2.5 px-3 text-slate-800 align-middle">{c.name}</td>
+                                  <td className="py-2.5 px-3 align-middle">
+                                    <select
+                                      value={cur.result}
+                                      onChange={(e) =>
+                                        setCriteriaRatings((prev) => ({
+                                          ...prev,
+                                          [c.code]: { ...cur, result: e.target.value },
+                                        }))
+                                      }
+                                      className="rounded-lg border border-[#E2E8F0] px-2 py-1 bg-white text-xs"
+                                    >
+                                      <option value="">-- Chọn --</option>
+                                      {c.options.map((o) => (
+                                        <option key={o.key} value={o.label}>{o.label}</option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="py-2.5 px-3 align-middle">
+                                    <input
+                                      type="text"
+                                      value={cur.note}
+                                      onChange={(e) =>
+                                        setCriteriaRatings((prev) => ({
+                                          ...prev,
+                                          [c.code]: { ...cur, note: e.target.value },
+                                        }))
+                                      }
+                                      placeholder="Nhận xét..."
+                                      className="w-full rounded-lg border border-[#E2E8F0] px-2 py-1 text-xs"
+                                    />
+                                  </td>
+                                </tr>
+                              )
+                            })}
                           </tbody>
                         </table>
                       </div>
-                    </div>
 
-                    {(student.devProfessionalComment || generalComment) && (
-                      <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3.5 text-xs">
-                        <span className="font-bold text-[#003B3A] block mb-1">Nhận xét tổng hợp của Giáo viên</span>
-                        <p className="text-slate-700 leading-relaxed">{student.devProfessionalComment || generalComment}</p>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Nhận xét tổng hợp của Giáo viên</label>
+                        <textarea
+                          rows={3}
+                          value={generalComment}
+                          onChange={(e) => setGeneralComment(e.target.value)}
+                          placeholder="Điểm nổi bật, khả năng thích nghi, lưu ý cần hỗ trợ..."
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+                        />
                       </div>
-                    )}
-                  </div>
-                ) : viewingRound?.roundType === "KHAO_SAT_MOI" ? (
-                  <>
-                    {/* Form Selection & Age Boundary Confirmation */}
-                    <div
-                      className={`rounded-xl border p-3.5 space-y-2 ${
-                        viewingRound.isAgeBoundary && !viewingRound.formConfirmedAt
-                          ? "bg-amber-50 border-amber-300 text-amber-900"
-                          : "bg-[#F0FDFA] border-teal-200 text-[#005854]"
-                      }`}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="font-semibold flex items-center gap-1.5">
-                          {viewingRound.isAgeBoundary && !viewingRound.formConfirmedAt && (
-                            <AlertTriangle className="w-4 h-4 text-amber-600" />
-                          )}
-                          <span>
-                            Gợi ý: {viewingRound.suggestedFormCode || suggestion?.suggestedFormCode} ·{" "}
-                            {viewingRound.formConfirmedAt ? `Đã xác nhận (${viewingRound.formConfirmedBy})` : "Chưa xác nhận mẫu"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={selectedFormCode}
-                            onChange={(e) => setSelectedFormCode(e.target.value)}
-                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-800"
-                          >
-                            {EVALUATION_FORM_CODES.map((code) => (
-                              <option key={code} value={code}>
-                                {code} — {PRESCHOOL_FORM_REGISTRY[code].shortTitle}
-                              </option>
-                            ))}
-                          </select>
-                          {isViewingLatest && (
-                            <button
-                              type="button"
-                              disabled={saving}
-                              onClick={() =>
-                                runAction(
-                                  { action: "CONFIRM_FORM", formCode: selectedFormCode },
-                                  `Đã xác nhận sử dụng mẫu ${selectedFormCode}.`
-                                )
-                              }
-                              className="px-3 py-1 rounded-lg bg-[#003B3A] text-white font-semibold cursor-pointer"
-                            >
-                              Xác nhận mẫu
-                            </button>
-                          )}
-                        </div>
+
+                      {perms.canEditEvaluation && isViewingLatest && (
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() => {
+                            const criteriaList = activeFormDef.defaultCriteria.map((c) => ({
+                              code: c.code,
+                              area: c.area,
+                              name: c.name,
+                              result: criteriaRatings[c.code]?.result || "",
+                              note: criteriaRatings[c.code]?.note || "",
+                            }))
+                            runAction(
+                              {
+                                action: "SAVE_EVALUATION",
+                                formCode: selectedFormCode,
+                                criteria: criteriaList,
+                                generalComment,
+                                experienceObservation,
+                              },
+                              "Đã lưu kết quả đánh giá / quan sát."
+                            )
+                          }}
+                          className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold cursor-pointer"
+                        >
+                          Lưu kết quả đánh giá
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">
+                          Nội dung quan sát tại lớp ({viewingRound?.roundType === "HOC_TRAI_NGHIEM" ? "B4B" : "B8"}) *
+                        </label>
+                        <textarea
+                          rows={5}
+                          value={experienceObservation}
+                          onChange={(e) => setExperienceObservation(e.target.value)}
+                          placeholder="Ghi nhận chi tiết thái độ, tương tác với cô và bạn, khả năng tham gia hoạt động, ăn ngủ và phản hồi của trẻ trong buổi trải nghiệm..."
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+                        />
                       </div>
-                      {viewingRound.ageBoundaryReason && (
-                        <p className="text-[11px]">{viewingRound.ageBoundaryReason}</p>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Nhận xét bổ sung</label>
+                        <textarea
+                          rows={2}
+                          value={generalComment}
+                          onChange={(e) => setGeneralComment(e.target.value)}
+                          className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
+                        />
+                      </div>
+                      {perms.canEditEvaluation && isViewingLatest && (
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() =>
+                            runAction(
+                              {
+                                action: "SAVE_EVALUATION",
+                                formCode: selectedFormCode,
+                                criteria: [],
+                                generalComment,
+                                experienceObservation,
+                              },
+                              "Đã lưu kết quả quan sát trải nghiệm."
+                            )
+                          }
+                          className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold cursor-pointer"
+                        >
+                          Lưu kết quả quan sát
+                        </button>
                       )}
                     </div>
-
-                    {/* Criteria Table */}
-                    <div className="rounded-2xl border border-[#E2E8F0] overflow-hidden">
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-[#003B3A] text-white text-[11px] font-semibold">
-                          <tr>
-                            <th className="py-2.5 px-3 text-teal-100">Lĩnh vực</th>
-                            <th className="py-2.5 px-3 text-white">Tiêu chí ({activeFormDef.code})</th>
-                            <th className="py-2.5 px-3 text-[#5EEAD4]">Đánh giá</th>
-                            <th className="py-2.5 px-3 text-teal-100">Ghi chú</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E2E8F0] bg-white">
-                          {activeFormDef.defaultCriteria.map((c) => {
-                            const cur = criteriaRatings[c.code] || { result: "", note: "" }
-                            return (
-                              <tr key={c.code} className="hover:bg-[#F8FAFC]">
-                                <td className="py-2.5 px-3 font-medium text-slate-600 align-middle">{c.area}</td>
-                                <td className="py-2.5 px-3 text-slate-800 align-middle">{c.name}</td>
-                                <td className="py-2.5 px-3 align-middle">
-                                  <select
-                                    value={cur.result}
-                                    onChange={(e) =>
-                                      setCriteriaRatings((prev) => ({
-                                        ...prev,
-                                        [c.code]: { ...cur, result: e.target.value },
-                                      }))
-                                    }
-                                    className="rounded-lg border border-[#E2E8F0] px-2 py-1 bg-white text-xs"
-                                  >
-                                    <option value="">-- Chọn --</option>
-                                    {c.options.map((o) => (
-                                      <option key={o.key} value={o.label}>{o.label}</option>
-                                    ))}
-                                  </select>
-                                </td>
-                                <td className="py-2.5 px-3 align-middle">
-                                  <input
-                                    type="text"
-                                    value={cur.note}
-                                    onChange={(e) =>
-                                      setCriteriaRatings((prev) => ({
-                                        ...prev,
-                                        [c.code]: { ...cur, note: e.target.value },
-                                      }))
-                                    }
-                                    placeholder="Nhận xét..."
-                                    className="w-full rounded-lg border border-[#E2E8F0] px-2 py-1 text-xs"
-                                  />
-                                </td>
-                              </tr>
-                            )
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Nhận xét tổng hợp của Giáo viên</label>
-                      <textarea
-                        rows={3}
-                        value={generalComment}
-                        onChange={(e) => setGeneralComment(e.target.value)}
-                        placeholder="Điểm nổi bật, khả năng thích nghi, lưu ý cần hỗ trợ..."
-                        className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Nội dung quan sát tại lớp ({viewingRound?.roundType === "HOC_TRAI_NGHIEM" ? "B4B" : "B8"}) *
-                      </label>
-                      <textarea
-                        rows={5}
-                        value={experienceObservation}
-                        onChange={(e) => setExperienceObservation(e.target.value)}
-                        placeholder="Ghi nhận chi tiết thái độ, tương tác với cô và bạn, khả năng tham gia hoạt động, ăn ngủ và phản hồi của trẻ trong buổi trải nghiệm..."
-                        className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Nhận xét bổ sung</label>
-                      <textarea
-                        rows={2}
-                        value={generalComment}
-                        onChange={(e) => setGeneralComment(e.target.value)}
-                        className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {perms.canEditEvaluation && isViewingLatest && (
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => {
-                      const criteriaList = activeFormDef.defaultCriteria.map((c) => ({
-                        code: c.code,
-                        area: c.area,
-                        name: c.name,
-                        result: criteriaRatings[c.code]?.result || "",
-                        note: criteriaRatings[c.code]?.note || "",
-                      }))
-                      runAction(
-                        {
-                          action: "SAVE_EVALUATION",
-                          formCode: selectedFormCode,
-                          criteria: criteriaList,
-                          generalComment,
-                          experienceObservation,
-                        },
-                        "Đã lưu kết quả đánh giá / quan sát."
-                      )
-                    }}
-                    className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold cursor-pointer"
-                  >
-                    Lưu kết quả đánh giá
-                  </button>
-                )}
+                  )
+                })()}
               </div>
             )}
 

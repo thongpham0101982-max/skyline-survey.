@@ -469,6 +469,70 @@ export async function GET(
       canArchive: hasAnyRole(userRoles, GIAOVU_ROLES) || hasAnyRole(userRoles, ADMIN_OR_KT),
     }
 
+    // Fetch active Phiếu đánh giá phát triển criteria matching student's ageGroup so B5/B4B can always render & edit full form
+    let availableDevCriteria: Array<{
+      criteriaId: string
+      criteriaCode: string
+      criteriaName: string
+      areaName: string
+      result: string
+      note: string
+    }> = []
+    try {
+      const allActiveCriteria = await (prisma as any).preschoolDevCriteria.findMany({
+        where: { status: "ACTIVE", area: { type: "INPUT", status: "ACTIVE" } },
+        include: { area: true },
+        orderBy: [{ area: { order: "asc" } }, { order: "asc" }],
+      })
+      const gLow = String(student.grade || "").toLowerCase().trim()
+      const matchesAge = (ag: string) => {
+        const a = String(ag || "").toLowerCase().trim()
+        if (!gLow || !a) return false
+        if (a === gLow) return true
+        if (gLow.includes("12") && a.includes("12")) return true
+        if (gLow.includes("18") && a.includes("18") && !gLow.includes("12")) return true
+        if (gLow.includes("24") && a.includes("24")) return true
+        if ((gLow.includes("bé") || gLow.includes("3-4") || gLow.includes("3 đến 4")) && (a.includes("bé") || a.includes("3-4") || a.includes("3 đến 4"))) return true
+        if ((gLow.includes("nhỡ") || gLow.includes("4-5") || gLow.includes("4 đến 5")) && (a.includes("nhỡ") || a.includes("4-5") || a.includes("4 đến 5"))) return true
+        if ((gLow.includes("lớn") || gLow.includes("5-6") || gLow.includes("5 đến 6")) && (a.includes("lớn") || a.includes("5-6") || a.includes("5 đến 6"))) return true
+        return false
+      }
+      const existingByCritId = new Map<string, any>()
+      for (const sc of legacyScoresList) {
+        if (sc.criteriaId) existingByCritId.set(sc.criteriaId, sc)
+      }
+      const matched = allActiveCriteria.filter((c: any) => matchesAge(c.ageGroup))
+      const sourceList = matched.length > 0 ? matched : legacyScoresList.map((sc: any) => sc.criteria).filter(Boolean)
+      const seenIds = new Set<string>()
+      for (const c of sourceList) {
+        if (!c?.id || seenIds.has(c.id)) continue
+        seenIds.add(c.id)
+        const ex = existingByCritId.get(c.id)
+        availableDevCriteria.push({
+          criteriaId: c.id,
+          criteriaCode: c.code || "",
+          criteriaName: c.name || "",
+          areaName: c.area?.name || "",
+          result: ex?.result || "",
+          note: ex?.note || "",
+        })
+      }
+      // Include any legacy scored criteria not in matched ageGroup
+      for (const sc of legacyScoresList) {
+        if (sc.criteriaId && !seenIds.has(sc.criteriaId)) {
+          seenIds.add(sc.criteriaId)
+          availableDevCriteria.push({
+            criteriaId: sc.criteriaId,
+            criteriaCode: sc.criteria?.code || "",
+            criteriaName: sc.criteria?.name || "",
+            areaName: sc.criteria?.area?.name || "",
+            result: sc.result || "",
+            note: sc.note || "",
+          })
+        }
+      }
+    } catch {}
+
     return NextResponse.json({
       student,
       rounds,
@@ -493,8 +557,10 @@ export async function GET(
         weightKg: legacyWeightKg,
         assignedTeachersFromBatch: batchTeacherNames,
         assignedMedicalFromBatch: batchMedicalNames,
+        availableCriteria: availableDevCriteria,
         scores: legacyScoresList.map((sc: any) => ({
           id: sc.id,
+          criteriaId: sc.criteriaId,
           criteriaCode: sc.criteria?.code || "",
           criteriaName: sc.criteria?.name || "",
           areaName: sc.criteria?.area?.name || "",
