@@ -984,22 +984,23 @@ export async function PATCH(
       return NextResponse.json({ success: true, workflowStatus: nextStatus })
     }
 
-    // 6. B7A: Phỏng vấn tâm lý & Lưu BM.KTĐBCL.09 + Báo cáo nhanh MS Teams
+    // 6. B7: Cập nhật kết quả khảo sát tâm lý từ GV Tâm lý (BM.KTĐBCL.09)
     if (action === "SAVE_PSYCHOLOGY") {
       const allowed =
         hasAnyRole(userRoles, REVIEWER_ROLES) ||
+        userRoles.includes("TAM_LY") ||
         activeRound.assignedPsychologistId === ctx.userId ||
+        student.trialPsychologistId === ctx.userId ||
         activeRound.assignedTeacherId === ctx.userId
       if (!allowed) {
-        return NextResponse.json({ error: "Chỉ nhân sự phụ trách đánh giá tâm lý hoặc cấp quản lý mới được nhập BM.KTĐBCL.09." }, { status: 403 })
+        return NextResponse.json({ error: "Chỉ GV Tâm lý phụ trách hoặc cấp quản lý mới được cập nhật kết quả khảo sát tâm lý." }, { status: 403 })
       }
-      const msTeamsReported = Boolean(body.msTeamsReported)
-      const msTeamsReportNote = String(body.msTeamsReportNote || "").trim() || null
+      const conclusionNote = String(body.conclusionNote || "").trim()
       const psyPayload = {
         formCode: "BM.KTĐBCL.09",
         formVersion: PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"].version,
         criteria: Array.isArray(body.criteria) ? body.criteria : [],
-        conclusionNote: String(body.conclusionNote || "").trim(),
+        conclusionNote,
         submittedBy: actorName,
         submittedAt: nowIso,
       }
@@ -1010,9 +1011,6 @@ export async function PATCH(
              "formCode" = 'BM.KTĐBCL.09',
              "formVersion" = ?,
              "psychologyPayloadJson" = ?,
-             "msTeamsReported" = ?,
-             "msTeamsReportedAt" = ?,
-             "msTeamsReportNote" = ?,
              "psychologistSubmittedAt" = ?,
              "psychologistSubmittedBy" = ?,
              "status" = 'IN_PROGRESS',
@@ -1020,9 +1018,6 @@ export async function PATCH(
          WHERE "id" = ?`,
         PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"].version,
         JSON.stringify(psyPayload),
-        msTeamsReported ? 1 : 0,
-        msTeamsReported ? nowIso : null,
-        msTeamsReportNote,
         nowIso,
         actorName,
         nowIso,
@@ -1031,9 +1026,20 @@ export async function PATCH(
 
       await prisma.$executeRawUnsafe(
         `UPDATE "PreschoolInputAssessmentStudent"
-         SET "devPsychologyComment" = ?, "workflowStatus" = 'DANG_DANH_GIA', "updatedAt" = ?
+         SET "devPsychologyComment" = ?,
+             "trialPsychologyStatus" = 'COMPLETED',
+             "trialPsychologyFeedback" = COALESCE(NULLIF(?, ''), "trialPsychologyFeedback"),
+             "trialPsychologyConclusion" = COALESCE(NULLIF(?, ''), "trialPsychologyConclusion"),
+             "trialPsychologistName" = COALESCE("trialPsychologistName", ?),
+             "trialPsychologyConfirmedAt" = COALESCE("trialPsychologyConfirmedAt", ?),
+             "workflowStatus" = 'DANG_DANH_GIA',
+             "updatedAt" = ?
          WHERE "id" = ?`,
-        psyPayload.conclusionNote || null,
+        conclusionNote || null,
+        conclusionNote,
+        conclusionNote,
+        actorName,
+        nowIso,
         nowIso,
         id
       )
@@ -1047,7 +1053,7 @@ export async function PATCH(
         actorId: ctx.userId,
         actorName,
         actorRole: ctx.role,
-        detail: { formCode: "BM.KTĐBCL.09", msTeamsReported },
+        detail: { formCode: "BM.KTĐBCL.09", psychologist: actorName },
       })
       return NextResponse.json({ success: true, workflowStatus: "DANG_DANH_GIA" })
     }

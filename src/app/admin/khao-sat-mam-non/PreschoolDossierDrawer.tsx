@@ -165,7 +165,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
       }
     } catch {}
     setPsyRatings(parsedPsy)
-    setPsyConclusion(psyConc)
+    setPsyConclusion(psyConc || student?.trialPsychologyFeedback || student?.trialPsychologyConclusion || student?.devPsychologyComment || "")
     setMsTeamsReported(Boolean(round?.msTeamsReported))
     setMsTeamsReportNote(round?.msTeamsReportNote || "")
 
@@ -1585,14 +1585,14 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
               )
             })()}
 
-            {/* TAB 4: B7A PSYCHOLOGY (BM.KTĐBCL.09) & B7B FOLLOW-UP */}
+            {/* TAB 4: B7 TÂM LÝ — KẾT QUẢ KHẢO SÁT TÂM LÝ TỪ GV TÂM LÝ */}
             {!loading && student && activeTab === "psychology" && (
               <div className="space-y-4 text-xs">
                 <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h3 className="text-sm font-bold text-[#003B3A]">B7A: Phiếu sàng lọc tâm lý (BM.KTĐBCL.09)</h3>
-                      <p className="text-slate-500 mt-0.5">Áp dụng khi bố trí phỏng vấn tâm lý ngay và báo cáo nhanh qua MS Teams.</p>
+                      <h3 className="text-sm font-bold text-[#003B3A]">B7: Kết quả khảo sát tâm lý (BM.KTĐBCL.09)</h3>
+                      <p className="text-slate-500 mt-0.5">Cập nhật kết quả khảo sát, phỏng vấn và khuyến nghị từ GV Tâm lý.</p>
                     </div>
                     {perms.canViewPsychology && (
                       <button
@@ -1605,6 +1605,53 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                       </button>
                     )}
                   </div>
+
+                  {/* Thông tin GV Tâm lý & trạng thái phản hồi */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3.5 text-xs tabular-nums">
+                    <div>
+                      <span className="text-[11px] text-slate-500 block">GV Tâm lý phân công</span>
+                      <strong className="text-[#003B3A]">
+                        {student.trialPsychologistName || viewingRound?.assignedPsychologistName || "Chưa phân công"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-slate-500 block">Trạng thái khảo sát tâm lý</span>
+                      <strong
+                        className={
+                          hasPsyResult || student.trialPsychologyStatus === "COMPLETED"
+                            ? "text-emerald-700"
+                            : student.trialPsychologyStatus === "CONFIRMED"
+                              ? "text-[#00736E]"
+                              : student.trialPsychologyEmailSentAt || Number(student.trialPsychologyScreening || 0) === 1
+                                ? "text-amber-700"
+                                : "text-slate-500"
+                        }
+                      >
+                        {hasPsyResult || student.trialPsychologyStatus === "COMPLETED"
+                          ? `Đã hoàn thành${viewingRound?.psychologistSubmittedAt ? ` (${new Date(viewingRound.psychologistSubmittedAt).toLocaleString("vi-VN")})` : ""}`
+                          : student.trialPsychologyStatus === "CONFIRMED"
+                            ? `GV Tâm lý đã xác nhận${student.trialPsychologyConfirmedAt ? ` (${new Date(student.trialPsychologyConfirmedAt).toLocaleString("vi-VN")})` : ""}`
+                            : student.trialPsychologyEmailSentAt
+                              ? `Đã gửi email chờ xác nhận (${new Date(student.trialPsychologyEmailSentAt).toLocaleString("vi-VN")})`
+                              : Number(student.trialPsychologyScreening || 0) === 1
+                                ? "Đã đánh dấu cần sàng lọc tâm lý"
+                                : "Không phát sinh"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-slate-500 block">Người cập nhật kết quả</span>
+                      <strong className="text-slate-800">
+                        {viewingRound?.psychologistSubmittedBy || student.trialPsychologistName || "—"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {student.trialPsychologyFeedback && (
+                    <div className="rounded-xl border border-teal-200 bg-[#F0FDFA] p-3.5 text-xs space-y-1">
+                      <span className="font-bold text-[#003B3A] block">Phản hồi / Nhận xét từ GV Tâm lý</span>
+                      <p className="text-slate-700 leading-relaxed">{student.trialPsychologyFeedback}</p>
+                    </div>
+                  )}
 
                   {!perms.canViewPsychology ? (
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-600 flex items-center gap-2">
@@ -1654,32 +1701,13 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                       </div>
 
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Kết luận & khuyến nghị tâm lý</label>
+                        <label className="block font-semibold text-slate-700 mb-1">Kết luận & khuyến nghị từ GV Tâm lý</label>
                         <textarea
                           rows={3}
                           value={psyConclusion}
                           onChange={(e) => setPsyConclusion(e.target.value)}
-                          placeholder="Ghi nhận kết quả phỏng vấn và khuyến nghị..."
+                          placeholder="Ghi nhận kết quả khảo sát tâm lý và khuyến nghị từ GV Tâm lý..."
                           className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
-                        />
-                      </div>
-
-                      <div className="rounded-xl border border-teal-200 bg-[#F0FDFA] p-3.5 space-y-2">
-                        <label className="flex items-center gap-2 font-semibold text-[#003B3A] cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={msTeamsReported}
-                            onChange={(e) => setMsTeamsReported(e.target.checked)}
-                            className="rounded border-slate-300"
-                          />
-                          Đã thực hiện báo cáo nhanh qua MS Teams theo lưu đồ (B7A)
-                        </label>
-                        <input
-                          type="text"
-                          value={msTeamsReportNote}
-                          onChange={(e) => setMsTeamsReportNote(e.target.value)}
-                          placeholder="Ghi chú kênh / thời điểm báo cáo MS Teams..."
-                          className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5"
                         />
                       </div>
 
@@ -1700,65 +1728,16 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                                 action: "SAVE_PSYCHOLOGY",
                                 criteria: criteriaList,
                                 conclusionNote: psyConclusion,
-                                msTeamsReported,
-                                msTeamsReportNote,
                               },
-                              "Đã lưu phiếu BM.KTĐBCL.09 và ghi nhận báo cáo MS Teams."
+                              "Đã cập nhật kết quả khảo sát tâm lý từ GV Tâm lý."
                             )
                           }}
                           className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold cursor-pointer"
                         >
-                          Lưu phiếu BM.KTĐBCL.09
+                          Cập nhật kết quả khảo sát tâm lý
                         </button>
                       )}
                     </>
-                  )}
-                </div>
-
-                {/* B7B Follow-up Experience */}
-                <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-3">
-                  <h3 className="text-sm font-bold text-[#003B3A] flex items-center gap-2">
-                    <CalendarPlus className="w-4 h-4 text-[#00A19A]" />
-                    B7B: Hẹn trải nghiệm kết hợp quan sát tâm lý (≥ 2 ngày làm việc)
-                  </h3>
-                  <p className="text-slate-600">
-                    Khi chưa thể phỏng vấn tâm lý ngay, tạo <strong>Lần khảo sát mới</strong> trên cùng hồ sơ này (giữ nguyên toàn bộ lịch sử và kết quả các lần trước).
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Thời gian hẹn mới (tối thiểu sau 2 ngày làm việc)</label>
-                      <input
-                        type="datetime-local"
-                        value={followUpDate}
-                        onChange={(e) => setFollowUpDate(e.target.value)}
-                        className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 tabular-nums"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Ghi chú thống nhất với phụ huynh</label>
-                      <input
-                        type="text"
-                        value={followUpNote}
-                        onChange={(e) => setFollowUpNote(e.target.value)}
-                        placeholder="Lớp trải nghiệm, nhân sự phối hợp..."
-                        className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
-                      />
-                    </div>
-                  </div>
-                  {perms.canScheduleFollowUp && isViewingLatest && (
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={() =>
-                        runAction(
-                          { action: "SCHEDULE_FOLLOWUP", scheduledAt: followUpDate, note: followUpNote },
-                          "Đã tạo lịch trải nghiệm bổ sung mới và bảo toàn lịch sử lần trước."
-                        )
-                      }
-                      className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold cursor-pointer"
-                    >
-                      Tạo lịch trải nghiệm bổ sung (Lần {rounds.length + 1})
-                    </button>
                   )}
                 </div>
               </div>

@@ -695,10 +695,7 @@ export function evaluatePreApprovalGate(
     }
   } else if (rt === "PHONG_VAN_TAM_LY") {
     if (!round.psychologyPayloadJson && !round.psychologistSubmittedAt) {
-      missing.push("B7A: Chưa hoàn thành phiếu sàng lọc tâm lý BM.KTĐBCL.09.")
-    }
-    if (!round.msTeamsReported) {
-      missing.push("B7A: Chưa ghi nhận đã báo cáo nhanh qua MS Teams theo lưu đồ.")
+      missing.push("B7: Chưa cập nhật kết quả khảo sát tâm lý từ GV Tâm lý (BM.KTĐBCL.09).")
     }
     if (!hasReview) {
       missing.push("B9A: Nhóm trưởng Mầm non chưa rà soát kết luận sau phỏng vấn tâm lý.")
