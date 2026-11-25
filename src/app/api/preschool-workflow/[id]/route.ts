@@ -1062,10 +1062,12 @@ export async function PATCH(
         return NextResponse.json({ error: "Chỉ GV Tâm lý phụ trách hoặc cấp quản lý mới được cập nhật kết quả khảo sát tâm lý." }, { status: 403 })
       }
       const conclusionNote = String(body.conclusionNote || "").trim()
+      const psychologyConclusion = String(body.psychologyConclusion || "").trim()
       const psyPayload = {
         formCode: "BM.KTĐBCL.09",
         formVersion: PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"].version,
         criteria: Array.isArray(body.criteria) ? body.criteria : [],
+        psychologyConclusion,
         conclusionNote,
         submittedBy: actorName,
         submittedAt: nowIso,
@@ -1092,18 +1094,17 @@ export async function PATCH(
 
       await prisma.$executeRawUnsafe(
         `UPDATE "PreschoolInputAssessmentStudent"
-         SET "devPsychologyComment" = ?,
+         SET "devPsychologyComment" = COALESCE(NULLIF(?, ''), "devPsychologyComment"),
              "trialPsychologyStatus" = 'COMPLETED',
              "trialPsychologyFeedback" = COALESCE(NULLIF(?, ''), "trialPsychologyFeedback"),
              "trialPsychologyConclusion" = COALESCE(NULLIF(?, ''), "trialPsychologyConclusion"),
              "trialPsychologistName" = COALESCE("trialPsychologistName", ?),
              "trialPsychologyConfirmedAt" = COALESCE("trialPsychologyConfirmedAt", ?),
-             "workflowStatus" = 'DANG_DANH_GIA',
              "updatedAt" = ?
          WHERE "id" = ?`,
-        conclusionNote || null,
         conclusionNote,
         conclusionNote,
+        psychologyConclusion || conclusionNote,
         actorName,
         nowIso,
         nowIso,

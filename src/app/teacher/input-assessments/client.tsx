@@ -15,6 +15,7 @@ import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
 import ChildDevStandardForm from "./ChildDevStandardForm";
 import ThinkingSkillsForm from "./ThinkingSkillsForm";
 import PreschoolEvaluationForm from "./PreschoolEvaluationForm";
+import PreschoolPsychologyForm from "./PreschoolPsychologyForm";
 import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner";
 import ReportExportDrawer from "@/components/testing/ReportExportDrawer";
 import { StudentOrientationModal } from "@/components/orientation/StudentOrientationModal";
@@ -411,10 +412,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 if (!unique.has(key)) {
                     unique.set(key, { ...a, overrideSystemLabel: "", overrideSystemCode: "", grade: "" });
                 }
+            } else if (a.isPreschoolPsychology || a.subjectId === "preschool-psychology") {
+                const key = "preschool-psychology";
+                if (!unique.has(key)) {
+                    unique.set(key, { ...a, id: "preschool-psychology-all", grade: "", overrideSystemLabel: "", subject: { ...a.subject, name: "Khảo sát Tâm lý (Mầm non · BM.KTĐBCL.09)" } });
+                }
             } else if (a.isPreschoolProbation) {
                 const key = "preschool-probation";
                 if (!unique.has(key)) {
-                    unique.set(key, { ...a, id: "preschool-probation-all", grade: "", overrideSystemLabel: "", subject: { ...a.subject, name: "Đánh giá Học thử (Mầm non)" } });
+                    unique.set(key, { ...a, id: "preschool-probation-all", grade: "", overrideSystemLabel: "", subject: { ...a.subject, name: "Đánh giá Học trải nghiệm (Mầm non)" } });
                 }
             } else if (a.isPreschool) {
                 const key = "preschool";
@@ -698,16 +704,21 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     const saveStudentScore = async (st: any, customScores?: any[], customComments?: any[], options?: { keepOpen?: boolean }) => {
         const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
-        if (!assignment) return;
+        if (!assignment) {
+            if (customScores) throw new Error("Không tìm thấy thông tin phân công môn học để lưu kết quả.");
+            return;
+        }
 
         setSaveStatus(prev => ({ ...prev, [st.id]: "saving" }));
         
         try {
+            const finalScores = customScores || st.scoreVals || [];
+            const finalComments = customComments || st.commentVals || [];
             const payload = {
                 studentId: st.id,
                 subjectId: assignment.subjectId,
-                scores: customScores || st.scoreVals || [],
-                comments: customComments || st.commentVals || []
+                scores: finalScores,
+                comments: finalComments
             };
 
             const res = await fetch("/api/teacher-assessments", {
@@ -723,13 +734,37 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     next.delete(st.id);
                     return next;
                 });
-                
-                setStudents(prev => prev.map(s => s.id === st.id ? { 
-                    ...s, 
-                    scoreVals: customScores || s.scoreVals, 
-                    commentVals: customComments || s.commentVals,
-                    scores: s.scores?.length > 0 ? s.scores : [{ id: "temp", scores: JSON.stringify(customScores || s.scoreVals) }]
-                } : s));
+
+                const serializedScores = JSON.stringify(finalScores);
+                const serializedComments = JSON.stringify(finalComments);
+                const applyUpdatedStudent = (s: any) => {
+                    let updatedScoresArr: any[];
+                    if (Array.isArray(s.scores) && s.scores.length > 0) {
+                        const hasMatchingSubject = s.scores.some((sc: any) => sc.subjectId === assignment.subjectId);
+                        if (hasMatchingSubject) {
+                            updatedScoresArr = s.scores.map((sc: any) =>
+                                sc.subjectId === assignment.subjectId
+                                    ? { ...sc, scores: serializedScores, comments: serializedComments }
+                                    : sc
+                            );
+                        } else if (s.scores.length === 1 && !s.scores[0]?.subjectId) {
+                            updatedScoresArr = [{ ...s.scores[0], subjectId: assignment.subjectId, scores: serializedScores, comments: serializedComments }];
+                        } else {
+                            updatedScoresArr = [...s.scores, { id: "temp", subjectId: assignment.subjectId, scores: serializedScores, comments: serializedComments }];
+                        }
+                    } else {
+                        updatedScoresArr = [{ id: "temp", subjectId: assignment.subjectId, scores: serializedScores, comments: serializedComments }];
+                    }
+                    return {
+                        ...s,
+                        scoreVals: finalScores,
+                        commentVals: finalComments,
+                        scores: updatedScoresArr
+                    };
+                };
+
+                setStudents(prev => prev.map(s => s.id === st.id ? applyUpdatedStudent(s) : s));
+                setActivePsychStudent((prev: any) => prev && prev.id === st.id ? applyUpdatedStudent(prev) : prev);
 
                 setTimeout(() => setSaveStatus(prev => ({ ...prev, [st.id]: "" })), 2500);
                 
@@ -739,12 +774,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             } else {
                 const errData = await res.json().catch(() => ({}));
                 setSaveStatus(prev => ({ ...prev, [st.id]: "error" }));
-                if (customScores) alert("Có lỗi khi lưu kết quả: " + (errData?.error || res.statusText));
+                const errMsg = "Có lỗi khi lưu kết quả: " + (errData?.error || res.statusText);
+                if (customScores) throw new Error(errMsg);
             }
         } catch (err: any) {
             console.error('saveStudentScore error:', err);
             setSaveStatus(prev => ({ ...prev, [st.id]: "error" }));
-            if (customScores) alert("Có lỗi kết nối khi lưu kết quả!");
+            if (customScores) {
+                throw err instanceof Error ? err : new Error("Có lỗi kết nối khi lưu kết quả!");
+            }
         }
     };
 
@@ -892,15 +930,31 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         const r = await fetch("/api/teacher-assessments", { 
             method: "PUT", 
             headers: { "Content-Type": "application/json" }, 
-            body: JSON.stringify({ action: "requestUnlock", assignmentId: selectedAssignmentId, reason: unlockReason }) 
+            body: JSON.stringify({
+                action: "requestUnlock",
+                assignmentId: selectedAssignmentId,
+                reason: unlockReason,
+                periodId: currentAssignment?.periodId,
+                batchId: currentAssignment?.batchId ?? null,
+                subjectId: currentAssignment?.subjectId,
+                grade: currentAssignment?.grade,
+                educationSystem: currentAssignment?.educationSystem,
+                userId: currentAssignment?.userId,
+                isPreschool: Boolean(currentAssignment?.isPreschool)
+            }) 
         });
         if (r.ok) {
+            const updatedRecord = await r.json().catch(() => null);
             setIsUnlockRequestOpen(false);
             setUnlockReason("");
+            if (updatedRecord?.id && updatedRecord.id !== selectedAssignmentId) {
+                setSelectedAssignmentId(updatedRecord.id);
+            }
             fetchAssignments();
             alert("Đã gửi yêu cầu mở khóa thành công!");
         } else {
-            alert("Lỗi: " + (await r.json()).error);
+            const errData = await r.json().catch(() => ({}));
+            alert("Lỗi: " + (errData?.error || r.statusText));
         }
     };
 
@@ -1516,6 +1570,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                                     assignmentId: currentAssignment.id,
                                                     periodId: selectedPeriodId || currentAssignment.periodId,
                                                     batchId: currentAssignment.batchId || null,
+                                                    isPreschool: Boolean(currentAssignment?.isPreschool || currentAssignment?.subjectId === "preschool" || currentAssignment?.subjectId === "preschool-probation"),
                                                     stageNumber: 4,
                                                     status: "COMPLETED",
                                                     note: `GV xác nhận hoàn thành đánh giá môn ${currentAssignment?.subject?.name || ""}`,
@@ -2853,7 +2908,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     <ThinkingSkillsForm 
                         student={activeThinkingSkillsStudent}
                         onSave={async (st: any, scores: any[], comments: any[]) => {
-                            saveStudentScore(st, scores, comments);
+                            await saveStudentScore(st, scores, comments);
                             setIsThinkingSkillsModalOpen(false);
                         }}
                         onClose={() => setIsThinkingSkillsModalOpen(false)}
@@ -2862,9 +2917,32 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 </div>
             )}
 
-            {/* Preschool Evaluation Modal */}
+            {/* Preschool Evaluation / Psychology Modal */}
             {isPreschoolSubject && activePreschoolStudent && isPreschoolModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-white overflow-y-auto animate-in fade-in">
+                    {activePreschoolStudent.isPreschoolPsychology ? (
+                        <PreschoolPsychologyForm
+                            student={activePreschoolStudent}
+                            user={user}
+                            onSaved={async () => {
+                                const assignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
+                                if (assignment) {
+                                    const gradeParam = selectedGrade !== "all" ? selectedGrade : "";
+                                    const systemParam = selectedSystemCode !== "all" ? selectedSystemCode : "";
+                                    setLoading(true);
+                                    const batchQueryParam = selectedBatchId === "all" ? "" : selectedBatchId;
+                                    const response = await fetch(`/api/teacher-assessments?action=getStudents&periodId=${assignment.periodId}&grade=${encodeURIComponent(gradeParam)}&systemCode=${encodeURIComponent(systemParam)}&subjectId=${assignment.subjectId}&batchId=${batchQueryParam}&_t=${Date.now()}`, { cache: "no-store" });
+                                    if (response.ok) {
+                                        const data = await response.json();
+                                        if (Array.isArray(data)) setStudents(data);
+                                    }
+                                    setLoading(false);
+                                }
+                            }}
+                            onClose={() => setIsPreschoolModalOpen(false)}
+                            isLocked={isLocked}
+                        />
+                    ) : (
                     <PreschoolEvaluationForm 
                         student={activePreschoolStudent}
                         user={user}
@@ -2922,6 +3000,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         onClose={() => setIsPreschoolModalOpen(false)}
                         isLocked={isLocked}
                     />
+                    )}
                 </div>
             )}
 

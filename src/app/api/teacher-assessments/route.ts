@@ -365,7 +365,7 @@ export async function GET(req: any) {
         }) : [];
 
         const mappedPreschool = preschoolAssignments.map((a: any) => {
-            const isProbation = a.grade === "Mẫu phiếu học thử" || a.grade === "Học thử";
+            const isProbation = a.grade === "Mẫu phiếu học thử" || a.grade === "Học thử" || a.grade === "Học trải nghiệm";
             const studentCount = preschoolStudents.filter((st: any) => {
                 if (st.periodId !== a.periodId) return false;
                 if (a.batchId && st.batchId !== a.batchId) return false;
@@ -381,13 +381,13 @@ export async function GET(req: any) {
                 batchId: a.batchId,
                 userId: a.userId,
                 subjectId: isProbation ? "preschool-probation" : "preschool",
-                grade: isProbation ? "Học thử" : a.grade,
+                grade: isProbation ? "Học trải nghiệm" : a.grade,
                 isPreschool: true,
                 isPreschoolProbation: isProbation ? true : undefined,
                 studentCount,
                 subject: {
                     id: isProbation ? "preschool-probation" : "preschool",
-                    name: isProbation ? "Đánh giá Học thử (Mầm non)" : "Đánh giá Mầm non",
+                    name: isProbation ? "Đánh giá Học trải nghiệm (Mầm non)" : "Đánh giá Mầm non",
                     code: isProbation ? "PRESCHOOL_PROBATION" : "PRESCHOOL",
                     scoreColumns: 1,
                     commentColumns: 1,
@@ -415,16 +415,27 @@ export async function GET(req: any) {
             const currentTeacher = await prisma.teacher.findUnique({
                 where: { userId: session.user.id }
             });
+            const candidateTeacherNames = Array.from(
+                new Set([currentTeacher?.teacherName, (session.user as any)?.fullName, (session.user as any)?.name].filter(Boolean))
+            ) as string[];
+            const currentUserEmail = String((session.user as any)?.email || "").trim().toLowerCase();
 
-            if (currentTeacher) {
+            // 1. Virtual assignments cho GV phụ trách B6 Học trải nghiệm (Mầm non)
+            if (candidateTeacherNames.length > 0 || isAdmin) {
                 const probationStudents = await (prisma as any).preschoolInputAssessmentStudent.findMany({
                     where: {
-                        probationaryTeacher: currentTeacher.teacherName,
-                        ...(academicYearId ? {
-                            period: { academicYearId: academicYearId }
-                        } : {})
+                        ...(isAdmin
+                            ? {
+                                  OR: [
+                                      { probationaryTeacher: { not: null } },
+                                      { bghApprovalStatus: { in: ["HEN_TRAI_NGHIEM", "DAT_HOC_THU"] } },
+                                  ],
+                              }
+                            : { probationaryTeacher: { in: candidateTeacherNames } }),
+                        ...(academicYearId ? { period: { academicYearId } } : {})
                     },
                     select: {
+                        id: true,
                         periodId: true,
                         period: {
                             select: {
@@ -432,43 +443,105 @@ export async function GET(req: any) {
                                 name: true,
                                 code: true,
                                 status: true,
-                                assignedUser: {
-                                    select: { id: true, fullName: true, email: true }
-                                }
+                                assignedUser: { select: { id: true, fullName: true, email: true } }
                             }
                         }
-                    },
-                    distinct: ["periodId"]
+                    }
                 });
 
-                probationStudents.forEach((p: any) => {
-                    if (p.period) {
-                        const studentCount = preschoolStudents.filter((st: any) => {
-                            return st.periodId === p.periodId && st.probationaryTeacher === currentTeacher.teacherName;
-                        }).length;
+                const probByPeriod = new Map<string, { period: any; count: number }>();
+                for (const st of probationStudents || []) {
+                    if (!st.period) continue;
+                    const cur = probByPeriod.get(st.periodId) || { period: st.period, count: 0 };
+                    cur.count += 1;
+                    probByPeriod.set(st.periodId, cur);
+                }
 
+                probByPeriod.forEach(({ period, count }, pid) => {
+                    if (!mappedPreschool.some((m: any) => m.periodId === pid && m.subjectId === "preschool-probation")) {
                         mappedPreschool.push({
-                            id: 'preschool-probation-' + p.periodId,
-                            periodId: p.periodId,
+                            id: "preschool-probation-" + pid,
+                            periodId: pid,
                             batchId: null,
                             userId: session.user.id,
                             subjectId: "preschool-probation",
-                            grade: "Học thử",
+                            grade: "Học trải nghiệm",
                             isPreschool: true,
                             isPreschoolProbation: true,
-                            studentCount,
+                            studentCount: count,
                             subject: {
                                 id: "preschool-probation",
-                                name: "Đánh giá Học thử (Mầm non)",
+                                name: "Đánh giá Học trải nghiệm (Mầm non)",
                                 code: "PRESCHOOL_PROBATION",
                                 scoreColumns: 1,
                                 commentColumns: 1,
                             },
                             batch: null,
-                            period: p.period
+                            period
                         });
                     }
                 });
+            }
+
+            // 2. Virtual assignments cho GV Tâm lý phụ trách B7 Khảo sát tâm lý (Mầm non · BM.KTĐBCL.09)
+            try {
+                const psyRows = await prisma.$queryRawUnsafe<any[]>(
+                    `SELECT s."id", s."periodId", s."trialPsychologistId", s."trialPsychologistEmail",
+                            s."trialPsychologistName", s."trialPsychologyScreening"
+                     FROM "PreschoolInputAssessmentStudent" s
+                     WHERE s."trialPsychologyScreening" = 1
+                        OR s."trialPsychologistId" IS NOT NULL
+                        OR s."trialPsychologistName" IS NOT NULL`
+                );
+                const matchedPsyPeriodCounts = new Map<string, number>();
+                for (const r of psyRows || []) {
+                    if (!r.periodId) continue;
+                    const emailMatch = currentUserEmail && String(r.trialPsychologistEmail || "").trim().toLowerCase() === currentUserEmail;
+                    const idMatch = r.trialPsychologistId && r.trialPsychologistId === session.user.id;
+                    const nameMatch = r.trialPsychologistName && candidateTeacherNames.includes(String(r.trialPsychologistName).trim());
+                    if (isAdmin || idMatch || emailMatch || nameMatch) {
+                        matchedPsyPeriodCounts.set(r.periodId, (matchedPsyPeriodCounts.get(r.periodId) || 0) + 1);
+                    }
+                }
+                if (matchedPsyPeriodCounts.size > 0) {
+                    const psyPeriods = await (prisma as any).preschoolInputAssessmentPeriod.findMany({
+                        where: {
+                            id: { in: Array.from(matchedPsyPeriodCounts.keys()) },
+                            ...(academicYearId ? { academicYearId } : {}),
+                        },
+                        select: {
+                            id: true,
+                            name: true,
+                            code: true,
+                            status: true,
+                            assignedUser: { select: { id: true, fullName: true, email: true } },
+                        },
+                    });
+                    for (const p of psyPeriods || []) {
+                        mappedPreschool.push({
+                            id: "preschool-psychology-" + p.id,
+                            periodId: p.id,
+                            batchId: null,
+                            userId: session.user.id,
+                            subjectId: "preschool-psychology",
+                            grade: "Khảo sát tâm lý",
+                            isPreschool: true,
+                            isPreschoolPsychology: true,
+                            studentCount: matchedPsyPeriodCounts.get(p.id) || 0,
+                            subject: {
+                                id: "preschool-psychology",
+                                name: "Khảo sát Tâm lý (Mầm non · BM.KTĐBCL.09)",
+                                code: "PRESCHOOL_PSYCHOLOGY",
+                                scoreColumns: 1,
+                                commentColumns: 1,
+                            },
+                            batch: null,
+                            period: p,
+                        });
+                    }
+                }
+            } catch (psyErr) {
+                console.error("Error fetching virtual psychology assignments:", psyErr);
             }
         } catch (eError) {
             console.error("Error fetching virtual probationary assignments:", eError);
@@ -1101,19 +1174,24 @@ export async function GET(req: any) {
 
         if (subjectId === "preschool-probation") {
             try {
+                const userRole = ((session?.user as any)?.role || "").toUpperCase();
+                const isAdminViewer = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GĐCS", "BGH", "BGH_CS", "BGH_MN", "GIAO_VU", "GIAO_VU_CS"].includes(userRole);
                 const currentTeacher = await prisma.teacher.findUnique({
                     where: { userId: session.user.id }
                 });
-                if (!currentTeacher) {
+                const candidateNames = Array.from(
+                    new Set([currentTeacher?.teacherName, (session.user as any)?.fullName, (session.user as any)?.name].filter(Boolean))
+                ) as string[];
+                if (!isAdminViewer && candidateNames.length === 0) {
                     return NextResponse.json([]);
                 }
-                
-                // Check if teacher has an assignment for "Mẫu phiếu học thử"
+
+                // Check if teacher has an assignment for "Mẫu phiếu học thử" / "Học trải nghiệm"
                 const hasProbationAssignment = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findFirst({
                     where: {
                         periodId: periodId,
                         userId: session.user.id,
-                        grade: "Mẫu phiếu học thử",
+                        grade: { in: ["Mẫu phiếu học thử", "Học thử", "Học trải nghiệm"] },
                         ...(batchId && batchId !== "all" && batchId !== "null" ? { batchId } : {})
                     }
                 });
@@ -1121,20 +1199,18 @@ export async function GET(req: any) {
                 const whereClause: any = {
                     periodId: periodId,
                     ...(batchId && batchId !== "all" && batchId !== "null" ? {
-                        OR: [
-                            { batchId: batchId },
-                            { batchId: null }
-                        ]
+                        AND: [{ OR: [{ batchId: batchId }, { batchId: null }] }]
                     } : {})
                 };
 
-                if (hasProbationAssignment) {
+                if (isAdminViewer || hasProbationAssignment) {
                     whereClause.OR = [
-                        { admissionResult: "Học thử" },
-                        { probationaryTeacher: currentTeacher.teacherName }
+                        { admissionResult: { in: ["Học thử", "Học trải nghiệm"] } },
+                        { bghApprovalStatus: { in: ["HEN_TRAI_NGHIEM", "DAT_HOC_THU"] } },
+                        { probationaryTeacher: { not: null } },
                     ];
                 } else {
-                    whereClause.probationaryTeacher = currentTeacher.teacherName;
+                    whereClause.probationaryTeacher = { in: candidateNames };
                 }
 
                 const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
@@ -1213,6 +1289,63 @@ export async function GET(req: any) {
             } catch (err: any) {
                 console.error("Error fetching probationary students:", err);
                 return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
+            }
+        }
+
+        if (subjectId === "preschool-psychology") {
+            try {
+                const userRole = ((session?.user as any)?.role || "").toUpperCase();
+                const isAdminViewer = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GĐCS", "BGH", "BGH_CS", "BGH_MN", "GIAO_VU", "GIAO_VU_CS"].includes(userRole);
+                const currentTeacher = await prisma.teacher.findUnique({
+                    where: { userId: session.user.id }
+                });
+                const candidateNames = Array.from(
+                    new Set([currentTeacher?.teacherName, (session.user as any)?.fullName, (session.user as any)?.name].filter(Boolean))
+                ) as string[];
+                const currentEmail = String((session.user as any)?.email || "").trim().toLowerCase();
+
+                const rawRows = await prisma.$queryRawUnsafe<any[]>(
+                    `SELECT s."id", s."studentCode", s."fullName", s."grade", s."gender", s."dateOfBirth",
+                            s."admissionCampus", s."batchId", s."periodId", s."surveyFormType",
+                            s."probationaryClass", s."probationaryTeacher", s."probationaryPeriod",
+                            s."devPsychologyComment",
+                            s."trialPsychologyScreening", s."trialPsychologistId", s."trialPsychologistName",
+                            s."trialPsychologistEmail", s."trialPsychologyStatus", s."trialPsychologyConclusion",
+                            s."trialPsychologyFeedback"
+                     FROM "PreschoolInputAssessmentStudent" s
+                     WHERE s."periodId" = ?
+                       AND (s."trialPsychologyScreening" = 1 OR s."trialPsychologistId" IS NOT NULL OR s."trialPsychologistName" IS NOT NULL)`,
+                    periodId
+                );
+
+                const filtered = (rawRows || []).filter((r: any) => {
+                    if (batchId && batchId !== "all" && batchId !== "null" && r.batchId && r.batchId !== batchId) {
+                        return false;
+                    }
+                    if (isAdminViewer) return true;
+                    const emailMatch = currentEmail && String(r.trialPsychologistEmail || "").trim().toLowerCase() === currentEmail;
+                    const idMatch = r.trialPsychologistId && r.trialPsychologistId === session.user.id;
+                    const nameMatch = r.trialPsychologistName && candidateNames.includes(String(r.trialPsychologistName).trim());
+                    return Boolean(idMatch || emailMatch || nameMatch);
+                });
+
+                const enriched = filtered.map((s: any) => {
+                    const psyDone = s.trialPsychologyStatus === "COMPLETED" || s.trialPsychologyStatus === "EVALUATED";
+                    return {
+                        ...s,
+                        scoredCount: psyDone ? 1 : 0,
+                        totalCriteria: 1,
+                        isPreschool: true,
+                        isPreschoolPsychology: true,
+                        resolvedAgeGroup: "BM.KTĐBCL.09",
+                        scoreVals: [],
+                    };
+                });
+
+                return NextResponse.json(enriched);
+            } catch (err: any) {
+                console.error("Error fetching preschool psychology students:", err);
+                return NextResponse.json({ error: err?.message || "Internal Server Error" }, { status: 500 });
             }
         }
 
@@ -1639,10 +1772,16 @@ export async function GET(req: any) {
                             id: true,
                             studentId: true,
                             templateCode: true,
+                            templateVersionCode: true,
                             versionNumber: true,
                             workflowStatus: true,
                             studentSectionStatus: true,
                             parentSectionStatus: true,
+                            orientationSectionStatus: true,
+                            teacherSummaryJson: true,
+                            isLocked: true,
+                            studentInterviewerName: true,
+                            parentInterviewerName: true,
                             returnReason: true,
                             updatedAt: true,
                         },
@@ -1700,29 +1839,88 @@ export async function GET(req: any) {
         });
 
         try {
-            await ensureTciSchema();
+            await Promise.all([
+                ensureTciSchema().catch(() => {}),
+                ensurePvdhSchema().catch(() => {}),
+            ]);
             const studentIds = students.map((s: any) => s.id).filter(Boolean);
             if (studentIds.length > 0) {
                 const tciDb = getTciDb();
-                const tciRecords = await tciDb.tciAssessmentRecord.findMany({
-                    where: {
-                        studentId: { in: studentIds },
-                        isLatestVersion: true,
-                    },
-                });
+                const pvdhDb = getPvdhDb();
+                const [tciRecords, pvdhRecords, gdcsLogs] = await Promise.all([
+                    tciDb.tciAssessmentRecord.findMany({
+                        where: {
+                            studentId: { in: studentIds },
+                            isLatestVersion: true,
+                        },
+                    }).catch(() => []),
+                    pvdhDb.pvdhAssessmentRecord.findMany({
+                        where: {
+                            studentId: { in: studentIds },
+                            isLatestAttempt: true,
+                        },
+                        select: {
+                            id: true,
+                            studentId: true,
+                            templateCode: true,
+                            templateVersionCode: true,
+                            versionNumber: true,
+                            workflowStatus: true,
+                            studentSectionStatus: true,
+                            parentSectionStatus: true,
+                            orientationSectionStatus: true,
+                            teacherSummaryJson: true,
+                            isLocked: true,
+                            studentInterviewerName: true,
+                            updatedAt: true,
+                        },
+                    }).catch(() => []),
+                    (prisma as any).auditLog.findMany({
+                        where: {
+                            action: "GDCS_APPROVAL_EMAIL_SENT",
+                            targetTable: "InputAssessmentStudent",
+                            targetId: { in: studentIds },
+                        },
+                        orderBy: { createdAt: "desc" },
+                        select: { targetId: true, createdAt: true, newValues: true },
+                    }).catch(() => []),
+                ]);
                 const tciMap = new Map<string, any>();
                 for (const r of tciRecords) {
                     tciMap.set(r.studentId, r);
                 }
+                const pvdhMap = new Map<string, any>();
+                for (const r of pvdhRecords) {
+                    pvdhMap.set(r.studentId, r);
+                }
+                const gdcsMailMap = new Map<string, { sentAt: string; recipient: string }>();
+                for (const log of gdcsLogs || []) {
+                    if (!log?.targetId || gdcsMailMap.has(log.targetId)) continue;
+                    let recipient = "";
+                    try {
+                        const parsed = log.newValues ? JSON.parse(log.newValues) : null;
+                        recipient = parsed?.to || "";
+                    } catch {}
+                    gdcsMailMap.set(log.targetId, {
+                        sentAt: log.createdAt ? new Date(log.createdAt).toISOString() : "",
+                        recipient,
+                    });
+                }
                 return NextResponse.json(
-                    students.map((s: any) => ({
-                        ...s,
-                        tciRecord: tciMap.get(s.id) || null,
-                    }))
+                    students.map((s: any) => {
+                        const gm = gdcsMailMap.get(s.id);
+                        return {
+                            ...s,
+                            tciRecord: tciMap.get(s.id) || null,
+                            pvdhRecord: pvdhMap.get(s.id) || null,
+                            gdcsEmailSentAt: gm?.sentAt || null,
+                            gdcsEmailRecipient: gm?.recipient || null,
+                        };
+                    })
                 );
             }
         } catch (tciErr) {
-            console.warn("Could not enrich TCI records in getReport:", tciErr);
+            console.warn("Could not enrich TCI/PVDH records in getReport:", tciErr);
         }
         
         return NextResponse.json(students);
@@ -1789,12 +1987,16 @@ export async function POST(req: any) {
   
   try {
     const body = await req.json();
-    const { action, studentId, subjectId, scores, comments, teacherName, teacherId } = body;
+    const { action, studentId, subjectId, scores, comments, teacherName, teacherId, adminDossierEdit } = body;
 
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    const isStrictAdmin = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN"].includes(userRole) || Boolean((session?.user as any)?.isSuperAdmin);
     const isAdmin = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN", "GIAO_VU", "GIAO_VU_CS"].includes(userRole);
 
     if (action === "deleteScore") {
+      if (!isStrictAdmin) {
+        return NextResponse.json({ error: "Chế độ xóa điểm đã khóa (chỉ tài khoản Admin mới có quyền)." }, { status: 403 });
+      }
       if (!studentId || !subjectId) {
         return NextResponse.json({ error: "Missing studentId or subjectId" }, { status: 400 });
       }
@@ -1802,6 +2004,10 @@ export async function POST(req: any) {
         where: { studentId, subjectId }
       });
       return NextResponse.json({ success: true });
+    }
+
+    if (adminDossierEdit && !isStrictAdmin) {
+      return NextResponse.json({ error: "Chế độ chỉnh sửa điểm đã khóa (chỉ tài khoản Admin mới có quyền)." }, { status: 403 });
     }
 
     // -- SECURITY HARDENING: Check if Period or Batch is Locked --
@@ -1889,6 +2095,16 @@ export async function POST(req: any) {
                     } else {
                         studentScoreUpdate.writtenEnglishScore = numVal;
                     }
+                } else if (subNameNorm.includes("tâm lý") || subCodeNorm.includes("tly")) {
+                    const psychTotal = scoresArr.length >= 27
+                        ? scoresArr.slice(7, 27).reduce((acc: number, v: any) => {
+                            const n = Number(v);
+                            return acc + (Number.isFinite(n) && n >= 0 ? n : 0);
+                        }, 0)
+                        : (scoresArr.length >= 7 && Number.isFinite(Number(scoresArr[6]))
+                            ? Number(scoresArr[6])
+                            : numVal);
+                    studentScoreUpdate.psychologyScore = psychTotal;
                 }
 
                 if (Object.keys(studentScoreUpdate).length > 0) {
@@ -1916,17 +2132,144 @@ export async function PUT(req: any) {
   
   try {
     const body = await req.json();
-    const { action, assignmentId, reason } = body;
+    const {
+      action,
+      assignmentId,
+      reason,
+      periodId,
+      batchId,
+      subjectId,
+      grade,
+      educationSystem,
+      userId,
+      isPreschool
+    } = body;
 
     if (action === "requestUnlock") {
-        const record = await prisma.inputAssessmentTeacherAssignment.update({
-            where: { id: assignmentId },
-            data: {
-                unlockRequestStatus: "PENDING",
-                unlockReason: reason
+        if (!reason || !String(reason).trim()) {
+            return NextResponse.json({ error: "Vui lòng nhập lý do xin mở khóa." }, { status: 400 });
+        }
+
+        if (isPreschool) {
+            return NextResponse.json(
+                { error: "Phân công khảo sát Mầm non hiện cần Quản trị viên mở khóa trực tiếp trên đợt khảo sát." },
+                { status: 400 }
+            );
+        }
+
+        // 1. Kiểm tra bản ghi thật theo assignmentId
+        const existingById = assignmentId
+            ? await prisma.inputAssessmentTeacherAssignment.findUnique({
+                  where: { id: assignmentId }
+              })
+            : null;
+
+        if (existingById) {
+            const record = await prisma.inputAssessmentTeacherAssignment.update({
+                where: { id: existingById.id },
+                data: {
+                    unlockRequestStatus: "PENDING",
+                    unlockReason: String(reason).trim()
+                }
+            });
+            return NextResponse.json(record);
+        }
+
+        // 2. Trường hợp phân công tổng hợp (session_ex_... từ Lịch ca thi hoặc synthesized_... từ phân công giảng dạy)
+        // Tìm hoặc tạo bản ghi InputAssessmentTeacherAssignment tương ứng để lưu trạng thái PENDING cho Admin duyệt
+        let resolvedPeriodId = periodId || null;
+        let resolvedBatchId = batchId || null;
+        let resolvedSubjectId = subjectId || null;
+        let resolvedGrade = grade || "Tất cả";
+        let resolvedSystem = educationSystem || "Tất cả";
+        let resolvedUserId = userId || session.user.id;
+
+        if (typeof assignmentId === "string" && assignmentId.startsWith("session_ex_")) {
+            const exId = assignmentId.replace("session_ex_", "");
+            const ex = await (prisma as any).inputAssessmentSessionExaminer.findUnique({
+                where: { id: exId },
+                include: {
+                    session: {
+                        include: {
+                            studentSessions: { include: { student: true }, take: 1 }
+                        }
+                    }
+                }
+            });
+            if (ex?.session) {
+                resolvedPeriodId = resolvedPeriodId || ex.session.periodId;
+                resolvedBatchId = resolvedBatchId ?? ex.session.batchId ?? null;
+                resolvedUserId = ex.userId || resolvedUserId;
+                const firstSt = ex.session.studentSessions?.[0]?.student;
+                if (!grade && firstSt?.grade) resolvedGrade = firstSt.grade;
+                if (!educationSystem && firstSt?.surveyFormType) resolvedSystem = firstSt.surveyFormType;
+
+                if (!resolvedSubjectId && ex.subjectCode) {
+                    const allSubs = await prisma.assessmentSubject.findMany();
+                    const subNorm = String(ex.subjectCode).toLowerCase().trim();
+                    const matchedSub = allSubs.find(s =>
+                        s.id === ex.subjectCode ||
+                        String(s.code || "").toLowerCase().trim() === subNorm ||
+                        String(s.name || "").toLowerCase().trim() === subNorm
+                    );
+                    if (matchedSub) resolvedSubjectId = matchedSub.id;
+                }
+            }
+        }
+
+        if (!resolvedPeriodId || !resolvedSubjectId) {
+            return NextResponse.json(
+                { error: "Không tìm thấy phân công tương ứng để gửi yêu cầu mở khóa. Vui lòng tải lại trang và thử lại." },
+                { status: 404 }
+            );
+        }
+
+        // Đảm bảo subjectId tồn tại trong AssessmentSubject (tránh lỗi khóa ngoại khi từ synthesized_...)
+        const validAssessmentSubject = await prisma.assessmentSubject.findUnique({
+            where: { id: resolvedSubjectId }
+        });
+        if (!validAssessmentSubject) {
+            return NextResponse.json(
+                { error: "Môn khảo sát không nằm trong danh mục phân công mở khóa tự động. Vui lòng liên hệ Quản trị viên để mở khóa đợt khảo sát." },
+                { status: 400 }
+            );
+        }
+
+        const existingMatch = await prisma.inputAssessmentTeacherAssignment.findFirst({
+            where: {
+                periodId: resolvedPeriodId,
+                batchId: resolvedBatchId || null,
+                userId: resolvedUserId,
+                subjectId: resolvedSubjectId,
+                grade: resolvedGrade,
+                educationSystem: resolvedSystem
             }
         });
-        return NextResponse.json(record);
+
+        if (existingMatch) {
+            const record = await prisma.inputAssessmentTeacherAssignment.update({
+                where: { id: existingMatch.id },
+                data: {
+                    unlockRequestStatus: "PENDING",
+                    unlockReason: String(reason).trim()
+                }
+            });
+            return NextResponse.json(record);
+        }
+
+        const created = await prisma.inputAssessmentTeacherAssignment.create({
+            data: {
+                periodId: resolvedPeriodId,
+                batchId: resolvedBatchId || null,
+                userId: resolvedUserId,
+                subjectId: resolvedSubjectId,
+                grade: resolvedGrade,
+                educationSystem: resolvedSystem,
+                unlockRequestStatus: "PENDING",
+                unlockReason: String(reason).trim()
+            }
+        });
+        return NextResponse.json(created);
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
