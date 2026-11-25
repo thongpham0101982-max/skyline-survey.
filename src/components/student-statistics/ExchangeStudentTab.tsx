@@ -28,7 +28,7 @@ import {
   formatDeltaForDisplay,
   formatRateWithFraction,
   formatScoreForDisplay,
-} from "@/lib/student-statistics/pdfExportService"
+} from "@/lib/student-statistics/formatters"
 
 interface ExchangeStudentTabProps {
   data: ExchangeStudentReportPayload

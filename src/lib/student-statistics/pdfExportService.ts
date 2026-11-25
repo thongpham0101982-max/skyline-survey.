@@ -1,12 +1,17 @@
-import { formatCommitmentScoreNumber } from "@/lib/ktdbcl/entranceCommitmentReportEngine"
+import {
+  formatDeltaForDisplay,
+  formatRateWithFraction,
+  formatScoreForDisplay,
+} from "./formatters"
 import {
   AcademicCommitmentReportPayload,
-  EducationLevelCode,
   ExchangeStudentReportPayload,
   HomeschoolingReportPayload,
   PsychologyCommitmentReportPayload,
   StudentStatisticsAccessScope,
 } from "./types"
+
+export { formatDeltaForDisplay, formatRateWithFraction, formatScoreForDisplay }
 
 function escapeHtml(input: unknown): string {
   if (input === null || input === undefined) return ""
@@ -43,37 +48,6 @@ export function formatVietnamTimestamp(date: Date = new Date()): string {
   } catch {
     return date.toLocaleString("vi-VN")
   }
-}
-
-export function formatScoreForDisplay(
-  score: number | null | undefined,
-  level?: EducationLevelCode
-): string {
-  if (score === null || score === undefined || Number.isNaN(Number(score))) return "—"
-  return formatCommitmentScoreNumber(Number(score), {
-    level: level === "TIEU_HOC" || level === "THCS" || level === "THPT" ? level : "THCS",
-  })
-}
-
-export function formatDeltaForDisplay(delta: number | null | undefined): string {
-  if (delta === null || delta === undefined || Number.isNaN(Number(delta))) return "—"
-  const rounded = Math.round((Number(delta) + Number.EPSILON) * 100) / 100
-  if (Math.abs(rounded) <= 1e-9) return "0"
-  const absStr = Math.abs(rounded)
-    .toFixed(2)
-    .replace(/0+$/, "")
-    .replace(/\.$/, "")
-    .replace(".", ",")
-  return rounded > 0 ? `+${absStr}` : `−${absStr}`
-}
-
-export function formatRateWithFraction(
-  numerator: number,
-  denominator: number,
-  rate: number | null
-): string {
-  if (!denominator || denominator <= 0 || rate === null) return "—"
-  return `${numerator}/${denominator} (${rate.toFixed(1).replace(".", ",")}%)`
 }
 
 export function buildAcademicPdfFileName(payload: AcademicCommitmentReportPayload): string {

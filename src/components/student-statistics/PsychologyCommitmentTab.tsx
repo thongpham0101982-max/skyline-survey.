@@ -27,7 +27,7 @@ import {
   PsychWeekCell,
   PsychWeekStatusCode,
 } from "@/lib/student-statistics/types"
-import { formatRateWithFraction } from "@/lib/student-statistics/pdfExportService"
+import { formatRateWithFraction } from "@/lib/student-statistics/formatters"
 
 interface PsychologyCommitmentTabProps {
   data: PsychologyCommitmentReportPayload
