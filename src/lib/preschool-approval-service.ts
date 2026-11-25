@@ -340,38 +340,177 @@ export function renderPreschoolApprovalEmailHtml(params: {
             </td>
           </tr>
 
-          <!-- Developmental Criteria Summary Table -->
+          <!-- B5 Area Table (for BGH_MN) OR B6/B9A Routing Summary Table (for GDCS) -->
           <tr>
             <td style="padding: 6px 28px 18px 28px;">
+              ${
+                isBghMnEmail
+                  ? `
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #CBD5E1; border-radius: 12px; border-collapse: separate; overflow: hidden;">
                 <tr bgcolor="#003B3A" style="background-color: #003B3A; color: #FFFFFF;">
-                  <th align="left" style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; width: 55%;">
+                  <th align="left" style="padding: 10px 14px; font-size: 11px; font-weight: 700; width: 55%;">
                     Lĩnh vực phát triển mầm non
                   </th>
-                  <th align="center" style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; width: 22%; text-align: center;">
+                  <th align="center" style="padding: 10px 14px; font-size: 11px; font-weight: 700; width: 22%; text-align: center;">
                     Tiêu chí Đạt
                   </th>
-                  <th align="center" style="padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; width: 23%; text-align: center;">
+                  <th align="center" style="padding: 10px 14px; font-size: 11px; font-weight: 700; width: 23%; text-align: center;">
                     Tỷ lệ
                   </th>
                 </tr>
                 ${devTableHtml}
                 ${devSummary && devSummary.totalCriteria > 0 ? `
                   <tr bgcolor="#F8FAFC" style="background-color: #F8FAFC; border-top: 2px solid #CBD5E1;">
-                    <td style="padding: 10px 14px; font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase;">
-                      TỔNG HỢP NĂNG LỰC ĐẦU VÀO
+                    <td style="padding: 10px 14px; font-size: 12px; font-weight: 800; color: #003B3A;">
+                      Tổng hợp năng lực đầu vào (B5/B4B)
                     </td>
                     <td align="center" style="padding: 10px 14px; font-size: 14px; font-weight: 800; color: #059669; text-align: center;">
                       ${devSummary.totalPassed}/${devSummary.totalCriteria} tiêu chí
                     </td>
                     <td align="center" style="padding: 10px 14px; text-align: center;">
                       <span style="display: inline-block; padding: 4px 12px; border-radius: 8px; font-size: 13px; font-weight: 800; background-color: #D1FAE5; color: #065F46; border: 1px solid #059669;">
-                        ${devSummary.overallPercentage}% ĐẠT
+                        ${devSummary.overallPercentage}% Đạt
                       </span>
                     </td>
                   </tr>
                 ` : ""}
               </table>
+                  `
+                  : (() => {
+                      const hasTrialInfo = Boolean(
+                        student.probationaryClass ||
+                          student.probationaryTeacher ||
+                          student.probationaryPeriod ||
+                          student.probationaryResult ||
+                          student.probationaryBghStatus ||
+                          bghStatus === "HEN_TRAI_NGHIEM" ||
+                          bghStatus === "DAT_HOC_THU"
+                      );
+                      const trialBadge = !hasTrialInfo
+                        ? { text: "Không KS", bg: "#F1F5F9", color: "#475569" }
+                        : student.probationaryBghStatus
+                          ? { text: "✓ Hoàn thành", bg: "#D1FAE5", color: "#065F46" }
+                          : { text: "● Đợi", bg: "#FEF3C7", color: "#92400E" };
+                      const trialDetail = !hasTrialInfo
+                        ? "Không phát sinh học trải nghiệm"
+                        : [
+                            student.probationaryResult
+                              ? `GV ĐG: ${student.probationaryResult === "DAT" ? "Đạt" : "Chưa đạt"}`
+                              : null,
+                            student.probationaryBghStatus
+                              ? `BGH duyệt: ${
+                                  student.probationaryBghStatus === "DAT"
+                                    ? "Đạt"
+                                    : student.probationaryBghStatus === "KHONG_DAT"
+                                      ? "Không đạt"
+                                      : "Ý kiến khác"
+                                }`
+                              : "Chờ BGH MN duyệt",
+                            student.probationaryClass ? `Lớp: ${student.probationaryClass}` : null,
+                            student.probationaryTeacher ? `GV: ${student.probationaryTeacher}` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" &bull; ");
+
+                      const hasPsyInfo = Boolean(
+                        Number(student.trialPsychologyScreening || 0) === 1 ||
+                          student.trialPsychologistName ||
+                          student.trialPsychologyStatus ||
+                          student.trialPsychologyConclusion
+                      );
+                      const psyDone =
+                        student.trialPsychologyStatus === "COMPLETED" ||
+                        student.trialPsychologyStatus === "EVALUATED";
+                      const psyBadge = !hasPsyInfo
+                        ? { text: "Không KS", bg: "#F1F5F9", color: "#475569" }
+                        : psyDone
+                          ? { text: "✓ Hoàn thành", bg: "#D1FAE5", color: "#065F46" }
+                          : { text: "● Đợi", bg: "#FEF3C7", color: "#92400E" };
+                      const psyConclusionText =
+                        student.trialPsychologyConclusion === "BINH_THUONG"
+                          ? "Phát triển tâm lý bình thường"
+                          : student.trialPsychologyConclusion === "CAN_THEO_DOI"
+                            ? "Cần theo dõi thêm"
+                            : student.trialPsychologyConclusion === "CAN_CAN_THIEP"
+                              ? "Cần hỗ trợ / can thiệp chuyên sâu"
+                              : psyDone
+                                ? "Đã hoàn thành đánh giá"
+                                : student.trialPsychologyStatus === "CONFIRMED"
+                                  ? "GV Tâm lý đã xác nhận"
+                                  : "Chờ GV Tâm lý đánh giá";
+                      const psyDetail = !hasPsyInfo
+                        ? "Không phát sinh khảo sát tâm lý"
+                        : `${psyConclusionText}${student.trialPsychologistName ? ` &bull; GV phụ trách: <strong>${student.trialPsychologistName}</strong>` : ""}`;
+
+                      const bghDone = Boolean(student.bghApprovalStatus);
+                      const bghBadge = bghDone
+                        ? { text: "✓ Hoàn thành", bg: "#D1FAE5", color: "#065F46" }
+                        : { text: "● Đợi", bg: "#FEF3C7", color: "#92400E" };
+
+                      return `
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #CBD5E1; border-radius: 12px; border-collapse: separate; overflow: hidden;">
+                <tr bgcolor="#003B3A" style="background-color: #003B3A; color: #FFFFFF;">
+                  <th colspan="3" align="left" style="padding: 10px 14px; font-size: 12px; font-weight: 700;">
+                    Kết quả rà soát &amp; định tuyến B6 / B9A (NT Mầm non / BGH &bull; Học trải nghiệm &bull; Tâm lý)
+                  </th>
+                </tr>
+                <tr bgcolor="#F8FAFC" style="background-color: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
+                  <th align="left" style="padding: 8px 14px; font-size: 11px; font-weight: 700; color: #475569; width: 28%;">Hạng mục</th>
+                  <th align="center" style="padding: 8px 10px; font-size: 11px; font-weight: 700; color: #475569; width: 20%; text-align: center;">Trạng thái</th>
+                  <th align="left" style="padding: 8px 14px; font-size: 11px; font-weight: 700; color: #475569; width: 52%;">Kết quả chi tiết</th>
+                </tr>
+                <tr style="border-bottom: 1px solid #E2E8F0;">
+                  <td style="padding: 10px 14px; font-size: 12px; font-weight: 700; color: #003B3A;">NT Mầm non / BGH</td>
+                  <td align="center" style="padding: 10px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: ${bghBadge.bg}; color: ${bghBadge.color};">
+                      ${bghBadge.text}
+                    </span>
+                  </td>
+                  <td style="padding: 10px 14px; font-size: 12px; color: #1E293B; line-height: 1.5;">
+                    <strong style="color: ${bghStatusColor};">${bghStatusText}</strong>
+                    ${bghDone ? `<div style="font-size: 11px; color: #64748B; margin-top: 2px;">Người rà soát: ${bghUser} &bull; ${bghDate}</div>` : ""}
+                    ${student.bghApprovalComment ? `<div style="font-size: 11px; color: #334155; font-style: italic; margin-top: 2px;">&ldquo;${student.bghApprovalComment}&rdquo;</div>` : ""}
+                  </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #E2E8F0;">
+                  <td style="padding: 10px 14px; font-size: 12px; font-weight: 700; color: #003B3A;">B6 Học trải nghiệm</td>
+                  <td align="center" style="padding: 10px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: ${trialBadge.bg}; color: ${trialBadge.color};">
+                      ${trialBadge.text}
+                    </span>
+                  </td>
+                  <td style="padding: 10px 14px; font-size: 12px; color: #334155; line-height: 1.5;">
+                    ${trialDetail}
+                  </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #E2E8F0;">
+                  <td style="padding: 10px 14px; font-size: 12px; font-weight: 700; color: #003B3A;">B7 Khảo sát tâm lý</td>
+                  <td align="center" style="padding: 10px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background-color: ${psyBadge.bg}; color: ${psyBadge.color};">
+                      ${psyBadge.text}
+                    </span>
+                  </td>
+                  <td style="padding: 10px 14px; font-size: 12px; color: #334155; line-height: 1.5;">
+                    ${psyDetail}
+                  </td>
+                </tr>
+                ${devSummary && devSummary.totalCriteria > 0 ? `
+                <tr bgcolor="#F0FDFA" style="background-color: #F0FDFA;">
+                  <td style="padding: 9px 14px; font-size: 12px; font-weight: 700; color: #003B3A;">B5/B4B Đánh giá đầu vào</td>
+                  <td align="center" style="padding: 9px 10px; text-align: center;">
+                    <span style="display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background-color: #D1FAE5; color: #065F46;">
+                      ${devSummary.overallPercentage}% Đạt
+                    </span>
+                  </td>
+                  <td style="padding: 9px 14px; font-size: 12px; font-weight: 700; color: #059669;">
+                    ${devSummary.totalPassed}/${devSummary.totalCriteria} tiêu chí Đạt
+                  </td>
+                </tr>
+                ` : ""}
+              </table>
+                      `;
+                    })()
+              }
             </td>
           </tr>
 
