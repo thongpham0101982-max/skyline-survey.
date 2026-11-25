@@ -248,7 +248,7 @@ export async function GET(
     const rawAuditLogs = await getStudentAuditLogs(id)
     const userRoles = getNormalizedRoles(ctx.role, ctx.roles)
 
-    // Tổng hợp đầy đủ lược sử từ cả PreschoolWorkflowAuditLog và dữ liệu thực tế trên hồ sơ (tiếp nhận, phân công, chấm điểm, học thử, BGH/GĐCS duyệt)
+    // Tổng hợp đầy đủ lược sử từ cả PreschoolWorkflowAuditLog và dữ liệu thực tế trên hồ sơ (tiếp nhận, phân công, chấm điểm, học trải nghiệm, BGH/GĐCS duyệt)
     const existingActions = new Set(rawAuditLogs.map((l: any) => String(l.action || "").toUpperCase()))
     const synthesizedLogs: any[] = []
 
@@ -316,7 +316,7 @@ export async function GET(
         actorName: "Giáo vụ / BGH Mầm non",
         actorRole: "GIAO_VU",
         source: "PORTAL",
-        detailText: `Phân lớp học thử: ${student.probationaryClass || "—"} · GV phụ trách: ${student.probationaryTeacher || "—"}`,
+        detailText: `Phân lớp học trải nghiệm: ${student.probationaryClass || "—"} · GV phụ trách: ${student.probationaryTeacher || "—"}`,
         createdAt: student.updatedAt || student.createdAt || new Date().toISOString(),
       })
     }
@@ -344,7 +344,7 @@ export async function GET(
         actorName: student.probationaryBghUser || "BGH Mầm non",
         actorRole: "BGH_MN",
         source: "PORTAL",
-        detailText: `BGH duyệt kết quả học thử: ${student.probationaryBghStatus}${student.probationaryBghComment ? ` · "${student.probationaryBghComment}"` : ""}`,
+        detailText: `BGH duyệt kết quả học trải nghiệm: ${student.probationaryBghStatus}${student.probationaryBghComment ? ` · "${student.probationaryBghComment}"` : ""}`,
         createdAt: student.probationaryBghDate || student.updatedAt || student.createdAt || new Date().toISOString(),
       })
     }
@@ -1359,10 +1359,10 @@ export async function PATCH(
       })
     }
 
-    // 11. B6: Lưu phân công học thử, kết quả đánh giá học thử & Sàng lọc tâm lý (gửi email GV Tâm lý)
+    // 11. B6: Lưu phân công học trải nghiệm, kết quả đánh giá học trải nghiệm & Sàng lọc tâm lý (gửi email GV Tâm lý)
     if (action === "SAVE_TRIAL_WORKFLOW") {
       if (!hasAnyRole(userRoles, GIAOVU_ROLES) && !hasAnyRole(userRoles, REVIEWER_ROLES) && !userRoles.includes("TEACHER")) {
-        return NextResponse.json({ error: "Bạn không có quyền cập nhật thông tin học thử." }, { status: 403 })
+        return NextResponse.json({ error: "Bạn không có quyền cập nhật thông tin học trải nghiệm." }, { status: 403 })
       }
 
       const probationaryClass = body.probationaryClass !== undefined ? (String(body.probationaryClass || "").trim() || null) : student.probationaryClass || null
@@ -1413,7 +1413,7 @@ export async function PATCH(
         })
         await sendEmail({
           to: trialPsychologistEmail,
-          subject: `[Sky-Line SSM] Yêu cầu Sàng lọc tâm lý (Học thử Mầm non) — Bé ${student.fullName} (${student.studentCode})`,
+          subject: `[Sky-Line SSM] Yêu cầu Sàng lọc tâm lý (Học trải nghiệm Mầm non) — Bé ${student.fullName} (${student.studentCode})`,
           html,
           replyTo: "ktdbcl@skylineschool.edu.vn",
         })

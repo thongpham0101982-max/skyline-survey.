@@ -65,7 +65,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
   const [generalComment, setGeneralComment] = useState("")
   const [experienceObservation, setExperienceObservation] = useState("")
 
-  // B6 Trial (Phân công học thử, Kết quả học thử & Sàng lọc tâm lý)
+  // B6 Trial (Phân công học trải nghiệm, Kết quả học trải nghiệm & Sàng lọc tâm lý)
   const [trialClass, setTrialClass] = useState("")
   const [trialTeacher, setTrialTeacher] = useState("")
   const [trialPeriod, setTrialPeriod] = useState("")
@@ -368,10 +368,10 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
       : { status: "waiting", label: "Đang đợi GV đánh giá" },
     trial:
       student?.probationaryBghStatus || student?.probationaryResult
-        ? { status: "done", label: "Đã có KQ học thử" }
+        ? { status: "done", label: "Đã có KQ học trải nghiệm" }
         : student?.probationaryTeacher || student?.probationaryClass || String(student?.bghApprovalStatus || "").includes("HOC_THU")
-          ? { status: "waiting", label: "Đang học thử" }
-          : { status: "optional", label: "Khi học thử" },
+          ? { status: "waiting", label: "Đang học trải nghiệm" }
+          : { status: "optional", label: "Khi học trải nghiệm" },
     psychology: hasPsyResult
       ? { status: "done", label: "Đã hoàn thành" }
       : wfStatus === "CHO_PHONG_VAN_TAM_LY"
@@ -394,7 +394,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
     { id: "intake", label: "B1–B3 Tiếp nhận", icon: ClipboardCheck },
     { id: "health", label: "B4A Y tế", icon: Stethoscope },
     { id: "evaluation", label: "B5/B4B Đánh giá", icon: FileText },
-    { id: "trial", label: "B6 Học thử", icon: CalendarPlus },
+    { id: "trial", label: "B6 Học trải nghiệm", icon: CalendarPlus },
     { id: "psychology", label: "B7 Tâm lý (khi cần)", icon: Brain },
     { id: "review", label: "B6/B9A/B10 Duyệt", icon: CheckCircle2 },
     { id: "letters", label: "B11–B13 Thư & Lưu", icon: Archive },
@@ -1194,7 +1194,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
               </div>
             )}
 
-            {/* TAB 3B: B6 PHÂN CÔNG HỌC THỬ, KẾT QUẢ HỌC THỬ & SÀNG LỌC TÂM LÝ */}
+            {/* TAB 3B: B6 PHÂN CÔNG HỌC TRẢI NGHIỆM, KẾT QUẢ HỌC TRẢI NGHIỆM & SÀNG LỌC TÂM LÝ */}
             {!loading && student && activeTab === "trial" && (() => {
               const trialCriteriaRows: Array<{ key: string; area: string; name: string; initialResult: string }> =
                 legacyDev && legacyDev.scores?.length > 0
@@ -1247,20 +1247,20 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                     sendPsychologyEmail: sendEmailFlag,
                   },
                   sendEmailFlag
-                    ? "Đã lưu B6 Học thử và gửi email yêu cầu xác nhận tới GV Tâm lý."
-                    : "Đã lưu phân công & kết quả học thử (B6)."
+                    ? "Đã lưu B6 Học trải nghiệm và gửi email yêu cầu xác nhận tới GV Tâm lý."
+                    : "Đã lưu phân công & kết quả học trải nghiệm (B6)."
                 )
               }
 
               return (
                 <div className="space-y-4 text-xs">
-                  {/* 1. Phân công học thử */}
+                  {/* 1. Phân công học trải nghiệm */}
                   <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <h3 className="text-sm font-bold text-[#003B3A]">B6: Phân công học thử &amp; Kết quả học thử</h3>
+                        <h3 className="text-sm font-bold text-[#003B3A]">B6: Phân công học trải nghiệm &amp; Kết quả học trải nghiệm</h3>
                         <p className="text-[11px] text-slate-500 mt-0.5">
-                          Ghi nhận phân công lớp/GV học thử, đánh giá lại theo mẫu phiếu và sàng lọc tâm lý (khi cần).
+                          Ghi nhận phân công lớp/GV học trải nghiệm, đánh giá lại theo mẫu phiếu và sàng lọc tâm lý (khi cần).
                         </p>
                       </div>
                       <span
@@ -1273,18 +1273,18 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                         }`}
                       >
                         {student.probationaryBghStatus === "DAT"
-                          ? "✓ BGH đã duyệt Đạt sau học thử"
+                          ? "✓ BGH đã duyệt Đạt sau học trải nghiệm"
                           : trialResult === "DAT"
-                            ? "GV học thử: Đạt"
+                            ? "GV học trải nghiệm: Đạt"
                             : trialTeacher || trialClass
-                              ? "● Đang học thử"
-                              : "Chưa phân công học thử"}
+                              ? "● Đang học trải nghiệm"
+                              : "Chưa phân công học trải nghiệm"}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Lớp học thử</label>
+                        <label className="block font-semibold text-slate-700 mb-1">Lớp học trải nghiệm</label>
                         <input
                           type="text"
                           value={trialClass}
@@ -1294,7 +1294,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                         />
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">GV đánh giá học thử</label>
+                        <label className="block font-semibold text-slate-700 mb-1">GV đánh giá học trải nghiệm</label>
                         <input
                           type="text"
                           list="preschool-trial-teachers-list"
@@ -1310,7 +1310,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                         </datalist>
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Thời gian học thử</label>
+                        <label className="block font-semibold text-slate-700 mb-1">Thời gian học trải nghiệm</label>
                         <input
                           type="text"
                           value={trialPeriod}
@@ -1416,14 +1416,14 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                     </div>
                   </div>
 
-                  {/* 2. Phiếu đánh giá phát triển kèm cột Học thử & GV đánh giá */}
+                  {/* 2. Phiếu đánh giá phát triển kèm cột Học trải nghiệm & GV đánh giá */}
                   <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h4 className="text-sm font-bold text-[#003B3A]">
-                        Phiếu theo dõi đánh giá Học thử ({trialCriteriaRows.length} tiêu chí)
+                        Phiếu theo dõi đánh giá Học trải nghiệm ({trialCriteriaRows.length} tiêu chí)
                       </h4>
                       <span className="text-[11px] text-slate-500">
-                        Tick <strong>Sàng lọc tâm lý</strong> ở cột Học thử nếu phát hiện dấu hiệu cần đánh giá tâm lý
+                        Tick <strong>Sàng lọc tâm lý</strong> ở cột Học trải nghiệm nếu phát hiện dấu hiệu cần đánh giá tâm lý
                       </span>
                     </div>
                     <div className="max-h-[340px] overflow-y-auto rounded-xl border border-[#E2E8F0]">
@@ -1433,7 +1433,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                             <th className="py-2 px-2.5 text-teal-100 font-semibold">Lĩnh vực</th>
                             <th className="py-2 px-2.5 text-white font-semibold">Tiêu chí</th>
                             <th className="py-2 px-2.5 text-teal-100 font-semibold whitespace-nowrap">KQ Đánh giá</th>
-                            <th className="py-2 px-2.5 text-[#5EEAD4] font-semibold">Học thử</th>
+                            <th className="py-2 px-2.5 text-[#5EEAD4] font-semibold">Học trải nghiệm</th>
                             <th className="py-2 px-2.5 text-white font-semibold">GV đánh giá</th>
                           </tr>
                         </thead>
@@ -1518,12 +1518,12 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                     </div>
                   </div>
 
-                  {/* 3. Kết quả đánh giá học thử & BGH duyệt KQ học thử */}
+                  {/* 3. Kết quả đánh giá học trải nghiệm & BGH duyệt KQ học trải nghiệm */}
                   <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-4">
-                    <h4 className="text-sm font-bold text-[#003B3A]">Kết quả học thử &amp; BGH Mầm non duyệt kết quả học thử</h4>
+                    <h4 className="text-sm font-bold text-[#003B3A]">Kết quả học trải nghiệm &amp; BGH Mầm non duyệt kết quả học trải nghiệm</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Kết quả GV đánh giá học thử</label>
+                        <label className="block font-semibold text-slate-700 mb-1">Kết quả GV đánh giá học trải nghiệm</label>
                         <select
                           value={trialResult}
                           onChange={(e) => setTrialResult(e.target.value)}
@@ -1535,7 +1535,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                         </select>
                       </div>
                       <div>
-                        <label className="block font-semibold text-slate-700 mb-1">BGH Mầm non duyệt kết quả học thử</label>
+                        <label className="block font-semibold text-slate-700 mb-1">BGH Mầm non duyệt kết quả học trải nghiệm</label>
                         <select
                           value={trialBghStatus}
                           onChange={(e) => setTrialBghStatus(e.target.value)}
@@ -1550,12 +1550,12 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Nhận xét kết quả học thử</label>
+                      <label className="block font-semibold text-slate-700 mb-1">Nhận xét kết quả học trải nghiệm</label>
                       <textarea
                         rows={2}
                         value={trialComment}
                         onChange={(e) => setTrialComment(e.target.value)}
-                        placeholder="Ghi nhận khả năng hòa nhập, vận động, ngôn ngữ, tâm lý trong thời gian học thử..."
+                        placeholder="Ghi nhận khả năng hòa nhập, vận động, ngôn ngữ, tâm lý trong thời gian học trải nghiệm..."
                         className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2"
                       />
                     </div>
@@ -1567,7 +1567,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                         onClick={() => saveTrial(false)}
                         className="px-4 py-2 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white font-semibold cursor-pointer disabled:opacity-50"
                       >
-                        Lưu phân công &amp; Kết quả học thử (B6)
+                        Lưu phân công &amp; Kết quả học trải nghiệm (B6)
                       </button>
                       {trialPsyScreening && trialPsyId && (
                         <button
@@ -2182,8 +2182,8 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                         SAVE_PSYCHOLOGY: "B7A: Đánh giá tâm lý (BM.KTĐBCL.09)",
                         SCHEDULE_FOLLOW_UP: "B7B: Hẹn lịch trải nghiệm / khảo sát lại",
                         REVIEW_B6_B9A: "B6/B9A: BGH Mầm non rà soát & xét duyệt",
-                        ASSIGN_TRIAL: "Phân lớp & GV học thử",
-                        BGH_TRIAL_APPROVE: "BGH Mầm non duyệt kết quả học thử",
+                        ASSIGN_TRIAL: "Phân lớp & GV học trải nghiệm",
+                        BGH_TRIAL_APPROVE: "BGH Mầm non duyệt kết quả học trải nghiệm",
                         APPROVE_B10: "B10: Giám đốc Cơ sở phê duyệt",
                         SEND_APPROVAL_EMAIL: "Gửi email yêu cầu phê duyệt",
                         DELIVER_RESULT: "B12: Trả kết quả cho Phụ huynh",

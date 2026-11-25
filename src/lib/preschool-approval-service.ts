@@ -179,11 +179,11 @@ export function renderPreschoolApprovalEmailHtml(params: {
   let bghStatusBg = "#F1F5F9";
   let bghStatusColor = "#475569";
   if (bghStatus === "DAT_MIEN_HOC_THU" || bghStatus === "DAT") {
-    bghStatusText = "ĐẠT - MIỄN HỌC THỬ (HỌC CHÍNH THỨC)";
+    bghStatusText = "ĐẠT - MIỄN HỌC TRẢI NGHIỆM (HỌC CHÍNH THỨC)";
     bghStatusBg = "#D1FAE5";
     bghStatusColor = "#065F46";
   } else if (bghStatus === "DAT_HOC_THU") {
-    bghStatusText = "ĐẠT - HỌC THỬ";
+    bghStatusText = "ĐẠT - HỌC TRẢI NGHIỆM";
     bghStatusBg = "#E0E7FF";
     bghStatusColor = "#3730A3";
   } else if (bghStatus === "KHONG_DAT") {
@@ -437,23 +437,23 @@ export function renderPreschoolApprovalEmailHtml(params: {
                 ⚡ THAO TÁC XÉT DUYỆT TRỰC TIẾP DÀNH CHO GĐCS
               </div>
 
-              <!-- Button 1: Đồng thuận duyệt Miễn học thử -->
+              <!-- Button 1: Đồng thuận duyệt Miễn học trải nghiệm -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 12px auto; width: 100%; max-width: 480px;">
                 <tr>
                   <td align="center" bgcolor="#059669" style="background-color: #059669; border-radius: 10px; box-shadow: 0 4px 6px rgba(5, 150, 105, 0.25);">
                     <a href="${approveMienHtUrl}" target="_blank" style="display: block; padding: 14px 24px; font-size: 14px; font-weight: 800; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px; text-transform: uppercase;">
-                      ✓ ĐỒNG THUẬN PHÊ DUYỆT: MIỄN HỌC THỬ &rarr;
+                      ✓ ĐỒNG THUẬN PHÊ DUYỆT: MIỄN HỌC TRẢI NGHIỆM &rarr;
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <!-- Button 2: Duyệt Học Thử -->
+              <!-- Button 2: Duyệt Học Trải Nghiệm -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 12px auto; width: 100%; max-width: 480px;">
                 <tr>
                   <td align="center" bgcolor="#0284C7" style="background-color: #0284C7; border-radius: 10px;">
                     <a href="${approveHocThuUrl}" target="_blank" style="display: block; padding: 12px 24px; font-size: 13px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
-                      ✦ PHÊ DUYỆT: ĐẠT - HỌC THỬ
+                      ✦ PHÊ DUYỆT: ĐẠT - HỌC TRẢI NGHIỆM
                     </a>
                   </td>
                 </tr>
@@ -699,7 +699,7 @@ export interface PreschoolPsychologyConfirmPayload {
 }
 
 /**
- * Tạo token ký HMAC-SHA256 (hiệu lực 14 ngày) để GV Tâm lý xác nhận tiếp nhận & gửi phản hồi sàng lọc tâm lý học thử.
+ * Tạo token ký HMAC-SHA256 (hiệu lực 14 ngày) để GV Tâm lý xác nhận tiếp nhận & gửi phản hồi sàng lọc tâm lý học trải nghiệm.
  */
 export function createPreschoolPsychologyToken(
   payload: Omit<PreschoolPsychologyConfirmPayload, "v" | "exp">,
@@ -756,7 +756,7 @@ export function verifyPreschoolPsychologyToken(
 }
 
 /**
- * Tạo nội dung Email mời GV Tâm lý đánh giá sàng lọc tâm lý & phản hồi xác nhận (giai đoạn Học thử Mầm non).
+ * Tạo nội dung Email mời GV Tâm lý đánh giá sàng lọc tâm lý & phản hồi xác nhận (giai đoạn Học trải nghiệm Mầm non).
  */
 export function renderPreschoolPsychologyScreeningEmailHtml(params: {
   student: {
@@ -818,7 +818,7 @@ export function renderPreschoolPsychologyScreeningEmailHtml(params: {
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;">
         <tr>
           <td style="background:#003B3A;padding:22px 28px;color:#FFFFFF;border-bottom:4px solid #00A19A;">
-            <div style="font-size:12px;color:#5EEAD4;font-weight:600;margin-bottom:4px;">Hệ thống Giáo dục Sky-Line · Khảo sát &amp; Học thử Mầm non</div>
+            <div style="font-size:12px;color:#5EEAD4;font-weight:600;margin-bottom:4px;">Hệ thống Giáo dục Sky-Line · Khảo sát &amp; Học trải nghiệm Mầm non</div>
             <div style="font-size:19px;font-weight:700;">Yêu cầu Sàng lọc tâm lý &amp; Phản hồi xác nhận</div>
           </td>
         </tr>
@@ -826,14 +826,14 @@ export function renderPreschoolPsychologyScreeningEmailHtml(params: {
           <td style="padding:24px 28px;">
             <p style="margin:0 0 12px 0;font-size:14px;">Kính gửi Cô/Thầy <strong>${psychologistName}</strong>,</p>
             <p style="margin:0 0 16px 0;font-size:13.5px;color:#334155;line-height:1.6;">
-              Trong quá trình phân công học thử Mầm non, bộ phận chuyên môn (${assignedByName}) ghi nhận trẻ dưới đây cần được <strong>Sàng lọc tâm lý</strong> và phân công Cô/Thầy thực hiện đánh giá, đồng thời phản hồi xác nhận trên hệ thống SSM.
+              Trong quá trình phân công học trải nghiệm Mầm non, bộ phận chuyên môn (${assignedByName}) ghi nhận trẻ dưới đây cần được <strong>Sàng lọc tâm lý</strong> và phân công Cô/Thầy thực hiện đánh giá, đồng thời phản hồi xác nhận trên hệ thống SSM.
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:16px;font-size:13px;">
               <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#475569;width:38%;">Họ và tên trẻ</td><td style="padding:9px 14px;font-weight:700;color:#0F172A;">${student.fullName} (${student.studentCode})</td></tr>
               <tr><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Nhóm tuổi / Cơ sở</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.grade || "Mầm non"} · ${student.admissionCampus || "Sky-Line"}</td></tr>
-              <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Lớp học thử</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;font-weight:600;color:#003B3A;">${student.probationaryClass || "Đang sắp xếp"}</td></tr>
-              <tr><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">GV đánh giá học thử</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.probationaryTeacher || "Chưa phân công"}</td></tr>
-              ${student.probationaryPeriod ? `<tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Thời gian học thử</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.probationaryPeriod}</td></tr>` : ""}
+              <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Lớp học trải nghiệm</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;font-weight:600;color:#003B3A;">${student.probationaryClass || "Đang sắp xếp"}</td></tr>
+              <tr><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">GV đánh giá học trải nghiệm</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.probationaryTeacher || "Chưa phân công"}</td></tr>
+              ${student.probationaryPeriod ? `<tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Thời gian học trải nghiệm</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.probationaryPeriod}</td></tr>` : ""}
               ${note ? `<tr><td style="padding:9px 14px;color:#475569;border-top:1px solid #F1F5F9;">Ghi chú chuyên môn</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;color:#334155;">${note}</td></tr>` : ""}
             </table>
 
@@ -851,7 +851,7 @@ export function renderPreschoolPsychologyScreeningEmailHtml(params: {
               </a>
             </div>
             <p style="margin:18px 0 0 0;font-size:11px;color:#64748B;line-height:1.5;">
-              Liên kết xác nhận có hiệu lực trong 14 ngày. Sau khi Cô/Thầy gửi phản hồi xác nhận, kết quả sẽ tự động đồng bộ trực tiếp vào phiếu Phân công học thử &amp; Xét duyệt trên hệ thống SSM.
+              Liên kết xác nhận có hiệu lực trong 14 ngày. Sau khi Cô/Thầy gửi phản hồi xác nhận, kết quả sẽ tự động đồng bộ trực tiếp vào phiếu Phân công học trải nghiệm &amp; Xét duyệt trên hệ thống SSM.
             </p>
           </td>
         </tr>

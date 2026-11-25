@@ -106,13 +106,13 @@ export async function GET(req: NextRequest) {
 
       return renderHtmlPage({
         title: "Phản hồi xác nhận Sàng lọc tâm lý",
-        subtitle: "Học thử Mầm non — Tự động đồng bộ trực tiếp vào phiếu trên SSM",
+        subtitle: "Học trải nghiệm Mầm non — Tự động đồng bộ trực tiếp vào phiếu trên SSM",
         tone: "pine",
         bodyHtml: `
           <div class="info-box">
             <div class="row"><span class="label">Họ và tên trẻ</span><span class="val">${student.fullName} (${student.studentCode})</span></div>
             <div class="row"><span class="label">Nhóm tuổi / Cơ sở</span><span class="val">${student.grade || "Mầm non"} · ${student.admissionCampus || "Sky-Line"}</span></div>
-            <div class="row"><span class="label">Lớp học thử / GV học thử</span><span class="val">${student.probationaryClass || "—"} · ${student.probationaryTeacher || "—"}</span></div>
+            <div class="row"><span class="label">Lớp học trải nghiệm / GV học trải nghiệm</span><span class="val">${student.probationaryClass || "—"} · ${student.probationaryTeacher || "—"}</span></div>
             <div class="row"><span class="label">GV Tâm lý phụ trách</span><span class="val">${payload.psychologistName}</span></div>
           </div>
           <form method="POST" action="/api/admin/quick-approve/preschool">
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
             <select id="psychologyConclusion" name="psychologyConclusion" style="width:100%;box-sizing:border-box;border:1px solid #CBD5E1;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px;background:#fff;">
               <option value="" ${!currentConclusion ? "selected" : ""}>-- Chưa kết luận / Đang theo dõi --</option>
               <option value="BINH_THUONG" ${currentConclusion === "BINH_THUONG" ? "selected" : ""}>Phát triển tâm lý bình thường</option>
-              <option value="CAN_THEO_DOI" ${currentConclusion === "CAN_THEO_DOI" ? "selected" : ""}>Cần theo dõi thêm trong quá trình học thử</option>
+              <option value="CAN_THEO_DOI" ${currentConclusion === "CAN_THEO_DOI" ? "selected" : ""}>Cần theo dõi thêm trong quá trình học trải nghiệm</option>
               <option value="CAN_CAN_THIEP" ${currentConclusion === "CAN_CAN_THIEP" ? "selected" : ""}>Cần hỗ trợ / can thiệp chuyên sâu</option>
             </select>
             <label for="psychologyFeedback" style="display:block;font-size:12px;font-weight:600;color:#334155;">Ý kiến phản hồi / Nhận xét đánh giá tâm lý:</label>
@@ -248,9 +248,9 @@ export async function GET(req: NextRequest) {
 
     const actionLabel =
       action === "APPROVE_MIEN_HT"
-        ? "Đạt - Miễn Học Thử"
+        ? "Đạt - Miễn Học Trải Nghiệm"
         : action === "APPROVE_HOC_THU"
-          ? "Đạt - Học Thử"
+          ? "Đạt - Học Trải Nghiệm"
           : "Chưa đạt"
 
     return renderHtmlPage({
@@ -393,7 +393,7 @@ export async function POST(req: NextRequest) {
         psychologyConclusion === "BINH_THUONG"
           ? "Phát triển tâm lý bình thường"
           : psychologyConclusion === "CAN_THEO_DOI"
-            ? "Cần theo dõi thêm trong quá trình học thử"
+            ? "Cần theo dõi thêm trong quá trình học trải nghiệm"
             : psychologyConclusion === "CAN_CAN_THIEP"
               ? "Cần hỗ trợ / can thiệp chuyên sâu"
               : "Chưa kết luận"
@@ -410,7 +410,7 @@ export async function POST(req: NextRequest) {
             <div class="row"><span class="label">Kết luận sàng lọc</span><span class="val">${conclusionLabel}</span></div>
             ${psychologyFeedback ? `<div class="row"><span class="label">Ý kiến phản hồi</span><span class="val">${psychologyFeedback.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span></div>` : ""}
           </div>
-          <p style="font-size:13px;color:#334155;">Cảm ơn Cô/Thầy đã phản hồi. Ban Giám Hiệu Mầm non và GV học thử có thể xem ngay trạng thái xác nhận trên bảng Xét duyệt kết quả.</p>
+          <p style="font-size:13px;color:#334155;">Cảm ơn Cô/Thầy đã phản hồi. Ban Giám Hiệu Mầm non và GV học trải nghiệm có thể xem ngay trạng thái xác nhận trên bảng Xét duyệt kết quả.</p>
           <a class="btn" href="/admin/xet-duyet-ket-qua?tab=preschool">Mở bảng Xét duyệt trên SSM</a>
         `,
       })

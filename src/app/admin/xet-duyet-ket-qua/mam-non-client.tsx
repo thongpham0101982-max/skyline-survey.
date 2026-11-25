@@ -76,16 +76,16 @@ const getStatusBadge = (status: string | null | undefined) => {
   
   const normStatus = status.toUpperCase();
   const badgeConfig: Record<string, { bg: string, text: string, border: string, label: string }> = {
-    DAT_MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
-    MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
-    MIEN_HT: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
+    DAT_MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học trải nghiệm" },
+    MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học trải nghiệm" },
+    MIEN_HT: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học trải nghiệm" },
     DE_XUAT_DAT: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200/70", label: "Đề xuất Đạt → B10" },
     DE_XUAT_CHUA_DAT: { bg: "bg-rose-50 text-rose-700 border-rose-200/70", label: "Đề xuất Chưa đạt → B10" },
     CAN_PV_TAM_LY: { bg: "bg-amber-50 text-amber-800 border-amber-200/70", label: "Cần PV tâm lý (B7A)" },
     HEN_TRAI_NGHIEM: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Hẹn trải nghiệm (B7B)" },
-    DAT_HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
-    HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
-    HOC_THU_LAI: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
+    DAT_HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học trải nghiệm" },
+    HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học trải nghiệm" },
+    HOC_THU_LAI: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học trải nghiệm" },
     DAT: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200/70", label: "Đạt" },
     KHONG_DAT: { bg: "bg-rose-50 text-rose-700 border-rose-200/70", label: "Không đạt" },
     K_DAT: { bg: "bg-rose-50 text-rose-700 border-rose-200/70", label: "Không đạt" },
@@ -211,8 +211,8 @@ const xetDuyetCols = [
   { id: "kqgvDg", label: "KQGV ĐG", width: "w-[172px] min-w-[172px] whitespace-normal" },
   { id: "dossierB1B13", label: "Mở Hồ sơ B1–B13", width: "w-[128px] min-w-[128px] text-center" },
   { id: "bghApproval", label: "1. BGH MN duyệt", width: "w-[156px] min-w-[156px] whitespace-normal" },
-  { id: "trialAssign", label: "2. Phân công học thử", width: "w-[162px] min-w-[162px] whitespace-normal" },
-  { id: "trialResult", label: "2. Kết quả học thử", width: "w-[172px] min-w-[172px] whitespace-normal" },
+  { id: "trialAssign", label: "2. Phân công học trải nghiệm", width: "w-[162px] min-w-[162px] whitespace-normal" },
+  { id: "trialResult", label: "2. Kết quả học trải nghiệm", width: "w-[172px] min-w-[172px] whitespace-normal" },
   { id: "gdcsApproval", label: "3. GĐCS duyệt", width: "w-[156px] min-w-[156px] whitespace-normal" },
   { id: "result", label: "Kết quả", width: "w-[128px] min-w-[128px] whitespace-normal" }
 ];
@@ -236,8 +236,8 @@ const dgkqHocThuCols = [
   { id: "dateOfBirth", label: "Ngày sinh", width: "w-24 min-w-[96px]" },
   { id: "grade", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
   { id: "resolvedAgeGroup", label: "Phiếu", width: "w-28 min-w-[112px]" },
-  { id: "probationaryClass", label: "Lớp học thử", width: "w-28 min-w-[112px]" },
-  { id: "probationaryTeacher", label: "GV Học thử", width: "w-36 min-w-[144px] whitespace-normal" },
+  { id: "probationaryClass", label: "Lớp học trải nghiệm", width: "w-28 min-w-[112px]" },
+  { id: "probationaryTeacher", label: "GV Học trải nghiệm", width: "w-36 min-w-[144px] whitespace-normal" },
   { id: "probationaryResult", label: "KQĐG GV", width: "w-28 min-w-[112px]" },
   { id: "bghStatus", label: "Kết quả", width: "w-28 min-w-[112px]" },
   { id: "actions", label: "BGH Xét duyệt", width: "w-28 min-w-[112px]" }
@@ -360,7 +360,7 @@ const isStudentHocThu = (s: any): boolean => {
 
   const isTrialText = (val: string) => {
     const v = val.toUpperCase();
-    return v === "DAT_HOC_THU" || v === "HOC_THU" || v.includes("HỌC THỬ") || v.includes("HOC_THU") || v.includes("HOC THU");
+    return v === "DAT_HOC_THU" || v === "HOC_THU" || v.includes("HỌC TRẢI NGHIỆM") || v.includes("HỌC THỬ") || v.includes("HOC_THU") || v.includes("HOC THU");
   };
 
   return isTrialText(gResult) || isTrialText(bgh) || isTrialText(gdcs) || isTrialText(devAssess) || isTrialText(admResult);
@@ -402,7 +402,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       v === "MIEN_HT" ||
       v.includes("MIỄN HT") ||
       v.includes("MIEN HT") ||
-      v.includes("MIỄN HỌC THỬ") ||
+      v.includes("MIỄN HỌC TRẢI NGHIỆM") || v.includes("MIỄN HỌC THỬ") ||
       v.includes("MIEN_HOC_THU");
 
     const isTrialToken = (v: string) =>
@@ -411,7 +411,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         v === "DAT_HOC_THU" ||
         v === "HOC_THU" ||
         v === "HOC_THU_LAI" ||
-        v.includes("HỌC THỬ") ||
+        v.includes("HỌC TRẢI NGHIỆM") || v.includes("HỌC THỬ") ||
         v.includes("HOC_THU") ||
         v.includes("TRẢI NGHIỆM"));
 
@@ -428,8 +428,8 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     const isTrialPassed = probBgh === "DAT";
 
     // Chỉ mở nút GĐCS xét duyệt khi:
-    // 1. BGH MN chọn Đề xuất Đạt / Đề xuất Chưa đạt trình B10 (hoặc Miễn học thử), HOẶC
-    // 2. Đã qua luồng Học thử / Trải nghiệm và BGH duyệt kết quả học thử = Đạt, HOẶC
+    // 1. BGH MN chọn Đề xuất Đạt / Đề xuất Chưa đạt trình B10 (hoặc Miễn học trải nghiệm), HOẶC
+    // 2. Đã qua luồng Học trải nghiệm / Trải nghiệm và BGH duyệt kết quả học trải nghiệm = Đạt, HOẶC
     // 3. GĐCS đã có kết quả duyệt trước đó
     const canGdcsApprove = Boolean(gdcsRaw || isBghDirectToB10 || isTrialPassed);
 
@@ -440,10 +440,10 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       } else if (isBghPsy) {
         pendingReason = "Chờ PV tâm lý (B7A)";
       } else if (isBghTrial) {
-        if (!hasTrialAssignment) pendingReason = "Chờ phân công HT";
-        else if (!probRes) pendingReason = "Đang học thử / TN";
-        else if (!probBgh) pendingReason = "Chờ duyệt KQHT";
-        else pendingReason = "KQ học thử chưa đạt";
+        if (!hasTrialAssignment) pendingReason = "Chờ phân công HTN";
+        else if (!probRes) pendingReason = "Đang học trải nghiệm";
+        else if (!probBgh) pendingReason = "Chờ duyệt KQ HTN";
+        else pendingReason = "KQ học trải nghiệm chưa đạt";
       } else {
         pendingReason = "Cần xử lý / trao đổi";
       }
@@ -571,7 +571,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [evalTrialPeriod, setEvalTrialPeriod] = useState(() => addBusinessDays(new Date(), 2).toISOString().slice(0, 16));
   const [evalTrialParentNote, setEvalTrialParentNote] = useState("");
 
-  // States for 'PCGV ĐG Học thử' Modal (kèm mẫu phiếu đánh giá, KQ học thử & Sàng lọc tâm lý)
+  // States for 'PCGV ĐG Học trải nghiệm' Modal (kèm mẫu phiếu đánh giá, KQ học trải nghiệm & Sàng lọc tâm lý)
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignStudent, setAssignStudent] = useState<any>(null);
   const [assignCampusId, setAssignCampusId] = useState("");
@@ -687,12 +687,12 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const openBatchEmailCongratsModal = () => {
     const eligible = studentSummaries.filter((s: any) => {
       const result = (s.admissionResult || "").toUpperCase();
-      return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+      return result.includes("MIỄN HỌC TRẢI NGHIỆM") || result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
     }).map((s: any) => {
       const isPassed = (s.probationaryResult === "DAT" || (s.admissionResult || "").toUpperCase().includes("MIỄN") || (s.admissionResult || "").toUpperCase().includes("MIEN"));
       return {
         ...s,
-        admissionResult: s.probationaryResult === "DAT" ? "Đạt - Sau học thử" : isPassed ? "Đạt - Miễn học thử" : "Chưa duyệt"
+        admissionResult: s.probationaryResult === "DAT" ? "Đạt - Sau học trải nghiệm" : isPassed ? "Đạt - Miễn học trải nghiệm" : "Chưa duyệt"
       };
     });
 
@@ -889,13 +889,13 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const handleOpenEmailModal = () => {
     const targetStudents = studentSummaries.filter(s => {
       const result = (s.admissionResult || "").toUpperCase();
-      return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+      return result.includes("MIỄN HỌC TRẢI NGHIỆM") || result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
     }).map(s => {
       // normalize fields for route quick report list
       const isPassed = (s.probationaryResult === "DAT" || (s.admissionResult || "").toUpperCase().includes("MIỄN") || (s.admissionResult || "").toUpperCase().includes("MIEN"));
       return {
         ...s,
-        admissionResult: s.probationaryResult === "DAT" ? "Đạt - Sau học thử" : isPassed ? "Đạt - Miễn học thử" : "Chưa duyệt"
+        admissionResult: s.probationaryResult === "DAT" ? "Đạt - Sau học trải nghiệm" : isPassed ? "Đạt - Miễn học trải nghiệm" : "Chưa duyệt"
       };
     });
     
@@ -1506,10 +1506,10 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
             return wf.canGdcsApprove && !wf.gdcsRaw;
           }
           if (approvalFilter === "DAT_MIEN_HOC_THU") {
-            return res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử";
+            return res === "DAT_MIEN_HOC_THU" || (res === "Đạt - Miễn Học Trải Nghiệm" || res === "Đạt - Miễn Học Thử");
           }
           if (approvalFilter === "DAT_HOC_THU") {
-            return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU" || wf.isBghTrial;
+            return res === "DAT_HOC_THU" || (res === "Đạt - Học Trải Nghiệm" || res === "Đạt - Học Thử") || (res === "Học trải nghiệm" || res === "Học thử") || res === "HOC_THU" || wf.isBghTrial;
           }
           if (approvalFilter === "DAT") {
             return res === "DAT" || res === "Đạt";
@@ -1528,7 +1528,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         .filter(s => {
           const result = (s.admissionResult || "").toUpperCase();
           const isMien = result.includes("MIỄN") || result.includes("MIEN");
-          return (result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass) && !isMien;
+          return (result.includes("HỌC TRẢI NGHIỆM") || result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass) && !isMien;
         })
         .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
     }
@@ -1536,7 +1536,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       return ageGroupFiltered
         .filter(s => {
           const result = (s.admissionResult || "").toUpperCase();
-          return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+          return result.includes("MIỄN HỌC TRẢI NGHIỆM") || result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
         })
         .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
     }
@@ -1613,9 +1613,9 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
     studentSummaries.forEach(s => {
       const res = s.admissionResult || "";
-      if (res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử") {
+      if (res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || (res === "Đạt - Miễn Học Trải Nghiệm" || res === "Đạt - Miễn Học Thử")) {
         passed++;
-      } else if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
+      } else if ((res === "Đạt - Học Trải Nghiệm" || res === "Đạt - Học Thử") || res === "DAT_HOC_THU" || (res === "Học trải nghiệm" || res === "Học thử") || res === "HOC_THU") {
         trial++;
       } else if (res === "Không đạt" || res === "KHONG_DAT") {
         failed++;
@@ -1632,7 +1632,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     let enrolled = 0;
     studentSummaries.forEach(s => {
       const res = s.admissionResult || "";
-      const isPassed = res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử" || res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU";
+      const isPassed = res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || (res === "Đạt - Miễn Học Trải Nghiệm" || res === "Đạt - Miễn Học Thử") || (res === "Đạt - Học Trải Nghiệm" || res === "Đạt - Học Thử") || res === "DAT_HOC_THU" || (res === "Học trải nghiệm" || res === "Học thử") || res === "HOC_THU";
       const isEnrolled = s.enrollmentStatus === "COMPLETED";
       if (isPassed && isEnrolled) {
         enrolled++;
@@ -1697,9 +1697,9 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       if (isTested) stat.surveyed++;
 
       const res = s.admissionResult || "";
-      if (res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử") {
+      if (res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || (res === "Đạt - Miễn Học Trải Nghiệm" || res === "Đạt - Miễn Học Thử")) {
         stat.passed++;
-      } else if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
+      } else if ((res === "Đạt - Học Trải Nghiệm" || res === "Đạt - Học Thử") || res === "DAT_HOC_THU" || (res === "Học trải nghiệm" || res === "Học thử") || res === "HOC_THU") {
         stat.trial++;
       } else if (res === "Không đạt" || res === "KHONG_DAT") {
         stat.failed++;
@@ -1711,7 +1711,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       if (s.gdcsApprovalStatus) stat.gdcsApproved++;
       if (s.bghApprovalStatus && s.gdcsApprovalStatus) stat.bothApproved++;
       
-      const isPassed = res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử" || res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU";
+      const isPassed = res === "Đạt" || res === "DAT" || res === "DAT_MIEN_HOC_THU" || (res === "Đạt - Miễn Học Trải Nghiệm" || res === "Đạt - Miễn Học Thử") || (res === "Đạt - Học Trải Nghiệm" || res === "Đạt - Học Thử") || res === "DAT_HOC_THU" || (res === "Học trải nghiệm" || res === "Học thử") || res === "HOC_THU";
       const isEnrolled = s.enrollmentStatus === "COMPLETED";
       if (isPassed && isEnrolled) {
         stat.enrolled++;
@@ -2945,10 +2945,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
     const dob = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "—";
     const isProbationPass = student.probationaryResult === "DAT";
-    const resultLabel = isProbationPass ? "ĐẠT - SAU HỌC THỬ" : "ĐẠT - MIỄN HỌC THỬ";
+    const resultLabel = isProbationPass ? "ĐẠT - SAU HỌC TRẢI NGHIỆM" : "ĐẠT - MIỄN HỌC TRẢI NGHIỆM";
     const descText = isProbationPass 
-      ? `Bé đã hoàn thành xuất sắc thời gian học thử thực nghiệm và chính thức đủ điều kiện nhập học tại nhà trường. Đây là một kết quả tuyệt vời, ghi nhận sự phát triển và thích nghi xuất sắc toàn diện về thể chất, nhận thức, ngôn ngữ và kỹ năng xã hội của bé.`
-      : `Bé đã chính thức đủ điều kiện nhập học trực tiếp và được <span class="highlight">Miễn thời gian Học thử thực nghiệm</span> tại nhà trường. Đây là một kết quả tuyệt vời, ghi nhận sự phát triển xuất sắc toàn diện về thể chất, nhận thức, ngôn ngữ và kỹ năng xã hội của bé.`;
+      ? `Bé đã hoàn thành xuất sắc thời gian học trải nghiệm thực nghiệm và chính thức đủ điều kiện nhập học tại nhà trường. Đây là một kết quả tuyệt vời, ghi nhận sự phát triển và thích nghi xuất sắc toàn diện về thể chất, nhận thức, ngôn ngữ và kỹ năng xã hội của bé.`
+      : `Bé đã chính thức đủ điều kiện nhập học trực tiếp và được <span class="highlight">Miễn thời gian Học trải nghiệm thực nghiệm</span> tại nhà trường. Đây là một kết quả tuyệt vời, ghi nhận sự phát triển xuất sắc toàn diện về thể chất, nhận thức, ngôn ngữ và kỹ năng xã hội của bé.`;
     
     printWindow.document.write(`
       <html>
@@ -3211,7 +3211,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       printWindow.document.write(`
         <html>
         <head>
-          <title>Phiếu Đánh Giá Học Thử - ${student.fullName}</title>
+          <title>Phiếu Đánh Giá Học Trải Nghiệm - ${student.fullName}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman:wght@400;700&display=swap');
             body {
@@ -3290,14 +3290,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         </head>
         <body>
           <div class="print-container">
-            <div class="doc-title">PHIẾU ĐÁNH GIÁ HỌC THỬ</div>
+            <div class="doc-title">PHIẾU ĐÁNH GIÁ HỌC TRẢI NGHIỆM</div>
             <div class="doc-subtitle">(Dành cho ${student.grade || "nhà trẻ 18 đến 24 tháng"})</div>
 
             <div class="student-info">
               Họ và tên trẻ: <span style="display:inline-block; width: 220px; border-bottom: 1px dotted #000; padding-left: 5px;">${student.fullName}</span> 
-              Thời gian học thử: <span style="display:inline-block; width: 230px; border-bottom: 1px dotted #000; padding-left: 5px;">${probPeriodVal || ''}</span>
+              Thời gian học trải nghiệm: <span style="display:inline-block; width: 230px; border-bottom: 1px dotted #000; padding-left: 5px;">${probPeriodVal || ''}</span>
               <br/>
-              Lớp học thử : <span style="display:inline-block; width: 220px; border-bottom: 1px dotted #000; padding-left: 5px;">${probClassVal || ''}</span> 
+              Lớp học trải nghiệm : <span style="display:inline-block; width: 220px; border-bottom: 1px dotted #000; padding-left: 5px;">${probClassVal || ''}</span> 
               Giáo viên: <span style="display:inline-block; width: 230px; border-bottom: 1px dotted #000; padding-left: 5px;">${probTeacherVal || ''}</span>
             </div>
 
@@ -3322,7 +3322,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </table>
 
             <div style="font-weight: bold; margin-bottom: 5px;">
-              KẾT LUẬN SAU THỜI GIAN HỌC THỬ: <span style="font-weight: normal;">(Đạt / Chưa đạt; Ghi chú thêm):</span>
+              KẾT LUẬN SAU THỜI GIAN HỌC TRẢI NGHIỆM: <span style="font-weight: normal;">(Đạt / Chưa đạt; Ghi chú thêm):</span>
               <span style="font-weight: normal; margin-left: 10px;">${conclusionText}</span>
             </div>
             <div style="line-height: 2; margin-bottom: 30px;">
@@ -3503,11 +3503,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     const effectiveTeacherName = chosenTeacher ? chosenTeacher.teacherName : (assignStudent.probationaryTeacher || "");
 
     if (!effectiveClassName) {
-      notify("Vui lòng chọn Tên lớp học thử", "err");
+      notify("Vui lòng chọn Tên lớp học trải nghiệm", "err");
       return;
     }
     if (!effectiveTeacherName) {
-      notify("Vui lòng chọn Giáo viên đánh giá học thử", "err");
+      notify("Vui lòng chọn Giáo viên đánh giá học trải nghiệm", "err");
       return;
     }
     if (assignPsyScreening && !assignPsychologistId) {
@@ -3556,14 +3556,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         setIsAssignModalOpen(false);
         fetchStudentSummaries();
         if (assignPsyScreening && resData.emailSent) {
-          notify(`Đã lưu phiếu học thử & gửi email xác nhận tới GV Tâm lý (${resData.psychologistEmail || ""})!`);
+          notify(`Đã lưu phiếu học trải nghiệm & gửi email xác nhận tới GV Tâm lý (${resData.psychologistEmail || ""})!`);
         } else if (assignPsyScreening && resData.emailError) {
-          notify(`Đã lưu phiếu học thử, nhưng gửi email GV Tâm lý lỗi: ${resData.emailError}`, "err");
+          notify(`Đã lưu phiếu học trải nghiệm, nhưng gửi email GV Tâm lý lỗi: ${resData.emailError}`, "err");
         } else {
-          notify("Đã lưu phân công & kết quả đánh giá học thử thành công!");
+          notify("Đã lưu phân công & kết quả đánh giá học trải nghiệm thành công!");
         }
       } else {
-        notify("Lỗi khi lưu phân công học thử: " + (resData?.error || "Vui lòng thử lại"), "err");
+        notify("Lỗi khi lưu phân công học trải nghiệm: " + (resData?.error || "Vui lòng thử lại"), "err");
       }
     } catch (e) {
       console.error(e);
@@ -3605,7 +3605,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       }
     } catch (e) {
       console.error(e);
-      notify("Lỗi khi tải thông tin đánh giá học thử", "err");
+      notify("Lỗi khi tải thông tin đánh giá học trải nghiệm", "err");
     } finally {
       setDevLoading(false);
     }
@@ -3633,9 +3633,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       if (r.ok) {
         setProbModal(false);
         fetchStudentSummaries();
-        notify("Đã lưu kết quả đánh giá học thử");
+        notify("Đã lưu kết quả đánh giá học trải nghiệm");
       } else {
-        notify("Lỗi khi lưu kết quả đánh giá học thử", "err");
+        notify("Lỗi khi lưu kết quả đánh giá học trải nghiệm", "err");
       }
     } catch (e) {
       console.error(e);
@@ -3751,9 +3751,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             const finalBatchName = availableBatches.find((b: any) => b.id === finalBatchId)?.name || "Đợt khảo sát Mầm non";
             const finalPeriodName = selPeriod?.name || "Kỳ Khảo sát Tuyển sinh Mầm non";
             const admissionResultStr = gdcsApprovalStatus === "DAT" || gdcsApprovalStatus === "DAT_MIEN_HOC_THU" 
-              ? "Đạt - Miễn học thử" 
+              ? "Đạt - Miễn học trải nghiệm" 
               : gdcsApprovalStatus === "DAT_HOC_THU" 
-                ? "Đạt - Học thử" 
+                ? "Đạt - Học trải nghiệm" 
                 : gdcsApprovalStatus === "KHONG_DAT" 
                   ? "Không đạt" 
                   : gdcsApprovalStatus;
@@ -3813,10 +3813,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             return !res || res === "" || res === "CHUA_DUYET" || res === "Chưa duyệt";
           }
           if (approvalFilter === "DAT_MIEN_HOC_THU") {
-            return res === "DAT_MIEN_HOC_THU" || res === "Đạt - Miễn Học Thử";
+            return res === "DAT_MIEN_HOC_THU" || (res === "Đạt - Miễn Học Trải Nghiệm" || res === "Đạt - Miễn Học Thử");
           }
           if (approvalFilter === "DAT_HOC_THU") {
-            return res === "DAT_HOC_THU" || res === "Đạt - Học Thử" || res === "Học thử" || res === "HOC_THU";
+            return res === "DAT_HOC_THU" || (res === "Đạt - Học Trải Nghiệm" || res === "Đạt - Học Thử") || (res === "Học trải nghiệm" || res === "Học thử") || res === "HOC_THU";
           }
           if (approvalFilter === "DAT") {
             return res === "DAT" || res === "Đạt";
@@ -3843,10 +3843,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           "Tình cảm - Kỹ năng XH - TM": s.tinhCamXhTmSummary || "Chưa đánh giá",
           "Giáo viên đánh giá": s.teacherComment || "Chưa có nhận xét",
           "Duyệt BGH MN": s.bghApprovalStatus 
-            ? `${s.bghApprovalStatus === "DAT_MIEN_HOC_THU" ? "Đạt - Miễn Học Thử" : s.bghApprovalStatus === "DAT_HOC_THU" ? "Đạt - Học Thử" : s.bghApprovalStatus === "DAT" ? "Đạt" : s.bghApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.bghApprovalComment ? ` - Ý kiến: ${s.bghApprovalComment}` : ""}` 
+            ? `${s.bghApprovalStatus === "DAT_MIEN_HOC_THU" ? "Đạt - Miễn Học Trải Nghiệm" : s.bghApprovalStatus === "DAT_HOC_THU" ? "Đạt - Học Trải Nghiệm" : s.bghApprovalStatus === "DAT" ? "Đạt" : s.bghApprovalStatus === "KHONG_DAT" ? "Không đạt" : "Ý kiến khác"}${s.bghApprovalComment ? ` - Ý kiến: ${s.bghApprovalComment}` : ""}` 
             : "Chưa duyệt",
           "Duyệt GĐCS": s.gdcsApprovalStatus 
-            ? `${s.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" ? "Đạt - Miễn Học Thử" : s.gdcsApprovalStatus === "DAT_HOC_THU" ? "Đạt - Học Thử" : s.gdcsApprovalStatus === "DAT" ? "Đạt" : s.gdcsApprovalStatus === "KHONG_DAT" || s.gdcsApprovalStatus === "CHUA_DAT" ? "Không đạt" : "Ý kiến khác"}${s.gdcsApprovalComment ? ` - Ý kiến: ${s.gdcsApprovalComment}` : ""}` 
+            ? `${s.gdcsApprovalStatus === "DAT_MIEN_HOC_THU" ? "Đạt - Miễn Học Trải Nghiệm" : s.gdcsApprovalStatus === "DAT_HOC_THU" ? "Đạt - Học Trải Nghiệm" : s.gdcsApprovalStatus === "DAT" ? "Đạt" : s.gdcsApprovalStatus === "KHONG_DAT" || s.gdcsApprovalStatus === "CHUA_DAT" ? "Không đạt" : "Ý kiến khác"}${s.gdcsApprovalComment ? ` - Ý kiến: ${s.gdcsApprovalComment}` : ""}` 
             : "Chưa duyệt",
           "Kết quả Duyệt": s.generalResult || "Chưa duyệt"
         }));
@@ -4206,7 +4206,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   const reportChildren = useMemo(() => { let all = children; if (rptBatchId === "none") all = all.filter(c => !c.batchId); else if (rptBatchId !== "all" && rptBatchId) all = all.filter(c => c.batchId === rptBatchId); return all; }, [children, rptBatchId]);
   const rptStats = useMemo(() => {
     const total = reportChildren.length;
-    const passed = reportChildren.filter(c => c.admissionResult && (c.admissionResult.toUpperCase().includes("ĐẠT") || c.admissionResult === "Học thử")).length;
+    const passed = reportChildren.filter(c => c.admissionResult && (c.admissionResult.toUpperCase().includes("ĐẠT") || c.admissionResult === "Học trải nghiệm")).length;
     const failed = reportChildren.filter(c => c.admissionResult && c.admissionResult.toUpperCase().includes("KHÔNG")).length;
     const pending = total - passed - failed;
     const gradeStats = grades.map(g => ({ grade: g, count: reportChildren.filter(c => c.grade === g).length }));
@@ -4939,7 +4939,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <td className="p-2 border border-slate-300 text-sm">{child.gender === "M" || child.gender === "Nam" ? "Nam" : child.gender === "F" || child.gender === "Nữ" ? "Nữ" : child.gender || "—"}</td>
                         <td className="p-2 border border-slate-300 text-sm text-slate-700">{child.grade || "—"}</td>
                         <td className="p-2 text-xs font-semibold text-slate-600 border border-slate-300">{child.admissionCampus || "—"}</td>
-                        <td className="p-2 border border-slate-300 text-xs font-black">{child.admissionResult ? <span className={child.admissionResult === "Học thử" ? "text-slate-800" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "text-slate-800" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "text-slate-800" : "text-slate-800"}>{child.admissionResult}</span> : <span className="text-slate-300">Chưa</span>}</td>
+                        <td className="p-2 border border-slate-300 text-xs font-black">{child.admissionResult ? <span className={child.admissionResult === "Học trải nghiệm" ? "text-slate-800" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "text-slate-800" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "text-slate-800" : "text-slate-800"}>{child.admissionResult}</span> : <span className="text-slate-300">Chưa</span>}</td>
                         <td className="p-2 text-right border border-slate-300"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
                     ))}
@@ -5100,7 +5100,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className="w-px h-8 bg-slate-200"></div>
                     <div className="flex flex-col items-center">
                       <span className="text-3xl font-black text-sky-650">{overallKPIs.trial}</span>
-                      <span className="text-[9px] text-sky-600 font-bold uppercase tracking-wider">Học thử</span>
+                      <span className="text-[9px] text-sky-600 font-bold uppercase tracking-wider">Học trải nghiệm</span>
                     </div>
                     <div className="w-px h-8 bg-slate-200"></div>
                     <div className="flex flex-col items-end">
@@ -5662,10 +5662,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <select value={approvalFilter} onChange={e => setApprovalFilter(e.target.value)} className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 focus:border-[#008B85] focus:ring-3 focus:ring-[#00A19A]/15 rounded-xl px-3 py-2 outline-none font-semibold text-slate-800 transition-all text-xs cursor-pointer">
                     <option value="">Tất cả kết quả</option>
                     <option value="CHUA_DUYET">Chưa duyệt</option>
-                    <option value="DANG_XU_LY">Đang xử lý (Học thử / Chờ)</option>
+                    <option value="DANG_XU_LY">Đang xử lý (Học trải nghiệm / Chờ)</option>
                     <option value="CHO_GDCS">Chờ GĐCS duyệt</option>
-                    <option value="DAT_MIEN_HOC_THU">Đạt - Miễn học thử</option>
-                    <option value="DAT_HOC_THU">Học thử</option>
+                    <option value="DAT_MIEN_HOC_THU">Đạt - Miễn học trải nghiệm</option>
+                    <option value="DAT_HOC_THU">Học trải nghiệm</option>
                     <option value="DAT">Đạt</option>
                     <option value="KHONG_DAT">Không đạt</option>
                     <option value="Y_KIEN_KHAC">Ý kiến khác</option>
@@ -5700,12 +5700,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </span>
                 <span className="text-slate-300">→</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/70">
-                  Đạt / Miễn HT → Chuyển thẳng GĐCS duyệt
+                  Đạt / Miễn HTN → Chuyển thẳng GĐCS duyệt
                 </span>
                 <span className="text-slate-300">|</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/70">
                   <span className="px-1 rounded bg-amber-100 text-amber-900 font-bold">2</span>
-                  Học thử → Phân công &amp; Duyệt KQ học thử (Đang xử lý)
+                  Học trải nghiệm → Phân công &amp; Duyệt KQ học trải nghiệm (Đang xử lý)
                 </span>
                 <span className="text-slate-300">→</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-[#00736E]">
@@ -5742,17 +5742,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <tbody className="divide-y divide-[#E2E8F0]">
                         {paginatedStudents.map((s, idx) => {
                             const getResultBadge = (res: string) => {
-                              if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
+                              if ((res === "Đạt - Miễn Học Trải Nghiệm" || res === "Đạt - Miễn Học Thử") || res === "DAT_MIEN_HOC_THU") {
                                 return (
                                   <span className="inline-flex items-center justify-center bg-teal-50 text-slate-800  rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
-                                    Miễn HT
+                                    Miễn HTN
                                   </span>
                                 );
                               }
-                              if (res === "Đạt - Học Thử" || res === "DAT_HOC_THU" || res === "Học thử" || res === "HOC_THU") {
+                              if ((res === "Đạt - Học Trải Nghiệm" || res === "Đạt - Học Thử") || res === "DAT_HOC_THU" || (res === "Học trải nghiệm" || res === "Học thử") || res === "HOC_THU") {
                                 return (
                                   <span className="inline-flex items-center justify-center bg-sky-50 text-sky-700 border border-sky-200/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
-                                    Học thử
+                                    Học trải nghiệm
                                   </span>
                                 );
                               }
@@ -5963,14 +5963,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </td>
                                 )}
 
-                                {/* 2. Phân công học thử */}
+                                {/* 2. Phân công học trải nghiệm */}
                                 <td className="w-[162px] min-w-[162px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
                                     const wf = getPreschoolRowWorkflowState(s);
                                     if (wf.isExemptTrial) {
                                       return (
                                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-800 border border-teal-200/70">
-                                          Miễn học thử
+                                          Miễn học trải nghiệm
                                         </span>
                                       );
                                     }
@@ -6028,12 +6028,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   })()}
                                 </td>
 
-                                {/* 2. Kết quả học thử (Gom từ tab Duyệt KQ Học thử) */}
+                                {/* 2. Kết quả học trải nghiệm (Gom từ tab Duyệt KQ Học trải nghiệm) */}
                                 <td className="w-[172px] min-w-[172px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
                                     const wf = getPreschoolRowWorkflowState(s);
                                     if (wf.isExemptTrial) {
-                                      return <span className="text-[11px] text-slate-400 font-medium">Không cần HT</span>;
+                                      return <span className="text-[11px] text-slate-400 font-medium">Không cần HTN</span>;
                                     }
                                     if (!wf.hasTrialData) {
                                       return <span className="text-[11px] text-slate-300 font-medium">—</span>;
@@ -6085,7 +6085,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                           className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-[#003B3A] bg-white hover:bg-[#F0FDFA] rounded-lg border border-slate-200 hover:border-[#008B85] transition-all cursor-pointer"
                                         >
                                           <ClipboardList className="w-3 h-3 text-[#008B85]" />
-                                          {wf.probBgh ? "Xem / Sửa KQHT" : "Duyệt KQ học thử"}
+                                          {wf.probBgh ? "Xem / Sửa KQ HTN" : "Duyệt KQ học trải nghiệm"}
                                         </button>
                                       </div>
                                     );
@@ -6155,7 +6155,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
           )}
 
-          {/* Sub-tab: Duyệt KQ Học thử */}
+          {/* Sub-tab: Duyệt KQ Học trải nghiệm */}
           {devTab === "dgkqHocThu" && (
             <div className="space-y-6">
               
@@ -6235,10 +6235,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 ) : studentSummaries.filter(s => {
                   const result = (s.admissionResult || "").toUpperCase();
                   const isMien = result.includes("MIỄN") || result.includes("MIEN");
-                  return (result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass) && !isMien;
+                  return (result.includes("HỌC TRẢI NGHIỆM") || result.includes("HỌC THỬ") || result.includes("HOC_THU") || s.probationaryResult || s.probationaryClass) && !isMien;
                 }).length === 0 ? (
                   <div className="text-center text-slate-400 font-extrabold text-xs p-12 bg-white rounded-3xl">
-                    {cPeriodId ? "Không có học sinh nào đang ở trạng thái học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
+                    {cPeriodId ? "Không có học sinh nào đang ở trạng thái học trải nghiệm" : "Vui lòng chọn Kỳ và bấm Tìm"}
                   </div>
                 ) : (
                   <>
@@ -6441,10 +6441,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
                 ) : studentSummaries.filter(s => {
                   const result = (s.admissionResult || "").toUpperCase();
-                  return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
+                  return result.includes("MIỄN HỌC TRẢI NGHIỆM") || result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
                 }).length === 0 ? (
                   <div className="text-center text-slate-400 font-extrabold text-xs p-12 bg-white rounded-3xl">
-                    {cPeriodId ? "Không có học sinh nào được duyệt Miễn học thử" : "Vui lòng chọn Kỳ và bấm Tìm"}
+                    {cPeriodId ? "Không có học sinh nào được duyệt Miễn học trải nghiệm" : "Vui lòng chọn Kỳ và bấm Tìm"}
                   </div>
                 ) : (
                   <>
@@ -6465,13 +6465,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               if (s.probationaryResult === "DAT") {
                                 return (
                                   <span className="inline-flex items-center justify-center bg-emerald-50 text-slate-800  rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
-                                    ✓ ĐẠT - SAU HỌC THỬ
+                                    ✓ ĐẠT - SAU HỌC TRẢI NGHIỆM
                                   </span>
                                 );
                               }
                               return (
                                 <span className="inline-flex items-center justify-center bg-teal-50 text-slate-800  rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
-                                  ✓ ĐẠT - MIỄN HỌC THỬ
+                                  ✓ ĐẠT - MIỄN HỌC TRẢI NGHIỆM
                                 </span>
                               );
                             };
@@ -6554,7 +6554,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   onClick={() => setDevType("PROBATION")}
                   className={`px-4 py-2 rounded-none text-sm font-bold transition-all ${devType === "PROBATION" ? "bg-white text-emerald-600 shadow-none" : "text-slate-500 hover:text-slate-700"}`}
                 >
-                  Tiêu chí Học thử (Probation)
+                  Tiêu chí Học trải nghiệm (Probation)
                 </button>
               </div>
                             <div className="flex flex-wrap gap-1.5 bg-[#48BFE3]/5/50 p-1.5 rounded-none border border-slate-300 max-w-fit">
@@ -7250,7 +7250,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <input
                 value={bForm.name}
                 onChange={e => setBForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="Nhập tên đợt khảo sát (Vd: KSĐV, Học thử...)"
+                placeholder="Nhập tên đợt khảo sát (Vd: KSĐV, Học trải nghiệm...)"
                 className={inp}
               />
             </Field>
@@ -7445,7 +7445,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <option value="Đạt">Đạt</option>
               <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
               <option value="Không đạt">Không đạt</option>
-              <option value="Học thử">Học thử</option>
+              <option value="Học trải nghiệm">Học trải nghiệm</option>
             </select>
           </Field>
         </div>
@@ -9271,10 +9271,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             const calcRes = getCalculatedResult();
 
             const getCalcBadge = (res: string) => {
-              if (res === "Đạt" || res === "Đạt - Miễn Học Thử" || res === "Đề xuất Đạt → Trình B10") {
+              if (res === "Đạt" || (res === "Đạt - Miễn Học Trải Nghiệm" || res === "Đạt - Miễn Học Thử") || res === "Đề xuất Đạt → Trình B10") {
                 return <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">✓ {res}</span>;
               }
-              if (res === "Hẹn trải nghiệm (B7B)" || res === "Đạt - Học Thử" || res === "Học thử") {
+              if (res === "Hẹn trải nghiệm (B7B)" || (res === "Đạt - Học Trải Nghiệm" || res === "Đạt - Học Thử") || (res === "Học trải nghiệm" || res === "Học thử")) {
                 return <span className="text-xs font-bold text-[#00736E] bg-[#F0FDFA] border border-teal-200 rounded-full px-2.5 py-1">{res}</span>;
               }
               if (res === "Cần PV tâm lý (B7A)") {
@@ -9607,7 +9607,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                       {!canApproveGDCS && (
                         <div className="text-[11px] font-medium text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 leading-relaxed">
-                          GĐCS chỉ phê duyệt B10 sau khi Nhóm trưởng / BGH Mầm non chọn <strong>Đề xuất Đạt → Trình B10</strong>, <strong>Đề xuất Chưa đạt → B10</strong> hoặc hoàn tất kết quả Học thử.
+                          GĐCS chỉ phê duyệt B10 sau khi Nhóm trưởng / BGH Mầm non chọn <strong>Đề xuất Đạt → Trình B10</strong>, <strong>Đề xuất Chưa đạt → B10</strong> hoặc hoàn tất kết quả Học trải nghiệm.
                         </div>
                       )}
 
@@ -9694,7 +9694,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 histRec.devAssessmentResult === "DAT" ? "bg-emerald-50 text-slate-800 border-emerald-200/50" :
                                 histRec.devAssessmentResult === "KHONG_DAT" ? "bg-rose-50 text-slate-800 border-rose-200/50" : "bg-teal-50 text-slate-800 border-teal-250/50"
                               }`}>
-                                {histRec.devAssessmentResult === "DAT" ? "Đạt" : histRec.devAssessmentResult === "KHONG_DAT" ? "Không Đạt" : histRec.devAssessmentResult === "HOC_THU" ? "Học thử" : "Chưa đánh giá"}
+                                {histRec.devAssessmentResult === "DAT" ? "Đạt" : histRec.devAssessmentResult === "KHONG_DAT" ? "Không Đạt" : histRec.devAssessmentResult === "HOC_THU" ? "Học trải nghiệm" : "Chưa đánh giá"}
                               </span>
                             </div>
                             <p className="text-[10px] font-semibold text-slate-450">
@@ -9749,11 +9749,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         </div>
       </Modal>
 
-      {/* Modal: Đánh giá Học thử */}
+      {/* Modal: Đánh giá Học trải nghiệm */}
       <Modal
         open={probModal}
         onClose={() => setProbModal(false)}
-        title={`Đánh giá kết quả Học thử: ${probStudent?.fullName || ""}`}
+        title={`Đánh giá kết quả Học trải nghiệm: ${probStudent?.fullName || ""}`}
         size="xl"
         footer={
           <div className="flex items-center justify-between w-full gap-3 pt-2">
@@ -9779,7 +9779,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-teal-600 hover:from-[#009085] hover:to-teal-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-teal-500/20 disabled:opacity-50 transition-all flex items-center gap-2 cursor-pointer"
               >
                 {savingProb ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {savingProb ? "Đang lưu..." : "Lưu Kết Quả Học Thử"}
+                {savingProb ? "Đang lưu..." : "Lưu Kết Quả Học Trải Nghiệm"}
               </button>
             </div>
           </div>
@@ -9817,7 +9817,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/60 p-4 rounded-2xl border border-slate-200/80 text-xs font-semibold">
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                <Clock className="w-3 h-3 text-teal-600" /> Thời gian học thử
+                <Clock className="w-3 h-3 text-teal-600" /> Thời gian học trải nghiệm
               </label>
               <input
                 type="text"
@@ -9829,7 +9829,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                <GraduationCap className="w-3 h-3 text-teal-800" /> Lớp học thử
+                <GraduationCap className="w-3 h-3 text-teal-800" /> Lớp học trải nghiệm
               </label>
               <input
                 type="text"
@@ -9841,7 +9841,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                <Users className="w-3 h-3 text-teal-800" /> Giáo viên học thử
+                <Users className="w-3 h-3 text-teal-800" /> Giáo viên học trải nghiệm
               </label>
               <input
                 type="text"
@@ -9857,7 +9857,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {devLoading ? (
             <div className="flex flex-col items-center justify-center p-12 gap-2 bg-slate-50/50 rounded-2xl border border-slate-200/80">
               <Loader2 className="w-6 h-6 text-slate-800 animate-spin" />
-              <span className="text-slate-800 font-bold text-xs">Đang tải tiêu chí đánh giá học thử...</span>
+              <span className="text-slate-800 font-bold text-xs">Đang tải tiêu chí đánh giá học trải nghiệm...</span>
             </div>
           ) : devAreas.length === 0 ? (
             <div className="text-center text-slate-400 font-bold text-xs p-8 bg-slate-50/50 rounded-2xl border border-slate-200/80">
@@ -9971,7 +9971,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-500" /> Kết luận sau thời gian học thử
+                  <Sparkles className="w-4 h-4 text-amber-500" /> Kết luận sau thời gian học trải nghiệm
                 </h4>
                 <p className="text-[11px] font-medium text-slate-400 mt-0.5">Quyết định kết quả thực nghiệm học tập thử của bé</p>
               </div>
@@ -10021,7 +10021,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                         <UserCheck className="w-4 h-4 text-teal-600" /> PHÊ DUYỆT CỦA BGH MẦM NON
                       </h4>
-                      <p className="text-[10px] font-medium text-slate-400 mt-0.5">Trạng thái phê duyệt kết quả học thử của BGH</p>
+                      <p className="text-[10px] font-medium text-slate-400 mt-0.5">Trạng thái phê duyệt kết quả học trải nghiệm của BGH</p>
                     </div>
                     <div className="flex gap-2">
                       {[
@@ -10144,11 +10144,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         </div>
       </Modal>
 
-      {/* Modal: Phân công & Mẫu phiếu đánh giá Học thử (kèm Sàng lọc tâm lý & Kết quả học thử) */}
+      {/* Modal: Phân công & Mẫu phiếu đánh giá Học trải nghiệm (kèm Sàng lọc tâm lý & Kết quả học trải nghiệm) */}
       <Modal
         open={isAssignModalOpen}
         onClose={() => setIsAssignModalOpen(false)}
-        title={`Phân công & Phiếu đánh giá Học thử: ${assignStudent?.fullName || ""}`}
+        title={`Phân công & Phiếu đánh giá Học trải nghiệm: ${assignStudent?.fullName || ""}`}
         size="xl"
         footer={
           <div className="flex flex-wrap items-center justify-between gap-3 w-full">
@@ -10178,7 +10178,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 className="px-5 py-2 bg-[#003B3A] hover:bg-[#005854] text-white font-semibold rounded-xl transition-colors disabled:opacity-50 cursor-pointer text-xs inline-flex items-center gap-1.5 shadow-2xs"
               >
                 {savingAssignment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5 text-[#5EEAD4]" />}
-                {savingAssignment ? "Đang lưu..." : "Lưu phân công & Kết quả học thử"}
+                {savingAssignment ? "Đang lưu..." : "Lưu phân công & Kết quả học trải nghiệm"}
               </button>
             </div>
           </div>
@@ -10212,7 +10212,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <Baby className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold text-[#00736E]">Phiếu phân công &amp; đánh giá Học thử Mầm non</p>
+                    <p className="text-[11px] font-semibold text-[#00736E]">Phiếu phân công &amp; đánh giá Học trải nghiệm Mầm non</p>
                     <h4 className="text-sm font-bold text-[#003B3A]">{assignStudent?.fullName}</h4>
                   </div>
                 </div>
@@ -10229,11 +10229,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
               </div>
 
-              {/* Khối 1: Thông tin phân công lớp & GV đánh giá học thử */}
+              {/* Khối 1: Thông tin phân công lớp & GV đánh giá học trải nghiệm */}
               <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 space-y-4">
                 <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-2.5">
-                  <h4 className="text-xs font-bold text-[#003B3A]">1. Thông tin phân công học thử</h4>
-                  <span className="text-[11px] text-slate-500">Chọn lớp học thử &amp; GV đánh giá trực tiếp</span>
+                  <h4 className="text-xs font-bold text-[#003B3A]">1. Thông tin phân công học trải nghiệm</h4>
+                  <span className="text-[11px] text-slate-500">Chọn lớp học trải nghiệm &amp; GV đánh giá trực tiếp</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -10271,7 +10271,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </select>
                   </Field>
 
-                  <Field label="Lớp học thử" required>
+                  <Field label="Lớp học trải nghiệm" required>
                     <select
                       value={assignClassId}
                       onChange={e => handleAssignClassChange(e.target.value)}
@@ -10285,7 +10285,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </select>
                   </Field>
 
-                  <Field label="GV đánh giá học thử" required>
+                  <Field label="GV đánh giá học trải nghiệm" required>
                     <select
                       value={assignTeacherId}
                       onChange={e => setAssignTeacherId(e.target.value)}
@@ -10300,7 +10300,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </select>
                   </Field>
 
-                  <Field label="Thời gian học thử">
+                  <Field label="Thời gian học trải nghiệm">
                     <input
                       type="text"
                       value={assignPeriod}
@@ -10425,7 +10425,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 {assignPsyMeta.conclusion === "BINH_THUONG"
                                   ? "Phát triển tâm lý bình thường"
                                   : assignPsyMeta.conclusion === "CAN_THEO_DOI"
-                                    ? "Cần theo dõi thêm trong quá trình học thử"
+                                    ? "Cần theo dõi thêm trong quá trình học trải nghiệm"
                                     : assignPsyMeta.conclusion === "CAN_CAN_THIEP"
                                       ? "Cần hỗ trợ / can thiệp chuyên sâu"
                                       : assignPsyMeta.conclusion}
@@ -10442,14 +10442,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
               </div>
 
-              {/* Khối 2: Mẫu phiếu đánh giá phát triển (bổ sung cột Học thử & GV đánh giá) */}
+              {/* Khối 2: Mẫu phiếu đánh giá phát triển (bổ sung cột Học trải nghiệm & GV đánh giá) */}
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h4 className="text-xs font-bold text-[#003B3A]">
-                    2. Mẫu phiếu đánh giá phát triển (bổ sung cột Học thử &amp; GV đánh giá)
+                    2. Mẫu phiếu đánh giá phát triển (bổ sung cột Học trải nghiệm &amp; GV đánh giá)
                   </h4>
                   <span className="text-[11px] text-slate-500">
-                    Tick <strong>Sàng lọc tâm lý</strong> tại cột Học thử nếu phát hiện dấu hiệu cần GV Tâm lý đánh giá
+                    Tick <strong>Sàng lọc tâm lý</strong> tại cột Học trải nghiệm nếu phát hiện dấu hiệu cần GV Tâm lý đánh giá
                   </span>
                 </div>
 
@@ -10482,7 +10482,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr className="text-[11px] font-semibold whitespace-nowrap">
                                 <th className="py-2.5 px-3 text-white w-[34%]">Tiêu chí đánh giá</th>
                                 <th className="py-2.5 px-3 text-teal-100 w-[18%]">KQ khảo sát ban đầu</th>
-                                <th className="py-2.5 px-3 text-[#5EEAD4] w-[32%]">Học thử</th>
+                                <th className="py-2.5 px-3 text-[#5EEAD4] w-[32%]">Học trải nghiệm</th>
                                 <th className="py-2.5 px-3 text-white w-[16%]">GV đánh giá</th>
                               </tr>
                             </thead>
@@ -10559,7 +10559,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                             [crit.id]: { ...trialSc, note: e.target.value },
                                           }))
                                         }
-                                        placeholder="Ghi chú quan sát học thử..."
+                                        placeholder="Ghi chú quan sát học trải nghiệm..."
                                         className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px] bg-white outline-none focus:border-[#008B85]"
                                       />
                                       <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
@@ -10601,17 +10601,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 )}
               </div>
 
-              {/* Khối 3: Kết quả học thử & Kết quả đánh giá học thử */}
+              {/* Khối 3: Kết quả học trải nghiệm & Kết quả đánh giá học trải nghiệm */}
               <div className="bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] p-4 space-y-4">
                 <h4 className="text-xs font-bold text-[#003B3A] border-b border-[#E2E8F0] pb-2">
-                  3. Kết quả học thử &amp; Kết quả đánh giá học thử
+                  3. Kết quả học trải nghiệm &amp; Kết quả đánh giá học trải nghiệm
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Kết quả học thử (GV đánh giá) */}
+                  {/* Kết quả học trải nghiệm (GV đánh giá) */}
                   <div className="bg-white rounded-xl border border-[#E2E8F0] p-3.5 space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-slate-800">Kết quả học thử (GV đánh giá)</span>
+                      <span className="text-xs font-bold text-slate-800">Kết quả học trải nghiệm (GV đánh giá)</span>
                       <div className="flex gap-1.5">
                         {[
                           { val: "DAT", label: "Đạt", active: "bg-emerald-600 text-white border-emerald-600", idle: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
@@ -10634,15 +10634,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={assignTrialComment}
                       onChange={e => setAssignTrialComment(e.target.value)}
                       rows={2}
-                      placeholder="Nhập nhận xét của giáo viên sau quá trình học thử..."
+                      placeholder="Nhập nhận xét của giáo viên sau quá trình học trải nghiệm..."
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#008B85] bg-white"
                     />
                   </div>
 
-                  {/* Kết quả đánh giá học thử (BGH MN duyệt) */}
+                  {/* Kết quả đánh giá học trải nghiệm (BGH MN duyệt) */}
                   <div className="bg-white rounded-xl border border-[#E2E8F0] p-3.5 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-[#003B3A]">Kết quả đánh giá học thử (BGH MN)</span>
+                      <span className="text-xs font-bold text-[#003B3A]">Kết quả đánh giá học trải nghiệm (BGH MN)</span>
                       <div className="flex gap-1.5">
                         {[
                           { val: "DAT", label: "Đạt", active: "bg-emerald-600 text-white border-emerald-600", idle: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
@@ -10668,7 +10668,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       onChange={e => setAssignTrialBghComment(e.target.value)}
                       disabled={!canApproveTrialBgh}
                       rows={2}
-                      placeholder={canApproveTrialBgh ? "Nhập ý kiến phê duyệt kết quả đánh giá học thử của BGH..." : "Chỉ BGH Mầm non mới có quyền phê duyệt"}
+                      placeholder={canApproveTrialBgh ? "Nhập ý kiến phê duyệt kết quả đánh giá học trải nghiệm của BGH..." : "Chỉ BGH Mầm non mới có quyền phê duyệt"}
                       className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-[#008B85] bg-white disabled:bg-slate-50 disabled:text-slate-500"
                     />
                   </div>
