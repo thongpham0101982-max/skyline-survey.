@@ -33,6 +33,26 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
       vi: "Quản trị chất lượng theo cơ sở",
       en: "Campus Quality Governance",
     },
+    STUDENT_STATISTICS_REPORT: {
+      vi: "Báo cáo thống kê học sinh",
+      en: "Student Statistics Report",
+    },
+    TEACHER_QUALITY_GOVERNANCE: {
+      vi: "Thành tích và bồi dưỡng GV",
+      en: "Teacher Achievements & Development",
+    },
+    TEACHER_QUALITY_ACHIEVEMENT_DEV: {
+      vi: "Thành tích & Bồi dưỡng GV",
+      en: "Teacher Achievements & Development",
+    },
+    TEACHER_QUALITY_MONTHLY_OBS: {
+      vi: "Dự giờ theo tháng",
+      en: "Monthly Class Observations",
+    },
+    TEACHER_QUALITY_COACHING: {
+      vi: "Bồi dưỡng & Phát triển CM",
+      en: "Coaching & Professional Development",
+    },
 
     // SYSTEM_KPIS
     KPI_PHAM_CHAT_TU_HAO: {
@@ -111,6 +131,7 @@ export const SIDEBAR_TRANSLATIONS: SidebarTranslations = {
     SPEC_SUB_GDGT: { vi: "6. Giám sát GD Giới tính (6–9)", en: "6. Monitor Sex Education (6–9)" },
     SPEC_SUB_FIN_EDU: { vi: "7. Giám sát GD Tài chính (1–9)", en: "7. Monitor Financial Education (1–9)" },
     SPEC_SUB_GDHN: { vi: "8. Giám sát GD Hướng nghiệp (6–12)", en: "8. Monitor Career Guidance (6–12)" },
+    SPEC_SUB_FIN_GAME_REPORT: { vi: "9. Báo cáo Game GD Tài chính", en: "9. Fin-Edu Gamification Report" },
 
     // EXPERIENTIAL
     EXPERIENTIAL_ACTIVITIES: { vi: "Hoạt động trải nghiệm", en: "Experiential Activities" },

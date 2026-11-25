@@ -153,6 +153,35 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         permissionModules?.includes("KTDBCL_GRADE_REMARKS") ||
         false
     }
+    if (module === "STUDENT_STATISTICS_REPORT") {
+      hasParent =
+        hasParent ||
+        isKtdbcl ||
+        isGDCS ||
+        isTTCM ||
+        permissionModules?.includes("CAMPUS_QUALITY_GOVERNANCE") ||
+        permissionModules?.includes("KTDBCL_PHAN_TICH_THKQ") ||
+        permissionModules?.includes("KTDBCL_SUPPORT") ||
+        permissionModules?.includes("KTDBCL_THONG_KE_BAO_CAO") ||
+        false
+    }
+    if (
+      module === "TEACHER_QUALITY_GOVERNANCE" ||
+      module === "TEACHER_QUALITY_ACHIEVEMENT_DEV" ||
+      module === "TEACHER_QUALITY_MONTHLY_OBS" ||
+      module === "TEACHER_QUALITY_COACHING"
+    ) {
+      hasParent =
+        hasParent ||
+        isKtdbcl ||
+        isGDCS ||
+        isTTCM ||
+        permissionModules?.includes("TEACHER_QUALITY_GOVERNANCE") ||
+        permissionModules?.includes("CAMPUS_QUALITY_GOVERNANCE") ||
+        permissionModules?.includes("TONG_HOP_DU_GIO") ||
+        permissionModules?.includes("MA_TRAN_DU_GIO_TTCM") ||
+        false
+    }
     if (module === "KTDBCL_EXAMS") {
       hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
     }

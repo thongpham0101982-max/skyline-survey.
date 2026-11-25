@@ -83,6 +83,12 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         icon: BarChart3,
         href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-co-so",
       },
+      {
+        code: "STUDENT_STATISTICS_REPORT",
+        name: "Báo cáo thống kê học sinh",
+        icon: FileText,
+        href: "/admin/phan-tich-tong-hop/bao-cao-thong-ke-hoc-sinh",
+      },
     ],
   },
   {
