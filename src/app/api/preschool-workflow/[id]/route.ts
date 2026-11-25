@@ -242,8 +242,127 @@ export async function GET(
 
     const activeRoundRaw = await ensureActiveRound(student)
     const allRoundsRaw = await getStudentRounds(id)
-    const auditLogs = await getStudentAuditLogs(id)
+    const rawAuditLogs = await getStudentAuditLogs(id)
     const userRoles = getNormalizedRoles(ctx.role, ctx.roles)
+
+    // Tổng hợp đầy đủ lược sử từ cả PreschoolWorkflowAuditLog và dữ liệu thực tế trên hồ sơ (tiếp nhận, phân công, chấm điểm, học thử, BGH/GĐCS duyệt)
+    const existingActions = new Set(rawAuditLogs.map((l: any) => String(l.action || "").toUpperCase()))
+    const synthesizedLogs: any[] = []
+
+    if (student.createdAt && !existingActions.has("CREATE_INTAKE")) {
+      synthesizedLogs.push({
+        id: `syn-intake-${student.id}`,
+        action: "CREATE_INTAKE",
+        fromStatus: null,
+        toStatus: "DA_HEN",
+        actorName: student.ownerUserName || "Tuyển sinh / Giáo vụ",
+        actorRole: "TU_VAN",
+        source: "PORTAL",
+        detailText: `Tiếp nhận hồ sơ trẻ ${student.fullName} (${student.studentCode}) · Cơ sở ${student.registeredCampus || student.admissionCampus || "—"} · ${student.grade || "—"} (${student.surveySystem || "Hệ S"})`,
+        createdAt: student.createdAt,
+      })
+    }
+
+    if ((batchTeacherNames.length > 0 || batchMedicalNames.length > 0) && !existingActions.has("ASSIGN_STAFF")) {
+      const assignDates = batchAssignments.map((a: any) => a.createdAt).filter(Boolean).sort()
+      const parts: string[] = []
+      if (batchTeacherNames.length > 0) parts.push(`GV đánh giá: ${batchTeacherNames.join(", ")}`)
+      if (batchMedicalNames.length > 0) parts.push(`Tổ Y tế (B4A): ${batchMedicalNames.join(", ")}`)
+      synthesizedLogs.push({
+        id: `syn-assign-${student.id}`,
+        action: "ASSIGN_STAFF",
+        fromStatus: null,
+        toStatus: null,
+        actorName: "Giáo vụ cơ sở",
+        actorRole: "GIAO_VU",
+        source: "PORTAL",
+        detailText: parts.join(" · "),
+        createdAt: assignDates[assignDates.length - 1] || student.createdAt || new Date().toISOString(),
+      })
+    }
+
+    if (legacyScoresList.length > 0 && !existingActions.has("SUBMIT_EVALUATION")) {
+      const scoreDates = legacyScoresList
+        .map((sc: any) => sc.updatedAt || sc.createdAt)
+        .filter(Boolean)
+        .map((d: any) => new Date(d).getTime())
+        .filter((t: number) => !isNaN(t))
+      const latestScoreTs = scoreDates.length > 0 ? new Date(Math.max(...scoreDates)).toISOString() : student.updatedAt || student.createdAt
+      const cmtSnippet = student.devProfessionalComment
+        ? ` · Nhận xét: "${String(student.devProfessionalComment).trim().slice(0, 120)}${String(student.devProfessionalComment).trim().length > 120 ? "…" : ""}"`
+        : ""
+      synthesizedLogs.push({
+        id: `syn-eval-${student.id}`,
+        action: "SUBMIT_EVALUATION",
+        fromStatus: "DA_HEN",
+        toStatus: "DANG_DANH_GIA",
+        actorName: activeRoundRaw?.assignedTeacherName || batchTeacherNames[0] || "Giáo viên khảo sát",
+        actorRole: "TEACHER",
+        source: "PORTAL",
+        detailText: `Đã chấm ${legacyScoresList.length} tiêu chí: ${legacyDatCount} Đạt · ${legacyChuaTheHienCount} Chưa thể hiện${legacyKhongDatCount > 0 ? ` · ${legacyKhongDatCount} Không đạt` : ""}${cmtSnippet}`,
+        createdAt: latestScoreTs || new Date().toISOString(),
+      })
+    }
+
+    if (student.probationaryTeacher || student.probationaryClass) {
+      synthesizedLogs.push({
+        id: `syn-trial-assign-${student.id}`,
+        action: "ASSIGN_TRIAL",
+        fromStatus: null,
+        toStatus: null,
+        actorName: "Giáo vụ / BGH Mầm non",
+        actorRole: "GIAO_VU",
+        source: "PORTAL",
+        detailText: `Phân lớp học thử: ${student.probationaryClass || "—"} · GV phụ trách: ${student.probationaryTeacher || "—"}`,
+        createdAt: student.updatedAt || student.createdAt || new Date().toISOString(),
+      })
+    }
+
+    if (student.bghApprovalStatus && !existingActions.has("REVIEW_B6_B9A")) {
+      synthesizedLogs.push({
+        id: `syn-bgh-${student.id}`,
+        action: "REVIEW_B6_B9A",
+        fromStatus: "DANG_DANH_GIA",
+        toStatus: "CHO_DUYET",
+        actorName: student.bghApprovalUser || "BGH Mầm non",
+        actorRole: "BGH_MN",
+        source: "PORTAL",
+        detailText: `Kết quả BGH MN duyệt: ${student.bghApprovalStatus}${student.bghApprovalComment ? ` · "${student.bghApprovalComment}"` : ""}`,
+        createdAt: student.bghApprovalDate || student.updatedAt || student.createdAt || new Date().toISOString(),
+      })
+    }
+
+    if (student.probationaryBghStatus) {
+      synthesizedLogs.push({
+        id: `syn-trial-bgh-${student.id}`,
+        action: "BGH_TRIAL_APPROVE",
+        fromStatus: null,
+        toStatus: null,
+        actorName: student.probationaryBghUser || "BGH Mầm non",
+        actorRole: "BGH_MN",
+        source: "PORTAL",
+        detailText: `BGH duyệt kết quả học thử: ${student.probationaryBghStatus}${student.probationaryBghComment ? ` · "${student.probationaryBghComment}"` : ""}`,
+        createdAt: student.probationaryBghDate || student.updatedAt || student.createdAt || new Date().toISOString(),
+      })
+    }
+
+    if (student.gdcsApprovalStatus && !existingActions.has("APPROVE_B10")) {
+      synthesizedLogs.push({
+        id: `syn-gdcs-${student.id}`,
+        action: "APPROVE_B10",
+        fromStatus: "CHO_DUYET",
+        toStatus: "DA_DUYET",
+        actorName: student.gdcsApprovalUser || "Giám đốc Cơ sở",
+        actorRole: "GDCS",
+        source: "PORTAL",
+        detailText: `GĐCS phê duyệt: ${student.gdcsApprovalStatus}${student.gdcsApprovalComment ? ` · "${student.gdcsApprovalComment}"` : ""}`,
+        createdAt: student.gdcsApprovalDate || student.updatedAt || student.createdAt || new Date().toISOString(),
+      })
+    }
+
+    const auditLogs = [...rawAuditLogs, ...synthesizedLogs].sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    )
 
     const rounds = allRoundsRaw.map((r) =>
       sanitizeRoundForViewer(r, { userId: ctx.userId, role: ctx.role, roles: ctx.roles })

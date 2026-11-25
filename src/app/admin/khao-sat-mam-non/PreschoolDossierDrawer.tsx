@@ -1710,31 +1710,75 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
             {/* TAB 7: AUDIT HISTORY */}
             {!loading && student && activeTab === "history" && (
               <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-3 text-xs">
-                <h3 className="text-sm font-bold text-[#003B3A]">Lịch sử phân công, cập nhật phiếu, chuyển bước & phê duyệt</h3>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-bold text-[#003B3A]">Lược sử phân công, cập nhật phiếu, chuyển bước &amp; phê duyệt</h3>
+                  <span className="text-[11px] font-semibold text-slate-500 tabular-nums">
+                    {(dossier?.auditLogs || []).length} sự kiện
+                  </span>
+                </div>
                 {(dossier?.auditLogs || []).length === 0 ? (
                   <p className="text-slate-500">Chưa có nhật ký tác động.</p>
                 ) : (
                   <div className="space-y-2.5">
-                    {dossier.auditLogs.map((log: any) => (
-                      <div key={log.id} className="rounded-xl border border-[#E2E8F0] p-3 bg-[#F8FAFC] flex flex-wrap justify-between gap-2">
-                        <div>
-                          <div className="font-bold text-[#003B3A]">
-                            {log.action}
-                            {log.fromStatus || log.toStatus ? (
-                              <span className="ml-2 font-normal text-slate-600">
-                                ({log.fromStatus || "—"} → {log.toStatus || "—"})
-                              </span>
-                            ) : null}
+                    {dossier.auditLogs.map((log: any) => {
+                      const ACTION_LABELS: Record<string, string> = {
+                        CREATE_INTAKE: "B1–B2: Tiếp nhận hồ sơ khảo sát",
+                        CONFIRM_INTAKE: "B3: Xác nhận đón trẻ & hình thức khảo sát",
+                        ASSIGN_STAFF: "Phân công nhân sự thực hiện",
+                        SAVE_HEALTH_CHECK: "B4A: Y tế kiểm tra thể chất",
+                        CONFIRM_FORM: "Xác nhận biểu mẫu BM.KTĐBCL",
+                        SUBMIT_EVALUATION: "B5/B4B: Giáo viên đánh giá phát triển",
+                        SAVE_PSYCHOLOGY: "B7A: Đánh giá tâm lý (BM.KTĐBCL.09)",
+                        SCHEDULE_FOLLOW_UP: "B7B: Hẹn lịch trải nghiệm / khảo sát lại",
+                        REVIEW_B6_B9A: "B6/B9A: BGH Mầm non rà soát & xét duyệt",
+                        ASSIGN_TRIAL: "Phân lớp & GV học thử",
+                        BGH_TRIAL_APPROVE: "BGH Mầm non duyệt kết quả học thử",
+                        APPROVE_B10: "B10: Giám đốc Cơ sở phê duyệt",
+                        SEND_APPROVAL_EMAIL: "Gửi email yêu cầu phê duyệt",
+                        DELIVER_RESULT: "B12: Trả kết quả cho Phụ huynh",
+                        ARCHIVE_RECORD: "B13: Hoàn tất lưu hồ sơ",
+                      }
+                      const actionTitle = ACTION_LABELS[log.action] || log.action
+                      let detailSummary = log.detailText || ""
+                      if (!detailSummary && log.detailJson) {
+                        try {
+                          const d = JSON.parse(log.detailJson)
+                          const pairs: string[] = []
+                          if (d.assignedTeacherName) pairs.push(`GV: ${d.assignedTeacherName}`)
+                          if (d.assignedMedicalName) pairs.push(`Y tế: ${d.assignedMedicalName}`)
+                          if (d.assignedPsychologistName) pairs.push(`Tâm lý: ${d.assignedPsychologistName}`)
+                          if (d.heightCm && d.weightKg) pairs.push(`${d.heightCm} cm · ${d.weightKg} kg${d.bmi ? ` (BMI ${d.bmi})` : ""}`)
+                          if (d.formCode) pairs.push(`Mẫu: ${d.formCode}`)
+                          if (d.decision || d.outcome) pairs.push(`Quyết định: ${d.decision || d.outcome}`)
+                          if (d.note || d.comment) pairs.push(`Ghi chú: ${d.note || d.comment}`)
+                          detailSummary = pairs.join(" · ")
+                        } catch {}
+                      }
+                      return (
+                        <div key={log.id} className="rounded-xl border border-[#E2E8F0] p-3.5 bg-[#F8FAFC] flex flex-wrap justify-between gap-2">
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <div className="font-bold text-[#003B3A] flex flex-wrap items-center gap-1.5">
+                              <span>{actionTitle}</span>
+                              {log.fromStatus || log.toStatus ? (
+                                <span className="font-medium text-[11px] text-[#00736E] bg-[#F0FDFA] border border-[#CCFBF1] px-2 py-0.5 rounded-md">
+                                  {log.fromStatus || "Khởi tạo"} → {log.toStatus || "—"}
+                                </span>
+                              ) : null}
+                            </div>
+                            {detailSummary && (
+                              <div className="text-slate-700 leading-relaxed">{detailSummary}</div>
+                            )}
+                            <div className="text-[11px] text-slate-500">
+                              Thực hiện: <strong className="text-slate-700">{log.actorName || "Hệ thống"}</strong> ({log.actorRole || "SYSTEM"}) · Nguồn:{" "}
+                              <strong>{log.source === "EMAIL_ONE_TAP" ? "Email 1 chạm" : "Cổng SSM"}</strong>
+                            </div>
                           </div>
-                          <div className="text-slate-600 mt-0.5">
-                            {log.actorName || "Hệ thống"} ({log.actorRole || "SYSTEM"}) · Nguồn: <strong>{log.source}</strong>
+                          <div className="text-[11px] text-slate-500 tabular-nums shrink-0">
+                            {log.createdAt ? new Date(log.createdAt).toLocaleString("vi-VN") : "—"}
                           </div>
                         </div>
-                        <div className="text-slate-500 tabular-nums">
-                          {new Date(log.createdAt).toLocaleString("vi-VN")}
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
