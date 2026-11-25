@@ -1348,6 +1348,7 @@ export function PreschoolInputAssessmentsClient({
   // ───────── BÀN GIAO DANH SÁCH TRẺ MẦM NON TỚI GIÁO VỤ (PHÂN CÔNG KHẢO SÁT) ─────────
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
   const [handoverPeriodId, setHandoverPeriodId] = useState("");
+  const [handoverMonthFilter, setHandoverMonthFilter] = useState<string>(() => getCurrentMonthYearKey());
   const [handoverBatchId, setHandoverBatchId] = useState("");
   const [handoverCampusCode, setHandoverCampusCode] = useState<"CS1" | "CS2" | "CS3" | "CS4" | "CS5">("CS3");
   const [handoverAssignedUserId, setHandoverAssignedUserId] = useState("");
@@ -3931,67 +3932,130 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           )}
 
           <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-2xs">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Kỳ khảo sát *</label>
-                <select
-                  value={handoverPeriodId}
-                  onChange={(e) => {
-                    const newPId = e.target.value;
-                    setHandoverPeriodId(newPId);
-                    const pObj = rawPeriods.find(p => p.id === newPId);
-                    const firstBatchId = pObj?.batches?.[0]?.id || "";
-                    setHandoverBatchId(firstBatchId);
-                    applyPreschoolHandoverDefaults(newPId, firstBatchId);
-                  }}
-                  className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
-                >
-                  <option value="">-- Chọn Kỳ khảo sát --</option>
-                  {rawPeriods.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
+            {(() => {
+              const periodBatches = rawPeriods.find(p => p.id === handoverPeriodId)?.batches || [];
+              const monthKeys = sortMonthYearKeysDesc(
+                Array.from(new Set(periodBatches.map(b => getBatchMonthYearKey(b)).filter(Boolean)))
+              );
+              const currentMonthKey = getCurrentMonthYearKey();
+              const effectiveMonth =
+                handoverMonthFilter === "ALL" || monthKeys.includes(handoverMonthFilter)
+                  ? handoverMonthFilter
+                  : "ALL";
+              const filteredBatches = (
+                effectiveMonth === "ALL"
+                  ? periodBatches
+                  : periodBatches.filter(b => getBatchMonthYearKey(b) === effectiveMonth)
+              )
+                .slice()
+                .sort((a, b) => (b.batchNumber || 0) - (a.batchNumber || 0));
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Đợt khảo sát *</label>
-                <select
-                  value={handoverBatchId}
-                  onChange={(e) => {
-                    const newBId = e.target.value;
-                    setHandoverBatchId(newBId);
-                    applyPreschoolHandoverDefaults(handoverPeriodId, newBId);
-                  }}
-                  className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
-                >
-                  <option value="">-- Toàn bộ các đợt --</option>
-                  {(rawPeriods.find(p => p.id === handoverPeriodId)?.batches || []).map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Kỳ khảo sát *</label>
+                    <select
+                      value={handoverPeriodId}
+                      onChange={(e) => {
+                        const newPId = e.target.value;
+                        setHandoverPeriodId(newPId);
+                        const pObj = rawPeriods.find(p => p.id === newPId);
+                        const pBatches = pObj?.batches || [];
+                        const matchedByMonth =
+                          handoverMonthFilter !== "ALL"
+                            ? pBatches.filter(b => getBatchMonthYearKey(b) === handoverMonthFilter)
+                            : pBatches;
+                        const pool = (matchedByMonth.length > 0 ? matchedByMonth : pBatches)
+                          .slice()
+                          .sort((a, b) => (b.batchNumber || 0) - (a.batchNumber || 0));
+                        const firstBatchId = pool[0]?.id || "";
+                        setHandoverBatchId(firstBatchId);
+                        applyPreschoolHandoverDefaults(newPId, firstBatchId);
+                      }}
+                      className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
+                    >
+                      <option value="">-- Chọn Kỳ khảo sát --</option>
+                      {rawPeriods.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Tài khoản Giáo vụ phụ trách</label>
-                <select
-                  value={handoverAssignedUserId}
-                  onChange={(e) => {
-                    const uid = e.target.value;
-                    setHandoverAssignedUserId(uid);
-                    const uObj = (giaoVuCSUsers as any[]).find(u => u.id === uid);
-                    if (uObj?.email && uObj.email.includes("@")) {
-                      setHandoverSelectedEmails(prev => Array.from(new Set([...prev, uObj.email])));
-                    }
-                  }}
-                  className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
-                >
-                  <option value="">-- Chọn Giáo vụ phụ trách --</option>
-                  {(giaoVuCSUsers as any[]).map((u: any) => (
-                    <option key={u.id} value={u.id}>{u.fullName} {u.email ? `(${u.email})` : ""}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Tháng / Năm khảo sát</label>
+                    <select
+                      value={effectiveMonth}
+                      onChange={(e) => {
+                        const nextMonth = e.target.value;
+                        setHandoverMonthFilter(nextMonth);
+                        const nextBatches = (
+                          nextMonth === "ALL"
+                            ? periodBatches
+                            : periodBatches.filter(b => getBatchMonthYearKey(b) === nextMonth)
+                        )
+                          .slice()
+                          .sort((a, b) => (b.batchNumber || 0) - (a.batchNumber || 0));
+                        const nextBatchId = nextBatches[0]?.id || "";
+                        setHandoverBatchId(nextBatchId);
+                        applyPreschoolHandoverDefaults(handoverPeriodId, nextBatchId);
+                      }}
+                      className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold tabular-nums"
+                    >
+                      <option value="ALL">Tất cả tháng/năm ({periodBatches.length} đợt)</option>
+                      {monthKeys.map(mk => {
+                        const cnt = periodBatches.filter(b => getBatchMonthYearKey(b) === mk).length;
+                        return (
+                          <option key={mk} value={mk}>
+                            Tháng {mk}{mk === currentMonthKey ? " (Hiện tại)" : ""} ({cnt} đợt)
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Đợt khảo sát * ({filteredBatches.length} đợt)
+                    </label>
+                    <select
+                      value={handoverBatchId}
+                      onChange={(e) => {
+                        const newBId = e.target.value;
+                        setHandoverBatchId(newBId);
+                        applyPreschoolHandoverDefaults(handoverPeriodId, newBId);
+                      }}
+                      className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
+                    >
+                      <option value="">-- Toàn bộ các đợt {effectiveMonth !== "ALL" ? `tháng ${effectiveMonth}` : ""} --</option>
+                      {filteredBatches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">Tài khoản Giáo vụ phụ trách</label>
+                    <select
+                      value={handoverAssignedUserId}
+                      onChange={(e) => {
+                        const uid = e.target.value;
+                        setHandoverAssignedUserId(uid);
+                        const uObj = (giaoVuCSUsers as any[]).find(u => u.id === uid);
+                        if (uObj?.email && uObj.email.includes("@")) {
+                          setHandoverSelectedEmails(prev => Array.from(new Set([...prev, uObj.email])));
+                        }
+                      }}
+                      className="h-10 w-full px-3 bg-white border border-slate-300 rounded-xl text-xs font-semibold"
+                    >
+                      <option value="">-- Chọn Giáo vụ phụ trách --</option>
+                      {(giaoVuCSUsers as any[]).map((u: any) => (
+                        <option key={u.id} value={u.id}>{u.fullName} {u.email ? `(${u.email})` : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="border border-slate-200 rounded-xl p-3.5 space-y-2.5 bg-slate-50/50">
               <div className="text-[11px] font-black text-[#005854] uppercase">Chọn Email Giáo vụ Cơ sở &amp; Người nhận</div>

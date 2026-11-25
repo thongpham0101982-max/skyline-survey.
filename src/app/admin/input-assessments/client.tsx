@@ -1,14 +1,16 @@
 "use client"
 import { parseCommittedSubjects } from "@/lib/subject-mapping"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
+import { formatStandardBatchName, extractMeaningfulBatchNote } from "@/lib/batchNaming"
+import { getCurrentMonthYearKey, getBatchMonthYearKey, getStudentSurveyMonthKey, sortMonthYearKeysDesc } from "@/lib/surveyMonth"
 const DEFAULT_WATERMARK_SVG = "/images/skyline-doc-watermark.png";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { Fragment, useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link"
 import {
   Plus, Search, Edit2, Trash2, Users, Settings, Clock, BarChart3,
   Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
-  ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
+  ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
   Filter, Building, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
@@ -179,13 +181,13 @@ const STATUS_MAP: Record<string,{label:string,cls:string}> = {
 
 function Badge({ s }: { s: string }) {
   const m = STATUS_MAP[s] || STATUS_MAP.INACTIVE
-  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${m.cls}`}>{m.label}</span>
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${m.cls}`}>{m.label}</span>
 }
 
 function Field({ label, required, children }: { label:string; required?:boolean; children:React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-1 text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+      <label className="flex items-center gap-1 text-xs font-semibold text-slate-700 ml-0.5">
         {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
       </label>
       {children}
@@ -203,10 +205,10 @@ function Modal({ open, onClose, title, size="md", children, footer }: {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"/>
-      <div className={`relative bg-white w-full ${w} rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 border border-[#D9E2EC]` } onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#D9E2EC] bg-white">
-          <h3 className="text-lg font-bold text-[#004C97] flex items-center gap-2"><span className="w-1.5 h-5 bg-[#00B5E2] inline-block rounded"></span>{title}</h3>
-          <button onClick={onClose} className="p-2 text-[#64748B] hover:text-[#00B5E2] hover:bg-[#E6F8FD] transition-all rounded-xl cursor-pointer"><X className="w-5 h-5"/></button>
+      <div className={`relative bg-white w-full ${w} rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 border border-[#E2E8F0]` } onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#E2E8F0] bg-white">
+          <h3 className="text-lg font-bold text-[#003B3A] flex items-center gap-2"><span className="w-1.5 h-5 bg-[#00A19A] inline-block rounded"></span>{title}</h3>
+          <button onClick={onClose} aria-label="Đóng hộp thoại" className="p-2 text-[#64748B] hover:text-[#003B3A] hover:bg-[#F0FDFA] transition-all rounded-xl cursor-pointer"><X className="w-5 h-5"/></button>
         </div>
         <div className="overflow-y-auto flex-1 px-6 py-6 bg-[#F8FAFC] custom-scrollbar">{children}</div>
         <div className="flex gap-3 flex-shrink-0 px-6 py-4 bg-white border-t border-[#D9E2EC]">{footer}</div>
@@ -587,20 +589,34 @@ export function InputAssessmentsClient({
 
   const getTabPermissions = (tabId: string) => {
     const userRole = (currentUser?.role || "").toUpperCase();
-    if (userRole === "ADMIN" || userRole === "KT_DBCL" || tabId === "categories" || tabId === "regulation") {
+    if (userRole === "ADMIN" || userRole === "SUPER_ADMIN" || userRole === "KT_DBCL") {
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
     }
 
-    // Explicit Role Rules: GDCS & GIAO_VU always have full permissions on students, reports, and periods
-    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole) || userRole.includes("GIAO_VU") || userRole.includes("GDCS");
+    // Explicit Role Rules: GDCS / BGH has full operational permissions on students, handover, reports, and periods
+    const isGDCS = ["GDCS", "GĐ_CS", "GĐCS", "GD_CS", "BGH", "BGH_CS", "BGH_MN", "HIEU_TRUONG"].includes(userRole) || userRole.includes("GDCS") || userRole.includes("GĐCS");
     if (isGDCS && (tabId === "students" || tabId === "handover" || tabId === "reports" || tabId === "periods")) {
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
+    }
+
+    // Giáo vụ cơ sở: quản lý đợt, danh sách học sinh, bàn giao & xem báo cáo (không xóa đợt/kỳ hoặc phê duyệt kết quả)
+    const isGiaoVu = ["GIAO_VU", "GIAO_VU_CS", "GIAOVU"].includes(userRole) || userRole.includes("GIAO_VU");
+    if (isGiaoVu && (tabId === "students" || tabId === "handover" || tabId === "periods")) {
+      return { canRead: true, canCreate: true, canUpdate: true, canDelete: false };
+    }
+    if (isGiaoVu && tabId === "reports") {
+      return { canRead: true, canCreate: false, canUpdate: false, canDelete: false };
     }
 
     // Admissions / Consultation staff (TVAN, TVTS) can create and update students
     const isTVTS = userRole === "TVAN" || userRole === "TVTS" || userRole.includes("TU_VAN") || userRole.includes("TUYEN_SINH");
     if (isTVTS && (tabId === "periods" || tabId === "students" || tabId === "handover")) {
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: false };
+    }
+
+    // Danh mục & Quy chế: chỉ đọc đối với nhân sự ngoài ADMIN/KT_DBCL
+    if (tabId === "categories" || tabId === "regulation") {
+      return { canRead: true, canCreate: false, canUpdate: false, canDelete: false };
     }
     
     let requiredModule = TAB_PERMISSION_MAP[tabId];
@@ -627,7 +643,8 @@ export function InputAssessmentsClient({
       };
     }
     
-    return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
+    // Fail-closed: tài khoản không có phân quyền tường minh chỉ được xem nếu có quyền truy cập trang, không được tạo/sửa/xóa
+    return { canRead: false, canCreate: false, canUpdate: false, canDelete: false };
   };
 
   useEffect(() => {
@@ -1441,6 +1458,10 @@ export function InputAssessmentsClient({
   const [pLoading, setPLoading] = useState(false)
   const [expandedId, setExpandedId] = useState<string|null>(null)
   const [batchCampusFilter, setBatchCampusFilter] = useState("all")
+  const [batchMonthFilter, setBatchMonthFilter] = useState(() => getCurrentMonthYearKey())
+  const [sMonthFilter, setSMonthFilter] = useState(() => getCurrentMonthYearKey())
+  const [expandedBatchRosterIds, setExpandedBatchRosterIds] = useState<Record<string, boolean>>({})
+  const [batchRosterSearchMap, setBatchRosterSearchMap] = useState<Record<string, string>>({})
   const [batchStatusFilter, setBatchStatusFilter] = useState("ACTIVE")
   const [batchSearch, setBatchSearch] = useState("")
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
@@ -1624,6 +1645,7 @@ export function InputAssessmentsClient({
 
   // ───────── BATCH CRUD ─────────
   const [bModal, setBModal] = useState(false)
+  const [isNormalizingBatchNames, setIsNormalizingBatchNames] = useState(false)
   const [editB, setEditB] = useState<Batch|null>(null)
   const [targetPeriodId, setTargetPeriodId] = useState("")
   const [bForm, setBForm] = useState({ batchNumber:"1", name:"", startDate:"", endDate:"", status:"ACTIVE", campusId: "", assignedUserId: "" })
@@ -1640,6 +1662,7 @@ export function InputAssessmentsClient({
   // ───────── BÀN GIAO DANH SÁCH HỌC SINH TỚI GIÁO VỤ (PHÂN CÔNG KHẢO SÁT) ─────────
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
   const [handoverPeriodId, setHandoverPeriodId] = useState("");
+  const [handoverMonthFilter, setHandoverMonthFilter] = useState<string>(() => getCurrentMonthYearKey());
   const [handoverBatchId, setHandoverBatchId] = useState("");
   const [handoverCampusCode, setHandoverCampusCode] = useState<"CS1" | "CS2" | "CS3" | "CS4" | "CS5">("CS1");
   const [handoverAssignedUserId, setHandoverAssignedUserId] = useState("");
@@ -1888,7 +1911,7 @@ export function InputAssessmentsClient({
   const [sCampusFilter, setSCampusFilter] = useState("")
   const [sResultFilter, setSResultFilter] = useState("all")
   const [sRecordFilter, setSRecordFilter] = useState<"all" | "achievements" | "old_school" | "attachments" | "eligible_regulation">("all")
-  const [tableViewMode, setTableViewMode] = useState<"inline" | "compact" | "detailed">("inline")
+  const [tableViewMode, setTableViewMode] = useState<"compact" | "detailed">("compact")
   const [studentModalTab, setStudentModalTab] = useState<"profile" | "academic">("profile")
   const [inlineEdits, setInlineEdits] = useState<Record<string, any>>({})
   const [savingRowIds, setSavingRowIds] = useState<string[]>([])
@@ -4850,56 +4873,68 @@ ${reportForm.directorNote}`;
   const openEditBatch = (b:Batch) => { 
     setTargetPeriodId(b.periodId); 
     setEditB(b); 
-    let baseName = b.name;
-    const parts = b.name.split(" _ ");
-    if (parts.length >= 6 && parts[3] === "KSĐV") {
-      baseName = parts[4];
-    } else if (parts.length >= 6 && parts[4] === "") {
-      baseName = parts[3];
-    } else if (parts.length === 5) {
-      baseName = parts[3];
-    } else if (parts.length >= 5) {
-      baseName = parts[4];
-    } else {
-      const match = b.name.match(/Đợt \d+ - (.*?) \|/);
-      if (match) {
-        baseName = match[1];
-      } else {
-        const match2 = b.name.match(/Đợt \d+ - (.*)/);
-        if (match2) baseName = match2[1];
-      }
-    }
+    const baseName = extractMeaningfulBatchNote(b.name);
     setBForm({ batchNumber:String(b.batchNumber), name:baseName, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status, campusId: b.campusId||"", assignedUserId: b.assignedUserId||"" }); 
     setBModal(true);
   }
   const saveBatch = async () => {
     if (editB ? cannotUpdate : cannotCreate) return;
-    if (!bForm.name.trim() || !bForm.startDate || !bForm.endDate) return notify("Cần nhập Tên Đợt KS, Ngày bắt/kết thúc", "err")
-    
+    if (!bForm.startDate || !bForm.endDate) return notify("Cần nhập Ngày bắt đầu và Ngày kết thúc", "err")
     const selectedCampus = campuses.find(c => c.id === bForm.campusId);
-    const campusName = selectedCampus ? (selectedCampus.campusCode || selectedCampus.campusName) : "Tất cả";
-    const startStr = bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "";
-    const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "";
-    
     const period = periods.find(p => p.id === targetPeriodId);
-    const periodName = period ? period.name : "Tên đợt";
-    let periodCode = period ? (period.code || period.name) : "";
-    if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
-      periodCode = "KSL";
-    }
-    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
-    
-    const r = await fetch("/api/input-assessments", { 
-      method: editB?"PUT":"POST", 
-      headers:{"Content-Type":"application/json"}, 
-      body: JSON.stringify({ 
-        action: editB?"UPDATE_BATCH":"CREATE_BATCH", 
-        id:editB?.id, 
-        data:{...bForm, name: fullScientificName, periodId:targetPeriodId, batchNumber:parseInt(bForm.batchNumber)||1} 
-      }) 
+    const fullScientificName = formatStandardBatchName({
+      campusCode: selectedCampus?.campusCode,
+      campusName: selectedCampus?.campusName,
+      periodName: period?.name,
+      periodCode: period?.code,
+      batchNumber: bForm.batchNumber || "1",
+      startDate: bForm.startDate,
+      endDate: bForm.endDate,
+      note: bForm.name.trim()
+    });
+    const r = await fetch("/api/input-assessments", {
+      method: editB?"PUT":"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        action: editB?"UPDATE_BATCH":"CREATE_BATCH",
+        id:editB?.id,
+        data:{...bForm, name: fullScientificName, periodId:targetPeriodId, batchNumber:parseInt(bForm.batchNumber)||1}
+      })
     })
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB?"Đã cập nhật đợt":"Đã tạo đợt mới") }
     else notify("Lỗi","err")
+  }
+  const handleNormalizeBatchNames = async () => {
+    if (cannotUpdate || isNormalizingBatchNames) return;
+    setIsNormalizingBatchNames(true);
+    try {
+      const r = await fetch("/api/input-assessments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "NORMALIZE_BATCH_NAMES",
+          data: {
+            academicYearId: yearId || undefined,
+            onlyActive: batchStatusFilter === "ACTIVE"
+          }
+        })
+      });
+      const res = await r.json();
+      if (r.ok && res.success) {
+        await fetchPeriods();
+        notify(
+          res.updatedCount > 0
+            ? `Đã chuẩn hóa tên ${res.updatedCount} / ${res.totalChecked} đợt khảo sát theo quy chuẩn Sky-Line!`
+            : `Tất cả ${res.totalChecked} đợt khảo sát đã đúng quy chuẩn.`
+        );
+      } else {
+        notify(res.error || "Lỗi khi chuẩn hóa tên đợt", "err");
+      }
+    } catch {
+      notify("Lỗi kết nối khi chuẩn hóa tên đợt", "err");
+    } finally {
+      setIsNormalizingBatchNames(false);
+    }
   }
   const doDeleteBatch = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessments?type=batch&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt") } }
 
@@ -5984,6 +6019,11 @@ ${reportForm.directorNote}`;
           if (pk.displayValue !== sTimingFilter && pk.milestoneCode !== expectedMilestone) return false;
         }
       }
+      if (sMonthFilter && sMonthFilter !== "all") {
+        const allBatchesPool = (selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || [])) || [];
+        const stMonth = getStudentSurveyMonthKey(s, allBatchesPool);
+        if (stMonth !== sMonthFilter) return false;
+      }
       if (sCampusFilter) {
         const matchedCampus = campuses.find(c => c.id === sCampusFilter);
         const sCampusRaw = (s.registeredCampus || s.admissionCampus || "").toLowerCase();
@@ -6021,7 +6061,7 @@ ${reportForm.directorNote}`;
       }
       return true;
     });
-  }, [students, sSearch, sGradeFilter, sEduFilter, sTimingFilter, sCampusFilter, sResultFilter, sRecordFilter, campuses, selPeriod, visiblePeriods, periods, showCompletedBatches, sBatchId, configs, viewMode, activeK12Track, checkIsTransferStudent]);
+  }, [students, sSearch, sGradeFilter, sEduFilter, sTimingFilter, sCampusFilter, sMonthFilter, sResultFilter, sRecordFilter, campuses, selPeriod, visiblePeriods, periods, showCompletedBatches, sBatchId, configs, viewMode, activeK12Track, checkIsTransferStudent]);
 
   const paginatedFiltStu = useMemo(() => {
     const startIndex = (studentsCurrentPage - 1) * studentsPageSize;
@@ -6134,6 +6174,119 @@ ${reportForm.directorNote}`;
       eligibleByRegulation
     };
   }, [students, configs, periods, showCompletedBatches, sBatchId, viewMode, activeK12Track, checkIsTransferStudent]);
+
+  // Trích xuất dữ liệu thành phần thực tế cho Bộ lọc trực quan (Cơ sở, Khối, Hệ KS, Mốc thời gian, Đợt KS)
+  const studentFilterFacets = useMemo(() => {
+    const completedBatchIds = new Set(
+      periods.flatMap(p => p.batches || []).filter(b => b.status === "COMPLETED").map(b => b.id)
+    );
+    const allBatchesList = (sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || [];
+    const batchMap = new Map<string, any>();
+    allBatchesList.forEach((b: any) => batchMap.set(b.id, b));
+
+    const scoped = students.filter(s => {
+      const isBatchCompleted = (s as any).batch?.status === "COMPLETED" || (s.batchId && completedBatchIds.has(s.batchId));
+      if (isBatchCompleted && !showCompletedBatches && sBatchId !== s.batchId) return false;
+      if (viewMode === "transfer") return checkIsTransferStudent(s, true);
+      if (viewMode === "general" && checkIsTransferStudent(s, false)) return false;
+      return getStudentK12Track(s) === activeK12Track;
+    });
+
+    const campusCounts = new Map<string, number>();
+    const gradeCounts = new Map<string, number>();
+    const eduCounts = new Map<string, number>();
+    const timingCounts = new Map<string, { value: string; label: string; count: number }>();
+    const batchCounts = new Map<string, number>();
+    let unbatchedCount = 0;
+
+    scoped.forEach(s => {
+      // 1. Đợt khảo sát
+      if (s.batchId) {
+        batchCounts.set(s.batchId, (batchCounts.get(s.batchId) || 0) + 1);
+      } else {
+        unbatchedCount++;
+      }
+
+      // 2. Cơ sở đăng ký (khớp trực tiếp hoặc qua Đợt)
+      const sCampusRaw = (s.registeredCampus || s.admissionCampus || "").toLowerCase();
+      const bObj = s.batchId ? batchMap.get(s.batchId) : null;
+      const matchedCampus = campuses.find(c =>
+        s.registeredCampus === c.id ||
+        s.admissionCampus === c.id ||
+        bObj?.campusId === c.id ||
+        (sCampusRaw && (
+          (c.campusCode && sCampusRaw.includes(c.campusCode.toLowerCase())) ||
+          (c.campusName && sCampusRaw.includes(c.campusName.toLowerCase()))
+        ))
+      );
+      if (matchedCampus) {
+        campusCounts.set(matchedCampus.id, (campusCounts.get(matchedCampus.id) || 0) + 1);
+      }
+
+      // 3. Khối đăng ký
+      if (s.grade) {
+        const g = String(s.grade).trim();
+        gradeCounts.set(g, (gradeCounts.get(g) || 0) + 1);
+      }
+
+      // 4. Hệ KS
+      const sys = (s.surveyFormType || s.surveySystem || "").trim();
+      if (sys) {
+        eduCounts.set(sys, (eduCounts.get(sys) || 0) + 1);
+      }
+
+      // 5. Mốc thời gian / Kỳ KS
+      const pObj = periods.find(p => p.id === s.periodId);
+      const pk = resolveStudentGradeConfigPeriodKey(s, visiblePeriods, pObj?.name || selPeriod?.name);
+      const tVal = pk.milestoneCode === "HK2" ? "Học kỳ 2" : pk.milestoneCode === "HK1" ? "Học kỳ 1" : "Đầu năm";
+      const prevTiming = timingCounts.get(tVal);
+      if (prevTiming) {
+        prevTiming.count++;
+      } else {
+        timingCounts.set(tVal, { value: tVal, label: tVal, count: 1 });
+      }
+    });
+
+    const campusItems = campuses
+      .map(c => ({
+        id: c.id,
+        code: c.campusCode || c.campusName,
+        name: c.campusName,
+        count: campusCounts.get(c.id) || 0
+      }))
+      .filter(c => c.count > 0 || c.id === sCampusFilter);
+
+    const gradeItems = Array.from(gradeCounts.entries())
+      .map(([grade, count]) => ({ grade, count }))
+      .sort((a, b) => (parseInt(a.grade, 10) || 99) - (parseInt(b.grade, 10) || 99));
+    if (sGradeFilter && !gradeItems.some(g => g.grade === sGradeFilter)) {
+      gradeItems.push({ grade: sGradeFilter, count: 0 });
+    }
+
+    const eduItems = Array.from(eduCounts.entries())
+      .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => b.count - a.count);
+    if (sEduFilter && !eduItems.some(e => e.code === sEduFilter)) {
+      eduItems.push({ code: sEduFilter, count: 0 });
+    }
+
+    const timingOrder: Record<string, number> = { "Đầu năm": 1, "Học kỳ 1": 2, "Học kỳ 2": 3 };
+    const timingItems = Array.from(timingCounts.values())
+      .sort((a, b) => (timingOrder[a.value] || 9) - (timingOrder[b.value] || 9));
+    if (sTimingFilter && !sTimingFilter.startsWith("PERIOD:") && !timingItems.some(t => t.value === sTimingFilter)) {
+      timingItems.push({ value: sTimingFilter, label: sTimingFilter, count: 0 });
+    }
+
+    return {
+      total: scoped.length,
+      campuses: campusItems,
+      grades: gradeItems,
+      eduSystems: eduItems,
+      timings: timingItems,
+      batchCounts,
+      unbatchedCount
+    };
+  }, [students, periods, visiblePeriods, selPeriod, sPeriodId, campuses, showCompletedBatches, sBatchId, sCampusFilter, sGradeFilter, sEduFilter, sTimingFilter, viewMode, activeK12Track, checkIsTransferStudent]);
 
   const studentResultKPIs = useMemo(() => {
     let datCount = 0;
@@ -6799,7 +6952,23 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
           {/* VIEW MODE 0: DEDICATED KHẢO SÁT LẺ WORKSPACE */}
           {periodSubView === "ksl" && (() => {
+            const getKslBatchMonthKey = (b: any): string => {
+              const raw = String(b?.endDate || b?.startDate || "").slice(0, 10);
+              if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+                return `${raw.slice(5, 7)}/${raw.slice(0, 4)}`;
+              }
+              return "";
+            };
+            const nowDate = new Date();
+            const currentMonthKey = `${String(nowDate.getMonth() + 1).padStart(2, "0")}/${nowDate.getFullYear()}`;
             const kslBatchesAll = [...(kslPeriod?.batches || [])].sort((a, b) => (Number(b.batchNumber) || 0) - (Number(a.batchNumber) || 0));
+            const kslAvailableMonths = Array.from(
+              new Set(kslBatchesAll.map(getKslBatchMonthKey).filter(Boolean))
+            ).sort((a, b) => {
+              const [ma, ya] = a.split("/").map(Number);
+              const [mb, yb] = b.split("/").map(Number);
+              return yb * 12 + mb - (ya * 12 + ma);
+            });
             const kslBatchesFiltered = kslBatchesAll.filter(b => {
               if (batchCampusFilter && batchCampusFilter !== "all") {
                 if (b.campusId) {
@@ -6811,6 +6980,9 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   const bName = b.name || "";
                   if (!bName.includes(cCode) && !bName.includes(cName)) return false;
                 }
+              }
+              if (batchMonthFilter && batchMonthFilter !== "all") {
+                if (getKslBatchMonthKey(b) !== batchMonthFilter) return false;
               }
               if (batchStatusFilter && batchStatusFilter !== "all") {
                 if (batchStatusFilter === "COMPLETED") {
@@ -6926,6 +7098,24 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                     <div className="flex items-center gap-1.5">
                       <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-[#00736E]" /> Tháng:
+                      </label>
+                      <select
+                        value={batchMonthFilter}
+                        onChange={e => setBatchMonthFilter(e.target.value)}
+                        className="raw-select h-9 py-1 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-700 outline-none focus:border-[#00A19A] cursor-pointer tabular-nums"
+                      >
+                        <option value="all">Tất cả Tháng</option>
+                        {kslAvailableMonths.map(mk => (
+                          <option key={mk} value={mk}>
+                            Tháng {mk}{mk === currentMonthKey ? " (Hiện tại)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#00736E]" /> Trạng thái:
                       </label>
                       <select
@@ -6940,11 +7130,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       </select>
                     </div>
 
-                    {(batchCampusFilter !== "all" || batchStatusFilter !== "all" || batchSearch) && (
+                    {(batchCampusFilter !== "all" || batchMonthFilter !== "all" || batchStatusFilter !== "all" || batchSearch) && (
                       <button
                         type="button"
                         onClick={() => {
                           setBatchCampusFilter("all");
+                          setBatchMonthFilter("all");
                           setBatchStatusFilter("all");
                           setBatchSearch("");
                         }}
@@ -7050,9 +7241,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             </th>
                             <th className="px-3 py-3 text-[10px] whitespace-nowrap font-semibold">Đợt #</th>
                             <th className="px-4 py-3 text-[10px] font-semibold">Học sinh / Nội dung Đợt Khảo sát lẻ</th>
-                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Cơ sở</th>
-                            <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Ngày KS</th>
-                            <th className="px-4 py-3 text-[10px] text-center whitespace-nowrap font-semibold">Sĩ số &amp; Hồ sơ</th>
+                            <th className="px-4 py-3 text-[11px] whitespace-nowrap font-semibold text-teal-100">Cơ sở</th>
+                            <th className="px-4 py-3 text-[11px] whitespace-nowrap font-semibold text-teal-100">Ngày KS</th>
+                            <th className="px-3 py-3 text-[11px] text-center whitespace-nowrap font-semibold text-[#5EEAD4]">Tháng</th>
+                            <th className="px-4 py-3 text-[11px] text-center whitespace-nowrap font-semibold text-teal-100">Sĩ số &amp; Hồ sơ</th>
                             <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Trạng thái</th>
                             <th className="px-4 py-3 text-[10px] whitespace-nowrap font-semibold">Phụ trách</th>
                             <th className="px-4 py-3 text-[10px] text-right pr-5 whitespace-nowrap font-semibold">Thao tác nhanh</th>
@@ -7112,11 +7304,29 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     {campusLabel}
                                   </span>
                                 </td>
-                                <td className="px-4 py-3">
+                                <td className="px-4 py-3 tabular-nums">
                                   <div className="flex items-center gap-1.5 font-bold text-slate-600">
                                     <Calendar className="w-3.5 h-3.5 text-[#00736E]" />
                                     <span>{b.endDate?.slice(0, 10).split("-").reverse().join("/") || b.startDate?.slice(0, 10).split("-").reverse().join("/") || "--"}</span>
                                   </div>
+                                </td>
+                                <td className="px-3 py-3 text-center whitespace-nowrap tabular-nums">
+                                  {(() => {
+                                    const mk = getKslBatchMonthKey(b);
+                                    const isCurMonth = mk && mk === currentMonthKey;
+                                    return (
+                                      <span
+                                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                                          isCurMonth
+                                            ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]"
+                                            : "bg-slate-50 text-slate-600 border-slate-200"
+                                        }`}
+                                        title={mk ? `Tự động lấy từ Ngày KS: Tháng ${mk}` : "Chưa có Ngày KS"}
+                                      >
+                                        {mk || "—"}
+                                      </span>
+                                    );
+                                  })()}
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                   <button
@@ -7157,16 +7367,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       <option value="COMPLETED">✓ Hoàn thành</option>
                                       <option value="LOCKED">Đã khóa</option>
                                     </select>
-                                    {b.status === "ACTIVE" && !cannotUpdate && (
-                                      <button
-                                        type="button"
-                                        onClick={() => updateSingleBatchStatus(b.id, "COMPLETED")}
-                                        className="h-8 px-2.5 rounded-lg bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200 text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
-                                        title="Đánh dấu Hoàn thành đợt này (Ẩn khỏi Nhập thông tin khảo sát & Phân công GV)"
-                                      >
-                                        ✓ Hoàn thành
-                                      </button>
-                                    )}
                                   </div>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
@@ -7175,65 +7375,82 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <td className="px-4 py-3 text-right pr-5 whitespace-nowrap">
                                   <div className="flex items-center justify-end gap-1.5">
                                     {!isCompleted ? (
-                                      <>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            if (cannotCreate) return;
-                                            openAddStudent({
-                                              periodId: kslPeriod.id,
-                                              batchId: b.id,
-                                              registeredCampus: selectedCampus?.campusName || ""
-                                            });
-                                          }}
-                                          disabled={cannotCreate}
-                                          className="h-8 px-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-                                          title="Thêm học sinh mới vào đợt khảo sát lẻ này"
-                                        >
-                                          <UserPlus className="w-3.5 h-3.5 shrink-0" />
-                                          <span>+ HS</span>
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => openHandoverGiaoVuModal(kslPeriod.id, b.id)}
-                                          className="h-8 px-2.5 bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-                                          title="Bàn giao danh sách học sinh đợt này tới Giáo vụ để Phân công Khảo sát"
-                                        >
-                                          <Mail className="w-3.5 h-3.5 shrink-0" />
-                                          <span>Bàn giao GVụ</span>
-                                        </button>
-                                        <a
-                                          href={`/admin/phan-cong-khao-sat?tab=k12&periodId=${kslPeriod.id}&batchId=${b.id}`}
-                                          className="h-8 px-2.5 bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white border border-teal-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-                                          title="Chuyển sang Phân công Giáo viên chấm khảo sát cho đợt này"
-                                        >
-                                          <UserCheck className="w-3.5 h-3.5 shrink-0" />
-                                          <span>Phân công</span>
-                                        </a>
-                                      </>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (cannotCreate) return;
+                                          openAddStudent({
+                                            periodId: kslPeriod.id,
+                                            batchId: b.id,
+                                            registeredCampus: selectedCampus?.campusName || ""
+                                          });
+                                        }}
+                                        disabled={cannotCreate}
+                                        className="h-8 px-2.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0"
+                                        title="Thêm học sinh mới vào đợt khảo sát lẻ này"
+                                      >
+                                        <UserPlus className="w-3.5 h-3.5 shrink-0" />
+                                        <span>+ Thêm HS</span>
+                                      </button>
                                     ) : (
-                                      <span className="text-[10px] font-bold text-slate-400 italic mr-1">
+                                      <span className="text-[11px] font-medium text-slate-400 mr-1">
                                         Đã hoàn thành
                                       </span>
                                     )}
-                                    <button
-                                      type="button"
-                                      onClick={() => openEditBatch(b)}
-                                      disabled={cannotUpdate}
-                                      className="p-1.5 text-slate-400 hover:text-[#00736E] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
-                                      title="Chỉnh sửa đợt"
-                                    >
-                                      <Edit2 className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirm({ msg: `Xóa đợt "${b.name}"?`, fn: () => doDeleteBatch(b.id) })}
-                                      disabled={cannotDelete}
-                                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
-                                      title="Xóa đợt"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
+                                    <details className="relative inline-block text-left">
+                                      <summary
+                                        aria-label={`Thao tác đợt khảo sát ${cleanName}`}
+                                        className="list-none h-8 w-8 rounded-lg border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-slate-600 flex items-center justify-center font-bold cursor-pointer select-none"
+                                        title="Thao tác khác"
+                                      >
+                                        ⋯
+                                      </summary>
+                                      <div className="absolute right-0 mt-1 w-48 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1 z-30 text-left">
+                                        {!isCompleted && (
+                                          <>
+                                            <button
+                                              type="button"
+                                              onClick={() => openHandoverGiaoVuModal(kslPeriod.id, b.id)}
+                                              className="w-full px-3 py-2 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] flex items-center gap-2 cursor-pointer"
+                                            >
+                                              <Mail className="w-3.5 h-3.5 text-[#00736E]" />
+                                              <span>Bàn giao Giáo vụ</span>
+                                            </button>
+                                            <a
+                                              href={`/admin/phan-cong-khao-sat?tab=k12&periodId=${kslPeriod.id}&batchId=${b.id}`}
+                                              className="w-full px-3 py-2 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] flex items-center gap-2"
+                                            >
+                                              <UserCheck className="w-3.5 h-3.5 text-[#00736E]" />
+                                              <span>Phân công giáo viên</span>
+                                            </a>
+                                            <div className="my-1 border-t border-[#F1F5F9]" />
+                                          </>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => openEditBatch(b)}
+                                          disabled={cannotUpdate}
+                                          className="w-full px-3 py-2 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+                                        >
+                                          <Edit2 className="w-3.5 h-3.5 text-slate-500" />
+                                          <span>Chỉnh sửa đợt</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setConfirm({
+                                              msg: `Xóa đợt "${b.name}" (đang có ${stCount} hồ sơ học sinh)? Thao tác này không thể hoàn tác.`,
+                                              fn: () => doDeleteBatch(b.id)
+                                            })
+                                          }
+                                          disabled={cannotDelete}
+                                          className="w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                          <span>Xóa đợt</span>
+                                        </button>
+                                      </div>
+                                    </details>
                                   </div>
                                 </td>
                               </tr>
@@ -8030,9 +8247,28 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     setBatchCampusFilter("all");
                     setBatchStatusFilter("all");
                   }}
-                  className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" /> Xóa lọc
+                </button>
+              )}
+
+              {/* Auto-Standardize Batch Names Button */}
+              {!cannotUpdate && (
+                <button
+                  type="button"
+                  disabled={isNormalizingBatchNames}
+                  onClick={() =>
+                    setConfirm({
+                      msg: `Tự động chuẩn hóa tên ${batchStatusFilter === "ACTIVE" ? "các đợt đang mở" : "toàn bộ các đợt"} theo quy chuẩn Sky-Line ([Cơ sở] · [Loại kỳ] #[STT] · [Ngày KS])? Dữ liệu học sinh và điểm số không bị ảnh hưởng.`,
+                      fn: handleNormalizeBatchNames
+                    })
+                  }
+                  className="h-9 px-3 rounded-xl bg-[#F0FDFA] hover:bg-teal-100/80 text-[#005854] border border-[#00A19A]/40 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                  title="Tự động chuẩn hóa tên đợt sang định dạng gọn: CS1 · KSL #091 · 12/09"
+                >
+                  {isNormalizingBatchNames ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-[#00736E]" />}
+                  <span>{isNormalizingBatchNames ? "Đang chuẩn hóa..." : "Chuẩn hóa tên đợt"}</span>
                 </button>
               )}
             </div>
@@ -8060,12 +8296,39 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 ">
-                      <button onClick={e=>{e.stopPropagation(); if (cannotCreate) return; openAddBatch(p.id)}} className={"flex items-center gap-1.5 px-4 py-2 text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-emerald-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
-                        <Plus className="w-3.5 h-3.5"/> Thêm Đợt
+                      <button onClick={e=>{e.stopPropagation(); if (cannotCreate) return; openAddBatch(p.id)}} className={"flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#003B3A] hover:bg-[#005854] rounded-xl transition-all shadow-2xs cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
+                        <Plus className="w-3.5 h-3.5"/> Tạo đợt khảo sát
                       </button>
-                      <button onClick={e=>{e.stopPropagation(); if (cannotUpdate) return; openEditPeriod(p)}} className={"p-2 text-slate-400 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}><Edit2 className="w-4 h-4"/></button>
-                      <button onClick={e=>{e.stopPropagation(); setConfirm({msg:`Xóa kỳ "${p.name}"?`,fn:()=>doDeletePeriod(p.id)})}} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")}><Trash2 className="w-4 h-4"/></button>
-                      <span className="text-slate-300 ml-2">{expandedId===p.id?<ChevronUp className="w-5 h-5"/>:<ChevronDown className="w-5 h-5"/>}</span>
+                      <details className="relative inline-block text-left" onClick={e => e.stopPropagation()}>
+                        <summary
+                          aria-label={`Thao tác kỳ khảo sát ${p.name}`}
+                          className="list-none h-8 w-8 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-slate-600 flex items-center justify-center font-bold cursor-pointer select-none"
+                          title="Thao tác kỳ khảo sát"
+                        >
+                          ⋯
+                        </summary>
+                        <div className="absolute right-0 mt-1 w-44 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1 z-30 text-left">
+                          <button
+                            type="button"
+                            onClick={() => { if (cannotUpdate) return; openEditPeriod(p); }}
+                            disabled={cannotUpdate}
+                            className="w-full px-3 py-2 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Chỉnh sửa kỳ</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirm({ msg: `Xóa kỳ khảo sát "${p.name}" (gồm ${p.batches?.length || 0} đợt khảo sát)? Thao tác này không thể hoàn tác.`, fn: () => doDeletePeriod(p.id) })}
+                            disabled={cannotDelete}
+                            className="w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Xóa kỳ khảo sát</span>
+                          </button>
+                        </div>
+                      </details>
+                      <span className="text-slate-300 ml-1">{expandedId===p.id?<ChevronUp className="w-5 h-5"/>:<ChevronDown className="w-5 h-5"/>}</span>
                     </div>
                   </div>
                   {expandedId===p.id && (
@@ -8094,14 +8357,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                      title="Chọn tất cả đợt của kỳ này"
                                    />
                                  </th>
-                                 <th className="px-3 py-3.5 border-b border-white/15 text-[10px] font-semibold">Mã Đợt</th>
-                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] font-semibold">Nội dung khảo sát & Môn theo hệ</th>
-                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Cơ sở</th>
-                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Thời gian</th>
-                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] text-center font-semibold">Học sinh</th>
-                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Trạng thái</th>
-                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] font-semibold">Người phụ trách</th>
-                                 <th className="px-4 py-3.5 border-b border-white/15 text-[10px] text-right pr-6 font-semibold">Thao tác</th>
+                                 <th className="px-3 py-3.5 border-b border-white/15 text-[11px] font-semibold text-white whitespace-nowrap">Mã Đợt</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] font-semibold text-white">Đợt khảo sát &amp; Phân bổ học sinh</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] font-semibold text-teal-100 whitespace-nowrap">Cơ sở</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] font-semibold text-teal-100 whitespace-nowrap">Thời gian</th>
+                                 <th className="px-3 py-3.5 border-b border-white/15 text-[11px] text-center font-semibold text-[#5EEAD4] whitespace-nowrap">Tháng</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] text-center font-semibold text-teal-100 whitespace-nowrap">Học sinh</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] font-semibold text-teal-100 whitespace-nowrap">Trạng thái</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] font-semibold text-teal-100 whitespace-nowrap">Người phụ trách</th>
+                                 <th className="px-4 py-3.5 border-b border-white/15 text-[11px] text-right pr-6 font-semibold text-white whitespace-nowrap">Thao tác</th>
                                </tr>
                              </thead>
                              <tbody className="divide-y divide-[#E2E8F0]">
@@ -8133,11 +8397,31 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                  const assignee = giaoVuCSUsers.find(u => u.id === b.assignedUserId);
                                  const assigneeName = assignee ? assignee.fullName : "-- Chưa gán --";
                                   const cleanName = (b.name || "").split("|")[0].trim();
-                                  const stCount = (b as any)._count?.students ?? b.students?.length ?? 0;
+                                  const bStudents: any[] = Array.isArray((b as any).students) ? (b as any).students : [];
+                                  const stCount = (b as any)._count?.students ?? bStudents.length ?? 0;
                                   const isCompleted = b.status === "COMPLETED";
+                                  const isRosterExpanded = Boolean(expandedBatchRosterIds[b.id]);
+                                  const rawBatchDate = String(b.endDate || b.startDate || "").slice(0, 10);
+                                  const batchMonthKey = /^\d{4}-\d{2}-\d{2}$/.test(rawBatchDate)
+                                    ? `${rawBatchDate.slice(5, 7)}/${rawBatchDate.slice(0, 4)}`
+                                    : "";
+                                  const nowCur = new Date();
+                                  const curMonthKey = `${String(nowCur.getMonth() + 1).padStart(2, "0")}/${nowCur.getFullYear()}`;
+
+                                  const heSCount = bStudents.filter(st => getStudentK12Track(st) === "HE_S").length;
+                                  const heICount = bStudents.length - heSCount;
+                                  const gradeCountMap = new Map<string, number>();
+                                  bStudents.forEach(st => {
+                                    const gKey = String(st.grade || "?").replace(/^Khối\s*/i, "").trim() || "?";
+                                    gradeCountMap.set(gKey, (gradeCountMap.get(gKey) || 0) + 1);
+                                  });
+                                  const gradeSummaryList = Array.from(gradeCountMap.entries()).sort(
+                                    (a, c) => (parseInt(a[0], 10) || 99) - (parseInt(c[0], 10) || 99)
+                                  );
 
                                   return (
-                                    <tr key={b.id} className={`group transition-colors text-xs font-semibold ${isCompleted ? "bg-slate-50/70 opacity-85 hover:opacity-100" : "hover:bg-slate-50/50"}`}>
+                                    <Fragment key={b.id}>
+                                    <tr className={`group transition-colors text-xs font-semibold tabular-nums ${isRosterExpanded ? "bg-[#F0FDFA]/60" : isCompleted ? "bg-slate-50/70 opacity-85 hover:opacity-100" : "hover:bg-[#F8FAFC]"}`}>
                                       <td className="px-3 py-3 border-b border-slate-100 text-center pl-4">
                                         <input
                                           type="checkbox"
@@ -8156,36 +8440,64 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       </td>
                                       <td className="px-4 py-3 border-b border-slate-100">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                          <p className={`text-sm font-bold ${isCompleted ? "text-slate-600" : "text-slate-800"}`}>{cleanName}</p>
+                                          <p className={`text-[13px] font-bold ${isCompleted ? "text-slate-600" : "text-[#003B3A]"}`}>{cleanName}</p>
                                           {isCompleted && (
-                                            <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-black uppercase tracking-wider">
+                                            <span className="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-semibold">
                                               ✓ Hoàn thành
                                             </span>
                                           )}
                                         </div>
-                                        {b.name.includes("|") && (
-                                          <p className="text-[10px] font-medium text-slate-400 truncate max-w-xs" title={b.name}>{b.name}</p>
-                                        )}
-                                        <div className="flex flex-col gap-1 mt-1.5 text-[10px]">
-                                          {systemSubjectsSummary.map((sysItem) => {
-                                            const isHns = sysItem.systemGroup === "HNS";
-                                            return (
-                                              <div
-                                                key={sysItem.systemGroup}
-                                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border w-fit ${
-                                                  isHns
-                                                    ? "bg-[#F0FDFA] border-[#CCFBF1] text-[#003B3A]"
-                                                    : "bg-slate-50 border-slate-200 text-slate-700"
-                                                }`}
-                                                title={`Môn khảo sát cấu hình cho Hệ ${sysItem.systemGroup}: ${sysItem.subjectsLabel}`}
-                                              >
-                                                <span className={`font-bold shrink-0 ${isHns ? "text-[#00736E]" : "text-[#003B3A]"}`}>
-                                                  Hệ {sysItem.systemGroup}:
-                                                </span>
-                                                <span className="font-medium">{sysItem.subjectsLabel}</span>
-                                              </div>
-                                            );
-                                          })}
+                                        {/* Thanh tóm tắt gọn: Phân bổ Hệ + Khối + Nút xổ danh sách HS theo đợt */}
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] tabular-nums">
+                                          {heSCount > 0 && (
+                                            <span className="px-1.5 py-0.5 rounded bg-[#F0FDFA] text-[#005854] border border-teal-200/80 font-semibold text-[10px]">
+                                              {heSCount} Hệ S
+                                            </span>
+                                          )}
+                                          {heICount > 0 && (
+                                            <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200/80 font-semibold text-[10px]">
+                                              {heICount} Hệ I
+                                            </span>
+                                          )}
+                                          {gradeSummaryList.slice(0, 4).map(([g, cnt]) => (
+                                            <span
+                                              key={g}
+                                              className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200/80 font-medium text-[10px]"
+                                            >
+                                              K{g} ({cnt})
+                                            </span>
+                                          ))}
+                                          {gradeSummaryList.length > 4 && (
+                                            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[10px] font-medium">
+                                              +{gradeSummaryList.length - 4} khối
+                                            </span>
+                                          )}
+                                          {bStudents.length > 0 && (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setExpandedBatchRosterIds(prev => ({
+                                                  ...prev,
+                                                  [b.id]: !prev[b.id]
+                                                }));
+                                              }}
+                                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-semibold border transition-colors cursor-pointer ${
+                                                isRosterExpanded
+                                                  ? "bg-[#003B3A] text-white border-[#003B3A]"
+                                                  : "bg-white text-[#00736E] border-[#99F6E4] hover:bg-[#F0FDFA]"
+                                              }`}
+                                              title="Xem nhanh danh sách học sinh thuộc đợt này ngay tại bảng"
+                                            >
+                                              <span>{isRosterExpanded ? "Ẩn DS HS" : `Xem DS (${bStudents.length} HS)`}</span>
+                                              {isRosterExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                            </button>
+                                          )}
+                                          {bStudents.length === 0 && (
+                                            <span className="text-[11px] text-slate-400 italic font-normal">
+                                              Chưa có học sinh trong đợt
+                                            </span>
+                                          )}
                                         </div>
                                       </td>
                                       <td className="px-4 py-3 border-b border-slate-100">
@@ -8193,13 +8505,25 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                           {campusName}
                                         </span>
                                       </td>
-                                      <td className="px-4 py-3 border-b border-slate-100">
+                                      <td className="px-4 py-3 border-b border-slate-100 whitespace-nowrap">
                                         <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
                                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
                                           <span>{b.startDate?.slice(0, 10).split('-').reverse().join('/')}</span>
                                           <span className="text-slate-300">→</span>
                                           <span>{b.endDate?.slice(0, 10).split('-').reverse().join('/')}</span>
                                         </div>
+                                      </td>
+                                      <td className="px-3 py-3 border-b border-slate-100 text-center whitespace-nowrap">
+                                        <span
+                                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                                            batchMonthKey && batchMonthKey === curMonthKey
+                                              ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]"
+                                              : "bg-slate-50 text-slate-600 border-slate-200"
+                                          }`}
+                                          title={batchMonthKey ? `Tự động lấy từ Ngày KS: Tháng ${batchMonthKey}` : "Chưa có Ngày KS"}
+                                        >
+                                          {batchMonthKey || "—"}
+                                        </span>
                                       </td>
                                       <td className="px-4 py-3 border-b border-slate-100 text-center">
                                         <button
@@ -8237,42 +8561,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                            <option value="COMPLETED">✓ Hoàn thành</option>
                                            <option value="LOCKED">Đã khóa</option>
                                          </select>
-                                         {b.status === "ACTIVE" && !cannotUpdate && (
-                                           <button
-                                             type="button"
-                                             onClick={() => updateSingleBatchStatus(b.id, "COMPLETED", Boolean((b as any).isPreschool))}
-                                             className="h-8 px-2.5 rounded-lg bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white border border-sky-200 text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
-                                             title="Đánh dấu Hoàn thành đợt này (Ẩn khỏi Nhập thông tin khảo sát & Phân công GV)"
-                                           >
-                                             ✓ Hoàn thành
-                                           </button>
-                                         )}
                                        </div>
                                      </td>
-                                                                           <td className="px-4 py-3 border-b border-slate-100">
-                                        <div className="flex items-center justify-between gap-2 group/assignee">
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 flex items-center justify-center text-[10px] font-black text-emerald-600 text-xs font-semibold">
-                                              {assigneeName.charAt(0)}
-                                            </div>
-                                            <span className="text-xs font-bold text-slate-600">{assigneeName}</span>
-                                          </div>
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openHandoverGiaoVuModal(p.id, b.id);
-                                            }}
-                                            className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-600 text-amber-800 hover:text-white border border-amber-200 transition-all ml-2 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
-                                            title="Bàn giao & Gửi thông tin danh sách HS theo đợt khảo sát tới Giáo vụ để Phân công Khảo sát"
-                                          >
-                                            <Mail className="w-3.5 h-3.5" />
-                                            <span>Bàn giao GVụ</span>
-                                          </button>
-                                        </div>
-                                      </td>
+                                     <td className="px-4 py-3 border-b border-slate-100">
+                                       <div className="flex items-center gap-2">
+                                         <div className="w-6 h-6 flex items-center justify-center text-[10px] font-black text-emerald-600">
+                                           {assigneeName.charAt(0)}
+                                         </div>
+                                         <span className="text-xs font-bold text-slate-600">{assigneeName}</span>
+                                       </div>
+                                     </td>
                                      <td className="px-4 py-3 border-b border-slate-100 text-right pr-6">
-                                       <div className="flex items-center justify-end gap-1">
+                                       <div className="flex items-center justify-end gap-1.5">
                                          {!isCompleted && (
                                            <button
                                              type="button"
@@ -8287,21 +8587,176 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                });
                                              }}
                                              disabled={cannotCreate}
-                                             className={"p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
+                                             className={"h-8 px-2.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg text-[11px] font-semibold inline-flex items-center gap-1 transition-all cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
                                              title="Thêm học sinh mới vào đợt này"
                                            >
                                              <UserPlus className="w-3.5 h-3.5" />
+                                             <span>+ Thêm HS</span>
                                            </button>
                                          )}
-                                         <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-teal-800 hover:bg-teal-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
-                                           <Edit2 className="w-3.5 h-3.5" />
-                                         </button>
-                                         <button onClick={() => setConfirm({ msg: `Xóa đợt "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa">
-                                           <Trash2 className="w-3.5 h-3.5" />
-                                         </button>
+                                         <details className="relative inline-block text-left" onClick={e => e.stopPropagation()}>
+                                           <summary
+                                             aria-label={`Thao tác đợt khảo sát ${cleanName}`}
+                                             className="list-none h-8 w-8 rounded-lg border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-slate-600 flex items-center justify-center font-bold cursor-pointer select-none"
+                                             title="Thao tác khác"
+                                           >
+                                             ⋯
+                                           </summary>
+                                           <div className="absolute right-0 mt-1 w-48 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1 z-30 text-left">
+                                             <button
+                                               type="button"
+                                               onClick={() => openHandoverGiaoVuModal(p.id, b.id)}
+                                               className="w-full px-3 py-2 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] flex items-center gap-2 cursor-pointer"
+                                             >
+                                               <Mail className="w-3.5 h-3.5 text-[#00736E]" />
+                                               <span>Bàn giao Giáo vụ</span>
+                                             </button>
+                                             <button
+                                               type="button"
+                                               onClick={() => openEditBatch(b)}
+                                               disabled={cannotUpdate}
+                                               className="w-full px-3 py-2 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC] flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+                                             >
+                                               <Edit2 className="w-3.5 h-3.5 text-slate-500" />
+                                               <span>Chỉnh sửa đợt</span>
+                                             </button>
+                                             <button
+                                               type="button"
+                                               onClick={() =>
+                                                 setConfirm({
+                                                   msg: `Xóa đợt "${b.name}" (đang có ${stCount} hồ sơ học sinh)? Thao tác này không thể hoàn tác.`,
+                                                   fn: () => doDeleteBatch(b.id)
+                                                 })
+                                               }
+                                               disabled={cannotDelete}
+                                               className="w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+                                             >
+                                               <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                               <span>Xóa đợt</span>
+                                             </button>
+                                           </div>
+                                         </details>
                                        </div>
                                      </td>
                                    </tr>
+                                   {isRosterExpanded && bStudents.length > 0 && (() => {
+                                     const rosterQuery = (batchRosterSearchMap[b.id] || "").trim().toLowerCase();
+                                     const filteredBatchStudents = rosterQuery
+                                       ? bStudents.filter(st =>
+                                           String(st.fullName || "").toLowerCase().includes(rosterQuery) ||
+                                           String(st.studentCode || "").toLowerCase().includes(rosterQuery) ||
+                                           String(st.grade || "").toLowerCase().includes(rosterQuery)
+                                         )
+                                       : bStudents;
+                                     return (
+                                       <tr className="bg-[#F8FAFC]">
+                                         <td colSpan={10} className="px-5 py-3 border-b border-[#E2E8F0]">
+                                           <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden shadow-2xs">
+                                             <div className="px-3.5 py-2 bg-[#F8FAFC] border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2 text-xs">
+                                               <div className="flex items-center gap-2 font-bold text-[#003B3A]">
+                                                 <Users className="w-3.5 h-3.5 text-[#00736E]" />
+                                                 <span>Danh sách học sinh thuộc đợt #{b.batchNumber} ({filteredBatchStudents.length}/{bStudents.length} HS)</span>
+                                               </div>
+                                               <div className="flex items-center gap-2 flex-wrap">
+                                                 {bStudents.length > 5 && (
+                                                   <div className="relative">
+                                                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                                                     <input
+                                                       type="text"
+                                                       value={batchRosterSearchMap[b.id] || ""}
+                                                       onChange={e =>
+                                                         setBatchRosterSearchMap(prev => ({
+                                                           ...prev,
+                                                           [b.id]: e.target.value
+                                                         }))
+                                                       }
+                                                       placeholder="Tìm tên, mã HS, khối..."
+                                                       className="pl-7 pr-2.5 py-1 rounded-lg border border-[#E2E8F0] bg-white text-[11px] font-medium text-slate-700 outline-none focus:border-[#008B85] w-44"
+                                                     />
+                                                   </div>
+                                                 )}
+                                                 <button
+                                                   type="button"
+                                                   onClick={() => {
+                                                     if (isCompleted) setShowCompletedBatches(true);
+                                                     setSPeriodId(p.id);
+                                                     setSBatchId(b.id);
+                                                     setTab("students");
+                                                   }}
+                                                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#003B3A] hover:bg-[#005854] text-white text-[11px] font-semibold transition-colors cursor-pointer"
+                                                 >
+                                                   <span>Mở đầy đủ tại Danh sách HS</span>
+                                                   <ArrowRight className="w-3 h-3" />
+                                                 </button>
+                                               </div>
+                                             </div>
+                                             <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                                               <table className="w-full text-left border-collapse text-xs tabular-nums">
+                                                 <thead className="bg-[#003B3A] text-white sticky top-0 z-10">
+                                                   <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                     <th className="py-2 px-3 text-center w-10 text-teal-100">STT</th>
+                                                     <th className="py-2 px-3 text-teal-100">Mã HS</th>
+                                                     <th className="py-2 px-3 text-white">Họ và tên</th>
+                                                     <th className="py-2 px-3 text-center text-teal-100">Khối</th>
+                                                     <th className="py-2 px-3 text-center text-teal-100">Hệ</th>
+                                                     <th className="py-2 px-3 text-center text-teal-100">Cơ sở</th>
+                                                     <th className="py-2 px-3 text-center text-[#5EEAD4]">Kết quả duyệt</th>
+                                                   </tr>
+                                                 </thead>
+                                                 <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                                                   {filteredBatchStudents.map((st: any, idx: number) => {
+                                                     const stTrack = getStudentK12Track(st);
+                                                     const stCampus =
+                                                       campuses.find(c => c.id === st.registeredCampus || c.id === st.admissionCampus)?.campusCode ||
+                                                       st.admissionCampus ||
+                                                       campusName;
+                                                     return (
+                                                       <tr key={st.id || idx} className="hover:bg-[#F8FAFC] align-middle">
+                                                         <td className="py-2 px-3 text-center text-slate-400">{idx + 1}</td>
+                                                         <td className="py-2 px-3 font-mono text-[11px] text-[#003B3A] font-semibold">
+                                                           {st.studentCode || "—"}
+                                                         </td>
+                                                         <td className="py-2 px-3 font-semibold text-slate-800">{st.fullName}</td>
+                                                         <td className="py-2 px-3 text-center text-slate-700">
+                                                           Khối {String(st.grade || "—").replace(/^Khối\s*/i, "")}
+                                                         </td>
+                                                         <td className="py-2 px-3 text-center">
+                                                           <span
+                                                             className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                                                               stTrack === "HE_I"
+                                                                 ? "bg-sky-50 text-sky-800 border-sky-200"
+                                                                 : "bg-[#F0FDFA] text-[#005854] border-teal-200"
+                                                             }`}
+                                                           >
+                                                             {st.surveyFormType || st.surveySystem || (stTrack === "HE_I" ? "Hệ I" : "HNS")}
+                                                           </span>
+                                                         </td>
+                                                         <td className="py-2 px-3 text-center text-slate-600 text-[11px]">
+                                                           {stCampus}
+                                                         </td>
+                                                         <td className="py-2 px-3 text-center">
+                                                           {st.admissionResult ? (
+                                                             <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-emerald-50 text-[#059669] border border-emerald-200">
+                                                               {st.admissionResult}
+                                                             </span>
+                                                           ) : (
+                                                             <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-amber-50 text-[#D97706] border border-amber-200">
+                                                               Chờ duyệt
+                                                             </span>
+                                                           )}
+                                                         </td>
+                                                       </tr>
+                                                     );
+                                                   })}
+                                                 </tbody>
+                                               </table>
+                                             </div>
+                                           </div>
+                                         </td>
+                                       </tr>
+                                     );
+                                   })()}
+                                   </Fragment>
                                  );
                                })}
                              </tbody>
@@ -8320,7 +8775,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
       )}
 
       {/* ===== TAB 3: BÀN GIAO DANH SÁCH TỚI GIÁO VỤ (PHÂN CÔNG KHẢO SÁT) ===== */}
-      {tab === "handover" && (
+      {tab === "handover" && (() => {
+        const isTransferPeriodName = (p: any) => {
+          const n = String(p?.name || "").toLowerCase();
+          return n.includes("chuyển hệ") || n.includes("chuyen he") || n.includes("chuyenhe");
+        };
+        const handoverPeriodsList = viewMode === "transfer"
+          ? visiblePeriods
+          : (periods.length > 0 ? periods : visiblePeriods);
+        const activeHandoverPeriod = handoverPeriodsList.find(p => p.id === handoverPeriodId) || periods.find(p => p.id === handoverPeriodId);
+        const handoverTargetTab = (viewMode === "transfer" || isTransferPeriodName(activeHandoverPeriod)) ? "transfer" : "k12";
+        return (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Header Card */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -8345,7 +8810,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <a
-                href={`/admin/phan-cong-khao-sat?tab=k12&periodId=${handoverPeriodId || ""}&batchId=${handoverBatchId || ""}`}
+                href={`/admin/phan-cong-khao-sat?tab=${handoverTargetTab}&periodId=${handoverPeriodId || ""}&batchId=${handoverBatchId || ""}`}
                 className="h-10 px-4 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#005854] border border-teal-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer"
                 title="Mở trực tiếp màn hình Phân công Khảo sát cho đợt này"
               >
@@ -8386,7 +8851,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </span>
                 </div>
                 <a
-                  href={handoverResult.assignUrl || `/admin/phan-cong-khao-sat?tab=k12&periodId=${handoverPeriodId}&batchId=${handoverBatchId}`}
+                  href={handoverResult.assignUrl || `/admin/phan-cong-khao-sat?tab=${handoverTargetTab}&periodId=${handoverPeriodId}&batchId=${handoverBatchId}`}
                   className="px-3.5 py-1.5 rounded-xl bg-[#00736E] hover:bg-[#005854] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all"
                 >
                   <span>Chuyển sang Phân công Khảo sát ngay</span>
@@ -8421,36 +8886,93 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     className={inp}
                   >
                     <option value="">-- Chọn Kỳ khảo sát --</option>
-                    {visiblePeriods.map(p => (
+                    {handoverPeriodsList.map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.name} ({(p as any)._count?.students || 0} HS)
+                        {isTransferPeriodName(p) ? `[Chuyển hệ] ${p.name}` : p.name} ({(p as any)._count?.students || 0} HS)
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Đợt khảo sát bàn giao *</label>
-                  <select
-                    value={handoverBatchId}
-                    onChange={(e) => {
-                      const newBId = e.target.value;
-                      setHandoverBatchId(newBId);
-                      applyHandoverDefaultsForSelection(handoverPeriodId, newBId);
-                    }}
-                    className={inp}
-                  >
-                    <option value="">-- Toàn bộ học sinh trong Kỳ khảo sát --</option>
-                    {((periods.find(p => p.id === handoverPeriodId) || visiblePeriods.find(p => p.id === handoverPeriodId))?.batches || []).map((b: any) => {
-                      const cnt = b._count?.students ?? b.students?.length ?? 0;
-                      return (
-                        <option key={b.id} value={b.id}>
-                          [{cnt} HS] {b.name} {b.status === "COMPLETED" ? "(Hoàn thành)" : ""}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
+                {(() => {
+                  const allPeriodBatches = (periods.find(p => p.id === handoverPeriodId) || visiblePeriods.find(p => p.id === handoverPeriodId))?.batches || [];
+                  const monthKeys = sortMonthYearKeysDesc(
+                    Array.from(new Set(allPeriodBatches.map((b: any) => getBatchMonthYearKey(b)).filter(Boolean)))
+                  );
+                  const currentMonthKey = getCurrentMonthYearKey();
+                  const effectiveMonth =
+                    handoverMonthFilter === "ALL" || monthKeys.includes(handoverMonthFilter)
+                      ? handoverMonthFilter
+                      : "ALL";
+                  const filteredBatches = (
+                    effectiveMonth === "ALL"
+                      ? allPeriodBatches
+                      : allPeriodBatches.filter((b: any) => getBatchMonthYearKey(b) === effectiveMonth)
+                  )
+                    .slice()
+                    .sort((a: any, b: any) => (b.batchNumber || 0) - (a.batchNumber || 0));
+
+                  return (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">Tháng / Năm khảo sát</label>
+                        <select
+                          value={effectiveMonth}
+                          onChange={(e) => {
+                            const nextMonth = e.target.value;
+                            setHandoverMonthFilter(nextMonth);
+                            const nextBatches = (
+                              nextMonth === "ALL"
+                                ? allPeriodBatches
+                                : allPeriodBatches.filter((b: any) => getBatchMonthYearKey(b) === nextMonth)
+                            )
+                              .slice()
+                              .sort((a: any, b: any) => (b.batchNumber || 0) - (a.batchNumber || 0));
+                            const nextBId = nextBatches[0]?.id || "";
+                            setHandoverBatchId(nextBId);
+                            applyHandoverDefaultsForSelection(handoverPeriodId, nextBId);
+                          }}
+                          className={`${inp} tabular-nums`}
+                        >
+                          <option value="ALL">Tất cả tháng/năm ({allPeriodBatches.length} đợt)</option>
+                          {monthKeys.map(mk => {
+                            const cnt = allPeriodBatches.filter((b: any) => getBatchMonthYearKey(b) === mk).length;
+                            return (
+                              <option key={mk} value={mk}>
+                                Tháng {mk}{mk === currentMonthKey ? " (Hiện tại)" : ""} ({cnt} đợt)
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Đợt khảo sát bàn giao * ({filteredBatches.length} đợt)
+                        </label>
+                        <select
+                          value={handoverBatchId}
+                          onChange={(e) => {
+                            const newBId = e.target.value;
+                            setHandoverBatchId(newBId);
+                            applyHandoverDefaultsForSelection(handoverPeriodId, newBId);
+                          }}
+                          className={inp}
+                        >
+                          <option value="">-- Toàn bộ học sinh trong Kỳ {effectiveMonth !== "ALL" ? `(Tháng ${effectiveMonth})` : ""} --</option>
+                          {filteredBatches.map((b: any) => {
+                            const cnt = b._count?.students ?? b.students?.length ?? 0;
+                            return (
+                              <option key={b.id} value={b.id}>
+                                [{cnt} HS] {b.name} {b.status === "COMPLETED" ? "(Hoàn thành)" : ""}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    </>
+                  );
+                })()}
 
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Tài khoản Giáo vụ phụ trách trên hệ thống</label>
@@ -8677,11 +9199,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <th className="py-2.5 px-3 font-bold text-[10px] text-center">Hệ KS</th>
                       <th className="py-2.5 px-3 font-bold text-[10px]">Diện KS / Hình thức</th>
                       <th className="py-2.5 px-3 font-bold text-[10px]">Trường học cũ</th>
+                      <th className="py-2.5 px-3 font-bold text-[10px] text-center text-[#5EEAD4]">Tháng</th>
                       <th className="py-2.5 px-3 font-bold text-[10px]">Cơ sở ĐK</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E2E8F0]">
-                    {effectiveHandoverStudents.map((s, idx) => (
+                  <tbody className="divide-y divide-[#E2E8F0] tabular-nums">
+                    {effectiveHandoverStudents.map((s, idx) => {
+                      const bObj = s.batch || (periods.flatMap(p => p.batches || [])).find((b: any) => b.id === (s.batchId || handoverBatchId));
+                      const rawD = String(bObj?.endDate || bObj?.startDate || s.createdAt || "").slice(0, 10);
+                      const mk = /^\d{4}-\d{2}-\d{2}$/.test(rawD) ? `${rawD.slice(5, 7)}/${rawD.slice(0, 4)}` : "";
+                      const nowM = new Date();
+                      const curM = `${String(nowM.getMonth() + 1).padStart(2, "0")}/${nowM.getFullYear()}`;
+                      return (
                       <tr key={s.id} className="hover:bg-slate-50/80">
                         <td className="py-2.5 px-3 text-center text-slate-500 font-semibold">{idx + 1}</td>
                         <td className="py-2.5 px-3 font-mono font-bold text-[#005854]">{s.studentCode || "—"}</td>
@@ -8702,18 +9231,31 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           {s.admissionCriteria || "Khảo sát"} {s.surveySystem ? `(${s.surveySystem})` : ""}
                         </td>
                         <td className="py-2.5 px-3 text-slate-600">{s.oldSchoolName || "—"}</td>
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                              mk && mk === curM
+                                ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]"
+                                : "bg-slate-50 text-slate-600 border-slate-200"
+                            }`}
+                          >
+                            {mk || "—"}
+                          </span>
+                        </td>
                         <td className="py-2.5 px-3 text-slate-700 font-semibold">
                           {resolveCampusDisplay(s.registeredCampus || s.admissionCampus, handoverCampusCode)}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* ===== TAB: STUDENTS (SAAS REDESIGNED) ===== */}
       {tab==="students" && (
@@ -8790,7 +9332,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                 {/* Concise Regulation Reference Strip */}
                 {viewMode !== "transfer" && (
-                  <div className="hidden 2xl:flex flex-wrap items-center gap-1 text-[10.5px] pl-2 border-l border-[#E2E8F0]">
+                  <div className="hidden xl:flex flex-wrap items-center gap-1 text-[10.5px] pl-2 border-l border-[#E2E8F0]">
                     <span className="font-semibold text-slate-500 mr-0.5">Quy chế:</span>
                     {activeK12Track === "HE_I" ? (
                       <>
@@ -8837,21 +9379,30 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </div>
                 )}
 
-                {/* Consolidated Excel & Data Utilities Dropdown */}
+                {/* Consolidated Excel & Workflow Utilities Dropdown */}
                 <div className="relative" ref={dataToolsRef}>
                   <button
                     type="button"
                     onClick={() => setIsDataToolsOpen(prev => !prev)}
-                    className="h-8 px-2.5 bg-white text-slate-700 border border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-slate-300 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors cursor-pointer"
-                    title="Tải mẫu Excel, xuất danh sách đủ ĐK Quy chế & đồng bộ dữ liệu"
+                    className="h-8 px-2.5 bg-white text-slate-700 border border-[#E2E8F0] hover:bg-[#F8FAFC] hover:border-slate-300 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
+                    title="Nhập/xuất Excel, tiếp nhận khảo sát lẻ, bàn giao Giáo vụ & đồng bộ dữ liệu"
                   >
                     <FileSpreadsheet className="w-3.5 h-3.5 text-[#00736E]" />
-                    <span>Mẫu & Xuất Excel</span>
+                    <span>Tiện ích &amp; Excel</span>
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isDataToolsOpen ? "rotate-180" : ""}`} />
                   </button>
 
                   {isDataToolsOpen && (
-                    <div className="absolute right-0 mt-1.5 w-64 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="absolute right-0 mt-1.5 w-68 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150">
+                      <button
+                        type="button"
+                        onClick={() => { setIsDataToolsOpen(false); fileRef.current?.click(); }}
+                        disabled={!sPeriodId || sPeriodId === "all" || importing || cannotCreate}
+                        className="w-full px-3.5 py-2 text-left text-xs font-semibold text-emerald-800 hover:bg-emerald-50/70 flex items-center gap-2.5 transition-colors disabled:opacity-45 cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{importing ? "Đang nhập Excel..." : "Nhập danh sách từ Excel (.xlsx)"}</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => { setIsDataToolsOpen(false); handleDownloadTemplate(); }}
@@ -8899,6 +9450,28 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         <span>Tải mẫu trống DS đủ ĐK Quy chế</span>
                       </button>
                       <div className="my-1 border-t border-[#F1F5F9]" />
+                      {viewMode !== "transfer" && (
+                        <button
+                          type="button"
+                          onClick={() => { setIsDataToolsOpen(false); openQuickScheduleModal(kslPeriod?.id); }}
+                          disabled={cannotCreate}
+                          className="w-full px-3.5 py-2 text-left text-xs font-medium text-[#005854] hover:bg-[#F0FDFA] flex items-center gap-2.5 transition-colors disabled:opacity-45 cursor-pointer"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-[#00736E] shrink-0" />
+                          <span>Tiếp nhận &amp; xếp lịch khảo sát lẻ (30s)</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDataToolsOpen(false);
+                          openHandoverGiaoVuModal(sPeriodId && sPeriodId !== "all" ? sPeriodId : undefined, sBatchId && sBatchId !== "none" ? sBatchId : undefined);
+                        }}
+                        className="w-full px-3.5 py-2 text-left text-xs font-medium text-amber-800 hover:bg-amber-50/70 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>Bàn giao danh sách tới Giáo vụ</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => { setIsDataToolsOpen(false); handleSyncMasterStudentInfo(); }}
@@ -8914,139 +9487,102 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                 <button
                   type="button"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={!sPeriodId || sPeriodId === "all" || importing || cannotCreate}
-                  className={"h-8 px-2.5 bg-white text-emerald-800 border border-emerald-200 rounded-lg flex items-center gap-1.5 text-xs font-semibold hover:bg-emerald-50 transition-colors cursor-pointer " + ((!sPeriodId || sPeriodId === "all" || importing || cannotCreate) ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
-                  title={cannotCreate ? "Chế độ xem" : "Nhập danh sách học sinh từ file Excel (chọn 1 Kỳ khảo sát cụ thể)"}
-                >
-                  {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-700" /> : <Upload className="w-3.5 h-3.5 text-emerald-600" />}
-                  <span>{importing ? "Đang nhập..." : "Nhập Excel"}</span>
-                </button>
-
-                {viewMode !== "transfer" && (
-                  <button
-                    type="button"
-                    onClick={() => openQuickScheduleModal(kslPeriod?.id)}
-                    disabled={cannotCreate}
-                    className={"h-8 px-2.5 bg-[#F0FDFA] hover:bg-teal-100/80 text-[#005854] border border-[#00A19A]/40 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
-                    title="Tiếp nhận học sinh khảo sát lẻ, tự động tạo đợt KSL mới & xếp lịch nhanh"
-                  >
-                    <Clock className="w-3.5 h-3.5 text-[#00736E]" />
-                    <span>Khảo sát lẻ (30s)</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => openHandoverGiaoVuModal(sPeriodId && sPeriodId !== "all" ? sPeriodId : undefined, sBatchId && sBatchId !== "none" ? sBatchId : undefined)}
-                  className="h-8 px-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
-                  title="Bàn giao danh sách học sinh theo đợt tới Giáo vụ để phân công khảo sát"
-                >
-                  <Mail className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Bàn giao Giáo vụ</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => openAddStudent()}
                   disabled={cannotCreate}
-                  className={"h-8 px-3 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg flex items-center gap-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
+                  className={"h-8 px-3.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg flex items-center gap-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer " + (cannotCreate ? "pointer-events-none opacity-40 cursor-not-allowed" : "")}
                   title={cannotCreate ? "Chế độ xem" : "Mở biểu mẫu thêm mới học sinh chi tiết"}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Thêm mới</span>
+                  <span>Thêm học sinh</span>
                 </button>
                 <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport} />
               </div>
             </div>
 
-            {/* Row 2: Compact 7-column Filter Grid */}
-            <div className="grid grid-cols-12 gap-2 items-end">
-              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Kỳ khảo sát *</label>
-                <select value={sPeriodId} onChange={e => { setSPeriodId(e.target.value); setSBatchId(""); }} className={inp + " !h-8.5 !py-0 text-xs font-medium"}>
+            {/* Row 2: Primary Scope & Search Bar (4 crisp controls: Kỳ, Đợt, Tháng, Tìm kiếm) */}
+            <div className="grid grid-cols-12 gap-2.5 items-end">
+              <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Kỳ khảo sát *</label>
+                <select value={sPeriodId} onChange={e => { setSPeriodId(e.target.value); setSBatchId(""); }} className={inp + " !h-9 !py-0 text-xs font-medium"}>
                   <option value="">-- Chọn kỳ --</option>
                   <option value="all">Tất cả các kỳ ({visiblePeriods.reduce((sum, p) => sum + ((p as any)._count?.students || 0), 0)} HS)</option>
                   {visiblePeriods.map(p => <option key={p.id} value={p.id}>{p.name} ({(p as any)._count?.students || 0} HS)</option>)}
                 </select>
               </div>
 
-              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Đợt khảo sát</label>
-                <select value={sBatchId} onChange={e => setSBatchId(e.target.value)} className={inp + " !h-8.5 !py-0 text-xs font-medium"} disabled={!sPeriodId}>
-                  <option value="">Tất cả đợt &amp; khảo sát lẻ</option>
-                  <option value="none">Khảo sát lẻ (chưa phân đợt)</option>
+              <div className="col-span-12 sm:col-span-6 lg:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Tháng</label>
+                {(() => {
+                  const curMk = getCurrentMonthYearKey();
+                  const batchesPool = ((sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || []);
+                  const monthKeys = sortMonthYearKeysDesc([
+                    curMk,
+                    ...batchesPool.map((b: any) => getBatchMonthYearKey(b)),
+                    ...students.map((st: any) => getStudentSurveyMonthKey(st, batchesPool))
+                  ]);
+                  return (
+                    <select
+                      value={sMonthFilter}
+                      onChange={e => {
+                        setSMonthFilter(e.target.value);
+                        setSBatchId("");
+                      }}
+                      className={inp + " !h-9 !py-0 text-xs font-medium tabular-nums"}
+                    >
+                      <option value="all">Tất cả Tháng</option>
+                      {monthKeys.map(mk => (
+                        <option key={mk} value={mk}>
+                          Tháng {mk}{mk === curMk ? " (Hiện tại)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()}
+              </div>
+
+              <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Đợt khảo sát</label>
+                <select value={sBatchId} onChange={e => setSBatchId(e.target.value)} className={inp + " !h-9 !py-0 text-xs font-medium"} disabled={!sPeriodId}>
+                  <option value="">Tất cả đợt &amp; khảo sát lẻ ({studentFilterFacets.total} HS)</option>
+                  <option value="none">Khảo sát lẻ — chưa phân đợt ({studentFilterFacets.unbatchedCount} HS)</option>
                   {[...((sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || [])]
-                    .filter((b: any) => showCompletedBatches || b.status !== "COMPLETED" || b.id === sBatchId)
+                    .filter((b: any) => (showCompletedBatches || b.status !== "COMPLETED" || b.id === sBatchId) && (!sMonthFilter || sMonthFilter === "all" || getBatchMonthYearKey(b) === sMonthFilter || b.id === sBatchId))
                     .sort((a: any, b: any) => (Number(b.batchNumber) || 0) - (Number(a.batchNumber) || 0))
                     .map((b: any) => {
-                      const bStCount = b._count?.students ?? b.students?.length ?? 0;
+                      const trackBatchCount = studentFilterFacets.batchCounts.get(b.id) ?? 0;
+                      const totalBatchCount = b._count?.students ?? b.students?.length ?? 0;
+                      const displayCount = sBatchId && sBatchId !== b.id ? totalBatchCount : trackBatchCount;
                       return (
                         <option key={b.id} value={b.id}>
-                          [{bStCount} HS] {b.status === "COMPLETED" ? "✓ " : ""}{b.name}
+                          [{displayCount} HS] {b.status === "COMPLETED" ? "✓ " : ""}{b.name}
                         </option>
                       );
                     })}
                 </select>
               </div>
 
-              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Cơ sở đăng ký</label>
-                <select value={sCampusFilter} onChange={e => setSCampusFilter(e.target.value)} className={inp + " !h-8.5 !py-0 text-xs font-medium"}>
-                  <option value="">Tất cả cơ sở</option>
-                  {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                </select>
-              </div>
-
-              <div className="col-span-3 sm:col-span-2 lg:col-span-1">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Khối</label>
-                <select value={sGradeFilter} onChange={e => setSGradeFilter(e.target.value)} className={inp + " !h-8.5 !py-0 !px-2 text-xs font-medium"}>
-                  <option value="">Tất cả</option>
-                  {activeGrades.map(g => <option key={g} value={g}>Khối {g}</option>)}
-                </select>
-              </div>
-
-              <div className="col-span-3 sm:col-span-2 lg:col-span-1">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Hệ KS</label>
-                <select value={sEduFilter} onChange={e => setSEduFilter(e.target.value)} className={inp + " !h-8.5 !py-0 !px-2 text-xs font-medium"}>
-                  <option value="">Tất cả</option>
-                  {trackEduSystems.map(es => <option key={es.code} value={es.code}>{es.code}</option>)}
-                </select>
-              </div>
-
-              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
-                <label className="block text-[11px] font-semibold text-[#003B3A] mb-0.5 truncate" title="1. Mốc thời gian / Kỳ khảo sát (đồng bộ Cấu hình quy chế tuyển sinh)">
-                  1. Mốc thời gian / Kỳ KS
-                </label>
-                <select value={sTimingFilter} onChange={e => setSTimingFilter(e.target.value)} className={inp + " !h-8.5 !py-0 !px-2 text-xs font-medium"}>
-                  <option value="">Tất cả mốc / Kỳ KS</option>
-                  <optgroup label="Mốc thời gian chuẩn">
-                    {STANDARD_INTAKE_MILESTONE_OPTIONS.map(opt => (
-                      <option key={opt.code} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </optgroup>
-                  {visiblePeriods.length > 0 && (
-                    <optgroup label="Kỳ khảo sát cụ thể">
-                      {visiblePeriods.map(p => (
-                        <option key={p.id} value={`PERIOD:${p.id}`}>Kỳ: {p.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-              </div>
-
-              <div className="col-span-6 sm:col-span-4 lg:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">Tìm kiếm học sinh</label>
+              <div className="col-span-12 sm:col-span-7 lg:col-span-4">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-semibold text-slate-600">Tìm kiếm nhanh</label>
+                  <span className="text-[11px] font-semibold text-[#00736E] tabular-nums">
+                    Hiển thị {filtStu.length} / {studentFilterFacets.total} hồ sơ
+                  </span>
+                </div>
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   <input
                     value={sSearch}
                     onChange={e => setSSearch(e.target.value)}
-                    placeholder="Tên hoặc mã HS..."
-                    className={inp + " !h-8.5 !py-0 pl-8 pr-6 text-xs font-normal"}
+                    placeholder="Nhập họ tên hoặc mã học sinh..."
+                    className={inp + " !h-9 !py-0 pl-8.5 pr-8 text-xs font-normal"}
                   />
                   {sSearch && (
-                    <button type="button" onClick={() => setSSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => setSSearch("")}
+                      aria-label="Xóa từ khóa tìm kiếm"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -9054,47 +9590,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               </div>
             </div>
 
-            {/* Row 3: Quick Ledger Filter Pills + Data-Entry Workspace Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#F1F5F9] text-xs">
-              <div className="flex flex-wrap items-center gap-1">
-                {visiblePeriods.length > 0 && (
-                  <div className="flex items-center gap-1 pr-2 mr-1 border-r border-[#E2E8F0]">
-                    <button
-                      type="button"
-                      onClick={() => { setSPeriodId("all"); setSBatchId(""); }}
-                      className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
-                        sPeriodId === "all"
-                          ? "bg-[#003B3A] text-white"
-                          : "bg-[#F8FAFC] text-slate-600 border border-[#E2E8F0] hover:bg-slate-100"
-                      }`}
-                    >
-                      Tất cả kỳ ({visiblePeriods.reduce((sum, p) => sum + ((p as any)._count?.students || 0), 0)})
-                    </button>
-                    {visiblePeriods.map(p => {
-                      const isSelected = sPeriodId === p.id;
-                      const pStCount = (p as any)._count?.students || 0;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => { setSPeriodId(p.id); setSBatchId(""); }}
-                          className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
-                            isSelected
-                              ? "bg-[#00736E] text-white border-[#00736E]"
-                              : "bg-white text-slate-600 border-[#E2E8F0] hover:border-[#00A19A]"
-                          }`}
-                        >
-                          {p.name} ({pStCount})
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
+            {/* Row 3: Quick Ledger Filter Pills + Active Reset + Table Density Toggle */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#F1F5F9] text-xs tabular-nums">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setSRecordFilter("all")}
-                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
                     sRecordFilter === "all"
                       ? "bg-[#003B3A] text-white"
                       : "bg-[#F8FAFC] text-slate-600 border border-[#E2E8F0] hover:bg-slate-100"
@@ -9104,8 +9606,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSRecordFilter("eligible_regulation")}
-                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                  onClick={() => setSRecordFilter(sRecordFilter === "eligible_regulation" ? "all" : "eligible_regulation")}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
                     sRecordFilter === "eligible_regulation"
                       ? "bg-[#059669] text-white border-[#059669]"
                       : "bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-100/70"
@@ -9116,8 +9618,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSRecordFilter("old_school")}
-                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                  onClick={() => setSRecordFilter(sRecordFilter === "old_school" ? "all" : "old_school")}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
                     sRecordFilter === "old_school"
                       ? "bg-[#00736E] text-white border-[#00736E]"
                       : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
@@ -9127,19 +9629,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSRecordFilter("achievements")}
-                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
-                    sRecordFilter === "achievements"
-                      ? "bg-amber-600 text-white border-amber-600"
-                      : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
-                  }`}
-                >
-                  Thành tích ({studentIntakeKPIs.withAchievements})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSRecordFilter("attachments")}
-                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                  onClick={() => setSRecordFilter(sRecordFilter === "attachments" ? "all" : "attachments")}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
                     sRecordFilter === "attachments"
                       ? "bg-sky-600 text-white border-sky-600"
                       : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
@@ -9150,7 +9641,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <button
                   type="button"
                   onClick={() => setShowCompletedBatches(prev => !prev)}
-                  className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer border ${
                     showCompletedBatches
                       ? "bg-[#003B3A] text-white border-[#003B3A]"
                       : "bg-white text-slate-500 border-[#E2E8F0] hover:bg-[#F8FAFC]"
@@ -9160,107 +9651,51 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   {showCompletedBatches ? "Hiện đợt hoàn thành" : "Ẩn đợt hoàn thành"}
                 </button>
 
-                {(sGradeFilter || sEduFilter || sTimingFilter || sCampusFilter || sSearch || sRecordFilter !== "all" || sBatchId) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSGradeFilter("");
-                      setSEduFilter("");
-                      setSTimingFilter("");
-                      setSCampusFilter("");
-                      setSSearch("");
-                      setSBatchId("");
-                      setSRecordFilter("all");
-                      setSResultFilter("all");
-                    }}
-                    className="px-2 py-1 rounded-md text-[11px] font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                  >
-                    Xóa lọc
-                  </button>
-                )}
+                {(() => {
+                  const activeFilterCount = [
+                    sGradeFilter,
+                    sEduFilter,
+                    sTimingFilter,
+                    sCampusFilter,
+                    sSearch.trim(),
+                    sBatchId,
+                    sRecordFilter !== "all" ? sRecordFilter : ""
+                  ].filter(Boolean).length;
+                  if (activeFilterCount === 0) return null;
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSGradeFilter("");
+                        setSEduFilter("");
+                        setSTimingFilter("");
+                        setSCampusFilter("");
+                        setSSearch("");
+                        setSBatchId("");
+                        setSRecordFilter("all");
+                        setSResultFilter("all");
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                      <span>Xóa {activeFilterCount} bộ lọc</span>
+                    </button>
+                  );
+                })()}
               </div>
 
               {viewMode !== "transfer" && (
                 <div className="flex flex-wrap items-center gap-1.5">
-                  {Object.keys(inlineEdits).length > 0 && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-300 rounded-lg animate-in fade-in duration-150">
-                      <span className="text-[11px] font-semibold text-amber-900">
-                        Đang sửa <strong>{Object.keys(inlineEdits).length}</strong> dòng
-                      </span>
-                      <button
-                        type="button"
-                        onClick={saveAllInlineRows}
-                        disabled={isSavingAllInline}
-                        className="px-2 py-0.5 rounded bg-[#00736E] hover:bg-[#005854] text-white text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                      >
-                        {isSavingAllInline ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                        <span>Lưu tất cả</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setInlineEdits({})}
-                        className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-600 border border-[#E2E8F0] text-[11px] font-medium transition-colors cursor-pointer"
-                      >
-                        Hoàn tác
-                      </button>
-                    </div>
-                  )}
-
-                  {tableViewMode === "inline" && (
-                    <button
-                      type="button"
-                      onClick={() => setShowInlineSchoolCols(prev => !prev)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 border ${
-                        showInlineSchoolCols
-                          ? "bg-[#F8FAFC] text-[#003B3A] border-[#CBD5E1]"
-                          : "bg-white text-slate-500 border-[#E2E8F0] hover:bg-[#F8FAFC]"
-                      }`}
-                      title="Ẩn/hiện cột Trường cũ & Khu vực để thu gọn bảng nhập điểm trên màn hình nhỏ"
-                    >
-                      <Building className="w-3 h-3 text-slate-500" />
-                      <span>{showInlineSchoolCols ? "Trường cũ: Hiện" : "Trường cũ: Ẩn"}</span>
-                    </button>
-                  )}
-
-                  {tableViewMode === "inline" && !cannotCreate && (
-                    <button
-                      type="button"
-                      onClick={() => setShowQuickAddRow(prev => !prev)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 border ${
-                        showQuickAddRow
-                          ? "bg-[#F0FDFA] text-[#005854] border-[#00A19A]/40"
-                          : "bg-white text-slate-600 border-[#E2E8F0] hover:bg-[#F8FAFC]"
-                      }`}
-                      title="Bật/tắt dòng thêm nhanh học sinh mới ngay đầu bảng"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Dòng nhập nhanh</span>
-                    </button>
-                  )}
-
                   <div className="flex items-center gap-0.5 bg-[#F8FAFC] p-0.5 rounded-lg border border-[#E2E8F0]">
                     <button
                       type="button"
-                      onClick={() => setTableViewMode("inline")}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
-                        tableViewMode === "inline"
-                          ? "bg-[#003B3A] text-white shadow-2xs"
-                          : "text-slate-600 hover:text-[#003B3A]"
-                      }`}
-                      title="Nhập và sửa trực tiếp theo cụm logic trên bảng"
-                    >
-                      <PenLine className="w-3 h-3" />
-                      <span>Nhập liệu nhanh</span>
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setTableViewMode("compact")}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                         tableViewMode === "compact"
                           ? "bg-[#003B3A] text-white shadow-2xs"
                           : "text-slate-600 hover:text-[#003B3A]"
                       }`}
-                      title="Chế độ xem bảng tóm tắt gọn"
+                      title="Chế độ bảng tóm tắt trực quan, gọn gàng"
                     >
                       <Layers className="w-3 h-3" />
                       <span>Bảng gọn</span>
@@ -9268,7 +9703,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     <button
                       type="button"
                       onClick={() => setTableViewMode("detailed")}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                         tableViewMode === "detailed"
                           ? "bg-[#003B3A] text-white shadow-2xs"
                           : "text-slate-600 hover:text-[#003B3A]"
@@ -9286,30 +9721,27 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
           {/* Data Table Area */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xs overflow-hidden flex flex-col min-h-[420px]">
-            {/* Shared Datalists for Inline Spreadsheet Autocomplete */}
-            <datalist id="old-schools-datalist">
-              {effectiveSchools.map((sc: any) => (
-                <option key={sc.id || sc.name} value={sc.name} />
-              ))}
-            </datalist>
-            <datalist id="overall-ratings-datalist">
-              <option value="Hoàn thành xuất sắc" />
-              <option value="Hoàn thành tốt" />
-              <option value="Hoàn thành" />
-              <option value="Tốt" />
-              <option value="Khá" />
-              <option value="Đạt" />
-            </datalist>
-
             {sLoading ? (
               <div className="flex-1 flex items-center justify-center py-20"><Spin/></div>
-            ) : (filtStu.length === 0 && !(tableViewMode === "inline" && showQuickAddRow && viewMode !== "transfer")) ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
-                  <Users className="w-6 h-6 text-slate-400"/>
+            ) : filtStu.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center text-slate-500">
+                <div className="w-12 h-12 rounded-2xl bg-[#F0FDFA] border border-teal-200/70 flex items-center justify-center mb-3">
+                  <Users className="w-6 h-6 text-[#00736E]"/>
                 </div>
-                <p className="font-medium text-slate-700 text-sm">Không tìm thấy hồ sơ học sinh nào</p>
-                <p className="text-xs text-slate-400 mt-1">Hãy chọn Kỳ khảo sát hoặc bật "Dòng nhập nhanh" để nhập trực tiếp học sinh mới.</p>
+                <p className="font-semibold text-[#003B3A] text-sm">Chưa có hồ sơ học sinh phù hợp</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-md">
+                  Chọn Kỳ khảo sát khác, điều chỉnh bộ lọc hoặc thêm mới hồ sơ học sinh trực tiếp bằng biểu mẫu hướng dẫn.
+                </p>
+                {!cannotCreate && (
+                  <button
+                    type="button"
+                    onClick={() => openAddStudent()}
+                    className="mt-4 h-9 px-4 bg-[#003B3A] hover:bg-[#005854] text-white rounded-lg inline-flex items-center gap-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Thêm học sinh mới</span>
+                  </button>
+                )}
               </div>
             ) : (
               <>
@@ -9317,9 +9749,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 <div className="hidden md:block overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left border-collapse text-xs tabular-nums">
                       <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                        {tableViewMode === "inline" && viewMode !== "transfer" ? (
                           <tr className="border-b border-[#003B3A] whitespace-nowrap text-[11px] font-semibold">
-                            <th className="px-2 py-2.5 w-11 text-center border-r border-white/15 md:sticky md:left-0 z-20 bg-[#003B3A] font-semibold text-white">
+                            <th className="px-2.5 py-3 w-9 text-center border-r border-white/15 font-semibold text-white">
                               <input
                                 type="checkbox"
                                 className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
@@ -9328,48 +9759,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 title="Chọn tất cả học sinh trong danh sách lọc"
                               />
                             </th>
-                            <th className="px-3 py-2.5 min-w-[230px] border-r border-white/15 md:sticky md:left-11 z-20 bg-[#003B3A] md:shadow-[4px_0_8px_-4px_rgba(15,23,42,0.18)] font-semibold text-white">
-                              Hồ sơ học sinh
-                            </th>
-                            <th className="px-2.5 py-2.5 min-w-[160px] border-r border-white/15 font-semibold text-teal-100">
-                              Đợt &amp; Cơ sở ĐK
-                            </th>
-                            <th className="px-2.5 py-2.5 min-w-[185px] border-r border-white/15 font-semibold text-teal-100" title="Khối đăng ký, Hệ khảo sát, Diện khảo sát &amp; 1. Mốc thời gian / Kỳ khảo sát">
-                              Nguyện vọng &amp; Mốc TS
-                            </th>
-                            {showInlineSchoolCols && (
-                              <th className="px-2.5 py-2.5 min-w-[175px] border-r border-white/15 font-semibold text-teal-100">
-                                Trường cũ &amp; Khu vực
-                              </th>
-                            )}
-                            <th className="px-2.5 py-2.5 min-w-[170px] border-r border-white/15 font-semibold text-teal-100">
-                              Học bạ &amp; Xếp loại
-                            </th>
-                            <th className="px-2.5 py-2.5 min-w-[205px] border-r border-white/15 font-semibold text-[#5EEAD4]" title="Nhập Điểm Toán, Điểm Văn/TV, Điểm Anh và Thành tích/Chứng chỉ để xét miễn môn theo Quy chế">
-                              Điểm xét quy chế &amp; Thành tích
-                            </th>
-                            <th className="px-3 py-2.5 min-w-[200px] border-r border-white/15 font-semibold text-[#5EEAD4]" title="Tự động xác định môn kiểm tra bám sát Cấu hình quy chế tuyển sinh">
-                              Môn kiểm tra
-                            </th>
-                            <th className="px-3 py-2.5 text-right pr-3.5 w-28 sticky right-0 z-20 bg-[#003B3A] border-l border-white/15 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.12)] font-semibold text-white">
-                              Thao tác
-                            </th>
-                          </tr>
-                        ) : (
-                          <tr className="border-b whitespace-nowrap text-[11px] font-semibold">
-                            <th className="px-2.5 py-3 w-9 text-center border-r border-white/15 font-semibold">
-                              <input
-                                type="checkbox"
-                                className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
-                                checked={filtStu.length > 0 && selectedIds.length === filtStu.length}
-                                onChange={(e) => setSelectedIds(e.target.checked ? filtStu.map(st => st.id) : [])}
-                                title="Chọn tất cả học sinh trong danh sách lọc"
-                              />
-                            </th>
-                            <th className="px-2.5 py-3 w-9 text-center border-r border-white/15 font-semibold">#</th>
-                            <th className="px-3 py-3 min-w-[105px] border-r border-white/15 font-semibold">Mã HS / SBD</th>
-                            <th className="px-3.5 py-3 min-w-[180px] border-r border-white/15 font-semibold">Thông tin học sinh</th>
+                            <th className="px-2.5 py-3 w-9 text-center border-r border-white/15 font-semibold text-white">#</th>
+                            <th className="px-3 py-3 min-w-[105px] border-r border-white/15 font-semibold text-white">Mã HS / SBD</th>
+                            <th className="px-3.5 py-3 min-w-[185px] border-r border-white/15 font-semibold text-white">Thông tin học sinh</th>
                             <th className="px-3 py-3 min-w-[175px] border-r border-white/15 font-semibold text-teal-100">Đợt &amp; Cơ sở KS</th>
+                            <th className="px-2.5 py-3 text-center min-w-[78px] border-r border-white/15 font-semibold text-[#5EEAD4]">Tháng</th>
                             {viewMode === "transfer" ? (
                               <>
                                 <th className="px-2.5 py-3 text-center min-w-[70px] border-r border-white/15 font-semibold text-teal-100">Khối ĐK</th>
@@ -9384,7 +9778,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Toán</th>
                                 <th className="px-2.5 py-3 text-center min-w-[130px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Văn/TV</th>
                                 <th className="px-2.5 py-3 text-center min-w-[95px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Điểm Anh</th>
-                                <th className="px-3.5 py-3 min-w-[145px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Thành tích &amp; Khen thưởng</th>
                                 <th className="px-3.5 py-3 min-w-[190px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] text-[11px] font-semibold">Môn kiểm tra</th>
                               </>
                             ) : tableViewMode === "compact" ? (
@@ -9393,7 +9786,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <th className="px-2.5 py-3 text-center min-w-[165px] border-r border-white/15 text-[#CCFBF1] font-semibold">1. Mốc thời gian / Kỳ khảo sát</th>
                                 <th className="px-3.5 py-3 min-w-[200px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Trường học cũ &amp; Khu vực</th>
                                 <th className="px-3.5 py-3 min-w-[240px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] font-semibold">Tóm tắt học bạ &amp; Điểm đầu vào</th>
-                                <th className="px-3.5 py-3 min-w-[150px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Thành tích &amp; Khen thưởng</th>
                                 <th className="px-3.5 py-3 min-w-[190px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] text-[11px] font-semibold">Môn kiểm tra</th>
                               </>
                             ) : (
@@ -9422,424 +9814,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     </th>
                                   ))
                                 )}
-                                <th className="px-3.5 py-3 min-w-[145px] border-r border-white/15 bg-[#003B3A] text-teal-100 font-semibold">Thành tích &amp; Khen thưởng</th>
                                 <th className="px-3.5 py-3 min-w-[190px] border-r border-white/15 bg-[#003B3A] text-[#5EEAD4] text-[11px] font-semibold">Môn kiểm tra</th>
                               </>
                             )}
-                            <th className="px-3.5 py-3 text-right pr-4 w-32 sticky right-0 z-20 bg-[#003B3A] border-l border-white/15 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)] font-semibold">Thao tác</th>
+                            <th className="px-3.5 py-3 text-right pr-4 w-36 sticky right-0 z-20 bg-[#003B3A] border-l border-white/15 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)] font-semibold text-white">Thao tác</th>
                           </tr>
-                        )}
                       </thead>
                       <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
-                        {/* QUICK-ADD SPREADSHEET ROW (DÒNG NHẬP NHANH HỌC SINH MỚI — GỌP CỤM LOGIC) */}
-                        {tableViewMode === "inline" && showQuickAddRow && viewMode !== "transfer" && !cannotCreate && (() => {
-                          const effQuickPeriodId = (sPeriodId && sPeriodId !== "all") ? sPeriodId : undefined;
-                          const draftRes = resolveStudentExamSubjects({
-                            grade: quickAddDraft.grade,
-                            hocKy: quickAddDraft.hocKy,
-                            periodId: effQuickPeriodId,
-                            surveyFormType: quickAddDraft.surveyFormType,
-                            surveySystem: quickAddDraft.surveySystem,
-                            admissionCriteria: quickAddDraft.admissionCriteria,
-                            kqRenLuyen: quickAddDraft.kqRenLuyen,
-                            kqgdTieuHoc: quickAddDraft.overallRating,
-                            kqHocTap: JSON.stringify({
-                              programType: quickAddDraft.programType,
-                              transcriptPeriod: quickAddDraft.transcriptPeriod,
-                              overallRating: quickAddDraft.overallRating,
-                              achievements: quickAddDraft.achievements,
-                              math: quickAddDraft.mathScoreOld,
-                              literature: quickAddDraft.litScoreOld,
-                              english: quickAddDraft.engScoreOld
-                            })
-                          }, {
-                            gradeConfigs,
-                            mappings: allMappings,
-                            regulationConfig,
-                            periods: visiblePeriods,
-                            periodName: selPeriod?.name
-                          });
-                          const qAllRuleNames = [...draftRes.insight.recommendedSubjectNames, ...draftRes.insight.exemptedSubjectNames];
-                          const qLitLabel = qAllRuleNames.some(n => n.toLowerCase().includes("tiếng việt"))
-                            ? "TV"
-                            : qAllRuleNames.some(n => n.toLowerCase().includes("ngữ văn"))
-                            ? "Văn"
-                            : (parseInt(quickAddDraft.grade, 10) || 1) <= 5 ? "TV" : "Văn";
-                          const qNoTranscript = draftRes.insight.exemptionMode === "NO_TRANSCRIPT";
-                          const qMathExempt = draftRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("toán"));
-                          const qLitExempt = draftRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("tiếng việt") || (e.subjectName || "").toLowerCase().includes("ngữ văn"));
-                          const qEngExempt = draftRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("tiếng anh"));
-
-                          return (
-                            <tr className="bg-[#F0FDFA]/80 hover:bg-[#F0FDFA] border-b-2 border-[#00A19A]/30 transition-colors align-middle">
-                              {/* 1. STT / Mới (Sticky Left) */}
-                              <td className="px-1.5 py-2 text-center border-r border-teal-200/60 md:sticky md:left-0 z-10 bg-[#ECFEFF]">
-                                <div className="flex flex-col items-center gap-0.5">
-                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-[#00736E] text-white text-[11px] font-bold" title="Dòng thêm nhanh học sinh mới">
-                                    +
-                                  </span>
-                                  <span className="text-[9.5px] font-bold text-[#005854]">Mới</span>
-                                </div>
-                              </td>
-
-                              {/* 2. Hồ sơ học sinh (Sticky Left) */}
-                              <td className="px-2.5 py-2 border-r border-teal-200/60 md:sticky md:left-11 z-10 bg-[#ECFEFF] md:shadow-[4px_0_8px_-4px_rgba(15,23,42,0.08)]">
-                                <div className="flex flex-col gap-1 min-w-[215px]">
-                                  <input
-                                    type="text"
-                                    value={quickAddDraft.fullName}
-                                    onChange={e => setQuickAddDraft(p => ({ ...p, fullName: e.target.value }))}
-                                    onBlur={e => {
-                                      const raw = e.target.value.trim();
-                                      if (raw) {
-                                        const tc = raw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-                                        setQuickAddDraft(p => ({ ...p, fullName: tc }));
-                                      }
-                                    }}
-                                    onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                    placeholder="Nhập họ và tên HS * (Enter lưu)"
-                                    className="raw-input py-0 h-7 w-full px-2 bg-white border border-[#00A19A]/60 rounded-md text-xs font-bold text-[#003B3A] placeholder-slate-400 outline-none focus:border-[#003B3A]"
-                                  />
-                                  <div className="flex items-center gap-1">
-                                    <div className="flex items-center bg-white border border-[#CBD5E1] rounded-md h-6.5 px-1 w-[92px] shrink-0">
-                                      <input
-                                        type="text"
-                                        value={quickAddDraft.studentCode}
-                                        onChange={e => setQuickAddDraft(p => ({ ...p, studentCode: e.target.value }))}
-                                        placeholder="Mã HS"
-                                        className="raw-input py-0 h-full w-full bg-transparent font-mono text-[10.5px] font-semibold text-[#005854] outline-none"
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={refreshQuickAddCode}
-                                        className="p-0.5 text-slate-400 hover:text-[#00736E] cursor-pointer shrink-0"
-                                        title="Cấp mã tự động tiếp theo"
-                                      >
-                                        <RefreshCw className="w-2.5 h-2.5" />
-                                      </button>
-                                    </div>
-                                    <select
-                                      value={quickAddDraft.gender}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, gender: e.target.value }))}
-                                      className="raw-select py-0 h-6.5 w-[52px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
-                                    >
-                                      <option value="Nam">Nam</option>
-                                      <option value="Nữ">Nữ</option>
-                                    </select>
-                                    <input
-                                      type="date"
-                                      value={quickAddDraft.dateOfBirth}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, dateOfBirth: e.target.value }))}
-                                      className="raw-input py-0 h-6.5 flex-1 min-w-[96px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none"
-                                    />
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* 3. Đợt & Cơ sở ĐK + Hình thức KS */}
-                              <td className="px-2 py-2 border-r border-teal-200/60">
-                                <div className="flex flex-col gap-1 min-w-[150px]">
-                                  <select
-                                    value={quickAddDraft.batchId}
-                                    onChange={e => setQuickAddDraft(p => ({ ...p, batchId: e.target.value }))}
-                                    className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-[#CBD5E1] rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer"
-                                  >
-                                    <option value="">Khảo sát lẻ</option>
-                                    {(selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || []))
-                                      .filter((b: any) => b.status !== "COMPLETED")
-                                      .map((b: any) => (
-                                        <option key={b.id} value={b.id}>{b.name}</option>
-                                      ))}
-                                  </select>
-                                  <div className="flex items-center gap-1">
-                                    <select
-                                      value={quickAddDraft.registeredCampus}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, registeredCampus: e.target.value }))}
-                                      className="raw-select py-0 h-6.5 flex-1 min-w-[74px] px-1.5 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-semibold text-[#005854] outline-none cursor-pointer"
-                                    >
-                                      <option value="">Cơ sở...</option>
-                                      {campuses.map(c => (
-                                        <option key={c.id} value={c.id}>{c.campusCode || c.campusName}</option>
-                                      ))}
-                                    </select>
-                                    <select
-                                      value={quickAddDraft.surveySystem}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, surveySystem: e.target.value }))}
-                                      className="raw-select py-0 h-6.5 w-[72px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
-                                      title="Hình thức khảo sát"
-                                    >
-                                      <option value="Offline">Offline</option>
-                                      {configs.filter(c => c.categoryType === "HINH_THUC_KS" && c.name !== "Offline").map(c => (
-                                        <option key={c.id} value={c.name}>{c.name}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* 4. Nguyện vọng & Mốc TS (Khối + Hệ + Diện KS + Mốc thời gian) */}
-                              <td className="px-2 py-2 border-r border-teal-200/60">
-                                <div className="flex flex-col gap-1 min-w-[175px]">
-                                  <div className="flex items-center gap-1">
-                                    <select
-                                      value={quickAddDraft.grade}
-                                      onChange={e => {
-                                        const nextGrade = e.target.value;
-                                        setQuickAddDraft(p => ({
-                                          ...p,
-                                          grade: nextGrade,
-                                          hocKy: p.hocKy === getDefaultHocKyByGrade(p.grade) ? getDefaultHocKyByGrade(nextGrade) : p.hocKy
-                                        }));
-                                      }}
-                                      className="raw-select py-0 h-7 w-[54px] px-1 bg-white border border-[#CBD5E1] rounded-md text-xs font-bold text-[#003B3A] outline-none cursor-pointer shrink-0"
-                                      title="Khối đăng ký"
-                                    >
-                                      {activeGrades.map(g => <option key={g} value={g}>K{g}</option>)}
-                                    </select>
-                                    <select
-                                      value={quickAddDraft.surveyFormType}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, surveyFormType: e.target.value }))}
-                                      className="raw-select py-0 h-7 w-[64px] px-1 bg-white border border-sky-200 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer shrink-0"
-                                      title="Hệ đào tạo khảo sát"
-                                    >
-                                      {trackEduSystems.map(es => <option key={es.code} value={es.code}>{es.code}</option>)}
-                                    </select>
-                                    <select
-                                      value={quickAddDraft.admissionCriteria}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, admissionCriteria: e.target.value }))}
-                                      className="raw-select py-0 h-7 flex-1 min-w-[68px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer"
-                                      title="Diện khảo sát / Tuyển thẳng"
-                                    >
-                                      {configs.filter(c => c.categoryType === "DIEN_KS").length > 0 ? (
-                                        configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)
-                                      ) : (
-                                        <>
-                                          <option value="Khảo sát">Khảo sát</option>
-                                          <option value="Tuyển thẳng">Tuyển thẳng</option>
-                                        </>
-                                      )}
-                                    </select>
-                                  </div>
-                                  <select
-                                    value={quickAddDraft.hocKy}
-                                    onChange={e => setQuickAddDraft(p => ({ ...p, hocKy: e.target.value }))}
-                                    className="raw-select py-0 h-6.5 w-full px-1.5 bg-white border border-[#00A19A]/50 rounded-md text-[11px] font-semibold text-[#003B3A] outline-none cursor-pointer"
-                                    title="1. Mốc thời gian / Kỳ khảo sát"
-                                  >
-                                    {renderIntakeMilestoneSelectOptions(quickAddDraft.hocKy)}
-                                  </select>
-                                </div>
-                              </td>
-
-                              {/* 5. Trường cũ & Khu vực (Ẩn/hiện linh hoạt) */}
-                              {showInlineSchoolCols && (
-                                <td className="px-2 py-2 border-r border-teal-200/60">
-                                  <div className="flex flex-col gap-1 min-w-[165px]">
-                                    <input
-                                      type="text"
-                                      list="old-schools-datalist"
-                                      value={quickAddDraft.oldSchoolName}
-                                      onChange={e => {
-                                        const val = e.target.value;
-                                        const matched = findMatchedSchool(val);
-                                        const st = matched ? (matched.schoolType === "PUBLIC" ? "Công lập" : matched.schoolType === "PRIVATE" ? "Tư thục" : (matched.schoolType || "")) : quickAddDraft.oldSchoolType;
-                                        setQuickAddDraft(p => ({
-                                          ...p,
-                                          oldSchoolName: val,
-                                          oldSchoolType: st || p.oldSchoolType,
-                                          programType: val.toLowerCase().includes("homeschool") ? "HOMESCHOOLING" : p.programType
-                                        }));
-                                      }}
-                                      onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                      placeholder="Trường học cũ..."
-                                      className="raw-input py-0 h-7 w-full px-2 bg-white border border-[#CBD5E1] rounded-md text-[11px] font-medium text-slate-800 outline-none focus:border-[#00736E]"
-                                    />
-                                    <div className="flex items-center gap-1">
-                                      <select
-                                        value={quickAddDraft.oldSchoolType}
-                                        onChange={e => setQuickAddDraft(p => ({ ...p, oldSchoolType: e.target.value }))}
-                                        className="raw-select py-0 h-6.5 w-[74px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
-                                      >
-                                        <option value="Công lập">Công lập</option>
-                                        <option value="Tư thục">Tư thục</option>
-                                        <option value="Song ngữ">Song ngữ</option>
-                                        <option value="Quốc tế">Quốc tế</option>
-                                      </select>
-                                      <select
-                                        value={quickAddDraft.targetType}
-                                        onChange={e => {
-                                          const loc = e.target.value;
-                                          setQuickAddDraft(p => ({
-                                            ...p,
-                                            targetType: loc,
-                                            cityName: loc === "Nội tỉnh" ? "Thành phố Đà Nẵng" : loc === "Nước ngoài" ? "Hoa Kỳ (Mỹ)" : ""
-                                          }));
-                                        }}
-                                        className="raw-select py-0 h-6.5 flex-1 min-w-[82px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer"
-                                      >
-                                        <option value="Nội tỉnh">Đà Nẵng</option>
-                                        <option value="Ngoại tỉnh">Ngoại tỉnh</option>
-                                        <option value="Nước ngoài">Nước ngoài</option>
-                                      </select>
-                                    </div>
-                                    {quickAddDraft.targetType !== "Nội tỉnh" && (
-                                      <select
-                                        value={quickAddDraft.cityName}
-                                        onChange={e => setQuickAddDraft(p => ({ ...p, cityName: e.target.value }))}
-                                        className="raw-select py-0 h-6 w-full px-1 bg-white border border-[#CBD5E1] rounded-md text-[10px] text-slate-700 outline-none cursor-pointer"
-                                      >
-                                        <option value="">{quickAddDraft.targetType === "Ngoại tỉnh" ? "-- Chọn Tỉnh/TP --" : "-- Chọn Quốc gia --"}</option>
-                                        {(quickAddDraft.targetType === "Ngoại tỉnh" ? vietnamProvinces : worldCountries).map(loc => (
-                                          <option key={loc} value={loc}>{loc}</option>
-                                        ))}
-                                      </select>
-                                    )}
-                                  </div>
-                                </td>
-                              )}
-
-                              {/* 6. Học bạ & Xếp loại */}
-                              <td className="px-2 py-2 border-r border-teal-200/60">
-                                <div className="flex flex-col gap-1 min-w-[160px]">
-                                  <div className="flex items-center gap-1">
-                                    <select
-                                      value={quickAddDraft.programType}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, programType: e.target.value as any }))}
-                                      className="raw-select py-0 h-7 flex-1 min-w-[88px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-semibold text-[#005854] outline-none cursor-pointer"
-                                    >
-                                      <option value="BO_GD_DT">Bộ GD&amp;ĐT</option>
-                                      <option value="SONG_NGU">Song ngữ</option>
-                                      <option value="NUOC_NGOAI">CT Quốc tế</option>
-                                      <option value="HOMESCHOOLING">Homeschool</option>
-                                    </select>
-                                    <select
-                                      value={quickAddDraft.transcriptPeriod}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, transcriptPeriod: e.target.value }))}
-                                      className="raw-select py-0 h-7 w-[66px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
-                                      title="Kỳ học bạ căn cứ"
-                                    >
-                                      <option value="Cả năm">Cả năm</option>
-                                      <option value="HK1">HK1</option>
-                                      <option value="HK2">HK2</option>
-                                    </select>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <input
-                                      type="text"
-                                      list="overall-ratings-datalist"
-                                      value={quickAddDraft.overallRating}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, overallRating: e.target.value }))}
-                                      placeholder="Xếp loại..."
-                                      className="raw-input py-0 h-6.5 flex-1 min-w-[88px] px-1.5 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-semibold text-emerald-800 outline-none focus:border-[#00736E]"
-                                    />
-                                    <select
-                                      value={quickAddDraft.kqRenLuyen}
-                                      onChange={e => setQuickAddDraft(p => ({ ...p, kqRenLuyen: e.target.value }))}
-                                      className="raw-select py-0 h-6.5 w-[66px] px-1 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0"
-                                      title="Kết quả rèn luyện"
-                                    >
-                                      <option value="Tốt">Tốt</option>
-                                      <option value="Khá">Khá</option>
-                                      <option value="Đạt">Đạt</option>
-                                      <option value="Chưa đạt">CĐ</option>
-                                    </select>
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* 7. Điểm xét quy chế & Thành tích */}
-                              <td className="px-2 py-2 border-r border-teal-200/60">
-                                <div className="flex flex-col gap-1 min-w-[198px]">
-                                  <div className={`grid grid-cols-3 gap-1 ${qNoTranscript ? "opacity-55" : ""}`}>
-                                    <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
-                                      qMathExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#CBD5E1] focus-within:border-[#00736E]"
-                                    }`} title={qNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : "Điểm môn Toán"}>
-                                      <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">Toán</span>
-                                      <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={quickAddDraft.mathScoreOld}
-                                        onChange={e => setQuickAddDraft(p => ({ ...p, mathScoreOld: e.target.value }))}
-                                        onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                        placeholder="—"
-                                        className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold outline-none ${
-                                          qMathExempt ? "text-emerald-700" : "text-[#003B3A]"
-                                        }`}
-                                      />
-                                    </label>
-                                    <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
-                                      qLitExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#CBD5E1] focus-within:border-[#00736E]"
-                                    }`} title={qNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : `Điểm môn ${qLitLabel === "TV" ? "Tiếng Việt" : "Ngữ Văn"}`}>
-                                      <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">{qLitLabel}</span>
-                                      <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={quickAddDraft.litScoreOld}
-                                        onChange={e => setQuickAddDraft(p => ({ ...p, litScoreOld: e.target.value }))}
-                                        onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                        placeholder="—"
-                                        className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold outline-none ${
-                                          qLitExempt ? "text-emerald-700" : "text-[#003B3A]"
-                                        }`}
-                                      />
-                                    </label>
-                                    <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
-                                      qEngExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#CBD5E1] focus-within:border-[#00736E]"
-                                    }`} title={qNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : "Điểm môn Tiếng Anh (xét miễn Tiếng Anh viết cho Hệ S)"}>
-                                      <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">Anh</span>
-                                      <input
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={quickAddDraft.engScoreOld}
-                                        onChange={e => setQuickAddDraft(p => ({ ...p, engScoreOld: e.target.value }))}
-                                        onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                        placeholder="—"
-                                        className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold outline-none ${
-                                          qEngExempt ? "text-emerald-700" : "text-[#003B3A]"
-                                        }`}
-                                      />
-                                    </label>
-                                  </div>
-                                  <input
-                                    type="text"
-                                    value={quickAddDraft.achievements}
-                                    onChange={e => setQuickAddDraft(p => ({ ...p, achievements: e.target.value }))}
-                                    onKeyDown={e => { if (e.key === "Enter") saveQuickAddRow(); }}
-                                    placeholder="Chứng chỉ QT, giải thưởng..."
-                                    className="raw-input py-0 h-6.5 w-full px-2 bg-white border border-[#CBD5E1] rounded-md text-[10.5px] font-medium text-amber-900 placeholder-slate-400 outline-none focus:border-amber-500"
-                                  />
-                                </div>
-                              </td>
-
-                              {/* 8. Môn kiểm tra (Bám sát Cấu hình quy chế tuyển sinh) */}
-                              <td className="px-2.5 py-2 border-r border-teal-200/60">
-                                {renderExamSubjectsCell(draftRes)}
-                              </td>
-
-                              {/* 9. Thao tác (Sticky Right) */}
-                              <td className="px-2.5 py-2 whitespace-nowrap text-right pr-3 sticky right-0 z-10 bg-[#ECFEFF] border-l border-teal-200 shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)]">
-                                <button
-                                  type="button"
-                                  onClick={saveQuickAddRow}
-                                  disabled={isSavingQuickAdd}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005854] text-white text-[11px] font-semibold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
-                                  title="Lưu học sinh mới vào danh sách (hoặc nhấn phím Enter)"
-                                >
-                                  {isSavingQuickAdd ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                                  <span>Lưu thêm</span>
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })()}
-
                         {paginatedFiltStu.length === 0 ? (
                           <tr>
                             <td
                               colSpan={
-                                tableViewMode === "inline" && viewMode !== "transfer"
-                                  ? (showInlineSchoolCols ? 9 : 8)
-                                  : tableViewMode === "compact" && viewMode !== "transfer"
+                                tableViewMode === "compact" && viewMode !== "transfer"
                                   ? 12
                                   : viewMode === "transfer"
                                   ? 20
@@ -10069,12 +10055,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             dienKs: dienKsVal,
                             periodName: periodObj?.name || selPeriod?.name
                           };
-                          const rowDraft = inlineEdits[s.id] || getRowInitialDraft(s, parsedRowDefaults);
                           const displayIntakeTiming = normalizeStudentHocKyDisplay(s, periodObj?.name || selPeriod?.name, visiblePeriods);
-                          const isRowDirty = Boolean(inlineEdits[s.id]);
-                          const isRowSaving = savingRowIds.includes(s.id);
-                          const isInlineLayout = tableViewMode === "inline" && viewMode !== "transfer";
-                          const isInline = isInlineLayout && !cannotUpdate;
                           const examSubjectsResult = resolveStudentExamSubjects(s, {
                             gradeConfigs,
                             mappings: allMappings,
@@ -10083,428 +10064,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             periodName: periodObj?.name || selPeriod?.name
                           });
 
-                          const stickyCellBg = isRowDirty
-                            ? "bg-amber-50 group-hover:bg-amber-100/80"
-                            : isRowSelected
+                          const stickyCellBg = isRowSelected
                             ? "bg-[#F0FDFA] group-hover:bg-[#CCFBF1]/50"
                             : "bg-white group-hover:bg-[#F8FAFC]";
 
                           return (
                             <tr key={s.id} className={`transition-colors align-middle group ${
-                              isRowDirty ? "bg-amber-50/40 hover:bg-amber-50/70" : isRowSelected ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]" : "hover:bg-[#F8FAFC]"
+                              isRowSelected ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]" : "hover:bg-[#F8FAFC]"
                             }`}>
-                              {isInlineLayout ? (
-                                (() => {
-                                  const inlineExamRes = resolveStudentExamSubjects({
-                                    ...s,
-                                    grade: rowDraft.grade,
-                                    hocKy: rowDraft.hocKy,
-                                    surveyFormType: rowDraft.surveyFormType,
-                                    surveySystem: rowDraft.surveySystem,
-                                    admissionCriteria: rowDraft.admissionCriteria,
-                                    kqRenLuyen: rowDraft.kqRenLuyen,
-                                    kqgdTieuHoc: rowDraft.overallRating,
-                                    kqHocTap: JSON.stringify({
-                                      programType: rowDraft.programType,
-                                      transcriptPeriod: rowDraft.transcriptPeriod,
-                                      overallRating: rowDraft.overallRating,
-                                      achievements: rowDraft.achievements,
-                                      math: rowDraft.mathScoreOld,
-                                      literature: rowDraft.litScoreOld,
-                                      english: rowDraft.engScoreOld
-                                    })
-                                  }, {
-                                    gradeConfigs,
-                                    mappings: allMappings,
-                                    regulationConfig,
-                                    periods: visiblePeriods,
-                                    periodName: periodObj?.name || selPeriod?.name
-                                  });
-                                  const rAllRuleNames = [
-                                    ...inlineExamRes.insight.recommendedSubjectNames,
-                                    ...inlineExamRes.insight.exemptedSubjectNames
-                                  ];
-                                  const rLitLabel = rAllRuleNames.some(n => n.toLowerCase().includes("tiếng việt"))
-                                    ? "TV"
-                                    : rAllRuleNames.some(n => n.toLowerCase().includes("ngữ văn"))
-                                    ? "Văn"
-                                    : (parseInt(String(rowDraft.grade || "1"), 10) || 1) <= 5
-                                    ? "TV"
-                                    : "Văn";
-                                  const rNoTranscript = inlineExamRes.insight.exemptionMode === "NO_TRANSCRIPT";
-                                  const rMathExempt = inlineExamRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("toán"));
-                                  const rLitExempt = inlineExamRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("tiếng việt") || (e.subjectName || "").toLowerCase().includes("ngữ văn"));
-                                  const rEngExempt = inlineExamRes.exemptSubjects.some(e => (e.subjectName || "").toLowerCase().includes("tiếng anh"));
-
-                                  return (
-                                    <>
-                                      {/* 1. Checkbox + STT (Sticky Left) */}
-                                      <td
-                                        className={`px-1.5 py-2 text-center whitespace-nowrap border-r border-[#E2E8F0] md:sticky md:left-0 z-10 transition-colors ${stickyCellBg}`}
-                                        onClick={e => e.stopPropagation()}
-                                      >
-                                        <div className="flex flex-col items-center gap-0.5">
-                                          <input
-                                            type="checkbox"
-                                            className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
-                                            checked={isRowSelected}
-                                            onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
-                                          />
-                                          <span className="text-[10px] font-medium text-slate-400">
-                                            {(studentsCurrentPage - 1) * studentsPageSize + idx + 1}
-                                          </span>
-                                        </div>
-                                      </td>
-
-                                      {/* 2. Hồ sơ học sinh (Sticky Left) */}
-                                      <td className={`px-2.5 py-2 whitespace-nowrap border-r border-[#E2E8F0] md:sticky md:left-11 z-10 md:shadow-[4px_0_8px_-4px_rgba(15,23,42,0.08)] transition-colors ${stickyCellBg}`}>
-                                        <div className="flex flex-col gap-1 min-w-[215px]">
-                                          <input
-                                            type="text"
-                                            disabled={!isInline}
-                                            value={rowDraft.fullName}
-                                            onChange={e => updateInlineCell(s, parsedRowDefaults, "fullName", e.target.value)}
-                                            onBlur={e => {
-                                              const raw = e.target.value.trim();
-                                              if (raw) {
-                                                const tc = raw.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-                                                if (tc !== rowDraft.fullName) updateInlineCell(s, parsedRowDefaults, "fullName", tc);
-                                              }
-                                            }}
-                                            onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                            className="raw-input py-0 h-7 w-full px-2 bg-white border border-[#E2E8F0] hover:border-slate-300 focus:border-[#00736E] rounded-md text-xs font-bold text-[#003B3A] outline-none transition-colors disabled:bg-slate-50"
-                                          />
-                                          <div className="flex items-center gap-1">
-                                            <button
-                                              type="button"
-                                              onClick={() => setQuickViewStudent(s)}
-                                              className="font-mono text-[10px] font-semibold text-[#005854] bg-[#F0FDFA] hover:bg-teal-100/80 border border-teal-200/80 px-1.5 h-6.5 rounded-md inline-flex items-center shrink-0 cursor-pointer transition-colors"
-                                              title={firstSession?.seatNumber ? `Mã HS: ${s.studentCode} • SBD: ${firstSession.seatNumber} (Bấm xem nhanh)` : `Mã HS: ${s.studentCode} (Bấm xem nhanh)`}
-                                            >
-                                              {s.studentCode}
-                                            </button>
-                                            <select
-                                              disabled={!isInline}
-                                              value={rowDraft.gender}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "gender", e.target.value)}
-                                              className="raw-select py-0 h-6.5 w-[52px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
-                                            >
-                                              <option value="Nam">Nam</option>
-                                              <option value="Nữ">Nữ</option>
-                                            </select>
-                                            <input
-                                              type="date"
-                                              disabled={!isInline}
-                                              value={rowDraft.dateOfBirth}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "dateOfBirth", e.target.value)}
-                                              className="raw-input py-0 h-6.5 flex-1 min-w-[96px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none disabled:bg-slate-50"
-                                            />
-                                            {details.attachments.length > 0 && (
-                                              <a
-                                                href={details.attachments[0].url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center justify-center w-6 h-6.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 shrink-0"
-                                                title={`Xem ${details.attachments.length} tệp học bạ đính kèm`}
-                                              >
-                                                <Paperclip className="w-3 h-3" />
-                                              </a>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </td>
-
-                                      {/* 3. Đợt & Cơ sở ĐK + Hình thức KS */}
-                                      <td className="px-2 py-2 border-r border-[#E2E8F0] whitespace-nowrap">
-                                        <div className="flex flex-col gap-1 min-w-[150px]">
-                                          <select
-                                            disabled={!isInline}
-                                            value={rowDraft.batchId}
-                                            onChange={e => updateInlineCell(s, parsedRowDefaults, "batchId", e.target.value)}
-                                            className="raw-select py-0 h-7 w-full px-1.5 bg-white border border-[#E2E8F0] rounded-md text-[11px] font-medium text-slate-700 outline-none cursor-pointer disabled:bg-slate-50"
-                                          >
-                                            <option value="">Khảo sát lẻ</option>
-                                            {(periodObj?.batches || selPeriod?.batches || visiblePeriods.flatMap(p => p.batches || []))
-                                              .filter((b: any) => b.status !== "COMPLETED" || b.id === rowDraft.batchId)
-                                              .map((b: any) => (
-                                                <option key={b.id} value={b.id}>{b.name}</option>
-                                              ))}
-                                          </select>
-                                          <div className="flex items-center gap-1">
-                                            <select
-                                              disabled={!isInline}
-                                              value={registeredCampusObj?.id || rowDraft.registeredCampus}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "registeredCampus", e.target.value)}
-                                              className="raw-select py-0 h-6.5 flex-1 min-w-[74px] px-1.5 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-semibold text-[#005854] outline-none cursor-pointer disabled:bg-slate-50"
-                                            >
-                                              <option value="">Cơ sở...</option>
-                                              {campuses.map(c => (
-                                                <option key={c.id} value={c.id}>{c.campusCode || c.campusName}</option>
-                                              ))}
-                                            </select>
-                                            <select
-                                              disabled={!isInline}
-                                              value={rowDraft.surveySystem}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "surveySystem", e.target.value)}
-                                              className="raw-select py-0 h-6.5 w-[72px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
-                                              title="Hình thức khảo sát"
-                                            >
-                                              <option value="">Hình thức</option>
-                                              {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => (
-                                                <option key={c.id} value={c.name}>{c.name}</option>
-                                              ))}
-                                              {rowDraft.surveySystem && !configs.some(c => c.categoryType === "HINH_THUC_KS" && c.name === rowDraft.surveySystem) && (
-                                                <option value={rowDraft.surveySystem}>{rowDraft.surveySystem}</option>
-                                              )}
-                                            </select>
-                                          </div>
-                                        </div>
-                                      </td>
-
-                                      {/* 4. Nguyện vọng & Mốc TS (Khối + Hệ + Diện KS + Mốc thời gian) */}
-                                      <td className="px-2 py-2 border-r border-[#E2E8F0] whitespace-nowrap">
-                                        <div className="flex flex-col gap-1 min-w-[175px]">
-                                          <div className="flex items-center gap-1">
-                                            <select
-                                              disabled={!isInline}
-                                              value={rowDraft.grade}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "grade", e.target.value)}
-                                              className="raw-select py-0 h-7 w-[54px] px-1 bg-white border border-[#E2E8F0] hover:border-slate-300 focus:border-[#00736E] rounded-md text-xs font-bold text-[#003B3A] outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
-                                              title="Khối đăng ký"
-                                            >
-                                              {activeGrades.map(g => <option key={g} value={g}>K{g}</option>)}
-                                            </select>
-                                            <select
-                                              disabled={!isInline}
-                                              value={rowDraft.surveyFormType}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "surveyFormType", e.target.value)}
-                                              className="raw-select py-0 h-7 w-[64px] px-1 bg-sky-50/50 border border-sky-200 hover:border-sky-300 rounded-md text-[11px] font-bold text-sky-800 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
-                                              title="Hệ đào tạo khảo sát"
-                                            >
-                                              <option value="">Hệ</option>
-                                              {trackEduSystems.map(es => (
-                                                <option key={es.code} value={es.code}>{es.code}</option>
-                                              ))}
-                                              {rowDraft.surveyFormType && !trackEduSystems.some(es => es.code === rowDraft.surveyFormType) && (
-                                                <option value={rowDraft.surveyFormType}>{rowDraft.surveyFormType}</option>
-                                              )}
-                                            </select>
-                                            <select
-                                              disabled={!isInline}
-                                              value={rowDraft.admissionCriteria}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "admissionCriteria", e.target.value)}
-                                              className="raw-select py-0 h-7 flex-1 min-w-[68px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer disabled:bg-slate-50"
-                                              title="Diện khảo sát / Tuyển thẳng"
-                                            >
-                                              <option value="">Diện KS</option>
-                                              {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
-                                                <option key={c.id} value={c.name}>{c.name}</option>
-                                              ))}
-                                              {rowDraft.admissionCriteria && !configs.some(c => c.categoryType === "DIEN_KS" && c.name === rowDraft.admissionCriteria) && (
-                                                <option value={rowDraft.admissionCriteria}>{rowDraft.admissionCriteria}</option>
-                                              )}
-                                            </select>
-                                          </div>
-                                          <select
-                                            disabled={!isInline}
-                                            value={rowDraft.hocKy}
-                                            onChange={e => updateInlineCell(s, parsedRowDefaults, "hocKy", e.target.value)}
-                                            className="raw-select py-0 h-6.5 w-full px-1.5 bg-[#F0FDFA]/80 border border-teal-200 hover:border-[#00A19A] rounded-md text-[11px] font-semibold text-[#003B3A] outline-none cursor-pointer disabled:bg-slate-50"
-                                            title="1. Mốc thời gian / Kỳ khảo sát"
-                                          >
-                                            {renderIntakeMilestoneSelectOptions(rowDraft.hocKy)}
-                                          </select>
-                                        </div>
-                                      </td>
-
-                                      {/* 5. Trường cũ & Khu vực (Ẩn/hiện linh hoạt) */}
-                                      {showInlineSchoolCols && (
-                                        <td className="px-2 py-2 border-r border-[#E2E8F0]">
-                                          <div className="flex flex-col gap-1 min-w-[165px]">
-                                            <input
-                                              type="text"
-                                              disabled={!isInline}
-                                              list="old-schools-datalist"
-                                              value={rowDraft.oldSchoolName}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "oldSchoolName", e.target.value)}
-                                              onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                              placeholder="Trường học cũ..."
-                                              className="raw-input py-0 h-7 w-full px-2 bg-white border border-[#E2E8F0] hover:border-slate-300 focus:border-[#00736E] rounded-md text-[11px] font-medium text-slate-800 placeholder-slate-300 outline-none disabled:bg-slate-50"
-                                            />
-                                            <div className="flex items-center gap-1">
-                                              <select
-                                                disabled={!isInline}
-                                                value={rowDraft.oldSchoolType}
-                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "oldSchoolType", e.target.value)}
-                                                className="raw-select py-0 h-6.5 w-[74px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
-                                              >
-                                                <option value="">Loại hình</option>
-                                                <option value="Công lập">Công lập</option>
-                                                <option value="Tư thục">Tư thục</option>
-                                                <option value="Song ngữ">Song ngữ</option>
-                                                <option value="Quốc tế">Quốc tế</option>
-                                              </select>
-                                              <select
-                                                disabled={!isInline}
-                                                value={rowDraft.targetType}
-                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "targetType", e.target.value)}
-                                                className="raw-select py-0 h-6.5 flex-1 min-w-[82px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer disabled:bg-slate-50"
-                                              >
-                                                <option value="Nội tỉnh">Đà Nẵng</option>
-                                                <option value="Ngoại tỉnh">Ngoại tỉnh</option>
-                                                <option value="Nước ngoài">Nước ngoài</option>
-                                              </select>
-                                            </div>
-                                            {rowDraft.targetType !== "Nội tỉnh" && (
-                                              <select
-                                                disabled={!isInline}
-                                                value={rowDraft.cityName}
-                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "cityName", e.target.value)}
-                                                className="raw-select py-0 h-6 w-full px-1 bg-white border border-[#E2E8F0] rounded-md text-[10px] text-slate-700 outline-none cursor-pointer disabled:bg-slate-50"
-                                              >
-                                                <option value="">{rowDraft.targetType === "Ngoại tỉnh" ? "-- Chọn Tỉnh/TP --" : "-- Chọn Quốc gia --"}</option>
-                                                {(rowDraft.targetType === "Ngoại tỉnh" ? vietnamProvinces : worldCountries).map(loc => (
-                                                  <option key={loc} value={loc}>{loc}</option>
-                                                ))}
-                                              </select>
-                                            )}
-                                          </div>
-                                        </td>
-                                      )}
-
-                                      {/* 6. Học bạ & Xếp loại */}
-                                      <td className="px-2 py-2 border-r border-[#E2E8F0] whitespace-nowrap">
-                                        <div className="flex flex-col gap-1 min-w-[160px]">
-                                          <div className="flex items-center gap-1">
-                                            <select
-                                              disabled={!isInline}
-                                              value={rowDraft.programType}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "programType", e.target.value)}
-                                              onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                              className="raw-select py-0 h-7 flex-1 min-w-[88px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-semibold text-[#005854] outline-none cursor-pointer disabled:bg-slate-50"
-                                            >
-                                              <option value="BO_GD_DT">Bộ GD&amp;ĐT</option>
-                                              <option value="SONG_NGU">Song ngữ</option>
-                                              <option value="NUOC_NGOAI">CT Quốc tế</option>
-                                              <option value="HOMESCHOOLING">Homeschool</option>
-                                            </select>
-                                            <select
-                                              disabled={!isInline}
-                                              value={rowDraft.transcriptPeriod}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "transcriptPeriod", e.target.value)}
-                                              className="raw-select py-0 h-7 w-[66px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
-                                              title="Kỳ học bạ căn cứ"
-                                            >
-                                              <option value="Cả năm">Cả năm</option>
-                                              <option value="HK1">HK1</option>
-                                              <option value="HK2">HK2</option>
-                                            </select>
-                                          </div>
-                                          <div className="flex items-center gap-1">
-                                            <input
-                                              type="text"
-                                              disabled={!isInline}
-                                              list="overall-ratings-datalist"
-                                              value={rowDraft.overallRating}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "overallRating", e.target.value)}
-                                              onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                              placeholder="Xếp loại..."
-                                              className="raw-input py-0 h-6.5 flex-1 min-w-[88px] px-1.5 bg-white border border-[#E2E8F0] focus:border-[#00736E] rounded-md text-[10.5px] font-semibold text-emerald-800 placeholder-slate-300 outline-none disabled:bg-slate-50"
-                                            />
-                                            <select
-                                              disabled={!isInline}
-                                              value={rowDraft.kqRenLuyen}
-                                              onChange={e => updateInlineCell(s, parsedRowDefaults, "kqRenLuyen", e.target.value)}
-                                              className="raw-select py-0 h-6.5 w-[66px] px-1 bg-white border border-[#E2E8F0] rounded-md text-[10.5px] font-medium text-slate-700 outline-none cursor-pointer shrink-0 disabled:bg-slate-50"
-                                              title="Kết quả rèn luyện"
-                                            >
-                                              <option value="">RL...</option>
-                                              <option value="Tốt">Tốt</option>
-                                              <option value="Khá">Khá</option>
-                                              <option value="Đạt">Đạt</option>
-                                              <option value="Chưa đạt">CĐ</option>
-                                            </select>
-                                          </div>
-                                        </div>
-                                      </td>
-
-                                      {/* 7. Điểm xét quy chế & Thành tích */}
-                                      <td className="px-2 py-2 border-r border-[#E2E8F0]">
-                                        <div className="flex flex-col gap-1 min-w-[198px]">
-                                          <div className={`grid grid-cols-3 gap-1 ${rNoTranscript ? "opacity-55" : ""}`}>
-                                            <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
-                                              rMathExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#E2E8F0] focus-within:border-[#00736E]"
-                                            }`} title={rNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : "Điểm môn Toán"}>
-                                              <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">Toán</span>
-                                              <input
-                                                type="text"
-                                                inputMode="decimal"
-                                                disabled={!isInline}
-                                                value={rowDraft.mathScoreOld}
-                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "mathScoreOld", e.target.value)}
-                                                onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                                placeholder="—"
-                                                className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold placeholder-slate-300 outline-none ${
-                                                  rMathExempt ? "text-emerald-700" : "text-[#003B3A]"
-                                                }`}
-                                              />
-                                            </label>
-                                            <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
-                                              rLitExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#E2E8F0] focus-within:border-[#00736E]"
-                                            }`} title={rNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : `Điểm môn ${rLitLabel === "TV" ? "Tiếng Việt" : "Ngữ Văn"}`}>
-                                              <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">{rLitLabel}</span>
-                                              <input
-                                                type="text"
-                                                inputMode="decimal"
-                                                disabled={!isInline}
-                                                value={rowDraft.litScoreOld}
-                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "litScoreOld", e.target.value)}
-                                                onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                                placeholder="—"
-                                                className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold placeholder-slate-300 outline-none ${
-                                                  rLitExempt ? "text-emerald-700" : "text-[#003B3A]"
-                                                }`}
-                                              />
-                                            </label>
-                                            <label className={`flex items-center h-7 px-1.5 rounded-md border bg-white ${
-                                              rEngExempt ? "border-emerald-400 bg-emerald-50/60" : "border-[#E2E8F0] focus-within:border-[#00736E]"
-                                            }`} title={rNoTranscript ? "Đầu cấp K1 chưa xét điểm học bạ" : "Điểm môn Tiếng Anh (xét miễn Tiếng Anh viết cho Hệ S)"}>
-                                              <span className="text-[10px] font-semibold text-slate-500 select-none mr-1">Anh</span>
-                                              <input
-                                                type="text"
-                                                inputMode="decimal"
-                                                disabled={!isInline}
-                                                value={rowDraft.engScoreOld}
-                                                onChange={e => updateInlineCell(s, parsedRowDefaults, "engScoreOld", e.target.value)}
-                                                onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                                placeholder="—"
-                                                className={`raw-input py-0 h-full w-full bg-transparent text-right text-xs font-bold placeholder-slate-300 outline-none ${
-                                                  rEngExempt ? "text-emerald-700" : "text-[#003B3A]"
-                                                }`}
-                                              />
-                                            </label>
-                                          </div>
-                                          <input
-                                            type="text"
-                                            disabled={!isInline}
-                                            value={rowDraft.achievements}
-                                            onChange={e => updateInlineCell(s, parsedRowDefaults, "achievements", e.target.value)}
-                                            onKeyDown={e => { if (e.key === "Enter") saveInlineRow(s); }}
-                                            placeholder="Chứng chỉ QT, giải thưởng..."
-                                            className="raw-input py-0 h-6.5 w-full px-2 bg-white border border-[#E2E8F0] focus:border-amber-500 rounded-md text-[10.5px] font-medium text-amber-900 placeholder-slate-300 outline-none disabled:bg-slate-50"
-                                          />
-                                        </div>
-                                      </td>
-
-                                      {/* 8. Môn kiểm tra (Bám sát Cấu hình quy chế tuyển sinh) */}
-                                      <td className="px-2.5 py-2 border-r border-[#E2E8F0] bg-[#F8FAFC]/60">
-                                        {renderExamSubjectsCell(inlineExamRes)}
-                                      </td>
-                                    </>
-                                  );
-                                })()
-                              ) : (
-                                <>
                                   {/* 0. Checkbox */}
                                   <td className="px-2.5 py-2.5 text-center whitespace-nowrap border-r border-slate-100" onClick={e => e.stopPropagation()}>
                                     <input
@@ -10583,6 +10150,30 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         )}
                                       </div>
                                     </div>
+                                  </td>
+
+                                  {/* 4b. Tháng (Tự động lấy từ Ngày KS của Đợt) */}
+                                  <td className="px-2.5 py-2 text-center border-r border-slate-100 whitespace-nowrap tabular-nums">
+                                    {(() => {
+                                      const rawDateStr = String(batchObj?.endDate || batchObj?.startDate || (s as any).batch?.endDate || (s as any).batch?.startDate || s.createdAt || "").slice(0, 10);
+                                      const mk = /^\d{4}-\d{2}-\d{2}$/.test(rawDateStr)
+                                        ? `${rawDateStr.slice(5, 7)}/${rawDateStr.slice(0, 4)}`
+                                        : "";
+                                      const nowM = new Date();
+                                      const curM = `${String(nowM.getMonth() + 1).padStart(2, "0")}/${nowM.getFullYear()}`;
+                                      return (
+                                        <span
+                                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${
+                                            mk && mk === curM
+                                              ? "bg-[#F0FDFA] text-[#003B3A] border-[#99F6E4]"
+                                              : "bg-slate-50 text-slate-600 border-slate-200"
+                                          }`}
+                                          title={mk ? `Tháng khảo sát: ${mk}` : "Chưa có Ngày KS"}
+                                        >
+                                          {mk || "—"}
+                                        </span>
+                                      );
+                                    })()}
                                   </td>
 
                                   {viewMode === "transfer" ? (
@@ -10694,15 +10285,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   <td className="px-2.5 py-2.5 text-center border-r border-slate-100 text-xs bg-teal-50/10 whitespace-nowrap">
                                     {renderScoreCell(details.english, "sky")}
                                   </td>
-                                  <td className="px-3.5 py-2.5 border-r border-slate-100 bg-amber-50/10">
-                                    {achievementsText ? (
-                                      <span className="font-semibold text-amber-900 text-[11px] line-clamp-2 max-w-[160px]" title={achievementsText}>
-                                        {achievementsText}
-                                      </span>
-                                    ) : (
-                                      <span className="text-[11px] text-slate-300 italic">Chưa có ghi nhận</span>
-                                    )}
-                                  </td>
                                   <td className="px-3.5 py-2.5 border-r border-slate-100 bg-teal-50/15">
                                     {renderExamSubjectsCell(examSubjectsResult)}
                                   </td>
@@ -10812,18 +10394,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     </div>
                                   </td>
 
-                                  {/* COMPACT COL 4: Thành tích & Khen thưởng */}
-                                  <td className="px-3.5 py-2.5 border-r border-slate-100 bg-amber-50/10">
-                                    {achievementsText ? (
-                                      <div className="text-xs max-w-[160px]">
-                                        <span className="font-semibold text-amber-900 text-[11px] line-clamp-2" title={achievementsText}>
-                                          {achievementsText}
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[11px] text-slate-300 italic">Chưa có ghi nhận</span>
-                                    )}
-                                  </td>
                                   <td className="px-3.5 py-2.5 border-r border-slate-100 bg-teal-50/15">
                                     {renderExamSubjectsCell(examSubjectsResult)}
                                   </td>
@@ -11031,98 +10601,59 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     })
                                   )}
 
-                                  {/* 19. Thành tích & Khen thưởng */}
-                                  <td className="px-3.5 py-2.5 border-r border-slate-100 bg-amber-50/10">
-                                    {achievementsText ? (
-                                      <div className="text-xs max-w-[160px]">
-                                        <span className="font-semibold text-amber-900 text-[11px] line-clamp-2" title={achievementsText}>
-                                          {achievementsText}
-                                        </span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[11px] text-slate-300 italic">Chưa có ghi nhận</span>
-                                    )}
-                                  </td>
                                   <td className="px-3.5 py-2.5 border-r border-slate-100 bg-teal-50/15">
                                     {renderExamSubjectsCell(examSubjectsResult)}
                                   </td>
                                 </>
                               )}
-                                </>
-                              )}
-
                               {/* Cột Thao tác (Sticky Right - Nền đặc 100% chống xuyên thấu) */}
-                              <td className={`px-2 py-2 whitespace-nowrap text-right sticky right-0 z-10 border-l border-[#E2E8F0] shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)] transition-colors ${stickyCellBg}`}>
-                                <div className="flex flex-col items-end gap-1">
-                                  {isRowDirty && (
-                                    <div className="flex items-center justify-end gap-1">
-                                      <button
-                                        type="button"
-                                        onClick={() => saveInlineRow(s)}
-                                        disabled={isRowSaving}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#003B3A] hover:bg-[#005854] text-white text-[10px] font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-                                        title="Lưu thay đổi dòng này (hoặc nhấn Enter)"
-                                      >
-                                        {isRowSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                                        <span>Lưu</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setInlineEdits(prev => { const n = { ...prev }; delete n[s.id]; return n; })}
-                                        className="p-1 text-slate-500 hover:text-slate-800 hover:bg-white border border-[#E2E8F0] rounded-md transition-all cursor-pointer"
-                                        title="Hoàn tác dòng này"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center justify-end gap-0.5">
-                                    <button
-                                      type="button"
-                                      onClick={() => setOrientationTargetStudent(s)}
-                                      className="p-1.5 text-teal-800 hover:text-[#003B3A] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
-                                      title="Phiếu định hướng đầu vào (3 Tab)"
-                                    >
-                                      <HeartHandshake className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setReportTargetStudent(s);
-                                        setActiveReportOrientationData(null);
-                                      }}
-                                      className="p-1.5 text-teal-600 hover:text-[#003B3A] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
-                                      title="Xem & in báo cáo nhận diện và định hướng đầu vào (A4)"
-                                    >
-                                      <Printer className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setQuickViewStudent(s)}
-                                      className="p-1.5 text-teal-700 hover:text-[#003B3A] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
-                                      title="Xem chi tiết bảng điểm và hồ sơ"
-                                    >
-                                      <Eye className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => openEditStudent(s)}
-                                      className={"p-1.5 text-slate-400 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-all cursor-pointer " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
-                                      disabled={cannotUpdate}
-                                      title="Mở cửa sổ chi tiết (Đính kèm tệp học bạ / Thêm môn học khác)"
-                                    >
-                                      <Paperclip className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirm({ msg: `Xóa hồ sơ học sinh ${s.fullName}?`, fn: () => doDeleteStudent(s.id) })}
-                                      className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
-                                      disabled={cannotDelete}
-                                      title="Xóa hồ sơ"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
+                              <td className={`px-2.5 py-2.5 whitespace-nowrap text-right sticky right-0 z-10 border-l border-[#E2E8F0] shadow-[-6px_0_12px_-4px_rgba(15,23,42,0.08)] transition-colors ${stickyCellBg}`}>
+                                <div className="flex items-center justify-end gap-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditStudent(s)}
+                                    className={"p-1.5 text-[#00736E] hover:text-[#003B3A] hover:bg-[#F0FDFA] rounded-lg transition-colors cursor-pointer " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
+                                    disabled={cannotUpdate}
+                                    title="Chỉnh sửa hồ sơ & học bạ"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setQuickViewStudent(s)}
+                                    className="p-1.5 text-slate-500 hover:text-[#003B3A] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                    title="Xem chi tiết bảng điểm và hồ sơ"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setOrientationTargetStudent(s)}
+                                    className="p-1.5 text-teal-700 hover:text-[#003B3A] hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+                                    title="Phiếu định hướng đầu vào (3 Tab)"
+                                  >
+                                    <HeartHandshake className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setReportTargetStudent(s);
+                                      setActiveReportOrientationData(null);
+                                    }}
+                                    className="p-1.5 text-teal-600 hover:text-[#003B3A] hover:bg-teal-50 rounded-lg transition-colors cursor-pointer"
+                                    title="Xem & in báo cáo nhận diện và định hướng đầu vào (A4)"
+                                  >
+                                    <Printer className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirm({ msg: `Xóa hồ sơ học sinh ${s.fullName}?`, fn: () => doDeleteStudent(s.id) })}
+                                    className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
+                                    disabled={cannotDelete}
+                                    title="Xóa hồ sơ"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -11226,12 +10757,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <div className="text-[11px] font-semibold text-sky-700">{details.english}</div>
                               </div>
                             </div>
-                            {details.achievements && (
-                              <div className="flex items-center gap-1.5 text-[11px] text-amber-900 bg-amber-50/80 px-2.5 py-1.5 rounded-lg border border-amber-200/80">
-                                <span className="font-semibold shrink-0">🏆 Thành tích:</span>
-                                <span className="truncate">{details.achievements}</span>
-                              </div>
-                            )}
                             {details.otherSubjects !== "—" && (
                               <div className="text-[10px] text-slate-500 font-normal">
                                 <span className="font-medium text-slate-600">Tổ hợp/Khác: </span>
@@ -13888,12 +13413,12 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             </Field>
           </div>
 
-          {/* Hàng 4: Tên nội dung đợt khảo sát */}
-          <Field label="Tên nội dung đợt khảo sát" required>
+          {/* Hàng 4: Ghi chú / Trọng tâm đợt khảo sát (tùy chọn) */}
+          <Field label="Ghi chú / Trọng tâm đợt (tùy chọn)">
             <input
               value={bForm.name}
               onChange={e => setBForm(f => ({ ...f, name: e.target.value }))}
-              placeholder="Vd: KSĐV, Openday, Học thử, Giao lưu năng lực..."
+              placeholder="Để trống nếu không cần (Vd: Online, HK2, Đầu năm, Tên HS...)"
               className={inp}
             />
           </Field>
@@ -13901,30 +13426,32 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           {/* Hàng 5: Xem trước tên chuẩn hóa theo quy chuẩn Sky-Line */}
           {(() => {
             const campus = campuses.find(c => c.id === bForm.campusId);
-            const campusName = campus ? (campus.campusCode || campus.campusName) : "Chưa chọn cơ sở";
             const period = periods.find(p => p.id === targetPeriodId);
-            const periodName = period ? period.name : "Tên đợt";
-            let periodCode = period ? (period.code || period.name) : "KSL";
-            if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
-              periodCode = "KSL";
-            }
-            const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-            const generatedName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name.trim() || "Tên Đợt KS"} _ ${endStr}`;
+            const generatedName = formatStandardBatchName({
+              campusCode: campus?.campusCode,
+              campusName: campus?.campusName || "Chưa chọn cơ sở",
+              periodName: period?.name,
+              periodCode: period?.code,
+              batchNumber: bForm.batchNumber || "1",
+              startDate: bForm.startDate,
+              endDate: bForm.endDate,
+              note: bForm.name.trim()
+            });
 
             return (
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="p-3.5 rounded-xl bg-[#F0FDFA]/70 border border-[#00A19A]/30">
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-                    Quy chuẩn tên đợt tự động:
+                  <span className="text-[11px] font-semibold text-[#003B3A] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#00736E]" />
+                    Tên đợt tự động theo quy chuẩn Sky-Line
                   </span>
-                  <span className="text-[10px] text-slate-400">Tự động chuẩn hóa</span>
+                  <span className="text-[10.5px] text-[#00736E] font-medium">Gọn · Dễ xét duyệt</span>
                 </div>
-                <div className="font-mono text-xs font-semibold text-teal-900 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-2xs break-all">
+                <div className="font-mono text-xs font-bold text-[#003B3A] bg-white px-3 py-2 rounded-lg border border-teal-200/80 shadow-2xs break-all tabular-nums">
                   {generatedName}
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1.5">
-                  Hệ thống tự động liên kết Cơ sở, Kỳ, Số đợt và Thời gian kết thúc theo cấu trúc chuẩn hóa đồng bộ.
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Cấu trúc chuẩn: <strong>[Cơ sở] · [Loại kỳ] #[STT] · [Ngày bắt đầu KS]</strong> (+ Ghi chú nếu có). Không cần nhập lặp từ khóa KSĐV/KTĐV.
                 </p>
               </div>
             );
@@ -13979,38 +13506,61 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               </div>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-              <div className="text-xs text-slate-500 font-medium">
-                Thông tin bắt buộc: <strong className="text-slate-700 font-bold">Mã HS, Họ tên, Khối đăng ký, Kỳ khảo sát</strong>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSModal(false)}
-                  className="h-10 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-all cursor-pointer"
-                >
-                  Hủy / Đóng
-                </button>
-                {!editS && (
-                  <button
-                    type="button"
-                    onClick={() => saveStudent(true)}
-                    disabled={isSavingStudent}
-                    className="h-10 px-5 bg-white hover:bg-teal-50 text-[#00736E] border border-[#00736E]/40 text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    Lưu &amp; Nhập tiếp
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => saveStudent(false)}
-                  disabled={isSavingStudent}
-                  className="h-10 px-6 bg-[#00736E] hover:bg-[#005854] text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {isSavingStudent ? "Đang lưu..." : (editS ? "Cập nhật hồ sơ" : "Lưu & Đóng")}
-                </button>
-              </div>
-            </div>
+            (() => {
+              const effModalPeriodId = sForm.periodId || (sPeriodId && sPeriodId !== "all" ? sPeriodId : "");
+              const missingFields: string[] = [];
+              if (!sForm.studentCode?.trim()) missingFields.push("Mã HS");
+              if (!sForm.fullName?.trim()) missingFields.push("Họ tên");
+              if (!sForm.grade) missingFields.push("Khối ĐK");
+              if (!effModalPeriodId) missingFields.push("Kỳ KS");
+              const isReadyToSave = missingFields.length === 0;
+              return (
+                <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+                  <div className="flex items-center gap-2 text-xs">
+                    {isReadyToSave ? (
+                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Đủ thông tin bắt buộc — Sẵn sàng lưu hồ sơ</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-slate-600 font-medium">
+                        <span>Cần bổ sung:</span>
+                        <strong className="text-amber-700 font-semibold">{missingFields.join(", ")}</strong>
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSModal(false)}
+                      className="h-9 px-4 bg-white hover:bg-slate-100 text-slate-700 border border-[#E2E8F0] text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                      Hủy / Đóng
+                    </button>
+                    {!editS && (
+                      <button
+                        type="button"
+                        onClick={() => saveStudent(true)}
+                        disabled={isSavingStudent}
+                        className="h-9 px-4 bg-[#F0FDFA] hover:bg-teal-100/80 text-[#005854] border border-[#00A19A]/40 text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Lưu &amp; Thêm tiếp</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => saveStudent(false)}
+                      disabled={isSavingStudent}
+                      className="h-9 px-5 bg-[#003B3A] hover:bg-[#005854] text-white text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                    >
+                      {isSavingStudent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      <span>{isSavingStudent ? "Đang lưu..." : (editS ? "Cập nhật hồ sơ" : "Lưu & Đóng")}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })()
           )
         }
       >
@@ -14369,69 +13919,110 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
           </div>
         ) : (
           <div className="space-y-4 text-left">
-            {/* Clean Administrative Tab Header (No Icons) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-1.5 bg-slate-200/60 border border-slate-200 rounded-xl">
-              <div className="flex items-center gap-1.5 flex-1">
-                <button
-                  type="button"
-                  onClick={() => setStudentModalTab("profile")}
-                  className={`flex-1 sm:flex-initial inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    studentModalTab === "profile"
-                      ? "bg-[#00736E] text-white shadow-2xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
-                  }`}
-                >
-                  <span>I. Thông tin &amp; Nguyện vọng đăng ký</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStudentModalTab("academic")}
-                  className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    studentModalTab === "academic"
-                      ? "bg-[#00736E] text-white shadow-2xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
-                  }`}
-                >
-                  <span>II. Hồ sơ Học bạ &amp; Điểm trường cũ</span>
-                  {sForm.kqHocTap ? (
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      studentModalTab === "academic"
-                        ? "bg-white/20 text-white"
-                        : "bg-emerald-100 text-emerald-800"
-                    }`}>
-                      Đã có dữ liệu
-                    </span>
-                  ) : (
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                      studentModalTab === "academic"
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-200 text-slate-600"
-                    }`}>
-                      Tùy chọn
-                    </span>
+            {/* Guided 2-Step Academic Intake Header */}
+            {(() => {
+              const effModalPeriodId = sForm.periodId || (sPeriodId && sPeriodId !== "all" ? sPeriodId : "");
+              const step1Complete = Boolean(sForm.studentCode?.trim() && sForm.fullName?.trim() && sForm.grade && effModalPeriodId);
+              const liveExamPreview = (sForm.grade && sForm.surveyFormType)
+                ? resolveStudentExamSubjects(
+                    {
+                      ...sForm,
+                      periodId: effModalPeriodId || undefined,
+                      hocKy: sForm.hocKy || getDefaultHocKyByGrade(sForm.grade),
+                    },
+                    {
+                      gradeConfigs,
+                      mappings: allMappings,
+                      regulationConfig,
+                      periods: visiblePeriods,
+                      periodName: periods.find(p => p.id === effModalPeriodId)?.name,
+                    }
+                  )
+                : null;
+              return (
+                <div className="space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl">
+                    <div className="flex items-center gap-1.5 flex-1">
+                      <button
+                        type="button"
+                        onClick={() => setStudentModalTab("profile")}
+                        className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                          studentModalTab === "profile"
+                            ? "bg-[#003B3A] text-white shadow-2xs"
+                            : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px] font-bold ${
+                          step1Complete
+                            ? (studentModalTab === "profile" ? "bg-[#00A19A] text-white" : "bg-emerald-100 text-emerald-700")
+                            : (studentModalTab === "profile" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600")
+                        }`}>
+                          {step1Complete ? <Check className="w-2.5 h-2.5" /> : "1"}
+                        </span>
+                        <span>Thông tin &amp; Nguyện vọng</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStudentModalTab("academic")}
+                        className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                          studentModalTab === "academic"
+                            ? "bg-[#003B3A] text-white shadow-2xs"
+                            : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full inline-flex items-center justify-center text-[10px] font-bold ${
+                          sForm.kqHocTap
+                            ? (studentModalTab === "academic" ? "bg-[#00A19A] text-white" : "bg-emerald-100 text-emerald-700")
+                            : (studentModalTab === "academic" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600")
+                        }`}>
+                          {sForm.kqHocTap ? <Check className="w-2.5 h-2.5" /> : "2"}
+                        </span>
+                        <span>Học bạ &amp; Điểm xét quy chế</span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${
+                          sForm.kqHocTap
+                            ? (studentModalTab === "academic" ? "bg-white/15 text-teal-100" : "bg-emerald-50 text-emerald-700 border border-emerald-200")
+                            : (studentModalTab === "academic" ? "bg-white/15 text-slate-200" : "bg-white text-slate-500 border border-[#E2E8F0]")
+                        }`}>
+                          {sForm.kqHocTap ? "Đã nhập" : "Tùy chọn"}
+                        </span>
+                      </button>
+                    </div>
+                    <div className="hidden md:flex items-center gap-2 px-2 text-[11px] tabular-nums">
+                      {editS ? (
+                        <span className="inline-flex items-center font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+                          Đang sửa: <strong className="font-mono ml-1">{sForm.studentCode}</strong>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center font-semibold text-[#005854] bg-[#F0FDFA] border border-teal-200 px-2.5 py-1 rounded-lg">
+                          Mã HS tự động: <strong className="font-mono ml-1">{sForm.studentCode || "..."}</strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Persistent Live Exam Subjects & Regulation Preview Bar */}
+                  {liveExamPreview && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-[#F0FDFA]/80 border border-[#00A19A]/30">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-[#003B3A]">
+                        <span className="w-1.5 h-4 rounded-full bg-[#00736E] inline-block shrink-0" />
+                        <span>
+                          Môn kiểm tra dự kiến ({sForm.surveyFormType} · Khối {sForm.grade} · {sForm.hocKy || getDefaultHocKyByGrade(sForm.grade)}):
+                        </span>
+                      </div>
+                      <div>{renderExamSubjectsCell(liveExamPreview)}</div>
+                    </div>
                   )}
-                </button>
-              </div>
-              <div className="hidden md:flex items-center gap-2 px-2 text-[11px]">
-                {editS ? (
-                  <span className="inline-flex items-center font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg">
-                    Chỉnh sửa mã: <strong className="font-mono ml-1">{sForm.studentCode}</strong>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center font-semibold text-[#005854] bg-teal-50 border border-teal-200 px-3 py-1 rounded-lg">
-                    Cấp mã tự động
-                  </span>
-                )}
-              </div>
-            </div>
+                </div>
+              );
+            })()}
 
             {studentModalTab === "profile" ? (
               <div className="space-y-4">
                 {/* MỤC 1: THÔNG TIN CÁ NHÂN HỌC SINH */}
-                <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
-                  <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                    <div className="border-l-3 border-[#00736E] pl-2.5">
-                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-[#F1F5F9]">
+                    <div className="border-l-4 border-[#003B3A] pl-2.5">
+                      <h4 className="text-xs font-bold text-[#003B3A]">
                         Mục 1. Thông tin định danh &amp; cá nhân
                       </h4>
                     </div>
@@ -14442,14 +14033,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     {/* Mã HS KS */}
                     <div className="sm:col-span-3">
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                          Mã HS KS <span className="text-rose-500">*</span>
+                        <label className="text-[11px] font-semibold text-slate-700">
+                          Mã HS khảo sát <span className="text-rose-500">*</span>
                         </label>
                         {!editS && (
                           <button
                             type="button"
                             onClick={() => generateNextStudentCode()}
-                            className="text-[10px] text-[#00736E] hover:text-[#005854] font-bold underline cursor-pointer transition-colors"
+                            className="text-[10.5px] text-[#00736E] hover:text-[#005854] font-semibold underline cursor-pointer transition-colors"
                             title="Lấy mã số tiếp theo từ hệ thống"
                           >
                             Đổi mã mới
@@ -14460,7 +14051,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         type="text"
                         value={sForm.studentCode}
                         onChange={e => setSForm(f => ({ ...f, studentCode: e.target.value }))}
-                        className={`${inp} font-mono font-bold tracking-wide ${editS ? 'bg-slate-100 cursor-not-allowed text-slate-500' : ''}`}
+                        className={`${inp} font-mono font-semibold tabular-nums ${editS ? 'bg-slate-100 cursor-not-allowed text-slate-500' : ''}`}
                         disabled={!!editS}
                         placeholder="VD: HS701020240"
                       />
@@ -14469,10 +14060,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     {/* Họ và Tên */}
                     <div className="sm:col-span-4">
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                          Họ và Tên <span className="text-rose-500">*</span>
+                        <label className="text-[11px] font-semibold text-slate-700">
+                          Họ và tên học sinh <span className="text-rose-500">*</span>
                         </label>
-                        <span className="text-[10px] text-slate-400">Tự viết hoa</span>
+                        <span className="text-[10px] text-slate-400">Tự chuẩn hóa viết hoa</span>
                       </div>
                       <input
                         type="text"
@@ -14485,37 +14076,37 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             setSForm(f => ({ ...f, fullName: titleCased }));
                           }
                         }}
-                        className={`${inp} text-slate-800 font-bold`}
+                        className={`${inp} text-slate-900 font-semibold`}
                         placeholder="VD: Nguyễn Văn An"
                       />
                     </div>
 
                     {/* Ngày sinh */}
                     <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Ngày sinh
                       </label>
                       <input
                         type="date"
                         value={sForm.dateOfBirth}
                         onChange={e => setSForm(f => ({ ...f, dateOfBirth: e.target.value }))}
-                        className={inp}
+                        className={`${inp} tabular-nums`}
                       />
                     </div>
 
-                    {/* Giới tính (No Icons) */}
+                    {/* Giới tính */}
                     <div className="sm:col-span-3">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Giới tính
                       </label>
-                      <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 h-10">
+                      <div className="grid grid-cols-2 gap-1 bg-[#F8FAFC] p-1 rounded-lg border border-[#E2E8F0] h-10">
                         <button
                           type="button"
                           onClick={() => setSForm(f => ({ ...f, gender: "Nam" }))}
-                          className={`rounded-md flex items-center justify-center text-xs font-bold transition-all cursor-pointer ${
+                          className={`rounded-md flex items-center justify-center text-xs font-semibold transition-colors cursor-pointer ${
                             sForm.gender === "Nam"
-                              ? 'bg-[#00736E] text-white shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'bg-[#003B3A] text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-[#003B3A]'
                           }`}
                         >
                           Nam
@@ -14523,10 +14114,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         <button
                           type="button"
                           onClick={() => setSForm(f => ({ ...f, gender: "Nữ" }))}
-                          className={`rounded-md flex items-center justify-center text-xs font-bold transition-all cursor-pointer ${
+                          className={`rounded-md flex items-center justify-center text-xs font-semibold transition-colors cursor-pointer ${
                             sForm.gender === "Nữ"
-                              ? 'bg-[#00736E] text-white shadow-2xs'
-                              : 'text-slate-600 hover:text-slate-900'
+                              ? 'bg-[#003B3A] text-white shadow-2xs'
+                              : 'text-slate-600 hover:text-[#003B3A]'
                           }`}
                         >
                           Nữ
@@ -14537,10 +14128,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 </div>
 
                 {/* MỤC 2: NGUYỆN VỌNG & ĐĂNG KÝ KHẢO SÁT */}
-                <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
-                  <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                    <div className="border-l-3 border-[#00736E] pl-2.5">
-                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-[#F1F5F9]">
+                    <div className="border-l-4 border-[#003B3A] pl-2.5">
+                      <h4 className="text-xs font-bold text-[#003B3A]">
                         Mục 2. Nguyện vọng &amp; Đăng ký khảo sát
                       </h4>
                     </div>
@@ -14549,7 +14140,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                   <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
                     <div className="sm:col-span-4">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Kỳ khảo sát <span className="text-rose-500">*</span>
                       </label>
                       <select
@@ -14570,7 +14161,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     </div>
 
                     <div className="sm:col-span-5">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Đợt khảo sát
                       </label>
                       <select
@@ -14597,7 +14188,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     </div>
 
                     <div className="sm:col-span-3">
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                         Cơ sở đăng ký
                       </label>
                       <select
@@ -14697,32 +14288,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                       </select>
                     </div>
-
-                    {sForm.grade && sForm.surveyFormType && (
-                      <div className="sm:col-span-12 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-[#F8FAFC] px-3 py-2.5 rounded-lg border border-[#E2E8F0]">
-                        <div className="text-[11px] font-semibold text-[#003B3A]">
-                          Môn kiểm tra dự kiến theo Cấu hình KSĐV &amp; Quy chế ({sForm.surveyFormType} • K{sForm.grade} • {sForm.hocKy || getDefaultHocKyByGrade(sForm.grade)}):
-                        </div>
-                        <div>
-                          {renderExamSubjectsCell(
-                            resolveStudentExamSubjects(
-                              {
-                                ...sForm,
-                                periodId: sForm.periodId || ((sPeriodId && sPeriodId !== "all") ? sPeriodId : undefined),
-                                hocKy: sForm.hocKy || getDefaultHocKyByGrade(sForm.grade),
-                              },
-                              {
-                                gradeConfigs,
-                                mappings: allMappings,
-                                regulationConfig,
-                                periods: visiblePeriods,
-                                periodName: periods.find(p => p.id === (sForm.periodId || sPeriodId))?.name,
-                              }
-                            )
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -14730,14 +14295,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 {(() => {
                   const activeLoc = selectedLocationType || "Nội tỉnh";
                   return (
-                    <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
-                        <div className="border-l-3 border-[#00736E] pl-2.5">
-                          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[#F1F5F9]">
+                        <div className="border-l-4 border-[#003B3A] pl-2.5">
+                          <h4 className="text-xs font-bold text-[#003B3A]">
                             Mục 3. Trường học cũ &amp; Khu vực tuyển sinh
                           </h4>
                         </div>
-                        <div className="flex items-center gap-1 bg-slate-100 p-1 border border-slate-200 rounded-lg text-xs">
+                        <div className="flex items-center gap-1 bg-[#F8FAFC] p-1 border border-[#E2E8F0] rounded-lg text-xs">
                           {(["Nội tỉnh", "Ngoại tỉnh", "Nước ngoài"] as const).map(loc => (
                             <button
                               type="button"
@@ -14746,10 +14311,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 setSelectedLocationType(loc);
                                 setSForm(f => ({ ...f, targetType: loc }));
                               }}
-                              className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+                              className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
                                 activeLoc === loc
-                                  ? 'bg-[#00736E] text-white shadow-2xs'
-                                  : 'text-slate-600 hover:text-slate-900'
+                                  ? 'bg-[#003B3A] text-white shadow-2xs'
+                                  : 'text-slate-600 hover:text-[#003B3A]'
                               }`}
                             >
                               {loc === "Nội tỉnh" ? "Nội tỉnh (Đà Nẵng)" : loc}
@@ -14761,7 +14326,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
                         {activeLoc === "Nội tỉnh" && (
                           <div className="sm:col-span-4">
-                            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                               Tỉnh / Thành phố <span className="text-rose-500">*</span>
                             </label>
                             <input
@@ -14775,7 +14340,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                         {activeLoc === "Ngoại tỉnh" && (
                           <div className="sm:col-span-4">
-                            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                               Tỉnh / Thành phố <span className="text-rose-500">*</span>
                             </label>
                             <select
@@ -14793,7 +14358,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                         {activeLoc === "Nước ngoài" && (
                           <div className="sm:col-span-4">
-                            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                               Quốc gia <span className="text-rose-500">*</span>
                             </label>
                             <select
@@ -14810,7 +14375,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         )}
 
                         <div className="sm:col-span-3">
-                          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                             Loại hình trường
                           </label>
                           <select
@@ -14827,7 +14392,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         </div>
 
                         <div className="sm:col-span-5">
-                          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
                             Tên trường học cũ
                           </label>
                           {(activeLoc === "Nội tỉnh" || activeLoc === "Ngoại tỉnh" || selectedProvince === "Thành phố Đà Nẵng" || (selectedProvince && selectedProvince.includes("Đà Nẵng"))) ? (
@@ -14893,52 +14458,54 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   );
                 })()}
 
-                {/* Clean Administrative Switch to Tab 2 (No Icons) */}
-                <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-100/90 border border-slate-200 rounded-xl">
+                {/* Switch to Step 2 */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl">
                   <div className="space-y-0.5">
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                      <span>Hồ sơ Học bạ &amp; Điểm số trường cũ</span>
+                    <div className="text-xs font-semibold text-[#003B3A] flex items-center gap-2">
+                      <span>Bước 2. Hồ sơ Học bạ &amp; Điểm xét quy chế</span>
                       {sForm.kqHocTap ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           Đã có dữ liệu
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-white text-slate-500 border border-slate-200">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white text-slate-500 border border-[#E2E8F0]">
                           Chưa nhập
                         </span>
                       )}
                     </div>
                     <p className="text-[11px] text-slate-500">
-                      Chuyển sang Mục II nếu cần nhập bảng điểm học bạ hoặc thành tích học tập từ trường cũ.
+                      Nhập bảng điểm học bạ (Toán, Văn/TV, Anh) hoặc đính kèm tệp học bạ để tự động xét miễn môn theo Quy chế.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setStudentModalTab("academic")}
-                    className="h-9 px-4 bg-white hover:bg-[#00736E] text-[#00736E] hover:text-white border border-[#00736E]/40 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0"
+                    className="h-9 px-4 bg-white hover:bg-[#003B3A] text-[#003B3A] hover:text-white border border-[#003B3A]/30 rounded-lg text-xs font-semibold transition-colors cursor-pointer shrink-0 inline-flex items-center gap-1.5"
                   >
-                    Mở Mục II: Nhập Học bạ &amp; Điểm cũ
+                    <span>Tiếp tục: Nhập Học bạ &amp; Điểm</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             ) : (
               /* TAB 2: HỒ SƠ HỌC BẠ & ĐIỂM SỐ CŨ */
-              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-2xs">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="border-l-3 border-[#00736E] pl-2.5">
-                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                      Hồ sơ Học bạ &amp; Điểm số trường cũ
+              <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 sm:p-5 space-y-4 shadow-2xs">
+                <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9]">
+                  <div className="border-l-4 border-[#003B3A] pl-2.5">
+                    <h4 className="text-xs font-bold text-[#003B3A]">
+                      Hồ sơ Học bạ &amp; Điểm xét quy chế
                     </h4>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      Ghi nhận chi tiết bảng điểm, môn học và thành tích từ trường cũ ({sForm.fullName || sForm.studentCode || "Học sinh mới"} - Khối {sForm.grade || "1"})
+                      Ghi nhận bảng điểm và xếp loại học bạ từ trường cũ ({sForm.fullName || sForm.studentCode || "Học sinh mới"} · Khối {sForm.grade || "1"})
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setStudentModalTab("profile")}
-                    className="h-9 px-3.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    className="h-9 px-3.5 rounded-lg border border-[#E2E8F0] text-xs font-semibold text-slate-700 hover:bg-[#F8FAFC] cursor-pointer inline-flex items-center gap-1"
                   >
-                    Quay lại Mục I
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Quay lại Bước 1</span>
                   </button>
                 </div>
 
