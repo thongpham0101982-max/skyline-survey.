@@ -208,13 +208,13 @@ const xetDuyetCols = [
   { id: "fullName", label: "Họ và tên", width: "w-[170px] min-w-[170px] max-w-[170px] sticky left-10 z-20 whitespace-normal" },
   { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
   { id: "admissionCampus", label: "Cơ sở", width: "w-20 min-w-[80px]" },
-  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[172px] min-w-[172px] whitespace-normal" },
-  { id: "dossierB1B13", label: "Mở Hồ sơ B1–B13", width: "w-[128px] min-w-[128px] text-center" },
-  { id: "bghApproval", label: "1. BGH MN duyệt", width: "w-[156px] min-w-[156px] whitespace-normal" },
-  { id: "trialAssign", label: "2. Phân công học trải nghiệm", width: "w-[162px] min-w-[162px] whitespace-normal" },
-  { id: "trialResult", label: "2. Kết quả học trải nghiệm", width: "w-[172px] min-w-[172px] whitespace-normal" },
-  { id: "gdcsApproval", label: "3. GĐCS duyệt", width: "w-[156px] min-w-[156px] whitespace-normal" },
-  { id: "result", label: "Kết quả", width: "w-[128px] min-w-[128px] whitespace-normal" }
+  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[164px] min-w-[164px] whitespace-normal" },
+  { id: "dossierB1B13", label: "Mở Hồ sơ B1–B13", width: "w-[126px] min-w-[126px] text-center" },
+  { id: "b5Eval", label: "B5/B4B Đánh giá", width: "w-[132px] min-w-[132px] whitespace-normal" },
+  { id: "b6Trial", label: "B6 Học trải nghiệm", width: "w-[144px] min-w-[144px] whitespace-normal" },
+  { id: "b7Psych", label: "B7 Tâm lý (khi cần)", width: "w-[144px] min-w-[144px] whitespace-normal" },
+  { id: "bghApproval", label: "NT Mầm non / BGH", width: "w-[152px] min-w-[152px] whitespace-normal" },
+  { id: "gdcsApproval", label: "GĐCS", width: "w-[152px] min-w-[152px] whitespace-normal" }
 ];
 
 const assessCols = [
@@ -5695,22 +5695,29 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   Luồng xét duyệt:
                 </span>
                 <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
-                  <span className="px-1.5 py-0.5 rounded bg-slate-100 text-[#003B3A] font-bold">1</span>
-                  BGH MN duyệt
+                  B5/B4B Đánh giá
                 </span>
                 <span className="text-slate-300">→</span>
-                <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/70">
-                  Đạt / Miễn HTN → Chuyển thẳng GĐCS duyệt
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
+                  B6 Học trải nghiệm
+                </span>
+                <span className="text-slate-300">→</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
+                  B7 Tâm lý (khi cần)
+                </span>
+                <span className="text-slate-300">→</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-[#003B3A]">
+                  B6/B9A/B10 Duyệt (NT Mầm non / BGH → GĐCS)
                 </span>
                 <span className="text-slate-300">|</span>
-                <span className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/70">
-                  <span className="px-1 rounded bg-amber-100 text-amber-900 font-bold">2</span>
-                  Học trải nghiệm → Phân công &amp; Duyệt KQ học trải nghiệm (Đang xử lý)
+                <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">
+                  ✓ Hoàn thành
                 </span>
-                <span className="text-slate-300">→</span>
-                <span className="inline-flex items-center gap-1 font-semibold text-[#00736E]">
-                  <span className="px-1.5 py-0.5 rounded bg-[#F0FDFA] text-[#003B3A] border border-[#99F6E4] font-bold">3</span>
-                  GĐCS duyệt → Kết quả
+                <span className="inline-flex items-center gap-1 font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/80">
+                  ● Đợi
+                </span>
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                  Không KS
                 </span>
               </div>
 
@@ -5733,7 +5740,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             if (col.id === "gdcsApproval") return showGdcsSection;
                             return true;
                           }).map(col => (
-                            <th key={col.id} className={`px-3.5 py-3 text-[11px] font-semibold border-b border-[#003B3A] ${col.id === "bghApproval" || col.id === "gdcsApproval" || col.id === "result" ? "text-[#5EEAD4]" : col.id === "fullName" || col.id === "actions" ? "text-white" : "text-teal-100"} ${col.width}`}>
+                            <th key={col.id} className={`px-3.5 py-3 text-[11px] font-semibold border-b border-[#003B3A] ${col.id === "bghApproval" || col.id === "gdcsApproval" ? "text-[#5EEAD4]" : col.id === "fullName" || col.id === "dossierB1B13" ? "text-white" : "text-teal-100"} ${col.width}`}>
                               {col.label}
                             </th>
                           ))}
@@ -5956,192 +5963,244 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </button>
                                 </td>
 
-                                {/* 1. BGH MN duyệt */}
-                                {showBghSection && (
-                                  <td className="w-[156px] min-w-[156px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                    {renderApprovalCell(s, true)}
-                                  </td>
-                                )}
+                                {/* B5/B4B Đánh giá */}
+                                <td className="w-[132px] min-w-[132px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                  {s.scoredCount > 0 ? (
+                                    <div className="flex flex-col items-start gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => openEvaluation(s)}
+                                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
+                                      >
+                                        ✓ Hoàn thành
+                                      </button>
+                                      <span className="text-[10px] text-slate-500 font-medium tabular-nums">
+                                        {s.datCount ?? 0}/{s.scoredCount} Đạt
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => openEvaluation(s)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 cursor-pointer"
+                                    >
+                                      ● Đợi
+                                    </button>
+                                  )}
+                                </td>
 
-                                {/* 2. Phân công học trải nghiệm */}
-                                <td className="w-[162px] min-w-[162px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                {/* B6 Học trải nghiệm */}
+                                <td className="w-[144px] min-w-[144px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
                                     const wf = getPreschoolRowWorkflowState(s);
-                                    if (wf.isExemptTrial) {
+                                    const needTrial = Boolean(
+                                      wf.hasTrialData ||
+                                        s.bghApprovalStatus === "HEN_TRAI_NGHIEM" ||
+                                        s.bghApprovalStatus === "DAT_HOC_THU"
+                                    );
+                                    if (!needTrial || wf.isExemptTrial) {
                                       return (
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-800 border border-teal-200/70">
-                                          Miễn học trải nghiệm
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                          Không KS
                                         </span>
                                       );
                                     }
-                                    if (!wf.hasTrialData) {
-                                      return <span className="text-[11px] text-slate-300 font-medium">—</span>;
-                                    }
-                                    const psyStatusBadge =
-                                      s.trialPsychologyStatus === "EVALUATED"
-                                        ? { text: "TL: Đã đánh giá", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-                                        : s.trialPsychologyStatus === "CONFIRMED"
-                                          ? { text: "TL: Đã xác nhận", cls: "bg-teal-50 text-[#00736E] border-teal-200" }
-                                          : { text: "TL: Chờ xác nhận", cls: "bg-amber-50 text-amber-800 border-amber-200" };
-
+                                    const trialDone = Boolean(wf.probRes || wf.probBgh);
                                     return (
-                                      <div className="flex flex-col gap-1.5 w-full items-start">
-                                        {s.probationaryTeacher || s.probationaryClass ? (
-                                          <div className="flex flex-col gap-1 w-full items-start">
-                                            {s.probationaryTeacher && (
-                                              <span className="text-[11px] font-bold text-slate-800 leading-snug">{s.probationaryTeacher}</span>
-                                            )}
-                                            {s.probationaryClass && (
-                                              <span className="text-[10px] text-slate-500 font-medium">{s.probationaryClass}</span>
-                                            )}
-                                            {s.trialPsychologyScreening && (
-                                              <div className="flex flex-col gap-0.5 pt-0.5 w-full">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border w-fit ${psyStatusBadge.cls}`}>
-                                                  {psyStatusBadge.text}
-                                                </span>
-                                                {s.trialPsychologistName && (
-                                                  <span className="text-[10px] text-slate-500 truncate max-w-[144px]" title={`GV Tâm lý: ${s.trialPsychologistName}`}>
-                                                    GV TL: <strong className="text-slate-700">{s.trialPsychologistName}</strong>
-                                                  </span>
-                                                )}
-                                              </div>
-                                            )}
-                                            <button
-                                              type="button"
-                                              onClick={() => openAssignModal(s)}
-                                              className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-[#003B3A] bg-[#F0FDFA] hover:bg-[#CCFBF1] active:scale-[0.98] rounded-lg border border-[#99F6E4] transition-all cursor-pointer"
-                                            >
-                                              Mở phiếu &amp; Phân công
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <button
-                                            type="button"
-                                            onClick={() => openAssignModal(s)}
-                                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-white bg-[#008B85] hover:bg-[#00736E] active:scale-[0.98] rounded-lg transition-all shadow-2xs cursor-pointer"
-                                          >
-                                            Phân công
-                                          </button>
+                                      <div className="flex flex-col items-start gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => openAssignModal(s)}
+                                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
+                                            trialDone
+                                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                              : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                          }`}
+                                        >
+                                          {trialDone ? "✓ Hoàn thành" : "● Đợi"}
+                                        </button>
+                                        {(s.probationaryClass || s.probationaryTeacher) && (
+                                          <span className="text-[10px] text-slate-600 leading-snug truncate max-w-[130px]" title={`${s.probationaryClass || ""} · ${s.probationaryTeacher || ""}`}>
+                                            {s.probationaryClass || s.probationaryTeacher}
+                                          </span>
+                                        )}
+                                        {wf.probRes && (
+                                          <span className={`text-[10px] font-semibold ${wf.probRes === "DAT" ? "text-emerald-700" : "text-rose-700"}`}>
+                                            KQ: {wf.probRes === "DAT" ? "Đạt" : "Chưa đạt"}
+                                          </span>
                                         )}
                                       </div>
                                     );
                                   })()}
                                 </td>
 
-                                {/* 2. Kết quả học trải nghiệm (Gom từ tab Duyệt KQ Học trải nghiệm) */}
-                                <td className="w-[172px] min-w-[172px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                {/* B7 Tâm lý (khi cần) */}
+                                <td className="w-[144px] min-w-[144px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
                                   {(() => {
-                                    const wf = getPreschoolRowWorkflowState(s);
-                                    if (wf.isExemptTrial) {
-                                      return <span className="text-[11px] text-slate-400 font-medium">Không cần HTN</span>;
+                                    const needPsy = Boolean(
+                                      s.trialPsychologyScreening ||
+                                        s.trialPsychologistName ||
+                                        s.trialPsychologyStatus
+                                    );
+                                    if (!needPsy) {
+                                      return (
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                          Không KS
+                                        </span>
+                                      );
                                     }
-                                    if (!wf.hasTrialData) {
-                                      return <span className="text-[11px] text-slate-300 font-medium">—</span>;
-                                    }
-                                    const gvLabel =
-                                      wf.probRes === "DAT"
-                                        ? { text: "GV: Đạt", cls: "bg-emerald-50 text-emerald-700 border-emerald-200/70" }
-                                        : wf.probRes === "CHUA_DAT" || wf.probRes === "KHONG_DAT"
-                                          ? { text: "GV: Chưa đạt", cls: "bg-rose-50 text-rose-700 border-rose-200/70" }
-                                          : { text: "GV: Chưa ĐG", cls: "bg-slate-100 text-slate-500 border-slate-200/70" };
-
-                                    const bghHtLabel =
-                                      wf.probBgh === "DAT"
-                                        ? { text: "BGH: Đạt", cls: "bg-emerald-50 text-emerald-800 border-emerald-200" }
-                                        : wf.probBgh === "KHONG_DAT"
-                                          ? { text: "BGH: Không đạt", cls: "bg-rose-50 text-rose-800 border-rose-200" }
-                                          : wf.probBgh === "Y_KIEN_KHAC"
-                                            ? { text: "BGH: Ý kiến khác", cls: "bg-amber-50 text-amber-800 border-amber-200" }
-                                            : { text: "BGH: Chưa duyệt", cls: "bg-amber-50/70 text-amber-700 border-amber-200/70" };
-
-                                    const psyConclusionBadge = s.trialPsychologyScreening
-                                      ? s.trialPsychologyConclusion === "BINH_THUONG"
-                                        ? { text: "TL: Bình thường", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-                                        : s.trialPsychologyConclusion === "CAN_THEO_DOI"
-                                          ? { text: "TL: Cần theo dõi", cls: "bg-amber-50 text-amber-800 border-amber-200" }
-                                          : s.trialPsychologyConclusion === "CAN_CAN_THIEP"
-                                            ? { text: "TL: Cần can thiệp", cls: "bg-rose-50 text-rose-700 border-rose-200" }
-                                            : null
-                                      : null;
-
+                                    const psyDone =
+                                      s.trialPsychologyStatus === "COMPLETED" ||
+                                      s.trialPsychologyStatus === "EVALUATED";
                                     return (
-                                      <div className="flex flex-col gap-1.5 items-start w-full">
-                                        <div className="flex flex-wrap items-center gap-1">
-                                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${gvLabel.cls}`}>
-                                            {gvLabel.text}
-                                          </span>
-                                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${bghHtLabel.cls}`}>
-                                            {bghHtLabel.text}
-                                          </span>
-                                          {psyConclusionBadge && (
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${psyConclusionBadge.cls}`}>
-                                              {psyConclusionBadge.text}
-                                            </span>
-                                          )}
-                                        </div>
+                                      <div className="flex flex-col items-start gap-1">
                                         <button
                                           type="button"
-                                          onClick={() => openAssignModal(s)}
-                                          className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-[#003B3A] bg-white hover:bg-[#F0FDFA] rounded-lg border border-slate-200 hover:border-[#008B85] transition-all cursor-pointer"
+                                          onClick={() => setWorkflowDrawerStudentId(s.id)}
+                                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
+                                            psyDone
+                                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                              : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                          }`}
                                         >
-                                          <ClipboardList className="w-3 h-3 text-[#008B85]" />
-                                          {wf.probBgh ? "Xem / Sửa KQ HTN" : "Duyệt KQ học trải nghiệm"}
+                                          {psyDone ? "✓ Hoàn thành" : "● Đợi"}
                                         </button>
+                                        {s.trialPsychologistName && (
+                                          <span className="text-[10px] text-slate-600 truncate max-w-[130px]" title={`GV Tâm lý: ${s.trialPsychologistName}`}>
+                                            {s.trialPsychologistName}
+                                          </span>
+                                        )}
                                       </div>
                                     );
                                   })()}
                                 </td>
 
-                                {/* 3. GĐCS duyệt */}
-                                {showGdcsSection && (
-                                  <td className="w-[156px] min-w-[156px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                    {renderApprovalCell(s, false)}
-                                  </td>
-                                )}
-
-                                {/* Kết quả chung cuộc */}
-                                <td className="w-[128px] min-w-[128px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
-                                  {(() => {
-                                    const wf = getPreschoolRowWorkflowState(s);
-                                    if (wf.gdcsRaw) {
-                                      const isFinalPass =
-                                        wf.isExemptTrial ||
-                                        wf.gdcsRaw === "DAT" ||
-                                        wf.gdcsRaw === "DAT_MIEN_HOC_THU" ||
-                                        wf.isTrialPassed;
+                                {/* B6/B9A/B10 Duyệt — Cột 1: NT Mầm non / BGH */}
+                                {showBghSection && (
+                                  <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                    {(() => {
+                                      const bghDone = Boolean(s.bghApprovalStatus);
+                                      const bghLabelMap: Record<string, string> = {
+                                        DE_XUAT_DAT: "Đề xuất Đạt",
+                                        DAT: "Đề xuất Đạt",
+                                        DAT_MIEN_HOC_THU: "Đạt · Miễn HTN",
+                                        DE_XUAT_CHUA_DAT: "Đề xuất Chưa đạt",
+                                        KHONG_DAT: "Chưa đạt",
+                                        HEN_TRAI_NGHIEM: "Hẹn trải nghiệm",
+                                        DAT_HOC_THU: "Học trải nghiệm",
+                                      };
                                       return (
-                                        <div className="flex flex-col gap-1.5 items-start">
-                                          {getStatusBadge(s.generalResult || s.gdcsApprovalStatus)}
-                                          {isFinalPass && (
+                                        <div className="flex flex-col items-start gap-1.5">
+                                          <div className="flex items-center gap-1.5">
                                             <button
                                               type="button"
-                                              onClick={() => openEmailCongratsModal(s)}
-                                              className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-white bg-[#003B3A] hover:bg-[#005854] active:scale-[0.98] rounded-lg transition-all cursor-pointer"
+                                              onClick={() => openEvaluation(s)}
+                                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
+                                                bghDone
+                                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                              }`}
                                             >
-                                              <Mail className="w-3 h-3 text-[#5EEAD4]" /> Trả kết quả
+                                              {bghDone ? "✓ Hoàn thành" : "● Đợi"}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => sendApprovalNotification(s.id, "BGH_MN")}
+                                              disabled={sendingNotifyId === s.id}
+                                              title="Gửi email nhắc duyệt tới Nhóm trưởng / BGH Mầm non"
+                                              className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-[#F0FDFA] hover:border-[#008B85] text-slate-500 hover:text-[#00736E] cursor-pointer transition-colors"
+                                            >
+                                              <Mail className="w-3 h-3" />
+                                            </button>
+                                          </div>
+                                          {bghDone ? (
+                                            <span className="text-[10px] font-semibold text-slate-700 leading-snug">
+                                              {bghLabelMap[s.bghApprovalStatus] || s.bghApprovalStatus}
+                                            </span>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              onClick={() => openEvaluation(s)}
+                                              className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#008B85] hover:bg-[#00736E] text-white cursor-pointer"
+                                            >
+                                              Xét duyệt
                                             </button>
                                           )}
                                         </div>
                                       );
-                                    }
-                                    if (wf.canGdcsApprove) {
+                                    })()}
+                                  </td>
+                                )}
+
+                                {/* B6/B9A/B10 Duyệt — Cột 2: GĐCS */}
+                                {showGdcsSection && (
+                                  <td className="w-[152px] min-w-[152px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                    {(() => {
+                                      const wf = getPreschoolRowWorkflowState(s);
+                                      const gdcsDone = Boolean(wf.gdcsRaw);
+                                      const isFinalPass =
+                                        wf.gdcsRaw === "DAT" ||
+                                        wf.gdcsRaw === "DAT_MIEN_HOC_THU" ||
+                                        wf.isTrialPassed;
                                       return (
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#99F6E4]">
-                                          Chờ GĐCS duyệt
-                                        </span>
+                                        <div className="flex flex-col items-start gap-1.5">
+                                          <div className="flex items-center gap-1.5">
+                                            <button
+                                              type="button"
+                                              onClick={() => openEvaluation(s)}
+                                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border cursor-pointer ${
+                                                gdcsDone
+                                                  ? isFinalPass
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                                    : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                                                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                              }`}
+                                            >
+                                              {gdcsDone ? "✓ Hoàn thành" : "● Đợi"}
+                                            </button>
+                                            {!gdcsDone && (
+                                              <button
+                                                type="button"
+                                                onClick={() => sendApprovalNotification(s.id, "GDCS")}
+                                                disabled={sendingNotifyId === s.id}
+                                                title="Gửi email phê duyệt 1 chạm tới GĐCS"
+                                                className="p-1 rounded-lg border border-slate-200 bg-white hover:bg-[#F0FDFA] hover:border-[#008B85] text-slate-500 hover:text-[#00736E] cursor-pointer transition-colors"
+                                              >
+                                                <Mail className="w-3 h-3" />
+                                              </button>
+                                            )}
+                                          </div>
+                                          {gdcsDone ? (
+                                            <div className="flex flex-col items-start gap-1">
+                                              <span className={`text-[10px] font-bold ${isFinalPass ? "text-emerald-700" : "text-rose-700"}`}>
+                                                {isFinalPass ? "Đạt" : "Chưa đạt"}
+                                              </span>
+                                              {isFinalPass && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openEmailCongratsModal(s)}
+                                                  className="inline-flex items-center justify-center gap-1 px-2 py-0.5 text-[10px] font-semibold text-white bg-[#003B3A] hover:bg-[#005854] rounded-md cursor-pointer"
+                                                >
+                                                  <Mail className="w-3 h-3 text-[#5EEAD4]" /> Trả kết quả
+                                                </button>
+                                              )}
+                                            </div>
+                                          ) : wf.canGdcsApprove ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => openEvaluation(s)}
+                                              className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#003B3A] hover:bg-[#005854] text-white cursor-pointer"
+                                            >
+                                              Phê duyệt
+                                            </button>
+                                          ) : (
+                                            <span className="text-[10px] text-slate-400">Chờ NT MN/BGH</span>
+                                          )}
+                                        </div>
                                       );
-                                    }
-                                    if (wf.bghRaw || wf.hasTrialData) {
-                                      return (
-                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/80">
-                                          <Clock className="w-3 h-3 text-amber-600" />
-                                          Đang xử lý
-                                        </span>
-                                      );
-                                    }
-                                    return getStatusBadge(s.generalResult);
-                                  })()}
-                                </td>
+                                    })()}
+                                  </td>
+                                )}
                               </tr>
                             );
                           })}
