@@ -89,11 +89,129 @@ export async function GET(
     }
 
     // Derive accurate legacy status & approved outcome for pre-existing records
-    const legacyDevScoreRows = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT COUNT(*) as cnt FROM "PreschoolDevScore" WHERE "studentId" = ?`,
-      id
-    ).catch(() => [])
-    const hasLegacyScores = Number(legacyDevScoreRows?.[0]?.cnt || 0) > 0
+    const legacyScoresList = await (prisma as any).preschoolDevScore.findMany({
+      where: { studentId: id },
+      include: { criteria: { include: { area: true } } },
+    }).catch(() => [])
+    const hasLegacyScores = legacyScoresList.length > 0
+
+    // Extract height/weight & counts from PreschoolDevScore for unified B4A & B5/B4B visibility
+    let legacyHeightCm: number | null = null
+    let legacyWeightKg: number | null = null
+    let legacyDatCount = 0
+    let legacyKhongDatCount = 0
+    let legacyChuaTheHienCount = 0
+    for (const sc of legacyScoresList) {
+      const cCode = String(sc.criteria?.code || "").toUpperCase()
+      const cName = String(sc.criteria?.name || "").toLowerCase()
+      if (cCode.endsWith("_01") || cName.includes("chiều cao")) {
+        const rawPart = sc.note?.includes("|") ? sc.note.split("|")[0] : sc.note || ""
+        const num = parseFloat(String(rawPart).replace(/[^\d.]/g, ""))
+        if (!isNaN(num) && num > 0) legacyHeightCm = num
+      } else if (cCode.endsWith("_02") || cName.includes("cân nặng")) {
+        const rawPart = sc.note?.includes("|") ? sc.note.split("|")[0] : sc.note || ""
+        const num = parseFloat(String(rawPart).replace(/[^\d.]/g, ""))
+        if (!isNaN(num) && num > 0) legacyWeightKg = num
+      }
+      if (sc.result === "DAT") legacyDatCount++
+      else if (sc.result === "KHONG_DAT") legacyKhongDatCount++
+      else legacyChuaTheHienCount++
+    }
+
+    // Fetch batch/period teacher & medical assignments for this student
+    const batchAssignments = studentRaw.periodId
+      ? await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+          where: {
+            periodId: studentRaw.periodId,
+            OR: studentRaw.batchId ? [{ batchId: studentRaw.batchId }, { batchId: null }] : [{ batchId: null }],
+          },
+          include: { user: { select: { id: true, fullName: true, email: true, role: true } } },
+        }).catch(() => [])
+      : []
+
+    const normGrade = String(studentRaw.grade || "").toLowerCase().trim()
+    const batchMedicalNames: string[] = []
+    const batchTeacherNames: string[] = []
+    for (const a of batchAssignments) {
+      const ag = String(a.grade || "").trim()
+      const uName = a.user?.fullName
+      if (!uName) continue
+      if (ag === "Y_TE_B4A") {
+        if (!batchMedicalNames.includes(uName)) batchMedicalNames.push(uName)
+      } else {
+        const agLow = ag.toLowerCase()
+        const matched =
+          !normGrade ||
+          agLow === normGrade ||
+          (normGrade.includes("12") && agLow.includes("12")) ||
+          (normGrade.includes("18") && agLow.includes("18")) ||
+          (normGrade.includes("24") && agLow.includes("24")) ||
+          ((normGrade.includes("3") || normGrade.includes("bé")) && (agLow.includes("3") || agLow.includes("bé"))) ||
+          ((normGrade.includes("4") || normGrade.includes("nhỡ")) && (agLow.includes("4") || agLow.includes("nhỡ"))) ||
+          ((normGrade.includes("5") || normGrade.includes("lớn")) && (agLow.includes("5") || agLow.includes("lớn")))
+        if (matched && !batchTeacherNames.includes(uName)) batchTeacherNames.push(uName)
+      }
+    }
+
+    // Categorized staff directory: GVCN / Mầm non, Tổ Y tế, Tổ Tâm lý (khi cần), Khác
+    const rawUsers = await (prisma as any).user.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+        teacher: {
+          select: {
+            id: true,
+            teacherName: true,
+            departmentRel: { select: { name: true } },
+            classes: {
+              select: { className: true, grade: true },
+              take: 2,
+            },
+          },
+        },
+      },
+      orderBy: { fullName: "asc" },
+    }).catch(() => [])
+
+    const homeroomTeachers: any[] = []
+    const medicalStaff: any[] = []
+    const psychologyStaff: any[] = []
+    const otherStaff: any[] = []
+
+    for (const u of rawUsers) {
+      const deptName = String(u.teacher?.departmentRel?.name || "").trim()
+      const deptNorm = deptName.toLowerCase().normalize("NFC")
+      const roleNorm = String(u.role || "").toUpperCase()
+      const hrClasses = (u.teacher?.classes || []).map((c: any) => c.className).filter(Boolean)
+      const entry = {
+        id: u.id,
+        fullName: u.fullName || u.teacher?.teacherName || u.email,
+        email: u.email || "",
+        role: u.role || "",
+        departmentName: deptName,
+        homeroomClasses: hrClasses,
+      }
+      if (roleNorm === "Y_TE" || deptNorm.includes("y tế") || deptNorm.includes("y te") || deptNorm.includes("sức khỏe")) {
+        medicalStaff.push(entry)
+      } else if (roleNorm === "TAM_LY" || deptNorm.includes("tâm lý") || deptNorm.includes("tam ly") || deptNorm.includes("tham vấn")) {
+        psychologyStaff.push(entry)
+      } else if (
+        hrClasses.length > 0 ||
+        deptNorm.includes("mầm non") ||
+        deptNorm.includes("nhà trẻ") ||
+        deptNorm.includes("mẫu giáo") ||
+        roleNorm === "TEACHER" ||
+        roleNorm === "GVCN" ||
+        roleNorm === "BGH_MN"
+      ) {
+        homeroomTeachers.push(entry)
+      } else {
+        otherStaff.push(entry)
+      }
+    }
     const admNorm = String(studentRaw.admissionResult || "")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -186,6 +304,31 @@ export async function GET(
       suggestion,
       preApprovalGate: gate,
       viewerPermissions,
+      staffDirectory: {
+        homeroomTeachers,
+        medicalStaff,
+        psychologyStaff,
+        otherStaff,
+      },
+      legacyDevSummary: {
+        totalScored: legacyScoresList.length,
+        datCount: legacyDatCount,
+        khongDatCount: legacyKhongDatCount,
+        chuaTheHienCount: legacyChuaTheHienCount,
+        pctDat: legacyScoresList.length > 0 ? Math.round((legacyDatCount / legacyScoresList.length) * 100) : 0,
+        heightCm: legacyHeightCm,
+        weightKg: legacyWeightKg,
+        assignedTeachersFromBatch: batchTeacherNames,
+        assignedMedicalFromBatch: batchMedicalNames,
+        scores: legacyScoresList.map((sc: any) => ({
+          id: sc.id,
+          criteriaCode: sc.criteria?.code || "",
+          criteriaName: sc.criteria?.name || "",
+          areaName: sc.criteria?.area?.name || "",
+          result: sc.result || "",
+          note: sc.note || "",
+        })),
+      },
     })
   } catch (err: any) {
     console.error("GET /api/preschool-workflow/[id] error:", err)
@@ -210,11 +353,129 @@ export async function PATCH(
     }
 
     // Derive accurate legacy status & approved outcome for pre-existing records
-    const legacyDevScoreRows = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT COUNT(*) as cnt FROM "PreschoolDevScore" WHERE "studentId" = ?`,
-      id
-    ).catch(() => [])
-    const hasLegacyScores = Number(legacyDevScoreRows?.[0]?.cnt || 0) > 0
+    const legacyScoresList = await (prisma as any).preschoolDevScore.findMany({
+      where: { studentId: id },
+      include: { criteria: { include: { area: true } } },
+    }).catch(() => [])
+    const hasLegacyScores = legacyScoresList.length > 0
+
+    // Extract height/weight & counts from PreschoolDevScore for unified B4A & B5/B4B visibility
+    let legacyHeightCm: number | null = null
+    let legacyWeightKg: number | null = null
+    let legacyDatCount = 0
+    let legacyKhongDatCount = 0
+    let legacyChuaTheHienCount = 0
+    for (const sc of legacyScoresList) {
+      const cCode = String(sc.criteria?.code || "").toUpperCase()
+      const cName = String(sc.criteria?.name || "").toLowerCase()
+      if (cCode.endsWith("_01") || cName.includes("chiều cao")) {
+        const rawPart = sc.note?.includes("|") ? sc.note.split("|")[0] : sc.note || ""
+        const num = parseFloat(String(rawPart).replace(/[^\d.]/g, ""))
+        if (!isNaN(num) && num > 0) legacyHeightCm = num
+      } else if (cCode.endsWith("_02") || cName.includes("cân nặng")) {
+        const rawPart = sc.note?.includes("|") ? sc.note.split("|")[0] : sc.note || ""
+        const num = parseFloat(String(rawPart).replace(/[^\d.]/g, ""))
+        if (!isNaN(num) && num > 0) legacyWeightKg = num
+      }
+      if (sc.result === "DAT") legacyDatCount++
+      else if (sc.result === "KHONG_DAT") legacyKhongDatCount++
+      else legacyChuaTheHienCount++
+    }
+
+    // Fetch batch/period teacher & medical assignments for this student
+    const batchAssignments = studentRaw.periodId
+      ? await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
+          where: {
+            periodId: studentRaw.periodId,
+            OR: studentRaw.batchId ? [{ batchId: studentRaw.batchId }, { batchId: null }] : [{ batchId: null }],
+          },
+          include: { user: { select: { id: true, fullName: true, email: true, role: true } } },
+        }).catch(() => [])
+      : []
+
+    const normGrade = String(studentRaw.grade || "").toLowerCase().trim()
+    const batchMedicalNames: string[] = []
+    const batchTeacherNames: string[] = []
+    for (const a of batchAssignments) {
+      const ag = String(a.grade || "").trim()
+      const uName = a.user?.fullName
+      if (!uName) continue
+      if (ag === "Y_TE_B4A") {
+        if (!batchMedicalNames.includes(uName)) batchMedicalNames.push(uName)
+      } else {
+        const agLow = ag.toLowerCase()
+        const matched =
+          !normGrade ||
+          agLow === normGrade ||
+          (normGrade.includes("12") && agLow.includes("12")) ||
+          (normGrade.includes("18") && agLow.includes("18")) ||
+          (normGrade.includes("24") && agLow.includes("24")) ||
+          ((normGrade.includes("3") || normGrade.includes("bé")) && (agLow.includes("3") || agLow.includes("bé"))) ||
+          ((normGrade.includes("4") || normGrade.includes("nhỡ")) && (agLow.includes("4") || agLow.includes("nhỡ"))) ||
+          ((normGrade.includes("5") || normGrade.includes("lớn")) && (agLow.includes("5") || agLow.includes("lớn")))
+        if (matched && !batchTeacherNames.includes(uName)) batchTeacherNames.push(uName)
+      }
+    }
+
+    // Categorized staff directory: GVCN / Mầm non, Tổ Y tế, Tổ Tâm lý (khi cần), Khác
+    const rawUsers = await (prisma as any).user.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        role: true,
+        teacher: {
+          select: {
+            id: true,
+            teacherName: true,
+            departmentRel: { select: { name: true } },
+            classes: {
+              select: { className: true, grade: true },
+              take: 2,
+            },
+          },
+        },
+      },
+      orderBy: { fullName: "asc" },
+    }).catch(() => [])
+
+    const homeroomTeachers: any[] = []
+    const medicalStaff: any[] = []
+    const psychologyStaff: any[] = []
+    const otherStaff: any[] = []
+
+    for (const u of rawUsers) {
+      const deptName = String(u.teacher?.departmentRel?.name || "").trim()
+      const deptNorm = deptName.toLowerCase().normalize("NFC")
+      const roleNorm = String(u.role || "").toUpperCase()
+      const hrClasses = (u.teacher?.classes || []).map((c: any) => c.className).filter(Boolean)
+      const entry = {
+        id: u.id,
+        fullName: u.fullName || u.teacher?.teacherName || u.email,
+        email: u.email || "",
+        role: u.role || "",
+        departmentName: deptName,
+        homeroomClasses: hrClasses,
+      }
+      if (roleNorm === "Y_TE" || deptNorm.includes("y tế") || deptNorm.includes("y te") || deptNorm.includes("sức khỏe")) {
+        medicalStaff.push(entry)
+      } else if (roleNorm === "TAM_LY" || deptNorm.includes("tâm lý") || deptNorm.includes("tam ly") || deptNorm.includes("tham vấn")) {
+        psychologyStaff.push(entry)
+      } else if (
+        hrClasses.length > 0 ||
+        deptNorm.includes("mầm non") ||
+        deptNorm.includes("nhà trẻ") ||
+        deptNorm.includes("mẫu giáo") ||
+        roleNorm === "TEACHER" ||
+        roleNorm === "GVCN" ||
+        roleNorm === "BGH_MN"
+      ) {
+        homeroomTeachers.push(entry)
+      } else {
+        otherStaff.push(entry)
+      }
+    }
     const admNorm = String(studentRaw.admissionResult || "")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -371,6 +632,33 @@ export async function PATCH(
         nowIso,
         targetRoundId
       )
+
+      // Đồng bộ Chiều cao & Cân nặng sang PreschoolDevScore (nếu đã có tiêu chí Thể chất tương ứng)
+      try {
+        const existingScores = await (prisma as any).preschoolDevScore.findMany({
+          where: { studentId: id },
+          include: { criteria: true },
+        })
+        for (const sc of existingScores) {
+          const cCode = String(sc.criteria?.code || "").toUpperCase()
+          const cName = String(sc.criteria?.name || "").toLowerCase()
+          if (cCode.endsWith("_01") || cName.includes("chiều cao")) {
+            const obs = sc.note?.includes("|") ? sc.note.split("|")[1] : ""
+            const newNote = obs ? `${heightCm} cm|${obs}` : `${heightCm} cm`
+            await (prisma as any).preschoolDevScore.update({
+              where: { id: sc.id },
+              data: { note: newNote, result: sc.result || "DAT" },
+            })
+          } else if (cCode.endsWith("_02") || cName.includes("cân nặng")) {
+            const obs = sc.note?.includes("|") ? sc.note.split("|")[1] : ""
+            const newNote = obs ? `${weightKg} kg|${obs}` : `${weightKg} kg`
+            await (prisma as any).preschoolDevScore.update({
+              where: { id: sc.id },
+              data: { note: newNote, result: sc.result || "DAT" },
+            })
+          }
+        }
+      } catch {}
 
       const nextStatus = student.workflowStatus === "DA_HEN" ? "DANG_DANH_GIA" : student.workflowStatus
       if (nextStatus !== student.workflowStatus) {

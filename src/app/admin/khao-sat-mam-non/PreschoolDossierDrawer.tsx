@@ -103,7 +103,7 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
       setDossier(data)
       const latest = data.activeRound || data.rounds?.[data.rounds.length - 1] || null
       setSelectedRoundId(latest?.id || null)
-      hydrateRoundFields(data.student, latest, data.suggestion)
+      hydrateRoundFields(data.student, latest, data.suggestion, data.legacyDevSummary)
     } catch (err: any) {
       setError(err?.message || "Lỗi tải dữ liệu.")
     } finally {
@@ -111,14 +111,16 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
     }
   }
 
-  const hydrateRoundFields = (student: any, round: any, suggestion: any) => {
+  const hydrateRoundFields = (student: any, round: any, suggestion: any, legacyDev?: any) => {
     setIntakeMode(student?.intakeMode === "HOC_TRAI_NGHIEM" ? "HOC_TRAI_NGHIEM" : "KHAO_SAT_MOI")
     setAssignedTeacherId(round?.assignedTeacherId || "")
     setAssignedMedicalId(round?.assignedMedicalId || "")
     setAssignedPsychologistId(round?.assignedPsychologistId || "")
 
-    setHeightCm(round?.heightCm != null ? String(round.heightCm) : "")
-    setWeightKg(round?.weightKg != null ? String(round.weightKg) : "")
+    const effHeight = round?.heightCm != null ? round.heightCm : legacyDev?.heightCm ?? null
+    const effWeight = round?.weightKg != null ? round.weightKg : legacyDev?.weightKg ?? null
+    setHeightCm(effHeight != null ? String(effHeight) : "")
+    setWeightKg(effWeight != null ? String(effWeight) : "")
     setPhysicalStatus(round?.physicalStatus && round.physicalStatus !== "DA_KIEM_TRA_AN_CHI_TIET" ? round.physicalStatus : "BINH_THUONG")
     setPhysicalNote(round?.physicalNote || "")
 
@@ -252,15 +254,107 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
   const activeFormDef = PRESCHOOL_FORM_REGISTRY[selectedFormCode] || PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.01"]
   const psyFormDef = PRESCHOOL_FORM_REGISTRY["BM.KTĐBCL.09"]
 
+  const staffDir = dossier?.staffDirectory || null
+  const legacyDev = dossier?.legacyDevSummary || null
+
+  const allDirectoryUsers: Array<{ id: string; fullName: string; email: string; role: string; departmentName?: string; homeroomClasses?: string[] }> = staffDir
+    ? [
+        ...(staffDir.homeroomTeachers || []),
+        ...(staffDir.medicalStaff || []),
+        ...(staffDir.psychologyStaff || []),
+        ...(staffDir.otherStaff || []),
+      ]
+    : staffUsers
+
+  const formatStaffOptionLabel = (u: any) => {
+    const extras: string[] = []
+    if (Array.isArray(u.homeroomClasses) && u.homeroomClasses.length > 0) {
+      extras.push(`GVCN ${u.homeroomClasses.join(", ")}`)
+    }
+    if (u.departmentName) {
+      extras.push(u.departmentName)
+    } else if (u.role) {
+      extras.push(u.role)
+    }
+    return extras.length > 0 ? `${u.fullName} (${extras.join(" · ")})` : u.fullName
+  }
+
+  // Tính toán nhân sự hiệu lực & trạng thái hoàn thành / đang đợi của từng bước
+  const effectiveTeacherName =
+    viewingRound?.assignedTeacherName ||
+    viewingRound?.teacherUserName ||
+    (legacyDev?.assignedTeachersFromBatch?.length ? legacyDev.assignedTeachersFromBatch.join(", ") : "") ||
+    "Chưa phân công"
+
+  const effectiveMedicalName =
+    viewingRound?.assignedMedicalName ||
+    viewingRound?.medicalUserName ||
+    (legacyDev?.assignedMedicalFromBatch?.length ? legacyDev.assignedMedicalFromBatch.join(", ") : "") ||
+    "Chưa phân công"
+
+  const hasHealthResult = Boolean(
+    viewingRound?.medicalCheckedAt ||
+      (viewingRound?.heightCm > 0 && viewingRound?.weightKg > 0) ||
+      (legacyDev?.heightCm > 0 && legacyDev?.weightKg > 0)
+  )
+  const hasEvalResult = Boolean(
+    viewingRound?.teacherSubmittedAt ||
+      (legacyDev?.totalScored || 0) > 0 ||
+      Object.values(criteriaRatings).some((c) => Boolean(c.result))
+  )
+  const hasPsyResult = Boolean(viewingRound?.psychologySubmittedAt)
+  const hasReviewDone = Boolean(student?.finalApprovedOutcome || student?.gdcsApprovalStatus)
+  const hasLettersDone = Boolean(student?.archivedAt || student?.resultDeliveredAt)
+
+  type StepStatus = "done" | "waiting" | "optional" | "pending"
+  const stepStatusMap: Record<DrawerTab, { status: StepStatus; label: string }> = {
+    intake:
+      wfStatus !== "DA_HEN" || viewingRound?.intakeConfirmedAt
+        ? { status: "done", label: "Đã hoàn thành" }
+        : { status: "waiting", label: "Đang đợi đón trẻ" },
+    health:
+      viewingRound?.roundType === "HOC_TRAI_NGHIEM"
+        ? { status: "optional", label: "Không bắt buộc" }
+        : hasHealthResult
+          ? { status: "done", label: "Đã hoàn thành" }
+          : { status: "waiting", label: "Đang đợi Y tế" },
+    evaluation: hasEvalResult
+      ? { status: "done", label: "Đã hoàn thành" }
+      : { status: "waiting", label: "Đang đợi GV đánh giá" },
+    psychology: hasPsyResult
+      ? { status: "done", label: "Đã hoàn thành" }
+      : wfStatus === "CHO_PHONG_VAN_TAM_LY"
+        ? { status: "waiting", label: "Đang đợi Tâm lý" }
+        : { status: "optional", label: "Khi cần" },
+    review: hasReviewDone
+      ? { status: "done", label: "Đã hoàn thành" }
+      : wfStatus === "CHO_DUYET" || student?.bghApprovalStatus || hasEvalResult
+        ? { status: "waiting", label: "Đang đợi duyệt" }
+        : { status: "pending", label: "Chờ bước trước" },
+    letters: hasLettersDone
+      ? { status: "done", label: "Đã hoàn thành" }
+      : wfStatus === "DA_DUYET" || wfStatus === "DA_TRA_KET_QUA"
+        ? { status: "waiting", label: "Đang đợi trả KQ" }
+        : { status: "pending", label: "Chờ bước trước" },
+    history: { status: "optional", label: "" },
+  }
+
   const tabs: Array<{ id: DrawerTab; label: string; icon: any }> = [
     { id: "intake", label: "B1–B3 Tiếp nhận", icon: ClipboardCheck },
     { id: "health", label: "B4A Y tế", icon: Stethoscope },
     { id: "evaluation", label: "B5/B4B Đánh giá", icon: FileText },
-    { id: "psychology", label: "B7 Tâm lý & Hẹn lại", icon: Brain },
+    { id: "psychology", label: "B7 Tâm lý (khi cần)", icon: Brain },
     { id: "review", label: "B6/B9A/B10 Duyệt", icon: CheckCircle2 },
     { id: "letters", label: "B11–B13 Thư & Lưu", icon: Archive },
     { id: "history", label: "Lịch sử", icon: History },
   ]
+
+  const completedStepLabels = tabs
+    .filter((t) => t.id !== "history" && stepStatusMap[t.id].status === "done")
+    .map((t) => t.label.split(" ")[0])
+  const waitingStepLabels = tabs
+    .filter((t) => t.id !== "history" && stepStatusMap[t.id].status === "waiting")
+    .map((t) => t.label)
 
   return (
     <>
@@ -342,11 +436,12 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
             </div>
           )}
 
-          {/* Navigation Tabs */}
+          {/* Navigation Tabs with Completion / Waiting Indicators */}
           <div className="bg-white border-b border-[#E2E8F0] px-4 flex items-center gap-1 overflow-x-auto">
             {tabs.map((t) => {
               const Icon = t.icon
               const active = activeTab === t.id
+              const st = stepStatusMap[t.id]
               return (
                 <button
                   key={t.id}
@@ -359,11 +454,36 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {t.label}
+                  <span>{t.label}</span>
+                  {t.id !== "history" && st.status === "done" && (
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold" title="Đã hoàn thành">
+                      ✓
+                    </span>
+                  )}
+                  {t.id !== "history" && st.status === "waiting" && (
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500" title={st.label} />
+                  )}
                 </button>
               )
             })}
           </div>
+
+          {/* Workflow Progress Summary Strip */}
+          {!loading && student && (
+            <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] px-6 py-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                Đã hoàn thành ({completedStepLabels.length}):{" "}
+                <strong className="text-slate-800">{completedStepLabels.length > 0 ? completedStepLabels.join(", ") : "Chưa có"}</strong>
+              </span>
+              <span className="text-slate-300">|</span>
+              <span className="inline-flex items-center gap-1.5 font-semibold text-amber-700">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                Đang đợi ({waitingStepLabels.length}):{" "}
+                <strong className="text-slate-800">{waitingStepLabels.length > 0 ? waitingStepLabels.join(" · ") : "Không còn bước chờ"}</strong>
+              </span>
+            </div>
+          )}
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -440,45 +560,126 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                 </div>
 
                 <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-3">
-                  <h3 className="text-sm font-bold text-[#003B3A]">Phân công nhân sự thực hiện</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-bold text-[#003B3A]">Phân công nhân sự thực hiện</h3>
+                    <span className="text-[11px] text-slate-500">
+                      Ưu tiên nhóm đúng Tổ chuyên môn · Tổ Tâm lý chỉ chọn khi cần
+                    </span>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">GV đánh giá / Quan sát</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        GV đánh giá / Quan sát
+                        <span className="ml-1 text-[10px] font-medium text-[#00736E]">(GVCN / Tổ Mầm non)</span>
+                      </label>
                       <select
                         value={assignedTeacherId}
                         onChange={(e) => setAssignedTeacherId(e.target.value)}
                         className="w-full rounded-xl border border-[#E2E8F0] px-2.5 py-2 bg-white"
                       >
                         <option value="">Chưa phân công</option>
-                        {staffUsers.map((u) => (
-                          <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
-                        ))}
+                        {staffDir ? (
+                          <>
+                            {staffDir.homeroomTeachers?.length > 0 && (
+                              <optgroup label="GVCN lớp / Giáo viên Mầm non">
+                                {staffDir.homeroomTeachers.map((u: any) => (
+                                  <option key={u.id} value={u.id}>{formatStaffOptionLabel(u)}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                            {staffDir.otherStaff?.length > 0 && (
+                              <optgroup label="Nhân sự khác">
+                                {staffDir.otherStaff.map((u: any) => (
+                                  <option key={u.id} value={u.id}>{formatStaffOptionLabel(u)}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </>
+                        ) : (
+                          staffUsers.map((u) => (
+                            <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
+                          ))
+                        )}
                       </select>
+                      {!assignedTeacherId && legacyDev?.assignedTeachersFromBatch?.length > 0 && (
+                        <p className="text-[10px] text-[#00736E] mt-1">
+                          Đang theo phân công đợt: <strong>{legacyDev.assignedTeachersFromBatch.join(", ")}</strong>
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Y tế (B4A)</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Y tế (B4A)
+                        <span className="ml-1 text-[10px] font-medium text-[#00736E]">(Tổ Y tế)</span>
+                      </label>
                       <select
                         value={assignedMedicalId}
                         onChange={(e) => setAssignedMedicalId(e.target.value)}
                         className="w-full rounded-xl border border-[#E2E8F0] px-2.5 py-2 bg-white"
                       >
                         <option value="">Chưa phân công</option>
-                        {staffUsers.map((u) => (
-                          <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
-                        ))}
+                        {staffDir ? (
+                          <>
+                            {staffDir.medicalStaff?.length > 0 && (
+                              <optgroup label="Tổ Y tế học đường">
+                                {staffDir.medicalStaff.map((u: any) => (
+                                  <option key={u.id} value={u.id}>{formatStaffOptionLabel(u)}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                            {staffDir.otherStaff?.length > 0 && (
+                              <optgroup label="Nhân sự khác">
+                                {staffDir.otherStaff.map((u: any) => (
+                                  <option key={u.id} value={u.id}>{formatStaffOptionLabel(u)}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </>
+                        ) : (
+                          staffUsers.map((u) => (
+                            <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
+                          ))
+                        )}
                       </select>
+                      {!assignedMedicalId && legacyDev?.assignedMedicalFromBatch?.length > 0 && (
+                        <p className="text-[10px] text-[#00736E] mt-1">
+                          Đang theo phân công đợt: <strong>{legacyDev.assignedMedicalFromBatch.join(", ")}</strong>
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Tâm lý (B7A)</label>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Tâm lý (B7A)
+                        <span className="ml-1 text-[10px] font-medium text-amber-700">(Tổ Tâm lý · Khi cần)</span>
+                      </label>
                       <select
                         value={assignedPsychologistId}
                         onChange={(e) => setAssignedPsychologistId(e.target.value)}
                         className="w-full rounded-xl border border-[#E2E8F0] px-2.5 py-2 bg-white"
                       >
-                        <option value="">Chưa phân công</option>
-                        {staffUsers.map((u) => (
-                          <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
-                        ))}
+                        <option value="">Không yêu cầu / Khi cần mới chọn</option>
+                        {staffDir ? (
+                          <>
+                            {staffDir.psychologyStaff?.length > 0 && (
+                              <optgroup label="Tổ Tâm lý học đường">
+                                {staffDir.psychologyStaff.map((u: any) => (
+                                  <option key={u.id} value={u.id}>{formatStaffOptionLabel(u)}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                            {staffDir.otherStaff?.length > 0 && (
+                              <optgroup label="Nhân sự khác">
+                                {staffDir.otherStaff.map((u: any) => (
+                                  <option key={u.id} value={u.id}>{formatStaffOptionLabel(u)}</option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </>
+                        ) : (
+                          staffUsers.map((u) => (
+                            <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
+                          ))
+                        )}
                       </select>
                     </div>
                   </div>
@@ -487,9 +688,9 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                       type="button"
                       disabled={saving}
                       onClick={() => {
-                        const t = staffUsers.find((u) => u.id === assignedTeacherId)
-                        const m = staffUsers.find((u) => u.id === assignedMedicalId)
-                        const p = staffUsers.find((u) => u.id === assignedPsychologistId)
+                        const t = allDirectoryUsers.find((u) => u.id === assignedTeacherId)
+                        const m = allDirectoryUsers.find((u) => u.id === assignedMedicalId)
+                        const p = allDirectoryUsers.find((u) => u.id === assignedPsychologistId)
                         runAction(
                           {
                             action: "ASSIGN_STAFF",
@@ -515,13 +716,43 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
             {/* TAB 2: B4A HEALTH */}
             {!loading && student && activeTab === "health" && (
               <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-[#003B3A]">B4A: Y tế kiểm tra thể chất</h3>
-                  {viewingRound?.medicalCheckedAt && (
-                    <span className="text-xs text-emerald-700 font-semibold">
-                      Đã kiểm tra lúc {new Date(viewingRound.medicalCheckedAt).toLocaleString("vi-VN")}
-                    </span>
-                  )}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-bold text-[#003B3A]">B4A: Y tế kiểm tra thể chất (Chiều cao · Cân nặng · Sức khỏe)</h3>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                      hasHealthResult
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-800 border-amber-200"
+                    }`}
+                  >
+                    {hasHealthResult ? "✓ Đã hoàn thành" : "● Đang đợi Tổ Y tế"}
+                  </span>
+                </div>
+
+                {/* Thẻ trạng thái nhân sự & kết quả B4A */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3.5 text-xs tabular-nums">
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">NV Tổ Y tế phân công</span>
+                    <strong className="text-[#003B3A]">{effectiveMedicalName}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">Trạng thái thực hiện</span>
+                    <strong className={hasHealthResult ? "text-emerald-700" : "text-amber-700"}>
+                      {viewingRound?.medicalCheckedAt
+                        ? `Đã đo (${new Date(viewingRound.medicalCheckedAt).toLocaleString("vi-VN")})`
+                        : hasHealthResult
+                          ? "Đã ghi nhận chỉ số"
+                          : "Chưa đo chiều cao / cân nặng"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">Kết quả thể chất</span>
+                    <strong className="text-slate-800">
+                      {Number(heightCm) > 0 && Number(weightKg) > 0
+                        ? `${heightCm} cm · ${weightKg} kg (BMI ${(Number(weightKg) / Math.pow(Number(heightCm) / 100, 2)).toFixed(1)})`
+                        : "Chưa có dữ liệu"}
+                    </strong>
+                  </div>
                 </div>
 
                 {!perms.canViewHealth ? (
@@ -626,17 +857,105 @@ export function PreschoolDossierDrawer({ studentId, onClose, onUpdated, staffUse
                       </p>
                     )}
                   </div>
-                  {viewingRound?.roundType === "KHAO_SAT_MOI" && (
-                    <button
-                      type="button"
-                      onClick={() => setPrintDoc("EVALUATION_FORM")}
-                      className="px-3 py-1.5 rounded-lg border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer"
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                        hasEvalResult
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-800 border-amber-200"
+                      }`}
                     >
-                      <Printer className="w-3.5 h-3.5" />
-                      Mở / In đúng mẫu đã dùng
-                    </button>
-                  )}
+                      {hasEvalResult ? "✓ Đã hoàn thành" : "● Đang đợi GV đánh giá"}
+                    </span>
+                    {viewingRound?.roundType === "KHAO_SAT_MOI" && (
+                      <button
+                        type="button"
+                        onClick={() => setPrintDoc("EVALUATION_FORM")}
+                        className="px-3 py-1.5 rounded-lg border border-[#E2E8F0] hover:bg-slate-50 text-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        Mở / In đúng mẫu đã dùng
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Thẻ trạng thái nhân sự, tiến độ & kết quả B5/B4B */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3.5 text-xs tabular-nums">
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">GV phân công đánh giá</span>
+                    <strong className="text-[#003B3A]">{effectiveTeacherName}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">Trạng thái bước B5/B4B</span>
+                    <strong className={hasEvalResult ? "text-emerald-700" : "text-amber-700"}>
+                      {viewingRound?.teacherSubmittedAt
+                        ? `Đã nộp (${new Date(viewingRound.teacherSubmittedAt).toLocaleString("vi-VN")})`
+                        : (legacyDev?.totalScored || 0) > 0
+                          ? `Đã chấm ${legacyDev.totalScored} tiêu chí trên Phiếu đánh giá`
+                          : "Chưa nhập kết quả đánh giá"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">Kết quả tóm tắt</span>
+                    {(legacyDev?.totalScored || 0) > 0 ? (
+                      <strong className="text-slate-800">
+                        {legacyDev.datCount}/{legacyDev.totalScored} Đạt ({legacyDev.pctDat}%)
+                        {legacyDev.khongDatCount > 0 ? ` · ${legacyDev.khongDatCount} Không đạt` : ""}
+                      </strong>
+                    ) : (
+                      <strong className="text-slate-500">Chưa có kết quả</strong>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bảng đối chiếu nhanh điểm thực tế GV đã chấm trên Phiếu đánh giá phát triển */}
+                {legacyDev && legacyDev.totalScored > 0 && (
+                  <div className="rounded-xl border border-teal-200/80 bg-[#F0FDFA]/50 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#003B3A]">
+                        Dữ liệu GV đã chấm trên Phiếu đánh giá phát triển ({legacyDev.totalScored} tiêu chí)
+                      </span>
+                      <span className="text-[11px] font-semibold text-emerald-700 tabular-nums">
+                        {legacyDev.datCount} Đạt · {legacyDev.khongDatCount} Không đạt · {legacyDev.chuaTheHienCount} Chưa thể hiện
+                      </span>
+                    </div>
+                    <div className="max-h-44 overflow-y-auto rounded-lg border border-[#E2E8F0] bg-white">
+                      <table className="w-full text-left border-collapse text-[11px] tabular-nums">
+                        <thead className="bg-[#003B3A] text-white sticky top-0">
+                          <tr>
+                            <th className="py-1.5 px-2.5 text-teal-100 font-semibold">Lĩnh vực</th>
+                            <th className="py-1.5 px-2.5 text-white font-semibold">Tiêu chí</th>
+                            <th className="py-1.5 px-2.5 text-[#5EEAD4] font-semibold">Kết quả</th>
+                            <th className="py-1.5 px-2.5 text-teal-100 font-semibold">Ghi chú</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E8F0]">
+                          {legacyDev.scores.map((sc: any) => (
+                            <tr key={sc.id} className="hover:bg-[#F8FAFC]">
+                              <td className="py-1.5 px-2.5 text-slate-600">{sc.areaName || "—"}</td>
+                              <td className="py-1.5 px-2.5 text-slate-800">{sc.criteriaName}</td>
+                              <td className="py-1.5 px-2.5 font-semibold">
+                                <span
+                                  className={
+                                    sc.result === "DAT"
+                                      ? "text-emerald-700"
+                                      : sc.result === "KHONG_DAT"
+                                        ? "text-rose-700"
+                                        : "text-slate-500"
+                                  }
+                                >
+                                  {sc.result === "DAT" ? "Đạt" : sc.result === "KHONG_DAT" ? "Không đạt" : "Chưa thể hiện"}
+                                </span>
+                              </td>
+                              <td className="py-1.5 px-2.5 text-slate-500">{sc.note || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {viewingRound?.roundType === "KHAO_SAT_MOI" ? (
                   <>

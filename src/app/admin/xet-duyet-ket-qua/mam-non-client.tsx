@@ -202,7 +202,7 @@ const xetDuyetCols = [
   { id: "fullName", label: "Họ và tên", width: "w-[170px] min-w-[170px] max-w-[170px] sticky left-10 z-20 whitespace-normal" },
   { id: "grade", label: "Khối", width: "w-28 min-w-[112px]" },
   { id: "admissionCampus", label: "Cơ sở", width: "w-20 min-w-[80px]" },
-  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[116px] min-w-[116px] text-center" },
+  { id: "kqgvDg", label: "KQGV ĐG", width: "w-[172px] min-w-[172px] whitespace-normal" },
   { id: "bghApproval", label: "1. BGH MN duyệt", width: "w-[156px] min-w-[156px] whitespace-normal" },
   { id: "trialAssign", label: "2. Phân công học thử", width: "w-[162px] min-w-[162px] whitespace-normal" },
   { id: "trialResult", label: "2. Kết quả học thử", width: "w-[172px] min-w-[172px] whitespace-normal" },
@@ -3980,8 +3980,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       if (!isMatch) return false;
       return !a.batchId || a.batchId === evalStudent.batchId;
     });
-    if (matches.length === 0) return "Chưa phân công";
+    if (matches.length === 0) {
+      return evalStudent?.assignedTeachers && evalStudent.assignedTeachers !== "Chưa phân công"
+        ? evalStudent.assignedTeachers
+        : "Chưa phân công";
+    }
     const names = Array.from(new Set(matches.map(m => m.user?.fullName || "Chưa rõ"))).filter(Boolean);
+    if (evalStudent?.assignedTeachers && evalStudent.assignedTeachers !== "Chưa phân công") {
+      for (const n of String(evalStudent.assignedTeachers).split(",").map(x => x.trim()).filter(Boolean)) {
+        if (!names.includes(n)) names.unshift(n);
+      }
+    }
     return names.length > 0 ? names.join(", ") : "Chưa phân công";
   }, [evalStudent, evalAssignments, devLoading]);
 
@@ -5619,16 +5628,42 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   {s.admissionCampus || "—"}
                                 </td>
 
-                                {/* KQGV DG cell */}
-                                <td className="w-[116px] min-w-[116px] p-3 align-middle text-center bg-inherit border border-slate-100">
-                                  <button
-                                    type="button"
-                                    onClick={() => openEvaluation(s)}
-                                    className="cursor-pointer hover:opacity-85 transition-opacity"
-                                    title="Xem phiếu đánh giá phát triển của Giáo viên"
-                                  >
-                                    {getStatusBadge(s.scoredCount > 0 ? "DA_DANH_GIA" : "CHUA_DANH_GIA")}
-                                  </button>
+                                {/* KQGV DG cell — hiển thị Trạng thái + Tên GV đánh giá + Y tế B4A */}
+                                <td className="w-[172px] min-w-[172px] whitespace-normal p-3 align-middle bg-inherit border border-slate-100">
+                                  <div className="flex flex-col items-start gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => openEvaluation(s)}
+                                      className="inline-flex items-center gap-1.5 cursor-pointer hover:opacity-85 transition-opacity"
+                                      title="Bấm để xem phiếu đánh giá phát triển của Giáo viên"
+                                    >
+                                      {getStatusBadge(s.scoredCount > 0 ? "DA_DANH_GIA" : "CHUA_DANH_GIA")}
+                                      {s.scoredCount > 0 && (
+                                        <span className="text-[10px] font-semibold text-slate-500 tabular-nums">
+                                          {s.datCount ?? 0}/{s.scoredCount} Đạt
+                                        </span>
+                                      )}
+                                    </button>
+                                    <div className="text-[10px] leading-snug text-slate-600 truncate max-w-[156px]" title={`GV đánh giá: ${s.assignedTeachers || "Chưa phân công"}`}>
+                                      <span className="text-slate-400">GV:</span>{" "}
+                                      <strong className={s.assignedTeachers && s.assignedTeachers !== "Chưa phân công" ? "text-[#003B3A]" : "text-slate-400 font-normal italic"}>
+                                        {s.assignedTeachers || "Chưa phân công"}
+                                      </strong>
+                                    </div>
+                                    {(s.assignedMedicalStaff || (s.b4aHealth?.heightCm && s.b4aHealth?.weightKg)) && (
+                                      <div
+                                        className="text-[10px] leading-snug text-[#00736E] truncate max-w-[156px]"
+                                        title={`Y tế (B4A): ${s.assignedMedicalStaff || "Tổ Y tế"}${s.b4aHealth?.heightCm && s.b4aHealth?.weightKg ? ` · ${s.b4aHealth.heightCm}cm / ${s.b4aHealth.weightKg}kg` : ""}`}
+                                      >
+                                        <span className="text-slate-400">Y tế:</span>{" "}
+                                        <strong>
+                                          {s.b4aHealth?.heightCm && s.b4aHealth?.weightKg
+                                            ? `${s.b4aHealth.heightCm}cm·${s.b4aHealth.weightKg}kg`
+                                            : s.assignedMedicalStaff}
+                                        </strong>
+                                      </div>
+                                    )}
+                                  </div>
                                 </td>
 
                                 {/* 1. BGH MN duyệt */}
@@ -8611,7 +8646,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-t md:border-t-0 border-[#E2E8F0] pt-3 md:pt-0 w-full md:w-auto text-xs tabular-nums">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 border-t md:border-t-0 border-[#E2E8F0] pt-3 md:pt-0 w-full md:w-auto text-xs tabular-nums">
                     <div>
                       <span className="text-[11px] font-medium text-slate-500 block mb-1">Nhóm tuổi</span>
                       <span className="font-semibold text-[#003B3A] bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0] inline-block">{evalStudent?.grade || "—"}</span>
@@ -8626,7 +8661,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </div>
                     <div>
                       <span className="text-[11px] font-medium text-slate-500 block mb-1">GV khảo sát</span>
-                      <span className="font-semibold text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0] truncate max-w-[130px] inline-block align-bottom" title={assignedTeachers}>{assignedTeachers || "Chưa phân công"}</span>
+                      <span className="font-semibold text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0] truncate max-w-[140px] inline-block align-bottom" title={assignedTeachers}>{assignedTeachers || "Chưa phân công"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">Y tế (B4A)</span>
+                      <span className="font-semibold text-[#00736E] bg-white px-2.5 py-1 rounded-lg border border-teal-200 truncate max-w-[140px] inline-block align-bottom" title={evalStudent?.assignedMedicalStaff || "Chưa phân công Tổ Y tế"}>
+                        {evalStudent?.assignedMedicalStaff || "Chưa phân công"}
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -141,6 +141,38 @@ export async function POST(req: NextRequest) {
         await (prisma as any).$transaction(transactionOperations);
       }
 
+      // Nếu phân công Tổ Y tế (B4A), tự động đồng bộ NV Y tế mặc định sang các hồ sơ PreschoolAssessmentRound thuộc kỳ/đợt này
+      if (grades.includes("Y_TE_B4A") && finalUserIds.length > 0) {
+        try {
+          const primaryMedicalUser = await (prisma as any).user.findUnique({
+            where: { id: finalUserIds[0] },
+            select: { id: true, fullName: true },
+          });
+          if (primaryMedicalUser?.id) {
+            const targetStudents = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+              where: {
+                periodId,
+                ...(normalizedBatchId ? { batchId: normalizedBatchId } : {}),
+              },
+              select: { id: true },
+            });
+            const sIds = targetStudents.map((st: any) => st.id);
+            if (sIds.length > 0) {
+              const placeholders = sIds.map(() => "?").join(",");
+              await prisma.$executeRawUnsafe(
+                `UPDATE "PreschoolAssessmentRound"
+                 SET "assignedMedicalId" = ?, "assignedMedicalName" = ?, "updatedAt" = ?
+                 WHERE "studentId" IN (${placeholders}) AND ("assignedMedicalId" IS NULL OR "assignedMedicalId" = '')`,
+                primaryMedicalUser.id,
+                primaryMedicalUser.fullName || "NV Y tế",
+                new Date().toISOString(),
+                ...sIds
+              );
+            }
+          }
+        } catch {}
+      }
+
       // Tạo thông báo trên hệ thống (NotificationBell) cho Giáo viên Mầm non được phân công hiển thị rõ Kỳ, Đợt, Số lượng HS khảo sát
       try {
         if (totalCreated > 0 && finalUserIds.length > 0 && periodId) {

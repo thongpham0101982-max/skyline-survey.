@@ -197,7 +197,7 @@ export async function GET(req: NextRequest) {
         criteriaMap[cc.ageGroup] = cc._count.id
       }
 
-      // Fetch all teacher assignments for this period
+      // Fetch all teacher & medical assignments for this period
       const assignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
         where: periodId !== "all" ? { periodId } : {},
         select: {
@@ -207,6 +207,26 @@ export async function GET(req: NextRequest) {
           user: { select: { fullName: true } }
         }
       })
+
+      // Fetch latest PreschoolAssessmentRound per student for assignedTeacherName, assignedMedicalName & B4A health data
+      const latestRoundByStudent: Record<string, any> = {}
+      if (studentIds.length > 0) {
+        try {
+          const placeholders = studentIds.map(() => "?").join(",")
+          const roundRows = await prisma.$queryRawUnsafe<any[]>(
+            `SELECT "studentId", "roundNumber", "assignedTeacherName", "assignedMedicalName",
+                    "assignedPsychologistName", "heightCm", "weightKg", "bmi", "physicalStatus",
+                    "medicalCheckedAt", "medicalUserName", "teacherSubmittedAt", "teacherUserName"
+             FROM "PreschoolAssessmentRound"
+             WHERE "studentId" IN (${placeholders})
+             ORDER BY "roundNumber" ASC`,
+            ...studentIds
+          )
+          for (const r of roundRows || []) {
+            latestRoundByStudent[r.studentId] = r
+          }
+        } catch {}
+      }
 
       // Map scores by studentId
       const studentScoresMap: Record<string, any[]> = {}
@@ -285,15 +305,53 @@ export async function GET(req: NextRequest) {
         const isStage2 = batchStartDate ? (!isNaN(batchStartDate.getTime()) && batchStartDate.getMonth() >= 0 && batchStartDate.getMonth() <= 4) : false;
         const matches = assignments.filter((a: any) => {
           if (a.periodId !== s.periodId) return false;
+          if (a.grade === "Y_TE_B4A") return false;
           if (!isPreschoolAssignmentMatch(a.grade, sAgeGroup, isStage2)) return false;
           return !a.batchId || a.batchId === s.batchId;
         });
-        const assignedTeachers = Array.from(new Set(matches.map((m: any) => m.user?.fullName || "Chưa rõ"))).filter(Boolean).join(", ") || "Chưa phân công";
+        const medicalMatches = assignments.filter((a: any) => {
+          if (a.periodId !== s.periodId) return false;
+          if (a.grade !== "Y_TE_B4A") return false;
+          return !a.batchId || a.batchId === s.batchId;
+        });
+        const latestRound = latestRoundByStudent[s.id] || null;
+
+        const teacherNameSet = new Set<string>();
+        if (latestRound?.assignedTeacherName) teacherNameSet.add(latestRound.assignedTeacherName);
+        if (latestRound?.teacherUserName) teacherNameSet.add(latestRound.teacherUserName);
+        for (const m of matches) {
+          if (m.user?.fullName) teacherNameSet.add(m.user.fullName);
+        }
+        const assignedTeachers = Array.from(teacherNameSet).join(", ") || "Chưa phân công";
+
+        const medicalNameSet = new Set<string>();
+        if (latestRound?.assignedMedicalName) medicalNameSet.add(latestRound.assignedMedicalName);
+        if (latestRound?.medicalUserName) medicalNameSet.add(latestRound.medicalUserName);
+        for (const m of medicalMatches) {
+          if (m.user?.fullName) medicalNameSet.add(m.user.fullName);
+        }
+        const assignedMedicalStaff = Array.from(medicalNameSet).join(", ") || "";
+
+        const datCount = studentScoresList.filter((sc: any) => sc.result === "DAT").length;
+        const khongDatCount = studentScoresList.filter((sc: any) => sc.result === "KHONG_DAT").length;
 
         return {
           ...s,
           assignedTeachers,
-                    scoredCount: scoreMap[s.id] || 0,
+          assignedMedicalStaff,
+          b4aHealth: latestRound
+            ? {
+                heightCm: latestRound.heightCm ?? null,
+                weightKg: latestRound.weightKg ?? null,
+                bmi: latestRound.bmi ?? null,
+                physicalStatus: latestRound.physicalStatus ?? null,
+                medicalCheckedAt: latestRound.medicalCheckedAt ?? null,
+                medicalUserName: latestRound.medicalUserName ?? null,
+              }
+            : null,
+          datCount,
+          khongDatCount,
+          scoredCount: scoreMap[s.id] || 0,
           totalCriteria: criteriaMap[sAgeGroup] || 0,
           resolvedAgeGroup: sAgeGroup,
           theChatSummary: formatSummary(theChatScores),
