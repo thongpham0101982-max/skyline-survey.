@@ -2687,6 +2687,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     loading: boolean;
     sending: boolean;
     studentId: string;
+    studentIds?: string[];
+    batchName?: string;
     targetRole?: "BGH_MN" | "GDCS";
     studentName: string;
     studentCode: string;
@@ -2701,6 +2703,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     loading: false,
     sending: false,
     studentId: "",
+    studentIds: undefined,
+    batchName: undefined,
     targetRole: "GDCS",
     studentName: "",
     studentCode: "",
@@ -2737,6 +2741,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       loading: true,
       sending: false,
       studentId,
+      studentIds: undefined,
+      batchName: undefined,
       targetRole,
       html: "",
       recipients: [],
@@ -2785,8 +2791,73 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     }
   };
 
+  const sendBatchApprovalNotification = async (studentIds: string[], targetRole: "BGH_MN" | "GDCS") => {
+    if (!studentIds.length) return;
+    const currentBatchObj = availableBatches.find((b: any) => b.id === cBatchId);
+    const batchLabel = currentBatchObj?.name || selPeriod?.name || "Đợt khảo sát Mầm non";
+    setSendingNotifyId("BATCH_" + targetRole);
+    setApprovalPreviewModal((prev) => ({
+      ...prev,
+      open: true,
+      loading: true,
+      sending: false,
+      studentId: "",
+      studentIds,
+      batchName: batchLabel,
+      targetRole,
+      html: "",
+      recipients: [],
+      selectedEmails: [],
+      extraEmails: "",
+    }));
+    try {
+      const res = await fetch("/api/preschool-input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_BATCH_APPROVAL_NOTIFICATION",
+          studentIds,
+          targetRole,
+          batchName: batchLabel,
+          previewOnly: true,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.preview) {
+        const recipients = Array.isArray(data.recipients) ? data.recipients : [];
+        setApprovalPreviewModal({
+          open: true,
+          loading: false,
+          sending: false,
+          studentId: "",
+          studentIds,
+          batchName: batchLabel,
+          targetRole,
+          studentName: data.studentName || `${studentIds.length} học sinh`,
+          studentCode: data.studentCode || `${studentIds.length} HS`,
+          campus: data.campus || "",
+          subject: data.subject || "",
+          recipients,
+          selectedEmails: recipients.map((r: any) => r.email),
+          extraEmails: "",
+          html: data.html || "",
+        });
+      } else {
+        setApprovalPreviewModal((prev) => ({ ...prev, open: false, loading: false }));
+        notify(data.error || "Không thể tạo bản xem trước email theo đợt", "err");
+      }
+    } catch (e) {
+      console.error(e);
+      setApprovalPreviewModal((prev) => ({ ...prev, open: false, loading: false }));
+      notify("Có lỗi xảy ra khi tải bản xem trước email theo đợt", "err");
+    } finally {
+      setSendingNotifyId(null);
+    }
+  };
+
   const confirmSendApprovalNotification = async () => {
-    if (!approvalPreviewModal.studentId) return;
+    const isBatch = Array.isArray(approvalPreviewModal.studentIds) && approvalPreviewModal.studentIds.length > 0;
+    if (!isBatch && !approvalPreviewModal.studentId) return;
     if (approvalPreviewModal.selectedEmails.length === 0 && !approvalPreviewModal.extraEmails.trim()) {
       notify("Vui lòng chọn ít nhất 1 người nhận email.", "err");
       return;
@@ -2796,19 +2867,35 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       const res = await fetch("/api/preschool-input-assessment-students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "SEND_APPROVAL_NOTIFICATION",
-          studentId: approvalPreviewModal.studentId,
-          targetRole: approvalPreviewModal.targetRole || "GDCS",
-          customSubject: approvalPreviewModal.subject,
-          selectedEmails: approvalPreviewModal.selectedEmails,
-          extraEmails: approvalPreviewModal.extraEmails,
-        }),
+        body: JSON.stringify(
+          isBatch
+            ? {
+                action: "SEND_BATCH_APPROVAL_NOTIFICATION",
+                studentIds: approvalPreviewModal.studentIds,
+                batchName: approvalPreviewModal.batchName,
+                targetRole: approvalPreviewModal.targetRole || "GDCS",
+                customSubject: approvalPreviewModal.subject,
+                selectedEmails: approvalPreviewModal.selectedEmails,
+                extraEmails: approvalPreviewModal.extraEmails,
+              }
+            : {
+                action: "SEND_APPROVAL_NOTIFICATION",
+                studentId: approvalPreviewModal.studentId,
+                targetRole: approvalPreviewModal.targetRole || "GDCS",
+                customSubject: approvalPreviewModal.subject,
+                selectedEmails: approvalPreviewModal.selectedEmails,
+                extraEmails: approvalPreviewModal.extraEmails,
+              }
+        ),
       });
       const data = await res.json();
       if (res.ok) {
         setApprovalPreviewModal((prev) => ({ ...prev, open: false, sending: false }));
-        notify(`Đã gửi ${data.emailsSent || 1} email yêu cầu duyệt tới cơ sở ${data.campus || "học sinh"} thành công!`);
+        notify(
+          isBatch
+            ? `Đã gửi ${data.emailsSent || 1} email theo đợt (${data.studentCount || approvalPreviewModal.studentIds?.length} HS) thành công!`
+            : `Đã gửi ${data.emailsSent || 1} email yêu cầu duyệt tới cơ sở ${data.campus || "học sinh"} thành công!`
+        );
       } else {
         setApprovalPreviewModal((prev) => ({ ...prev, sending: false }));
         notify(data.error || "Gửi yêu cầu thất bại", "err");
@@ -5733,6 +5820,51 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <span className="inline-flex items-center gap-1 font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
                   Không KS
                 </span>
+
+                {/* Nút gửi Email theo đợt tới NT Mầm non / BGH (khi tất cả HS trong đợt đã ✓ Hoàn thành B5/B4B) và tới GĐCS (khi tất cả HS đã qua NT MN/BGH) */}
+                {(() => {
+                  const total = filteredStudents.length;
+                  if (total === 0) return null;
+                  const b5DoneCount = filteredStudents.filter((st: any) => st.scoredCount > 0).length;
+                  const allB5Done = b5DoneCount === total;
+                  const pendingBgh = filteredStudents.filter((st: any) => !st.bghApprovalStatus);
+                  const allBghReadyForGdcs =
+                    pendingBgh.length === 0 &&
+                    filteredStudents.every((st: any) => getPreschoolRowWorkflowState(st).canGdcsApprove);
+                  const pendingGdcs = filteredStudents.filter((st: any) => !st.gdcsApprovalStatus);
+
+                  return (
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                      {allB5Done && pendingBgh.length > 0 && (
+                        <button
+                          type="button"
+                          disabled={sendingNotifyId === "BATCH_BGH_MN"}
+                          onClick={() => sendBatchApprovalNotification(pendingBgh.map((st: any) => st.id), "BGH_MN")}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#008B85] hover:bg-[#00736E] text-white shadow-2xs cursor-pointer transition-colors disabled:opacity-50"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Gửi Email theo đợt → NT Mầm non / BGH ({pendingBgh.length} HS)
+                        </button>
+                      )}
+                      {allBghReadyForGdcs && pendingGdcs.length > 0 && (
+                        <button
+                          type="button"
+                          disabled={sendingNotifyId === "BATCH_GDCS"}
+                          onClick={() => sendBatchApprovalNotification(pendingGdcs.map((st: any) => st.id), "GDCS")}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs cursor-pointer transition-colors disabled:opacity-50"
+                        >
+                          <Mail className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                          Gửi Email theo đợt → GĐCS duyệt B10 ({pendingGdcs.length} HS)
+                        </button>
+                      )}
+                      {!allB5Done && (
+                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 tabular-nums">
+                          B5/B4B: {b5DoneCount}/{total} HS hoàn thành
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="bg-white rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03)] border border-slate-200/90 overflow-hidden tabular-nums">

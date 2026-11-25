@@ -16,7 +16,7 @@ function parseSmartDate(d: any): Date | null {
 }
 
 import { sendEmail } from "@/lib/mail"
-import { getPreschoolDevelopmentSummary, renderPreschoolApprovalEmailHtml } from "@/lib/preschool-approval-service"
+import { getPreschoolDevelopmentSummary, renderPreschoolApprovalEmailHtml, renderPreschoolBatchApprovalEmailHtml } from "@/lib/preschool-approval-service"
 
 function buildPreschoolLetterHtmlServer(student: any, config: any, isCommitmentFlag: boolean = false, isInvitationFlag: boolean = false) {
   const rawGrade = student?.grade || "Nát";
@@ -1194,6 +1194,177 @@ export async function POST(req) {
         notificationsSent: notificationCount,
         emailsSent: emailSentCount,
         campus: campusName
+      });
+    }
+
+    if (action === "SEND_BATCH_APPROVAL_NOTIFICATION") {
+      const { studentIds, targetRole, batchName: reqBatchName, previewOnly, customSubject, selectedEmails, extraEmails } = body;
+      if (!Array.isArray(studentIds) || studentIds.length === 0) {
+        return NextResponse.json({ error: "Vui lòng chọn ít nhất 1 học sinh trong đợt." }, { status: 400 });
+      }
+
+      const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+        where: { id: { in: studentIds } },
+        include: { period: true, batch: true },
+        orderBy: { fullName: "asc" },
+      });
+      if (!students || students.length === 0) {
+        return NextResponse.json({ error: "Không tìm thấy danh sách học sinh." }, { status: 404 });
+      }
+
+      const firstSt = students[0];
+      const campusName = firstSt.admissionCampus || firstSt.registeredCampus || "Sky-Line";
+      const batchName = reqBatchName || firstSt.batch?.name || firstSt.period?.name || "Đợt khảo sát Mầm non";
+      const effectiveEmailRole: "BGH_MN" | "GDCS" = targetRole === "BGH_MN" ? "BGH_MN" : "GDCS";
+
+      const cUp = String(campusName).toUpperCase();
+      const campusCode =
+        cUp.includes("CS1") || cUp.includes("RIVERSIDE") ? "CS1"
+        : cUp.includes("CS2") || cUp.includes("CENTRAL") ? "CS2"
+        : cUp.includes("CS3") || cUp.includes("GLOBAL") ? "CS3"
+        : cUp.includes("CS4") || cUp.includes("HILL") ? "CS4"
+        : cUp.includes("CS5") || cUp.includes("BEACH") ? "CS5"
+        : "";
+
+      const DEFAULT_PRESCHOOL_CAMPUS_EMAILS: Record<string, { bghmn: string; gdcs: string }> = {
+        CS1: { bghmn: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn", gdcs: "longtt@skylineschool.edu.vn" },
+        CS2: { bghmn: "yenlth@skylineschool.edu.vn, thanhmaitt@skylineschool.edu.vn", gdcs: "khanhpt@skylineschool.edu.vn" },
+        CS3: { bghmn: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn", gdcs: "thanhtt@skylineschool.edu.vn" },
+        CS4: { bghmn: "quyenlth@skylineschool.edu.vn, chault@skylineschool.edu.vn", gdcs: "trungct@skylineschool.edu.vn" },
+        CS5: { bghmn: "monghatn@skylineschool.edu.vn, ngocltb@skylineschool.edu.vn", gdcs: "trungdq1@skylineschool.edu.vn, oanhntk@skylineschool.edu.vn" },
+      };
+
+      const recipientMap = new Map<string, { id?: string; fullName: string; email: string; role: string; isArchiveCopy: boolean }>();
+      let ktdbclEmails: string[] = ["ktdbcl@skylineschool.edu.vn"];
+
+      try {
+        const savedCfg = await (prisma as any).assessmentConfig.findFirst({
+          where: { categoryType: "APPROVAL_EMAIL_CONFIG", name: "PRESCHOOL_APPROVAL_ROUTING_V1" },
+        });
+        const parsed = savedCfg?.content ? JSON.parse(savedCfg.content) : null;
+        const configuredStr = campusCode
+          ? (effectiveEmailRole === "BGH_MN"
+              ? parsed?.campuses?.[campusCode]?.bghmn || DEFAULT_PRESCHOOL_CAMPUS_EMAILS[campusCode]?.bghmn
+              : parsed?.campuses?.[campusCode]?.gdcs || DEFAULT_PRESCHOOL_CAMPUS_EMAILS[campusCode]?.gdcs)
+          : "";
+        if (parsed?.ktdbclEmails) {
+          ktdbclEmails = String(parsed.ktdbclEmails).split(/[,;\n]+/).map((s: string) => s.trim()).filter((s: string) => s.includes("@"));
+        }
+        for (const rawEmail of String(configuredStr || "").split(/[,;\n]+/)) {
+          const e = rawEmail.trim().toLowerCase();
+          if (!e.includes("@")) continue;
+          const dbUser = await (prisma as any).user.findFirst({ where: { email: e }, select: { id: true, fullName: true } }).catch(() => null);
+          recipientMap.set(e, {
+            id: dbUser?.id,
+            fullName: dbUser?.fullName || (effectiveEmailRole === "BGH_MN" ? `BGH Mầm non ${campusCode}` : `GĐCS ${campusCode}`),
+            email: e,
+            role: effectiveEmailRole === "BGH_MN" ? `NT Mầm non / BGH ${campusCode}` : `GĐCS ${campusCode}`,
+            isArchiveCopy: false,
+          });
+        }
+      } catch {}
+
+      for (const ke of ktdbclEmails) {
+        const kLow = ke.toLowerCase();
+        if (!recipientMap.has(kLow)) {
+          recipientMap.set(kLow, {
+            fullName: kLow.split("@")[0],
+            email: kLow,
+            role: "Nhóm Khảo thí / KT&ĐBCL",
+            isArchiveCopy: true,
+          });
+        }
+      }
+
+      const studentItems = await Promise.all(
+        students.map(async (st: any) => ({
+          student: st,
+          devSummary: await getPreschoolDevelopmentSummary(st.id).catch(() => undefined),
+        }))
+      );
+
+      const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
+      const protocol = req.headers.get("x-forwarded-proto") || "https";
+      const baseUrl = `${protocol}://${host}`;
+      const defaultSubject =
+        effectiveEmailRole === "BGH_MN"
+          ? `[Preschool-Batch] Yêu cầu NT Mầm non / BGH xét duyệt theo đợt (${students.length} HS) — ${batchName}`
+          : `[Preschool-Batch] Yêu cầu GĐCS phê duyệt B10 theo đợt (${students.length} HS) — ${batchName}`;
+      const emailSubject = (typeof customSubject === "string" && customSubject.trim()) || defaultSubject;
+      const allRecipients = Array.from(recipientMap.values());
+
+      if (previewOnly) {
+        const primaryRec = allRecipients.find((r) => !r.isArchiveCopy) || allRecipients[0];
+        const previewHtml = renderPreschoolBatchApprovalEmailHtml({
+          students: studentItems,
+          batchName,
+          campusName,
+          recipientName: primaryRec?.fullName || (effectiveEmailRole === "BGH_MN" ? "NT Mầm non / BGH" : "Giám đốc Cơ sở"),
+          recipientEmail: primaryRec?.email || "ktdbcl@skylineschool.edu.vn",
+          targetRole: effectiveEmailRole,
+          isArchiveCopy: false,
+          baseUrl,
+        });
+        return NextResponse.json({
+          preview: true,
+          campus: campusName,
+          studentName: `${students.length} học sinh (${batchName})`,
+          studentCode: `${students.length} HS`,
+          subject: emailSubject,
+          recipients: allRecipients,
+          html: previewHtml,
+        });
+      }
+
+      const selectedSet =
+        Array.isArray(selectedEmails) && selectedEmails.length > 0
+          ? new Set(selectedEmails.map((e: string) => String(e).trim().toLowerCase()))
+          : null;
+
+      if (typeof extraEmails === "string" && extraEmails.trim()) {
+        for (const ex of extraEmails.split(/[,;\n]+/).map((e: string) => e.trim()).filter((e: string) => e.includes("@"))) {
+          const key = ex.toLowerCase();
+          if (!recipientMap.has(key)) {
+            recipientMap.set(key, { fullName: ex, email: ex, role: "Người nhận bổ sung", isArchiveCopy: false });
+          }
+          if (selectedSet) selectedSet.add(key);
+        }
+      }
+
+      const finalRecipients = Array.from(recipientMap.values()).filter((r) =>
+        selectedSet ? selectedSet.has(r.email.toLowerCase()) : true
+      );
+
+      let emailSentCount = 0;
+      for (const r of finalRecipients) {
+        try {
+          const emailBody = renderPreschoolBatchApprovalEmailHtml({
+            students: studentItems,
+            batchName,
+            campusName,
+            recipientName: r.fullName,
+            recipientEmail: r.email,
+            targetRole: effectiveEmailRole,
+            isArchiveCopy: r.isArchiveCopy,
+            baseUrl,
+          });
+          await sendEmail({
+            to: r.email,
+            subject: emailSubject,
+            html: emailBody,
+            replyTo: "ktdbcl@skylineschool.edu.vn",
+          });
+          emailSentCount++;
+        } catch (err) {
+          console.error("Batch preschool email error:", r.email, err);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        emailsSent: emailSentCount,
+        campus: campusName,
+        studentCount: students.length,
       });
     }
 

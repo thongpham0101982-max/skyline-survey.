@@ -21,6 +21,7 @@ import {
 } from "@/lib/preschool-workflow"
 import {
   generatePreschoolB10ApprovalEmailHtml,
+  notifyPreschoolGdcsResultToStakeholders,
   renderPreschoolPsychologyScreeningEmailHtml,
 } from "@/lib/preschool-approval-service"
 import { sendEmail } from "@/lib/mail"
@@ -1495,6 +1496,16 @@ export async function PATCH(
         actorRole: ctx.role,
         detail: { decision, comment: gdcsComment },
       })
+
+      // Tự động gửi email thông báo kết quả GĐCS duyệt (B10) đến Tư vấn, Giáo vụ, BGH / Nhóm trưởng cơ sở
+      notifyPreschoolGdcsResultToStakeholders({
+        student,
+        outcome: decision,
+        admissionResult,
+        approverName: actorName,
+        comment: gdcsComment,
+        baseUrl: req.nextUrl.origin,
+      }).catch(() => {})
 
       try {
         if (student.periodId) {

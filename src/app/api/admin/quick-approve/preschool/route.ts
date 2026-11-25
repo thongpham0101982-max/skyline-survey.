@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import {
+  notifyPreschoolGdcsResultToStakeholders,
   verifyPreschoolApprovalToken,
   verifyWorkflowQuickApproveToken,
   verifyPreschoolPsychologyToken,
@@ -667,6 +668,16 @@ export async function POST(req: NextRequest) {
           detail: { outcome, comment: comment || null, approverEmail: payload.approverEmail },
         })
 
+        // Tự động gửi email thông báo kết quả GĐCS duyệt đến Tư vấn, Giáo vụ, BGH / Nhóm trưởng cơ sở
+        notifyPreschoolGdcsResultToStakeholders({
+          student,
+          outcome,
+          admissionResult,
+          approverName: approverLabel,
+          comment,
+          baseUrl: req.nextUrl.origin,
+        }).catch(() => {})
+
         // Best-effort sync with Entrance Operations Dashboard
         try {
           if (student.periodId) {
@@ -998,6 +1009,16 @@ export async function POST(req: NextRequest) {
       source: "EMAIL_QUICK_APPROVE",
       detail: { legacyAction, gdcsStatus, admissionResult, comment: comment || null },
     })
+
+    // Tự động gửi email thông báo kết quả GĐCS duyệt đến Tư vấn, Giáo vụ, BGH / Nhóm trưởng cơ sở
+    notifyPreschoolGdcsResultToStakeholders({
+      student,
+      outcome: finalOutcome,
+      admissionResult,
+      approverName: legacyEmail || "Giám đốc Cơ sở",
+      comment,
+      baseUrl: req.nextUrl.origin,
+    }).catch(() => {})
 
     if (wantsJson) {
       return NextResponse.json({ success: true, workflowStatus: "DA_DUYET", admissionResult })

@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
+import { sendEmail } from "@/lib/mail";
 
 const SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "skyline-preschool-approval-secret-key-2026";
 
@@ -1056,4 +1057,320 @@ export function renderPreschoolPsychologyScreeningEmailHtml(params: {
 </body>
 </html>
   `;
+}
+
+/**
+ * Render batch email for Preschool Approval by Batch:
+ * - targetRole === "BGH_MN": lists all B5/B4B-completed students with per-student 1-tap B6/B9A links
+ *   (Đề xuất Đạt → B10, Đề xuất Chưa đạt → B10, Hẹn trải nghiệm B7B)
+ * - targetRole === "GDCS": lists all BGH-reviewed students with B6/B9A summary (NT MN/BGH · Trial · Psych)
+ *   and per-student 1-tap B10 buttons (Phê duyệt Đạt / Chưa đạt)
+ */
+export function renderPreschoolBatchApprovalEmailHtml(params: {
+  students: Array<{
+    student: any;
+    devSummary?: { totalCriteria: number; totalPassed: number; overallPercentage: number };
+  }>;
+  batchName: string;
+  campusName: string;
+  recipientName: string;
+  recipientEmail: string;
+  targetRole: "BGH_MN" | "GDCS";
+  isArchiveCopy?: boolean;
+  baseUrl: string;
+}): string {
+  const {
+    students,
+    batchName,
+    campusName,
+    recipientName,
+    recipientEmail,
+    targetRole,
+    isArchiveCopy = false,
+    baseUrl,
+  } = params;
+
+  const isBghMn = targetRole === "BGH_MN";
+  const portalUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=preschool`;
+
+  const rowsHtml = students
+    .map(({ student, devSummary }, idx) => {
+      const scoreText =
+        devSummary && devSummary.totalCriteria > 0
+          ? `${devSummary.totalPassed}/${devSummary.totalCriteria} Đạt (${devSummary.overallPercentage}%)`
+          : "Đã đánh giá";
+
+      if (isBghMn) {
+        const tDat = generatePreschoolApprovalToken(student.id, "BGH_DE_XUAT_DAT", recipientEmail);
+        const tChuaDat = generatePreschoolApprovalToken(student.id, "BGH_DE_XUAT_CHUA_DAT", recipientEmail);
+        const tHenTn = generatePreschoolApprovalToken(student.id, "BGH_HEN_TRAI_NGHIEM", recipientEmail);
+        const uDat = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=BGH_DE_XUAT_DAT&email=${encodeURIComponent(recipientEmail)}&token=${tDat}`;
+        const uChuaDat = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=BGH_DE_XUAT_CHUA_DAT&email=${encodeURIComponent(recipientEmail)}&token=${tChuaDat}`;
+        const uHenTn = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=BGH_HEN_TRAI_NGHIEM&email=${encodeURIComponent(recipientEmail)}&token=${tHenTn}`;
+
+        return `
+          <tr style="border-bottom: 1px solid #E2E8F0;">
+            <td style="padding: 10px 10px; font-size: 12px; color: #64748B; text-align: center;">${idx + 1}</td>
+            <td style="padding: 10px 10px; font-size: 12px;">
+              <div style="font-weight: 700; color: #003B3A;">${student.fullName}</div>
+              <div style="font-size: 11px; color: #64748B;">${student.studentCode} &bull; ${student.grade || "Mầm non"}</div>
+            </td>
+            <td style="padding: 10px 10px; font-size: 12px;">
+              <span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#ECFDF5;color:#065F46;font-weight:700;font-size:11px;">${scoreText}</span>
+              ${student.devProfessionalComment ? `<div style="font-size:11px;color:#475569;margin-top:3px;font-style:italic;">&ldquo;${String(student.devProfessionalComment).slice(0, 90)}&rdquo;</div>` : ""}
+            </td>
+            <td style="padding: 10px 10px; font-size: 11px; white-space: nowrap;">
+              <a href="${uDat}" target="_blank" style="display:inline-block;padding:5px 9px;margin:2px;border-radius:6px;background:#059669;color:#FFFFFF;font-weight:700;text-decoration:none;">✓ Đạt → B10</a>
+              <a href="${uChuaDat}" target="_blank" style="display:inline-block;padding:5px 9px;margin:2px;border-radius:6px;background:#E11D48;color:#FFFFFF;font-weight:700;text-decoration:none;">✕ Chưa đạt</a>
+              <a href="${uHenTn}" target="_blank" style="display:inline-block;padding:5px 9px;margin:2px;border-radius:6px;background:#008B85;color:#FFFFFF;font-weight:700;text-decoration:none;">📅 Hẹn TN (B7B)</a>
+            </td>
+          </tr>
+        `;
+      } else {
+        const tDat = generatePreschoolApprovalToken(student.id, "APPROVE_MIEN_HT", recipientEmail);
+        const tChuaDat = generatePreschoolApprovalToken(student.id, "KHONG_DAT", recipientEmail);
+        const uDat = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=APPROVE_MIEN_HT&email=${encodeURIComponent(recipientEmail)}&token=${tDat}`;
+        const uChuaDat = `${baseUrl}/api/admin/quick-approve/preschool?studentId=${student.id}&action=KHONG_DAT&email=${encodeURIComponent(recipientEmail)}&token=${tChuaDat}`;
+
+        const bghRaw = String(student.bghApprovalStatus || "").toUpperCase();
+        const bghText =
+          bghRaw === "DE_XUAT_DAT" || bghRaw === "DAT" || bghRaw === "DAT_MIEN_HOC_THU"
+            ? "Đề xuất Đạt"
+            : bghRaw === "DE_XUAT_CHUA_DAT" || bghRaw === "KHONG_DAT"
+              ? "Đề xuất Chưa đạt"
+              : bghRaw === "HEN_TRAI_NGHIEM" || bghRaw === "DAT_HOC_THU"
+                ? "Hẹn trải nghiệm"
+                : "Chưa rà soát";
+        const trialText = student.probationaryBghStatus
+          ? `HTN: BGH duyệt ${student.probationaryBghStatus === "DAT" ? "Đạt" : "Không đạt"}`
+          : "HTN: Không KS";
+        const psyText =
+          Number(student.trialPsychologyScreening || 0) === 1 || student.trialPsychologistName
+            ? `Tâm lý: ${student.trialPsychologyConclusion || student.trialPsychologyStatus || "Đã đánh giá"}${student.trialPsychologistName ? ` (${student.trialPsychologistName})` : ""}`
+            : "Tâm lý: Không KS";
+
+        return `
+          <tr style="border-bottom: 1px solid #E2E8F0;">
+            <td style="padding: 10px 10px; font-size: 12px; color: #64748B; text-align: center;">${idx + 1}</td>
+            <td style="padding: 10px 10px; font-size: 12px;">
+              <div style="font-weight: 700; color: #003B3A;">${student.fullName}</div>
+              <div style="font-size: 11px; color: #64748B;">${student.studentCode} &bull; ${student.grade || "Mầm non"}</div>
+            </td>
+            <td style="padding: 10px 10px; font-size: 11px; color: #334155; line-height: 1.5;">
+              <div><strong>NT MN/BGH:</strong> ${bghText} (${scoreText})</div>
+              <div>${trialText} &bull; ${psyText}</div>
+            </td>
+            <td style="padding: 10px 10px; font-size: 11px; white-space: nowrap;">
+              <a href="${uDat}" target="_blank" style="display:inline-block;padding:6px 10px;margin:2px;border-radius:6px;background:#059669;color:#FFFFFF;font-weight:700;text-decoration:none;">✓ Duyệt Đạt (B10)</a>
+              <a href="${uChuaDat}" target="_blank" style="display:inline-block;padding:6px 10px;margin:2px;border-radius:6px;background:#E11D48;color:#FFFFFF;font-weight:700;text-decoration:none;">✕ Chưa đạt</a>
+            </td>
+          </tr>
+        `;
+      }
+    })
+    .join("");
+
+  return `
+<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:'Segoe UI',Arial,sans-serif;color:#0F172A;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:20px 10px;">
+    <tr><td align="center">
+      <table role="presentation" width="700" cellpadding="0" cellspacing="0" style="max-width:700px;width:100%;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:16px;overflow:hidden;">
+        <tr>
+          <td bgcolor="#003B3A" style="background:#003B3A;padding:22px 26px;color:#FFFFFF;border-bottom:4px solid #00A19A;">
+            <div style="font-size:11px;color:#5EEAD4;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;">
+              Hệ thống Giáo dục Sky-Line &bull; Khảo sát Mầm non ${campusName}
+            </div>
+            ${isArchiveCopy ? `<div style="display:inline-block;margin-top:6px;padding:3px 10px;border-radius:6px;background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;">Bản sao lưu trữ KT&amp;ĐBCL</div>` : ""}
+            <h1 style="margin:6px 0 0 0;font-size:18px;font-weight:800;">
+              ${
+                isBghMn
+                  ? `Yêu cầu NT Mầm non / BGH rà soát &amp; định tuyến theo đợt (${students.length} HS)`
+                  : `Yêu cầu Giám đốc Cơ sở phê duyệt B10 theo đợt (${students.length} HS)`
+              }
+            </h1>
+            <div style="margin-top:4px;font-size:12px;color:#CCFBF1;">Đợt khảo sát: <strong>${batchName}</strong></div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 26px;">
+            <p style="margin:0 0 10px 0;font-size:14px;">Kính gửi Thầy/Cô <strong>${recipientName}</strong>,</p>
+            <p style="margin:0 0 16px 0;font-size:13px;color:#334155;line-height:1.6;">
+              ${
+                isBghMn
+                  ? `Tất cả <strong>${students.length} học sinh</strong> trong đợt <strong>${batchName}</strong> đã hoàn thành đánh giá <strong>B5/B4B</strong>. Kính đề xuất Thầy/Cô thực hiện rà soát &amp; định tuyến (Bước 1 — B6/B9A) trực tiếp ngay trên bảng bên dưới:`
+                  : `Tất cả <strong>${students.length} học sinh</strong> trong đợt <strong>${batchName}</strong> đã hoàn tất rà soát <strong>Bước 1 (NT Mầm non / BGH)</strong>. Kính đề xuất Giám đốc Cơ sở phê duyệt kết quả chính thức (Bước 2 — B10) trực tiếp ngay trên bảng bên dưới:`
+              }
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #CBD5E1;border-radius:10px;overflow:hidden;border-collapse:collapse;">
+              <tr bgcolor="#003B3A" style="background:#003B3A;color:#FFFFFF;font-size:11px;font-weight:700;">
+                <th style="padding:9px 8px;width:32px;text-align:center;">#</th>
+                <th style="padding:9px 10px;text-align:left;">Học sinh</th>
+                <th style="padding:9px 10px;text-align:left;">${isBghMn ? "Kết quả B5/B4B" : "Kết quả rà soát B6/B9A"}</th>
+                <th style="padding:9px 10px;text-align:left;color:#5EEAD4;">Thao tác trực tiếp</th>
+              </tr>
+              ${rowsHtml}
+            </table>
+            <div style="text-align:center;margin-top:18px;">
+              <a href="${portalUrl}" target="_blank" style="display:inline-block;padding:10px 22px;border-radius:10px;border:2px solid #003B3A;color:#003B3A;font-size:13px;font-weight:700;text-decoration:none;">
+                🔍 Mở bảng Xét duyệt Mầm non trên SSM Portal &rarr;
+              </a>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Tự động gửi email thông báo kết quả phê duyệt GĐCS (B10) đến:
+ * Tư vấn tuyển sinh cơ sở, Giáo vụ cơ sở, và BGH / Nhóm trưởng Mầm non cơ sở.
+ */
+export async function notifyPreschoolGdcsResultToStakeholders(params: {
+  student: any;
+  outcome: "DAT" | "CHUA_DAT";
+  admissionResult: string;
+  approverName: string;
+  comment?: string | null;
+  baseUrl?: string;
+}): Promise<{ emailsSent: number; recipients: string[] }> {
+  const { student, outcome, admissionResult, approverName, comment, baseUrl = "https://ssm.skylineschool.edu.vn" } = params;
+  const campusStr = String(student?.admissionCampus || student?.registeredCampus || "").trim();
+  const cUp = campusStr.toUpperCase();
+  const campusCode =
+    cUp.includes("CS1") || cUp.includes("RIVERSIDE") ? "CS1"
+    : cUp.includes("CS2") || cUp.includes("CENTRAL") ? "CS2"
+    : cUp.includes("CS3") || cUp.includes("GLOBAL") ? "CS3"
+    : cUp.includes("CS4") || cUp.includes("HILL") ? "CS4"
+    : cUp.includes("CS5") || cUp.includes("BEACH") ? "CS5"
+    : "";
+
+  const recipientEmails = new Set<string>();
+  const addEmails = (raw?: string | null) => {
+    if (!raw) return;
+    for (const part of String(raw).split(/[,;\n]+/)) {
+      const e = part.trim().toLowerCase();
+      if (e.includes("@") && e !== "admin@skyline.edu") recipientEmails.add(e);
+    }
+  };
+
+  // 1. Load configured PRESCHOOL_APPROVAL_ROUTING_V1 (BGH MN) & EMAIL_ROUTING_V1 (Tư vấn, Giáo vụ, BGH)
+  try {
+    const configs = await (prisma as any).assessmentConfig.findMany({
+      where: { categoryType: "APPROVAL_EMAIL_CONFIG", name: { in: ["PRESCHOOL_APPROVAL_ROUTING_V1", "EMAIL_ROUTING_V1"] } },
+    });
+    for (const cfg of configs || []) {
+      try {
+        const parsed = JSON.parse(cfg.content || "{}");
+        if (cfg.name === "PRESCHOOL_APPROVAL_ROUTING_V1" && campusCode) {
+          addEmails(parsed?.campuses?.[campusCode]?.bghmn);
+        }
+        if (cfg.name === "EMAIL_ROUTING_V1" && campusCode) {
+          const cObj = parsed?.campuses?.[campusCode];
+          addEmails(cObj?.tuVan);
+          addEmails(cObj?.giaoVu);
+          addEmails(cObj?.bgh);
+        }
+        if (parsed?.ktdbclEmails) addEmails(parsed.ktdbclEmails);
+      } catch {}
+    }
+  } catch {}
+
+  // 2. Fallback DB users for that campus (TU_VAN, GIAO_VU, BGH_MN, NHOM_TRUONG_MN)
+  try {
+    const campusObj = campusCode
+      ? await (prisma as any).campus.findFirst({ where: { OR: [{ campusCode }, { campusName: campusStr }] } })
+      : null;
+    if (campusObj) {
+      addEmails(campusObj.admissionEmail);
+      const staff = await (prisma as any).user.findMany({
+        where: {
+          isActive: true,
+          role: { in: ["TU_VAN", "TU_VAN_CS", "GIAO_VU", "GIAO_VU_CS", "BGH_MN", "NHOM_TRUONG_MN", "BGH_CS"] },
+          OR: [{ campusId: campusObj.id }, { teacher: { campusId: campusObj.id } }],
+        },
+        select: { email: true },
+      });
+      for (const u of staff || []) addEmails(u.email);
+    }
+  } catch {}
+
+  // 3. Default BGH MN fallback by campus if empty
+  const DEFAULT_BGH_MN: Record<string, string> = {
+    CS1: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
+    CS2: "yenlth@skylineschool.edu.vn, thanhmaitt@skylineschool.edu.vn",
+    CS3: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
+    CS4: "quyenlth@skylineschool.edu.vn, chault@skylineschool.edu.vn",
+    CS5: "monghatn@skylineschool.edu.vn, ngocltb@skylineschool.edu.vn",
+  };
+  if (campusCode && DEFAULT_BGH_MN[campusCode]) addEmails(DEFAULT_BGH_MN[campusCode]);
+  addEmails("ktdbcl@skylineschool.edu.vn");
+
+  const list = Array.from(recipientEmails);
+  if (list.length === 0) return { emailsSent: 0, recipients: [] };
+
+  const isPass = outcome === "DAT";
+  const badgeBg = isPass ? "#D1FAE5" : "#FFE4E6";
+  const badgeColor = isPass ? "#065F46" : "#9F1239";
+  const subject = `[Sky-Line SSM · Mầm non] Kết quả phê duyệt GĐCS (${admissionResult}) — Bé ${student.fullName} (${student.studentCode})`;
+  const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:'Segoe UI',Arial,sans-serif;color:#0F172A;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 12px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;">
+        <tr>
+          <td style="background:#003B3A;padding:20px 26px;color:#FFFFFF;border-bottom:4px solid ${isPass ? "#059669" : "#E11D48"};">
+            <div style="font-size:11px;color:#5EEAD4;font-weight:700;">Hệ thống Giáo dục Sky-Line · Thông báo kết quả phê duyệt B10</div>
+            <div style="font-size:18px;font-weight:800;margin-top:4px;">GĐCS đã phê duyệt kết quả Khảo sát Mầm non</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:22px 26px;font-size:13.5px;line-height:1.6;">
+            <p style="margin:0 0 12px 0;">Kính gửi Bộ phận <strong>Tư vấn tuyển sinh</strong>, <strong>Giáo vụ cơ sở</strong> và <strong>BGH / Nhóm trưởng Mầm non ${campusStr || campusCode}</strong>,</p>
+            <p style="margin:0 0 14px 0;color:#334155;">Giám đốc Điều hành Cơ sở đã hoàn tất phê duyệt kết quả khảo sát đầu vào cho học sinh dưới đây:</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;font-size:13px;margin-bottom:16px;">
+              <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#64748B;width:36%;">Học sinh</td><td style="padding:9px 14px;font-weight:700;color:#003B3A;">${student.fullName} (${student.studentCode})</td></tr>
+              <tr><td style="padding:9px 14px;color:#64748B;border-top:1px solid #F1F5F9;">Nhóm tuổi / Cơ sở</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;">${student.grade || "Mầm non"} &bull; ${campusStr || campusCode}</td></tr>
+              <tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#64748B;border-top:1px solid #F1F5F9;">Kết quả GĐCS duyệt</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;"><span style="display:inline-block;padding:3px 10px;border-radius:999px;font-weight:700;background:${badgeBg};color:${badgeColor};">${admissionResult}</span></td></tr>
+              <tr><td style="padding:9px 14px;color:#64748B;border-top:1px solid #F1F5F9;">Người phê duyệt</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;font-weight:600;">${approverName}</td></tr>
+              ${comment ? `<tr style="background:#F8FAFC;"><td style="padding:9px 14px;color:#64748B;border-top:1px solid #F1F5F9;">Ý kiến GĐCS</td><td style="padding:9px 14px;border-top:1px solid #F1F5F9;font-style:italic;">&ldquo;${comment}&rdquo;</td></tr>` : ""}
+            </table>
+            <p style="margin:0 0 16px 0;font-size:13px;color:#334155;">
+              ${
+                isPass
+                  ? "Bộ phận <strong>Giáo vụ / Tư vấn</strong> vui lòng tiến hành xuất <strong>Thư chúc mừng (BM.KTĐBCL.17)</strong> và trả kết quả chính thức cho Quý Phụ huynh."
+                  : "Bộ phận <strong>Tư vấn / Giáo vụ</strong> vui lòng phối hợp trao đổi với Quý Phụ huynh và xuất <strong>Thư cảm ơn (BM.KTĐBCL.04)</strong> theo quy trình."
+              }
+            </p>
+            <div style="text-align:center;">
+              <a href="${baseUrl}/admin/xet-duyet-ket-qua?tab=preschool" style="display:inline-block;padding:10px 22px;border-radius:10px;background:#003B3A;color:#FFFFFF;font-size:13px;font-weight:700;text-decoration:none;">
+                Mở bảng Xét duyệt Mầm non trên SSM &rarr;
+              </a>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+  `;
+
+  let sent = 0;
+  for (const to of list) {
+    try {
+      await sendEmail({ to, subject, html, replyTo: "ktdbcl@skylineschool.edu.vn" });
+      sent++;
+    } catch {}
+  }
+  return { emailsSent: sent, recipients: list };
 }
