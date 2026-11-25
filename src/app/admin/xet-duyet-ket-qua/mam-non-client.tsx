@@ -77,6 +77,10 @@ const getStatusBadge = (status: string | null | undefined) => {
     DAT_MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
     MIEN_HOC_THU: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
     MIEN_HT: { bg: "bg-teal-50 text-teal-800 border-teal-200/70", label: "Miễn học thử" },
+    DE_XUAT_DAT: { bg: "bg-emerald-50 text-emerald-700 border-emerald-200/70", label: "Đề xuất Đạt → B10" },
+    DE_XUAT_CHUA_DAT: { bg: "bg-rose-50 text-rose-700 border-rose-200/70", label: "Đề xuất Chưa đạt → B10" },
+    CAN_PV_TAM_LY: { bg: "bg-amber-50 text-amber-800 border-amber-200/70", label: "Cần PV tâm lý (B7A)" },
+    HEN_TRAI_NGHIEM: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Hẹn trải nghiệm (B7B)" },
     DAT_HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
     HOC_THU: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
     HOC_THU_LAI: { bg: "bg-sky-50 text-sky-700 border-sky-200/70", label: "Học thử" },
@@ -390,6 +394,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     const isPassToken = (v: string) =>
       v === "DAT" ||
       v === "ĐẠT" ||
+      v === "DE_XUAT_DAT" ||
       v === "DAT_MIEN_HOC_THU" ||
       v === "MIEN_HOC_THU" ||
       v === "MIEN_HT" ||
@@ -400,35 +405,41 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
     const isTrialToken = (v: string) =>
       !isPassToken(v) &&
-      (v === "DAT_HOC_THU" ||
+      (v === "HEN_TRAI_NGHIEM" ||
+        v === "DAT_HOC_THU" ||
         v === "HOC_THU" ||
         v === "HOC_THU_LAI" ||
         v.includes("HỌC THỬ") ||
-        v.includes("HOC_THU"));
+        v.includes("HOC_THU") ||
+        v.includes("TRẢI NGHIỆM"));
 
     const isBghDirectPass = isPassToken(bghRaw);
+    const isBghDirectToB10 = isBghDirectPass || bghRaw === "DE_XUAT_CHUA_DAT";
+    const isBghPsy = bghRaw === "CAN_PV_TAM_LY";
     const isBghTrial = isTrialToken(bghRaw);
     const isExemptTrial =
       isBghDirectPass ||
-      (!isBghTrial && (isPassToken(gdcsRaw) || isPassToken(generalRaw) || isPassToken(admRaw)));
+      (!isBghTrial && !isBghPsy && (isPassToken(gdcsRaw) || isPassToken(generalRaw) || isPassToken(admRaw)));
 
     const hasTrialAssignment = Boolean(s.probationaryTeacher || s.probationaryClass);
     const hasTrialData = Boolean(isBghTrial || hasTrialAssignment || probRes || probBgh);
     const isTrialPassed = probBgh === "DAT";
 
     // Chỉ mở nút GĐCS xét duyệt khi:
-    // 1. BGH MN duyệt Đạt / Miễn học thử trực tiếp, HOẶC
-    // 2. Đã qua luồng Học thử và BGH duyệt kết quả học thử = Đạt, HOẶC
+    // 1. BGH MN chọn Đề xuất Đạt / Đề xuất Chưa đạt trình B10 (hoặc Miễn học thử), HOẶC
+    // 2. Đã qua luồng Học thử / Trải nghiệm và BGH duyệt kết quả học thử = Đạt, HOẶC
     // 3. GĐCS đã có kết quả duyệt trước đó
-    const canGdcsApprove = Boolean(gdcsRaw || isBghDirectPass || isTrialPassed);
+    const canGdcsApprove = Boolean(gdcsRaw || isBghDirectToB10 || isTrialPassed);
 
     let pendingReason = "";
     if (!canGdcsApprove) {
       if (!bghRaw) {
         pendingReason = "Chờ BGH MN duyệt";
+      } else if (isBghPsy) {
+        pendingReason = "Chờ PV tâm lý (B7A)";
       } else if (isBghTrial) {
         if (!hasTrialAssignment) pendingReason = "Chờ phân công HT";
-        else if (!probRes) pendingReason = "Đang học thử";
+        else if (!probRes) pendingReason = "Đang học thử / TN";
         else if (!probBgh) pendingReason = "Chờ duyệt KQHT";
         else pendingReason = "KQ học thử chưa đạt";
       } else {
@@ -547,6 +558,12 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [isInvitation, setIsInvitation] = useState(true);
   const [isCommitment, setIsCommitment] = useState(false);
   const [selectedReportStudent, setSelectedReportStudent] = useState<any>(null);
+
+  // States for B6/B9A Routing inside Evaluation Modal (B7A Tâm lý & B7B Hẹn trải nghiệm)
+  const [evalPsyTeacherId, setEvalPsyTeacherId] = useState("");
+  const [evalTrialTeacher, setEvalTrialTeacher] = useState("");
+  const [evalTrialClass, setEvalTrialClass] = useState("");
+  const [evalTrialPeriod, setEvalTrialPeriod] = useState("");
 
   // States for 'PCGV ĐG Học thử' Modal (kèm mẫu phiếu đánh giá, KQ học thử & Sàng lọc tâm lý)
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -2829,6 +2846,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setBghApprovalDate(student.bghApprovalDate || "");
     setGdcsApprovalUser(student.gdcsApprovalUser || "");
     setGdcsApprovalDate(student.gdcsApprovalDate || "");
+    setEvalPsyTeacherId(student.trialPsychologistId || "");
+    setEvalTrialTeacher(student.probationaryTeacher || "");
+    setEvalTrialClass(student.probationaryClass || "");
+    setEvalTrialPeriod(student.probationaryPeriod || "");
     setHistoryList([]);
     setExpandedHistoryId(null);
     if (student.studentCode) {
@@ -3606,6 +3627,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
   const saveEvaluation = async () => {
     if (!evalStudent) return;
+    if (bghApprovalStatus === "CAN_PV_TAM_LY" && !evalPsyTeacherId) {
+      notify("Vui lòng chọn GV Tâm lý được phân công để gửi email phỏng vấn tâm lý (B7A).", "err");
+      return;
+    }
+    if (bghApprovalStatus === "HEN_TRAI_NGHIEM") {
+      if (!evalTrialTeacher.trim() || !evalTrialClass.trim() || !evalTrialPeriod.trim()) {
+        notify("Trường hợp Hẹn trải nghiệm (B7B) bắt buộc chọn đủ GV phân công, Lớp trải nghiệm và Thời gian trải nghiệm.", "err");
+        return;
+      }
+    }
     setSavingEval(true);
     try {
       const scoresPayload = Object.entries(studentScores).map(([criteriaId, val]) => ({
@@ -3630,9 +3661,55 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         })
       });
       if (r.ok) {
+        let extraMsg = "";
+        // Tự động gửi email đến GV Tâm lý khi chọn Cần PV tâm lý (B7A)
+        if (bghApprovalStatus === "CAN_PV_TAM_LY" && evalPsyTeacherId) {
+          const psyTeacher = (teachers || []).find((t: any) => (t.user?.id || t.id) === evalPsyTeacherId);
+          const psyName = psyTeacher?.teacherName || psyTeacher?.user?.fullName || "GV Tâm lý";
+          const psyEmail = psyTeacher?.email || psyTeacher?.user?.email || "";
+          try {
+            const wfRes = await fetch(`/api/preschool-workflow/${evalStudent.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "SAVE_TRIAL_WORKFLOW",
+                trialPsychologyScreening: true,
+                trialPsychologistId: psyTeacher?.user?.id || evalPsyTeacherId,
+                trialPsychologistName: psyName,
+                trialPsychologistEmail: psyEmail,
+                psychologyNote: bghApprovalComment || devPsyComment || "Cần phỏng vấn / sàng lọc tâm lý (B7A)",
+                sendPsychologyEmail: Boolean(psyEmail),
+              }),
+            });
+            const wfData = await wfRes.json().catch(() => ({}));
+            extraMsg = wfData?.emailSent
+              ? ` Đã tự động gửi email tới GV Tâm lý (${psyName}).`
+              : ` Đã phân công GV Tâm lý (${psyName}).`;
+          } catch {}
+        }
+
+        // Lưu GV phân công, Lớp trải nghiệm & Thời gian trải nghiệm khi chọn Hẹn trải nghiệm (B7B)
+        if (bghApprovalStatus === "HEN_TRAI_NGHIEM") {
+          try {
+            await fetch(`/api/preschool-workflow/${evalStudent.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "SAVE_TRIAL_WORKFLOW",
+                probationaryTeacher: evalTrialTeacher.trim(),
+                probationaryClass: evalTrialClass.trim(),
+                probationaryPeriod: evalTrialPeriod.trim(),
+                probationaryComment: bghApprovalComment || "",
+                trialPsychologyScreening: Boolean(evalStudent.trialPsychologyScreening),
+              }),
+            });
+            extraMsg = ` Đã lưu lịch trải nghiệm (${evalTrialClass.trim()} · ${evalTrialTeacher.trim()} · ${evalTrialPeriod.trim()}).`;
+          } catch {}
+        }
+
         setEvalModal(false);
         fetchStudentSummaries();
-        notify("Đã lưu kết quả đánh giá & xét duyệt thành công!", "ok");
+        notify(`Đã lưu kết quả đánh giá & định tuyến B6/B9A thành công!${extraMsg}`, "ok");
 
         // Gửi email kết quả xét duyệt Mầm non tới GĐCS, Tư vấn Cơ sở & Ban KT&ĐBCL
         if (gdcsApprovalStatus) {
@@ -9118,7 +9195,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
           </div>
 
-          {/* PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT CARD */}
+          {/* B6 / B9A: NHÓM TRƯỞNG MẦM NON RÀ SOÁT & ĐỊNH TUYẾN → B10: GĐCS PHÊ DUYỆT */}
           {(() => {
             const userCampuses = campuses.filter(c => currentUser?.campusIds?.includes(c.id));
             const hasCampusMatch = currentUser?.campusIds?.length === 0 || userCampuses.some(c => 
@@ -9126,260 +9203,307 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             );
 
             const canApproveBGH = (isSystemAdmin || isBGHUser) && hasCampusMatch;
-            const canApproveGDCS = (isSystemAdmin || isGDCSUser) && hasCampusMatch && !!bghApprovalStatus;
+            const isBghRoutedToB10 =
+              bghApprovalStatus === "DE_XUAT_DAT" ||
+              bghApprovalStatus === "DE_XUAT_CHUA_DAT" ||
+              bghApprovalStatus === "DAT_MIEN_HOC_THU" ||
+              bghApprovalStatus === "DAT" ||
+              bghApprovalStatus === "KHONG_DAT" ||
+              evalStudent?.probationaryBghStatus === "DAT";
+            const canApproveGDCS = (isSystemAdmin || isGDCSUser) && hasCampusMatch && (isBghRoutedToB10 || Boolean(gdcsApprovalStatus));
             const userCampusNames = userCampuses.map(c => c.campusName).join(", ");
+
+            const psyTeachers = (teachers || []).filter((t: any) => {
+              const dept = String(t.departmentRel?.name || "").toLowerCase().normalize("NFC");
+              const role = String(t.user?.role || "").toUpperCase();
+              return dept.includes("tâm lý") || dept.includes("tam ly") || dept.includes("tham vấn") || role === "TAM_LY";
+            });
+            const otherTeachers = (teachers || []).filter((t: any) => !psyTeachers.includes(t));
 
             const getCalculatedResult = () => {
               const bgh = bghApprovalStatus || "";
               const gdcs = gdcsApprovalStatus || "";
+              if (gdcs === "DAT" || gdcs === "DAT_MIEN_HOC_THU") return "Đạt";
+              if (gdcs === "KHONG_DAT") return "Chưa đạt";
               const resolved = resolvePreschoolAdmissionResult({ bghStatus: bgh, gdcsStatus: gdcs });
               if (resolved) return resolved;
-              if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") return "Không đạt";
-              if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") return "Ý kiến khác";
-              return "Chưa duyệt";
+              if (bgh === "DE_XUAT_DAT") return "Đề xuất Đạt → Trình B10";
+              if (bgh === "DE_XUAT_CHUA_DAT") return "Đề xuất Chưa đạt → B10";
+              if (bgh === "CAN_PV_TAM_LY") return "Cần PV tâm lý (B7A)";
+              if (bgh === "HEN_TRAI_NGHIEM") return "Hẹn trải nghiệm (B7B)";
+              if (bgh === "KHONG_DAT") return "Chưa đạt";
+              return "Chưa rà soát";
             };
 
             const calcRes = getCalculatedResult();
-            
+
             const getCalcBadge = (res: string) => {
-              if (res === "Đạt - Miễn Học Thử") {
-                return <span className="text-xs font-black text-slate-800 bg-teal-50  rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✓ ĐẠT - MIỄN HỌC THỬ</span>;
+              if (res === "Đạt" || res === "Đạt - Miễn Học Thử" || res === "Đề xuất Đạt → Trình B10") {
+                return <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">✓ {res}</span>;
               }
-              if (res === "Đạt - Học Thử" || res === "Học thử") {
-                return <span className="text-xs font-black text-sky-700 bg-sky-50 border border-sky-200/50 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">★ ĐẠT - HỌC THỬ</span>;
+              if (res === "Hẹn trải nghiệm (B7B)" || res === "Đạt - Học Thử" || res === "Học thử") {
+                return <span className="text-xs font-bold text-[#00736E] bg-[#F0FDFA] border border-teal-200 rounded-full px-2.5 py-1">{res}</span>;
               }
-              if (res === "Đạt") {
-                return <span className="text-xs font-black text-slate-800 bg-emerald-50  rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✓ ĐẠT</span>;
+              if (res === "Cần PV tâm lý (B7A)") {
+                return <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">{res}</span>;
               }
-              if (res === "Không đạt") {
-                return <span className="text-xs font-black text-slate-800 bg-rose-50  rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✗ KHÔNG ĐẠT</span>;
+              if (res === "Chưa đạt" || res === "Không đạt" || res === "Đề xuất Chưa đạt → B10") {
+                return <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-full px-2.5 py-1">✕ {res}</span>;
               }
-              if (res === "Ý kiến khác") {
-                return <span className="text-xs font-black text-slate-800 bg-amber-50 border border-amber-250/50 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">★ Ý KIẾN KHÁC</span>;
-              }
-              return <span className="text-xs font-black text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2.5 py-1">CHƯA DUYỆT</span>;
+              return <span className="text-xs font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-full px-2.5 py-1">{res}</span>;
             };
 
             return (
-              <div className="bg-[#EBF5F4]/40 border border-[#48BFE3]/15 p-6 rounded-3xl space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#48BFE3]/10 pb-4">
+              <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-5 rounded-2xl space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3.5">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-slate-800" />
-                    <h4 className="text-xs font-black text-[#003B3A] uppercase tracking-wider">PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT</h4>
+                    <span className="w-1.5 h-5 rounded-full bg-[#003B3A]" />
+                    <h4 className="text-xs font-bold text-[#003B3A]">
+                      B6 / B9A: Nhóm trưởng Mầm non rà soát &amp; định tuyến → B10: GĐCS phê duyệt
+                    </h4>
                   </div>
-                  <div className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-2xl border border-slate-200 shadow-xs self-start sm:self-auto">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      {bghApprovalStatus && gdcsApprovalStatus ? "Kết quả Duyệt:" : "Kết quả Duyệt (Dự kiến):"}
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-[#E2E8F0] self-start sm:self-auto">
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      {gdcsApprovalStatus ? "Kết luận B10:" : "Định tuyến:"}
                     </span>
                     {getCalcBadge(calcRes)}
                   </div>
                 </div>
 
-                <div className={`grid grid-cols-1 ${showBghSection && showGdcsSection ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
-                  {/* BGH MN Column */}
+                <div className={`grid grid-cols-1 ${showBghSection && showGdcsSection ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-5`}>
+                  {/* B6 / B9A: Nhóm trưởng / BGH Mầm non */}
                   {showBghSection && (
-                    <div className={`space-y-4 bg-white p-5 rounded-2xl border transition-all ${canApproveBGH ? 'border-[#48BFE3]/20 shadow-xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${canApproveBGH ? 'bg-teal-400 animate-pulse' : 'bg-slate-300'}`} />
-                          <span className="text-[10px] font-black text-[#003B3A] uppercase tracking-wider mr-2">BAN GIÁM HIỆU MẦM NON</span>
-                          {(() => {
-                            if (!bghApprovalStatus) return <span className="text-[8px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">Chưa duyệt</span>;
-                            if (bghApprovalStatus === "DAT_MIEN_HOC_THU" || bghApprovalStatus === "DAT") return <span className="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">Miễn HT</span>;
-                            if (bghApprovalStatus === "DAT_HOC_THU") return <span className="text-[8px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-lg border border-sky-100">Học thử</span>;
-                            if (bghApprovalStatus === "KHONG_DAT") return <span className="text-[8px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-100">Không đạt</span>;
-                            return <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">Ý kiến</span>;
-                          })()}
+                    <div className={`space-y-3.5 bg-white p-5 rounded-2xl border transition-all ${canApproveBGH ? 'border-[#008B85]/30 shadow-2xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-[#003B3A]">B6 / B9A · Nhóm trưởng / BGH Mầm non</span>
+                          {getStatusBadge(bghApprovalStatus)}
                         </div>
-                        {!canApproveBGH && (
-                          <span className="text-[9px] font-bold text-slate-450 bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1" title={
-                            !evalStudent?.admissionCampus 
-                              ? "Học sinh chưa có thông tin cơ sở" 
-                              : isBGHUser 
-                                ? `Bạn là BGH của cơ sở khác, học sinh thuộc ${evalStudent.admissionCampus}` 
-                                : "Quyền hạn yêu cầu Ban Giám Hiệu Mầm Non"
-                          }>
-                            🔒 Chỉ đọc
-                          </span>
-                        )}
-                        {canApproveBGH && (
-                          <span className="text-[9px] font-bold text-slate-800 bg-[#48BFE3]/5 px-2 py-1 rounded-lg">
-                            ✍️ Quyền duyệt
-                          </span>
-                        )}
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg ${canApproveBGH ? 'text-[#00736E] bg-[#F0FDFA] border border-teal-200' : 'text-slate-500 bg-slate-100'}`}>
+                          {canApproveBGH ? "Quyền định tuyến" : "Chỉ đọc"}
+                        </span>
                       </div>
 
-                      {/* Helpful Permission Hint for BGH */}
                       {isBGHUser && !hasCampusMatch && evalStudent?.admissionCampus && (
-                        <div className="text-[9px] font-semibold text-amber-600 bg-amber-50/50 p-2.5 rounded-xl border border-amber-250/20 leading-relaxed">
-                          ⚠️ Cơ sở học sinh: <span className="underline font-bold">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline font-bold">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                        <div className="text-[11px] font-medium text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 leading-relaxed">
+                          Cơ sở học sinh: <strong>{evalStudent.admissionCampus}</strong>. Cơ sở của bạn: <strong>{userCampusNames || "Chưa gán"}</strong>.
                         </div>
                       )}
 
-                      {(isSystemAdmin || isGDCSUser) && hasCampusMatch && !bghApprovalStatus && (
-                        <div className="text-[9px] font-semibold text-amber-600 bg-amber-50/50 p-2.5 rounded-xl border border-amber-250/20 leading-relaxed mb-4">
-                          ⚠️ Chờ Ban Giám Hiệu Mầm Non duyệt trước. Bạn chỉ có quyền duyệt sau khi BGH đã duyệt.
-                        </div>
-                      )}
-
-                      {!evalStudent?.admissionCampus && !isSystemAdmin && (
-                        <div className="text-[9px] font-semibold text-rose-600 bg-rose-50/50 p-2.5 rounded-xl border border-rose-250/20 leading-relaxed">
-                          ⚠️ Học sinh chưa được gán Cơ sở. Chỉ Quản trị viên hệ thống có quyền duyệt.
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {[
-                          { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "text-emerald-600 border-emerald-200 hover:bg-emerald-50/40 hover:border-emerald-350", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-xs" },
-                          { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "text-slate-800 border-[#48BFE3]/20 hover:bg-teal-50/40 hover:border-[#48BFE3]/40", activeColor: "bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs" },
-                          { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "text-rose-600 border-rose-205 hover:bg-rose-50/40 hover:border-rose-350", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
-                          { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "text-amber-600 border-amber-205 hover:bg-amber-50/40 hover:border-amber-350", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
-                        ].map(opt => (
-                          <button
-                            key={opt.status}
-                            type="button"
-                            disabled={!canApproveBGH || isAssessmentLocked}
-                            onClick={() => setBghApprovalStatus(bghApprovalStatus === opt.status ? "" : opt.status)}
-                            className={`px-3 py-2 rounded-xl border text-[9px] font-black tracking-wide transition-all ${
-                              (bghApprovalStatus === opt.status || (opt.status === "DAT_MIEN_HOC_THU" && bghApprovalStatus === "DAT"))
-                                ? opt.activeColor 
-                                : `bg-white ${opt.color}`
-                            } ${(!canApproveBGH || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                        {canApproveBGH && !isAssessmentLocked && bghApprovalStatus && (
-                          <button
-                            type="button"
-                            onClick={() => setBghApprovalStatus("")}
-                            className="text-[9px] font-black text-rose-600 hover:bg-rose-50 transition-all px-2.5 py-2"
-                          >
-                            Bỏ chọn
-                          </button>
-                        )}
+                          { status: "DE_XUAT_DAT", label: "Đề xuất Đạt → Trình B10", color: "text-emerald-700 border-emerald-200 hover:bg-emerald-50", activeColor: "bg-emerald-600 text-white border-emerald-600 shadow-2xs" },
+                          { status: "DE_XUAT_CHUA_DAT", label: "Đề xuất Chưa đạt → B10", color: "text-rose-700 border-rose-200 hover:bg-rose-50", activeColor: "bg-rose-600 text-white border-rose-600 shadow-2xs" },
+                          { status: "CAN_PV_TAM_LY", label: "Cần PV tâm lý (B7A)", color: "text-amber-800 border-amber-200 hover:bg-amber-50", activeColor: "bg-amber-600 text-white border-amber-600 shadow-2xs" },
+                          { status: "HEN_TRAI_NGHIEM", label: "Hẹn trải nghiệm (B7B)", color: "text-[#00736E] border-teal-200 hover:bg-[#F0FDFA]", activeColor: "bg-[#008B85] text-white border-[#008B85] shadow-2xs" }
+                        ].map(opt => {
+                          const isSelected =
+                            bghApprovalStatus === opt.status ||
+                            (opt.status === "DE_XUAT_DAT" && (bghApprovalStatus === "DAT_MIEN_HOC_THU" || bghApprovalStatus === "DAT")) ||
+                            (opt.status === "HEN_TRAI_NGHIEM" && bghApprovalStatus === "DAT_HOC_THU") ||
+                            (opt.status === "DE_XUAT_CHUA_DAT" && bghApprovalStatus === "KHONG_DAT");
+                          return (
+                            <button
+                              key={opt.status}
+                              type="button"
+                              disabled={!canApproveBGH || isAssessmentLocked}
+                              onClick={() => setBghApprovalStatus(isSelected ? "" : opt.status)}
+                              className={`px-3 py-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+                                isSelected ? opt.activeColor : `bg-white ${opt.color}`
+                              } ${(!canApproveBGH || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : ''}`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
                       </div>
+
+                      {/* Khung tự động gửi email GV Tâm lý khi chọn Cần PV tâm lý (B7A) */}
+                      {bghApprovalStatus === "CAN_PV_TAM_LY" && (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 space-y-2.5 text-xs">
+                          <div className="font-bold text-amber-900">
+                            Phân công GV Tâm lý phỏng vấn (B7A) <span className="text-rose-600">*</span>
+                          </div>
+                          <select
+                            value={evalPsyTeacherId}
+                            onChange={(e) => setEvalPsyTeacherId(e.target.value)}
+                            disabled={!canApproveBGH || isAssessmentLocked}
+                            className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                          >
+                            <option value="">-- Chọn GV Tâm lý được phân công --</option>
+                            {psyTeachers.length > 0 && (
+                              <optgroup label="Tổ Tâm lý học đường">
+                                {psyTeachers.map((t: any) => (
+                                  <option key={t.id} value={t.user?.id || t.id}>
+                                    {t.teacherName} ({t.email || t.user?.email || "Chưa có email"})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                            {otherTeachers.length > 0 && (
+                              <optgroup label="Nhân sự khác">
+                                {otherTeachers.map((t: any) => (
+                                  <option key={t.id} value={t.user?.id || t.id}>
+                                    {t.teacherName} {t.departmentRel?.name ? `(${t.departmentRel.name})` : ""}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
+                          </select>
+                          <p className="text-[11px] text-amber-800 leading-snug">
+                            Khi bấm <strong>Lưu đánh giá &amp; phê duyệt</strong>, hệ thống sẽ <strong>tự động gửi email</strong> kèm liên kết phản hồi xác nhận đến GV Tâm lý được chọn.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Khung bắt buộc chọn GV, Lớp & Thời gian trải nghiệm khi chọn Hẹn trải nghiệm (B7B) */}
+                      {bghApprovalStatus === "HEN_TRAI_NGHIEM" && (
+                        <div className="rounded-xl border border-teal-200 bg-[#F0FDFA] p-3.5 space-y-2.5 text-xs">
+                          <div className="font-bold text-[#003B3A]">
+                            Thông tin Hẹn trải nghiệm / Học thử (B7B) — Bắt buộc nhập đủ
+                          </div>
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                GV phân công trải nghiệm <span className="text-rose-600">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                list="eval-b7b-teachers-list"
+                                value={evalTrialTeacher}
+                                onChange={(e) => setEvalTrialTeacher(e.target.value)}
+                                disabled={!canApproveBGH || isAssessmentLocked}
+                                placeholder="Chọn hoặc nhập tên GV phụ trách..."
+                                className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                              />
+                              <datalist id="eval-b7b-teachers-list">
+                                {(teachers || []).map((t: any) => (
+                                  <option key={t.id} value={t.teacherName} />
+                                ))}
+                              </datalist>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                  Lớp trải nghiệm <span className="text-rose-600">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  list="eval-b7b-classes-list"
+                                  value={evalTrialClass}
+                                  onChange={(e) => setEvalTrialClass(e.target.value)}
+                                  disabled={!canApproveBGH || isAssessmentLocked}
+                                  placeholder="VD: ROOTS - C1..."
+                                  className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                                />
+                                <datalist id="eval-b7b-classes-list">
+                                  {(classes || []).map((cl: any) => (
+                                    <option key={cl.id} value={cl.className} />
+                                  ))}
+                                </datalist>
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                                  Thời gian trải nghiệm <span className="text-rose-600">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={evalTrialPeriod}
+                                  onChange={(e) => setEvalTrialPeriod(e.target.value)}
+                                  disabled={!canApproveBGH || isAssessmentLocked}
+                                  placeholder="VD: 27/11/2026 - 29/11/2026"
+                                  className="w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85]"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       <textarea
                         value={bghApprovalComment}
                         onChange={e => setBghApprovalComment(e.target.value)}
                         disabled={!canApproveBGH || isAssessmentLocked}
                         rows={2}
-                        placeholder={isAssessmentLocked ? "Chưa có ý kiến phê duyệt của BGH" : canApproveBGH ? "Ý kiến phê duyệt của BGH..." : "Chưa có ý kiến phê duyệt của BGH"}
-                        className={`w-full border rounded-2xl px-4 py-2.5 text-xs font-semibold outline-none transition-all resize-none placeholder:text-slate-400 ${
+                        placeholder={canApproveBGH && !isAssessmentLocked ? "Ý kiến rà soát & định tuyến của Nhóm trưởng / BGH Mầm non..." : "Chưa có ý kiến của BGH Mầm non"}
+                        className={`w-full border rounded-xl px-3.5 py-2.5 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-400 ${
                           canApproveBGH && !isAssessmentLocked
-                            ? 'bg-slate-50 border-slate-200 focus:border-[#48BFE3] focus:bg-white focus:ring-4 focus:ring-[#48BFE3]/10' 
-                            : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
+                            ? 'bg-slate-50 border-slate-200 focus:border-[#008B85] focus:bg-white' 
+                            : 'bg-slate-100/60 border-slate-200 text-slate-500 cursor-not-allowed'
                         }`}
                       />
                       {bghApprovalUser && (
-                        <div className="text-[9px] text-slate-500 font-semibold mt-2 flex flex-col gap-1 p-2.5 bg-slate-50/50 rounded-xl border border-slate-200/50 animate-in fade-in">
-                          <div className="flex items-center gap-1">👤 Người duyệt: <span className="font-bold text-slate-700">{bghApprovalUser}</span></div>
+                        <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-4 gap-y-1 pt-2 border-t border-slate-100 tabular-nums">
+                          <span>Người rà soát: <strong className="text-slate-700">{bghApprovalUser}</strong></span>
                           {bghApprovalDate && (
-                            <div className="flex items-center gap-1">📅 Thời gian: <span className="font-bold text-slate-700">{new Date(bghApprovalDate).toLocaleString("vi-VN")}</span></div>
+                            <span>Thời gian: <strong className="text-slate-700">{new Date(bghApprovalDate).toLocaleString("vi-VN")}</strong></span>
                           )}
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* GĐCS Column */}
+                  {/* B10: Giám đốc Cơ sở (GĐCS) */}
                   {showGdcsSection && (
-                    <div className={`space-y-4 bg-white p-5 rounded-2xl border transition-all ${canApproveGDCS ? 'border-[#48BFE3]/20 shadow-xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${canApproveGDCS ? 'bg-fuchsia-400 animate-pulse' : 'bg-slate-300'}`} />
-                          <span className="text-[10px] font-black text-[#003B3A] uppercase tracking-wider mr-2">
-                            {getGdcsLabel(evalStudent?.admissionCampus)}
+                    <div className={`space-y-3.5 bg-white p-5 rounded-2xl border transition-all ${canApproveGDCS ? 'border-[#003B3A]/30 shadow-2xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-[#003B3A]">
+                            B10 · {getGdcsLabel(evalStudent?.admissionCampus)}
                           </span>
-                          {(() => {
-                            if (!gdcsApprovalStatus) return <span className="text-[8px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">Chưa duyệt</span>;
-                            if (gdcsApprovalStatus === "DAT_MIEN_HOC_THU" || gdcsApprovalStatus === "DAT") return <span className="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">Miễn HT</span>;
-                            if (gdcsApprovalStatus === "DAT_HOC_THU") return <span className="text-[8px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-lg border border-sky-100">Học thử</span>;
-                            if (gdcsApprovalStatus === "KHONG_DAT") return <span className="text-[8px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-100">Không đạt</span>;
-                            return <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">Ý kiến</span>;
-                          })()}
+                          {getStatusBadge(gdcsApprovalStatus)}
                         </div>
-                        {!canApproveGDCS && (
-                          <span className="text-[9px] font-bold text-slate-450 bg-slate-100 px-2 py-1 rounded-lg flex items-center gap-1" title={
-                            !evalStudent?.admissionCampus 
-                              ? "Học sinh chưa có thông tin cơ sở" 
-                              : !bghApprovalStatus && (isSystemAdmin || isGDCSUser) && hasCampusMatch
-                                ? "Chờ Ban Giám Hiệu Mầm Non duyệt trước"
-                                : isGDCSUser && !hasCampusMatch
-                                  ? `Bạn là GĐCS của ${userCampusNames || "cơ sở khác"}, học sinh thuộc ${evalStudent.admissionCampus}` 
-                                  : "Quyền hạn yêu cầu Giám đốc Cơ sở"
-                          }>
-                            🔒 Chỉ đọc
-                          </span>
-                        )}
-                        {canApproveGDCS && (
-                          <span className="text-[9px] font-bold text-fuchsia-500">
-                            ✍️ Quyền duyệt
-                          </span>
-                        )}
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg ${canApproveGDCS ? 'text-[#003B3A] bg-[#F0FDFA] border border-teal-200' : 'text-slate-500 bg-slate-100'}`}>
+                          {canApproveGDCS ? "Quyền phê duyệt" : "Chờ trình B10"}
+                        </span>
                       </div>
 
-                      {/* Helpful Permission Hint for GĐCS */}
-                      {isGDCSUser && !hasCampusMatch && evalStudent?.admissionCampus && (
-                        <div className="text-[9px] font-semibold text-amber-600 bg-amber-50/50 p-2.5 rounded-xl border border-amber-250/20 leading-relaxed">
-                          ⚠️ Cơ sở học sinh: <span className="underline font-bold">${evalStudent.admissionCampus}</span>. Cơ sở của bạn: <span className="underline font-bold">${userCampusNames || "Chưa gán"}</span>. Bạn không có quyền duyệt phiếu cơ sở này.
+                      {!canApproveGDCS && (
+                        <div className="text-[11px] font-medium text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 leading-relaxed">
+                          GĐCS chỉ phê duyệt B10 sau khi Nhóm trưởng / BGH Mầm non chọn <strong>Đề xuất Đạt → Trình B10</strong>, <strong>Đề xuất Chưa đạt → B10</strong> hoặc hoàn tất kết quả Học thử.
                         </div>
                       )}
 
-                      {!evalStudent?.admissionCampus && !isSystemAdmin && (
-                        <div className="text-[9px] font-semibold text-rose-600 bg-rose-50/50 p-2.5 rounded-xl border border-rose-250/20 leading-relaxed">
-                          ⚠️ Học sinh chưa được gán Cơ sở. Chỉ Quản trị viên hệ thống có quyền duyệt.
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-2 gap-2.5">
                         {[
-                          { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "text-emerald-600 border-emerald-200 hover:bg-emerald-50/40 hover:border-emerald-350", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-xs" },
-                          { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "text-slate-800 border-[#48BFE3]/20 hover:bg-teal-50/40 hover:border-[#48BFE3]/40", activeColor: "bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs" },
-                          { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "text-rose-600 border-rose-205 hover:bg-rose-50/40 hover:border-rose-350", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
-                          { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "text-amber-600 border-amber-205 hover:bg-amber-50/40 hover:border-amber-350", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
-                        ].map(opt => (
-                          <button
-                            key={opt.status}
-                            type="button"
-                            disabled={!canApproveGDCS || isAssessmentLocked}
-                            onClick={() => setGdcsApprovalStatus(gdcsApprovalStatus === opt.status ? "" : opt.status)}
-                            className={`px-3 py-2 rounded-xl border text-[9px] font-black tracking-wide transition-all ${
-                              (gdcsApprovalStatus === opt.status || (opt.status === "DAT_MIEN_HOC_THU" && gdcsApprovalStatus === "DAT"))
-                                ? opt.activeColor 
-                                : `bg-white ${opt.color}`
-                            } ${(!canApproveGDCS || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                        {canApproveGDCS && !isAssessmentLocked && gdcsApprovalStatus && (
-                          <button
-                            type="button"
-                            onClick={() => setGdcsApprovalStatus("")}
-                            className="text-[9px] font-black text-rose-600 hover:bg-rose-50 transition-all px-2.5 py-2"
-                          >
-                            Bỏ chọn
-                          </button>
-                        )}
+                          { status: "DAT", label: "✓ Phê duyệt Đạt", color: "text-emerald-700 border-emerald-200 hover:bg-emerald-50", activeColor: "bg-emerald-600 text-white border-emerald-600 shadow-2xs" },
+                          { status: "KHONG_DAT", label: "✕ Phê duyệt Chưa đạt", color: "text-rose-700 border-rose-200 hover:bg-rose-50", activeColor: "bg-rose-600 text-white border-rose-600 shadow-2xs" }
+                        ].map(opt => {
+                          const isSelected =
+                            gdcsApprovalStatus === opt.status ||
+                            (opt.status === "DAT" && gdcsApprovalStatus === "DAT_MIEN_HOC_THU");
+                          return (
+                            <button
+                              key={opt.status}
+                              type="button"
+                              disabled={!canApproveGDCS || isAssessmentLocked}
+                              onClick={() => setGdcsApprovalStatus(isSelected ? "" : opt.status)}
+                              className={`px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                                isSelected ? opt.activeColor : `bg-white ${opt.color}`
+                              } ${(!canApproveGDCS || isAssessmentLocked) ? 'cursor-not-allowed opacity-60' : ''}`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
                       </div>
                       <textarea
                         value={gdcsApprovalComment}
                         onChange={e => setGdcsApprovalComment(e.target.value)}
                         disabled={!canApproveGDCS || isAssessmentLocked}
                         rows={2}
-                        placeholder={isAssessmentLocked ? "Chưa có ý kiến phê duyệt của GĐCS" : canApproveGDCS ? "Ý kiến phê duyệt của GĐCS..." : "Chưa có ý kiến phê duyệt của GĐCS"}
-                        className={`w-full border rounded-2xl px-4 py-2.5 text-xs font-semibold outline-none transition-all resize-none placeholder:text-slate-400 ${
+                        placeholder={canApproveGDCS && !isAssessmentLocked ? "Ý kiến phê duyệt B10 của Giám đốc Cơ sở..." : "Chưa có ý kiến phê duyệt của GĐCS"}
+                        className={`w-full border rounded-xl px-3.5 py-2.5 text-xs font-medium outline-none transition-all resize-none placeholder:text-slate-400 ${
                           canApproveGDCS && !isAssessmentLocked
-                            ? 'bg-slate-50 border-slate-200 focus:border-[#48BFE3] focus:bg-white focus:ring-4 focus:ring-[#48BFE3]/10' 
-                            : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
+                            ? 'bg-slate-50 border-slate-200 focus:border-[#008B85] focus:bg-white' 
+                            : 'bg-slate-100/60 border-slate-200 text-slate-500 cursor-not-allowed'
                         }`}
                       />
                       {gdcsApprovalUser && (
-                        <div className="text-[9px] text-slate-500 font-semibold mt-2 flex flex-col gap-1 p-2.5 bg-slate-50/50 rounded-xl border border-slate-200/50 animate-in fade-in">
-                          <div className="flex items-center gap-1">👤 Người duyệt: <span className="font-bold text-slate-700">{gdcsApprovalUser}</span></div>
+                        <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-4 gap-y-1 pt-2 border-t border-slate-100 tabular-nums">
+                          <span>Người duyệt: <strong className="text-slate-700">{gdcsApprovalUser}</strong></span>
                           {gdcsApprovalDate && (
-                            <div className="flex items-center gap-1">📅 Thời gian: <span className="font-bold text-slate-700">{new Date(gdcsApprovalDate).toLocaleString("vi-VN")}</span></div>
+                            <span>Thời gian: <strong className="text-slate-700">{new Date(gdcsApprovalDate).toLocaleString("vi-VN")}</strong></span>
                           )}
                         </div>
                       )}
