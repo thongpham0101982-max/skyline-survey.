@@ -1289,29 +1289,37 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
     }
   } catch {}
 
-  // 2. Fallback DB users for that campus (TU_VAN, GIAO_VU, BGH_MN, NHOM_TRUONG_MN)
+  // 2. Fallback DB users for that campus via UserCampusAssignment (TU_VAN, GIAO_VU, BGH_MN, NHOM_TRUONG_MN)
   try {
     const campusObj = campusCode
       ? await (prisma as any).campus.findFirst({ where: { OR: [{ campusCode }, { campusName: campusStr }] } })
       : null;
     if (campusObj) {
       addEmails(campusObj.admissionEmail, `Tư vấn tuyển sinh ${campusCode}`);
-      const staff = await (prisma as any).user.findMany({
-        where: {
-          isActive: true,
-          role: { in: ["TU_VAN", "TU_VAN_CS", "GIAO_VU", "GIAO_VU_CS", "BGH_MN", "NHOM_TRUONG_MN", "BGH_CS"] },
-          OR: [{ campusId: campusObj.id }, { teacher: { campusId: campusObj.id } }],
-        },
-        select: { email: true, fullName: true, role: true },
+      const assignments = await (prisma as any).userCampusAssignment.findMany({
+        where: { campusId: campusObj.id },
+        include: { user: { select: { email: true, fullName: true, role: true, isActive: true } } },
       });
-      for (const u of staff || []) {
+      for (const a of assignments || []) {
+        const u = a?.user;
+        if (!u || u.isActive === false) continue;
+        const roleUp = String(u.role || "").toUpperCase();
+        const isTuVan = ["TU_VAN", "TU_VAN_CS", "TVCS", "TU_VAN_TS", "TU_VAN_TUYEN_SINH"].includes(roleUp);
+        const isGiaoVu = ["GIAO_VU", "GIAO_VU_CS", "GVCS", "GIAOVU"].includes(roleUp);
+        const isBgh = ["BGH_MN", "NHOM_TRUONG_MN", "BGH_CS", "BGH MN", "BGH"].includes(roleUp);
+        if (!isTuVan && !isGiaoVu && !isBgh) continue;
         const e = String(u.email || "").trim().toLowerCase();
         if (e.includes("@") && e !== "admin@skyline.edu") {
           const existing = recMap.get(e);
+          const roleLabel = isTuVan
+            ? `Tư vấn tuyển sinh ${campusCode}`
+            : isGiaoVu
+              ? `Giáo vụ cơ sở ${campusCode}`
+              : `BGH / NT Mầm non ${campusCode}`;
           recMap.set(e, {
             fullName: u.fullName || existing?.fullName || e.split("@")[0],
             email: e,
-            role: existing?.role || u.role || `Nhân sự ${campusCode}`,
+            role: existing?.role || roleLabel,
             isArchiveCopy: existing?.isArchiveCopy || false,
           });
         }
@@ -1319,7 +1327,14 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
     }
   } catch {}
 
-  // 3. Default BGH MN fallback by campus if empty
+  // 3. Default Tư vấn & BGH MN fallback by campus if not yet present
+  const DEFAULT_TUVAN_BY_CAMPUS: Record<string, string> = {
+    CS1: "tuyensinh.cs1@skylineschool.edu.vn",
+    CS2: "tuyensinh.cs2@skylineschool.edu.vn",
+    CS3: "tuyensinh.cs3@skylineschool.edu.vn",
+    CS4: "tuyensinh.cs4@skylineschool.edu.vn",
+    CS5: "tuyensinh.cs5@skylineschool.edu.vn",
+  };
   const DEFAULT_BGH_MN: Record<string, string> = {
     CS1: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
     CS2: "yenlth@skylineschool.edu.vn, thanhmaitt@skylineschool.edu.vn",
@@ -1327,6 +1342,10 @@ export async function resolvePreschoolStakeholderRecipients(student: any): Promi
     CS4: "quyenlth@skylineschool.edu.vn, chault@skylineschool.edu.vn",
     CS5: "monghatn@skylineschool.edu.vn, ngocltb@skylineschool.edu.vn",
   };
+  const hasTuVanAlready = Array.from(recMap.values()).some((r) => r.role.toLowerCase().includes("tư vấn"));
+  if (!hasTuVanAlready && campusCode && DEFAULT_TUVAN_BY_CAMPUS[campusCode]) {
+    addEmails(DEFAULT_TUVAN_BY_CAMPUS[campusCode], `Tư vấn tuyển sinh ${campusCode}`);
+  }
   if (campusCode && DEFAULT_BGH_MN[campusCode]) {
     addEmails(DEFAULT_BGH_MN[campusCode], `BGH / NT Mầm non ${campusCode}`);
   }
@@ -1521,27 +1540,28 @@ export async function resolvePreschoolBghReviewRecipients(
     }
   } catch {}
 
-  // 3. Fallback DB users cho Tư vấn, Giáo vụ cơ sở & Khảo thí tổng hợp
+  // 3. Fallback DB users cho Tư vấn, Giáo vụ cơ sở (qua UserCampusAssignment) & Khảo thí tổng hợp
   try {
     const campusObj = campusCode
       ? await (prisma as any).campus.findFirst({ where: { OR: [{ campusCode }, { campusName: campusStr }] } })
       : null;
     if (campusObj) {
       addEmails(campusObj.admissionEmail, `Tư vấn tuyển sinh ${campusCode}`);
-      const staff = await (prisma as any).user.findMany({
-        where: {
-          isActive: true,
-          role: { in: ["TU_VAN", "TU_VAN_CS", "GIAO_VU", "GIAO_VU_CS"] },
-          OR: [{ campusId: campusObj.id }, { teacher: { campusId: campusObj.id } }],
-        },
-        select: { email: true, fullName: true, role: true },
+      const assignments = await (prisma as any).userCampusAssignment.findMany({
+        where: { campusId: campusObj.id },
+        include: { user: { select: { email: true, fullName: true, role: true, isActive: true } } },
       });
-      for (const u of staff || []) {
+      for (const a of assignments || []) {
+        const u = a?.user;
+        if (!u || u.isActive === false) continue;
+        const roleUp = String(u.role || "").toUpperCase();
+        const isTuVan = ["TU_VAN", "TU_VAN_CS", "TVCS", "TU_VAN_TS", "TU_VAN_TUYEN_SINH"].includes(roleUp);
+        const isGiaoVu = ["GIAO_VU", "GIAO_VU_CS", "GVCS", "GIAOVU"].includes(roleUp);
+        if (!isTuVan && !isGiaoVu) continue;
         const e = String(u.email || "").trim().toLowerCase();
         if (e.includes("@") && e !== "admin@skyline.edu") {
           const existing = recMap.get(e);
-          const roleUpper = String(u.role || "").toUpperCase();
-          const roleLabel = roleUpper.includes("TU_VAN")
+          const roleLabel = isTuVan
             ? `Tư vấn tuyển sinh ${campusCode}`
             : `Giáo vụ cơ sở ${campusCode}`;
           recMap.set(e, {
@@ -1562,7 +1582,18 @@ export async function resolvePreschoolBghReviewRecipients(
     }
   }
 
-  // Fallback BGH MN nếu chưa có approverEmail
+  // Fallback Tư vấn tuyển sinh & BGH MN theo cơ sở nếu chưa có
+  const DEFAULT_TUVAN_BY_CAMPUS: Record<string, string> = {
+    CS1: "tuyensinh.cs1@skylineschool.edu.vn",
+    CS2: "tuyensinh.cs2@skylineschool.edu.vn",
+    CS3: "tuyensinh.cs3@skylineschool.edu.vn",
+    CS4: "tuyensinh.cs4@skylineschool.edu.vn",
+    CS5: "tuyensinh.cs5@skylineschool.edu.vn",
+  };
+  const hasTuVanAlready = Array.from(recMap.values()).some((r) => r.role.toLowerCase().includes("tư vấn"));
+  if (!hasTuVanAlready && campusCode && DEFAULT_TUVAN_BY_CAMPUS[campusCode]) {
+    addEmails(DEFAULT_TUVAN_BY_CAMPUS[campusCode], `Tư vấn tuyển sinh ${campusCode}`);
+  }
   const DEFAULT_BGH_MN: Record<string, string> = {
     CS1: "yenlth@skylineschool.edu.vn, yendhb@skylineschool.edu.vn",
     CS2: "yenlth@skylineschool.edu.vn, thanhmaitt@skylineschool.edu.vn",

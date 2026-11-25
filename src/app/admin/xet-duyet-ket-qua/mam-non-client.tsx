@@ -5222,10 +5222,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 type="button"
                 onClick={() => setIsPreschoolEmailConfigOpen(true)}
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#99F6E4] bg-[#F0FDFA] text-[#003B3A] hover:bg-[#CCFBF1] transition-colors cursor-pointer"
-                title="Cấu hình danh sách email BGH Mầm non & GĐCS nhận thông báo xét duyệt theo từng cơ sở"
+                title="Cấu hình danh sách email BGH Mầm non, GĐCS, Tư vấn & Giáo vụ theo từng cơ sở"
               >
                 <Settings className="w-3.5 h-3.5 text-[#008B85]" />
-                <span>Cấu hình Email BGHMN & GĐCS</span>
+                <span>Cấu hình Email cơ sở (BGH · GĐCS · TV · GVụ)</span>
               </button>
             </div>
           </div>
