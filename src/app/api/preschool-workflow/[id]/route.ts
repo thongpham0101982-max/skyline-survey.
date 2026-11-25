@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import crypto from "crypto"
 import { prisma } from "@/lib/db"
 import { requireStaffSession } from "@/lib/security-guard"
 import {
@@ -570,6 +571,30 @@ export async function GET(
           note: sc.note || "",
         })),
       },
+      stepSignatures: (() => {
+        const sigs: Record<string, any> = {}
+        for (const lg of auditLogs) {
+          if (lg.action !== "SIGN_AND_COMPLETE_STEP") continue
+          try {
+            const parsed = lg.detailJson ? JSON.parse(lg.detailJson) : {}
+            const code = String(parsed.stepCode || "").trim()
+            if (code) {
+              sigs[code] = {
+                stepCode: code,
+                stepLabel: parsed.stepLabel || code,
+                signerName: parsed.signerName || lg.actorName || "Cán bộ SSM",
+                signerRole: parsed.signerRole || lg.actorRole || "",
+                signerEmail: parsed.signerEmail || "",
+                signatureImageUrl: parsed.signatureImageUrl || null,
+                signatureHash: parsed.signatureHash || "",
+                signedAt: parsed.signedAt || lg.createdAt,
+                note: parsed.note || null,
+              }
+            }
+          } catch {}
+        }
+        return sigs
+      })(),
     })
   } catch (err: any) {
     console.error("GET /api/preschool-workflow/[id] error:", err)
@@ -1849,6 +1874,90 @@ export async function PATCH(
         detail: { note: archiveNote },
       })
       return NextResponse.json({ success: true, workflowStatus: "DA_LUU_HO_SO" })
+    }
+
+    // 15. Xác nhận hoàn thành & Ký số từng bước từ B4A đến B6/B9A/B10
+    if (action === "SIGN_AND_COMPLETE_STEP") {
+      const VALID_STEPS: Record<string, string> = {
+        B4A: "B4A: Y tế kiểm tra thể chất",
+        B5_B4B: "B5/B4B: Giáo viên đánh giá phát triển",
+        B6_TRIAL: "B6: Giáo viên đánh giá Học trải nghiệm",
+        B7_PSYCHOLOGY: "B7: Giáo viên Tâm lý khảo sát (BM.KTĐBCL.09)",
+        B6_B9A_REVIEW: "B6 / B9A: Nhóm trưởng Mầm non / BGH rà soát",
+        B10_APPROVAL: "B10: Giám đốc Điều hành Cơ sở phê duyệt",
+      }
+      const stepCode = String(body.stepCode || "").trim().toUpperCase()
+      if (!VALID_STEPS[stepCode]) {
+        return NextResponse.json({ error: "Mã bước xác nhận & ký số không hợp lệ." }, { status: 400 })
+      }
+      const stepLabel = String(body.stepLabel || "").trim() || VALID_STEPS[stepCode]
+      const note = String(body.note || "").trim() || null
+
+      const actorUser = ctx.userId
+        ? await (prisma as any).user
+            .findUnique({
+              where: { id: ctx.userId },
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                role: true,
+                teacher: {
+                  select: {
+                    id: true,
+                    teacherName: true,
+                    teacherCode: true,
+                  },
+                },
+              },
+            })
+            .catch(() => null)
+        : null
+
+      let signatureImageUrl: string | null = null
+      if (actorUser?.teacher?.id && (prisma as any).teacherSignatureProfile) {
+        const sigProfile = await (prisma as any).teacherSignatureProfile
+          .findFirst({ where: { teacherId: actorUser.teacher.id } })
+          .catch(() => null)
+        signatureImageUrl = sigProfile?.signatureImageUrl || sigProfile?.imageUrl || null
+      }
+
+      const signerName = actorUser?.teacher?.teacherName || actorUser?.fullName || actorName
+      const signerEmail = actorUser?.email || ""
+      const signerRole = actorUser?.role || ctx.role || "STAFF"
+      const rawDigest = crypto
+        .createHash("sha256")
+        .update(`${id}|${activeRound.id}|${stepCode}|${ctx.userId || signerName}|${nowIso}`)
+        .digest("hex")
+        .slice(0, 12)
+        .toUpperCase()
+      const signatureHash = `SKL-${stepCode.replace(/[^A-Z0-9]/g, "").slice(0, 4)}-${rawDigest}`
+
+      const signaturePayload = {
+        stepCode,
+        stepLabel,
+        signerName,
+        signerRole,
+        signerEmail,
+        signatureImageUrl,
+        signatureHash,
+        signedAt: nowIso,
+        note,
+      }
+
+      await appendPreschoolAuditLog({
+        studentId: id,
+        roundId: activeRound.id,
+        action: "SIGN_AND_COMPLETE_STEP",
+        fromStatus: student.workflowStatus,
+        toStatus: student.workflowStatus,
+        actorId: ctx.userId,
+        actorName: signerName,
+        actorRole: signerRole,
+        detail: signaturePayload,
+      })
+
+      return NextResponse.json({ success: true, signature: signaturePayload })
     }
 
     return NextResponse.json({ error: `Hành động không hợp lệ: ${action}` }, { status: 400 })

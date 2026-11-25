@@ -18,6 +18,8 @@ import {
   Printer,
   ArrowRight,
   Lock,
+  PenTool,
+  ShieldCheck,
 } from "lucide-react"
 import {
   EVALUATION_FORM_CODES,
@@ -448,6 +450,105 @@ export function PreschoolDossierDrawer({ studentId, initialTab, singleTabOnly = 
   const waitingStepLabels = tabs
     .filter((t) => t.id !== "history" && stepStatusMap[t.id].status === "waiting")
     .map((t) => t.label)
+
+  const stepSignatures: Record<string, any> = dossier?.stepSignatures || {}
+
+  const renderStepSignBox = (stepCode: string, stepLabel: string, subtitle: string) => {
+    const sig = stepSignatures[stepCode]
+    return (
+      <div
+        className={`rounded-2xl border p-4 space-y-2.5 text-xs ${
+          sig
+            ? "border-emerald-200 bg-emerald-50/50"
+            : "border-[#E2E8F0] bg-[#F8FAFC]"
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-start gap-2.5">
+            <div
+              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                sig ? "bg-emerald-600 text-white" : "bg-[#003B3A] text-[#5EEAD4]"
+              }`}
+            >
+              {sig ? <ShieldCheck className="w-4 h-4" /> : <PenTool className="w-4 h-4" />}
+            </div>
+            <div>
+              <div className="font-bold text-[#003B3A] flex flex-wrap items-center gap-2">
+                <span>Xác nhận hoàn thành &amp; Ký số — {stepLabel}</span>
+                {sig ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    ✓ Đã ký số
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                    ● Chưa ký xác nhận
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">{subtitle}</p>
+            </div>
+          </div>
+
+          {isViewingLatest && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() =>
+                runAction(
+                  {
+                    action: "SIGN_AND_COMPLETE_STEP",
+                    stepCode,
+                    stepLabel,
+                  },
+                  `Đã xác nhận hoàn thành & ký số thành công cho ${stepLabel}.`
+                )
+              }
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 ${
+                sig
+                  ? "bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50"
+                  : "bg-[#003B3A] hover:bg-[#005854] text-white shadow-2xs"
+              }`}
+            >
+              <PenTool className={`w-3.5 h-3.5 ${sig ? "text-emerald-600" : "text-[#5EEAD4]"}`} />
+              <span>{sig ? "Ký xác nhận lại" : "Xác nhận hoàn thành & Ký số"}</span>
+            </button>
+          )}
+        </div>
+
+        {sig && (
+          <div className="rounded-xl bg-white border border-emerald-200/80 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-3 text-[11px] tabular-nums">
+            <div className="space-y-0.5">
+              <div className="text-slate-700">
+                Người ký: <strong className="text-[#003B3A]">{sig.signerName}</strong>
+                {sig.signerRole ? <span className="text-slate-500"> ({sig.signerRole})</span> : null}
+              </div>
+              <div className="text-slate-500">
+                Thời gian ký:{" "}
+                <strong className="text-slate-700">
+                  {sig.signedAt ? new Date(sig.signedAt).toLocaleString("vi-VN") : "—"}
+                </strong>
+                {sig.signatureHash ? (
+                  <>
+                    {" · "}Mã xác thực:{" "}
+                    <code className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200/70">
+                      {sig.signatureHash}
+                    </code>
+                  </>
+                ) : null}
+              </div>
+            </div>
+            {sig.signatureImageUrl && (
+              <img
+                src={sig.signatureImageUrl}
+                alt={`Chữ ký số ${sig.signerName}`}
+                className="h-10 max-w-[140px] object-contain border border-slate-200 rounded-lg bg-white px-2 py-0.5"
+              />
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -942,6 +1043,14 @@ export function PreschoolDossierDrawer({ studentId, initialTab, singleTabOnly = 
                         Lưu kết quả Y tế (B4A)
                       </button>
                     )}
+
+                    <div className="pt-2">
+                      {renderStepSignBox(
+                        "B4A",
+                        "B4A: Y tế kiểm tra thể chất",
+                        "Nhân viên Y tế phụ trách xác nhận hoàn thành đo thể chất & ký số hồ sơ."
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1480,6 +1589,14 @@ export function PreschoolDossierDrawer({ studentId, initialTab, singleTabOnly = 
                     </div>
                   )
                 })()}
+
+                <div className="pt-2">
+                  {renderStepSignBox(
+                    "B5_B4B",
+                    "B5/B4B: Giáo viên đánh giá phát triển",
+                    "Giáo viên được phân công khảo sát xác nhận hoàn thành đánh giá phát triển & ký số."
+                  )}
+                </div>
               </div>
             )}
 
@@ -2054,6 +2171,14 @@ export function PreschoolDossierDrawer({ studentId, initialTab, singleTabOnly = 
                         </button>
                       )}
                     </div>
+
+                    <div className="pt-2">
+                      {renderStepSignBox(
+                        "B6_TRIAL",
+                        "B6: Đánh giá Học trải nghiệm",
+                        "Giáo viên phụ trách học trải nghiệm xác nhận hoàn thành phiếu đánh giá & ký số."
+                      )}
+                    </div>
                   </div>
                 </div>
               )
@@ -2211,6 +2336,14 @@ export function PreschoolDossierDrawer({ studentId, initialTab, singleTabOnly = 
                           Cập nhật kết quả khảo sát tâm lý
                         </button>
                       )}
+
+                      <div className="pt-2">
+                        {renderStepSignBox(
+                          "B7_PSYCHOLOGY",
+                          "B7: Khảo sát tâm lý (BM.KTĐBCL.09)",
+                          "Giáo viên Tâm lý phụ trách xác nhận hoàn thành phỏng vấn/đánh giá & ký số."
+                        )}
+                      </div>
                     </>
                   )}
                 </div>
@@ -2856,6 +2989,20 @@ export function PreschoolDossierDrawer({ studentId, initialTab, singleTabOnly = 
                     </div>
                   )}
                 </div>
+
+                {/* Xác nhận hoàn thành & Ký số cho Bước 1 (B6/B9A) & Bước 2 (B10) */}
+                <div className="space-y-3">
+                  {renderStepSignBox(
+                    "B6_B9A_REVIEW",
+                    "B6 / B9A: Nhóm trưởng Mầm non / BGH rà soát",
+                    "Nhóm trưởng chuyên môn / BGH Mầm non xác nhận hoàn thành Bước 1 & ký số."
+                  )}
+                  {renderStepSignBox(
+                    "B10_APPROVAL",
+                    "B10: Giám đốc Điều hành Cơ sở phê duyệt",
+                    "Giám đốc Cơ sở xác nhận hoàn thành phê duyệt kết quả Bước 2 (B10) & ký số."
+                  )}
+                </div>
               </div>
               )
             })()}
@@ -3043,6 +3190,7 @@ export function PreschoolDossierDrawer({ studentId, initialTab, singleTabOnly = 
                         SEND_APPROVAL_EMAIL: "Gửi email yêu cầu phê duyệt",
                         DELIVER_RESULT: "B12: Trả kết quả cho Phụ huynh",
                         ARCHIVE_RECORD: "B13: Hoàn tất lưu hồ sơ",
+                        SIGN_AND_COMPLETE_STEP: "Xác nhận hoàn thành & Ký số bước khảo sát",
                       }
                       const actionTitle = ACTION_LABELS[log.action] || log.action
                       let detailSummary = log.detailText || ""

@@ -100,6 +100,15 @@ export default function PreschoolPsychologyForm({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error || "Không thể lưu kết quả khảo sát tâm lý.")
+      await fetch(`/api/preschool-workflow/${student.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SIGN_AND_COMPLETE_STEP",
+          stepCode: "B7_PSYCHOLOGY",
+          stepLabel: "B7: Giáo viên Tâm lý khảo sát (BM.KTĐBCL.09)",
+        }),
+      }).catch(() => {})
       await onSaved()
       onClose()
     } catch (err: any) {
@@ -314,7 +323,7 @@ export default function PreschoolPsychologyForm({
                     className="px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold flex items-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4 text-[#5EEAD4]" />}
-                    {saving ? "Đang lưu..." : "Lưu kết quả khảo sát tâm lý (B7)"}
+                    {saving ? "Đang lưu & ký số..." : "Xác nhận hoàn thành & Ký số (B7)"}
                   </button>
                 )}
               </div>
