@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { ReportsClient } from "./client"
+import { EntranceWorkflowStepper } from "@/components/entrance/EntranceWorkflowStepper"
 import { isCampusScopedEntranceRole } from "@/lib/entrance-progress/constants"
 
 export const metadata = { title: "Văn bản & Xuất báo cáo KSĐV | Admin" }
@@ -86,7 +87,8 @@ export default async function InputAssessmentReportsPage() {
   const safeJson = (data: any) => { try { if (!data) return []; return JSON.parse(JSON.stringify(data)); } catch (e) { return []; } };
 
   return (
-    <div className="p-3 sm:p-4 lg:p-5">
+    <div className="p-3 sm:p-4 lg:p-5 space-y-4">
+      <EntranceWorkflowStepper activeStep="reports" />
       <ReportsClient
         academicYears={safeJson(academicYears)}
         campuses={safeJson(campuses)}

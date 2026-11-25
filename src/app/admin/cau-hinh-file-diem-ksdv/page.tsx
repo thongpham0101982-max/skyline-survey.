@@ -2,6 +2,7 @@ import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { CauHinhFileDiemKsdvClient } from "./client"
+import { EntranceWorkflowStepper } from "@/components/entrance/EntranceWorkflowStepper"
 import { ensureTciSchema } from "@/lib/tci/schema-init"
 import { ensurePvdhSchema } from "@/lib/pvdh/schema-init"
 
@@ -74,7 +75,8 @@ export default async function CauHinhFileDiemKsdvPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-[1700px] mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 max-w-[1700px] mx-auto space-y-4">
+      <EntranceWorkflowStepper activeStep="config" />
       <CauHinhFileDiemKsdvClient
         academicYears={academicYears}
         activeYearId={activeYearId}

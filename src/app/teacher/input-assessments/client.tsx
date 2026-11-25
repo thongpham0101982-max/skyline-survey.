@@ -97,9 +97,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         }
 
         const typeFilteredAssignments = urlType === "preschool"
-            ? assignments.filter(a => a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation")
+            ? assignments.filter(a => a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation" || a.subjectId === "preschool-psychology")
             : urlType === "general"
-                ? assignments.filter(a => !(a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation"))
+                ? assignments.filter(a => !(a.isPreschool || a.subjectId === "preschool" || a.subjectId === "preschool-probation" || a.subjectId === "preschool-psychology"))
                 : assignments;
         const pool = typeFilteredAssignments.length > 0 ? typeFilteredAssignments : assignments;
 
@@ -1187,6 +1187,84 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     )}
                 </div>
             </div>
+
+            {/* 1.5. Thanh chuyển nhanh đúng môn & mẫu phiếu được phân công cho GV */}
+            {Array.isArray(assignments) && assignments.length > 0 && (() => {
+                const grouped = new Map<string, { key: string; label: string; formBadge: string; periodId: string; batchId: string; subjectId: string; count: number; isActive: boolean }>();
+                for (const a of assignments) {
+                    const subjId = String(a?.subjectId || a?.subject?.id || "");
+                    const subjName = String(a?.subject?.name || "Khảo sát đầu vào");
+                    const formBadge =
+                        subjId === "preschool"
+                            ? "BM.KTĐBCL.03/08"
+                            : subjId === "preschool-psychology"
+                              ? "BM.KTĐBCL.09"
+                              : subjId === "preschool-probation"
+                                ? "Phiếu Học trải nghiệm"
+                                : /TÂM LÝ|TAM LY|PSY/i.test(subjName)
+                                  ? "Phiếu Tâm lý K-12"
+                                  : /ĐỊNH HƯỚNG|DINH HUONG|PHỎNG VẤN/i.test(subjName)
+                                    ? "BM.KTĐBCL.31–42"
+                                    : "Phiếu điểm môn";
+                    const key = `${subjId}__${subjName}`;
+                    const stCount = Array.isArray(a?.students) ? a.students.length : 0;
+                    const isActive =
+                        currentAssignment &&
+                        (String(currentAssignment.subjectId || "") === subjId && String(currentAssignment.subject?.name || "") === subjName);
+                    if (!grouped.has(key)) {
+                        grouped.set(key, {
+                            key,
+                            label: subjName,
+                            formBadge,
+                            periodId: a.periodId || "",
+                            batchId: a.batchId || "all",
+                            subjectId: subjId,
+                            count: stCount,
+                            isActive: Boolean(isActive),
+                        });
+                    } else {
+                        const ex = grouped.get(key)!;
+                        ex.count += stCount;
+                        if (isActive) ex.isActive = true;
+                    }
+                }
+                const items = Array.from(grouped.values());
+                return (
+                    <div className="rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 shadow-2xs flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-bold text-[#003B3A] border-l-4 border-[#003B3A] pl-2.5 mr-1 whitespace-nowrap">
+                            Phân công của bạn ({items.length} môn/mẫu):
+                        </span>
+                        {items.map((item) => (
+                            <button
+                                key={item.key}
+                                type="button"
+                                onClick={() => {
+                                    if (item.periodId) setSelectedPeriodId(item.periodId);
+                                    if (item.batchId) setSelectedBatchId(item.batchId);
+                                    if (typeof setSelectedSubjectId === "function" && item.subjectId) {
+                                        setSelectedSubjectId(item.subjectId);
+                                    }
+                                }}
+                                className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer tabular-nums ${
+                                    item.isActive
+                                        ? "bg-[#003B3A] text-white shadow-2xs"
+                                        : "bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] hover:border-[#00A19A] hover:text-[#003B3A]"
+                                }`}
+                            >
+                                <span>{item.label}</span>
+                                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${item.isActive ? "bg-[#00A19A] text-white" : "bg-white text-[#00736E] border border-[#CCFBF1]"}`}>
+                                    {item.formBadge}
+                                </span>
+                                {item.count > 0 && (
+                                    <span className={`text-[10px] font-bold ${item.isActive ? "text-[#5EEAD4]" : "text-slate-500"}`}>
+                                        ({item.count} HS)
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                );
+            })()}
 
             {/* 2. Notification Banner for Assigned Survey Period, Batch & Student Count */}
             {latestBatchInfo && (

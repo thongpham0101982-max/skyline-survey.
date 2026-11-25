@@ -5,6 +5,7 @@ import {
   resolveEntranceViewerScope,
 } from "@/lib/entrance-progress/entranceProgressEngine";
 import { EntranceOperationsDashboardClient } from "./client";
+import { EntranceWorkflowStepper } from "@/components/entrance/EntranceWorkflowStepper";
 
 export const metadata = {
   title: "Điều hành & Tiến độ Khảo sát Đầu vào | Sky-Line SSM",
@@ -44,17 +45,22 @@ export default async function EntranceOperationsDashboardPage() {
   }
 
   return (
-    <EntranceOperationsDashboardClient
-      initialData={initialData}
-      currentUser={{
-        id: user?.id || "",
-        fullName: user?.fullName || user?.name || "Cán bộ điều hành",
-        role: user?.role || "ADMIN",
-        email: user?.email || "",
-        isSuperAdmin: viewerScope.isSuperAdmin,
-        campusIds: viewerScope.liveCampusIds,
-      }}
-      rolePermissions={rolePermissions}
-    />
+    <div className="space-y-4">
+      <div className="px-3 pt-3 sm:px-4 sm:pt-4 lg:px-5">
+        <EntranceWorkflowStepper activeStep="handover" />
+      </div>
+      <EntranceOperationsDashboardClient
+        initialData={initialData}
+        currentUser={{
+          id: user?.id || "",
+          fullName: user?.fullName || user?.name || "Cán bộ điều hành",
+          role: user?.role || "ADMIN",
+          email: user?.email || "",
+          isSuperAdmin: viewerScope.isSuperAdmin,
+          campusIds: viewerScope.liveCampusIds,
+        }}
+        rolePermissions={rolePermissions}
+      />
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { SurveyConfigClient } from "./client"
+import { EntranceWorkflowStepper } from "@/components/entrance/EntranceWorkflowStepper"
 
 export const metadata = { title: "Cấu hình Khảo sát | Admin" }
 export const dynamic = "force-dynamic";
@@ -103,7 +104,7 @@ export default async function SurveyConfigPage(props: {
         }).catch(() => []) : Promise.resolve([]),
         // 7. examBoardUsers
         pAny.user ? pAny.user.findMany({
-          where: { role: { in: ["KT_DBCL", "ADMIN"] } },
+          where: { role: { in: ["KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "ADMIN"] } },
           select: { id: true, fullName: true }
         }).catch(() => []) : Promise.resolve([]),
         // 8. gdcsUsers
@@ -231,8 +232,12 @@ export default async function SurveyConfigPage(props: {
     : null;
 
   return (
-    <SurveyConfigClient
-      initialTab={resolvedSearchParams?.tab || ""}
+    <div className="space-y-4">
+      <div className="px-3 pt-3 sm:px-4 sm:pt-4 lg:px-5">
+        <EntranceWorkflowStepper activeStep="config" />
+      </div>
+      <SurveyConfigClient
+        initialTab={resolvedSearchParams?.tab || ""}
       academicYears={safeJson(academicYears)}
       campuses={safeJson(campuses)}
       giaoVuCSUsers={safeJson(giaoVuCSUsers)}
@@ -255,6 +260,7 @@ export default async function SurveyConfigPage(props: {
       // User
       currentUser={currentUser}
     />
+    </div>
   )
 }
 

@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation"
 import { fetchStudentInfoPageData } from "../student-info/fetchData"
 import { KetQuaKhaoSatClient } from "./client"
+import { EntranceWorkflowStepper } from "@/components/entrance/EntranceWorkflowStepper"
 
 export const metadata = { title: "Kết quả khảo sát | Admin Portal" }
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function KetQuaKhaoSatPage(props: {
   searchParams?: Promise<{ tab?: string; subTab?: string }> | { tab?: string; subTab?: string };
@@ -22,10 +24,11 @@ export default async function KetQuaKhaoSatPage(props: {
     redirect(`/admin/student-info?tab=${initialTab}&subTab=${initialSubTab}`);
   }
 
-  const data = await fetchStudentInfoPageData();
+  const data = await fetchStudentInfoPageData({ pageMode: "ket-qua" });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <EntranceWorkflowStepper activeStep="results" />
       <KetQuaKhaoSatClient 
         initialTab={initialTab}
         initialSubTab={

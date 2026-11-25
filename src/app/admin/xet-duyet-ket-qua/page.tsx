@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { XetDuyetKetQuaClient } from "./client"
+import { EntranceWorkflowStepper } from "@/components/entrance/EntranceWorkflowStepper"
 import { hasModulePermission, getDefaultRouteForRole } from "@/lib/permissions"
 import {
   isSuperAdminRole,
@@ -272,7 +273,8 @@ export default async function XetDuyetKetQuaPage() {
   }
 
   return (
-    <div className="p-3 sm:p-4 lg:p-5">
+    <div className="p-3 sm:p-4 lg:p-5 space-y-4">
+      <EntranceWorkflowStepper activeStep="approval" />
       <XetDuyetKetQuaClient
         classes={safeJson(mầmNonClasses)}
         academicYears={safeJson(academicYears)}

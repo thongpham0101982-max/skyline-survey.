@@ -83,24 +83,6 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         icon: BarChart3,
         href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-co-so",
       },
-      {
-        code: "TEACHER_QUALITY_GOVERNANCE",
-        name: "Quản trị chất lượng giáo viên",
-        icon: GraduationCap,
-        href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-giao-vien",
-        subModules: [
-          {
-            code: "TEACHER_QUALITY_MONTHLY_OBS",
-            name: "Thành tích & Bồi dưỡng GV · Dự giờ theo tháng",
-            href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-giao-vien?section=du-gio-thang",
-          },
-          {
-            code: "TEACHER_QUALITY_COACHING",
-            name: "Nội dung bồi dưỡng GV",
-            href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-giao-vien?section=boi-duong",
-          },
-        ],
-      },
     ],
   },
   {
@@ -368,6 +350,12 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
     modules: [
       { code: "TEACHERS", name: "Quản lý Giáo viên", icon: GraduationCap, href: "/admin/teachers" },
       {
+        code: "TEACHER_QUALITY_GOVERNANCE",
+        name: "Thành tích và bồi dưỡng GV",
+        icon: Award,
+        href: "/admin/phan-tich-tong-hop/quan-tri-chat-luong-giao-vien",
+      },
+      {
         code: "CO_VAN_HOC_TAP",
         name: "QL Cố vấn học tập",
         icon: Compass,
@@ -441,14 +429,8 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
     icon: ClipboardList,
     modules: [
       {
-        code: "DIEU_HANH_KHAO_SAT",
-        name: "Điều hành & Tiến độ KSĐV",
-        icon: Activity,
-        href: "/admin/dieu-hanh-khao-sat"
-      },
-      {
         code: "STUDENT_INFO",
-        name: "Đợt & Danh sách khảo sát",
+        name: "1. Lập danh sách & Đợt KS",
         icon: Users2,
         href: "/admin/student-info",
         subModules: [
@@ -457,8 +439,14 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
         ]
       },
       {
+        code: "DIEU_HANH_KHAO_SAT",
+        name: "2. Bàn giao & Điều hành",
+        icon: Activity,
+        href: "/admin/dieu-hanh-khao-sat"
+      },
+      {
         code: "PHAN_CONG_KHAO_SAT",
-        name: "Phân công khảo sát",
+        name: "3. Phân công GV khảo sát",
         icon: UserCheck,
         href: "/admin/phan-cong-khao-sat",
         subModules: [
@@ -469,13 +457,13 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
       },
       {
         code: "KET_QUA_KHAO_SAT",
-        name: "Kết quả & Định hướng (K-12)",
+        name: "4. Kết quả & Định hướng (K-12)",
         icon: Award,
         href: "/admin/ket-qua-khao-sat?tab=general"
       },
       {
         code: "XET_DUYET_KET_QUA",
-        name: "Xét duyệt kết quả",
+        name: "5. Xét duyệt & Email KQ",
         icon: CheckCircle2,
         href: "/admin/xet-duyet-ket-qua",
         subModules: [
@@ -485,21 +473,19 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
       },
       {
         code: "INPUT_ASSESSMENT_REPORTS",
-        name: "Văn bản & Xuất báo cáo",
-        icon: FileSpreadsheet,
+        name: "6. Thống kê & Báo cáo",
+        icon: BarChart3,
         href: "/admin/input-assessments/reports"
       },
       {
         code: "CAU_HINH_KHAO_SAT",
-        name: "Cấu hình khảo sát",
+        name: "Cấu hình Khảo sát đầu vào",
         icon: Settings,
-        href: "/admin/cau-hinh-khao-sat"
-      },
-      {
-        code: "CAU_HINH_FILE_DIEM_KSDV",
-        name: "Cấu hình file điểm KSĐV",
-        icon: FileSpreadsheet,
-        href: "/admin/cau-hinh-file-diem-ksdv",
+        href: "/admin/cau-hinh-khao-sat",
+        subModules: [
+          { code: "CAU_HINH_KHAO_SAT_CHUNG", name: "Biểu mẫu & Tham số KSĐV", href: "/admin/cau-hinh-khao-sat" },
+          { code: "CAU_HINH_FILE_DIEM_KSDV", name: "Cấu hình file điểm KSĐV", href: "/admin/cau-hinh-file-diem-ksdv" }
+        ]
       }
     ]
   },

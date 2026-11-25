@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { PhanCongKhaoSatClient } from "./client"
+import { EntranceWorkflowStepper } from "@/components/entrance/EntranceWorkflowStepper"
 
 export const metadata = { title: "Phân công khảo sát | Admin" }
 export const dynamic = "force-dynamic";
@@ -120,14 +121,19 @@ export default async function PhanCongKhaoSatPage() {
   };
 
   let rolePermissions: any[] = [];
+  if (!session?.user) {
+    const { redirect } = await import("next/navigation");
+    redirect("/login");
+  }
   try {
-    const roleCode = (session?.user as any)?.role || "ADMIN";
+    const roleCode = (session?.user as any)?.role || "";
     const { getRolePermissions } = await import("@/lib/permissions");
-    rolePermissions = await getRolePermissions(roleCode);
+    rolePermissions = roleCode ? await getRolePermissions(roleCode) : [];
   } catch {}
 
   return (
-    <div className="p-3 sm:p-4 lg:p-5">
+    <div className="p-3 sm:p-4 lg:p-5 space-y-4">
+      <EntranceWorkflowStepper activeStep="assign" />
       <PhanCongKhaoSatClient
         academicYears={safeJson(academicYears)}
         k12Periods={safeJson(k12Periods)}
