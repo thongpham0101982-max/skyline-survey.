@@ -14,6 +14,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -76,17 +77,44 @@ export function AcademicCommitmentTab({
 
   const chartData = useMemo(
     () =>
-      data.campusSummary.map((c) => ({
-        name: c.campusCode || c.campusName,
-        fullName: c.campusName,
-        campusId: c.campusId,
-        rate: c.progressRate ?? 0,
-        hasDenominator: c.comparableRowCount > 0,
-        progressCount: c.progressCount,
-        comparableRowCount: c.comparableRowCount,
+      (data.hierarchy.children || []).map((cp) => ({
+        name: cp.code || cp.label,
+        fullName: cp.label,
+        campusId: cp.campusId || cp.id,
+        rate: cp.standardRate ?? 0,
+        hasDenominator: cp.eligibleRowCount > 0,
+        metCount: cp.totalStandardMetCount,
+        eligibleCount: cp.eligibleRowCount,
+        studentCount: cp.distinctStudentCount,
       })),
-    [data.campusSummary]
+    [data.hierarchy.children]
   )
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderRateLabel = (props: any) => {
+    const { x, y, width, index } = props
+    const row = chartData[index]
+    if (!row) return null
+    const cx = Number(x ?? 0) + Number(width ?? 0) / 2
+    const topY = Number(y ?? 0)
+    if (!row.hasDenominator) {
+      return (
+        <text x={cx} y={topY - 6} textAnchor="middle" fill="#94A3B8" fontSize={10} fontWeight={600}>
+          —
+        </text>
+      )
+    }
+    return (
+      <g>
+        <text x={cx} y={topY - 16} textAnchor="middle" fill="#003B3A" fontSize={10.5} fontWeight={700}>
+          {row.rate.toFixed(1).replace(".", ",")}%
+        </text>
+        <text x={cx} y={topY - 4} textAnchor="middle" fill="#475569" fontSize={9.5} fontWeight={500}>
+          {row.metCount}/{row.eligibleCount}
+        </text>
+      </g>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -213,16 +241,16 @@ export function AcademicCommitmentTab({
         {chartData.length > 1 && (
           <div className="xl:col-span-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-4 flex flex-col">
             <div className="text-sm font-semibold text-[#003B3A]">
-              So sánh tỷ lệ đạt tiến bộ GK1 giữa các cơ sở
+              So sánh tỷ lệ đạt chuẩn (Kỳ gần nhất) giữa các cơ sở
             </div>
             <div className="text-xs text-slate-500 mt-0.5 mb-3">
-              Đơn vị: % lượt đạt tiến bộ trên tổng lượt đủ điểm đối chiếu
+              Hiển thị % và số lượt đạt chuẩn / tổng lượt xét chuẩn (gồm Đạt chuẩn + Tiến bộ vượt bậc)
             </div>
-            <div className="h-60 w-full">
+            <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                <BarChart data={chartData} margin={{ top: 34, right: 12, left: 0, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155" }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155", fontWeight: 600 }} />
                   <YAxis
                     domain={[0, 100]}
                     tickFormatter={(v) => `${v}%`}
@@ -230,12 +258,12 @@ export function AcademicCommitmentTab({
                     width={42}
                   />
                   <Tooltip
-                    formatter={(_val: unknown, _name: unknown, item: { payload?: { hasDenominator: boolean; progressCount: number; comparableRowCount: number; rate: number } }) => {
+                    formatter={(_val: unknown, _name: unknown, item: { payload?: { hasDenominator: boolean; metCount: number; eligibleCount: number; rate: number } }) => {
                       const p = item?.payload
-                      if (!p || !p.hasDenominator) return ["—", "Tỷ lệ đạt tiến bộ"]
+                      if (!p || !p.hasDenominator) return ["—", "Tỷ lệ đạt chuẩn"]
                       return [
-                        `${p.progressCount}/${p.comparableRowCount} (${p.rate.toFixed(1).replace(".", ",")}%)`,
-                        "Tỷ lệ đạt tiến bộ",
+                        `${p.metCount}/${p.eligibleCount} (${p.rate.toFixed(1).replace(".", ",")}%)`,
+                        "Tỷ lệ đạt chuẩn",
                       ]
                     }}
                     labelFormatter={(_label, payload) => payload?.[0]?.payload?.fullName || ""}
@@ -249,6 +277,7 @@ export function AcademicCommitmentTab({
                     }}
                     className="cursor-pointer"
                   >
+                    <LabelList dataKey="rate" content={renderRateLabel} />
                     {chartData.map((entry, idx) => (
                       <Cell
                         key={entry.campusId || idx}

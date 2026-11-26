@@ -15,6 +15,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -106,6 +107,32 @@ export function PsychologyCommitmentTab({
       })),
     [data.campusSummary]
   )
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderPsychLabel = (props: any) => {
+    const { x, y, width, index } = props
+    const row = chartData[index]
+    if (!row) return null
+    const cx = Number(x ?? 0) + Number(width ?? 0) / 2
+    const topY = Number(y ?? 0)
+    if (!row.hasDenominator) {
+      return (
+        <text x={cx} y={topY - 6} textAnchor="middle" fill="#94A3B8" fontSize={10} fontWeight={600}>
+          —
+        </text>
+      )
+    }
+    return (
+      <g>
+        <text x={cx} y={topY - 16} textAnchor="middle" fill="#003B3A" fontSize={10.5} fontWeight={700}>
+          {row.rate.toFixed(1).replace(".", ",")}%
+        </text>
+        <text x={cx} y={topY - 4} textAnchor="middle" fill="#475569" fontSize={9.5} fontWeight={500}>
+          {row.summarized}/{row.total} HS
+        </text>
+      </g>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -273,11 +300,11 @@ export function PsychologyCommitmentTab({
             <div className="text-xs text-slate-500 mt-0.5 mb-3">
               Đơn vị: % học sinh thuộc diện đã tổng kết trong kỳ đang chọn
             </div>
-            <div className="h-56 w-full">
+            <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                <BarChart data={chartData} margin={{ top: 34, right: 12, left: 0, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155" }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155", fontWeight: 600 }} />
                   <YAxis
                     domain={[0, 100]}
                     tickFormatter={(v) => `${v}%`}
@@ -304,6 +331,7 @@ export function PsychologyCommitmentTab({
                     }}
                     className="cursor-pointer"
                   >
+                    <LabelList dataKey="rate" content={renderPsychLabel} />
                     {chartData.map((entry, idx) => (
                       <Cell
                         key={entry.campusId || idx}

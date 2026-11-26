@@ -6,6 +6,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  LabelList,
   Legend,
   ResponsiveContainer,
   Tooltip,
@@ -87,14 +88,59 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
     () =>
       (root.children || []).map((cp) => ({
         name: cp.code,
-        fullName: cp.label,
+        fullName: `${cp.label} (${cp.enrolledStudentCount} HS nhập học)`,
+        enrolled: cp.enrolledStudentCount,
         "Cam kết môn học": cp.academicCommitment.studentCount,
+        academicPct: cp.academicCommitment.shareOfEnrolledRate,
         "Tâm lý CKĐV": cp.psychologyCommitment.studentCount,
+        psychPct: cp.psychologyCommitment.shareOfEnrolledRate,
         Homeschooling: cp.homeschooling.studentCount,
+        hsPct: cp.homeschooling.shareOfEnrolledRate,
         "Học giao lưu": cp.exchange.studentCount,
+        exPct: cp.exchange.shareOfEnrolledRate,
       })),
     [root.children]
   )
+
+  const makeOverviewBarLabel =
+    (pctKey: "academicPct" | "psychPct" | "hsPct" | "exPct") =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function OverviewBarLabel(props: any) {
+      const { x, y, width, value, index } = props
+      const numVal = Number(value ?? 0)
+      if (!numVal || numVal <= 0) return null
+      const row = campusChartData[index]
+      const pct = row ? row[pctKey] : null
+      const pctText = pct !== null && pct !== undefined ? `${pct.toFixed(1).replace(".", ",")}%` : ""
+      const cx = Number(x ?? 0) + Number(width ?? 0) / 2
+      const topY = Number(y ?? 0)
+      return (
+        <g>
+          <text
+            x={cx}
+            y={topY - 15}
+            textAnchor="middle"
+            fill="#0F172A"
+            fontSize={10}
+            fontWeight={700}
+          >
+            {numVal}
+          </text>
+          {pctText && (
+            <text
+              x={cx}
+              y={topY - 4}
+              textAnchor="middle"
+              fill="#475569"
+              fontSize={9}
+              fontWeight={500}
+            >
+              {pctText}
+            </text>
+          )}
+        </g>
+      )
+    }
 
   const renderNode = (node: OverviewHierarchyNode, depth: number): React.ReactNode => {
     const hasChildren = Boolean(node.children && node.children.length > 0)
@@ -311,24 +357,50 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
             So sánh số lượng học sinh theo dõi giữa các cơ sở
           </div>
           <div className="text-xs text-slate-500 mt-0.5 mb-3">
-            Đơn vị: học sinh (mã duy nhất)
+            Đơn vị: số học sinh (mã duy nhất) và % so với HS nhập học của từng cơ sở
           </div>
-          <div className="h-64 w-full">
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={campusChartData} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+              <BarChart
+                data={campusChartData}
+                margin={{ top: 34, right: 16, left: 0, bottom: 4 }}
+                barCategoryGap="16%"
+                barGap={4}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155" }} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155", fontWeight: 600 }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748B" }} width={40} />
                 <Tooltip
+                  formatter={(val: unknown, name: unknown, item: { payload?: Record<string, unknown> }) => {
+                    const p = item?.payload || {}
+                    const pctMap: Record<string, unknown> = {
+                      "Cam kết môn học": p.academicPct,
+                      "Tâm lý CKĐV": p.psychPct,
+                      Homeschooling: p.hsPct,
+                      "Học giao lưu": p.exPct,
+                    }
+                    const pct = pctMap[String(name)]
+                    const pctStr =
+                      typeof pct === "number" ? ` (${pct.toFixed(1).replace(".", ",")}%)` : ""
+                    return [`${val} HS${pctStr}`, String(name)]
+                  }}
                   labelFormatter={(_label, payload) => payload?.[0]?.payload?.fullName || ""}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="Cam kết môn học" fill="#003B3A" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="Cam kết môn học" fill="#003B3A" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                  <LabelList dataKey="Cam kết môn học" content={makeOverviewBarLabel("academicPct")} />
+                </Bar>
                 {showPsych && (
-                  <Bar dataKey="Tâm lý CKĐV" fill="#00A19A" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="Tâm lý CKĐV" fill="#00A19A" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                    <LabelList dataKey="Tâm lý CKĐV" content={makeOverviewBarLabel("psychPct")} />
+                  </Bar>
                 )}
-                <Bar dataKey="Homeschooling" fill="#D97706" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="Học giao lưu" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="Homeschooling" fill="#D97706" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                  <LabelList dataKey="Homeschooling" content={makeOverviewBarLabel("hsPct")} />
+                </Bar>
+                <Bar dataKey="Học giao lưu" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={36}>
+                  <LabelList dataKey="Học giao lưu" content={makeOverviewBarLabel("exPct")} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

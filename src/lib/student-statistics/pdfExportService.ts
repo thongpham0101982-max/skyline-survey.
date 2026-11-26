@@ -6,9 +6,11 @@ import {
 import {
   AcademicCommitmentReportPayload,
   ExchangeStudentReportPayload,
+  HierarchyNodeMetrics,
   HomeschoolingReportPayload,
   OverviewHierarchyNode,
   OverviewReportPayload,
+  PsychHierarchyNodeMetrics,
   PsychologyCommitmentReportPayload,
   StudentStatisticsAccessScope,
 } from "./types"
@@ -23,6 +25,11 @@ function escapeHtml(input: unknown): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;")
+}
+
+function fmtPct(rate: number | null | undefined): string {
+  if (rate === null || rate === undefined || Number.isNaN(rate)) return "—"
+  return `${rate.toFixed(1).replace(".", ",")}%`
 }
 
 export function sanitizePdfFileNameSegment(raw: string, fallback: string): string {
@@ -89,7 +96,7 @@ export function buildOverviewPdfFileName(payload: OverviewReportPayload): string
 const SHARED_PDF_CSS = `
   @page {
     size: A4 landscape;
-    margin: 12mm 10mm 14mm 10mm;
+    margin: 11mm 10mm 13mm 10mm;
   }
   * {
     box-sizing: border-box;
@@ -98,7 +105,7 @@ const SHARED_PDF_CSS = `
   }
   body {
     font-family: "Segoe UI", "Roboto", "DejaVu Sans", Arial, sans-serif;
-    font-size: 8.5pt;
+    font-size: 8.4pt;
     line-height: 1.38;
     color: #0F172A;
     margin: 0;
@@ -110,40 +117,55 @@ const SHARED_PDF_CSS = `
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    border-left: 4px solid #003B3A;
-    border-bottom: 1.5px solid #003B3A;
-    padding: 4px 0 8px 10px;
-    margin-bottom: 10px;
+    border-left: 5px solid #003B3A;
+    border-bottom: 2px solid #003B3A;
+    background: linear-gradient(90deg, #F0FDFA 0%, #FFFFFF 60%);
+    padding: 7px 10px 8px 12px;
+    margin-bottom: 9px;
+    border-radius: 0 6px 0 0;
   }
   .brand-org {
-    font-size: 9pt;
+    font-size: 8.5pt;
     font-weight: 700;
-    color: #003B3A;
-    letter-spacing: 0.2px;
+    color: #00736E;
+    letter-spacing: 0.3px;
   }
   .report-title {
-    font-size: 13pt;
+    font-size: 14.5pt;
     font-weight: 800;
     color: #003B3A;
-    margin: 2px 0;
+    margin: 2px 0 4px 0;
+    letter-spacing: 0.2px;
+  }
+  .tab-pill {
+    display: inline-block;
+    background: #003B3A;
+    color: #FFFFFF;
+    font-size: 7.8pt;
+    font-weight: 700;
+    padding: 2.5px 9px;
+    border-radius: 999px;
+    margin-right: 6px;
   }
   .report-sub {
-    font-size: 8pt;
+    font-size: 7.8pt;
     color: #475569;
+    display: inline-block;
   }
   .meta-right {
     text-align: right;
     font-size: 7.8pt;
     color: #334155;
-    line-height: 1.45;
+    line-height: 1.5;
+    white-space: nowrap;
   }
   .filter-strip {
     background: #F8FAFC;
     border: 1px solid #E2E8F0;
     border-radius: 6px;
-    padding: 6px 10px;
-    margin-bottom: 10px;
-    font-size: 8pt;
+    padding: 5px 10px;
+    margin-bottom: 9px;
+    font-size: 7.8pt;
     color: #334155;
   }
   .filter-strip strong {
@@ -152,40 +174,92 @@ const SHARED_PDF_CSS = `
   .kpi-grid {
     display: flex;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 9px;
   }
   .kpi-box {
     flex: 1;
-    border: 1px solid #E2E8F0;
-    border-top: 3px solid #00A19A;
-    border-radius: 6px;
-    padding: 6px 8px;
+    border: 1px solid #CBD5E1;
+    border-top: 3.5px solid #00A19A;
+    border-radius: 7px;
+    padding: 7px 9px;
     background: #FFFFFF;
   }
+  .kpi-box.pine { border-top-color: #003B3A; background: #F8FAFC; }
+  .kpi-box.emerald { border-top-color: #059669; background: #F0FDFA; }
+  .kpi-box.amber { border-top-color: #D97706; }
+  .kpi-box.rose { border-top-color: #E11D48; }
   .kpi-label {
-    font-size: 7.5pt;
-    color: #64748B;
+    font-size: 7.4pt;
+    font-weight: 600;
+    color: #475569;
     margin-bottom: 2px;
   }
   .kpi-value {
-    font-size: 11.5pt;
-    font-weight: 700;
+    font-size: 12pt;
+    font-weight: 800;
     color: #003B3A;
+    line-height: 1.2;
+  }
+  .kpi-pct {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #00736E;
+    margin-left: 3px;
   }
   .kpi-unit {
-    font-size: 7.2pt;
+    font-size: 7pt;
     color: #64748B;
-    margin-top: 1px;
+    margin-top: 2px;
   }
-  .section-title {
-    font-size: 9.5pt;
+  .progress-track {
+    width: 100%;
+    height: 5px;
+    background: #E2E8F0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: #00A19A;
+  }
+  .progress-fill.emerald { background: #059669; }
+  .progress-fill.amber { background: #D97706; }
+  .progress-fill.rose { background: #E11D48; }
+  .chart-card {
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    padding: 8px 10px 6px 10px;
+    background: #FFFFFF;
+    margin-bottom: 9px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .chart-title {
+    font-size: 9pt;
     font-weight: 700;
     color: #003B3A;
-    margin: 10px 0 5px 0;
+    margin-bottom: 1px;
+  }
+  .chart-sub {
+    font-size: 7.4pt;
+    color: #64748B;
+    margin-bottom: 5px;
+  }
+  .section-title {
+    font-size: 9.2pt;
+    font-weight: 700;
+    color: #003B3A;
+    margin: 9px 0 5px 0;
     padding-left: 7px;
-    border-left: 3px solid #00A19A;
+    border-left: 3.5px solid #00A19A;
     break-after: avoid;
     page-break-after: avoid;
+  }
+  .page-break {
+    page-break-before: always;
+    break-before: page;
   }
   table {
     width: 100%;
@@ -204,7 +278,7 @@ const SHARED_PDF_CSS = `
     background: #003B3A;
     color: #FFFFFF;
     font-weight: 600;
-    font-size: 7.5pt;
+    font-size: 7.4pt;
     padding: 5px 4px;
     border: 1px solid #003B3A;
     text-align: left;
@@ -219,8 +293,8 @@ const SHARED_PDF_CSS = `
   td {
     border: 1px solid #CBD5E1;
     padding: 4px 5px;
-    font-size: 7.6pt;
-    vertical-align: top;
+    font-size: 7.5pt;
+    vertical-align: middle;
     word-wrap: break-word;
     overflow-wrap: anywhere;
   }
@@ -239,7 +313,7 @@ const SHARED_PDF_CSS = `
     display: inline-block;
     padding: 1.5px 5px;
     border-radius: 4px;
-    font-size: 7pt;
+    font-size: 6.9pt;
     font-weight: 600;
     line-height: 1.25;
   }
@@ -251,36 +325,45 @@ const SHARED_PDF_CSS = `
   .note-box {
     background: #F8FAFC;
     border: 1px solid #E2E8F0;
+    border-left: 3px solid #00A19A;
     border-radius: 5px;
-    padding: 6px 9px;
-    font-size: 7.5pt;
-    color: #475569;
+    padding: 5px 9px;
+    font-size: 7.4pt;
+    color: #334155;
     margin-bottom: 8px;
   }
   .empty-box {
     border: 1px dashed #94A3B8;
     border-radius: 6px;
-    padding: 18px;
+    padding: 16px;
     text-align: center;
-    font-size: 9pt;
+    font-size: 8.8pt;
     font-weight: 600;
     color: #475569;
     background: #F8FAFC;
-    margin: 10px 0;
+    margin: 8px 0;
   }
-  .muted { color: #64748B; font-size: 7pt; }
+  .muted { color: #64748B; font-size: 6.9pt; }
 `
+
+function renderProgressBar(rate: number | null, variant: "teal" | "emerald" | "amber" | "rose" = "teal"): string {
+  const clamped = rate !== null && !Number.isNaN(rate) ? Math.max(0, Math.min(100, rate)) : 0
+  return `<div class="progress-track"><div class="progress-fill ${variant === "teal" ? "" : variant}" style="width:${clamped.toFixed(1)}%"></div></div>`
+}
 
 function getOutcomeBadgeClass(code: string): string {
   switch (code) {
     case "DAT_TIEN_BO":
+    case "TIEN_BO_VUOT_BAC":
       return "badge-emerald"
+    case "DAT_CHUAN":
     case "DAT_CHUAN_GIU_NGUYEN":
     case "DAT_CHUAN_GIAM":
       return "badge-teal"
     case "TANG_CHUA_DAT_CHUAN":
     case "CHUA_DAT_CHUAN_GIU_NGUYEN":
       return "badge-amber"
+    case "CHUA_DAT_CHUAN":
     case "CHUA_DAT_CHUAN_GIAM":
       return "badge-rose"
     default:
@@ -305,6 +388,331 @@ function getPsychStatusBadgeClass(code: string): string {
   }
 }
 
+// ============================================================================
+// BIỂU ĐỒ SVG VECTOR TRỰC QUAN CHO PDF (HIỆN RÕ SỐ & % TRÊN ĐẦU MỖI CỘT)
+// ============================================================================
+
+function renderOverviewGroupedBarSvg(
+  campuses: OverviewHierarchyNode[],
+  showPsych: boolean
+): string {
+  if (!campuses || campuses.length === 0) return ""
+
+  const series = [
+    { key: "academicCommitment" as const, label: "Cam kết môn học", color: "#003B3A" },
+    ...(showPsych
+      ? [{ key: "psychologyCommitment" as const, label: "Tâm lý CKĐV", color: "#00A19A" }]
+      : []),
+    { key: "homeschooling" as const, label: "Homeschooling", color: "#D97706" },
+    { key: "exchange" as const, label: "Học giao lưu", color: "#059669" },
+  ]
+
+  let maxVal = 4
+  for (const cp of campuses) {
+    for (const s of series) {
+      const v = cp[s.key].studentCount
+      if (v > maxVal) maxVal = v
+    }
+  }
+  const yMax = Math.ceil(maxVal / 5) * 5 || 5
+
+  const svgW = 980
+  const svgH = 228
+  const padL = 42
+  const padR = 16
+  const padT = 34
+  const padB = 46
+  const plotW = svgW - padL - padR
+  const plotH = svgH - padT - padB
+  const groupW = plotW / campuses.length
+  const barGap = 6
+  const barW = Math.min(34, Math.max(18, (groupW - 26 - barGap * (series.length - 1)) / series.length))
+  const totalBarsW = series.length * barW + (series.length - 1) * barGap
+
+  // Y gridlines (4 steps)
+  const gridLines: string[] = []
+  for (let i = 0; i <= 4; i++) {
+    const val = Math.round((yMax * i) / 4)
+    const y = padT + plotH - (plotH * i) / 4
+    gridLines.push(
+      `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${svgW - padR}" y2="${y.toFixed(1)}" stroke="#E2E8F0" stroke-dasharray="${i === 0 ? "" : "3,3"}" stroke-width="${i === 0 ? 1.2 : 0.8}" />`,
+      `<text x="${padL - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="#64748B">${val}</text>`
+    )
+  }
+
+  // Bars + top labels (Count + %)
+  const barEls: string[] = []
+  campuses.forEach((cp, cIdx) => {
+    const groupCenterX = padL + groupW * cIdx + groupW / 2
+    const startX = groupCenterX - totalBarsW / 2
+
+    series.forEach((s, sIdx) => {
+      const stats = cp[s.key]
+      const count = stats.studentCount
+      const pct = stats.shareOfEnrolledRate
+      const x = startX + sIdx * (barW + barGap)
+      const h = count > 0 ? Math.max(3, (count / yMax) * plotH) : 0
+      const y = padT + plotH - h
+      const cx = x + barW / 2
+
+      if (count > 0) {
+        barEls.push(
+          `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${s.color}" />`,
+          `<text x="${cx.toFixed(1)}" y="${(y - 13).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0F172A">${count}</text>`,
+          `<text x="${cx.toFixed(1)}" y="${(y - 3).toFixed(1)}" text-anchor="middle" font-size="8" font-weight="600" fill="#475569">${escapeHtml(fmtPct(pct))}</text>`
+        )
+      }
+    })
+
+    barEls.push(
+      `<text x="${groupCenterX.toFixed(1)}" y="${(padT + plotH + 14).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#003B3A">${escapeHtml(cp.code || cp.label)}</text>`,
+      `<text x="${groupCenterX.toFixed(1)}" y="${(padT + plotH + 25).toFixed(1)}" text-anchor="middle" font-size="8" fill="#64748B">(${cp.enrolledStudentCount} HS nhập học)</text>`
+    )
+  })
+
+  // Legend
+  const legendStartX = padL + 10
+  const legendY = svgH - 8
+  const legendEls = series
+    .map((s, idx) => {
+      const lx = legendStartX + idx * 165
+      return `<rect x="${lx}" y="${legendY - 8}" width="10" height="10" rx="2" fill="${s.color}" /><text x="${lx + 14}" y="${legendY}" font-size="9" font-weight="600" fill="#334155">${escapeHtml(s.label)}</text>`
+    })
+    .join("")
+
+  return `
+    <div class="chart-card">
+      <div class="chart-title">Biểu đồ so sánh quy mô học sinh theo dõi cam kết giữa các cơ sở</div>
+      <div class="chart-sub">Hiển thị trực tiếp số lượng học sinh (mã duy nhất) và tỷ lệ % so với tổng HS nhập học của từng cơ sở</div>
+      <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="190" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+        ${gridLines.join("")}
+        ${barEls.join("")}
+        ${legendEls}
+      </svg>
+    </div>`
+}
+
+interface CampusRateBarItem {
+  code: string
+  subLabel: string
+  rate: number | null
+  numerator: number
+  denominator: number
+}
+
+function renderCampusRateBarSvg(params: {
+  title: string
+  subtitle: string
+  items: CampusRateBarItem[]
+  unitSuffix?: string
+}): string {
+  const { title, subtitle, items, unitSuffix = "" } = params
+  if (!items || items.length === 0) return ""
+
+  const svgW = 980
+  const svgH = 192
+  const padL = 44
+  const padR = 16
+  const padT = 34
+  const padB = 34
+  const plotW = svgW - padL - padR
+  const plotH = svgH - padT - padB
+  const colW = plotW / items.length
+  const barW = Math.min(54, Math.max(24, colW * 0.45))
+
+  const gridLines: string[] = []
+  for (let i = 0; i <= 4; i++) {
+    const pct = i * 25
+    const y = padT + plotH - (plotH * i) / 4
+    gridLines.push(
+      `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${svgW - padR}" y2="${y.toFixed(1)}" stroke="#E2E8F0" stroke-dasharray="${i === 0 ? "" : "3,3"}" stroke-width="${i === 0 ? 1.2 : 0.8}" />`,
+      `<text x="${padL - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="#64748B">${pct}%</text>`
+    )
+  }
+
+  const barEls: string[] = []
+  items.forEach((item, idx) => {
+    const cx = padL + colW * idx + colW / 2
+    const x = cx - barW / 2
+    const hasDenom = item.denominator > 0 && item.rate !== null
+    const clampedRate = hasDenom ? Math.max(0, Math.min(100, item.rate!)) : 0
+    const h = hasDenom ? Math.max(clampedRate > 0 ? 3 : 0, (clampedRate / 100) * plotH) : 0
+    const y = padT + plotH - h
+    const fill =
+      !hasDenom
+        ? "#CBD5E1"
+        : clampedRate >= 70
+          ? "#059669"
+          : clampedRate >= 50
+            ? "#00A19A"
+            : "#D97706"
+
+    if (h > 0) {
+      barEls.push(
+        `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${fill}" />`
+      )
+    }
+
+    if (hasDenom) {
+      const labelBaseY = Math.min(y, padT + plotH)
+      barEls.push(
+        `<text x="${cx.toFixed(1)}" y="${(labelBaseY - 14).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="800" fill="#003B3A">${escapeHtml(fmtPct(item.rate))}</text>`,
+        `<text x="${cx.toFixed(1)}" y="${(labelBaseY - 3).toFixed(1)}" text-anchor="middle" font-size="8.8" font-weight="600" fill="#475569">${item.numerator}/${item.denominator}${escapeHtml(unitSuffix)}</text>`
+      )
+    } else {
+      barEls.push(
+        `<text x="${cx.toFixed(1)}" y="${(padT + plotH - 6).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#94A3B8">—</text>`
+      )
+    }
+
+    barEls.push(
+      `<text x="${cx.toFixed(1)}" y="${(padT + plotH + 14).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#003B3A">${escapeHtml(item.code)}</text>`,
+      `<text x="${cx.toFixed(1)}" y="${(padT + plotH + 25).toFixed(1)}" text-anchor="middle" font-size="8" fill="#64748B">${escapeHtml(item.subLabel)}</text>`
+    )
+  })
+
+  return `
+    <div class="chart-card">
+      <div class="chart-title">${escapeHtml(title)}</div>
+      <div class="chart-sub">${escapeHtml(subtitle)}</div>
+      <svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="162" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+        ${gridLines.join("")}
+        ${barEls.join("")}
+      </svg>
+    </div>`
+}
+
+// ============================================================================
+// BẢNG TỔNG HỢP PHÂN CẤP TOÀN HỆ THỐNG → CƠ SỞ → KHỐI → LỚP CHO PDF
+// ============================================================================
+
+function renderAcademicHierarchyRowsRecursive(node: HierarchyNodeMetrics, depth: number): string {
+  const pad = depth * 12
+  const rowStyle =
+    node.nodeType === "SYSTEM"
+      ? "background:#F0FDFA;font-weight:700;color:#003B3A;"
+      : node.nodeType === "CAMPUS"
+        ? "background:#F8FAFC;font-weight:700;color:#003B3A;"
+        : node.nodeType === "GRADE"
+          ? "font-weight:600;"
+          : ""
+
+  let html = `
+    <tr style="${rowStyle}">
+      <td style="padding-left:${pad + 5}px;">${escapeHtml(node.label)}</td>
+      <td class="num">${node.enrolledStudentCount}</td>
+      <td class="num"><strong>${node.distinctStudentCount}</strong> <span class="muted">(${escapeHtml(fmtPct(node.enrolledShareRate))})</span></td>
+      <td class="num">${node.eligibleRowCount}</td>
+      <td class="num">${node.standardBandCount}</td>
+      <td class="num" style="color:#047857;font-weight:700;">${node.outstandingCount}</td>
+      <td class="num" style="color:#00736E;font-weight:700;">${escapeHtml(formatRateWithFraction(node.totalStandardMetCount, node.eligibleRowCount, node.standardRate))}</td>
+    </tr>`
+
+  for (const ch of node.children || []) {
+    html += renderAcademicHierarchyRowsRecursive(ch, depth + 1)
+  }
+  return html
+}
+
+function renderAcademicHierarchyPdfSection(
+  sectionHeading: string,
+  root: HierarchyNodeMetrics,
+  cohortLabel: string
+): string {
+  return `
+    <div class="section-title">${escapeHtml(sectionHeading)}</div>
+    <table>
+      <colgroup>
+        <col style="width:26%" />
+        <col style="width:10%" />
+        <col style="width:16%" />
+        <col style="width:10%" />
+        <col style="width:11%" />
+        <col style="width:12%" />
+        <col style="width:15%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Đơn vị (Hệ thống / Cơ sở / Khối / Lớp)</th>
+          <th class="num">HS nhập học</th>
+          <th class="num">${escapeHtml(cohortLabel)} (% nhập học)</th>
+          <th class="num">Lượt xét chuẩn</th>
+          <th class="num">Đạt chuẩn (7–8 / 5–7)</th>
+          <th class="num">Tiến bộ vượt bậc (9–10 / 8–10)</th>
+          <th class="num">Tỷ lệ Đạt chuẩn (Kỳ gần nhất)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${renderAcademicHierarchyRowsRecursive(root, 0)}
+      </tbody>
+    </table>`
+}
+
+function renderPsychHierarchyRowsRecursive(node: PsychHierarchyNodeMetrics, depth: number): string {
+  const pad = depth * 12
+  const rowStyle =
+    node.nodeType === "SYSTEM"
+      ? "background:#F0FDFA;font-weight:700;color:#003B3A;"
+      : node.nodeType === "CAMPUS"
+        ? "background:#F8FAFC;font-weight:700;color:#003B3A;"
+        : node.nodeType === "GRADE"
+          ? "font-weight:600;"
+          : ""
+
+  let html = `
+    <tr style="${rowStyle}">
+      <td style="padding-left:${pad + 5}px;">${escapeHtml(node.label)}</td>
+      <td class="num">${node.enrolledStudentCount}</td>
+      <td class="num"><strong>${node.totalStudents}</strong> <span class="muted">(${escapeHtml(fmtPct(node.enrolledShareRate))})</span></td>
+      <td class="num" style="color:${node.unassignedStudents > 0 ? "#BE123C" : "#334155"};">${node.unassignedStudents}</td>
+      <td class="num" style="color:${node.overdueStudents > 0 ? "#B45309" : "#334155"};">${node.overdueStudents}</td>
+      <td class="num">${node.duePendingStudents}</td>
+      <td class="num" style="color:#047857;">${node.completedAllDueStudents}</td>
+      <td class="num" style="color:#00736E;font-weight:700;">${escapeHtml(formatRateWithFraction(node.monthSummarizedStudents, node.totalStudents, node.monthSummaryRate))}</td>
+    </tr>`
+
+  for (const ch of node.children || []) {
+    html += renderPsychHierarchyRowsRecursive(ch, depth + 1)
+  }
+  return html
+}
+
+function renderPdfHeader(params: {
+  tabLabel: string
+  subDetail: string
+  academicYearName: string
+  scopeLabel: string
+  extraMetaLabel?: string
+  extraMetaValue?: string
+  exportedAt: string
+}): string {
+  return `
+    <div class="header">
+      <div>
+        <div class="brand-org">HỆ THỐNG GIÁO DỤC SKY-LINE • PHÂN TÍCH TỔNG HỢP (SSM)</div>
+        <div class="report-title">BÁO CÁO HỌC SINH THEO DÕI CAM KẾT</div>
+        <div>
+          <span class="tab-pill">${escapeHtml(params.tabLabel)}</span>
+          <span class="report-sub">${escapeHtml(params.subDetail)}</span>
+        </div>
+      </div>
+      <div class="meta-right">
+        <div><strong>Năm học:</strong> ${escapeHtml(params.academicYearName)}</div>
+        <div><strong>Phạm vi:</strong> ${escapeHtml(params.scopeLabel)}</div>
+        ${
+          params.extraMetaLabel && params.extraMetaValue
+            ? `<div><strong>${escapeHtml(params.extraMetaLabel)}:</strong> ${escapeHtml(params.extraMetaValue)}</div>`
+            : ""
+        }
+        <div><strong>Xuất lúc (VN):</strong> ${escapeHtml(params.exportedAt)}</div>
+      </div>
+    </div>`
+}
+
+// ============================================================================
+// TAB 1: HỌC SINH CAM KẾT ĐẦU VÀO THEO MÔN HỌC
+// ============================================================================
+
 export function buildAcademicCommitmentPdfHtml(
   payload: AcademicCommitmentReportPayload,
   scope: StudentStatisticsAccessScope,
@@ -312,6 +720,22 @@ export function buildAcademicCommitmentPdfHtml(
 ): string {
   const exportedAt = exportedAtStr || formatVietnamTimestamp()
   const includeDetail = !scope.isSummaryOnly && scope.canExportDetailPdf
+
+  const campusChartItems: CampusRateBarItem[] = (payload.hierarchy.children || []).map((cp) => ({
+    code: cp.code || cp.label,
+    subLabel: `${cp.distinctStudentCount} HS (${fmtPct(cp.enrolledShareRate)})`,
+    rate: cp.standardRate,
+    numerator: cp.totalStandardMetCount,
+    denominator: cp.eligibleRowCount,
+  }))
+
+  const chartSvg = renderCampusRateBarSvg({
+    title: "Biểu đồ tỷ lệ đạt chuẩn (Kỳ gần nhất) — Học sinh cam kết đầu vào theo môn học",
+    subtitle:
+      "Hiển thị trực tiếp % và số lượt đạt chuẩn / tổng lượt xét chuẩn (gồm Đạt chuẩn + Tiến bộ vượt bậc) theo từng cơ sở",
+    items: campusChartItems,
+    unitSuffix: " lượt",
+  })
 
   const summaryTableRows = payload.campusLevelSubjectSummary
     .map(
@@ -335,7 +759,6 @@ export function buildAcademicCommitmentPdfHtml(
     if (payload.detailRows.length === 0) {
       detailHtml = `<div class="empty-box">Chưa có dữ liệu phù hợp</div>`
     } else {
-      // Nhóm theo Cơ sở / Lớp để giữ tiêu đề nhóm đi cùng dòng đầu nhóm khi ngắt trang
       const grouped = new Map<string, typeof payload.detailRows>()
       for (const r of payload.detailRows) {
         const key = `${r.campusName} (${r.campusCode}) — Lớp ${r.className}`
@@ -345,7 +768,7 @@ export function buildAcademicCommitmentPdfHtml(
 
       const tbodyContent = Array.from(grouped.entries())
         .map(([groupTitle, rows]) => {
-          const headerTr = `<tr class="group-header-row"><td colspan="11">${escapeHtml(groupTitle)} (${rows.length} lượt cam kết)</td></tr>`
+          const headerTr = `<tr class="group-header-row"><td colspan="12">${escapeHtml(groupTitle)} (${rows.length} lượt cam kết)</td></tr>`
           const rowsTr = rows
             .map(
               (r) => `
@@ -353,13 +776,14 @@ export function buildAcademicCommitmentPdfHtml(
               <td class="center">${r.stt}</td>
               <td><strong>${escapeHtml(r.studentName)}</strong><br/><span class="muted">${escapeHtml(r.studentCode)}</span></td>
               <td>${escapeHtml(r.className)}<br/><span class="muted">${escapeHtml(r.campusCode)}</span></td>
-              <td>${escapeHtml(r.committedSubject)}</td>
+              <td><strong>${escapeHtml(r.committedSubject)}</strong></td>
               <td class="num">${escapeHtml(formatScoreForDisplay(r.ksdnScore, r.level))}</td>
               <td class="num"><strong>${escapeHtml(formatScoreForDisplay(r.gk1Score, r.level))}</strong></td>
               <td class="num">${escapeHtml(formatScoreForDisplay(r.ck1Score, r.level))}</td>
               <td class="num">${escapeHtml(formatScoreForDisplay(r.gk2Score, r.level))}</td>
               <td class="num">${escapeHtml(formatScoreForDisplay(r.ck2Score, r.level))}</td>
               <td class="num">${escapeHtml(formatDeltaForDisplay(r.deltaGk1Ksdn))}</td>
+              <td><span class="badge ${getOutcomeBadgeClass(r.standardClassification)}">${escapeHtml(r.standardClassificationLabel)}</span><div class="muted">${escapeHtml(r.latestPeriodLabel)}</div></td>
               <td><span class="badge ${getOutcomeBadgeClass(r.gk1Outcome)}">${escapeHtml(r.gk1OutcomeLabel)}</span></td>
             </tr>`
             )
@@ -369,20 +793,22 @@ export function buildAcademicCommitmentPdfHtml(
         .join("")
 
       detailHtml = `
-        <div class="section-title">2. Bảng chi tiết học sinh cam kết đầu vào theo môn học (${payload.detailRows.length} lượt)</div>
+        <div class="page-break"></div>
+        <div class="section-title">3. Danh sách chi tiết học sinh cam kết đầu vào theo môn học (${payload.detailRows.length} lượt)</div>
         <table>
           <colgroup>
-            <col style="width:4%" />
-            <col style="width:17%" />
-            <col style="width:9%" />
-            <col style="width:10%" />
-            <col style="width:6.5%" />
-            <col style="width:6.5%" />
-            <col style="width:6.5%" />
-            <col style="width:6.5%" />
-            <col style="width:6.5%" />
+            <col style="width:3.5%" />
+            <col style="width:15.5%" />
             <col style="width:8%" />
-            <col style="width:19.5%" />
+            <col style="width:9%" />
+            <col style="width:5.5%" />
+            <col style="width:5.5%" />
+            <col style="width:5.5%" />
+            <col style="width:5.5%" />
+            <col style="width:5.5%" />
+            <col style="width:6.5%" />
+            <col style="width:14.5%" />
+            <col style="width:15.5%" />
           </colgroup>
           <thead>
             <tr>
@@ -391,11 +817,12 @@ export function buildAcademicCommitmentPdfHtml(
               <th>Lớp / Cơ sở</th>
               <th>Môn cam kết</th>
               <th class="num">KSĐN</th>
-              <th class="num">Giữa kỳ 1</th>
-              <th class="num">Cuối kỳ 1</th>
-              <th class="num">Giữa kỳ 2</th>
-              <th class="num">Cuối kỳ 2</th>
-              <th class="num">Chênh lệch GK1 − KSĐN</th>
+              <th class="num">GK1</th>
+              <th class="num">CK1</th>
+              <th class="num">GK2</th>
+              <th class="num">CK2</th>
+              <th class="num">GK1−KSĐN</th>
+              <th>Xếp loại chuẩn (Kỳ gần nhất)</th>
               <th>Kết quả GK1</th>
             </tr>
           </thead>
@@ -412,22 +839,17 @@ export function buildAcademicCommitmentPdfHtml(
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<title>Báo cáo Học sinh cam kết đầu vào theo môn học</title>
+<title>BÁO CÁO HỌC SINH THEO DÕI CAM KẾT — Học sinh cam kết đầu vào theo môn học</title>
 <style>${SHARED_PDF_CSS}</style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <div class="brand-org">HỆ THỐNG GIÁO DỤC SKY-LINE • PHÂN TÍCH TỔNG HỢP (SSM)</div>
-      <div class="report-title">BÁO CÁO THỐNG KÊ HỌC SINH — HỌC SINH CAM KẾT ĐẦU VÀO THEO MÔN HỌC</div>
-      <div class="report-sub">Phạm vi quyền: ${escapeHtml(scope.roleDisplayLabel)}</div>
-    </div>
-    <div class="meta-right">
-      <div><strong>Năm học:</strong> ${escapeHtml(payload.filters.academicYearName)}</div>
-      <div><strong>Phạm vi:</strong> ${escapeHtml(payload.filters.campusName)}</div>
-      <div><strong>Xuất lúc (VN):</strong> ${escapeHtml(exportedAt)}</div>
-    </div>
-  </div>
+  ${renderPdfHeader({
+    tabLabel: "HỌC SINH CAM KẾT ĐẦU VÀO THEO MÔN HỌC",
+    subDetail: `Khối Phổ thông K-12 • Quyền: ${scope.roleDisplayLabel}`,
+    academicYearName: payload.filters.academicYearName,
+    scopeLabel: payload.filters.campusName,
+    exportedAt,
+  })}
 
   <div class="filter-strip">
     <strong>Bộ lọc áp dụng:</strong>
@@ -440,40 +862,52 @@ export function buildAcademicCommitmentPdfHtml(
   </div>
 
   <div class="kpi-grid">
-    <div class="kpi-box">
-      <div class="kpi-label">Số HS cam kết</div>
-      <div class="kpi-value">${payload.summary.distinctStudentCount}</div>
-      <div class="kpi-unit">học sinh (mã duy nhất)</div>
+    <div class="kpi-box pine">
+      <div class="kpi-label">HS cam kết môn học</div>
+      <div class="kpi-value">${payload.summary.distinctStudentCount}<span class="kpi-pct">(${escapeHtml(fmtPct(payload.summary.enrolledShareRate))})</span></div>
+      <div class="kpi-unit">trên ${payload.summary.enrolledStudentCount} HS nhập học</div>
+      ${renderProgressBar(payload.summary.enrolledShareRate, "teal")}
     </div>
     <div class="kpi-box">
       <div class="kpi-label">Số lượt cam kết theo môn</div>
       <div class="kpi-value">${payload.summary.commitmentRowCount}</div>
-      <div class="kpi-unit">lượt (cặp HS–môn)</div>
+      <div class="kpi-unit">đủ điểm xét chuẩn: ${payload.summary.eligibleStandardRowCount} lượt</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-label">Đủ điểm đối chiếu</div>
-      <div class="kpi-value">${payload.summary.comparableRowCount}</div>
-      <div class="kpi-unit">lượt đủ KSĐN, GK1 &amp; ngưỡng</div>
+      <div class="kpi-label">Đạt chuẩn (7–8 / 5–7)</div>
+      <div class="kpi-value" style="color:#00736E;">${payload.summary.standardBandCount}</div>
+      <div class="kpi-unit">lượt theo kỳ định kỳ gần nhất</div>
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Đạt chuẩn GK1</div>
-      <div class="kpi-value">${payload.summary.gk1PassCount}</div>
-      <div class="kpi-unit">lượt (kể cả thiếu KSĐN)</div>
+    <div class="kpi-box emerald">
+      <div class="kpi-label">Tiến bộ vượt bậc (9–10 / 8–10)</div>
+      <div class="kpi-value" style="color:#047857;">${payload.summary.outstandingCount}<span class="kpi-pct">(${escapeHtml(fmtPct(payload.summary.outstandingRate))})</span></div>
+      <div class="kpi-unit">${payload.summary.outstandingCount}/${payload.summary.eligibleStandardRowCount} lượt xét chuẩn</div>
+      ${renderProgressBar(payload.summary.outstandingRate, "emerald")}
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Đạt tiến bộ GK1</div>
-      <div class="kpi-value">${escapeHtml(formatRateWithFraction(payload.summary.progressCount, payload.summary.comparableRowCount, payload.summary.progressRate))}</div>
-      <div class="kpi-unit">lượt đạt chuẩn &amp; GK1 &gt; KSĐN</div>
+    <div class="kpi-box emerald">
+      <div class="kpi-label">Tổng tỷ lệ Đạt chuẩn (Kỳ gần nhất)</div>
+      <div class="kpi-value" style="color:#047857;">${escapeHtml(formatRateWithFraction(payload.summary.totalStandardMetCount, payload.summary.eligibleStandardRowCount, payload.summary.standardRate))}</div>
+      <div class="kpi-unit">gồm Đạt chuẩn + Tiến bộ vượt bậc</div>
+      ${renderProgressBar(payload.summary.standardRate, "emerald")}
     </div>
   </div>
 
   <div class="note-box">
-    <strong>Quy tắc &amp; Ngưỡng chuẩn:</strong>
-    Tiểu học đạt chuẩn GK1 khi điểm ≥ 7,0; THCS đạt chuẩn GK1 khi điểm ≥ 5,0; bậc khác áp dụng ngưỡng cấu hình đã xác nhận (nếu thiếu hiển thị “Chưa có cấu hình chuẩn” và loại khỏi mẫu số).
-    Ghi nhận “Đạt tiến bộ” khi GK1 đạt chuẩn và GK1 &gt; KSĐN. Tỷ lệ đạt tiến bộ = Số lượt đạt tiến bộ / Số lượt đủ điểm KSĐN, GK1 và ngưỡng áp dụng.
+    <strong>Chuẩn quy định theo kỳ định kỳ gần nhất (KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
+    Tiểu học: <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Tiến bộ vượt bậc ·
+    THCS: <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Tiến bộ vượt bậc.
+    Tỷ lệ <strong>Đạt chuẩn</strong> = (Đạt chuẩn + Tiến bộ vượt bậc) / Tổng lượt có điểm kỳ gần nhất.
   </div>
 
-  <div class="section-title">1. Bảng tổng hợp theo cơ sở, bậc học và môn học</div>
+  ${chartSvg}
+
+  ${renderAcademicHierarchyPdfSection(
+    "1. Báo cáo tổng hợp theo Toàn hệ thống → Cơ sở → Khối → Lớp",
+    payload.hierarchy,
+    "HS cam kết"
+  )}
+
+  <div class="section-title">2. Tổng hợp theo cơ sở, bậc học và môn cam kết</div>
   ${
     payload.campusLevelSubjectSummary.length === 0
       ? `<div class="empty-box">Chưa có dữ liệu phù hợp</div>`
@@ -513,6 +947,10 @@ export function buildAcademicCommitmentPdfHtml(
 </html>`
 }
 
+// ============================================================================
+// TAB 2: TÂM LÝ CAM KẾT ĐẦU VÀO
+// ============================================================================
+
 export function buildPsychologyCommitmentPdfHtml(
   payload: PsychologyCommitmentReportPayload,
   scope: StudentStatisticsAccessScope,
@@ -526,20 +964,20 @@ export function buildPsychologyCommitmentPdfHtml(
       ? `Tổng kết ${payload.filters.monthLabel}`
       : `Tổng kết ${payload.filters.month}`
 
-  const campusRowsHtml = payload.campusSummary
-    .map(
-      (c) => `
-      <tr>
-        <td>${escapeHtml(c.campusName)} (${escapeHtml(c.campusCode)})</td>
-        <td class="num">${c.totalStudents}</td>
-        <td class="num">${c.unassignedStudents}</td>
-        <td class="num">${c.overdueStudents}</td>
-        <td class="num">${c.duePendingStudents}</td>
-        <td class="num">${c.completedAllDueStudents}</td>
-        <td class="num">${escapeHtml(formatRateWithFraction(c.monthSummarizedStudents, c.totalStudents, c.monthSummaryRate))}</td>
-      </tr>`
-    )
-    .join("")
+  const campusChartItems: CampusRateBarItem[] = payload.campusSummary.map((c) => ({
+    code: c.campusCode || c.campusName,
+    subLabel: `${c.totalStudents} HS thuộc diện`,
+    rate: c.monthSummaryRate,
+    numerator: c.monthSummarizedStudents,
+    denominator: c.totalStudents,
+  }))
+
+  const chartSvg = renderCampusRateBarSvg({
+    title: "Biểu đồ tỷ lệ đã tổng kết tháng theo cơ sở — Tâm lý cam kết đầu vào",
+    subtitle: "Hiển thị trực tiếp % và số học sinh đã tổng kết / tổng số HS thuộc diện tâm lý cam kết đầu vào",
+    items: campusChartItems,
+    unitSuffix: " HS",
+  })
 
   const weekSummaryHtml = payload.weekSummary
     .map(
@@ -612,7 +1050,8 @@ export function buildPsychologyCommitmentPdfHtml(
         .join("")
 
       detailHtml = `
-        <div class="section-title">3. Bảng chi tiết theo dõi Tâm lý cam kết đầu vào (${payload.detailRows.length} học sinh)</div>
+        <div class="page-break"></div>
+        <div class="section-title">3. Danh sách chi tiết theo dõi Tâm lý cam kết đầu vào (${payload.detailRows.length} học sinh)</div>
         <table>
           <colgroup>
             <col style="width:3.2%" />
@@ -653,26 +1092,28 @@ export function buildPsychologyCommitmentPdfHtml(
     detailHtml = `<div class="note-box">Tài khoản chỉ có quyền xem số liệu tổng hợp. Danh sách học sinh và nhận xét tâm lý được ẩn theo phân quyền.</div>`
   }
 
+  const sessionRate =
+    payload.summary.totalScheduledSessions > 0
+      ? (payload.summary.completedSessions / payload.summary.totalScheduledSessions) * 100
+      : null
+
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<title>Báo cáo Tâm lý cam kết đầu vào</title>
+<title>BÁO CÁO HỌC SINH THEO DÕI CAM KẾT — Tâm lý cam kết đầu vào</title>
 <style>${SHARED_PDF_CSS}</style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <div class="brand-org">HỆ THỐNG GIÁO DỤC SKY-LINE • PHÂN TÍCH TỔNG HỢP (SSM)</div>
-      <div class="report-title">BÁO CÁO THỐNG KÊ HỌC SINH — TÂM LÝ CAM KẾT ĐẦU VÀO</div>
-      <div class="report-sub">Phạm vi quyền: ${escapeHtml(scope.roleDisplayLabel)}</div>
-    </div>
-    <div class="meta-right">
-      <div><strong>Năm học:</strong> ${escapeHtml(payload.filters.academicYearName)}</div>
-      <div><strong>Kỳ / Tháng:</strong> ${escapeHtml(payload.filters.monthLabel)}</div>
-      <div><strong>Xuất lúc (VN):</strong> ${escapeHtml(exportedAt)}</div>
-    </div>
-  </div>
+  ${renderPdfHeader({
+    tabLabel: "TÂM LÝ CAM KẾT ĐẦU VÀO",
+    subDetail: `Khối Phổ thông K-12 • Quyền: ${scope.roleDisplayLabel}`,
+    academicYearName: payload.filters.academicYearName,
+    scopeLabel: payload.filters.campusName,
+    extraMetaLabel: "Kỳ / Tháng",
+    extraMetaValue: payload.filters.monthLabel,
+    exportedAt,
+  })}
 
   <div class="filter-strip">
     <strong>Bộ lọc áp dụng:</strong>
@@ -684,52 +1125,66 @@ export function buildPsychologyCommitmentPdfHtml(
   </div>
 
   <div class="kpi-grid">
-    <div class="kpi-box">
-      <div class="kpi-label">HS thuộc diện</div>
-      <div class="kpi-value">${payload.summary.totalStudents}</div>
-      <div class="kpi-unit">học sinh (mã duy nhất)</div>
+    <div class="kpi-box pine">
+      <div class="kpi-label">HS thuộc diện Tâm lý CKĐV</div>
+      <div class="kpi-value">${payload.summary.totalStudents}<span class="kpi-pct">(${escapeHtml(fmtPct(payload.summary.enrolledShareRate))})</span></div>
+      <div class="kpi-unit">trên ${payload.summary.enrolledStudentCount} HS nhập học</div>
+      ${renderProgressBar(payload.summary.enrolledShareRate, "teal")}
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Chưa phân công</div>
-      <div class="kpi-value">${payload.summary.unassignedStudents}</div>
-      <div class="kpi-unit">học sinh</div>
+    <div class="kpi-box rose">
+      <div class="kpi-label">Chưa phân công GV/CV</div>
+      <div class="kpi-value" style="color:#BE123C;">${payload.summary.unassignedStudents}</div>
+      <div class="kpi-unit">học sinh cần gán phụ trách</div>
     </div>
-    <div class="kpi-box">
+    <div class="kpi-box amber">
       <div class="kpi-label">Có đánh giá quá hạn</div>
-      <div class="kpi-value">${payload.summary.overdueStudents}</div>
-      <div class="kpi-unit">học sinh</div>
+      <div class="kpi-value" style="color:#B45309;">${payload.summary.overdueStudents}</div>
+      <div class="kpi-unit">học sinh quá hạn theo dõi</div>
     </div>
-    <div class="kpi-box">
+    <div class="kpi-box emerald">
       <div class="kpi-label">Đã tổng kết tháng</div>
-      <div class="kpi-value">${escapeHtml(formatRateWithFraction(payload.summary.monthSummarizedStudents, payload.summary.totalStudents, payload.summary.monthSummaryRate))}</div>
-      <div class="kpi-unit">học sinh</div>
+      <div class="kpi-value" style="color:#047857;">${escapeHtml(formatRateWithFraction(payload.summary.monthSummarizedStudents, payload.summary.totalStudents, payload.summary.monthSummaryRate))}</div>
+      <div class="kpi-unit">học sinh đã chốt tổng kết</div>
+      ${renderProgressBar(payload.summary.monthSummaryRate, "emerald")}
     </div>
     <div class="kpi-box">
-      <div class="kpi-label">Tiến độ lượt đánh giá</div>
-      <div class="kpi-value">${payload.summary.completedSessions}/${payload.summary.totalScheduledSessions}</div>
-      <div class="kpi-unit">lượt đánh giá tuần</div>
+      <div class="kpi-label">Tiến độ lượt đánh giá tuần</div>
+      <div class="kpi-value">${payload.summary.completedSessions}/${payload.summary.totalScheduledSessions}<span class="kpi-pct">(${escapeHtml(fmtPct(sessionRate))})</span></div>
+      <div class="kpi-unit">lượt đánh giá hoàn thành</div>
+      ${renderProgressBar(sessionRate, "teal")}
     </div>
   </div>
 
-  <div class="section-title">1. Tổng hợp theo cơ sở</div>
-  ${
-    payload.campusSummary.length === 0
-      ? `<div class="empty-box">Chưa có dữ liệu phù hợp</div>`
-      : `<table>
-          <thead>
-            <tr>
-              <th>Cơ sở</th>
-              <th class="num">Số HS thuộc diện</th>
-              <th class="num">Chưa phân công</th>
-              <th class="num">Có ĐG quá hạn</th>
-              <th class="num">Còn lượt đến hạn</th>
-              <th class="num">Đã cập nhật đủ</th>
-              <th class="num">Đã tổng kết tháng</th>
-            </tr>
-          </thead>
-          <tbody>${campusRowsHtml}</tbody>
-        </table>`
-  }
+  ${chartSvg}
+
+  <div class="section-title">1. Báo cáo tổng hợp theo Toàn hệ thống → Cơ sở → Khối → Lớp</div>
+  <table>
+    <colgroup>
+      <col style="width:26%" />
+      <col style="width:9%" />
+      <col style="width:15%" />
+      <col style="width:9%" />
+      <col style="width:9%" />
+      <col style="width:9%" />
+      <col style="width:9%" />
+      <col style="width:14%" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Đơn vị (Hệ thống / Cơ sở / Khối / Lớp)</th>
+        <th class="num">HS nhập học</th>
+        <th class="num">HS thuộc diện (% nhập học)</th>
+        <th class="num">Chưa phân công</th>
+        <th class="num">Có ĐG quá hạn</th>
+        <th class="num">Còn lượt đến hạn</th>
+        <th class="num">Đã cập nhật đủ</th>
+        <th class="num">Đã tổng kết tháng</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${renderPsychHierarchyRowsRecursive(payload.hierarchy, 0)}
+    </tbody>
+  </table>
 
   <div class="section-title">2. Tổng hợp tiến độ theo tuần (${escapeHtml(payload.filters.monthLabel)})</div>
   <table>
@@ -752,6 +1207,10 @@ export function buildPsychologyCommitmentPdfHtml(
 </html>`
 }
 
+// ============================================================================
+// TAB 3: HỌC SINH HOMESCHOOLING NHẬP HỌC
+// ============================================================================
+
 export function buildHomeschoolingPdfHtml(
   payload: HomeschoolingReportPayload,
   scope: StudentStatisticsAccessScope,
@@ -759,6 +1218,22 @@ export function buildHomeschoolingPdfHtml(
 ): string {
   const exportedAt = exportedAtStr || formatVietnamTimestamp()
   const includeDetail = !scope.isSummaryOnly && scope.canExportDetailPdf
+
+  const campusChartItems: CampusRateBarItem[] = (payload.hierarchy.children || []).map((cp) => ({
+    code: cp.code || cp.label,
+    subLabel: `${cp.distinctStudentCount} HS (${fmtPct(cp.enrolledShareRate)})`,
+    rate: cp.standardRate,
+    numerator: cp.totalStandardMetCount,
+    denominator: cp.eligibleRowCount,
+  }))
+
+  const chartSvg = renderCampusRateBarSvg({
+    title: "Biểu đồ tỷ lệ đạt chuẩn (Kỳ gần nhất) — Học sinh Homeschooling nhập học",
+    subtitle:
+      "Hiển thị trực tiếp % và số lượt đạt chuẩn / tổng lượt xét chuẩn (gồm Đạt chuẩn + Tiến bộ vượt bậc) theo từng cơ sở",
+    items: campusChartItems,
+    unitSuffix: " lượt",
+  })
 
   const summaryTableRows = payload.campusLevelSubjectSummary
     .map(
@@ -807,7 +1282,7 @@ export function buildHomeschoolingPdfHtml(
               <td class="num">${escapeHtml(formatScoreForDisplay(r.ck1Score, r.level))}</td>
               <td class="num">${escapeHtml(formatScoreForDisplay(r.gk2Score, r.level))}</td>
               <td class="num">${escapeHtml(formatScoreForDisplay(r.ck2Score, r.level))}</td>
-              <td class="num">${escapeHtml(formatDeltaForDisplay(r.deltaGk1Ksdn))}</td>
+              <td><span class="badge ${getOutcomeBadgeClass(r.standardClassification)}">${escapeHtml(r.standardClassificationLabel)}</span><div class="muted">${escapeHtml(r.latestPeriodLabel)}</div></td>
               <td><span class="badge ${getOutcomeBadgeClass(r.gk1Outcome)}">${escapeHtml(r.gk1OutcomeLabel)}</span></td>
             </tr>`
             )
@@ -817,21 +1292,22 @@ export function buildHomeschoolingPdfHtml(
         .join("")
 
       detailHtml = `
-        <div class="section-title">2. Bảng chi tiết theo dõi học sinh Homeschooling nhập học (${payload.detailRows.length} lượt)</div>
+        <div class="page-break"></div>
+        <div class="section-title">3. Danh sách chi tiết học sinh Homeschooling nhập học (${payload.detailRows.length} lượt)</div>
         <table>
           <colgroup>
-            <col style="width:3.5%" />
-            <col style="width:14.5%" />
-            <col style="width:8%" />
+            <col style="width:3.2%" />
             <col style="width:14%" />
-            <col style="width:8.5%" />
-            <col style="width:5.5%" />
-            <col style="width:5.5%" />
-            <col style="width:5.5%" />
-            <col style="width:5.5%" />
-            <col style="width:5.5%" />
             <col style="width:7.5%" />
-            <col style="width:16.5%" />
+            <col style="width:13%" />
+            <col style="width:8%" />
+            <col style="width:5%" />
+            <col style="width:5%" />
+            <col style="width:5%" />
+            <col style="width:5%" />
+            <col style="width:5%" />
+            <col style="width:14.3%" />
+            <col style="width:15%" />
           </colgroup>
           <thead>
             <tr>
@@ -841,11 +1317,11 @@ export function buildHomeschoolingPdfHtml(
               <th>Cam kết</th>
               <th>Môn theo dõi</th>
               <th class="num">KSĐN</th>
-              <th class="num">Giữa kỳ 1</th>
-              <th class="num">Cuối kỳ 1</th>
-              <th class="num">Giữa kỳ 2</th>
-              <th class="num">Cuối kỳ 2</th>
-              <th class="num">Chênh lệch GK1 − KSĐN</th>
+              <th class="num">GK1</th>
+              <th class="num">CK1</th>
+              <th class="num">GK2</th>
+              <th class="num">CK2</th>
+              <th>Xếp loại chuẩn (Kỳ gần nhất)</th>
               <th>Tiến bộ (GK1)</th>
             </tr>
           </thead>
@@ -869,22 +1345,17 @@ export function buildHomeschoolingPdfHtml(
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<title>Báo cáo Theo dõi học sinh Homeschooling nhập học</title>
+<title>BÁO CÁO HỌC SINH THEO DÕI CAM KẾT — Học sinh Homeschooling</title>
 <style>${SHARED_PDF_CSS}</style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <div class="brand-org">HỆ THỐNG GIÁO DỤC SKY-LINE • PHÂN TÍCH TỔNG HỢP (SSM)</div>
-      <div class="report-title">BÁO CÁO THỐNG KÊ HỌC SINH — THEO DÕI HỌC SINH HOMESCHOOLING NHẬP HỌC</div>
-      <div class="report-sub">Chương trình học tập trước đây: Homeschooling • Phạm vi quyền: ${escapeHtml(scope.roleDisplayLabel)}</div>
-    </div>
-    <div class="meta-right">
-      <div><strong>Năm học:</strong> ${escapeHtml(payload.filters.academicYearName)}</div>
-      <div><strong>Phạm vi:</strong> ${escapeHtml(payload.filters.campusName)}</div>
-      <div><strong>Xuất lúc (VN):</strong> ${escapeHtml(exportedAt)}</div>
-    </div>
-  </div>
+  ${renderPdfHeader({
+    tabLabel: "HỌC SINH HOMESCHOOLING NHẬP HỌC",
+    subDetail: `Chương trình học tập trước đây: Homeschooling • Quyền: ${scope.roleDisplayLabel}`,
+    academicYearName: payload.filters.academicYearName,
+    scopeLabel: payload.filters.campusName,
+    exportedAt,
+  })}
 
   <div class="filter-strip">
     <strong>Bộ lọc áp dụng:</strong>
@@ -898,40 +1369,51 @@ export function buildHomeschoolingPdfHtml(
   </div>
 
   <div class="kpi-grid">
-    <div class="kpi-box">
+    <div class="kpi-box pine">
       <div class="kpi-label">HS Homeschooling nhập học</div>
-      <div class="kpi-value">${payload.summary.distinctStudentCount}</div>
-      <div class="kpi-unit">học sinh (mã duy nhất)</div>
+      <div class="kpi-value">${payload.summary.distinctStudentCount}<span class="kpi-pct">(${escapeHtml(fmtPct(payload.summary.enrolledShareRate))})</span></div>
+      <div class="kpi-unit">trên ${payload.summary.enrolledStudentCount} HS nhập học</div>
+      ${renderProgressBar(payload.summary.enrolledShareRate, "teal")}
     </div>
-    <div class="kpi-box">
+    <div class="kpi-box amber">
       <div class="kpi-label">HS có cam kết đầu vào</div>
-      <div class="kpi-value">${payload.summary.committedStudentCount}</div>
-      <div class="kpi-unit">học sinh</div>
+      <div class="kpi-value" style="color:#B45309;">${payload.summary.committedStudentCount}</div>
+      <div class="kpi-unit">trên ${payload.summary.distinctStudentCount} HS Homeschooling</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-label">Số lượt theo dõi môn</div>
-      <div class="kpi-value">${payload.summary.trackedRowCount}</div>
-      <div class="kpi-unit">lượt (cặp HS–môn)</div>
+      <div class="kpi-label">Đạt chuẩn (7–8 / 5–7)</div>
+      <div class="kpi-value" style="color:#00736E;">${payload.summary.standardBandCount}</div>
+      <div class="kpi-unit">lượt theo kỳ gần nhất</div>
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Đạt chuẩn GK1</div>
-      <div class="kpi-value">${payload.summary.gk1PassCount}</div>
-      <div class="kpi-unit">lượt</div>
+    <div class="kpi-box emerald">
+      <div class="kpi-label">Tiến bộ vượt bậc (9–10 / 8–10)</div>
+      <div class="kpi-value" style="color:#047857;">${payload.summary.outstandingCount}<span class="kpi-pct">(${escapeHtml(fmtPct(payload.summary.outstandingRate))})</span></div>
+      <div class="kpi-unit">${payload.summary.outstandingCount}/${payload.summary.eligibleStandardRowCount} lượt xét chuẩn</div>
+      ${renderProgressBar(payload.summary.outstandingRate, "emerald")}
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Tỷ lệ đạt tiến bộ GK1</div>
-      <div class="kpi-value">${escapeHtml(formatRateWithFraction(payload.summary.progressCount, payload.summary.comparableRowCount, payload.summary.progressRate))}</div>
-      <div class="kpi-unit">lượt đạt chuẩn &amp; GK1 &gt; KSĐN</div>
+    <div class="kpi-box emerald">
+      <div class="kpi-label">Tổng tỷ lệ Đạt chuẩn (Kỳ gần nhất)</div>
+      <div class="kpi-value" style="color:#047857;">${escapeHtml(formatRateWithFraction(payload.summary.totalStandardMetCount, payload.summary.eligibleStandardRowCount, payload.summary.standardRate))}</div>
+      <div class="kpi-unit">gồm Đạt chuẩn + Tiến bộ vượt bậc</div>
+      ${renderProgressBar(payload.summary.standardRate, "emerald")}
     </div>
   </div>
 
   <div class="note-box">
-    <strong>Quy tắc đánh giá tiến bộ:</strong>
-    Tiểu học đạt chuẩn GK1 khi điểm ≥ 7,0; THCS đạt chuẩn GK1 khi điểm ≥ 5,0; bậc khác áp dụng ngưỡng cấu hình đã xác nhận.
-    Ghi nhận “Đạt tiến bộ” khi GK1 đạt chuẩn và GK1 &gt; KSĐN.
+    <strong>Chuẩn quy định (kỳ định kỳ gần nhất KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
+    Tiểu học: <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Tiến bộ vượt bậc ·
+    THCS: <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Tiến bộ vượt bậc.
   </div>
 
-  <div class="section-title">1. Bảng tổng hợp theo cơ sở, bậc học và môn theo dõi</div>
+  ${chartSvg}
+
+  ${renderAcademicHierarchyPdfSection(
+    "1. Báo cáo tổng hợp theo Toàn hệ thống → Cơ sở → Khối → Lớp",
+    payload.hierarchy,
+    "HS Homeschooling"
+  )}
+
+  <div class="section-title">2. Tổng hợp theo cơ sở, bậc học và môn theo dõi</div>
   ${
     payload.campusLevelSubjectSummary.length === 0
       ? `<div class="empty-box">Chưa có dữ liệu phù hợp</div>`
@@ -959,6 +1441,10 @@ export function buildHomeschoolingPdfHtml(
 </html>`
 }
 
+// ============================================================================
+// TAB 4: HỌC SINH DIỆN HỌC GIAO LƯU
+// ============================================================================
+
 export function buildExchangePdfHtml(
   payload: ExchangeStudentReportPayload,
   scope: StudentStatisticsAccessScope,
@@ -966,6 +1452,22 @@ export function buildExchangePdfHtml(
 ): string {
   const exportedAt = exportedAtStr || formatVietnamTimestamp()
   const includeDetail = !scope.isSummaryOnly && scope.canExportDetailPdf
+
+  const campusChartItems: CampusRateBarItem[] = (payload.hierarchy.children || []).map((cp) => ({
+    code: cp.code || cp.label,
+    subLabel: `${cp.distinctStudentCount} HS (${fmtPct(cp.enrolledShareRate)})`,
+    rate: cp.standardRate,
+    numerator: cp.totalStandardMetCount,
+    denominator: cp.eligibleRowCount,
+  }))
+
+  const chartSvg = renderCampusRateBarSvg({
+    title: "Biểu đồ tỷ lệ đạt chuẩn (Kỳ gần nhất) — Học sinh diện Học giao lưu",
+    subtitle:
+      "Hiển thị trực tiếp % và số lượt đạt chuẩn / tổng lượt xét chuẩn (gồm Đạt chuẩn + Tiến bộ vượt bậc) theo từng cơ sở",
+    items: campusChartItems,
+    unitSuffix: " lượt",
+  })
 
   const summaryTableRows = payload.campusLevelSubjectSummary
     .map(
@@ -1013,7 +1515,7 @@ export function buildExchangePdfHtml(
               <td class="num">${escapeHtml(formatScoreForDisplay(r.ck1Score, r.level))}</td>
               <td class="num">${escapeHtml(formatScoreForDisplay(r.gk2Score, r.level))}</td>
               <td class="num">${escapeHtml(formatScoreForDisplay(r.ck2Score, r.level))}</td>
-              <td class="num">${escapeHtml(formatDeltaForDisplay(r.deltaGk1Ksdn))}</td>
+              <td><span class="badge ${getOutcomeBadgeClass(r.standardClassification)}">${escapeHtml(r.standardClassificationLabel)}</span><div class="muted">${escapeHtml(r.latestPeriodLabel)}</div></td>
               <td><span class="badge ${getOutcomeBadgeClass(r.gk1Outcome)}">${escapeHtml(r.gk1OutcomeLabel)}</span></td>
             </tr>`
             )
@@ -1023,21 +1525,22 @@ export function buildExchangePdfHtml(
         .join("")
 
       detailHtml = `
-        <div class="section-title">2. Bảng chi tiết học sinh diện Học giao lưu (${payload.detailRows.length} lượt)</div>
+        <div class="page-break"></div>
+        <div class="section-title">3. Danh sách chi tiết học sinh diện Học giao lưu (${payload.detailRows.length} lượt)</div>
         <table>
           <colgroup>
-            <col style="width:3.5%" />
-            <col style="width:15%" />
-            <col style="width:8%" />
-            <col style="width:13.5%" />
-            <col style="width:8.5%" />
-            <col style="width:5.5%" />
-            <col style="width:5.5%" />
-            <col style="width:5.5%" />
-            <col style="width:5.5%" />
-            <col style="width:5.5%" />
+            <col style="width:3.2%" />
+            <col style="width:14%" />
             <col style="width:7.5%" />
-            <col style="width:16.5%" />
+            <col style="width:13%" />
+            <col style="width:8%" />
+            <col style="width:5%" />
+            <col style="width:5%" />
+            <col style="width:5%" />
+            <col style="width:5%" />
+            <col style="width:5%" />
+            <col style="width:14.3%" />
+            <col style="width:15%" />
           </colgroup>
           <thead>
             <tr>
@@ -1047,11 +1550,11 @@ export function buildExchangePdfHtml(
               <th>Diện học sinh</th>
               <th>Môn theo dõi</th>
               <th class="num">KSĐN</th>
-              <th class="num">Giữa kỳ 1</th>
-              <th class="num">Cuối kỳ 1</th>
-              <th class="num">Giữa kỳ 2</th>
-              <th class="num">Cuối kỳ 2</th>
-              <th class="num">Chênh lệch GK1 − KSĐN</th>
+              <th class="num">GK1</th>
+              <th class="num">CK1</th>
+              <th class="num">GK2</th>
+              <th class="num">CK2</th>
+              <th>Xếp loại chuẩn (Kỳ gần nhất)</th>
               <th>Tiến bộ (GK1)</th>
             </tr>
           </thead>
@@ -1068,22 +1571,17 @@ export function buildExchangePdfHtml(
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<title>Báo cáo Học sinh diện Học giao lưu</title>
+<title>BÁO CÁO HỌC SINH THEO DÕI CAM KẾT — Học sinh diện Học giao lưu</title>
 <style>${SHARED_PDF_CSS}</style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <div class="brand-org">HỆ THỐNG GIÁO DỤC SKY-LINE • PHÂN TÍCH TỔNG HỢP (SSM)</div>
-      <div class="report-title">BÁO CÁO THỐNG KÊ HỌC SINH — HỌC SINH DIỆN HỌC GIAO LƯU</div>
-      <div class="report-sub">Diện học sinh: Học giao lưu (GIAO_LUU) • Phạm vi quyền: ${escapeHtml(scope.roleDisplayLabel)}</div>
-    </div>
-    <div class="meta-right">
-      <div><strong>Năm học:</strong> ${escapeHtml(payload.filters.academicYearName)}</div>
-      <div><strong>Phạm vi:</strong> ${escapeHtml(payload.filters.campusName)}</div>
-      <div><strong>Xuất lúc (VN):</strong> ${escapeHtml(exportedAt)}</div>
-    </div>
-  </div>
+  ${renderPdfHeader({
+    tabLabel: "HỌC SINH DIỆN HỌC GIAO LƯU",
+    subDetail: `Diện học sinh: Học giao lưu (GIAO_LUU) • Quyền: ${scope.roleDisplayLabel}`,
+    academicYearName: payload.filters.academicYearName,
+    scopeLabel: payload.filters.campusName,
+    exportedAt,
+  })}
 
   <div class="filter-strip">
     <strong>Bộ lọc áp dụng:</strong>
@@ -1096,40 +1594,51 @@ export function buildExchangePdfHtml(
   </div>
 
   <div class="kpi-grid">
-    <div class="kpi-box">
+    <div class="kpi-box pine">
       <div class="kpi-label">HS diện Học giao lưu</div>
-      <div class="kpi-value">${payload.summary.distinctStudentCount}</div>
-      <div class="kpi-unit">học sinh (mã duy nhất)</div>
+      <div class="kpi-value">${payload.summary.distinctStudentCount}<span class="kpi-pct">(${escapeHtml(fmtPct(payload.summary.enrolledShareRate))})</span></div>
+      <div class="kpi-unit">trên ${payload.summary.enrolledStudentCount} HS nhập học</div>
+      ${renderProgressBar(payload.summary.enrolledShareRate, "teal")}
     </div>
     <div class="kpi-box">
       <div class="kpi-label">Số lượt theo dõi môn</div>
       <div class="kpi-value">${payload.summary.trackedRowCount}</div>
-      <div class="kpi-unit">lượt (cặp HS–môn)</div>
+      <div class="kpi-unit">đủ điểm xét chuẩn: ${payload.summary.eligibleStandardRowCount} lượt</div>
     </div>
     <div class="kpi-box">
-      <div class="kpi-label">Đủ điểm đối chiếu</div>
-      <div class="kpi-value">${payload.summary.comparableRowCount}</div>
-      <div class="kpi-unit">lượt đủ KSĐN, GK1 &amp; ngưỡng</div>
+      <div class="kpi-label">Đạt chuẩn (7–8 / 5–7)</div>
+      <div class="kpi-value" style="color:#00736E;">${payload.summary.standardBandCount}</div>
+      <div class="kpi-unit">lượt theo kỳ gần nhất</div>
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Đạt chuẩn GK1</div>
-      <div class="kpi-value">${payload.summary.gk1PassCount}</div>
-      <div class="kpi-unit">lượt</div>
+    <div class="kpi-box emerald">
+      <div class="kpi-label">Tiến bộ vượt bậc (9–10 / 8–10)</div>
+      <div class="kpi-value" style="color:#047857;">${payload.summary.outstandingCount}<span class="kpi-pct">(${escapeHtml(fmtPct(payload.summary.outstandingRate))})</span></div>
+      <div class="kpi-unit">${payload.summary.outstandingCount}/${payload.summary.eligibleStandardRowCount} lượt xét chuẩn</div>
+      ${renderProgressBar(payload.summary.outstandingRate, "emerald")}
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Tỷ lệ đạt tiến bộ GK1</div>
-      <div class="kpi-value">${escapeHtml(formatRateWithFraction(payload.summary.progressCount, payload.summary.comparableRowCount, payload.summary.progressRate))}</div>
-      <div class="kpi-unit">lượt đạt chuẩn &amp; GK1 &gt; KSĐN</div>
+    <div class="kpi-box emerald">
+      <div class="kpi-label">Tổng tỷ lệ Đạt chuẩn (Kỳ gần nhất)</div>
+      <div class="kpi-value" style="color:#047857;">${escapeHtml(formatRateWithFraction(payload.summary.totalStandardMetCount, payload.summary.eligibleStandardRowCount, payload.summary.standardRate))}</div>
+      <div class="kpi-unit">gồm Đạt chuẩn + Tiến bộ vượt bậc</div>
+      ${renderProgressBar(payload.summary.standardRate, "emerald")}
     </div>
   </div>
 
   <div class="note-box">
-    <strong>Quy tắc đánh giá tiến bộ:</strong>
-    Tiểu học đạt chuẩn GK1 khi điểm ≥ 7,0; THCS đạt chuẩn GK1 khi điểm ≥ 5,0; bậc khác áp dụng ngưỡng cấu hình đã xác nhận.
-    Ghi nhận “Đạt tiến bộ” khi GK1 đạt chuẩn và GK1 &gt; KSĐN.
+    <strong>Chuẩn quy định (kỳ định kỳ gần nhất KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
+    Tiểu học: <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Tiến bộ vượt bậc ·
+    THCS: <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Tiến bộ vượt bậc.
   </div>
 
-  <div class="section-title">1. Bảng tổng hợp theo cơ sở, bậc học và môn theo dõi</div>
+  ${chartSvg}
+
+  ${renderAcademicHierarchyPdfSection(
+    "1. Báo cáo tổng hợp theo Toàn hệ thống → Cơ sở → Khối → Lớp",
+    payload.hierarchy,
+    "HS Học giao lưu"
+  )}
+
+  <div class="section-title">2. Tổng hợp theo cơ sở, bậc học và môn theo dõi</div>
   ${
     payload.campusLevelSubjectSummary.length === 0
       ? `<div class="empty-box">Chưa có dữ liệu phù hợp</div>`
@@ -1156,6 +1665,10 @@ export function buildExchangePdfHtml(
 </html>`
 }
 
+// ============================================================================
+// TAB 0: TỔNG QUAN (4 DIỆN THEO DÕI)
+// ============================================================================
+
 function renderOverviewRowsRecursive(
   node: OverviewHierarchyNode,
   depth: number,
@@ -1164,9 +1677,9 @@ function renderOverviewRowsRecursive(
   const pad = depth * 12
   const rowBg =
     node.nodeType === "SYSTEM"
-      ? "background:#F0FDFA;font-weight:700;"
+      ? "background:#F0FDFA;font-weight:700;color:#003B3A;"
       : node.nodeType === "CAMPUS"
-        ? "background:#F8FAFC;font-weight:700;"
+        ? "background:#F8FAFC;font-weight:700;color:#003B3A;"
         : node.nodeType === "GRADE"
           ? "font-weight:600;"
           : ""
@@ -1178,22 +1691,19 @@ function renderOverviewRowsRecursive(
     standardEligibleCount: number
     standardRate: number | null
   }) => {
-    const shareStr =
-      c.shareOfEnrolledRate !== null
-        ? `${c.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%`
-        : "—"
+    const shareStr = fmtPct(c.shareOfEnrolledRate)
     const stdStr = formatRateWithFraction(
       c.standardMetCount,
       c.standardEligibleCount,
       c.standardRate
     )
-    return `<strong>${c.studentCount}</strong> <span class="muted">(${shareStr})</span><br/><span class="muted">Đạt chuẩn: ${escapeHtml(stdStr)}</span>`
+    return `<strong>${c.studentCount}</strong> <span class="muted">(${shareStr})</span><br/><span style="color:#00736E;font-size:6.9pt;font-weight:600;">Đạt chuẩn: ${escapeHtml(stdStr)}</span>`
   }
 
   let html = `
     <tr style="${rowBg}">
       <td style="padding-left:${pad + 5}px;">${escapeHtml(node.label)}</td>
-      <td class="num">${node.enrolledStudentCount}</td>
+      <td class="num"><strong>${node.enrolledStudentCount}</strong></td>
       <td class="num">${fmtCell(node.academicCommitment)}</td>
       ${showPsych ? `<td class="num">${fmtCell(node.psychologyCommitment)}</td>` : ""}
       <td class="num">${fmtCell(node.homeschooling)}</td>
@@ -1215,68 +1725,70 @@ export function buildOverviewPdfHtml(
   const root = payload.hierarchy
   const showPsych = payload.canViewPsychologyTab
   const rowsHtml = renderOverviewRowsRecursive(root, 0, showPsych)
+  const overviewChartSvg = renderOverviewGroupedBarSvg(root.children || [], showPsych)
 
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<title>Báo cáo Tổng quan Thống kê Học sinh</title>
+<title>BÁO CÁO HỌC SINH THEO DÕI CAM KẾT — Tổng quan</title>
 <style>${SHARED_PDF_CSS}</style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <div class="brand-org">HỆ THỐNG GIÁO DỤC SKY-LINE • PHÂN TÍCH TỔNG HỢP (SSM)</div>
-      <div class="report-title">BÁO CÁO TỔNG QUAN THỐNG KÊ HỌC SINH THEO CƠ SỞ &amp; KHỐI LỚP</div>
-      <div class="report-sub">Phạm vi quyền: ${escapeHtml(scope.roleDisplayLabel)}</div>
-    </div>
-    <div class="meta-right">
-      <div><strong>Năm học:</strong> ${escapeHtml(payload.filters.academicYearName)}</div>
-      <div><strong>Phạm vi:</strong> ${escapeHtml(payload.filters.campusName)}</div>
-      <div><strong>Xuất lúc (VN):</strong> ${escapeHtml(exportedAt)}</div>
-    </div>
-  </div>
-
-  <div class="note-box">
-    <strong>Chuẩn quy định theo kỳ định kỳ gần nhất (KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
-    Tiểu học: từ 7,0 đến 8,x là <strong>Đạt chuẩn</strong>, từ 9,0 đến 10 là <strong>Tiến bộ vượt bậc</strong>.
-    THCS: từ 5,0 đến 7,x là <strong>Đạt chuẩn</strong>, từ 8,0 đến 10 là <strong>Tiến bộ vượt bậc</strong>.
-    Tỷ lệ <strong>Đạt chuẩn</strong> bao gồm cả Đạt chuẩn và Tiến bộ vượt bậc. Tỷ lệ <strong>% so với HS nhập học</strong> tính trên tổng số HS nhập học / đang học trong cùng phạm vi.
-  </div>
+  ${renderPdfHeader({
+    tabLabel: "TỔNG QUAN TOÀN HỆ THỐNG (4 DIỆN THEO DÕI)",
+    subDetail: `Khối Phổ thông K-12 (Khối 1–12) • Quyền: ${scope.roleDisplayLabel}`,
+    academicYearName: payload.filters.academicYearName,
+    scopeLabel: payload.filters.campusName,
+    exportedAt,
+  })}
 
   <div class="kpi-grid">
-    <div class="kpi-box">
-      <div class="kpi-label">Tổng HS nhập học</div>
+    <div class="kpi-box pine">
+      <div class="kpi-label">Tổng HS nhập học (Chuyển đến)</div>
       <div class="kpi-value">${root.enrolledStudentCount}</div>
-      <div class="kpi-unit">học sinh trong phạm vi</div>
+      <div class="kpi-unit">từ Lịch sử HS chuyển đến (${escapeHtml(payload.filters.campusName)})</div>
     </div>
     <div class="kpi-box">
       <div class="kpi-label">HS cam kết môn học</div>
-      <div class="kpi-value">${root.academicCommitment.studentCount} (${root.academicCommitment.shareOfEnrolledRate !== null ? `${root.academicCommitment.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%` : "—"})</div>
-      <div class="kpi-unit">Đạt chuẩn: ${escapeHtml(formatRateWithFraction(root.academicCommitment.standardMetCount, root.academicCommitment.standardEligibleCount, root.academicCommitment.standardRate))}</div>
+      <div class="kpi-value">${root.academicCommitment.studentCount}<span class="kpi-pct">(${escapeHtml(fmtPct(root.academicCommitment.shareOfEnrolledRate))})</span></div>
+      <div class="kpi-unit">Đạt chuẩn: <strong>${escapeHtml(formatRateWithFraction(root.academicCommitment.standardMetCount, root.academicCommitment.standardEligibleCount, root.academicCommitment.standardRate))}</strong></div>
+      ${renderProgressBar(root.academicCommitment.standardRate, "emerald")}
     </div>
     ${
       showPsych
         ? `<div class="kpi-box">
             <div class="kpi-label">Tâm lý cam kết đầu vào</div>
-            <div class="kpi-value">${root.psychologyCommitment.studentCount} (${root.psychologyCommitment.shareOfEnrolledRate !== null ? `${root.psychologyCommitment.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%` : "—"})</div>
-            <div class="kpi-unit">Tổng kết tháng: ${escapeHtml(formatRateWithFraction(root.psychologyCommitment.standardMetCount, root.psychologyCommitment.standardEligibleCount, root.psychologyCommitment.standardRate))}</div>
+            <div class="kpi-value">${root.psychologyCommitment.studentCount}<span class="kpi-pct">(${escapeHtml(fmtPct(root.psychologyCommitment.shareOfEnrolledRate))})</span></div>
+            <div class="kpi-unit">Tổng kết tháng: <strong>${escapeHtml(formatRateWithFraction(root.psychologyCommitment.standardMetCount, root.psychologyCommitment.standardEligibleCount, root.psychologyCommitment.standardRate))}</strong></div>
+            ${renderProgressBar(root.psychologyCommitment.standardRate, "teal")}
           </div>`
         : ""
     }
-    <div class="kpi-box">
+    <div class="kpi-box amber">
       <div class="kpi-label">HS Homeschooling</div>
-      <div class="kpi-value">${root.homeschooling.studentCount} (${root.homeschooling.shareOfEnrolledRate !== null ? `${root.homeschooling.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%` : "—"})</div>
-      <div class="kpi-unit">Đạt chuẩn: ${escapeHtml(formatRateWithFraction(root.homeschooling.standardMetCount, root.homeschooling.standardEligibleCount, root.homeschooling.standardRate))}</div>
+      <div class="kpi-value">${root.homeschooling.studentCount}<span class="kpi-pct">(${escapeHtml(fmtPct(root.homeschooling.shareOfEnrolledRate))})</span></div>
+      <div class="kpi-unit">Đạt chuẩn: <strong>${escapeHtml(formatRateWithFraction(root.homeschooling.standardMetCount, root.homeschooling.standardEligibleCount, root.homeschooling.standardRate))}</strong></div>
+      ${renderProgressBar(root.homeschooling.standardRate, "amber")}
     </div>
-    <div class="kpi-box">
+    <div class="kpi-box emerald">
       <div class="kpi-label">HS học giao lưu</div>
-      <div class="kpi-value">${root.exchange.studentCount} (${root.exchange.shareOfEnrolledRate !== null ? `${root.exchange.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%` : "—"})</div>
-      <div class="kpi-unit">Đạt chuẩn: ${escapeHtml(formatRateWithFraction(root.exchange.standardMetCount, root.exchange.standardEligibleCount, root.exchange.standardRate))}</div>
+      <div class="kpi-value">${root.exchange.studentCount}<span class="kpi-pct">(${escapeHtml(fmtPct(root.exchange.shareOfEnrolledRate))})</span></div>
+      <div class="kpi-unit">Đạt chuẩn: <strong>${escapeHtml(formatRateWithFraction(root.exchange.standardMetCount, root.exchange.standardEligibleCount, root.exchange.standardRate))}</strong></div>
+      ${renderProgressBar(root.exchange.standardRate, "emerald")}
     </div>
   </div>
 
-  <div class="section-title">Phân rã chi tiết: Toàn hệ thống → Cơ sở → Khối → Lớp</div>
+  <div class="note-box">
+    <strong>Chuẩn quy định theo kỳ định kỳ gần nhất (KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
+    Tiểu học: từ <strong>7–8</strong> là <strong>Đạt chuẩn</strong>, từ <strong>9–10</strong> là <strong>Tiến bộ vượt bậc</strong>.
+    THCS: từ <strong>5–7</strong> là <strong>Đạt chuẩn</strong>, từ <strong>8–10</strong> là <strong>Tiến bộ vượt bậc</strong>.
+    Tỷ lệ <strong>Đạt chuẩn</strong> bao gồm cả Đạt chuẩn và Tiến bộ vượt bậc. Tỷ lệ <strong>% so với HS nhập học</strong> tính trên tổng số HS Chuyển đến (K-12) trong cùng phạm vi.
+  </div>
+
+  ${overviewChartSvg}
+
+  <div class="section-title">Bảng tổng hợp phân cấp: Toàn hệ thống → Cơ sở → Khối → Lớp</div>
   <table>
     <thead>
       <tr>
@@ -1350,13 +1862,13 @@ export async function renderHtmlToLandscapePdfBuffer(
         headerTemplate: "<div></div>",
         footerTemplate: `
           <div style="width:100%;font-family:'Segoe UI',Arial,sans-serif;font-size:8px;color:#64748B;padding:0 10mm;display:flex;justify-content:space-between;">
-            <span>Hệ thống Giáo dục Sky-Line • SSM</span>
+            <span>Hệ thống Giáo dục Sky-Line • BÁO CÁO HỌC SINH THEO DÕI CAM KẾT</span>
             <span>Trang <span class="pageNumber"></span> / <span class="totalPages"></span></span>
           </div>`,
         margin: {
-          top: "12mm",
+          top: "11mm",
           right: "10mm",
-          bottom: "14mm",
+          bottom: "13mm",
           left: "10mm",
         },
       })
