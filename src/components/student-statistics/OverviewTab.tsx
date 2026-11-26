@@ -76,6 +76,130 @@ function CohortCell({
   )
 }
 
+function aggregateAcademicByGrade(root: HierarchyNodeMetrics) {
+  const map = new Map<
+    string,
+    {
+      grade: string
+      label: string
+      studentCount: number
+      metCount: number
+      eligibleCount: number
+      outstandingCount: number
+    }
+  >()
+  for (const cp of root.children || []) {
+    for (const gr of cp.children || []) {
+      if (gr.distinctStudentCount <= 0 && gr.eligibleRowCount <= 0) continue
+      const key = gr.grade || gr.code
+      const cur = map.get(key) || {
+        grade: key,
+        label: `K${key}`,
+        studentCount: 0,
+        metCount: 0,
+        eligibleCount: 0,
+        outstandingCount: 0,
+      }
+      cur.studentCount += gr.distinctStudentCount
+      cur.metCount += gr.totalStandardMetCount
+      cur.eligibleCount += gr.eligibleRowCount
+      cur.outstandingCount += gr.outstandingCount
+      map.set(key, cur)
+    }
+  }
+  return Array.from(map.values())
+    .sort((a, b) => {
+      const na = Number(a.grade)
+      const nb = Number(b.grade)
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+      return a.grade.localeCompare(b.grade, "vi")
+    })
+    .map((g) => ({
+      name: g.label,
+      fullName: `Khối ${g.grade} (${g.studentCount} HS)`,
+      campusId: undefined as string | undefined,
+      rate:
+        g.eligibleCount > 0 ? Math.round((g.metCount / g.eligibleCount) * 1000) / 10 : 0,
+      hasDenominator: g.eligibleCount > 0,
+      metCount: g.metCount,
+      eligibleCount: g.eligibleCount,
+    }))
+}
+
+function aggregatePsychByGrade(root: PsychHierarchyNodeMetrics) {
+  const map = new Map<
+    string,
+    { grade: string; label: string; summarized: number; total: number }
+  >()
+  for (const cp of root.children || []) {
+    for (const gr of cp.children || []) {
+      if (gr.totalStudents <= 0) continue
+      const key = gr.grade || gr.code
+      const cur = map.get(key) || {
+        grade: key,
+        label: `K${key}`,
+        summarized: 0,
+        total: 0,
+      }
+      cur.summarized += gr.monthSummarizedStudents
+      cur.total += gr.totalStudents
+      map.set(key, cur)
+    }
+  }
+  return Array.from(map.values())
+    .sort((a, b) => {
+      const na = Number(a.grade)
+      const nb = Number(b.grade)
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+      return a.grade.localeCompare(b.grade, "vi")
+    })
+    .map((g) => ({
+      name: g.label,
+      fullName: `Khối ${g.grade} (${g.total} HS)`,
+      campusId: undefined as string | undefined,
+      rate: g.total > 0 ? Math.round((g.summarized / g.total) * 1000) / 10 : 0,
+      hasDenominator: g.total > 0,
+      summarized: g.summarized,
+      total: g.total,
+    }))
+}
+
+function InlineStackedRateBar({
+  outstanding,
+  standardBand,
+  below,
+  eligible,
+  rate,
+}: {
+  outstanding: number
+  standardBand: number
+  below: number
+  eligible: number
+  rate: number | null
+}) {
+  const met = outstanding + standardBand
+  const pctOut = eligible > 0 ? (outstanding / eligible) * 100 : 0
+  const pctBand = eligible > 0 ? (standardBand / eligible) * 100 : 0
+  const pctBelow = eligible > 0 ? (below / eligible) * 100 : 0
+  return (
+    <div className="min-w-[118px]">
+      <div className="text-right font-semibold text-[#00736E] whitespace-nowrap">
+        {formatRateWithFraction(met, eligible, rate)}
+      </div>
+      {eligible > 0 && (
+        <div
+          className="mt-1 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden flex"
+          title={`Vượt bậc: ${outstanding} · Đạt chuẩn: ${standardBand} · Chưa đạt: ${below}`}
+        >
+          {pctOut > 0 && <div className="bg-emerald-600 h-full" style={{ width: `${pctOut}%` }} />}
+          {pctBand > 0 && <div className="bg-[#00A19A] h-full" style={{ width: `${pctBand}%` }} />}
+          {pctBelow > 0 && <div className="bg-rose-400 h-full" style={{ width: `${pctBelow}%` }} />}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AcademicCohortEvalSection({
   sectionNumber,
   title,
@@ -96,10 +220,20 @@ function AcademicCohortEvalSection({
   const root = evalData.hierarchy
   const campuses = root.children || []
   const basisTxt = formatBasisCompact(evalData.basisPeriodCounts)
+  const [chartMode, setChartMode] = useState<"CAMPUS" | "GRADE">(
+    campuses.length > 1 ? "CAMPUS" : "GRADE"
+  )
+  const [expandedCampuses, setExpandedCampuses] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {}
+    for (const cp of campuses) {
+      init[cp.id] = !isAllSystem
+    }
+    return init
+  })
 
-  const chartData = campuses.map((cp) => ({
+  const campusChartData = campuses.map((cp) => ({
     name: cp.code || cp.label,
-    fullName: cp.label,
+    fullName: `${cp.label} (${cp.distinctStudentCount} HS)`,
     campusId: cp.campusId || cp.id,
     rate: cp.standardRate ?? 0,
     hasDenominator: cp.eligibleRowCount > 0,
@@ -107,10 +241,22 @@ function AcademicCohortEvalSection({
     eligibleCount: cp.eligibleRowCount,
   }))
 
+  const gradeChartData = useMemo(() => aggregateAcademicByGrade(root), [root])
+  const activeChartData = chartMode === "GRADE" ? gradeChartData : campusChartData
+
+  const toggleCampus = (id: string) =>
+    setExpandedCampuses((prev) => ({ ...prev, [id]: !prev[id] }))
+
+  const setAllGradesOpen = (open: boolean) => {
+    const next: Record<string, boolean> = {}
+    for (const cp of campuses) next[cp.id] = open
+    setExpandedCampuses(next)
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function renderBarLabel(props: any) {
     const { x, y, width, index } = props
-    const row = chartData[index]
+    const row = activeChartData[index]
     if (!row) return null
     const cx = Number(x ?? 0) + Number(width ?? 0) / 2
     const topY = Number(y ?? 0)
@@ -133,11 +279,16 @@ function AcademicCohortEvalSection({
     )
   }
 
-  const rows: Array<{ node: HierarchyNodeMetrics; depth: number }> = [{ node: root, depth: 0 }]
+  const rows: Array<{ node: HierarchyNodeMetrics; depth: number; hasGrades?: boolean }> = [
+    { node: root, depth: 0 },
+  ]
   for (const cp of campuses) {
-    rows.push({ node: cp, depth: 1 })
-    if (!isAllSystem) {
-      for (const gr of cp.children || []) {
+    const activeGrades = (cp.children || []).filter(
+      (gr) => gr.distinctStudentCount > 0 || gr.eligibleRowCount > 0
+    )
+    rows.push({ node: cp, depth: 1, hasGrades: activeGrades.length > 0 })
+    if (expandedCampuses[cp.id]) {
+      for (const gr of activeGrades) {
         rows.push({ node: gr, depth: 2 })
       }
     }
@@ -161,28 +312,70 @@ function AcademicCohortEvalSection({
             {basisTxt ? ` · Kỳ lấy điểm: ${basisTxt}` : ""}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onJumpToTab(tab)}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#003B3A] bg-white border border-[#CBD5E1] hover:bg-[#F0FDFA] hover:border-[#00A19A] transition-colors"
-        >
-          <span>Xem danh sách chi tiết</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAllGradesOpen(true)}
+            className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 bg-white border border-[#E2E8F0] hover:bg-slate-50"
+          >
+            Mở các Khối
+          </button>
+          <button
+            type="button"
+            onClick={() => setAllGradesOpen(false)}
+            className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 bg-white border border-[#E2E8F0] hover:bg-slate-50"
+          >
+            Thu gọn Khối
+          </button>
+          <button
+            type="button"
+            onClick={() => onJumpToTab(tab)}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#003B3A] bg-white border border-[#CBD5E1] hover:bg-[#F0FDFA] hover:border-[#00A19A] transition-colors"
+          >
+            <span>Xem danh sách chi tiết</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       <div className="p-4 grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
-        {chartData.length > 1 && (
+        {activeChartData.length > 0 && (
           <div className="xl:col-span-5 rounded-xl border border-[#E2E8F0] p-3">
-            <div className="text-xs font-semibold text-[#003B3A]">
-              Tỷ lệ đạt chuẩn (Kỳ gần nhất) theo cơ sở
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="text-xs font-semibold text-[#003B3A]">
+                Tỷ lệ đạt chuẩn {chartMode === "CAMPUS" ? "theo Cơ sở" : "theo Khối"}
+              </div>
+              <div className="inline-flex rounded-lg bg-slate-100 p-0.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setChartMode("CAMPUS")}
+                  className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
+                    chartMode === "CAMPUS"
+                      ? "bg-[#003B3A] text-white"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Cơ sở
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartMode("GRADE")}
+                  className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
+                    chartMode === "GRADE"
+                      ? "bg-[#003B3A] text-white"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Khối
+                </button>
+              </div>
             </div>
             <div className="text-[11px] text-slate-500 mb-2">
               Hiển thị % và số lượt đạt chuẩn / tổng lượt xét chuẩn
             </div>
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 32, right: 10, left: 0, bottom: 2 }}>
+                <BarChart data={activeChartData} margin={{ top: 32, right: 10, left: 0, bottom: 2 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155", fontWeight: 600 }} />
                   <YAxis
@@ -216,16 +409,18 @@ function AcademicCohortEvalSection({
                   <Bar
                     dataKey="rate"
                     radius={[5, 5, 0, 0]}
-                    maxBarSize={40}
-                    className="cursor-pointer"
+                    maxBarSize={38}
+                    className={chartMode === "CAMPUS" ? "cursor-pointer" : ""}
                     onClick={(entry: { campusId?: string }) => {
-                      if (entry?.campusId) onJumpToTab(tab, entry.campusId)
+                      if (chartMode === "CAMPUS" && entry?.campusId) {
+                        onJumpToTab(tab, entry.campusId)
+                      }
                     }}
                   >
                     <LabelList dataKey="rate" content={renderBarLabel} />
-                    {chartData.map((entry, idx) => (
+                    {activeChartData.map((entry, idx) => (
                       <Cell
-                        key={entry.campusId || idx}
+                        key={`${entry.name}_${idx}`}
                         fill={
                           !entry.hasDenominator
                             ? "#CBD5E1"
@@ -246,7 +441,7 @@ function AcademicCohortEvalSection({
 
         <div
           className={
-            chartData.length > 1
+            activeChartData.length > 0
               ? "xl:col-span-7 rounded-xl border border-[#E2E8F0] overflow-hidden"
               : "xl:col-span-12 rounded-xl border border-[#E2E8F0] overflow-hidden"
           }
@@ -256,7 +451,7 @@ function AcademicCohortEvalSection({
               <thead className="bg-[#003B3A] border-b border-[#003B3A]">
                 <tr className="text-[11px] font-semibold whitespace-nowrap">
                   <th className="py-2.5 px-3 text-left text-white">
-                    {isAllSystem ? "Đơn vị (Hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}
+                    Đơn vị (Hệ thống → Cơ sở → Khối)
                   </th>
                   <th className="py-2.5 px-3 text-right text-teal-100">HS nhập học</th>
                   <th className="py-2.5 px-3 text-right text-teal-100">{cohortLabel}</th>
@@ -268,27 +463,40 @@ function AcademicCohortEvalSection({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
-                {rows.map(({ node, depth }) => (
+                {rows.map(({ node, depth, hasGrades }) => (
                   <tr
                     key={node.id}
-                    onClick={() => {
-                      if (node.nodeType === "CAMPUS" && node.campusId) {
-                        onJumpToTab(tab, node.campusId)
-                      }
-                    }}
                     className={`transition-colors align-middle ${
                       node.nodeType === "SYSTEM"
                         ? "bg-[#F0FDFA] font-bold text-[#003B3A]"
                         : node.nodeType === "CAMPUS"
-                          ? "bg-[#F8FAFC] font-semibold text-[#003B3A] hover:bg-[#F0FDFA]/70 cursor-pointer"
-                          : "hover:bg-[#F8FAFC]"
+                          ? "bg-[#F8FAFC] font-semibold text-[#003B3A] hover:bg-[#F0FDFA]/70"
+                          : "hover:bg-[#F8FAFC] text-slate-700"
                     }`}
                   >
                     <td
                       className="py-2.5 pr-3 whitespace-nowrap"
-                      style={{ paddingLeft: `${depth * 14 + 12}px` }}
+                      style={{ paddingLeft: `${depth * 14 + 10}px` }}
                     >
-                      {node.label}
+                      <div className="inline-flex items-center gap-1">
+                        {node.nodeType === "CAMPUS" && hasGrades ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleCampus(node.id)}
+                            className="p-0.5 rounded hover:bg-slate-200/70 text-slate-500"
+                            aria-label="Mở/thu gọn khối"
+                          >
+                            {expandedCampuses[node.id] ? (
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            ) : (
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        ) : (
+                          <span className="w-4 inline-block" />
+                        )}
+                        <span>{node.label}</span>
+                      </div>
                     </td>
                     <td className="py-2.5 px-3 text-right">{node.enrolledStudentCount}</td>
                     <td className="py-2.5 px-3 text-right whitespace-nowrap">
@@ -311,17 +519,30 @@ function AcademicCohortEvalSection({
                     >
                       {node.belowStandardCount}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-semibold text-[#00736E] whitespace-nowrap">
-                      {formatRateWithFraction(
-                        node.totalStandardMetCount,
-                        node.eligibleRowCount,
-                        node.standardRate
-                      )}
+                    <td className="py-2 px-3 text-right">
+                      <InlineStackedRateBar
+                        outstanding={node.outstandingCount}
+                        standardBand={node.standardBandCount}
+                        below={node.belowStandardCount}
+                        eligible={node.eligibleRowCount}
+                        rate={node.standardRate}
+                      />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="px-3 py-1.5 bg-[#F8FAFC] border-t border-[#E2E8F0] flex flex-wrap items-center justify-end gap-3 text-[10.5px] text-slate-500">
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2.5 h-1.5 rounded-full bg-emerald-600 inline-block" /> Vượt bậc
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2.5 h-1.5 rounded-full bg-[#00A19A] inline-block" /> Đạt chuẩn
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="w-2.5 h-1.5 rounded-full bg-rose-400 inline-block" /> Chưa đạt
+            </span>
           </div>
         </div>
       </div>
@@ -342,21 +563,40 @@ function PsychCohortEvalSection({
 }) {
   const root = evalData.hierarchy
   const campuses = root.children || []
+  const [chartMode, setChartMode] = useState<"CAMPUS" | "GRADE">(
+    campuses.length > 1 ? "CAMPUS" : "GRADE"
+  )
+  const [expandedCampuses, setExpandedCampuses] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {}
+    for (const cp of campuses) init[cp.id] = !isAllSystem
+    return init
+  })
 
-  const chartData = campuses.map((cp) => ({
+  const campusChartData = campuses.map((cp) => ({
     name: cp.code || cp.label,
-    fullName: cp.label,
+    fullName: `${cp.label} (${cp.totalStudents} HS)`,
     campusId: cp.campusId || cp.id,
     rate: cp.monthSummaryRate ?? 0,
     hasDenominator: cp.totalStudents > 0,
     summarized: cp.monthSummarizedStudents,
     total: cp.totalStudents,
   }))
+  const gradeChartData = useMemo(() => aggregatePsychByGrade(root), [root])
+  const activeChartData = chartMode === "GRADE" ? gradeChartData : campusChartData
+
+  const toggleCampus = (id: string) =>
+    setExpandedCampuses((prev) => ({ ...prev, [id]: !prev[id] }))
+
+  const setAllGradesOpen = (open: boolean) => {
+    const next: Record<string, boolean> = {}
+    for (const cp of campuses) next[cp.id] = open
+    setExpandedCampuses(next)
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function renderPsychBarLabel(props: any) {
     const { x, y, width, index } = props
-    const row = chartData[index]
+    const row = activeChartData[index]
     if (!row) return null
     const cx = Number(x ?? 0) + Number(width ?? 0) / 2
     const topY = Number(y ?? 0)
@@ -379,11 +619,14 @@ function PsychCohortEvalSection({
     )
   }
 
-  const rows: Array<{ node: PsychHierarchyNodeMetrics; depth: number }> = [{ node: root, depth: 0 }]
+  const rows: Array<{ node: PsychHierarchyNodeMetrics; depth: number; hasGrades?: boolean }> = [
+    { node: root, depth: 0 },
+  ]
   for (const cp of campuses) {
-    rows.push({ node: cp, depth: 1 })
-    if (!isAllSystem) {
-      for (const gr of cp.children || []) {
+    const activeGrades = (cp.children || []).filter((gr) => gr.totalStudents > 0)
+    rows.push({ node: cp, depth: 1, hasGrades: activeGrades.length > 0 })
+    if (expandedCampuses[cp.id]) {
+      for (const gr of activeGrades) {
         rows.push({ node: gr, depth: 2 })
       }
     }
@@ -408,28 +651,70 @@ function PsychCohortEvalSection({
             · Tiến độ tuần: {evalData.completedSessions}/{evalData.totalScheduledSessions} lượt
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onJumpToTab("psychology")}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#003B3A] bg-white border border-[#CBD5E1] hover:bg-[#F0FDFA] hover:border-[#00A19A] transition-colors"
-        >
-          <span>Xem danh sách chi tiết</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAllGradesOpen(true)}
+            className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 bg-white border border-[#E2E8F0] hover:bg-slate-50"
+          >
+            Mở các Khối
+          </button>
+          <button
+            type="button"
+            onClick={() => setAllGradesOpen(false)}
+            className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 bg-white border border-[#E2E8F0] hover:bg-slate-50"
+          >
+            Thu gọn Khối
+          </button>
+          <button
+            type="button"
+            onClick={() => onJumpToTab("psychology")}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#003B3A] bg-white border border-[#CBD5E1] hover:bg-[#F0FDFA] hover:border-[#00A19A] transition-colors"
+          >
+            <span>Xem danh sách chi tiết</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       <div className="p-4 grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
-        {chartData.length > 1 && (
+        {activeChartData.length > 0 && (
           <div className="xl:col-span-5 rounded-xl border border-[#E2E8F0] p-3">
-            <div className="text-xs font-semibold text-[#003B3A]">
-              Tỷ lệ đã tổng kết tháng theo cơ sở
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="text-xs font-semibold text-[#003B3A]">
+                Tỷ lệ tổng kết tháng {chartMode === "CAMPUS" ? "theo Cơ sở" : "theo Khối"}
+              </div>
+              <div className="inline-flex rounded-lg bg-slate-100 p-0.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setChartMode("CAMPUS")}
+                  className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
+                    chartMode === "CAMPUS"
+                      ? "bg-[#003B3A] text-white"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Cơ sở
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartMode("GRADE")}
+                  className={`px-2 py-0.5 rounded-md font-medium transition-colors ${
+                    chartMode === "GRADE"
+                      ? "bg-[#003B3A] text-white"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Khối
+                </button>
+              </div>
             </div>
             <div className="text-[11px] text-slate-500 mb-2">
               Hiển thị % và số HS đã tổng kết / tổng HS thuộc diện
             </div>
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 32, right: 10, left: 0, bottom: 2 }}>
+                <BarChart data={activeChartData} margin={{ top: 32, right: 10, left: 0, bottom: 2 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155", fontWeight: 600 }} />
                   <YAxis
@@ -463,16 +748,18 @@ function PsychCohortEvalSection({
                   <Bar
                     dataKey="rate"
                     radius={[5, 5, 0, 0]}
-                    maxBarSize={40}
-                    className="cursor-pointer"
+                    maxBarSize={38}
+                    className={chartMode === "CAMPUS" ? "cursor-pointer" : ""}
                     onClick={(entry: { campusId?: string }) => {
-                      if (entry?.campusId) onJumpToTab("psychology", entry.campusId)
+                      if (chartMode === "CAMPUS" && entry?.campusId) {
+                        onJumpToTab("psychology", entry.campusId)
+                      }
                     }}
                   >
                     <LabelList dataKey="rate" content={renderPsychBarLabel} />
-                    {chartData.map((entry, idx) => (
+                    {activeChartData.map((entry, idx) => (
                       <Cell
-                        key={entry.campusId || idx}
+                        key={`${entry.name}_${idx}`}
                         fill={idx % 2 === 0 ? "#00A19A" : "#003B3A"}
                       />
                     ))}
@@ -485,7 +772,7 @@ function PsychCohortEvalSection({
 
         <div
           className={
-            chartData.length > 1 ? "xl:col-span-7 space-y-3" : "xl:col-span-12 space-y-3"
+            activeChartData.length > 0 ? "xl:col-span-7 space-y-3" : "xl:col-span-12 space-y-3"
           }
         >
           <div className="rounded-xl border border-[#E2E8F0] overflow-hidden">
@@ -494,7 +781,7 @@ function PsychCohortEvalSection({
                 <thead className="bg-[#003B3A] border-b border-[#003B3A]">
                   <tr className="text-[11px] font-semibold whitespace-nowrap">
                     <th className="py-2.5 px-3 text-left text-white">
-                      {isAllSystem ? "Đơn vị (Hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}
+                      Đơn vị (Hệ thống → Cơ sở → Khối)
                     </th>
                     <th className="py-2.5 px-3 text-right text-teal-100">HS nhập học</th>
                     <th className="py-2.5 px-3 text-right text-teal-100">HS thuộc diện</th>
@@ -505,27 +792,40 @@ function PsychCohortEvalSection({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
-                  {rows.map(({ node, depth }) => (
+                  {rows.map(({ node, depth, hasGrades }) => (
                     <tr
                       key={node.id}
-                      onClick={() => {
-                        if (node.nodeType === "CAMPUS" && node.campusId) {
-                          onJumpToTab("psychology", node.campusId)
-                        }
-                      }}
                       className={`transition-colors align-middle ${
                         node.nodeType === "SYSTEM"
                           ? "bg-[#F0FDFA] font-bold text-[#003B3A]"
                           : node.nodeType === "CAMPUS"
-                            ? "bg-[#F8FAFC] font-semibold text-[#003B3A] hover:bg-[#F0FDFA]/70 cursor-pointer"
-                            : "hover:bg-[#F8FAFC]"
+                            ? "bg-[#F8FAFC] font-semibold text-[#003B3A] hover:bg-[#F0FDFA]/70"
+                            : "hover:bg-[#F8FAFC] text-slate-700"
                       }`}
                     >
                       <td
                         className="py-2.5 pr-3 whitespace-nowrap"
-                        style={{ paddingLeft: `${depth * 14 + 12}px` }}
+                        style={{ paddingLeft: `${depth * 14 + 10}px` }}
                       >
-                        {node.label}
+                        <div className="inline-flex items-center gap-1">
+                          {node.nodeType === "CAMPUS" && hasGrades ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleCampus(node.id)}
+                              className="p-0.5 rounded hover:bg-slate-200/70 text-slate-500"
+                              aria-label="Mở/thu gọn khối"
+                            >
+                              {expandedCampuses[node.id] ? (
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              ) : (
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          ) : (
+                            <span className="w-4 inline-block" />
+                          )}
+                          <span>{node.label}</span>
+                        </div>
                       </td>
                       <td className="py-2.5 px-3 text-right">{node.enrolledStudentCount}</td>
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">

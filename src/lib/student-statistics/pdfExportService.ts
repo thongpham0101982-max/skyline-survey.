@@ -1819,6 +1819,89 @@ function renderOverviewRowsRecursive(
   return html
 }
 
+function renderInlineStackedBarHtml(params: {
+  outstanding: number
+  standardBand: number
+  below: number
+  eligible: number
+  rate: number | null
+}): string {
+  const { outstanding, standardBand, below, eligible, rate } = params
+  const met = outstanding + standardBand
+  const txt = formatRateWithFraction(met, eligible, rate)
+  if (eligible <= 0) return `<span>${escapeHtml(txt)}</span>`
+  const pOut = ((outstanding / eligible) * 100).toFixed(1)
+  const pBand = ((standardBand / eligible) * 100).toFixed(1)
+  const pBelow = ((below / eligible) * 100).toFixed(1)
+  return `
+    <div style="text-align:right;font-weight:700;color:#00736E;">${escapeHtml(txt)}</div>
+    <div style="display:flex;height:4.5px;width:100%;background:#E2E8F0;border-radius:999px;overflow:hidden;margin-top:2px;">
+      ${outstanding > 0 ? `<div style="width:${pOut}%;background:#059669;"></div>` : ""}
+      ${standardBand > 0 ? `<div style="width:${pBand}%;background:#00A19A;"></div>` : ""}
+      ${below > 0 ? `<div style="width:${pBelow}%;background:#FB7185;"></div>` : ""}
+    </div>`
+}
+
+function aggregateAcademicGradeChartItems(root: HierarchyNodeMetrics): CampusRateBarItem[] {
+  const map = new Map<
+    string,
+    { grade: string; students: number; met: number; eligible: number }
+  >()
+  for (const cp of root.children || []) {
+    for (const gr of cp.children || []) {
+      if (gr.distinctStudentCount <= 0 && gr.eligibleRowCount <= 0) continue
+      const key = gr.grade || gr.code
+      const cur = map.get(key) || { grade: key, students: 0, met: 0, eligible: 0 }
+      cur.students += gr.distinctStudentCount
+      cur.met += gr.totalStandardMetCount
+      cur.eligible += gr.eligibleRowCount
+      map.set(key, cur)
+    }
+  }
+  return Array.from(map.values())
+    .sort((a, b) => {
+      const na = Number(a.grade)
+      const nb = Number(b.grade)
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+      return a.grade.localeCompare(b.grade, "vi")
+    })
+    .map((g) => ({
+      code: `K${g.grade}`,
+      subLabel: `${g.students} HS`,
+      rate: g.eligible > 0 ? Math.round((g.met / g.eligible) * 1000) / 10 : null,
+      numerator: g.met,
+      denominator: g.eligible,
+    }))
+}
+
+function aggregatePsychGradeChartItems(root: PsychHierarchyNodeMetrics): CampusRateBarItem[] {
+  const map = new Map<string, { grade: string; summarized: number; total: number }>()
+  for (const cp of root.children || []) {
+    for (const gr of cp.children || []) {
+      if (gr.totalStudents <= 0) continue
+      const key = gr.grade || gr.code
+      const cur = map.get(key) || { grade: key, summarized: 0, total: 0 }
+      cur.summarized += gr.monthSummarizedStudents
+      cur.total += gr.totalStudents
+      map.set(key, cur)
+    }
+  }
+  return Array.from(map.values())
+    .sort((a, b) => {
+      const na = Number(a.grade)
+      const nb = Number(b.grade)
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+      return a.grade.localeCompare(b.grade, "vi")
+    })
+    .map((g) => ({
+      code: `K${g.grade}`,
+      subLabel: `${g.total} HS`,
+      rate: g.total > 0 ? Math.round((g.summarized / g.total) * 1000) / 10 : null,
+      numerator: g.summarized,
+      denominator: g.total,
+    }))
+}
+
 function renderCompactAcademicEvalPage(params: {
   pageIndex: number
   tabLabel: string
@@ -1845,7 +1928,6 @@ function renderCompactAcademicEvalPage(params: {
     subjectScopeNote,
     academicYearName,
     campusName,
-    isAllSystem,
     exportedAt,
     root,
     extraKpiLabel,
@@ -1854,7 +1936,6 @@ function renderCompactAcademicEvalPage(params: {
     basisCounts,
   } = params
 
-  const maxDepth = isAllSystem ? 1 : 2
   const campusChartItems: CampusRateBarItem[] = (root.children || []).map((cp) => ({
     code: cp.code || cp.label,
     subLabel: `${cp.distinctStudentCount} HS (${fmtPct(cp.enrolledShareRate)})`,
@@ -1862,14 +1943,29 @@ function renderCompactAcademicEvalPage(params: {
     numerator: cp.totalStandardMetCount,
     denominator: cp.eligibleRowCount,
   }))
+  const gradeChartItems = aggregateAcademicGradeChartItems(root)
 
-  const chartSvg = renderCampusRateBarSvg({
-    title: chartTitle,
-    subtitle:
-      "Hiển thị trực tiếp % và số lượt đạt chuẩn / tổng lượt xét chuẩn (gồm Đạt chuẩn + Tiến bộ vượt bậc) theo từng cơ sở",
+  const campusChartSvg = renderCampusRateBarSvg({
+    title: `${chartTitle} — Theo Cơ sở`,
+    subtitle: "Hiển thị % và số lượt đạt chuẩn / tổng lượt xét chuẩn từng cơ sở",
     items: campusChartItems,
-    unitSuffix: " lượt",
+    unitSuffix: "",
   })
+
+  const gradeChartSvg =
+    gradeChartItems.length > 0
+      ? renderCampusRateBarSvg({
+          title: "So sánh tỷ lệ đạt chuẩn — Theo Khối (K1–K12)",
+          subtitle: "Tổng hợp theo từng khối có học sinh theo dõi trong phạm vi",
+          items: gradeChartItems,
+          unitSuffix: "",
+        })
+      : ""
+
+  const chartsRowHtml =
+    campusChartSvg && gradeChartSvg
+      ? `<div style="display:flex;gap:8px;margin-bottom:6px;break-inside:avoid;page-break-inside:avoid;"><div style="flex:1.05;min-width:0;">${campusChartSvg}</div><div style="flex:0.95;min-width:0;">${gradeChartSvg}</div></div>`
+      : campusChartSvg || gradeChartSvg
 
   const renderRows = (node: HierarchyNodeMetrics, depth: number): string => {
     const pad = depth * 12
@@ -1878,20 +1974,27 @@ function renderCompactAcademicEvalPage(params: {
         ? "background:#F0FDFA;font-weight:700;color:#003B3A;"
         : node.nodeType === "CAMPUS"
           ? "background:#F8FAFC;font-weight:700;color:#003B3A;"
-          : "font-weight:600;"
+          : "color:#334155;"
     let html = `
       <tr style="${rowStyle}">
-        <td style="padding:3.5px 5px 3.5px ${pad + 5}px;">${escapeHtml(node.label)}</td>
-        <td class="num" style="padding:3.5px 5px;">${node.enrolledStudentCount}</td>
-        <td class="num" style="padding:3.5px 5px;"><strong>${node.distinctStudentCount} HS</strong> <span class="muted">(${escapeHtml(fmtPct(node.enrolledShareRate))})</span></td>
-        <td class="num" style="padding:3.5px 5px;">${node.eligibleRowCount}</td>
-        <td class="num" style="padding:3.5px 5px;color:#00736E;font-weight:600;">${node.standardBandCount}</td>
-        <td class="num" style="padding:3.5px 5px;color:#047857;font-weight:700;">${node.outstandingCount}</td>
-        <td class="num" style="padding:3.5px 5px;color:${node.belowStandardCount > 0 ? "#BE123C" : "#334155"};">${node.belowStandardCount}</td>
-        <td class="num" style="padding:3.5px 5px;color:#00736E;font-weight:700;">${escapeHtml(formatRateWithFraction(node.totalStandardMetCount, node.eligibleRowCount, node.standardRate))}</td>
+        <td style="padding:3px 5px 3px ${pad + 5}px;">${escapeHtml(node.label)}</td>
+        <td class="num" style="padding:3px 5px;">${node.enrolledStudentCount}</td>
+        <td class="num" style="padding:3px 5px;"><strong>${node.distinctStudentCount} HS</strong> <span class="muted">(${escapeHtml(fmtPct(node.enrolledShareRate))})</span></td>
+        <td class="num" style="padding:3px 5px;">${node.eligibleRowCount}</td>
+        <td class="num" style="padding:3px 5px;color:#00736E;font-weight:600;">${node.standardBandCount}</td>
+        <td class="num" style="padding:3px 5px;color:#047857;font-weight:700;">${node.outstandingCount}</td>
+        <td class="num" style="padding:3px 5px;color:${node.belowStandardCount > 0 ? "#BE123C" : "#334155"};">${node.belowStandardCount}</td>
+        <td class="num" style="padding:3px 5px;">${renderInlineStackedBarHtml({
+          outstanding: node.outstandingCount,
+          standardBand: node.standardBandCount,
+          below: node.belowStandardCount,
+          eligible: node.eligibleRowCount,
+          rate: node.standardRate,
+        })}</td>
       </tr>`
-    if (depth < maxDepth) {
+    if (depth < 2) {
       for (const ch of node.children || []) {
+        if (depth === 1 && ch.distinctStudentCount <= 0 && ch.eligibleRowCount <= 0) continue
         html += renderRows(ch, depth + 1)
       }
     }
@@ -1908,7 +2011,7 @@ function renderCompactAcademicEvalPage(params: {
       exportedAt,
     })}
 
-    <div class="kpi-grid" style="margin-bottom:7px;">
+    <div class="kpi-grid" style="margin-bottom:6px;">
       <div class="kpi-box pine" style="padding:5px 8px;">
         <div class="kpi-label">${escapeHtml(cohortLabel)}</div>
         <div class="kpi-value">${root.distinctStudentCount} HS<span class="kpi-pct">(${escapeHtml(fmtPct(root.enrolledShareRate))})</span></div>
@@ -1939,34 +2042,30 @@ function renderCompactAcademicEvalPage(params: {
       </div>
     </div>
 
-    ${chartSvg}
+    ${chartsRowHtml}
 
-    <div class="section-title" style="margin:6px 0 4px 0;font-size:8.8pt;">${
-      isAllSystem
-        ? `Bảng đánh giá ${tabLabel.toLowerCase()} theo Toàn hệ thống và từng cơ sở`
-        : `Bảng đánh giá ${tabLabel.toLowerCase()} theo cơ sở và khối (${escapeHtml(campusName)})`
-    }</div>
-    <table style="margin-bottom:6px;">
+    <div class="section-title" style="margin:5px 0 3px 0;font-size:8.6pt;">Bảng đánh giá 3 cấp: Toàn hệ thống → Cơ sở → Khối (${escapeHtml(tabLabel.toLowerCase())})</div>
+    <table style="margin-bottom:5px;">
       <colgroup>
-        <col style="width:23%" />
+        <col style="width:22%" />
         <col style="width:9%" />
         <col style="width:15%" />
-        <col style="width:10%" />
-        <col style="width:10%" />
-        <col style="width:10%" />
         <col style="width:9%" />
-        <col style="width:14%" />
+        <col style="width:9%" />
+        <col style="width:9%" />
+        <col style="width:9%" />
+        <col style="width:18%" />
       </colgroup>
       <thead>
         <tr>
-          <th style="padding:4px 5px;">${isAllSystem ? "Đơn vị (Toàn hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}</th>
+          <th style="padding:4px 5px;">Đơn vị (Hệ thống → Cơ sở → Khối)</th>
           <th class="num" style="padding:4px 5px;">HS nhập học</th>
           <th class="num" style="padding:4px 5px;">${escapeHtml(cohortLabel)} (% nhập học)</th>
-          <th class="num" style="padding:4px 5px;">Lượt xét chuẩn</th>
+          <th class="num" style="padding:4px 5px;">Lượt xét</th>
           <th class="num" style="padding:4px 5px;">Đạt chuẩn</th>
           <th class="num" style="padding:4px 5px;">Vượt bậc</th>
           <th class="num" style="padding:4px 5px;">Chưa đạt</th>
-          <th class="num" style="padding:4px 5px;">Tỷ lệ Đạt chuẩn</th>
+          <th class="num" style="padding:4px 5px;">Tỷ lệ Đạt chuẩn (Thanh trực quan)</th>
         </tr>
       </thead>
       <tbody>
@@ -1978,7 +2077,7 @@ function renderCompactAcademicEvalPage(params: {
       <strong>Căn cứ đánh giá (${escapeHtml(tabLabel)}):</strong>
       Kỳ lấy điểm thực tế: <em>${escapeHtml(formatBasisPeriodCounts(basisCounts))}</em> (ưu tiên <strong>CK2 → GK2 → CK1 → GK1 → KSĐN</strong>).
       Ngưỡng chuẩn K-12: Tiểu học <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Vượt bậc · THCS <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Vượt bậc.
-      Tỷ lệ Đạt chuẩn = <code>(Đạt chuẩn + Vượt bậc) / Lượt xét chuẩn</code>. ${escapeHtml(subjectScopeNote)}
+      Thanh màu: <span style="color:#059669;font-weight:700;">■ Vượt bậc</span> · <span style="color:#00A19A;font-weight:700;">■ Đạt chuẩn</span> · <span style="color:#FB7185;font-weight:700;">■ Chưa đạt</span>. ${escapeHtml(subjectScopeNote)}
     </div>`
 }
 
@@ -1989,27 +2088,69 @@ function renderCompactPsychEvalPage(params: {
   isAllSystem: boolean
   exportedAt: string
 }): string {
-  const { pageIndex, psych, scope, isAllSystem, exportedAt } = params
-  const maxDepth = isAllSystem ? 1 : 2
+  const { pageIndex, psych, scope, exportedAt } = params
   const campusChartItems: CampusRateBarItem[] = psych.campusSummary.map((c) => ({
     code: c.campusCode || c.campusName,
-    subLabel: `${c.totalStudents} HS thuộc diện`,
+    subLabel: `${c.totalStudents} HS`,
     rate: c.monthSummaryRate,
     numerator: c.monthSummarizedStudents,
     denominator: c.totalStudents,
   }))
+  const gradeChartItems = aggregatePsychGradeChartItems(psych.hierarchy)
 
-  const chartSvg = renderCampusRateBarSvg({
-    title: "Biểu đồ tỷ lệ đã tổng kết tháng theo cơ sở — Tâm lý cam kết đầu vào",
-    subtitle: "Hiển thị trực tiếp % và số học sinh đã tổng kết / tổng số HS thuộc diện tâm lý cam kết đầu vào",
+  const campusChartSvg = renderCampusRateBarSvg({
+    title: "Tỷ lệ tổng kết tháng — Theo Cơ sở",
+    subtitle: "Hiển thị % và số HS đã tổng kết / tổng HS thuộc diện từng cơ sở",
     items: campusChartItems,
-    unitSuffix: " HS",
+    unitSuffix: "",
   })
+  const gradeChartSvg =
+    gradeChartItems.length > 0
+      ? renderCampusRateBarSvg({
+          title: "Tỷ lệ tổng kết tháng — Theo Khối (K1–K12)",
+          subtitle: "Tổng hợp theo từng khối có HS thuộc diện Tâm lý CKĐV",
+          items: gradeChartItems,
+          unitSuffix: "",
+        })
+      : ""
+
+  const chartsRowHtml =
+    campusChartSvg && gradeChartSvg
+      ? `<div style="display:flex;gap:8px;margin-bottom:6px;break-inside:avoid;page-break-inside:avoid;"><div style="flex:1.05;min-width:0;">${campusChartSvg}</div><div style="flex:0.95;min-width:0;">${gradeChartSvg}</div></div>`
+      : campusChartSvg || gradeChartSvg
 
   const sessionRate =
     psych.summary.totalScheduledSessions > 0
       ? (psych.summary.completedSessions / psych.summary.totalScheduledSessions) * 100
       : null
+
+  const renderPsychRows3Level = (node: PsychHierarchyNodeMetrics, depth: number): string => {
+    const pad = depth * 12
+    const rowStyle =
+      node.nodeType === "SYSTEM"
+        ? "background:#F0FDFA;font-weight:700;color:#003B3A;"
+        : node.nodeType === "CAMPUS"
+          ? "background:#F8FAFC;font-weight:700;color:#003B3A;"
+          : "color:#334155;"
+    let html = `
+      <tr style="${rowStyle}">
+        <td style="padding:3px 5px 3px ${pad + 5}px;">${escapeHtml(node.label)}</td>
+        <td class="num" style="padding:3px 5px;">${node.enrolledStudentCount}</td>
+        <td class="num" style="padding:3px 5px;"><strong>${node.totalStudents} HS</strong> <span class="muted">(${escapeHtml(fmtPct(node.enrolledShareRate))})</span></td>
+        <td class="num" style="padding:3px 5px;color:${node.unassignedStudents > 0 ? "#BE123C" : "#334155"};">${node.unassignedStudents}</td>
+        <td class="num" style="padding:3px 5px;color:${node.overdueStudents > 0 ? "#B45309" : "#334155"};">${node.overdueStudents}</td>
+        <td class="num" style="padding:3px 5px;">${node.duePendingStudents}</td>
+        <td class="num" style="padding:3px 5px;color:#047857;">${node.completedAllDueStudents}</td>
+        <td class="num" style="padding:3px 5px;color:#00736E;font-weight:700;">${escapeHtml(formatRateWithFraction(node.monthSummarizedStudents, node.totalStudents, node.monthSummaryRate))}</td>
+      </tr>`
+    if (depth < 2) {
+      for (const ch of node.children || []) {
+        if (depth === 1 && ch.totalStudents <= 0) continue
+        html += renderPsychRows3Level(ch, depth + 1)
+      }
+    }
+    return html
+  }
 
   const weekSummaryHtml = psych.weekSummary
     .map(
@@ -2037,7 +2178,7 @@ function renderCompactPsychEvalPage(params: {
       exportedAt,
     })}
 
-    <div class="kpi-grid" style="margin-bottom:7px;">
+    <div class="kpi-grid" style="margin-bottom:6px;">
       <div class="kpi-box pine" style="padding:5px 8px;">
         <div class="kpi-label">HS Tâm lý CKĐV</div>
         <div class="kpi-value">${psych.summary.totalStudents} HS<span class="kpi-pct">(${escapeHtml(fmtPct(psych.summary.enrolledShareRate))})</span></div>
@@ -2068,32 +2209,28 @@ function renderCompactPsychEvalPage(params: {
       </div>
     </div>
 
-    ${chartSvg}
+    ${chartsRowHtml}
 
-    <div class="section-title" style="margin:6px 0 4px 0;font-size:8.8pt;">${
-      isAllSystem
-        ? "Bảng đánh giá Tâm lý cam kết đầu vào theo Toàn hệ thống và từng cơ sở"
-        : `Bảng đánh giá Tâm lý cam kết đầu vào theo cơ sở và khối (${escapeHtml(psych.filters.campusName)})`
-    }</div>
-    <table style="margin-bottom:6px;">
+    <div class="section-title" style="margin:5px 0 3px 0;font-size:8.6pt;">Bảng đánh giá 3 cấp: Toàn hệ thống → Cơ sở → Khối (Tâm lý cam kết đầu vào)</div>
+    <table style="margin-bottom:5px;">
       <thead>
         <tr>
-          <th style="padding:4px 5px;">${isAllSystem ? "Đơn vị (Toàn hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}</th>
+          <th style="padding:4px 5px;">Đơn vị (Hệ thống → Cơ sở → Khối)</th>
           <th class="num" style="padding:4px 5px;">HS nhập học</th>
           <th class="num" style="padding:4px 5px;">HS thuộc diện (% nhập học)</th>
-          <th class="num" style="padding:4px 5px;">Chưa phân công</th>
-          <th class="num" style="padding:4px 5px;">Có ĐG quá hạn</th>
-          <th class="num" style="padding:4px 5px;">Còn lượt đến hạn</th>
-          <th class="num" style="padding:4px 5px;">Đã cập nhật đủ</th>
+          <th class="num" style="padding:4px 5px;">Chưa PC</th>
+          <th class="num" style="padding:4px 5px;">Quá hạn</th>
+          <th class="num" style="padding:4px 5px;">Còn hạn</th>
+          <th class="num" style="padding:4px 5px;">Cập nhật đủ</th>
           <th class="num" style="padding:4px 5px;">Đã tổng kết tháng</th>
         </tr>
       </thead>
       <tbody>
-        ${renderPsychHierarchyRowsRecursive(psych.hierarchy, 0, maxDepth)}
+        ${renderPsychRows3Level(psych.hierarchy, 0)}
       </tbody>
     </table>
 
-    <div class="section-title" style="margin:5px 0 3px 0;font-size:8.5pt;">Tiến độ đánh giá theo tuần (${escapeHtml(psych.filters.monthLabel)})</div>
+    <div class="section-title" style="margin:5px 0 3px 0;font-size:8.4pt;">Tiến độ đánh giá theo tuần (${escapeHtml(psych.filters.monthLabel)})</div>
     <table style="margin-bottom:0;">
       <thead>
         <tr>
