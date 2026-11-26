@@ -18,6 +18,7 @@ import {
 import {
   buildAcademicHierarchy,
   evaluateLatestStandard,
+  isK12Class,
   loadEnrolledTransferInLookup,
   resolveLatestPeriodScore,
 } from "./standardEvaluator"
@@ -284,11 +285,10 @@ export async function generateHomeschoolingStatistics(
   ])
 
   const inputPeriodIds = inputPeriods.map((x: any) => x.id)
-  const preschoolPeriodIds = preschoolPeriods.map((x: any) => x.id)
 
-  const [inputStudents, preschoolStudents] = await Promise.all([
+  const inputStudents =
     inputPeriodIds.length > 0
-      ? prisma.inputAssessmentStudent.findMany({
+      ? await prisma.inputAssessmentStudent.findMany({
           where: {
             periodId: { in: inputPeriodIds },
             OR: [
@@ -309,30 +309,7 @@ export async function generateHomeschoolingStatistics(
             },
           },
         })
-      : Promise.resolve([]),
-    preschoolPeriodIds.length > 0 && p.preschoolInputAssessmentStudent?.findMany
-      ? p.preschoolInputAssessmentStudent
-          .findMany({
-            where: {
-              periodId: { in: preschoolPeriodIds },
-              OR: [
-                { kqHocTap: { contains: "HOMESCHOOLING" } },
-                { kqHocTap: { contains: "Homeschooling" } },
-                { targetType: { contains: "Homeschool" } },
-                { targetType: { contains: "Home School" } },
-              ],
-            },
-            include: {
-              enrollmentClass: {
-                include: {
-                  campus: { select: { id: true, campusCode: true, campusName: true } },
-                },
-              },
-            },
-          })
-          .catch(() => [])
-      : Promise.resolve([]),
-  ])
+      : []
 
   const reconciliationItems: ReconciliationItem[] = []
   let reconSeq = 1
@@ -340,7 +317,8 @@ export async function generateHomeschoolingStatistics(
     reconciliationItems.push({ id: `hs_recon_${reconSeq++}`, ...item })
   }
 
-  const classById = new Map<string, any>(allClasses.map((c: any) => [c.id, c]))
+  const k12Classes = allClasses.filter((c: any) => isK12Class(c))
+  const classById = new Map<string, any>(k12Classes.map((c: any) => [c.id, c]))
   const asOfMs = new Date(asOfDateIso).getTime()
   const latestTransferByStudentId = new Map<string, any>()
   for (const tr of studentTransfers) {
@@ -384,7 +362,7 @@ export async function generateHomeschoolingStatistics(
 
   const cohortMap = new Map<string, HomeschoolCohortStudent>()
 
-  for (const is of [...inputStudents, ...preschoolStudents]) {
+  for (const is of inputStudents) {
     const hsCheck = isHomeschoolingEntranceRecord(is)
     if (!hsCheck.isHomeschooling) continue
 
@@ -422,13 +400,15 @@ export async function generateHomeschoolingStatistics(
     }
 
     const effectiveClass = resolveEffectiveClass(matchingStudent, is.enrollmentClass || null)
-    if (!effectiveClass || !effectiveClass.id) {
-      pushRecon({
-        type: "UNASSIGNED_CLASS_EXCLUDED",
-        studentCode: matchingStudent.studentCode || "-",
-        studentName: matchingStudent.studentName || "-",
-        detail: "Học sinh Homeschooling chưa có phân lớp hợp lệ trong năm học.",
-      })
+    if (!effectiveClass || !effectiveClass.id || !isK12Class(effectiveClass)) {
+      if (!effectiveClass || !effectiveClass.id) {
+        pushRecon({
+          type: "UNASSIGNED_CLASS_EXCLUDED",
+          studentCode: matchingStudent.studentCode || "-",
+          studentName: matchingStudent.studentName || "-",
+          detail: "Học sinh Homeschooling chưa có phân lớp hợp lệ trong năm học.",
+        })
+      }
       continue
     }
 

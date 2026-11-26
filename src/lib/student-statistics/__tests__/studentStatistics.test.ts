@@ -84,6 +84,7 @@ import {
 import {
   buildAcademicHierarchy,
   evaluateLatestStandard,
+  isK12Class,
   resolveLatestPeriodScore,
 } from "../standardEvaluator"
 import { generateOverviewStatistics } from "../overviewEngine"
@@ -1080,6 +1081,17 @@ describe("Báo cáo thống kê học sinh trên SSM", () => {
       )
       expect(pdfRes.status).toBe(200)
       expect(pdfRes.headers.get("Content-Type")).toBe("application/pdf")
+    })
+
+    it("Chỉ áp dụng khối Phổ thông K-12 (Khối 1–12), loại trừ hoàn toàn Mầm non", () => {
+      expect(isK12Class({ level: "Tieu hoc", grade: "1", className: "1.1_CS1" })).toBe(true)
+      expect(isK12Class({ level: "THCS", grade: "7", className: "7.1_CS1" })).toBe(true)
+      expect(isK12Class({ level: "THPT", grade: "12", className: "12.1_CS1" })).toBe(true)
+
+      expect(isK12Class({ level: "Mầm non", grade: "Mầm", className: "Mầm 1" })).toBe(false)
+      expect(isK12Class({ level: "MAM_NON", grade: "0", className: "Lá 2" })).toBe(false)
+      expect(isK12Class({ level: "Preschool", grade: "", className: "Chồi 1" })).toBe(false)
+      expect(isK12Class(null)).toBe(false)
     })
   })
 })

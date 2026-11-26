@@ -16,6 +16,7 @@ import {
 import {
   buildAcademicHierarchy,
   evaluateLatestStandard,
+  isK12Class,
   loadEnrolledTransferInLookup,
   resolveLatestPeriodScore,
 } from "./standardEvaluator"
@@ -230,7 +231,8 @@ export async function generateExchangeStudentStatistics(
     reconciliationItems.push({ id: `ex_recon_${reconSeq++}`, ...item })
   }
 
-  const classById = new Map<string, any>(allClasses.map((c: any) => [c.id, c]))
+  const k12Classes = allClasses.filter((c: any) => isK12Class(c))
+  const classById = new Map<string, any>(k12Classes.map((c: any) => [c.id, c]))
   const asOfMs = new Date(asOfDateIso).getTime()
   const latestTransferByStudentId = new Map<string, any>()
   for (const tr of studentTransfers) {
@@ -271,13 +273,15 @@ export async function generateExchangeStudentStatistics(
   for (const st of rawExchangeStudents) {
     if (!isExchangeStudentRecord(st)) continue
     const effectiveClass = resolveEffectiveClass(st)
-    if (!effectiveClass || !effectiveClass.id) {
-      pushRecon({
-        type: "UNASSIGNED_CLASS_EXCLUDED",
-        studentCode: st.studentCode || "-",
-        studentName: st.studentName || "-",
-        detail: "Học sinh diện Học giao lưu chưa có bản ghi phân lớp hợp lệ trong năm học.",
-      })
+    if (!effectiveClass || !effectiveClass.id || !isK12Class(effectiveClass)) {
+      if (!effectiveClass || !effectiveClass.id) {
+        pushRecon({
+          type: "UNASSIGNED_CLASS_EXCLUDED",
+          studentCode: st.studentCode || "-",
+          studentName: st.studentName || "-",
+          detail: "Học sinh diện Học giao lưu chưa có bản ghi phân lớp hợp lệ trong năm học.",
+        })
+      }
       continue
     }
 

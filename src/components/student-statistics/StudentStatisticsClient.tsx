@@ -296,7 +296,7 @@ export function StudentStatisticsClient() {
               Báo cáo thống kê học sinh
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Theo dõi tiến độ học sinh cam kết đầu vào theo môn học và tiến độ đánh giá tâm lý cam kết đầu vào.
+              Phạm vi: Phổ thông K-12 (Khối 1 – Khối 12) · Theo dõi học sinh cam kết đầu vào theo môn học, tâm lý cam kết đầu vào, Homeschooling và học giao lưu.
             </p>
           </div>
 

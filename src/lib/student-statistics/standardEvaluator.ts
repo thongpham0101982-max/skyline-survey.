@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@/lib/db"
+import { extractGradeNumber } from "@/lib/grading/vnedu-config-types"
 import { CommitmentPeriodCode } from "@/lib/ktdbcl/entranceCommitmentReportEngine"
 import {
   EducationLevelCode,
@@ -11,6 +12,64 @@ import {
 } from "./types"
 
 const EPS = 1e-9
+
+/**
+ * Kiểm tra lớp học có thuộc khối Phổ thông K-12 (Khối 1 đến Khối 12) hay không.
+ * Loại trừ hoàn toàn các lớp Mầm non / Nhà trẻ / Mẫu giáo / Preschool.
+ */
+export function isK12Class(
+  cls:
+    | {
+        level?: string | null
+        grade?: string | null
+        className?: string | null
+      }
+    | null
+    | undefined
+): boolean {
+  if (!cls) return false
+  const lvlNorm = String(cls.level || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .trim()
+
+  if (
+    lvlNorm.includes("mam non") ||
+    lvlNorm.includes("mam_non") ||
+    lvlNorm.includes("mamnon") ||
+    lvlNorm.includes("preschool") ||
+    lvlNorm.includes("nha tre") ||
+    lvlNorm.includes("mau giao")
+  ) {
+    return false
+  }
+
+  const classNorm = String(cls.className || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .trim()
+  if (
+    /^(mam|choi|la|nha tre|nhatre|be|nho|lon|kinder|nursery|pre)\b/i.test(classNorm)
+  ) {
+    return false
+  }
+
+  const gNum = extractGradeNumber(cls.grade || cls.className)
+  if (gNum !== null) {
+    return gNum >= 1 && gNum <= 12
+  }
+
+  return (
+    lvlNorm.includes("tieu hoc") ||
+    lvlNorm.includes("tieuhoc") ||
+    lvlNorm.includes("thcs") ||
+    lvlNorm.includes("thpt")
+  )
+}
 
 export const PERIOD_LABELS_VI: Record<CommitmentPeriodCode, string> = {
   KSĐN: "KSĐN",
@@ -648,6 +707,7 @@ export async function loadEnrolledTransferInLookup(params: {
     const st = tr.student
     if (!st || !st.id) continue
     if (String(st.status || "").toUpperCase() === "TRANSFERRED_OUT") continue
+    if (!isK12Class(st.class)) continue
 
     const cId = st.class?.campusId || st.campusId || ""
     const clsId = st.class?.id || st.classId || ""

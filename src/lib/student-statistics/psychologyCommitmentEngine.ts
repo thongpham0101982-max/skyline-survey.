@@ -9,6 +9,7 @@ import {
 import { parseEvaluationCommentSafe } from "@/lib/support/exportTrackingBookExcel"
 import {
   buildPsychHierarchy,
+  isK12Class,
   loadEnrolledTransferInLookup,
 } from "./standardEvaluator"
 import {
@@ -616,11 +617,10 @@ export async function generatePsychologyCommitmentStatistics(
   ])
 
   const inputPeriodIds = inputPeriods.map((x: any) => x.id)
-  const preschoolPeriodIds = preschoolPeriods.map((x: any) => x.id)
 
-  const [inputStudents, preschoolStudents] = await Promise.all([
+  const inputStudents =
     inputPeriodIds.length > 0
-      ? prisma.inputAssessmentStudent.findMany({
+      ? await prisma.inputAssessmentStudent.findMany({
           where: {
             periodId: { in: inputPeriodIds },
             OR: [
@@ -640,31 +640,7 @@ export async function generatePsychologyCommitmentStatistics(
             },
           },
         })
-      : Promise.resolve([]),
-    preschoolPeriodIds.length > 0 && p.preschoolInputAssessmentStudent?.findMany
-      ? p.preschoolInputAssessmentStudent
-          .findMany({
-            where: {
-              periodId: { in: preschoolPeriodIds },
-              OR: [
-                { admissionResult: { contains: "tâm lý" } },
-                { admissionResult: { contains: "Tâm lý" } },
-                { directorNote: { contains: "tâm lý" } },
-                { directorNote: { contains: "Tâm lý" } },
-                { directorNote: { contains: "tam ly" } },
-              ],
-            },
-            include: {
-              enrollmentClass: {
-                include: {
-                  campus: { select: { id: true, campusCode: true, campusName: true } },
-                },
-              },
-            },
-          })
-          .catch(() => [])
-      : Promise.resolve([]),
-  ])
+      : []
 
   const reconciliationItems: ReconciliationItem[] = []
   let reconSeq = 1
@@ -672,7 +648,8 @@ export async function generatePsychologyCommitmentStatistics(
     reconciliationItems.push({ id: `psych_recon_${reconSeq++}`, ...item })
   }
 
-  const classById = new Map<string, any>(allClasses.map((c: any) => [c.id, c]))
+  const k12Classes = allClasses.filter((c: any) => isK12Class(c))
+  const classById = new Map<string, any>(k12Classes.map((c: any) => [c.id, c]))
   const studentById = new Map<string, any>(systemStudents.map((s: any) => [s.id, s]))
   const teacherNameById = new Map<string, string>()
   for (const t of allTeachers) {
@@ -748,13 +725,15 @@ export async function generatePsychologyCommitmentStatistics(
     if (cohortMap.has(student.id)) return
 
     const effectiveClass = resolveEffectiveClass(student, fallbackClass)
-    if (!effectiveClass || !effectiveClass.id) {
-      pushRecon({
-        type: "UNASSIGNED_CLASS_EXCLUDED",
-        studentCode: student.studentCode || "-",
-        studentName: student.studentName || "-",
-        detail: "Hồ sơ Tâm lý cam kết đầu vào chưa có phân lớp hợp lệ trong năm học.",
-      })
+    if (!effectiveClass || !effectiveClass.id || !isK12Class(effectiveClass)) {
+      if (!effectiveClass || !effectiveClass.id) {
+        pushRecon({
+          type: "UNASSIGNED_CLASS_EXCLUDED",
+          studentCode: student.studentCode || "-",
+          studentName: student.studentName || "-",
+          detail: "Hồ sơ Tâm lý cam kết đầu vào chưa có phân lớp hợp lệ trong năm học.",
+        })
+      }
       return
     }
 
@@ -812,8 +791,8 @@ export async function generatePsychologyCommitmentStatistics(
     })
   }
 
-  // Nguồn 1: Hồ sơ Khảo sát đầu vào đã xác nhận thuộc diện Tâm lý cam kết đầu vào
-  for (const is of [...inputStudents, ...preschoolStudents]) {
+  // Nguồn 1: Hồ sơ Khảo sát đầu vào K-12 đã xác nhận thuộc diện Tâm lý cam kết đầu vào (loại trừ Mầm non)
+  for (const is of inputStudents) {
     if (!isConfirmedPsychEntranceAssessment(is)) continue
 
     let matchingStudent = systemStudents.find(

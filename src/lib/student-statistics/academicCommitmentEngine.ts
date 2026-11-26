@@ -20,6 +20,7 @@ import {
 import {
   buildAcademicHierarchy,
   evaluateLatestStandard,
+  isK12Class,
   loadEnrolledTransferInLookup,
   resolveLatestPeriodScore,
 } from "./standardEvaluator"
@@ -586,11 +587,10 @@ export async function generateAcademicCommitmentStatistics(
   ])
 
   const inputPeriodIds = inputPeriods.map((x: any) => x.id)
-  const preschoolPeriodIds = preschoolPeriods.map((x: any) => x.id)
 
-  const [inputStudents, preschoolStudents] = await Promise.all([
+  const inputStudents =
     inputPeriodIds.length > 0
-      ? prisma.inputAssessmentStudent.findMany({
+      ? await prisma.inputAssessmentStudent.findMany({
           where: {
             periodId: { in: inputPeriodIds },
             OR: [
@@ -610,32 +610,7 @@ export async function generateAcademicCommitmentStatistics(
             },
           },
         })
-      : Promise.resolve([]),
-    preschoolPeriodIds.length > 0 && p.preschoolInputAssessmentStudent?.findMany
-      ? p.preschoolInputAssessmentStudent
-          .findMany({
-            where: {
-              periodId: { in: preschoolPeriodIds },
-              OR: [
-                { admissionResult: { contains: "cam kết" } },
-                { admissionResult: { contains: "Cam kết" } },
-                { directorNote: { contains: "Môn cam kết" } },
-                { directorNote: { contains: "Mon cam ket" } },
-                { directorNote: { contains: "cam kết" } },
-                { directorNote: { contains: "Cam kết" } },
-              ],
-            },
-            include: {
-              enrollmentClass: {
-                include: {
-                  campus: { select: { id: true, campusCode: true, campusName: true } },
-                },
-              },
-            },
-          })
-          .catch(() => [])
-      : Promise.resolve([]),
-  ])
+      : []
 
   const reconciliationItems: ReconciliationItem[] = []
   let reconSeq = 1
@@ -643,7 +618,8 @@ export async function generateAcademicCommitmentStatistics(
     reconciliationItems.push({ id: `recon_${reconSeq++}`, ...item })
   }
 
-  const classById = new Map<string, any>(allClasses.map((c: any) => [c.id, c]))
+  const k12Classes = allClasses.filter((c: any) => isK12Class(c))
+  const classById = new Map<string, any>(k12Classes.map((c: any) => [c.id, c]))
   const studentById = new Map<string, any>(systemStudents.map((s: any) => [s.id, s]))
 
   // Phân lớp hiệu lực theo mốc báo cáo (chỉ lấy các lệnh chuyển lớp có hiệu lực <= asOfDate)
@@ -733,13 +709,15 @@ export async function generateAcademicCommitmentStatistics(
   ) => {
     if (!student || !student.id || rawSubjects.length === 0) return
     const effectiveClass = resolveEffectiveStudentClass(student, fallbackClass)
-    if (!effectiveClass || !effectiveClass.id) {
-      pushRecon({
-        type: "UNASSIGNED_CLASS_EXCLUDED",
-        studentCode: student.studentCode || "-",
-        studentName: student.studentName || "-",
-        detail: `Học sinh có cam kết (${rawSubjects.join(", ")}) nhưng chưa có bản ghi phân lớp hợp lệ trong năm học.`,
-      })
+    if (!effectiveClass || !effectiveClass.id || !isK12Class(effectiveClass)) {
+      if (!effectiveClass || !effectiveClass.id) {
+        pushRecon({
+          type: "UNASSIGNED_CLASS_EXCLUDED",
+          studentCode: student.studentCode || "-",
+          studentName: student.studentName || "-",
+          detail: `Học sinh có cam kết (${rawSubjects.join(", ")}) nhưng chưa có bản ghi phân lớp hợp lệ trong năm học.`,
+        })
+      }
       return
     }
 
@@ -775,8 +753,8 @@ export async function generateAcademicCommitmentStatistics(
     }
   }
 
-  // Nguồn 1: InputAssessmentStudent & PreschoolInputAssessmentStudent
-  for (const is of [...inputStudents, ...preschoolStudents]) {
+  // Nguồn 1: InputAssessmentStudent (chỉ Phổ thông K-12, không gộp Mầm non)
+  for (const is of inputStudents) {
     if (isExplicitNonCommitmentRecord(is.admissionResult, is.directorNote)) continue
 
     let matchingStudent = systemStudents.find(
