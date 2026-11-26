@@ -5,7 +5,7 @@ import { writeSecurityAuditLog } from "@/lib/security-guard"
 import { generateAcademicCommitmentStatistics } from "@/lib/student-statistics/academicCommitmentEngine"
 import { generateExchangeStudentStatistics } from "@/lib/student-statistics/exchangeStudentEngine"
 import { generateHomeschoolingStatistics } from "@/lib/student-statistics/homeschoolingEngine"
-import { generateOverviewStatistics } from "@/lib/student-statistics/overviewEngine"
+import { generateOverviewStatisticsWithBundle } from "@/lib/student-statistics/overviewEngine"
 import {
   buildAcademicCommitmentPdfHtml,
   buildAcademicPdfFileName,
@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
     let title = ""
 
     if (tab === "overview") {
-      const payload = await generateOverviewStatistics(
+      const { overview, cohorts } = await generateOverviewStatisticsWithBundle(
         {
           academicYearId,
           campusId: sp.get("campusId") || undefined,
@@ -85,8 +85,8 @@ export async function GET(req: NextRequest) {
         },
         scope
       )
-      htmlContent = buildOverviewPdfHtml(payload, scope)
-      fileName = buildOverviewPdfFileName(payload)
+      htmlContent = buildOverviewPdfHtml(overview, scope, undefined, cohorts)
+      fileName = buildOverviewPdfFileName(overview)
       title = "Bao_cao_Tong_quan_Thong_ke_HS"
     } else if (tab === "psychology") {
       if (!scope.canViewPsychologyTab) {

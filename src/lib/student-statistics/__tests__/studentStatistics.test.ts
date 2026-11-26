@@ -87,7 +87,7 @@ import {
   isK12Class,
   resolveLatestPeriodScore,
 } from "../standardEvaluator"
-import { generateOverviewStatistics } from "../overviewEngine"
+import { generateOverviewStatisticsWithBundle } from "../overviewEngine"
 import {
   buildAcademicCommitmentPdfHtml,
   buildAcademicPdfFileName,
@@ -1062,14 +1062,21 @@ describe("Báo cáo thống kê học sinh trên SSM", () => {
         },
       ])
 
-      const ov = await generateOverviewStatistics({ academicYearId: "ay_2026" }, fullScope)
+      const { overview: ov, cohorts } = await generateOverviewStatisticsWithBundle(
+        { academicYearId: "ay_2026" },
+        fullScope
+      )
       expect(ov.hierarchy.nodeType).toBe("SYSTEM")
       expect(ov.hierarchy.enrolledStudentCount).toBe(1)
       expect(ov.hierarchy.children?.[0].code).toBe("CS1")
       expect(ov.hierarchy.children?.[0].enrolledStudentCount).toBe(1)
-      const ovHtml = buildOverviewPdfHtml(ov, fullScope, "08:40 26/11/2026")
+      const ovHtml = buildOverviewPdfHtml(ov, fullScope, "08:40 26/11/2026", cohorts)
       expect(ovHtml).toContain("BÁO CÁO HỌC SINH THEO DÕI CAM KẾT")
       expect(ovHtml).toContain("TỔNG QUAN THEO CƠ SỞ")
+      expect(ovHtml).toContain("HỌC SINH CAM KẾT ĐẦU VÀO THEO MÔN HỌC")
+      expect(ovHtml).toContain("TÂM LÝ CAM KẾT ĐẦU VÀO")
+      expect(ovHtml).toContain("HỌC SINH HOMESCHOOLING")
+      expect(ovHtml).toContain("HỌC SINH HỌC GIAO LƯU")
       expect(ovHtml).toContain("Ghi chú căn cứ tính Đạt chuẩn")
       expect(ovHtml).toContain("<svg")
       expect(ovHtml).toContain("Tiến bộ vượt bậc")

@@ -4,14 +4,25 @@ import { generateHomeschoolingStatistics } from "./homeschoolingEngine"
 import { generatePsychologyCommitmentStatistics } from "./psychologyCommitmentEngine"
 import { loadEnrolledTransferInLookup } from "./standardEvaluator"
 import {
+  AcademicCommitmentReportPayload,
+  ExchangeStudentReportPayload,
   HierarchyNodeMetrics,
+  HomeschoolingReportPayload,
   OverviewCohortStats,
   OverviewFilterInput,
   OverviewHierarchyNode,
   OverviewReportPayload,
   PsychHierarchyNodeMetrics,
+  PsychologyCommitmentReportPayload,
   StudentStatisticsAccessScope,
 } from "./types"
+
+export interface OverviewPdfCohortBundle {
+  academic: AcademicCommitmentReportPayload
+  homeschooling: HomeschoolingReportPayload
+  exchange: ExchangeStudentReportPayload
+  psychology: PsychologyCommitmentReportPayload | null
+}
 
 function emptyCohort(): OverviewCohortStats {
   return {
@@ -75,10 +86,10 @@ function indexHierarchyByKey<T extends { id: string; code: string; children?: T[
   return map
 }
 
-export async function generateOverviewStatistics(
+export async function generateOverviewStatisticsWithBundle(
   filters: OverviewFilterInput,
   scope: StudentStatisticsAccessScope
-): Promise<OverviewReportPayload> {
+): Promise<{ overview: OverviewReportPayload; cohorts: OverviewPdfCohortBundle }> {
   const [academic, homeschooling, exchange, psychology] = await Promise.all([
     generateAcademicCommitmentStatistics(
       {
@@ -392,7 +403,7 @@ export async function generateOverviewStatistics(
     return counts
   }
 
-  return {
+  const overview: OverviewReportPayload = {
     asOfDate: academic.asOfDate,
     filters: {
       academicYearId: academic.filters.academicYearId,
@@ -421,4 +432,22 @@ export async function generateOverviewStatistics(
     },
     hierarchy: systemNode,
   }
+
+  return {
+    overview,
+    cohorts: {
+      academic,
+      homeschooling,
+      exchange,
+      psychology,
+    },
+  }
+}
+
+export async function generateOverviewStatistics(
+  filters: OverviewFilterInput,
+  scope: StudentStatisticsAccessScope
+): Promise<OverviewReportPayload> {
+  const { overview } = await generateOverviewStatisticsWithBundle(filters, scope)
+  return overview
 }

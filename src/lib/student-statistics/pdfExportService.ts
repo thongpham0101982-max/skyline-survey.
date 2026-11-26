@@ -16,6 +16,13 @@ import {
   StudentStatisticsAccessScope,
 } from "./types"
 
+export interface OverviewPdfCohortBundleInput {
+  academic: AcademicCommitmentReportPayload
+  homeschooling: HomeschoolingReportPayload
+  exchange: ExchangeStudentReportPayload
+  psychology: PsychologyCommitmentReportPayload | null
+}
+
 export { formatDeltaForDisplay, formatRateWithFraction, formatScoreForDisplay }
 
 function escapeHtml(input: unknown): string {
@@ -1812,10 +1819,301 @@ function renderOverviewRowsRecursive(
   return html
 }
 
+function renderCompactAcademicEvalPage(params: {
+  pageIndex: number
+  tabLabel: string
+  subDetail: string
+  cohortLabel: string
+  chartTitle: string
+  subjectScopeNote: string
+  academicYearName: string
+  campusName: string
+  isAllSystem: boolean
+  exportedAt: string
+  root: HierarchyNodeMetrics
+  extraKpiLabel: string
+  extraKpiValue: string
+  extraKpiUnit: string
+  basisCounts: StandardBasisPeriodCounts
+}): string {
+  const {
+    pageIndex,
+    tabLabel,
+    subDetail,
+    cohortLabel,
+    chartTitle,
+    subjectScopeNote,
+    academicYearName,
+    campusName,
+    isAllSystem,
+    exportedAt,
+    root,
+    extraKpiLabel,
+    extraKpiValue,
+    extraKpiUnit,
+    basisCounts,
+  } = params
+
+  const maxDepth = isAllSystem ? 1 : 2
+  const campusChartItems: CampusRateBarItem[] = (root.children || []).map((cp) => ({
+    code: cp.code || cp.label,
+    subLabel: `${cp.distinctStudentCount} HS (${fmtPct(cp.enrolledShareRate)})`,
+    rate: cp.standardRate,
+    numerator: cp.totalStandardMetCount,
+    denominator: cp.eligibleRowCount,
+  }))
+
+  const chartSvg = renderCampusRateBarSvg({
+    title: chartTitle,
+    subtitle:
+      "Hiển thị trực tiếp % và số lượt đạt chuẩn / tổng lượt xét chuẩn (gồm Đạt chuẩn + Tiến bộ vượt bậc) theo từng cơ sở",
+    items: campusChartItems,
+    unitSuffix: " lượt",
+  })
+
+  const renderRows = (node: HierarchyNodeMetrics, depth: number): string => {
+    const pad = depth * 12
+    const rowStyle =
+      node.nodeType === "SYSTEM"
+        ? "background:#F0FDFA;font-weight:700;color:#003B3A;"
+        : node.nodeType === "CAMPUS"
+          ? "background:#F8FAFC;font-weight:700;color:#003B3A;"
+          : "font-weight:600;"
+    let html = `
+      <tr style="${rowStyle}">
+        <td style="padding:3.5px 5px 3.5px ${pad + 5}px;">${escapeHtml(node.label)}</td>
+        <td class="num" style="padding:3.5px 5px;">${node.enrolledStudentCount}</td>
+        <td class="num" style="padding:3.5px 5px;"><strong>${node.distinctStudentCount} HS</strong> <span class="muted">(${escapeHtml(fmtPct(node.enrolledShareRate))})</span></td>
+        <td class="num" style="padding:3.5px 5px;">${node.eligibleRowCount}</td>
+        <td class="num" style="padding:3.5px 5px;color:#00736E;font-weight:600;">${node.standardBandCount}</td>
+        <td class="num" style="padding:3.5px 5px;color:#047857;font-weight:700;">${node.outstandingCount}</td>
+        <td class="num" style="padding:3.5px 5px;color:${node.belowStandardCount > 0 ? "#BE123C" : "#334155"};">${node.belowStandardCount}</td>
+        <td class="num" style="padding:3.5px 5px;color:#00736E;font-weight:700;">${escapeHtml(formatRateWithFraction(node.totalStandardMetCount, node.eligibleRowCount, node.standardRate))}</td>
+      </tr>`
+    if (depth < maxDepth) {
+      for (const ch of node.children || []) {
+        html += renderRows(ch, depth + 1)
+      }
+    }
+    return html
+  }
+
+  return `
+    <div class="page-break"></div>
+    ${renderPdfHeader({
+      tabLabel: `PHẦN ${pageIndex}: ĐÁNH GIÁ — ${tabLabel}`,
+      subDetail,
+      academicYearName,
+      scopeLabel: campusName,
+      exportedAt,
+    })}
+
+    <div class="kpi-grid" style="margin-bottom:7px;">
+      <div class="kpi-box pine" style="padding:5px 8px;">
+        <div class="kpi-label">${escapeHtml(cohortLabel)}</div>
+        <div class="kpi-value">${root.distinctStudentCount} HS<span class="kpi-pct">(${escapeHtml(fmtPct(root.enrolledShareRate))})</span></div>
+        <div class="kpi-unit">trên ${root.enrolledStudentCount} HS nhập học K-12</div>
+        ${renderProgressBar(root.enrolledShareRate, "teal")}
+      </div>
+      <div class="kpi-box" style="padding:5px 8px;">
+        <div class="kpi-label">${escapeHtml(extraKpiLabel)}</div>
+        <div class="kpi-value">${escapeHtml(extraKpiValue)}</div>
+        <div class="kpi-unit">${escapeHtml(extraKpiUnit)}</div>
+      </div>
+      <div class="kpi-box" style="padding:5px 8px;">
+        <div class="kpi-label">Đạt chuẩn (7–8 / 5–7)</div>
+        <div class="kpi-value" style="color:#00736E;">${root.standardBandCount} <span class="kpi-pct">lượt</span></div>
+        <div class="kpi-unit">Chưa đạt chuẩn: ${root.belowStandardCount} lượt</div>
+      </div>
+      <div class="kpi-box emerald" style="padding:5px 8px;">
+        <div class="kpi-label">Tiến bộ vượt bậc (9–10 / 8–10)</div>
+        <div class="kpi-value" style="color:#047857;">${root.outstandingCount} <span class="kpi-pct">(${escapeHtml(fmtPct(root.outstandingRate))})</span></div>
+        <div class="kpi-unit">${root.outstandingCount}/${root.eligibleRowCount} lượt xét chuẩn</div>
+        ${renderProgressBar(root.outstandingRate, "emerald")}
+      </div>
+      <div class="kpi-box emerald" style="padding:5px 8px;">
+        <div class="kpi-label">Tổng tỷ lệ Đạt chuẩn (Kỳ gần nhất)</div>
+        <div class="kpi-value" style="color:#047857;">${escapeHtml(formatRateWithFraction(root.totalStandardMetCount, root.eligibleRowCount, root.standardRate))}</div>
+        <div class="kpi-unit">gồm Đạt chuẩn + Tiến bộ vượt bậc</div>
+        ${renderProgressBar(root.standardRate, "emerald")}
+      </div>
+    </div>
+
+    ${chartSvg}
+
+    <div class="section-title" style="margin:6px 0 4px 0;font-size:8.8pt;">${
+      isAllSystem
+        ? `Bảng đánh giá ${tabLabel.toLowerCase()} theo Toàn hệ thống và từng cơ sở`
+        : `Bảng đánh giá ${tabLabel.toLowerCase()} theo cơ sở và khối (${escapeHtml(campusName)})`
+    }</div>
+    <table style="margin-bottom:6px;">
+      <colgroup>
+        <col style="width:23%" />
+        <col style="width:9%" />
+        <col style="width:15%" />
+        <col style="width:10%" />
+        <col style="width:10%" />
+        <col style="width:10%" />
+        <col style="width:9%" />
+        <col style="width:14%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th style="padding:4px 5px;">${isAllSystem ? "Đơn vị (Toàn hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}</th>
+          <th class="num" style="padding:4px 5px;">HS nhập học</th>
+          <th class="num" style="padding:4px 5px;">${escapeHtml(cohortLabel)} (% nhập học)</th>
+          <th class="num" style="padding:4px 5px;">Lượt xét chuẩn</th>
+          <th class="num" style="padding:4px 5px;">Đạt chuẩn</th>
+          <th class="num" style="padding:4px 5px;">Vượt bậc</th>
+          <th class="num" style="padding:4px 5px;">Chưa đạt</th>
+          <th class="num" style="padding:4px 5px;">Tỷ lệ Đạt chuẩn</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${renderRows(root, 0)}
+      </tbody>
+    </table>
+
+    <div class="note-box" style="padding:5px 9px;font-size:7pt;line-height:1.38;">
+      <strong>Căn cứ đánh giá (${escapeHtml(tabLabel)}):</strong>
+      Kỳ lấy điểm thực tế: <em>${escapeHtml(formatBasisPeriodCounts(basisCounts))}</em> (ưu tiên <strong>CK2 → GK2 → CK1 → GK1 → KSĐN</strong>).
+      Ngưỡng chuẩn K-12: Tiểu học <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Vượt bậc · THCS <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Vượt bậc.
+      Tỷ lệ Đạt chuẩn = <code>(Đạt chuẩn + Vượt bậc) / Lượt xét chuẩn</code>. ${escapeHtml(subjectScopeNote)}
+    </div>`
+}
+
+function renderCompactPsychEvalPage(params: {
+  pageIndex: number
+  psych: PsychologyCommitmentReportPayload
+  scope: StudentStatisticsAccessScope
+  isAllSystem: boolean
+  exportedAt: string
+}): string {
+  const { pageIndex, psych, scope, isAllSystem, exportedAt } = params
+  const maxDepth = isAllSystem ? 1 : 2
+  const campusChartItems: CampusRateBarItem[] = psych.campusSummary.map((c) => ({
+    code: c.campusCode || c.campusName,
+    subLabel: `${c.totalStudents} HS thuộc diện`,
+    rate: c.monthSummaryRate,
+    numerator: c.monthSummarizedStudents,
+    denominator: c.totalStudents,
+  }))
+
+  const chartSvg = renderCampusRateBarSvg({
+    title: "Biểu đồ tỷ lệ đã tổng kết tháng theo cơ sở — Tâm lý cam kết đầu vào",
+    subtitle: "Hiển thị trực tiếp % và số học sinh đã tổng kết / tổng số HS thuộc diện tâm lý cam kết đầu vào",
+    items: campusChartItems,
+    unitSuffix: " HS",
+  })
+
+  const sessionRate =
+    psych.summary.totalScheduledSessions > 0
+      ? (psych.summary.completedSessions / psych.summary.totalScheduledSessions) * 100
+      : null
+
+  const weekSummaryHtml = psych.weekSummary
+    .map(
+      (w) => `
+      <tr>
+        <td style="padding:3px 5px;"><strong>${escapeHtml(w.weekLabel)}</strong></td>
+        <td class="num" style="padding:3px 5px;">${w.dueStudentCount} HS</td>
+        <td class="num" style="padding:3px 5px;color:#047857;font-weight:600;">${w.evaluatedStudentCount} HS</td>
+        <td class="num" style="padding:3px 5px;color:${w.overdueStudentCount > 0 ? "#BE123C" : "#334155"};">${w.overdueStudentCount} HS</td>
+        <td class="num" style="padding:3px 5px;">${w.notDueStudentCount} HS</td>
+        <td class="num" style="padding:3px 5px;">${w.completedSessions}/${w.totalScheduledSessions} lượt</td>
+      </tr>`
+    )
+    .join("")
+
+  return `
+    <div class="page-break"></div>
+    ${renderPdfHeader({
+      tabLabel: `PHẦN ${pageIndex}: ĐÁNH GIÁ — TÂM LÝ CAM KẾT ĐẦU VÀO`,
+      subDetail: `Khối Phổ thông K-12 • Quyền: ${scope.roleDisplayLabel}`,
+      academicYearName: psych.filters.academicYearName,
+      scopeLabel: psych.filters.campusName,
+      extraMetaLabel: "Kỳ / Tháng",
+      extraMetaValue: psych.filters.monthLabel,
+      exportedAt,
+    })}
+
+    <div class="kpi-grid" style="margin-bottom:7px;">
+      <div class="kpi-box pine" style="padding:5px 8px;">
+        <div class="kpi-label">HS Tâm lý CKĐV</div>
+        <div class="kpi-value">${psych.summary.totalStudents} HS<span class="kpi-pct">(${escapeHtml(fmtPct(psych.summary.enrolledShareRate))})</span></div>
+        <div class="kpi-unit">trên ${psych.summary.enrolledStudentCount} HS nhập học K-12</div>
+        ${renderProgressBar(psych.summary.enrolledShareRate, "teal")}
+      </div>
+      <div class="kpi-box rose" style="padding:5px 8px;">
+        <div class="kpi-label">Chưa phân công GV/CV</div>
+        <div class="kpi-value" style="color:#BE123C;">${psych.summary.unassignedStudents} HS</div>
+        <div class="kpi-unit">cần phân công phụ trách</div>
+      </div>
+      <div class="kpi-box amber" style="padding:5px 8px;">
+        <div class="kpi-label">Có đánh giá quá hạn</div>
+        <div class="kpi-value" style="color:#B45309;">${psych.summary.overdueStudents} HS</div>
+        <div class="kpi-unit">còn lượt đến hạn: ${psych.summary.duePendingStudents} HS</div>
+      </div>
+      <div class="kpi-box emerald" style="padding:5px 8px;">
+        <div class="kpi-label">Đã tổng kết ${escapeHtml(psych.filters.monthLabel)}</div>
+        <div class="kpi-value" style="color:#047857;">${escapeHtml(formatRateWithFraction(psych.summary.monthSummarizedStudents, psych.summary.totalStudents, psych.summary.monthSummaryRate))}</div>
+        <div class="kpi-unit">học sinh đã chốt tổng kết tháng</div>
+        ${renderProgressBar(psych.summary.monthSummaryRate, "emerald")}
+      </div>
+      <div class="kpi-box" style="padding:5px 8px;">
+        <div class="kpi-label">Tiến độ lượt đánh giá tuần</div>
+        <div class="kpi-value">${psych.summary.completedSessions}/${psych.summary.totalScheduledSessions}<span class="kpi-pct">(${escapeHtml(fmtPct(sessionRate))})</span></div>
+        <div class="kpi-unit">lượt hoàn thành trong tháng</div>
+        ${renderProgressBar(sessionRate, "teal")}
+      </div>
+    </div>
+
+    ${chartSvg}
+
+    <div class="section-title" style="margin:6px 0 4px 0;font-size:8.8pt;">${
+      isAllSystem
+        ? "Bảng đánh giá Tâm lý cam kết đầu vào theo Toàn hệ thống và từng cơ sở"
+        : `Bảng đánh giá Tâm lý cam kết đầu vào theo cơ sở và khối (${escapeHtml(psych.filters.campusName)})`
+    }</div>
+    <table style="margin-bottom:6px;">
+      <thead>
+        <tr>
+          <th style="padding:4px 5px;">${isAllSystem ? "Đơn vị (Toàn hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}</th>
+          <th class="num" style="padding:4px 5px;">HS nhập học</th>
+          <th class="num" style="padding:4px 5px;">HS thuộc diện (% nhập học)</th>
+          <th class="num" style="padding:4px 5px;">Chưa phân công</th>
+          <th class="num" style="padding:4px 5px;">Có ĐG quá hạn</th>
+          <th class="num" style="padding:4px 5px;">Còn lượt đến hạn</th>
+          <th class="num" style="padding:4px 5px;">Đã cập nhật đủ</th>
+          <th class="num" style="padding:4px 5px;">Đã tổng kết tháng</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${renderPsychHierarchyRowsRecursive(psych.hierarchy, 0, maxDepth)}
+      </tbody>
+    </table>
+
+    <div class="section-title" style="margin:5px 0 3px 0;font-size:8.5pt;">Tiến độ đánh giá theo tuần (${escapeHtml(psych.filters.monthLabel)})</div>
+    <table style="margin-bottom:0;">
+      <thead>
+        <tr>
+          <th style="padding:3.5px 5px;">Tuần</th>
+          <th class="num" style="padding:3.5px 5px;">HS đến hạn</th>
+          <th class="num" style="padding:3.5px 5px;">HS đã đánh giá</th>
+          <th class="num" style="padding:3.5px 5px;">HS quá hạn</th>
+          <th class="num" style="padding:3.5px 5px;">HS chưa đến hạn</th>
+          <th class="num" style="padding:3.5px 5px;">Tiến độ lượt ĐG</th>
+        </tr>
+      </thead>
+      <tbody>${weekSummaryHtml}</tbody>
+    </table>`
+}
+
 export function buildOverviewPdfHtml(
   payload: OverviewReportPayload,
   scope: StudentStatisticsAccessScope,
-  exportedAtStr?: string
+  exportedAtStr?: string,
+  cohorts?: OverviewPdfCohortBundleInput
 ): string {
   const exportedAt = exportedAtStr || formatVietnamTimestamp()
   const root = payload.hierarchy
@@ -1970,6 +2268,86 @@ ${SHARED_PDF_CSS}
       </ul>
     </div>
   </div>
+  ${
+    cohorts
+      ? (() => {
+          let secNum = 1
+          const parts: string[] = []
+          parts.push(
+            renderCompactAcademicEvalPage({
+              pageIndex: ++secNum,
+              tabLabel: "HỌC SINH CAM KẾT ĐẦU VÀO THEO MÔN HỌC",
+              subDetail: `Khối Phổ thông K-12 • Quyền: ${scope.roleDisplayLabel}`,
+              cohortLabel: "HS cam kết môn học",
+              chartTitle:
+                "Biểu đồ tỷ lệ đạt chuẩn (Kỳ gần nhất) — Học sinh cam kết đầu vào theo môn học",
+              subjectScopeNote: "Tính trên đúng các môn học sinh cam kết đầu vào.",
+              academicYearName: cohorts.academic.filters.academicYearName,
+              campusName: cohorts.academic.filters.campusName,
+              isAllSystem,
+              exportedAt,
+              root: cohorts.academic.hierarchy,
+              extraKpiLabel: "Tổng lượt cam kết môn",
+              extraKpiValue: `${cohorts.academic.summary.commitmentRowCount} lượt`,
+              extraKpiUnit: `đủ điểm xét chuẩn: ${cohorts.academic.summary.eligibleStandardRowCount} lượt`,
+              basisCounts: countDetailBasisPeriods(cohorts.academic.detailRows),
+            })
+          )
+          if (showPsych && cohorts.psychology) {
+            parts.push(
+              renderCompactPsychEvalPage({
+                pageIndex: ++secNum,
+                psych: cohorts.psychology,
+                scope,
+                isAllSystem,
+                exportedAt,
+              })
+            )
+          }
+          parts.push(
+            renderCompactAcademicEvalPage({
+              pageIndex: ++secNum,
+              tabLabel: "HỌC SINH HOMESCHOOLING",
+              subDetail: `Chương trình trước đây: Homeschooling • Quyền: ${scope.roleDisplayLabel}`,
+              cohortLabel: "HS Homeschooling",
+              chartTitle:
+                "Biểu đồ tỷ lệ đạt chuẩn (Kỳ gần nhất) — Học sinh Homeschooling nhập học",
+              subjectScopeNote:
+                "Tính trên môn cam kết đầu vào (nếu có) hoặc nhóm môn cốt lõi theo cấp học.",
+              academicYearName: cohorts.homeschooling.filters.academicYearName,
+              campusName: cohorts.homeschooling.filters.campusName,
+              isAllSystem,
+              exportedAt,
+              root: cohorts.homeschooling.hierarchy,
+              extraKpiLabel: "HS có cam kết đầu vào",
+              extraKpiValue: `${cohorts.homeschooling.summary.committedStudentCount} HS`,
+              extraKpiUnit: `tổng lượt theo dõi: ${cohorts.homeschooling.summary.trackedRowCount} lượt`,
+              basisCounts: countDetailBasisPeriods(cohorts.homeschooling.detailRows),
+            })
+          )
+          parts.push(
+            renderCompactAcademicEvalPage({
+              pageIndex: ++secNum,
+              tabLabel: "HỌC SINH HỌC GIAO LƯU",
+              subDetail: `Diện học sinh: Học giao lưu (GIAO_LUU) • Quyền: ${scope.roleDisplayLabel}`,
+              cohortLabel: "HS Học giao lưu",
+              chartTitle: "Biểu đồ tỷ lệ đạt chuẩn (Kỳ gần nhất) — Học sinh diện Học giao lưu",
+              subjectScopeNote: "Tính trên nhóm môn cốt lõi theo cấp học (Toán, TV/NV, Tiếng Anh).",
+              academicYearName: cohorts.exchange.filters.academicYearName,
+              campusName: cohorts.exchange.filters.campusName,
+              isAllSystem,
+              exportedAt,
+              root: cohorts.exchange.hierarchy,
+              extraKpiLabel: "Tổng lượt theo dõi môn",
+              extraKpiValue: `${cohorts.exchange.summary.trackedRowCount} lượt`,
+              extraKpiUnit: `đủ điểm xét chuẩn: ${cohorts.exchange.summary.eligibleStandardRowCount} lượt`,
+              basisCounts: countDetailBasisPeriods(cohorts.exchange.detailRows),
+            })
+          )
+          return parts.join("")
+        })()
+      : ""
+  }
 </body>
 </html>`
 }
