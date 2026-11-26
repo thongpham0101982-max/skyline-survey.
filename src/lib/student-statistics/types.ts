@@ -785,6 +785,12 @@ export interface OverviewReportPayload {
     homeschooling: StandardBasisPeriodCounts
     exchange: StandardBasisPeriodCounts
     psychologyMonthLabel?: string
+    psychologyDetail?: {
+      unassignedStudents: number
+      overdueStudents: number
+      completedSessions: number
+      totalScheduledSessions: number
+    }
   }
   hierarchy: OverviewHierarchyNode
 }

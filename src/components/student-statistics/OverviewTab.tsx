@@ -31,28 +31,41 @@ function formatPct(rate: number | null): string {
   return `${rate.toFixed(1).replace(".", ",")}%`
 }
 
+function formatBasisCompact(counts?: Record<"KSĐN" | "GK1" | "CK1" | "GK2" | "CK2", number>): string {
+  if (!counts) return ""
+  const order: Array<"CK2" | "GK2" | "CK1" | "GK1" | "KSĐN"> = ["CK2", "GK2", "CK1", "GK1", "KSĐN"]
+  const parts: string[] = []
+  for (const k of order) {
+    if ((counts[k] || 0) > 0) parts.push(`${k}: ${counts[k]}`)
+  }
+  return parts.join(" · ")
+}
+
 function CohortCell({
   stats,
   enrolledCount,
+  isPsych = false,
 }: {
   stats: OverviewCohortStats
   enrolledCount: number
+  isPsych?: boolean
 }) {
+  const unitLabel = isPsych ? "HS" : "lượt"
+  const prefix = isPsych ? "Tổng kết" : "Đạt chuẩn"
+  const pctStr =
+    stats.standardEligibleCount > 0 && stats.standardRate !== null
+      ? `${stats.standardMetCount}/${stats.standardEligibleCount} ${unitLabel} (${formatPct(stats.standardRate)})`
+      : "—"
   return (
     <div className="leading-tight">
       <div className="font-semibold text-slate-900">
-        {stats.studentCount}{" "}
+        {stats.studentCount} HS{" "}
         <span className="text-[11px] font-normal text-slate-500">
           ({enrolledCount > 0 ? formatPct(stats.shareOfEnrolledRate) : "—"})
         </span>
       </div>
       <div className="text-[11px] text-[#00736E]">
-        Đạt chuẩn:{" "}
-        {formatRateWithFraction(
-          stats.standardMetCount,
-          stats.standardEligibleCount,
-          stats.standardRate
-        )}
+        {prefix}: {pctStr}
       </div>
     </div>
   )
@@ -196,6 +209,7 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
               <CohortCell
                 stats={node.psychologyCommitment}
                 enrolledCount={node.enrolledStudentCount}
+                isPsych
               />
             </td>
           )}
@@ -244,18 +258,23 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
                 {root.academicCommitment.studentCount}
               </span>
               <span className="text-xs font-semibold text-[#00736E]">
-                ({formatPct(root.academicCommitment.shareOfEnrolledRate)})
+                HS ({formatPct(root.academicCommitment.shareOfEnrolledRate)})
               </span>
             </div>
-            <div className="mt-0.5 text-[11px] text-slate-600">
+            <div className="mt-1 text-[11px] text-slate-700">
               Đạt chuẩn:{" "}
-              <strong>
-                {formatRateWithFraction(
-                  root.academicCommitment.standardMetCount,
-                  root.academicCommitment.standardEligibleCount,
-                  root.academicCommitment.standardRate
-                )}
+              <strong className="text-emerald-700">
+                {root.academicCommitment.standardEligibleCount > 0
+                  ? `${root.academicCommitment.standardMetCount}/${root.academicCommitment.standardEligibleCount} lượt môn (${formatPct(root.academicCommitment.standardRate)})`
+                  : "—"}
               </strong>
+            </div>
+            <div className="mt-0.5 text-[10.5px] text-slate-500">
+              {root.academicCommitment.standardMetCount - root.academicCommitment.outstandingCount}{" "}
+              Đạt chuẩn · {root.academicCommitment.outstandingCount} Vượt bậc
+              {formatBasisCompact(data.basisPeriodSummary?.academic)
+                ? ` · ${formatBasisCompact(data.basisPeriodSummary?.academic)}`
+                : ""}
             </div>
           </button>
 
@@ -271,12 +290,12 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
                   {root.psychologyCommitment.studentCount}
                 </span>
                 <span className="text-xs font-semibold text-[#00736E]">
-                  ({formatPct(root.psychologyCommitment.shareOfEnrolledRate)})
+                  HS ({formatPct(root.psychologyCommitment.shareOfEnrolledRate)})
                 </span>
               </div>
-              <div className="mt-0.5 text-[11px] text-slate-600">
-                Tổng kết tháng:{" "}
-                <strong>
+              <div className="mt-1 text-[11px] text-slate-700">
+                Tổng kết {data.basisPeriodSummary?.psychologyMonthLabel || "tháng"}:{" "}
+                <strong className="text-[#00736E]">
                   {formatRateWithFraction(
                     root.psychologyCommitment.standardMetCount,
                     root.psychologyCommitment.standardEligibleCount,
@@ -284,6 +303,14 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
                   )}
                 </strong>
               </div>
+              {data.basisPeriodSummary?.psychologyDetail && (
+                <div className="mt-0.5 text-[10.5px] text-slate-500">
+                  {data.basisPeriodSummary.psychologyDetail.completedSessions}/
+                  {data.basisPeriodSummary.psychologyDetail.totalScheduledSessions} lượt tuần ·{" "}
+                  {data.basisPeriodSummary.psychologyDetail.overdueStudents} quá hạn ·{" "}
+                  {data.basisPeriodSummary.psychologyDetail.unassignedStudents} chưa PC
+                </div>
+              )}
             </button>
           )}
 
@@ -298,18 +325,23 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
                 {root.homeschooling.studentCount}
               </span>
               <span className="text-xs font-semibold text-[#00736E]">
-                ({formatPct(root.homeschooling.shareOfEnrolledRate)})
+                HS ({formatPct(root.homeschooling.shareOfEnrolledRate)})
               </span>
             </div>
-            <div className="mt-0.5 text-[11px] text-slate-600">
+            <div className="mt-1 text-[11px] text-slate-700">
               Đạt chuẩn:{" "}
-              <strong>
-                {formatRateWithFraction(
-                  root.homeschooling.standardMetCount,
-                  root.homeschooling.standardEligibleCount,
-                  root.homeschooling.standardRate
-                )}
+              <strong className="text-emerald-700">
+                {root.homeschooling.standardEligibleCount > 0
+                  ? `${root.homeschooling.standardMetCount}/${root.homeschooling.standardEligibleCount} lượt môn (${formatPct(root.homeschooling.standardRate)})`
+                  : "—"}
               </strong>
+            </div>
+            <div className="mt-0.5 text-[10.5px] text-slate-500">
+              {root.homeschooling.standardMetCount - root.homeschooling.outstandingCount} Đạt chuẩn ·{" "}
+              {root.homeschooling.outstandingCount} Vượt bậc
+              {formatBasisCompact(data.basisPeriodSummary?.homeschooling)
+                ? ` · ${formatBasisCompact(data.basisPeriodSummary?.homeschooling)}`
+                : ""}
             </div>
           </button>
 
@@ -324,18 +356,23 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
                 {root.exchange.studentCount}
               </span>
               <span className="text-xs font-semibold text-[#00736E]">
-                ({formatPct(root.exchange.shareOfEnrolledRate)})
+                HS ({formatPct(root.exchange.shareOfEnrolledRate)})
               </span>
             </div>
-            <div className="mt-0.5 text-[11px] text-slate-600">
+            <div className="mt-1 text-[11px] text-slate-700">
               Đạt chuẩn:{" "}
-              <strong>
-                {formatRateWithFraction(
-                  root.exchange.standardMetCount,
-                  root.exchange.standardEligibleCount,
-                  root.exchange.standardRate
-                )}
+              <strong className="text-emerald-700">
+                {root.exchange.standardEligibleCount > 0
+                  ? `${root.exchange.standardMetCount}/${root.exchange.standardEligibleCount} lượt môn (${formatPct(root.exchange.standardRate)})`
+                  : "—"}
               </strong>
+            </div>
+            <div className="mt-0.5 text-[10.5px] text-slate-500">
+              {root.exchange.standardMetCount - root.exchange.outstandingCount} Đạt chuẩn ·{" "}
+              {root.exchange.outstandingCount} Vượt bậc
+              {formatBasisCompact(data.basisPeriodSummary?.exchange)
+                ? ` · ${formatBasisCompact(data.basisPeriodSummary?.exchange)}`
+                : ""}
             </div>
           </button>
         </div>

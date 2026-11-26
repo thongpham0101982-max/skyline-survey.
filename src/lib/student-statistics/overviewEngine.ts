@@ -410,6 +410,14 @@ export async function generateOverviewStatistics(
       homeschooling: countBasis(homeschooling.detailRows),
       exchange: countBasis(exchange.detailRows),
       psychologyMonthLabel: psychology?.filters.monthLabel,
+      psychologyDetail: psychology
+        ? {
+            unassignedStudents: psychology.summary.unassignedStudents,
+            overdueStudents: psychology.summary.overdueStudents,
+            completedSessions: psychology.summary.completedSessions,
+            totalScheduledSessions: psychology.summary.totalScheduledSessions,
+          }
+        : undefined,
     },
     hierarchy: systemNode,
   }
