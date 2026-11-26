@@ -765,6 +765,8 @@ export interface OverviewHierarchyNode {
   children?: OverviewHierarchyNode[]
 }
 
+export type StandardBasisPeriodCounts = Record<"KSĐN" | "GK1" | "CK1" | "GK2" | "CK2", number>
+
 export interface OverviewReportPayload {
   asOfDate: string
   filters: {
@@ -778,5 +780,11 @@ export interface OverviewReportPayload {
     campuses: Array<{ id: string; campusCode: string; campusName: string }>
   }
   canViewPsychologyTab: boolean
+  basisPeriodSummary?: {
+    academic: StandardBasisPeriodCounts
+    homeschooling: StandardBasisPeriodCounts
+    exchange: StandardBasisPeriodCounts
+    psychologyMonthLabel?: string
+  }
   hierarchy: OverviewHierarchyNode
 }

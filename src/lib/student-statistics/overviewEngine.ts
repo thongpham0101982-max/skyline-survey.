@@ -380,6 +380,18 @@ export async function generateOverviewStatistics(
     children: campusNodes,
   }
 
+  const countBasis = (
+    rows: Array<{ isEligibleForStandardRate: boolean; latestPeriod: "KSĐN" | "GK1" | "CK1" | "GK2" | "CK2" | null }>
+  ) => {
+    const counts = { KSĐN: 0, GK1: 0, CK1: 0, GK2: 0, CK2: 0 }
+    for (const r of rows) {
+      if (r.isEligibleForStandardRate && r.latestPeriod) {
+        counts[r.latestPeriod]++
+      }
+    }
+    return counts
+  }
+
   return {
     asOfDate: academic.asOfDate,
     filters: {
@@ -393,6 +405,12 @@ export async function generateOverviewStatistics(
       campuses: academic.availableFilters.campuses,
     },
     canViewPsychologyTab: scope.canViewPsychologyTab,
+    basisPeriodSummary: {
+      academic: countBasis(academic.detailRows),
+      homeschooling: countBasis(homeschooling.detailRows),
+      exchange: countBasis(exchange.detailRows),
+      psychologyMonthLabel: psychology?.filters.monthLabel,
+    },
     hierarchy: systemNode,
   }
 }

@@ -12,6 +12,7 @@ import {
   OverviewReportPayload,
   PsychHierarchyNodeMetrics,
   PsychologyCommitmentReportPayload,
+  StandardBasisPeriodCounts,
   StudentStatisticsAccessScope,
 } from "./types"
 
@@ -586,7 +587,64 @@ function renderCampusRateBarSvg(params: {
 // BẢNG TỔNG HỢP PHÂN CẤP TOÀN HỆ THỐNG → CƠ SỞ → KHỐI → LỚP CHO PDF
 // ============================================================================
 
-function renderAcademicHierarchyRowsRecursive(node: HierarchyNodeMetrics, depth: number): string {
+function formatBasisPeriodCounts(counts?: StandardBasisPeriodCounts): string {
+  if (!counts) return "Theo kỳ định kỳ gần nhất có điểm chính thức"
+  const order: Array<"CK2" | "GK2" | "CK1" | "GK1" | "KSĐN"> = ["CK2", "GK2", "CK1", "GK1", "KSĐN"]
+  const parts: string[] = []
+  for (const key of order) {
+    const val = counts[key] || 0
+    if (val > 0) parts.push(`${key}: ${val} lượt`)
+  }
+  return parts.length > 0 ? parts.join(" · ") : "Chưa có lượt đủ điểm xét chuẩn"
+}
+
+function countDetailBasisPeriods(
+  rows: Array<{
+    isEligibleForStandardRate: boolean
+    latestPeriod: "KSĐN" | "GK1" | "CK1" | "GK2" | "CK2" | null
+  }>
+): StandardBasisPeriodCounts {
+  const counts: StandardBasisPeriodCounts = { KSĐN: 0, GK1: 0, CK1: 0, GK2: 0, CK2: 0 }
+  for (const r of rows) {
+    if (r.isEligibleForStandardRate && r.latestPeriod) {
+      counts[r.latestPeriod]++
+    }
+  }
+  return counts
+}
+
+function renderStandardBasisNoteBox(params: {
+  periodUsageLines: string[]
+  includePsychNote?: boolean
+  subjectScopeNote?: string
+}): string {
+  const usageHtml = params.periodUsageLines
+    .map((line) => `<li>${line}</li>`)
+    .join("")
+
+  return `
+    <div class="note-box" style="padding:7px 10px;line-height:1.45;">
+      <div style="font-weight:700;color:#003B3A;margin-bottom:3px;">Ghi chú căn cứ tính Đạt chuẩn &amp; Tỷ lệ (Khối Phổ thông K-12):</div>
+      <ul style="margin:0;padding-left:15px;">
+        <li><strong>Kỳ định kỳ làm căn cứ xét chuẩn:</strong> Hệ thống tự động lấy <strong>kỳ kiểm tra định kỳ gần nhất có điểm chính thức</strong> của từng học sinh theo thứ tự ưu tiên <strong>CK2 → GK2 → CK1 → GK1 → KSĐN</strong>.</li>
+        ${usageHtml}
+        <li><strong>Ngưỡng điểm chuẩn theo cấp học:</strong> Tiểu học (Khối 1–5): <strong>7,0 – 8,x</strong> là <em>Đạt chuẩn</em>, <strong>9,0 – 10</strong> là <em>Tiến bộ vượt bậc</em>, dưới 7,0 là <em>Chưa đạt chuẩn</em> · THCS (Khối 6–9): <strong>5,0 – 7,x</strong> là <em>Đạt chuẩn</em>, <strong>8,0 – 10</strong> là <em>Tiến bộ vượt bậc</em>, dưới 5,0 là <em>Chưa đạt chuẩn</em> · THPT (Khối 10–12): áp dụng ngưỡng cấu hình trên hệ thống.</li>
+        <li><strong>Công thức tính tỷ lệ Đạt chuẩn:</strong> <code>(Số lượt Đạt chuẩn + Số lượt Tiến bộ vượt bậc) / Tổng số lượt HS–môn có điểm kỳ gần nhất &amp; có ngưỡng chuẩn</code>.${params.subjectScopeNote ? ` ${params.subjectScopeNote}` : ""}</li>
+        ${
+          params.includePsychNote
+            ? `<li><strong>Tỷ lệ Tổng kết (Tâm lý cam kết đầu vào):</strong> <code>Số HS đã có kết quả tổng kết tháng / Tổng số HS thuộc diện Tâm lý cam kết đầu vào</code>.</li>`
+            : ""
+        }
+        <li><strong>Tỷ lệ % so với HS nhập học:</strong> <code>Số HS theo dõi (mã duy nhất) / Tổng số HS nhập học</code> (lấy từ Lịch sử học sinh Chuyển đến trong năm học, chỉ tính Khối 1–12).</li>
+      </ul>
+    </div>`
+}
+
+function renderAcademicHierarchyRowsRecursive(
+  node: HierarchyNodeMetrics,
+  depth: number,
+  maxDepth: number
+): string {
   const pad = depth * 12
   const rowStyle =
     node.nodeType === "SYSTEM"
@@ -608,8 +666,10 @@ function renderAcademicHierarchyRowsRecursive(node: HierarchyNodeMetrics, depth:
       <td class="num" style="color:#00736E;font-weight:700;">${escapeHtml(formatRateWithFraction(node.totalStandardMetCount, node.eligibleRowCount, node.standardRate))}</td>
     </tr>`
 
-  for (const ch of node.children || []) {
-    html += renderAcademicHierarchyRowsRecursive(ch, depth + 1)
+  if (depth < maxDepth) {
+    for (const ch of node.children || []) {
+      html += renderAcademicHierarchyRowsRecursive(ch, depth + 1, maxDepth)
+    }
   }
   return html
 }
@@ -617,8 +677,13 @@ function renderAcademicHierarchyRowsRecursive(node: HierarchyNodeMetrics, depth:
 function renderAcademicHierarchyPdfSection(
   sectionHeading: string,
   root: HierarchyNodeMetrics,
-  cohortLabel: string
+  cohortLabel: string,
+  maxDepth: number = 1
 ): string {
+  const unitHeader =
+    maxDepth <= 1
+      ? "Đơn vị (Toàn hệ thống / Cơ sở)"
+      : "Đơn vị (Hệ thống / Cơ sở / Khối / Lớp)"
   return `
     <div class="section-title">${escapeHtml(sectionHeading)}</div>
     <table>
@@ -633,7 +698,7 @@ function renderAcademicHierarchyPdfSection(
       </colgroup>
       <thead>
         <tr>
-          <th>Đơn vị (Hệ thống / Cơ sở / Khối / Lớp)</th>
+          <th>${unitHeader}</th>
           <th class="num">HS nhập học</th>
           <th class="num">${escapeHtml(cohortLabel)} (% nhập học)</th>
           <th class="num">Lượt xét chuẩn</th>
@@ -643,12 +708,16 @@ function renderAcademicHierarchyPdfSection(
         </tr>
       </thead>
       <tbody>
-        ${renderAcademicHierarchyRowsRecursive(root, 0)}
+        ${renderAcademicHierarchyRowsRecursive(root, 0, maxDepth)}
       </tbody>
     </table>`
 }
 
-function renderPsychHierarchyRowsRecursive(node: PsychHierarchyNodeMetrics, depth: number): string {
+function renderPsychHierarchyRowsRecursive(
+  node: PsychHierarchyNodeMetrics,
+  depth: number,
+  maxDepth: number
+): string {
   const pad = depth * 12
   const rowStyle =
     node.nodeType === "SYSTEM"
@@ -671,8 +740,10 @@ function renderPsychHierarchyRowsRecursive(node: PsychHierarchyNodeMetrics, dept
       <td class="num" style="color:#00736E;font-weight:700;">${escapeHtml(formatRateWithFraction(node.monthSummarizedStudents, node.totalStudents, node.monthSummaryRate))}</td>
     </tr>`
 
-  for (const ch of node.children || []) {
-    html += renderPsychHierarchyRowsRecursive(ch, depth + 1)
+  if (depth < maxDepth) {
+    for (const ch of node.children || []) {
+      html += renderPsychHierarchyRowsRecursive(ch, depth + 1, maxDepth)
+    }
   }
   return html
 }
@@ -892,19 +963,22 @@ export function buildAcademicCommitmentPdfHtml(
     </div>
   </div>
 
-  <div class="note-box">
-    <strong>Chuẩn quy định theo kỳ định kỳ gần nhất (KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
-    Tiểu học: <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Tiến bộ vượt bậc ·
-    THCS: <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Tiến bộ vượt bậc.
-    Tỷ lệ <strong>Đạt chuẩn</strong> = (Đạt chuẩn + Tiến bộ vượt bậc) / Tổng lượt có điểm kỳ gần nhất.
-  </div>
+  ${renderStandardBasisNoteBox({
+    periodUsageLines: [
+      `<strong>Phân bổ kỳ lấy điểm thực tế trong báo cáo này:</strong> ${escapeHtml(formatBasisPeriodCounts(countDetailBasisPeriods(payload.detailRows)))}.`,
+    ],
+    subjectScopeNote: "Tính trên đúng các môn học sinh cam kết đầu vào.",
+  })}
 
   ${chartSvg}
 
   ${renderAcademicHierarchyPdfSection(
-    "1. Báo cáo tổng hợp theo Toàn hệ thống → Cơ sở → Khối → Lớp",
+    payload.filters.campusId === "ALL"
+      ? "1. Báo cáo tổng hợp theo Toàn hệ thống và từng cơ sở"
+      : "1. Báo cáo tổng hợp theo cơ sở, khối và lớp",
     payload.hierarchy,
-    "HS cam kết"
+    "HS cam kết",
+    payload.filters.campusId === "ALL" ? 1 : 3
   )}
 
   <div class="section-title">2. Tổng hợp theo cơ sở, bậc học và môn cam kết</div>
@@ -1157,7 +1231,11 @@ export function buildPsychologyCommitmentPdfHtml(
 
   ${chartSvg}
 
-  <div class="section-title">1. Báo cáo tổng hợp theo Toàn hệ thống → Cơ sở → Khối → Lớp</div>
+  <div class="section-title">${
+    payload.filters.campusId === "ALL"
+      ? "1. Báo cáo tổng hợp theo Toàn hệ thống và từng cơ sở"
+      : "1. Báo cáo tổng hợp theo cơ sở, khối và lớp"
+  }</div>
   <table>
     <colgroup>
       <col style="width:26%" />
@@ -1171,7 +1249,7 @@ export function buildPsychologyCommitmentPdfHtml(
     </colgroup>
     <thead>
       <tr>
-        <th>Đơn vị (Hệ thống / Cơ sở / Khối / Lớp)</th>
+        <th>${payload.filters.campusId === "ALL" ? "Đơn vị (Toàn hệ thống / Cơ sở)" : "Đơn vị (Hệ thống / Cơ sở / Khối / Lớp)"}</th>
         <th class="num">HS nhập học</th>
         <th class="num">HS thuộc diện (% nhập học)</th>
         <th class="num">Chưa phân công</th>
@@ -1182,7 +1260,7 @@ export function buildPsychologyCommitmentPdfHtml(
       </tr>
     </thead>
     <tbody>
-      ${renderPsychHierarchyRowsRecursive(payload.hierarchy, 0)}
+      ${renderPsychHierarchyRowsRecursive(payload.hierarchy, 0, payload.filters.campusId === "ALL" ? 1 : 3)}
     </tbody>
   </table>
 
@@ -1399,18 +1477,23 @@ export function buildHomeschoolingPdfHtml(
     </div>
   </div>
 
-  <div class="note-box">
-    <strong>Chuẩn quy định (kỳ định kỳ gần nhất KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
-    Tiểu học: <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Tiến bộ vượt bậc ·
-    THCS: <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Tiến bộ vượt bậc.
-  </div>
+  ${renderStandardBasisNoteBox({
+    periodUsageLines: [
+      `<strong>Phân bổ kỳ lấy điểm thực tế trong báo cáo này:</strong> ${escapeHtml(formatBasisPeriodCounts(countDetailBasisPeriods(payload.detailRows)))}.`,
+    ],
+    subjectScopeNote:
+      "Tính trên môn cam kết đầu vào (nếu có) hoặc nhóm môn cốt lõi theo cấp học (Tiểu học: Toán, Tiếng Việt, Tiếng Anh; THCS/THPT: Toán, Ngữ văn, Tiếng Anh).",
+  })}
 
   ${chartSvg}
 
   ${renderAcademicHierarchyPdfSection(
-    "1. Báo cáo tổng hợp theo Toàn hệ thống → Cơ sở → Khối → Lớp",
+    payload.filters.campusId === "ALL"
+      ? "1. Báo cáo tổng hợp theo Toàn hệ thống và từng cơ sở"
+      : "1. Báo cáo tổng hợp theo cơ sở, khối và lớp",
     payload.hierarchy,
-    "HS Homeschooling"
+    "HS Homeschooling",
+    payload.filters.campusId === "ALL" ? 1 : 3
   )}
 
   <div class="section-title">2. Tổng hợp theo cơ sở, bậc học và môn theo dõi</div>
@@ -1624,18 +1707,23 @@ export function buildExchangePdfHtml(
     </div>
   </div>
 
-  <div class="note-box">
-    <strong>Chuẩn quy định (kỳ định kỳ gần nhất KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
-    Tiểu học: <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Tiến bộ vượt bậc ·
-    THCS: <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Tiến bộ vượt bậc.
-  </div>
+  ${renderStandardBasisNoteBox({
+    periodUsageLines: [
+      `<strong>Phân bổ kỳ lấy điểm thực tế trong báo cáo này:</strong> ${escapeHtml(formatBasisPeriodCounts(countDetailBasisPeriods(payload.detailRows)))}.`,
+    ],
+    subjectScopeNote:
+      "Tính trên nhóm môn cốt lõi theo cấp học (Tiểu học: Toán, Tiếng Việt, Tiếng Anh; THCS/THPT: Toán, Ngữ văn, Tiếng Anh).",
+  })}
 
   ${chartSvg}
 
   ${renderAcademicHierarchyPdfSection(
-    "1. Báo cáo tổng hợp theo Toàn hệ thống → Cơ sở → Khối → Lớp",
+    payload.filters.campusId === "ALL"
+      ? "1. Báo cáo tổng hợp theo Toàn hệ thống và từng cơ sở"
+      : "1. Báo cáo tổng hợp theo cơ sở, khối và lớp",
     payload.hierarchy,
-    "HS Học giao lưu"
+    "HS Học giao lưu",
+    payload.filters.campusId === "ALL" ? 1 : 3
   )}
 
   <div class="section-title">2. Tổng hợp theo cơ sở, bậc học và môn theo dõi</div>
@@ -1672,7 +1760,8 @@ export function buildExchangePdfHtml(
 function renderOverviewRowsRecursive(
   node: OverviewHierarchyNode,
   depth: number,
-  showPsych: boolean
+  showPsych: boolean,
+  maxDepth: number
 ): string {
   const pad = depth * 12
   const rowBg =
@@ -1710,8 +1799,10 @@ function renderOverviewRowsRecursive(
       <td class="num">${fmtCell(node.exchange)}</td>
     </tr>`
 
-  for (const child of node.children || []) {
-    html += renderOverviewRowsRecursive(child, depth + 1, showPsych)
+  if (depth < maxDepth) {
+    for (const child of node.children || []) {
+      html += renderOverviewRowsRecursive(child, depth + 1, showPsych, maxDepth)
+    }
   }
   return html
 }
@@ -1724,19 +1815,36 @@ export function buildOverviewPdfHtml(
   const exportedAt = exportedAtStr || formatVietnamTimestamp()
   const root = payload.hierarchy
   const showPsych = payload.canViewPsychologyTab
-  const rowsHtml = renderOverviewRowsRecursive(root, 0, showPsych)
+  const isAllSystem = payload.filters.campusId === "ALL"
+  // Xuất tổng quan gọn theo Cơ sở khi xem Toàn hệ thống; khi lọc 1 cơ sở thì xuất Cơ sở -> Khối
+  const maxDepth = isAllSystem ? 1 : 2
+  const rowsHtml = renderOverviewRowsRecursive(root, 0, showPsych, maxDepth)
   const overviewChartSvg = renderOverviewGroupedBarSvg(root.children || [], showPsych)
+
+  const basis = payload.basisPeriodSummary
+  const periodUsageLines: string[] = []
+  if (basis) {
+    periodUsageLines.push(
+      `<strong>Kỳ lấy điểm thực tế theo từng diện trong báo cáo này:</strong> Cam kết môn học (<em>${escapeHtml(formatBasisPeriodCounts(basis.academic))}</em>) · Homeschooling (<em>${escapeHtml(formatBasisPeriodCounts(basis.homeschooling))}</em>) · Học giao lưu (<em>${escapeHtml(formatBasisPeriodCounts(basis.exchange))}</em>)${
+        showPsych && basis.psychologyMonthLabel
+          ? ` · Tâm lý CKĐV (<em>tổng kết ${escapeHtml(basis.psychologyMonthLabel)}</em>)`
+          : ""
+      }.`
+    )
+  }
 
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8" />
-<title>BÁO CÁO HỌC SINH THEO DÕI CAM KẾT — Tổng quan</title>
+<title>BÁO CÁO HỌC SINH THEO DÕI CAM KẾT — Tổng quan theo cơ sở</title>
 <style>${SHARED_PDF_CSS}</style>
 </head>
 <body>
   ${renderPdfHeader({
-    tabLabel: "TỔNG QUAN TOÀN HỆ THỐNG (4 DIỆN THEO DÕI)",
+    tabLabel: isAllSystem
+      ? "TỔNG QUAN THEO CƠ SỞ (4 DIỆN THEO DÕI)"
+      : `TỔNG QUAN ${payload.filters.campusName.toUpperCase()} (4 DIỆN THEO DÕI)`,
     subDetail: `Khối Phổ thông K-12 (Khối 1–12) • Quyền: ${scope.roleDisplayLabel}`,
     academicYearName: payload.filters.academicYearName,
     scopeLabel: payload.filters.campusName,
@@ -1779,20 +1887,17 @@ export function buildOverviewPdfHtml(
     </div>
   </div>
 
-  <div class="note-box">
-    <strong>Chuẩn quy định theo kỳ định kỳ gần nhất (KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
-    Tiểu học: từ <strong>7–8</strong> là <strong>Đạt chuẩn</strong>, từ <strong>9–10</strong> là <strong>Tiến bộ vượt bậc</strong>.
-    THCS: từ <strong>5–7</strong> là <strong>Đạt chuẩn</strong>, từ <strong>8–10</strong> là <strong>Tiến bộ vượt bậc</strong>.
-    Tỷ lệ <strong>Đạt chuẩn</strong> bao gồm cả Đạt chuẩn và Tiến bộ vượt bậc. Tỷ lệ <strong>% so với HS nhập học</strong> tính trên tổng số HS Chuyển đến (K-12) trong cùng phạm vi.
-  </div>
-
   ${overviewChartSvg}
 
-  <div class="section-title">Bảng tổng hợp phân cấp: Toàn hệ thống → Cơ sở → Khối → Lớp</div>
+  <div class="section-title">${
+    isAllSystem
+      ? "Bảng tổng hợp tổng quan theo Toàn hệ thống và từng cơ sở"
+      : `Bảng tổng hợp tổng quan theo cơ sở và khối (${escapeHtml(payload.filters.campusName)})`
+  }</div>
   <table>
     <thead>
       <tr>
-        <th>Đơn vị (Hệ thống / Cơ sở / Khối / Lớp)</th>
+        <th>${isAllSystem ? "Đơn vị (Toàn hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}</th>
         <th class="num">HS nhập học</th>
         <th class="num">Cam kết môn học (SL / % / Đạt chuẩn)</th>
         ${showPsych ? `<th class="num">Tâm lý CKĐV (SL / % / Tổng kết)</th>` : ""}
@@ -1804,6 +1909,13 @@ export function buildOverviewPdfHtml(
       ${rowsHtml}
     </tbody>
   </table>
+
+  ${renderStandardBasisNoteBox({
+    periodUsageLines,
+    includePsychNote: showPsych,
+    subjectScopeNote:
+      "Cam kết môn học tính trên các môn cam kết; Homeschooling & Học giao lưu tính trên môn cam kết (nếu có) hoặc nhóm môn cốt lõi.",
+  })}
 </body>
 </html>`
 }
