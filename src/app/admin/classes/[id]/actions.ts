@@ -127,9 +127,18 @@ export async function importStudentsAction(classId: string, data: any[]) {
 }
 
 
-export async function upsertStudentVnEduMapping(academicYearId: string, databaseCode: string, vnEduCode?: string | null) {
+export async function upsertStudentVnEduMapping(
+  academicYearId: string,
+  databaseCode: string,
+  vnEduCode?: string | null,
+  previousDatabaseCode?: string | null
+) {
   const sCode = String(databaseCode || "").trim().toUpperCase();
   if (!sCode) return { success: false, error: "Mã học sinh không hợp lệ" };
+
+  const prevCode = previousDatabaseCode ? String(previousDatabaseCode).trim().toUpperCase() : "";
+  const isCodeRenamed = Boolean(prevCode && prevCode !== sCode);
+  const selfCodes = isCodeRenamed ? [sCode, prevCode] : [sCode];
 
   const markCode = vnEduCode !== undefined && vnEduCode !== null ? String(vnEduCode).trim().toUpperCase() : "";
 
@@ -139,7 +148,7 @@ export async function upsertStudentVnEduMapping(academicYearId: string, database
       await prisma.studentCodeMapping.deleteMany({
         where: {
           academicYearId,
-          databaseCode: sCode
+          databaseCode: { in: selfCodes }
         }
       });
       return { success: true, vnEduCode: null };
@@ -151,10 +160,11 @@ export async function upsertStudentVnEduMapping(academicYearId: string, database
 
   // Kiểm tra ràng buộc 1 - 1 xuyên suốt:
   // Mã VNEdu này đã được gán cho một học sinh (databaseCode) khác chưa?
+  // Loại trừ cả mã cũ (prevCode) khi đang đổi mã cho chính học sinh đó.
   const existingMapping = await prisma.studentCodeMapping.findFirst({
     where: {
       markFileCode: markCode,
-      databaseCode: { not: sCode }
+      databaseCode: { notIn: selfCodes }
     }
   });
 
@@ -171,6 +181,31 @@ export async function upsertStudentVnEduMapping(academicYearId: string, database
   }
 
   try {
+    // Nếu học sinh vừa đổi mã HS (prevCode -> sCode), chuyển tất cả mapping cũ sang mã mới trước khi upsert
+    if (isCodeRenamed) {
+      const oldMappings = await prisma.studentCodeMapping.findMany({
+        where: { databaseCode: prevCode }
+      });
+      for (const oldMap of oldMappings) {
+        const targetExists = await prisma.studentCodeMapping.findUnique({
+          where: {
+            academicYearId_databaseCode: {
+              academicYearId: oldMap.academicYearId,
+              databaseCode: sCode
+            }
+          }
+        });
+        if (targetExists) {
+          await prisma.studentCodeMapping.delete({ where: { id: oldMap.id } });
+        } else {
+          await prisma.studentCodeMapping.update({
+            where: { id: oldMap.id },
+            data: { databaseCode: sCode, markFileCode: markCode }
+          });
+        }
+      }
+    }
+
     // Upsert cho năm học hiện tại
     await prisma.studentCodeMapping.upsert({
       where: {
@@ -428,12 +463,23 @@ export async function updateStudentAction(classId: string, studentId: string, da
       return { success: false, error: `Mã học sinh '${studentCode}' đã tồn tại trên một học sinh khác!` }
     }
 
-    // Cập nhật mã VNEdu nếu có trong payload
+    const oldCode = oldStudent.studentCode.trim().toUpperCase();
+    const isCodeRenamed = oldCode !== studentCode;
+
+    // Cập nhật mã VNEdu nếu có trong payload (truyền oldCode để không báo trùng với chính HS đang đổi mã)
+    let resolvedVnEduCode: string | null | undefined = undefined;
     if (data.vnEduCode !== undefined) {
-      const mapRes = await upsertStudentVnEduMapping(oldStudent.academicYearId, studentCode, data.vnEduCode);
+      const mapRes = await upsertStudentVnEduMapping(oldStudent.academicYearId, studentCode, data.vnEduCode, oldCode);
       if (!mapRes.success) {
         return { success: false, error: mapRes.error };
       }
+      resolvedVnEduCode = mapRes.vnEduCode ?? null;
+    } else if (isCodeRenamed) {
+      // Đổi mã HS nhưng không gửi vnEduCode: vẫn đồng bộ databaseCode trong StudentCodeMapping
+      await prisma.studentCodeMapping.updateMany({
+        where: { databaseCode: oldCode },
+        data: { databaseCode: studentCode }
+      });
     }
 
     const normalizedStudentName = normalizePersonName(data.studentName);
@@ -442,11 +488,26 @@ export async function updateStudentAction(classId: string, studentId: string, da
       where: { id: studentId },
       data: {
         studentCode: studentCode,
+        ...(resolvedVnEduCode !== undefined ? { vnEduCode: resolvedVnEduCode } : {}),
         studentName: normalizedStudentName,
         gender: data.gender,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       }
     })
+
+    // Nếu đổi mã HS, đồng bộ enrollmentCode trên hồ sơ khảo sát đầu vào đang trỏ tới mã cũ
+    if (isCodeRenamed) {
+      await Promise.all([
+        prisma.inputAssessmentStudent.updateMany({
+          where: { enrollmentCode: oldCode },
+          data: { enrollmentCode: studentCode }
+        }),
+        prisma.preschoolInputAssessmentStudent.updateMany({
+          where: { enrollmentCode: oldCode },
+          data: { enrollmentCode: studentCode }
+        })
+      ]);
+    }
     await syncAssessmentStudentInfoWithMasterAction(studentCode, normalizedStudentName, data.gender, data.dateOfBirth);
     const session = await auth()
     await logActivity(
