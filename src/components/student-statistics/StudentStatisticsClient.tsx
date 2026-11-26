@@ -7,6 +7,7 @@ import {
   Brain,
   FileDown,
   Home,
+  LayoutGrid,
   Loader2,
   RefreshCw,
   ShieldCheck,
@@ -17,12 +18,14 @@ import {
   AcademicCommitmentReportPayload,
   ExchangeStudentReportPayload,
   HomeschoolingReportPayload,
+  OverviewReportPayload,
   PsychologyCommitmentReportPayload,
   StudentStatisticsTab,
 } from "@/lib/student-statistics/types"
 import { AcademicCommitmentTab } from "./AcademicCommitmentTab"
 import { ExchangeStudentTab } from "./ExchangeStudentTab"
 import { HomeschoolingTab } from "./HomeschoolingTab"
+import { OverviewTab } from "./OverviewTab"
 import { PsychologyCommitmentTab } from "./PsychologyCommitmentTab"
 
 interface ScopeMeta {
@@ -37,7 +40,7 @@ interface ScopeMeta {
 }
 
 export function StudentStatisticsClient() {
-  const [activeTab, setActiveTab] = useState<StudentStatisticsTab>("academic")
+  const [activeTab, setActiveTab] = useState<StudentStatisticsTab>("overview")
 
   // Shared filters
   const [academicYearId, setAcademicYearId] = useState("")
@@ -68,6 +71,7 @@ export function StudentStatisticsClient() {
   const [psychData, setPsychData] = useState<PsychologyCommitmentReportPayload | null>(null)
   const [hsData, setHsData] = useState<HomeschoolingReportPayload | null>(null)
   const [exchangeData, setExchangeData] = useState<ExchangeStudentReportPayload | null>(null)
+  const [overviewData, setOverviewData] = useState<OverviewReportPayload | null>(null)
 
   const initializedRef = useRef(false)
 
@@ -79,7 +83,9 @@ export function StudentStatisticsClient() {
       if (campusId && campusId !== "ALL") sp.set("campusId", campusId)
       if (classId && classId !== "ALL") sp.set("classId", classId)
 
-      if (tab === "academic") {
+      if (tab === "overview") {
+        // Overview uses academicYearId & campusId
+      } else if (tab === "academic") {
         if (level && level !== "ALL") sp.set("level", level)
         if (grade && grade !== "ALL") sp.set("grade", grade)
         if (committedSubject && committedSubject !== "ALL") {
@@ -131,7 +137,15 @@ export function StudentStatisticsClient() {
 
         if (json.scope) setScope(json.scope)
 
-        if (tab === "academic") {
+        if (tab === "overview") {
+          const payload = json.data as OverviewReportPayload
+          setOverviewData(payload)
+          if (!initializedRef.current) {
+            initializedRef.current = true
+            if (payload.filters.academicYearId) setAcademicYearId(payload.filters.academicYearId)
+            if (payload.filters.campusId) setCampusId(payload.filters.campusId)
+          }
+        } else if (tab === "academic") {
           const payload = json.data as AcademicCommitmentReportPayload
           setAcademicData(payload)
           if (!initializedRef.current) {
@@ -225,6 +239,18 @@ export function StudentStatisticsClient() {
     setTeacherId("ALL")
   }
 
+  const handleSelectClass = (nextCampusId: string, nextClassId: string) => {
+    setCampusId(nextCampusId)
+    setClassId(nextClassId)
+  }
+
+  const handleJumpToTab = (tab: StudentStatisticsTab, nextCampusId?: string, nextClassId?: string) => {
+    if (nextCampusId) setCampusId(nextCampusId)
+    if (nextClassId) setClassId(nextClassId)
+    setActiveTab(tab)
+    setPdfError(null)
+  }
+
   const handleYearChange = (nextYearId: string) => {
     setAcademicYearId(nextYearId)
     setClassId("ALL")
@@ -234,22 +260,26 @@ export function StudentStatisticsClient() {
   }
 
   const availableYears =
-    activeTab === "academic"
-      ? academicData?.availableFilters.academicYears || []
-      : activeTab === "homeschooling"
-        ? hsData?.availableFilters.academicYears || []
-        : activeTab === "exchange"
-          ? exchangeData?.availableFilters.academicYears || []
-          : psychData?.availableFilters.academicYears || []
+    activeTab === "overview"
+      ? overviewData?.availableFilters.academicYears || []
+      : activeTab === "academic"
+        ? academicData?.availableFilters.academicYears || []
+        : activeTab === "homeschooling"
+          ? hsData?.availableFilters.academicYears || []
+          : activeTab === "exchange"
+            ? exchangeData?.availableFilters.academicYears || []
+            : psychData?.availableFilters.academicYears || []
 
   const availableCampuses =
-    activeTab === "academic"
-      ? academicData?.availableFilters.campuses || []
-      : activeTab === "homeschooling"
-        ? hsData?.availableFilters.campuses || []
-        : activeTab === "exchange"
-          ? exchangeData?.availableFilters.campuses || []
-          : psychData?.availableFilters.campuses || []
+    activeTab === "overview"
+      ? overviewData?.availableFilters.campuses || []
+      : activeTab === "academic"
+        ? academicData?.availableFilters.campuses || []
+        : activeTab === "homeschooling"
+          ? hsData?.availableFilters.campuses || []
+          : activeTab === "exchange"
+            ? exchangeData?.availableFilters.campuses || []
+            : psychData?.availableFilters.campuses || []
 
   const isSingleCampusLocked = Boolean(scope?.isCampusRestricted && availableCampuses.length <= 1)
 
@@ -304,6 +334,22 @@ export function StudentStatisticsClient() {
 
         {/* Segmented Tab Switcher */}
         <div className="mt-4 pt-4 border-t border-[#F1F5F9] flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("overview")
+              setPdfError(null)
+            }}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
+              activeTab === "overview"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "bg-[#F8FAFC] text-slate-600 hover:text-[#003B3A] border border-[#E2E8F0]"
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span>Tổng quan</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -737,16 +783,31 @@ export function StudentStatisticsClient() {
             Tải lại dữ liệu
           </button>
         </div>
+      ) : activeTab === "overview" && overviewData ? (
+        <OverviewTab data={overviewData} onJumpToTab={handleJumpToTab} />
       ) : activeTab === "academic" && academicData ? (
-        <AcademicCommitmentTab data={academicData} onSelectCampus={handleCampusChange} />
+        <AcademicCommitmentTab
+          data={academicData}
+          onSelectCampus={handleCampusChange}
+          onSelectClass={handleSelectClass}
+        />
       ) : activeTab === "homeschooling" && hsData ? (
-        <HomeschoolingTab data={hsData} onSelectCampus={handleCampusChange} />
+        <HomeschoolingTab
+          data={hsData}
+          onSelectCampus={handleCampusChange}
+          onSelectClass={handleSelectClass}
+        />
       ) : activeTab === "exchange" && exchangeData ? (
-        <ExchangeStudentTab data={exchangeData} onSelectCampus={handleCampusChange} />
+        <ExchangeStudentTab
+          data={exchangeData}
+          onSelectCampus={handleCampusChange}
+          onSelectClass={handleSelectClass}
+        />
       ) : activeTab === "psychology" && psychData ? (
         <PsychologyCommitmentTab
           data={psychData}
           onSelectCampus={handleCampusChange}
+          onSelectClass={handleSelectClass}
           onSelectMonth={(mVal) => setMonth(mVal)}
         />
       ) : (

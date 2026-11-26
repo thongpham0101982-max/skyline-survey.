@@ -8,6 +8,10 @@ import {
 } from "@/lib/ktdbcl/entranceCommitmentReportEngine"
 import { parseEvaluationCommentSafe } from "@/lib/support/exportTrackingBookExcel"
 import {
+  buildEnrolledCountsLookup,
+  buildPsychHierarchy,
+} from "./standardEvaluator"
+import {
   PSYCH_TEACHER_STATUS_LABELS,
   PSYCH_WEEK_STATUS_LABELS,
   PsychCampusSummaryRow,
@@ -1160,6 +1164,35 @@ export async function generatePsychologyCommitmentStatistics(
   const totalScheduledSessions = weekSummary.reduce((acc, w) => acc + w.totalScheduledSessions, 0)
   const completedSessions = weekSummary.reduce((acc, w) => acc + w.completedSessions, 0)
 
+  const scopedEnrolledStudents = systemStudents.filter((st: any) => {
+    const cId = st.class?.campusId || st.campusId || ""
+    const clsId = st.class?.id || st.classId || ""
+    if (isCampusRestricted && !scope.allowedCampusIds.includes(cId)) return false
+    if (isClassRestricted && !scope.allowedClassIds.includes(clsId)) return false
+    if (selectedCampusId !== "ALL" && cId !== selectedCampusId) return false
+    if (selectedClassId !== "ALL" && clsId !== selectedClassId) return false
+    return true
+  })
+  const enrolledLookup = buildEnrolledCountsLookup(scopedEnrolledStudents)
+  const hierarchy = buildPsychHierarchy(
+    detailRows.map((r) => ({
+      studentId: r.studentId,
+      studentCode: r.studentCode,
+      campusId: r.campusId,
+      campusCode: r.campusCode,
+      campusName: r.campusName,
+      grade: r.grade || r.className.match(/^(\d+)/)?.[1] || "Khác",
+      classId: r.classId,
+      className: r.className,
+      isUnassigned: r.isUnassigned,
+      hasOverdue: r.weeks.some((w) => w.status === "QUA_HAN"),
+      hasDuePending: r.weeks.some((w) => w.status === "DEN_HAN"),
+      isCompletedAllDue: r.teacherEvalStatus === "DA_CAP_NHAT_DU",
+      hasMonthSummary: r.hasMonthSummary,
+    })),
+    enrolledLookup
+  )
+
   const selectedCampusObj = allCampuses.find((c) => c.id === selectedCampusId)
   const selectedClassObj = availableClasses.find((c) => c.id === selectedClassId)
   const selectedTeacherObj = availableTeachers.find((t) => t.id === selectedTeacherId)
@@ -1193,7 +1226,12 @@ export async function generatePsychologyCommitmentStatistics(
       teachers: availableTeachers,
     },
     summary: {
+      enrolledStudentCount: enrolledLookup.system,
       totalStudents,
+      enrolledShareRate:
+        enrolledLookup.system > 0
+          ? Math.round((totalStudents / enrolledLookup.system) * 1000) / 10
+          : null,
       unassignedStudents,
       overdueStudents,
       duePendingStudents,
@@ -1206,6 +1244,7 @@ export async function generatePsychologyCommitmentStatistics(
       totalScheduledSessions,
       completedSessions,
     },
+    hierarchy,
     weekSummary,
     yearMonthlySummary,
     campusSummary,

@@ -28,10 +28,12 @@ import {
   PsychWeekStatusCode,
 } from "@/lib/student-statistics/types"
 import { formatRateWithFraction } from "@/lib/student-statistics/formatters"
+import { PsychHierarchyBreakdownTable } from "./HierarchyBreakdownTable"
 
 interface PsychologyCommitmentTabProps {
   data: PsychologyCommitmentReportPayload
   onSelectCampus: (campusId: string) => void
+  onSelectClass?: (campusId: string, classId: string) => void
   onSelectMonth: (monthValue: string) => void
 }
 
@@ -69,6 +71,7 @@ function getTeacherStatusBadgeClasses(status: PsychTeacherEvalStatusCode): strin
 export function PsychologyCommitmentTab({
   data,
   onSelectCampus,
+  onSelectClass,
   onSelectMonth,
 }: PsychologyCommitmentTabProps) {
   const [page, setPage] = useState(1)
@@ -187,7 +190,15 @@ export function PsychologyCommitmentTab({
         </div>
       )}
 
-      {/* 2. Chế độ Tổng hợp năm học (10 tháng) — cho phép bấm mở chi tiết từng tháng */}
+      {/* 2. Phân rã Toàn hệ thống -> Cơ sở -> Khối -> Lớp */}
+      <PsychHierarchyBreakdownTable
+        title="Thống kê Tâm lý cam kết đầu vào theo Toàn hệ thống → Cơ sở → Khối → Lớp"
+        root={data.hierarchy}
+        onSelectCampus={onSelectCampus}
+        onSelectClass={onSelectClass}
+      />
+
+      {/* 3. Chế độ Tổng hợp năm học (10 tháng) — cho phép bấm mở chi tiết từng tháng */}
       {data.viewMode === "YEAR_SUMMARY" && (
         <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
           <div className="px-4 py-3 border-b border-[#E2E8F0] flex items-center justify-between">

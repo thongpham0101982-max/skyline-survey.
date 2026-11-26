@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import { generateAcademicCommitmentStatistics } from "@/lib/student-statistics/academicCommitmentEngine"
 import { generateExchangeStudentStatistics } from "@/lib/student-statistics/exchangeStudentEngine"
 import { generateHomeschoolingStatistics } from "@/lib/student-statistics/homeschoolingEngine"
+import { generateOverviewStatistics } from "@/lib/student-statistics/overviewEngine"
 import { generatePsychologyCommitmentStatistics } from "@/lib/student-statistics/psychologyCommitmentEngine"
 import { resolveStudentStatisticsScope } from "@/lib/student-statistics/scope"
 
@@ -22,13 +23,15 @@ export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams
     const tabParam = (sp.get("tab") || "academic").toLowerCase()
     const tab =
-      tabParam === "psychology"
-        ? "psychology"
-        : tabParam === "homeschooling"
-          ? "homeschooling"
-          : tabParam === "exchange"
-            ? "exchange"
-            : "academic"
+      tabParam === "overview"
+        ? "overview"
+        : tabParam === "psychology"
+          ? "psychology"
+          : tabParam === "homeschooling"
+            ? "homeschooling"
+            : tabParam === "exchange"
+              ? "exchange"
+              : "academic"
 
     let academicYearId = sp.get("academicYearId") || ""
     if (!academicYearId) {
@@ -52,6 +55,33 @@ export async function GET(req: NextRequest) {
         },
         { status: 403 }
       )
+    }
+
+    if (tab === "overview") {
+      const data = await generateOverviewStatistics(
+        {
+          academicYearId,
+          campusId: sp.get("campusId") || undefined,
+          asOfDate: sp.get("asOfDate") || undefined,
+        },
+        scope
+      )
+
+      return NextResponse.json({
+        success: true,
+        tab: "overview",
+        scope: {
+          roleDisplayLabel: scope.roleDisplayLabel,
+          isCampusRestricted: scope.isCampusRestricted,
+          canViewAcademicTab: scope.canViewAcademicTab,
+          canViewPsychologyTab: scope.canViewPsychologyTab,
+          canViewDetail: scope.canViewDetail,
+          canViewPsychologyComments: scope.canViewPsychologyComments,
+          canExportPdf: scope.canExportPdf,
+          isSummaryOnly: scope.isSummaryOnly,
+        },
+        data,
+      })
     }
 
     if (tab === "psychology") {

@@ -16,6 +16,12 @@ import {
   resolveOfficialPeriodScoreWithConflictCheck,
 } from "./academicCommitmentEngine"
 import {
+  buildAcademicHierarchy,
+  buildEnrolledCountsLookup,
+  evaluateLatestStandard,
+  resolveLatestPeriodScore,
+} from "./standardEvaluator"
+import {
   EducationLevelCode,
   Gk1OutcomeCode,
   HomeschoolingAggregateRow,
@@ -807,6 +813,20 @@ export async function generateHomeschoolingStatistics(
         threshold: thresholdRes.threshold,
       })
 
+      const latestInfo = resolveLatestPeriodScore({
+        ksdnScore: resolvedScores.KSĐN,
+        gk1Score: resolvedScores.GK1,
+        ck1Score: resolvedScores.CK1,
+        gk2Score: resolvedScores.GK2,
+        ck2Score: resolvedScores.CK2,
+      })
+      const latestStd = evaluateLatestStandard({
+        level,
+        latestScore: latestInfo.latestScore,
+        ksdnScore: resolvedScores.KSĐN,
+        configuredThreshold: thresholdRes.threshold,
+      })
+
       detailRows.push({
         rowKey: `${rec.studentId}_${subName}`,
         stt: detailRows.length + 1,
@@ -841,6 +861,16 @@ export async function generateHomeschoolingStatistics(
         isGk1Pass: evalRes.isGk1Pass,
         isComparableForProgress: evalRes.isComparableForProgress,
         isProgressAchieved: evalRes.isProgressAchieved,
+        latestPeriod: latestInfo.latestPeriod,
+        latestPeriodLabel: latestInfo.latestPeriodLabel,
+        latestScore: latestInfo.latestScore,
+        deltaLatestVsKsdn: latestStd.deltaLatestVsKsdn,
+        standardClassification: latestStd.classification,
+        standardClassificationLabel: latestStd.classificationLabel,
+        isStandardMet: latestStd.isStandardMet,
+        isStandardBandOnly: latestStd.isStandardBandOnly,
+        isOutstandingProgress: latestStd.isOutstandingProgress,
+        isEligibleForStandardRate: latestStd.isEligibleForStandardRate,
         hasAmbiguousScore,
         scoreNotes,
       })
@@ -903,6 +933,18 @@ export async function generateHomeschoolingStatistics(
     return (a.subject || "").localeCompare(b.subject || "", "vi")
   })
 
+  const scopedEnrolledStudents = systemStudents.filter((st: any) => {
+    const cId = st.class?.campusId || st.campusId || ""
+    const clsId = st.class?.id || st.classId || ""
+    if (isCampusRestricted && !scope.allowedCampusIds.includes(cId)) return false
+    if (isClassRestricted && !scope.allowedClassIds.includes(clsId)) return false
+    if (selectedCampusId !== "ALL" && cId !== selectedCampusId) return false
+    if (selectedClassId !== "ALL" && clsId !== selectedClassId) return false
+    return true
+  })
+  const enrolledLookup = buildEnrolledCountsLookup(scopedEnrolledStudents)
+  const hierarchy = buildAcademicHierarchy(detailRows, enrolledLookup)
+
   const selectedCampusObj = allCampuses.find((c) => c.id === selectedCampusId)
   const selectedClassObj = availableClasses.find((c) => c.id === selectedClassId)
 
@@ -934,7 +976,12 @@ export async function generateHomeschoolingStatistics(
       subjects: availableSubjects,
     },
     summary: {
+      enrolledStudentCount: enrolledLookup.system,
       distinctStudentCount: distinctStudents.size,
+      enrolledShareRate:
+        enrolledLookup.system > 0
+          ? Math.round((distinctStudents.size / enrolledLookup.system) * 1000) / 10
+          : null,
       committedStudentCount: committedStudents.size,
       trackedRowCount: detailRows.length,
       comparableRowCount,
@@ -944,10 +991,18 @@ export async function generateHomeschoolingStatistics(
         comparableRowCount > 0
           ? Math.round((progressCount / comparableRowCount) * 1000) / 10
           : null,
+      eligibleStandardRowCount: hierarchy.eligibleRowCount,
+      standardBandCount: hierarchy.standardBandCount,
+      outstandingCount: hierarchy.outstandingCount,
+      totalStandardMetCount: hierarchy.totalStandardMetCount,
+      belowStandardCount: hierarchy.belowStandardCount,
+      standardRate: hierarchy.standardRate,
+      outstandingRate: hierarchy.outstandingRate,
       missingDataCount: outcomeCounts.CHUA_DU_DU_LIEU,
       missingThresholdCount: outcomeCounts.CHUA_CO_CAU_HINH_CHUAN,
       outcomeCounts,
     },
+    hierarchy,
     campusSummary,
     campusLevelSubjectSummary,
     detailRows: scope.isSummaryOnly ? [] : detailRows,

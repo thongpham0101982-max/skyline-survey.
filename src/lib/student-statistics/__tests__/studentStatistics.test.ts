@@ -82,12 +82,20 @@ import {
   isConfirmedPsychEntranceTarget,
 } from "../psychologyCommitmentEngine"
 import {
+  buildAcademicHierarchy,
+  evaluateLatestStandard,
+  resolveLatestPeriodScore,
+} from "../standardEvaluator"
+import { generateOverviewStatistics } from "../overviewEngine"
+import {
   buildAcademicCommitmentPdfHtml,
   buildAcademicPdfFileName,
   buildExchangePdfFileName,
   buildExchangePdfHtml,
   buildHomeschoolingPdfFileName,
   buildHomeschoolingPdfHtml,
+  buildOverviewPdfFileName,
+  buildOverviewPdfHtml,
   buildPsychologyCommitmentPdfHtml,
   buildPsychologyPdfFileName,
   renderHtmlToLandscapePdfBuffer,
@@ -929,6 +937,114 @@ describe("Báo cáo thống kê học sinh trên SSM", () => {
       const pdfRes = await exportPdfGET(
         new NextRequest(
           "http://localhost/api/admin/student-statistics/export-pdf?tab=exchange&academicYearId=ay_2026"
+        )
+      )
+      expect(pdfRes.status).toBe(200)
+      expect(pdfRes.headers.get("Content-Type")).toBe("application/pdf")
+    })
+  })
+
+  describe("7. Chuẩn quy định mới (kỳ gần nhất), phân cấp Hệ thống → Cơ sở → Khối → Lớp & Tab Tổng quan", () => {
+    it("Phân loại đúng Tiểu học (7–8 Đạt chuẩn, 9–10 Tiến bộ vượt bậc) và THCS (5–7 Đạt chuẩn, 8–10 Tiến bộ vượt bậc) theo kỳ gần nhất", () => {
+      // Kỳ gần nhất: có KSĐN=5.0, GK1=7.5 -> lấy GK1
+      const latestGk1 = resolveLatestPeriodScore({ ksdnScore: 5.0, gk1Score: 7.5 })
+      expect(latestGk1.latestPeriod).toBe("GK1")
+      expect(latestGk1.latestScore).toBe(7.5)
+
+      // Có thêm CK1=9.0 -> lấy CK1
+      const latestCk1 = resolveLatestPeriodScore({ ksdnScore: 5.0, gk1Score: 7.5, ck1Score: 9.0 })
+      expect(latestCk1.latestPeriod).toBe("CK1")
+      expect(latestCk1.latestScore).toBe(9.0)
+
+      // Tiểu học: 6.5 Chưa đạt chuẩn, 7.0 & 8.5 Đạt chuẩn, 9.0 & 10 Tiến bộ vượt bậc
+      expect(evaluateLatestStandard({ level: "TIEU_HOC", latestScore: 6.5 }).classification).toBe("CHUA_DAT_CHUAN")
+      const thDat = evaluateLatestStandard({ level: "TIEU_HOC", latestScore: 8.0 })
+      expect(thDat.classification).toBe("DAT_CHUAN")
+      expect(thDat.isStandardMet).toBe(true)
+      expect(thDat.isOutstandingProgress).toBe(false)
+      const thVuot = evaluateLatestStandard({ level: "TIEU_HOC", latestScore: 9.0 })
+      expect(thVuot.classification).toBe("TIEN_BO_VUOT_BAC")
+      expect(thVuot.isStandardMet).toBe(true)
+      expect(thVuot.isOutstandingProgress).toBe(true)
+
+      // THCS: 4.5 Chưa đạt chuẩn, 5.0 & 7.5 Đạt chuẩn, 8.0 & 10 Tiến bộ vượt bậc
+      expect(evaluateLatestStandard({ level: "THCS", latestScore: 4.5 }).classification).toBe("CHUA_DAT_CHUAN")
+      const thcsDat = evaluateLatestStandard({ level: "THCS", latestScore: 7.0 })
+      expect(thcsDat.classification).toBe("DAT_CHUAN")
+      expect(thcsDat.isStandardMet).toBe(true)
+      const thcsVuot = evaluateLatestStandard({ level: "THCS", latestScore: 8.0 })
+      expect(thcsVuot.classification).toBe("TIEN_BO_VUOT_BAC")
+      expect(thcsVuot.isStandardMet).toBe(true)
+      expect(thcsVuot.isOutstandingProgress).toBe(true)
+    })
+
+    it("Xây dựng đúng cây Toàn hệ thống → Cơ sở → Khối → Lớp và Tab Tổng quan + Xuất PDF overview", async () => {
+      const h = buildAcademicHierarchy(
+        [
+          {
+            studentId: "s1",
+            studentCode: "HS1",
+            campusId: "cp1",
+            campusCode: "CS1",
+            campusName: "Cơ sở 1",
+            grade: "3",
+            classId: "c31",
+            className: "3/1",
+            isEligibleForStandardRate: true,
+            isStandardMet: true,
+            isStandardBandOnly: false,
+            isOutstandingProgress: true,
+          },
+          {
+            studentId: "s2",
+            studentCode: "HS2",
+            campusId: "cp1",
+            campusCode: "CS1",
+            campusName: "Cơ sở 1",
+            grade: "3",
+            classId: "c31",
+            className: "3/1",
+            isEligibleForStandardRate: true,
+            isStandardMet: false,
+            isStandardBandOnly: false,
+            isOutstandingProgress: false,
+          },
+        ],
+        {
+          system: 20,
+          byCampus: new Map([["cp1", 20]]),
+          byCampusGrade: new Map([["cp1_3", 10]]),
+          byClass: new Map([["c31", 10]]),
+        }
+      )
+
+      expect(h.distinctStudentCount).toBe(2)
+      expect(h.enrolledStudentCount).toBe(20)
+      expect(h.enrolledShareRate).toBe(10)
+      expect(h.totalStandardMetCount).toBe(1)
+      expect(h.outstandingCount).toBe(1)
+      expect(h.standardRate).toBe(50)
+      expect(h.children?.[0].children?.[0].children?.[0].label).toBe("Lớp 3/1")
+
+      // Tab Tổng quan & PDF overview
+      mockPrisma.class.findMany.mockResolvedValue([])
+      mockPrisma.student.findMany.mockResolvedValue([])
+      mockPrisma.inputAssessmentStudent.findMany.mockResolvedValue([])
+      mockPrisma.learningSupportTarget.findMany.mockResolvedValue([])
+      mockPrisma.subjectGradeEntry.findMany.mockResolvedValue([])
+
+      const ov = await generateOverviewStatistics({ academicYearId: "ay_2026" }, fullScope)
+      expect(ov.hierarchy.nodeType).toBe("SYSTEM")
+      const ovHtml = buildOverviewPdfHtml(ov, fullScope, "08:40 26/11/2026")
+      expect(ovHtml).toContain("BÁO CÁO TỔNG QUAN THỐNG KÊ HỌC SINH")
+      expect(ovHtml).toContain("Tiến bộ vượt bậc")
+      expect(buildOverviewPdfFileName(ov)).toContain("Bao_cao_Tong_quan_Thong_ke_HS")
+
+      mockAuth.mockResolvedValueOnce({ user: { id: "u_admin", role: "ADMIN" } })
+      mockResolveScope.mockResolvedValueOnce(fullScope)
+      const pdfRes = await exportPdfGET(
+        new NextRequest(
+          "http://localhost/api/admin/student-statistics/export-pdf?tab=overview&academicYearId=ay_2026"
         )
       )
       expect(pdfRes.status).toBe(200)

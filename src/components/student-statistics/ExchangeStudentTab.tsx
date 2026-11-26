@@ -22,32 +22,30 @@ import {
 import {
   EducationLevelCode,
   ExchangeStudentReportPayload,
-  Gk1OutcomeCode,
+  StandardClassificationCode,
 } from "@/lib/student-statistics/types"
 import {
   formatDeltaForDisplay,
   formatRateWithFraction,
   formatScoreForDisplay,
 } from "@/lib/student-statistics/formatters"
+import { AcademicHierarchyBreakdownTable } from "./HierarchyBreakdownTable"
 
 interface ExchangeStudentTabProps {
   data: ExchangeStudentReportPayload
   onSelectCampus: (campusId: string) => void
+  onSelectClass?: (campusId: string, classId: string) => void
 }
 
 const PAGE_SIZE = 25
 
-function getOutcomeBadgeClasses(code: Gk1OutcomeCode): string {
+function getStandardBadgeClasses(code: StandardClassificationCode): string {
   switch (code) {
-    case "DAT_TIEN_BO":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200"
-    case "DAT_CHUAN_GIU_NGUYEN":
-    case "DAT_CHUAN_GIAM":
+    case "TIEN_BO_VUOT_BAC":
+      return "bg-emerald-50 text-emerald-700 border-emerald-300 font-semibold"
+    case "DAT_CHUAN":
       return "bg-teal-50 text-[#00736E] border-teal-200"
-    case "TANG_CHUA_DAT_CHUAN":
-    case "CHUA_DAT_CHUAN_GIU_NGUYEN":
-      return "bg-amber-50 text-amber-700 border-amber-200"
-    case "CHUA_DAT_CHUAN_GIAM":
+    case "CHUA_DAT_CHUAN":
       return "bg-rose-50 text-rose-700 border-rose-200"
     default:
       return "bg-slate-100 text-slate-600 border-slate-200"
@@ -61,7 +59,11 @@ function getDeltaClasses(delta: number | null): string {
   return "text-slate-700 font-medium"
 }
 
-export function ExchangeStudentTab({ data, onSelectCampus }: ExchangeStudentTabProps) {
+export function ExchangeStudentTab({
+  data,
+  onSelectCampus,
+  onSelectClass,
+}: ExchangeStudentTabProps) {
   const [page, setPage] = useState(1)
   const [showReconciliation, setShowReconciliation] = useState(false)
 
@@ -93,43 +95,54 @@ export function ExchangeStudentTab({ data, onSelectCampus }: ExchangeStudentTabP
         <div className="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-[#E2E8F0] tabular-nums">
           <div className="p-4">
             <div className="text-xs font-medium text-slate-500">HS diện Học giao lưu</div>
-            <div className="mt-1 text-2xl font-bold text-[#003B3A]">
-              {data.summary.distinctStudentCount}
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-[#003B3A]">
+                {data.summary.distinctStudentCount}
+              </span>
+              {data.summary.enrolledShareRate !== null && (
+                <span className="text-xs font-semibold text-[#00736E]">
+                  ({data.summary.enrolledShareRate.toFixed(1).replace(".", ",")}%)
+                </span>
+              )}
             </div>
-            <div className="mt-0.5 text-[11px] text-slate-500">học sinh (mã duy nhất)</div>
+            <div className="mt-0.5 text-[11px] text-slate-500">
+              so với {data.summary.enrolledStudentCount} HS nhập học
+            </div>
           </div>
           <div className="p-4">
             <div className="text-xs font-medium text-slate-500">Số lượt theo dõi môn</div>
             <div className="mt-1 text-2xl font-bold text-slate-800">
               {data.summary.trackedRowCount}
             </div>
-            <div className="mt-0.5 text-[11px] text-slate-500">lượt (cặp HS–môn)</div>
-          </div>
-          <div className="p-4">
-            <div className="text-xs font-medium text-slate-500">Đủ điểm đối chiếu</div>
-            <div className="mt-1 text-2xl font-bold text-slate-800">
-              {data.summary.comparableRowCount}
+            <div className="mt-0.5 text-[11px] text-slate-500">
+              đủ điểm xét chuẩn: {data.summary.eligibleStandardRowCount} lượt
             </div>
-            <div className="mt-0.5 text-[11px] text-slate-500">lượt đủ KSĐN, GK1 &amp; ngưỡng</div>
           </div>
           <div className="p-4">
-            <div className="text-xs font-medium text-slate-500">Đạt chuẩn GK1</div>
+            <div className="text-xs font-medium text-slate-500">Đạt chuẩn (7–8 / 5–7)</div>
             <div className="mt-1 text-2xl font-bold text-[#00736E]">
-              {data.summary.gk1PassCount}
+              {data.summary.standardBandCount}
+            </div>
+            <div className="mt-0.5 text-[11px] text-slate-500">lượt theo kỳ gần nhất</div>
+          </div>
+          <div className="p-4">
+            <div className="text-xs font-medium text-slate-500">Tiến bộ vượt bậc (9–10 / 8–10)</div>
+            <div className="mt-1 text-2xl font-bold text-emerald-700">
+              {data.summary.outstandingCount}
             </div>
             <div className="mt-0.5 text-[11px] text-slate-500">lượt</div>
           </div>
           <div className="p-4 bg-[#F0FDFA]/50">
-            <div className="text-xs font-medium text-[#003B3A]">Tỷ lệ đạt tiến bộ GK1</div>
+            <div className="text-xs font-medium text-[#003B3A]">Tỷ lệ đạt chuẩn (Kỳ gần nhất)</div>
             <div className="mt-1 text-xl font-bold text-emerald-700">
               {formatRateWithFraction(
-                data.summary.progressCount,
-                data.summary.comparableRowCount,
-                data.summary.progressRate
+                data.summary.totalStandardMetCount,
+                data.summary.eligibleStandardRowCount,
+                data.summary.standardRate
               )}
             </div>
             <div className="mt-0.5 text-[11px] text-slate-500">
-              lượt đạt chuẩn &amp; GK1 &gt; KSĐN
+              gồm Đạt chuẩn + Tiến bộ vượt bậc
             </div>
           </div>
         </div>
@@ -177,7 +190,15 @@ export function ExchangeStudentTab({ data, onSelectCampus }: ExchangeStudentTabP
         </div>
       )}
 
-      {/* 2. Biểu đồ & Bảng tổng hợp theo cơ sở */}
+      {/* 2. Phân rã Toàn hệ thống -> Cơ sở -> Khối -> Lớp */}
+      <AcademicHierarchyBreakdownTable
+        title="Thống kê Học sinh học giao lưu theo Toàn hệ thống → Cơ sở → Khối → Lớp"
+        root={data.hierarchy}
+        onSelectCampus={onSelectCampus}
+        onSelectClass={onSelectClass}
+      />
+
+      {/* 3. Biểu đồ & Bảng tổng hợp theo cơ sở */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
         {chartData.length > 1 && (
           <div className="xl:col-span-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-4 flex flex-col">
@@ -418,17 +439,22 @@ export function ExchangeStudentTab({ data, onSelectCampus }: ExchangeStudentTabP
                       <td className="py-3 px-3 text-right text-slate-700">
                         {formatScoreForDisplay(row.ck2Score, row.level as EducationLevelCode)}
                       </td>
-                      <td className={`py-3 px-3 text-right ${getDeltaClasses(row.deltaGk1Ksdn)}`}>
-                        {formatDeltaForDisplay(row.deltaGk1Ksdn)}
+                      <td className={`py-3 px-3 text-right ${getDeltaClasses(row.deltaLatestVsKsdn)}`}>
+                        {formatDeltaForDisplay(row.deltaLatestVsKsdn)}
                       </td>
                       <td className="py-3 px-3">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium whitespace-nowrap ${getOutcomeBadgeClasses(
-                            row.gk1Outcome
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium whitespace-nowrap ${getStandardBadgeClasses(
+                            row.standardClassification
                           )}`}
                         >
-                          {row.gk1OutcomeLabel}
+                          {row.standardClassificationLabel}
                         </span>
+                        {row.latestPeriod && (
+                          <div className="text-[10px] text-slate-500 mt-0.5">
+                            Căn cứ: {row.latestPeriodLabel}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))

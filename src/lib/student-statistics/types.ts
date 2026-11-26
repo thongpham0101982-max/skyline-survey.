@@ -1,4 +1,66 @@
-export type StudentStatisticsTab = "academic" | "psychology" | "homeschooling" | "exchange"
+export type StudentStatisticsTab =
+  | "overview"
+  | "academic"
+  | "psychology"
+  | "homeschooling"
+  | "exchange"
+
+export type StandardClassificationCode =
+  | "TIEN_BO_VUOT_BAC"
+  | "DAT_CHUAN"
+  | "CHUA_DAT_CHUAN"
+  | "CHUA_DU_DU_LIEU"
+  | "CHUA_CO_CAU_HINH_CHUAN"
+
+export const STANDARD_CLASSIFICATION_LABELS: Record<StandardClassificationCode, string> = {
+  TIEN_BO_VUOT_BAC: "Tiến bộ vượt bậc",
+  DAT_CHUAN: "Đạt chuẩn",
+  CHUA_DAT_CHUAN: "Chưa đạt chuẩn",
+  CHUA_DU_DU_LIEU: "Chưa đủ dữ liệu",
+  CHUA_CO_CAU_HINH_CHUAN: "Chưa có cấu hình chuẩn",
+}
+
+export interface HierarchyNodeMetrics {
+  id: string
+  code: string
+  label: string
+  nodeType: "SYSTEM" | "CAMPUS" | "GRADE" | "CLASS"
+  campusId?: string
+  grade?: string
+  classId?: string
+  enrolledStudentCount: number
+  distinctStudentCount: number
+  enrolledShareRate: number | null // % so với HS nhập học
+  trackedRowCount: number
+  eligibleRowCount: number
+  standardBandCount: number // Đạt chuẩn (Tiểu học 7-8, THCS 5-7)
+  outstandingCount: number // Tiến bộ vượt bậc (Tiểu học 9-10, THCS 8-10)
+  totalStandardMetCount: number // Đạt chuẩn + Tiến bộ vượt bậc
+  belowStandardCount: number
+  standardRate: number | null // totalStandardMetCount / eligibleRowCount * 100
+  outstandingRate: number | null // outstandingCount / eligibleRowCount * 100
+  children?: HierarchyNodeMetrics[]
+}
+
+export interface PsychHierarchyNodeMetrics {
+  id: string
+  code: string
+  label: string
+  nodeType: "SYSTEM" | "CAMPUS" | "GRADE" | "CLASS"
+  campusId?: string
+  grade?: string
+  classId?: string
+  enrolledStudentCount: number
+  totalStudents: number
+  enrolledShareRate: number | null
+  unassignedStudents: number
+  overdueStudents: number
+  duePendingStudents: number
+  completedAllDueStudents: number
+  monthSummarizedStudents: number
+  monthSummaryRate: number | null
+  children?: PsychHierarchyNodeMetrics[]
+}
 
 export type EducationLevelCode = "TIEU_HOC" | "THCS" | "THPT" | "MAM_NON" | "KHAC"
 
@@ -105,6 +167,16 @@ export interface AcademicCommitmentDetailRow {
   isGk1Pass: boolean | null
   isComparableForProgress: boolean
   isProgressAchieved: boolean
+  latestPeriod: "KSĐN" | "GK1" | "CK1" | "GK2" | "CK2" | null
+  latestPeriodLabel: string
+  latestScore: number | null
+  deltaLatestVsKsdn: number | null
+  standardClassification: StandardClassificationCode
+  standardClassificationLabel: string
+  isStandardMet: boolean | null
+  isStandardBandOnly: boolean
+  isOutstandingProgress: boolean
+  isEligibleForStandardRate: boolean
   hasAmbiguousScore: boolean
   scoreNotes: string[]
 }
@@ -159,16 +231,26 @@ export interface AcademicCommitmentReportPayload {
     subjects: Array<{ code: string; name: string; rowCount: number }>
   }
   summary: {
+    enrolledStudentCount: number
     distinctStudentCount: number
+    enrolledShareRate: number | null
     commitmentRowCount: number
     comparableRowCount: number
     gk1PassCount: number
     progressCount: number
     progressRate: number | null
+    eligibleStandardRowCount: number
+    standardBandCount: number
+    outstandingCount: number
+    totalStandardMetCount: number
+    belowStandardCount: number
+    standardRate: number | null
+    outstandingRate: number | null
     missingDataCount: number
     missingThresholdCount: number
     outcomeCounts: Record<Gk1OutcomeCode, number>
   }
+  hierarchy: HierarchyNodeMetrics
   campusSummary: AcademicCommitmentAggregateRow[]
   campusLevelSubjectSummary: AcademicCommitmentAggregateRow[]
   detailRows: AcademicCommitmentDetailRow[]
@@ -347,7 +429,9 @@ export interface PsychologyCommitmentReportPayload {
     }>
   }
   summary: {
+    enrolledStudentCount: number
     totalStudents: number
+    enrolledShareRate: number | null
     unassignedStudents: number
     overdueStudents: number
     duePendingStudents: number
@@ -357,6 +441,7 @@ export interface PsychologyCommitmentReportPayload {
     totalScheduledSessions: number
     completedSessions: number
   }
+  hierarchy: PsychHierarchyNodeMetrics
   weekSummary: PsychWeekSummaryRow[]
   yearMonthlySummary: PsychMonthSummaryRow[]
   campusSummary: PsychCampusSummaryRow[]
@@ -415,6 +500,16 @@ export interface HomeschoolingDetailRow {
   isGk1Pass: boolean | null
   isComparableForProgress: boolean
   isProgressAchieved: boolean
+  latestPeriod: "KSĐN" | "GK1" | "CK1" | "GK2" | "CK2" | null
+  latestPeriodLabel: string
+  latestScore: number | null
+  deltaLatestVsKsdn: number | null
+  standardClassification: StandardClassificationCode
+  standardClassificationLabel: string
+  isStandardMet: boolean | null
+  isStandardBandOnly: boolean
+  isOutstandingProgress: boolean
+  isEligibleForStandardRate: boolean
   hasAmbiguousScore: boolean
   scoreNotes: string[]
 }
@@ -471,17 +566,27 @@ export interface HomeschoolingReportPayload {
     subjects: Array<{ code: string; name: string; rowCount: number }>
   }
   summary: {
+    enrolledStudentCount: number
     distinctStudentCount: number
+    enrolledShareRate: number | null
     committedStudentCount: number
     trackedRowCount: number
     comparableRowCount: number
     gk1PassCount: number
     progressCount: number
     progressRate: number | null
+    eligibleStandardRowCount: number
+    standardBandCount: number
+    outstandingCount: number
+    totalStandardMetCount: number
+    belowStandardCount: number
+    standardRate: number | null
+    outstandingRate: number | null
     missingDataCount: number
     missingThresholdCount: number
     outcomeCounts: Record<Gk1OutcomeCode, number>
   }
+  hierarchy: HierarchyNodeMetrics
   campusSummary: HomeschoolingAggregateRow[]
   campusLevelSubjectSummary: HomeschoolingAggregateRow[]
   detailRows: HomeschoolingDetailRow[]
@@ -534,6 +639,16 @@ export interface ExchangeStudentDetailRow {
   isGk1Pass: boolean | null
   isComparableForProgress: boolean
   isProgressAchieved: boolean
+  latestPeriod: "KSĐN" | "GK1" | "CK1" | "GK2" | "CK2" | null
+  latestPeriodLabel: string
+  latestScore: number | null
+  deltaLatestVsKsdn: number | null
+  standardClassification: StandardClassificationCode
+  standardClassificationLabel: string
+  isStandardMet: boolean | null
+  isStandardBandOnly: boolean
+  isOutstandingProgress: boolean
+  isEligibleForStandardRate: boolean
   hasAmbiguousScore: boolean
   scoreNotes: string[]
 }
@@ -588,19 +703,80 @@ export interface ExchangeStudentReportPayload {
     subjects: Array<{ code: string; name: string; rowCount: number }>
   }
   summary: {
+    enrolledStudentCount: number
     distinctStudentCount: number
+    enrolledShareRate: number | null
     trackedRowCount: number
     comparableRowCount: number
     gk1PassCount: number
     progressCount: number
     progressRate: number | null
+    eligibleStandardRowCount: number
+    standardBandCount: number
+    outstandingCount: number
+    totalStandardMetCount: number
+    belowStandardCount: number
+    standardRate: number | null
+    outstandingRate: number | null
     missingDataCount: number
     missingThresholdCount: number
     outcomeCounts: Record<Gk1OutcomeCode, number>
   }
+  hierarchy: HierarchyNodeMetrics
   campusSummary: ExchangeStudentAggregateRow[]
   campusLevelSubjectSummary: ExchangeStudentAggregateRow[]
   detailRows: ExchangeStudentDetailRow[]
   reconciliationItems: ReconciliationItem[]
   isSummaryOnly: boolean
+}
+
+// ============================================================================
+// TAB TỔNG QUAN (OVERVIEW) — THỐNG KÊ CẢ 4 DIỆN SO VỚI HS NHẬP HỌC
+// ============================================================================
+
+export interface OverviewFilterInput {
+  academicYearId?: string
+  campusId?: string
+  asOfDate?: string
+}
+
+export interface OverviewCohortStats {
+  studentCount: number
+  shareOfEnrolledRate: number | null // % so với HS nhập học
+  standardMetCount: number
+  standardEligibleCount: number
+  standardRate: number | null // % đạt chuẩn (hoặc hoàn thành tổng kết với Tâm lý)
+  outstandingCount: number
+}
+
+export interface OverviewHierarchyNode {
+  id: string
+  code: string
+  label: string
+  nodeType: "SYSTEM" | "CAMPUS" | "GRADE" | "CLASS"
+  campusId?: string
+  grade?: string
+  classId?: string
+  enrolledStudentCount: number
+  academicCommitment: OverviewCohortStats
+  psychologyCommitment: OverviewCohortStats
+  homeschooling: OverviewCohortStats
+  exchange: OverviewCohortStats
+  children?: OverviewHierarchyNode[]
+}
+
+export interface OverviewReportPayload {
+  asOfDate: string
+  filters: {
+    academicYearId: string
+    academicYearName: string
+    campusId: string
+    campusName: string
+  }
+  availableFilters: {
+    academicYears: Array<{ id: string; name: string; status: string }>
+    campuses: Array<{ id: string; campusCode: string; campusName: string }>
+  }
+  canViewPsychologyTab: boolean
+  hierarchy: OverviewHierarchyNode
 }

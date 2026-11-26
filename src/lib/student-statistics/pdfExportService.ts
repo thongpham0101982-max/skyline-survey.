@@ -7,6 +7,8 @@ import {
   AcademicCommitmentReportPayload,
   ExchangeStudentReportPayload,
   HomeschoolingReportPayload,
+  OverviewHierarchyNode,
+  OverviewReportPayload,
   PsychologyCommitmentReportPayload,
   StudentStatisticsAccessScope,
 } from "./types"
@@ -76,6 +78,12 @@ export function buildExchangePdfFileName(payload: ExchangeStudentReportPayload):
   const scopeSeg = sanitizePdfFileNameSegment(payload.filters.campusName, "Toan_he_thong")
   const yearSeg = sanitizePdfFileNameSegment(payload.filters.academicYearName, "NamHoc")
   return `Bao_cao_HS_Hoc_giao_luu_${scopeSeg}_${yearSeg}.pdf`
+}
+
+export function buildOverviewPdfFileName(payload: OverviewReportPayload): string {
+  const scopeSeg = sanitizePdfFileNameSegment(payload.filters.campusName, "Toan_he_thong")
+  const yearSeg = sanitizePdfFileNameSegment(payload.filters.academicYearName, "NamHoc")
+  return `Bao_cao_Tong_quan_Thong_ke_HS_${scopeSeg}_${yearSeg}.pdf`
 }
 
 const SHARED_PDF_CSS = `
@@ -1144,6 +1152,146 @@ export function buildExchangePdfHtml(
   }
 
   ${detailHtml}
+</body>
+</html>`
+}
+
+function renderOverviewRowsRecursive(
+  node: OverviewHierarchyNode,
+  depth: number,
+  showPsych: boolean
+): string {
+  const pad = depth * 12
+  const rowBg =
+    node.nodeType === "SYSTEM"
+      ? "background:#F0FDFA;font-weight:700;"
+      : node.nodeType === "CAMPUS"
+        ? "background:#F8FAFC;font-weight:700;"
+        : node.nodeType === "GRADE"
+          ? "font-weight:600;"
+          : ""
+
+  const fmtCell = (c: {
+    studentCount: number
+    shareOfEnrolledRate: number | null
+    standardMetCount: number
+    standardEligibleCount: number
+    standardRate: number | null
+  }) => {
+    const shareStr =
+      c.shareOfEnrolledRate !== null
+        ? `${c.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%`
+        : "—"
+    const stdStr = formatRateWithFraction(
+      c.standardMetCount,
+      c.standardEligibleCount,
+      c.standardRate
+    )
+    return `<strong>${c.studentCount}</strong> <span class="muted">(${shareStr})</span><br/><span class="muted">Đạt chuẩn: ${escapeHtml(stdStr)}</span>`
+  }
+
+  let html = `
+    <tr style="${rowBg}">
+      <td style="padding-left:${pad + 5}px;">${escapeHtml(node.label)}</td>
+      <td class="num">${node.enrolledStudentCount}</td>
+      <td class="num">${fmtCell(node.academicCommitment)}</td>
+      ${showPsych ? `<td class="num">${fmtCell(node.psychologyCommitment)}</td>` : ""}
+      <td class="num">${fmtCell(node.homeschooling)}</td>
+      <td class="num">${fmtCell(node.exchange)}</td>
+    </tr>`
+
+  for (const child of node.children || []) {
+    html += renderOverviewRowsRecursive(child, depth + 1, showPsych)
+  }
+  return html
+}
+
+export function buildOverviewPdfHtml(
+  payload: OverviewReportPayload,
+  scope: StudentStatisticsAccessScope,
+  exportedAtStr?: string
+): string {
+  const exportedAt = exportedAtStr || formatVietnamTimestamp()
+  const root = payload.hierarchy
+  const showPsych = payload.canViewPsychologyTab
+  const rowsHtml = renderOverviewRowsRecursive(root, 0, showPsych)
+
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<title>Báo cáo Tổng quan Thống kê Học sinh</title>
+<style>${SHARED_PDF_CSS}</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand-org">HỆ THỐNG GIÁO DỤC SKY-LINE • PHÂN TÍCH TỔNG HỢP (SSM)</div>
+      <div class="report-title">BÁO CÁO TỔNG QUAN THỐNG KÊ HỌC SINH THEO CƠ SỞ &amp; KHỐI LỚP</div>
+      <div class="report-sub">Phạm vi quyền: ${escapeHtml(scope.roleDisplayLabel)}</div>
+    </div>
+    <div class="meta-right">
+      <div><strong>Năm học:</strong> ${escapeHtml(payload.filters.academicYearName)}</div>
+      <div><strong>Phạm vi:</strong> ${escapeHtml(payload.filters.campusName)}</div>
+      <div><strong>Xuất lúc (VN):</strong> ${escapeHtml(exportedAt)}</div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>Chuẩn quy định theo kỳ định kỳ gần nhất (KSĐN → GK1 → CK1 → GK2 → CK2):</strong>
+    Tiểu học: từ 7,0 đến 8,x là <strong>Đạt chuẩn</strong>, từ 9,0 đến 10 là <strong>Tiến bộ vượt bậc</strong>.
+    THCS: từ 5,0 đến 7,x là <strong>Đạt chuẩn</strong>, từ 8,0 đến 10 là <strong>Tiến bộ vượt bậc</strong>.
+    Tỷ lệ <strong>Đạt chuẩn</strong> bao gồm cả Đạt chuẩn và Tiến bộ vượt bậc. Tỷ lệ <strong>% so với HS nhập học</strong> tính trên tổng số HS nhập học / đang học trong cùng phạm vi.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-box">
+      <div class="kpi-label">Tổng HS nhập học</div>
+      <div class="kpi-value">${root.enrolledStudentCount}</div>
+      <div class="kpi-unit">học sinh trong phạm vi</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">HS cam kết môn học</div>
+      <div class="kpi-value">${root.academicCommitment.studentCount} (${root.academicCommitment.shareOfEnrolledRate !== null ? `${root.academicCommitment.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%` : "—"})</div>
+      <div class="kpi-unit">Đạt chuẩn: ${escapeHtml(formatRateWithFraction(root.academicCommitment.standardMetCount, root.academicCommitment.standardEligibleCount, root.academicCommitment.standardRate))}</div>
+    </div>
+    ${
+      showPsych
+        ? `<div class="kpi-box">
+            <div class="kpi-label">Tâm lý cam kết đầu vào</div>
+            <div class="kpi-value">${root.psychologyCommitment.studentCount} (${root.psychologyCommitment.shareOfEnrolledRate !== null ? `${root.psychologyCommitment.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%` : "—"})</div>
+            <div class="kpi-unit">Tổng kết tháng: ${escapeHtml(formatRateWithFraction(root.psychologyCommitment.standardMetCount, root.psychologyCommitment.standardEligibleCount, root.psychologyCommitment.standardRate))}</div>
+          </div>`
+        : ""
+    }
+    <div class="kpi-box">
+      <div class="kpi-label">HS Homeschooling</div>
+      <div class="kpi-value">${root.homeschooling.studentCount} (${root.homeschooling.shareOfEnrolledRate !== null ? `${root.homeschooling.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%` : "—"})</div>
+      <div class="kpi-unit">Đạt chuẩn: ${escapeHtml(formatRateWithFraction(root.homeschooling.standardMetCount, root.homeschooling.standardEligibleCount, root.homeschooling.standardRate))}</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">HS học giao lưu</div>
+      <div class="kpi-value">${root.exchange.studentCount} (${root.exchange.shareOfEnrolledRate !== null ? `${root.exchange.shareOfEnrolledRate.toFixed(1).replace(".", ",")}%` : "—"})</div>
+      <div class="kpi-unit">Đạt chuẩn: ${escapeHtml(formatRateWithFraction(root.exchange.standardMetCount, root.exchange.standardEligibleCount, root.exchange.standardRate))}</div>
+    </div>
+  </div>
+
+  <div class="section-title">Phân rã chi tiết: Toàn hệ thống → Cơ sở → Khối → Lớp</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Đơn vị (Hệ thống / Cơ sở / Khối / Lớp)</th>
+        <th class="num">HS nhập học</th>
+        <th class="num">Cam kết môn học (SL / % / Đạt chuẩn)</th>
+        ${showPsych ? `<th class="num">Tâm lý CKĐV (SL / % / Tổng kết)</th>` : ""}
+        <th class="num">Homeschooling (SL / % / Đạt chuẩn)</th>
+        <th class="num">Học giao lưu (SL / % / Đạt chuẩn)</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHtml}
+    </tbody>
+  </table>
 </body>
 </html>`
 }

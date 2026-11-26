@@ -5,6 +5,7 @@ import { writeSecurityAuditLog } from "@/lib/security-guard"
 import { generateAcademicCommitmentStatistics } from "@/lib/student-statistics/academicCommitmentEngine"
 import { generateExchangeStudentStatistics } from "@/lib/student-statistics/exchangeStudentEngine"
 import { generateHomeschoolingStatistics } from "@/lib/student-statistics/homeschoolingEngine"
+import { generateOverviewStatistics } from "@/lib/student-statistics/overviewEngine"
 import {
   buildAcademicCommitmentPdfHtml,
   buildAcademicPdfFileName,
@@ -12,6 +13,8 @@ import {
   buildExchangePdfHtml,
   buildHomeschoolingPdfFileName,
   buildHomeschoolingPdfHtml,
+  buildOverviewPdfFileName,
+  buildOverviewPdfHtml,
   buildPsychologyCommitmentPdfHtml,
   buildPsychologyPdfFileName,
   renderHtmlToLandscapePdfBuffer,
@@ -34,13 +37,15 @@ export async function GET(req: NextRequest) {
     const sp = new URL(req.url).searchParams
     const tabParam = (sp.get("tab") || "academic").toLowerCase()
     const tab =
-      tabParam === "psychology"
-        ? "psychology"
-        : tabParam === "homeschooling"
-          ? "homeschooling"
-          : tabParam === "exchange"
-            ? "exchange"
-            : "academic"
+      tabParam === "overview"
+        ? "overview"
+        : tabParam === "psychology"
+          ? "psychology"
+          : tabParam === "homeschooling"
+            ? "homeschooling"
+            : tabParam === "exchange"
+              ? "exchange"
+              : "academic"
 
     let academicYearId = sp.get("academicYearId") || ""
     if (!academicYearId) {
@@ -71,7 +76,19 @@ export async function GET(req: NextRequest) {
     let fileName = ""
     let title = ""
 
-    if (tab === "psychology") {
+    if (tab === "overview") {
+      const payload = await generateOverviewStatistics(
+        {
+          academicYearId,
+          campusId: sp.get("campusId") || undefined,
+          asOfDate: sp.get("asOfDate") || undefined,
+        },
+        scope
+      )
+      htmlContent = buildOverviewPdfHtml(payload, scope)
+      fileName = buildOverviewPdfFileName(payload)
+      title = "Bao_cao_Tong_quan_Thong_ke_HS"
+    } else if (tab === "psychology") {
       if (!scope.canViewPsychologyTab) {
         return NextResponse.json(
           {
