@@ -1026,15 +1026,46 @@ describe("Báo cáo thống kê học sinh trên SSM", () => {
       expect(h.standardRate).toBe(50)
       expect(h.children?.[0].children?.[0].children?.[0].label).toBe("Lớp 3/1")
 
-      // Tab Tổng quan & PDF overview
+      // Tab Tổng quan & PDF overview (có dữ liệu Lịch sử HS chuyển đến type = "IN")
       mockPrisma.class.findMany.mockResolvedValue([])
       mockPrisma.student.findMany.mockResolvedValue([])
       mockPrisma.inputAssessmentStudent.findMany.mockResolvedValue([])
       mockPrisma.learningSupportTarget.findMany.mockResolvedValue([])
       mockPrisma.subjectGradeEntry.findMany.mockResolvedValue([])
+      mockPrisma.studentTransfer.findMany.mockResolvedValue([
+        {
+          id: "tin_1",
+          type: "IN",
+          studentId: "st_in1",
+          student: {
+            id: "st_in1",
+            studentCode: "HS901",
+            status: "ACTIVE",
+            campusId: "cp_cs1",
+            classId: "cls_71",
+            campus: { id: "cp_cs1", campusCode: "CS1", campusName: "Cơ sở 1" },
+            class: {
+              id: "cls_71",
+              className: "7.1_CS1",
+              grade: "7",
+              campusId: "cp_cs1",
+              campus: { id: "cp_cs1", campusCode: "CS1", campusName: "Cơ sở 1" },
+            },
+          },
+        },
+        {
+          id: "tin_2",
+          type: "OUT", // Chuyển đi KHÔNG được tính vào HS nhập học
+          studentId: "st_out1",
+          student: { id: "st_out1", studentCode: "HS902", status: "TRANSFERRED_OUT" },
+        },
+      ])
 
       const ov = await generateOverviewStatistics({ academicYearId: "ay_2026" }, fullScope)
       expect(ov.hierarchy.nodeType).toBe("SYSTEM")
+      expect(ov.hierarchy.enrolledStudentCount).toBe(1)
+      expect(ov.hierarchy.children?.[0].code).toBe("CS1")
+      expect(ov.hierarchy.children?.[0].enrolledStudentCount).toBe(1)
       const ovHtml = buildOverviewPdfHtml(ov, fullScope, "08:40 26/11/2026")
       expect(ovHtml).toContain("BÁO CÁO TỔNG QUAN THỐNG KÊ HỌC SINH")
       expect(ovHtml).toContain("Tiến bộ vượt bậc")

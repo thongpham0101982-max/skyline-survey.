@@ -8,8 +8,8 @@ import {
 } from "@/lib/ktdbcl/entranceCommitmentReportEngine"
 import { parseEvaluationCommentSafe } from "@/lib/support/exportTrackingBookExcel"
 import {
-  buildEnrolledCountsLookup,
   buildPsychHierarchy,
+  loadEnrolledTransferInLookup,
 } from "./standardEvaluator"
 import {
   PSYCH_TEACHER_STATUS_LABELS,
@@ -1164,16 +1164,13 @@ export async function generatePsychologyCommitmentStatistics(
   const totalScheduledSessions = weekSummary.reduce((acc, w) => acc + w.totalScheduledSessions, 0)
   const completedSessions = weekSummary.reduce((acc, w) => acc + w.completedSessions, 0)
 
-  const scopedEnrolledStudents = systemStudents.filter((st: any) => {
-    const cId = st.class?.campusId || st.campusId || ""
-    const clsId = st.class?.id || st.classId || ""
-    if (isCampusRestricted && !scope.allowedCampusIds.includes(cId)) return false
-    if (isClassRestricted && !scope.allowedClassIds.includes(clsId)) return false
-    if (selectedCampusId !== "ALL" && cId !== selectedCampusId) return false
-    if (selectedClassId !== "ALL" && clsId !== selectedClassId) return false
-    return true
+  const transferIn = await loadEnrolledTransferInLookup({
+    academicYearId: selectedYearId,
+    scope,
+    selectedCampusId,
+    selectedClassId,
   })
-  const enrolledLookup = buildEnrolledCountsLookup(scopedEnrolledStudents)
+  const enrolledLookup = transferIn.lookup
   const hierarchy = buildPsychHierarchy(
     detailRows.map((r) => ({
       studentId: r.studentId,

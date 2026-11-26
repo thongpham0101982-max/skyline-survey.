@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { prisma } from "@/lib/db"
 import { CommitmentPeriodCode } from "@/lib/ktdbcl/entranceCommitmentReportEngine"
 import {
   EducationLevelCode,
@@ -5,6 +7,7 @@ import {
   PsychHierarchyNodeMetrics,
   STANDARD_CLASSIFICATION_LABELS,
   StandardClassificationCode,
+  StudentStatisticsAccessScope,
 } from "./types"
 
 const EPS = 1e-9
@@ -580,5 +583,117 @@ export function buildEnrolledCountsLookup(
     byCampus: new Map(Array.from(byCampus.entries()).map(([k, s]) => [k, s.size])),
     byCampusGrade: new Map(Array.from(byCampusGrade.entries()).map(([k, s]) => [k, s.size])),
     byClass: new Map(Array.from(byClass.entries()).map(([k, s]) => [k, s.size])),
+  }
+}
+
+export interface TransferInEnrolledResult {
+  lookup: EnrolledCountsLookup
+  campuses: Array<{ id: string; code: string; name: string }>
+  gradesByCampus: Map<string, Set<string>>
+  classesByCampusGrade: Map<string, Array<{ id: string; className: string }>>
+}
+
+/**
+ * Truy vấn danh sách HS nhập học từ "Lịch sử học sinh Chuyển đến" (StudentTransfer với type = "IN")
+ * trong năm học đang chọn, đã áp dụng phân quyền cơ sở / lớp và bộ lọc hiện hành.
+ */
+export async function loadEnrolledTransferInLookup(params: {
+  academicYearId: string
+  scope: StudentStatisticsAccessScope
+  selectedCampusId: string
+  selectedClassId?: string
+}): Promise<TransferInEnrolledResult> {
+  const { academicYearId, scope, selectedCampusId, selectedClassId = "ALL" } = params
+  const p = prisma as any
+
+  const rawTransfers: any[] = p.studentTransfer?.findMany
+    ? await p.studentTransfer
+        .findMany({
+          where: {
+            type: "IN",
+            student: {
+              academicYearId,
+              status: { not: "TRANSFERRED_OUT" },
+            },
+          },
+          include: {
+            student: {
+              include: {
+                class: {
+                  include: {
+                    campus: { select: { id: true, campusCode: true, campusName: true } },
+                  },
+                },
+                campus: { select: { id: true, campusCode: true, campusName: true } },
+              },
+            },
+          },
+        })
+        .catch(() => [])
+    : []
+
+  const isCampusRestricted = Boolean(scope.isCampusRestricted)
+  const isClassRestricted = Boolean(
+    scope.isClassRestricted && (scope.allowedClassIds || []).length > 0
+  )
+
+  const uniqueStudents: any[] = []
+  const seenKeys = new Set<string>()
+  const campusMap = new Map<string, { id: string; code: string; name: string }>()
+  const gradesByCampus = new Map<string, Set<string>>()
+  const classesByCampusGrade = new Map<string, Map<string, string>>()
+
+  for (const tr of rawTransfers) {
+    if (tr.type && String(tr.type).toUpperCase() !== "IN") continue
+    const st = tr.student
+    if (!st || !st.id) continue
+    if (String(st.status || "").toUpperCase() === "TRANSFERRED_OUT") continue
+
+    const cId = st.class?.campusId || st.campusId || ""
+    const clsId = st.class?.id || st.classId || ""
+
+    if (isCampusRestricted && cId && !scope.allowedCampusIds.includes(cId)) continue
+    if (isClassRestricted && clsId && !scope.allowedClassIds.includes(clsId)) continue
+    if (selectedCampusId !== "ALL" && cId !== selectedCampusId) continue
+    if (selectedClassId !== "ALL" && clsId !== selectedClassId) continue
+
+    const sKey = st.studentCode && st.studentCode !== "-" ? st.studentCode : st.id
+    if (seenKeys.has(sKey)) continue
+    seenKeys.add(sKey)
+    uniqueStudents.push(st)
+
+    if (cId) {
+      const cCode = st.class?.campus?.campusCode || st.campus?.campusCode || cId
+      const cName = st.class?.campus?.campusName || st.campus?.campusName || cCode
+      if (!campusMap.has(cId)) {
+        campusMap.set(cId, { id: cId, code: cCode, name: cName })
+      }
+      const rawGrade = st.class?.grade || st.class?.className?.match(/^(\d+)/)?.[1] || "Khác"
+      const gradeKey = String(rawGrade).replace(/^khối\s*/i, "").trim() || "Khác"
+      if (!gradesByCampus.has(cId)) gradesByCampus.set(cId, new Set())
+      gradesByCampus.get(cId)!.add(gradeKey)
+
+      if (clsId && st.class?.className) {
+        const cgKey = `${cId}_${gradeKey}`
+        if (!classesByCampusGrade.has(cgKey)) classesByCampusGrade.set(cgKey, new Map())
+        classesByCampusGrade.get(cgKey)!.set(clsId, st.class.className)
+      }
+    }
+  }
+
+  const lookup = buildEnrolledCountsLookup(uniqueStudents)
+  const classesByCampusGradeArr = new Map<string, Array<{ id: string; className: string }>>()
+  for (const [k, m] of classesByCampusGrade.entries()) {
+    classesByCampusGradeArr.set(
+      k,
+      Array.from(m.entries()).map(([id, className]) => ({ id, className }))
+    )
+  }
+
+  return {
+    lookup,
+    campuses: Array.from(campusMap.values()),
+    gradesByCampus,
+    classesByCampusGrade: classesByCampusGradeArr,
   }
 }

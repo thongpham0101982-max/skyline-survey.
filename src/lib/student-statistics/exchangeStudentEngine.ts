@@ -15,8 +15,8 @@ import {
 } from "./academicCommitmentEngine"
 import {
   buildAcademicHierarchy,
-  buildEnrolledCountsLookup,
   evaluateLatestStandard,
+  loadEnrolledTransferInLookup,
   resolveLatestPeriodScore,
 } from "./standardEvaluator"
 import {
@@ -724,16 +724,13 @@ export async function generateExchangeStudentStatistics(
     return (a.subject || "").localeCompare(b.subject || "", "vi")
   })
 
-  const scopedEnrolledStudents = rawExchangeStudents.filter((st: any) => {
-    const cId = st.class?.campusId || st.campusId || ""
-    const clsId = st.class?.id || st.classId || ""
-    if (isCampusRestricted && !scope.allowedCampusIds.includes(cId)) return false
-    if (isClassRestricted && !scope.allowedClassIds.includes(clsId)) return false
-    if (selectedCampusId !== "ALL" && cId !== selectedCampusId) return false
-    if (selectedClassId !== "ALL" && clsId !== selectedClassId) return false
-    return true
+  const transferIn = await loadEnrolledTransferInLookup({
+    academicYearId: selectedYearId,
+    scope,
+    selectedCampusId,
+    selectedClassId,
   })
-  const enrolledLookup = buildEnrolledCountsLookup(scopedEnrolledStudents)
+  const enrolledLookup = transferIn.lookup
   const hierarchy = buildAcademicHierarchy(detailRows, enrolledLookup)
 
   const selectedCampusObj = allCampuses.find((c) => c.id === selectedCampusId)

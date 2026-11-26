@@ -178,12 +178,12 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
           } divide-y sm:divide-y-0 sm:divide-x divide-[#E2E8F0] tabular-nums`}
         >
           <div className="p-4 bg-[#F8FAFC]/60">
-            <div className="text-xs font-medium text-slate-500">Tổng HS nhập học</div>
+            <div className="text-xs font-medium text-slate-500">Tổng HS nhập học (Chuyển đến)</div>
             <div className="mt-1 text-2xl font-bold text-[#003B3A]">
               {root.enrolledStudentCount}
             </div>
             <div className="mt-0.5 text-[11px] text-slate-500">
-              học sinh ({data.filters.campusName})
+              từ Lịch sử HS chuyển đến ({data.filters.campusName})
             </div>
           </div>
 

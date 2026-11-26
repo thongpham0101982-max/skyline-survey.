@@ -2,6 +2,7 @@ import { generateAcademicCommitmentStatistics } from "./academicCommitmentEngine
 import { generateExchangeStudentStatistics } from "./exchangeStudentEngine"
 import { generateHomeschoolingStatistics } from "./homeschoolingEngine"
 import { generatePsychologyCommitmentStatistics } from "./psychologyCommitmentEngine"
+import { loadEnrolledTransferInLookup } from "./standardEvaluator"
 import {
   HierarchyNodeMetrics,
   OverviewCohortStats,
@@ -241,6 +242,62 @@ export async function generateOverviewStatistics(
   registerFromTree(exchange.hierarchy)
   registerFromTree(psychology?.hierarchy)
 
+  // Bổ sung đầy đủ các cơ sở / khối / lớp có HS nhập học từ Lịch sử Chuyển đến (type = "IN")
+  const transferIn = await loadEnrolledTransferInLookup({
+    academicYearId: academic.filters.academicYearId,
+    scope,
+    selectedCampusId: academic.filters.campusId,
+  })
+  for (const cp of transferIn.campuses) {
+    const cKey = `C:${cp.id}`
+    const cpEnrolled = transferIn.lookup.byCampus.get(cp.id) || 0
+    if (!campusMetaMap.has(cKey)) {
+      campusMetaMap.set(cKey, {
+        campusId: cp.id,
+        code: cp.code,
+        label: `${cp.name} (${cp.code})`,
+        enrolled: cpEnrolled,
+      })
+    } else {
+      campusMetaMap.get(cKey)!.enrolled = Math.max(campusMetaMap.get(cKey)!.enrolled, cpEnrolled)
+    }
+
+    for (const gradeKey of transferIn.gradesByCampus.get(cp.id) || []) {
+      const gKey = `G:${cp.id}:${gradeKey}`
+      const gEnrolled = transferIn.lookup.byCampusGrade.get(`${cp.id}_${gradeKey}`) || 0
+      const gLabel = /^\d+$/.test(gradeKey) ? `Khối ${gradeKey}` : gradeKey
+      if (!gradeMetaMap.has(gKey)) {
+        gradeMetaMap.set(gKey, {
+          campusKey: cKey,
+          campusId: cp.id,
+          grade: gradeKey,
+          label: gLabel,
+          enrolled: gEnrolled,
+        })
+      } else {
+        gradeMetaMap.get(gKey)!.enrolled = Math.max(gradeMetaMap.get(gKey)!.enrolled, gEnrolled)
+      }
+
+      for (const cls of transferIn.classesByCampusGrade.get(`${cp.id}_${gradeKey}`) || []) {
+        const lKey = `L:${cls.id}`
+        const lEnrolled = transferIn.lookup.byClass.get(cls.id) || 0
+        if (!classMetaMap.has(lKey)) {
+          classMetaMap.set(lKey, {
+            gradeKey: gKey,
+            campusId: cp.id,
+            grade: gradeKey,
+            classId: cls.id,
+            code: cls.className,
+            label: `Lớp ${cls.className}`,
+            enrolled: lEnrolled,
+          })
+        } else {
+          classMetaMap.get(lKey)!.enrolled = Math.max(classMetaMap.get(lKey)!.enrolled, lEnrolled)
+        }
+      }
+    }
+  }
+
   const campusNodes: OverviewHierarchyNode[] = Array.from(campusMetaMap.entries())
     .map(([cKey, cMeta]) => {
       const gradeNodes: OverviewHierarchyNode[] = Array.from(gradeMetaMap.entries())
@@ -303,6 +360,7 @@ export async function generateOverviewStatistics(
     .sort((a, b) => a.code.localeCompare(b.code, "vi"))
 
   const sysEnrolled = Math.max(
+    transferIn.lookup.system,
     academic.summary.enrolledStudentCount,
     homeschooling.summary.enrolledStudentCount,
     exchange.summary.enrolledStudentCount,
