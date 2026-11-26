@@ -767,6 +767,21 @@ export interface OverviewHierarchyNode {
 
 export type StandardBasisPeriodCounts = Record<"KSĐN" | "GK1" | "CK1" | "GK2" | "CK2", number>
 
+export interface OverviewAcademicEvalSummary {
+  hierarchy: HierarchyNodeMetrics
+  totalTrackedRows: number
+  committedStudentCount?: number
+  basisPeriodCounts: StandardBasisPeriodCounts
+}
+
+export interface OverviewPsychEvalSummary {
+  monthLabel: string
+  hierarchy: PsychHierarchyNodeMetrics
+  weekSummary: PsychWeekSummaryRow[]
+  completedSessions: number
+  totalScheduledSessions: number
+}
+
 export interface OverviewReportPayload {
   asOfDate: string
   filters: {
@@ -791,6 +806,12 @@ export interface OverviewReportPayload {
       completedSessions: number
       totalScheduledSessions: number
     }
+  }
+  cohortEvaluations?: {
+    academic: OverviewAcademicEvalSummary
+    homeschooling: OverviewAcademicEvalSummary
+    exchange: OverviewAcademicEvalSummary
+    psychology: OverviewPsychEvalSummary | null
   }
   hierarchy: OverviewHierarchyNode
 }

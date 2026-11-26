@@ -403,6 +403,10 @@ export async function generateOverviewStatisticsWithBundle(
     return counts
   }
 
+  const acBasis = countBasis(academic.detailRows)
+  const hsBasis = countBasis(homeschooling.detailRows)
+  const exBasis = countBasis(exchange.detailRows)
+
   const overview: OverviewReportPayload = {
     asOfDate: academic.asOfDate,
     filters: {
@@ -417,9 +421,9 @@ export async function generateOverviewStatisticsWithBundle(
     },
     canViewPsychologyTab: scope.canViewPsychologyTab,
     basisPeriodSummary: {
-      academic: countBasis(academic.detailRows),
-      homeschooling: countBasis(homeschooling.detailRows),
-      exchange: countBasis(exchange.detailRows),
+      academic: acBasis,
+      homeschooling: hsBasis,
+      exchange: exBasis,
       psychologyMonthLabel: psychology?.filters.monthLabel,
       psychologyDetail: psychology
         ? {
@@ -429,6 +433,33 @@ export async function generateOverviewStatisticsWithBundle(
             totalScheduledSessions: psychology.summary.totalScheduledSessions,
           }
         : undefined,
+    },
+    cohortEvaluations: {
+      academic: {
+        hierarchy: academic.hierarchy,
+        totalTrackedRows: academic.summary.commitmentRowCount,
+        basisPeriodCounts: acBasis,
+      },
+      homeschooling: {
+        hierarchy: homeschooling.hierarchy,
+        totalTrackedRows: homeschooling.summary.trackedRowCount,
+        committedStudentCount: homeschooling.summary.committedStudentCount,
+        basisPeriodCounts: hsBasis,
+      },
+      exchange: {
+        hierarchy: exchange.hierarchy,
+        totalTrackedRows: exchange.summary.trackedRowCount,
+        basisPeriodCounts: exBasis,
+      },
+      psychology: psychology
+        ? {
+            monthLabel: psychology.filters.monthLabel,
+            hierarchy: psychology.hierarchy,
+            weekSummary: psychology.weekSummary,
+            completedSessions: psychology.summary.completedSessions,
+            totalScheduledSessions: psychology.summary.totalScheduledSessions,
+          }
+        : null,
     },
     hierarchy: systemNode,
   }

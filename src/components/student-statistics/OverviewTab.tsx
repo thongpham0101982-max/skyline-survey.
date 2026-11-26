@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { ChevronDown, ChevronRight, Info } from "lucide-react"
+import { ArrowRight, ChevronDown, ChevronRight, Info } from "lucide-react"
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   LabelList,
   Legend,
   ResponsiveContainer,
@@ -14,9 +15,13 @@ import {
   YAxis,
 } from "recharts"
 import {
+  HierarchyNodeMetrics,
+  OverviewAcademicEvalSummary,
   OverviewCohortStats,
   OverviewHierarchyNode,
+  OverviewPsychEvalSummary,
   OverviewReportPayload,
+  PsychHierarchyNodeMetrics,
   StudentStatisticsTab,
 } from "@/lib/student-statistics/types"
 import { formatRateWithFraction } from "@/lib/student-statistics/formatters"
@@ -66,6 +71,520 @@ function CohortCell({
       </div>
       <div className="text-[11px] text-[#00736E]">
         {prefix}: {pctStr}
+      </div>
+    </div>
+  )
+}
+
+function AcademicCohortEvalSection({
+  sectionNumber,
+  title,
+  cohortLabel,
+  tab,
+  evalData,
+  isAllSystem,
+  onJumpToTab,
+}: {
+  sectionNumber: number
+  title: string
+  cohortLabel: string
+  tab: StudentStatisticsTab
+  evalData: OverviewAcademicEvalSummary
+  isAllSystem: boolean
+  onJumpToTab: (tab: StudentStatisticsTab, campusId?: string) => void
+}) {
+  const root = evalData.hierarchy
+  const campuses = root.children || []
+  const basisTxt = formatBasisCompact(evalData.basisPeriodCounts)
+
+  const chartData = campuses.map((cp) => ({
+    name: cp.code || cp.label,
+    fullName: cp.label,
+    campusId: cp.campusId || cp.id,
+    rate: cp.standardRate ?? 0,
+    hasDenominator: cp.eligibleRowCount > 0,
+    metCount: cp.totalStandardMetCount,
+    eligibleCount: cp.eligibleRowCount,
+  }))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function renderBarLabel(props: any) {
+    const { x, y, width, index } = props
+    const row = chartData[index]
+    if (!row) return null
+    const cx = Number(x ?? 0) + Number(width ?? 0) / 2
+    const topY = Number(y ?? 0)
+    if (!row.hasDenominator) {
+      return (
+        <text x={cx} y={topY - 6} textAnchor="middle" fill="#94A3B8" fontSize={10} fontWeight={600}>
+          —
+        </text>
+      )
+    }
+    return (
+      <g>
+        <text x={cx} y={topY - 15} textAnchor="middle" fill="#003B3A" fontSize={10.5} fontWeight={700}>
+          {row.rate.toFixed(1).replace(".", ",")}%
+        </text>
+        <text x={cx} y={topY - 4} textAnchor="middle" fill="#475569" fontSize={9.5} fontWeight={500}>
+          {row.metCount}/{row.eligibleCount}
+        </text>
+      </g>
+    )
+  }
+
+  const rows: Array<{ node: HierarchyNodeMetrics; depth: number }> = [{ node: root, depth: 0 }]
+  for (const cp of campuses) {
+    rows.push({ node: cp, depth: 1 })
+    if (!isAllSystem) {
+      for (const gr of cp.children || []) {
+        rows.push({ node: gr, depth: 2 })
+      }
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+      <div className="px-4 py-3 border-b border-[#E2E8F0] border-l-4 border-l-[#003B3A] flex flex-wrap items-center justify-between gap-2 bg-[#F8FAFC]/60">
+        <div>
+          <div className="text-sm font-semibold text-[#003B3A]">
+            Phần {sectionNumber}: Đánh giá — {title}
+          </div>
+          <div className="text-xs text-slate-500 tabular-nums mt-0.5">
+            {root.distinctStudentCount} HS ({formatPct(root.enrolledShareRate)} nhập học) ·{" "}
+            Đạt chuẩn:{" "}
+            <strong className="text-emerald-700">
+              {root.eligibleRowCount > 0
+                ? `${root.totalStandardMetCount}/${root.eligibleRowCount} lượt (${formatPct(root.standardRate)})`
+                : "—"}
+            </strong>
+            {basisTxt ? ` · Kỳ lấy điểm: ${basisTxt}` : ""}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onJumpToTab(tab)}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#003B3A] bg-white border border-[#CBD5E1] hover:bg-[#F0FDFA] hover:border-[#00A19A] transition-colors"
+        >
+          <span>Xem danh sách chi tiết</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <div className="p-4 grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+        {chartData.length > 1 && (
+          <div className="xl:col-span-5 rounded-xl border border-[#E2E8F0] p-3">
+            <div className="text-xs font-semibold text-[#003B3A]">
+              Tỷ lệ đạt chuẩn (Kỳ gần nhất) theo cơ sở
+            </div>
+            <div className="text-[11px] text-slate-500 mb-2">
+              Hiển thị % và số lượt đạt chuẩn / tổng lượt xét chuẩn
+            </div>
+            <div className="h-56 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 32, right: 10, left: 0, bottom: 2 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155", fontWeight: 600 }} />
+                  <YAxis
+                    domain={[0, 100]}
+                    tickFormatter={(v) => `${v}%`}
+                    tick={{ fontSize: 10, fill: "#64748B" }}
+                    width={38}
+                  />
+                  <Tooltip
+                    formatter={(
+                      _val: unknown,
+                      _name: unknown,
+                      item: {
+                        payload?: {
+                          hasDenominator: boolean
+                          metCount: number
+                          eligibleCount: number
+                          rate: number
+                        }
+                      }
+                    ) => {
+                      const p = item?.payload
+                      if (!p || !p.hasDenominator) return ["—", "Tỷ lệ đạt chuẩn"]
+                      return [
+                        `${p.metCount}/${p.eligibleCount} lượt (${p.rate.toFixed(1).replace(".", ",")}%)`,
+                        "Tỷ lệ đạt chuẩn",
+                      ]
+                    }}
+                    labelFormatter={(_l, payload) => payload?.[0]?.payload?.fullName || ""}
+                  />
+                  <Bar
+                    dataKey="rate"
+                    radius={[5, 5, 0, 0]}
+                    maxBarSize={40}
+                    className="cursor-pointer"
+                    onClick={(entry: { campusId?: string }) => {
+                      if (entry?.campusId) onJumpToTab(tab, entry.campusId)
+                    }}
+                  >
+                    <LabelList dataKey="rate" content={renderBarLabel} />
+                    {chartData.map((entry, idx) => (
+                      <Cell
+                        key={entry.campusId || idx}
+                        fill={
+                          !entry.hasDenominator
+                            ? "#CBD5E1"
+                            : entry.rate >= 70
+                              ? "#059669"
+                              : entry.rate >= 50
+                                ? "#00A19A"
+                                : "#D97706"
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        <div
+          className={
+            chartData.length > 1
+              ? "xl:col-span-7 rounded-xl border border-[#E2E8F0] overflow-hidden"
+              : "xl:col-span-12 rounded-xl border border-[#E2E8F0] overflow-hidden"
+          }
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-2.5 px-3 text-left text-white">
+                    {isAllSystem ? "Đơn vị (Hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}
+                  </th>
+                  <th className="py-2.5 px-3 text-right text-teal-100">HS nhập học</th>
+                  <th className="py-2.5 px-3 text-right text-teal-100">{cohortLabel}</th>
+                  <th className="py-2.5 px-3 text-right text-teal-100">Lượt xét</th>
+                  <th className="py-2.5 px-3 text-right text-teal-100">Đạt chuẩn</th>
+                  <th className="py-2.5 px-3 text-right text-[#5EEAD4]">Vượt bậc</th>
+                  <th className="py-2.5 px-3 text-right text-teal-100">Chưa đạt</th>
+                  <th className="py-2.5 px-3 text-right text-[#5EEAD4]">Tỷ lệ Đạt chuẩn</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                {rows.map(({ node, depth }) => (
+                  <tr
+                    key={node.id}
+                    onClick={() => {
+                      if (node.nodeType === "CAMPUS" && node.campusId) {
+                        onJumpToTab(tab, node.campusId)
+                      }
+                    }}
+                    className={`transition-colors align-middle ${
+                      node.nodeType === "SYSTEM"
+                        ? "bg-[#F0FDFA] font-bold text-[#003B3A]"
+                        : node.nodeType === "CAMPUS"
+                          ? "bg-[#F8FAFC] font-semibold text-[#003B3A] hover:bg-[#F0FDFA]/70 cursor-pointer"
+                          : "hover:bg-[#F8FAFC]"
+                    }`}
+                  >
+                    <td
+                      className="py-2.5 pr-3 whitespace-nowrap"
+                      style={{ paddingLeft: `${depth * 14 + 12}px` }}
+                    >
+                      {node.label}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">{node.enrolledStudentCount}</td>
+                    <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                      <strong>{node.distinctStudentCount} HS</strong>{" "}
+                      <span className="text-[11px] font-normal text-slate-500">
+                        ({formatPct(node.enrolledShareRate)})
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right">{node.eligibleRowCount}</td>
+                    <td className="py-2.5 px-3 text-right text-[#00736E] font-medium">
+                      {node.standardBandCount}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-emerald-700 font-semibold">
+                      {node.outstandingCount}
+                    </td>
+                    <td
+                      className={`py-2.5 px-3 text-right ${
+                        node.belowStandardCount > 0 ? "text-rose-600 font-medium" : "text-slate-500"
+                      }`}
+                    >
+                      {node.belowStandardCount}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-semibold text-[#00736E] whitespace-nowrap">
+                      {formatRateWithFraction(
+                        node.totalStandardMetCount,
+                        node.eligibleRowCount,
+                        node.standardRate
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PsychCohortEvalSection({
+  sectionNumber,
+  evalData,
+  isAllSystem,
+  onJumpToTab,
+}: {
+  sectionNumber: number
+  evalData: OverviewPsychEvalSummary
+  isAllSystem: boolean
+  onJumpToTab: (tab: StudentStatisticsTab, campusId?: string) => void
+}) {
+  const root = evalData.hierarchy
+  const campuses = root.children || []
+
+  const chartData = campuses.map((cp) => ({
+    name: cp.code || cp.label,
+    fullName: cp.label,
+    campusId: cp.campusId || cp.id,
+    rate: cp.monthSummaryRate ?? 0,
+    hasDenominator: cp.totalStudents > 0,
+    summarized: cp.monthSummarizedStudents,
+    total: cp.totalStudents,
+  }))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function renderPsychBarLabel(props: any) {
+    const { x, y, width, index } = props
+    const row = chartData[index]
+    if (!row) return null
+    const cx = Number(x ?? 0) + Number(width ?? 0) / 2
+    const topY = Number(y ?? 0)
+    if (!row.hasDenominator) {
+      return (
+        <text x={cx} y={topY - 6} textAnchor="middle" fill="#94A3B8" fontSize={10} fontWeight={600}>
+          —
+        </text>
+      )
+    }
+    return (
+      <g>
+        <text x={cx} y={topY - 15} textAnchor="middle" fill="#003B3A" fontSize={10.5} fontWeight={700}>
+          {row.rate.toFixed(1).replace(".", ",")}%
+        </text>
+        <text x={cx} y={topY - 4} textAnchor="middle" fill="#475569" fontSize={9.5} fontWeight={500}>
+          {row.summarized}/{row.total} HS
+        </text>
+      </g>
+    )
+  }
+
+  const rows: Array<{ node: PsychHierarchyNodeMetrics; depth: number }> = [{ node: root, depth: 0 }]
+  for (const cp of campuses) {
+    rows.push({ node: cp, depth: 1 })
+    if (!isAllSystem) {
+      for (const gr of cp.children || []) {
+        rows.push({ node: gr, depth: 2 })
+      }
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+      <div className="px-4 py-3 border-b border-[#E2E8F0] border-l-4 border-l-[#00A19A] flex flex-wrap items-center justify-between gap-2 bg-[#F8FAFC]/60">
+        <div>
+          <div className="text-sm font-semibold text-[#003B3A]">
+            Phần {sectionNumber}: Đánh giá — Tâm lý cam kết đầu vào ({evalData.monthLabel})
+          </div>
+          <div className="text-xs text-slate-500 tabular-nums mt-0.5">
+            {root.totalStudents} HS ({formatPct(root.enrolledShareRate)} nhập học) · Tổng kết:{" "}
+            <strong className="text-[#00736E]">
+              {formatRateWithFraction(
+                root.monthSummarizedStudents,
+                root.totalStudents,
+                root.monthSummaryRate
+              )}
+            </strong>{" "}
+            · Tiến độ tuần: {evalData.completedSessions}/{evalData.totalScheduledSessions} lượt
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onJumpToTab("psychology")}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#003B3A] bg-white border border-[#CBD5E1] hover:bg-[#F0FDFA] hover:border-[#00A19A] transition-colors"
+        >
+          <span>Xem danh sách chi tiết</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <div className="p-4 grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+        {chartData.length > 1 && (
+          <div className="xl:col-span-5 rounded-xl border border-[#E2E8F0] p-3">
+            <div className="text-xs font-semibold text-[#003B3A]">
+              Tỷ lệ đã tổng kết tháng theo cơ sở
+            </div>
+            <div className="text-[11px] text-slate-500 mb-2">
+              Hiển thị % và số HS đã tổng kết / tổng HS thuộc diện
+            </div>
+            <div className="h-56 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 32, right: 10, left: 0, bottom: 2 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#334155", fontWeight: 600 }} />
+                  <YAxis
+                    domain={[0, 100]}
+                    tickFormatter={(v) => `${v}%`}
+                    tick={{ fontSize: 10, fill: "#64748B" }}
+                    width={38}
+                  />
+                  <Tooltip
+                    formatter={(
+                      _val: unknown,
+                      _name: unknown,
+                      item: {
+                        payload?: {
+                          hasDenominator: boolean
+                          summarized: number
+                          total: number
+                          rate: number
+                        }
+                      }
+                    ) => {
+                      const p = item?.payload
+                      if (!p || !p.hasDenominator) return ["—", "Đã tổng kết tháng"]
+                      return [
+                        `${p.summarized}/${p.total} HS (${p.rate.toFixed(1).replace(".", ",")}%)`,
+                        "Đã tổng kết tháng",
+                      ]
+                    }}
+                    labelFormatter={(_l, payload) => payload?.[0]?.payload?.fullName || ""}
+                  />
+                  <Bar
+                    dataKey="rate"
+                    radius={[5, 5, 0, 0]}
+                    maxBarSize={40}
+                    className="cursor-pointer"
+                    onClick={(entry: { campusId?: string }) => {
+                      if (entry?.campusId) onJumpToTab("psychology", entry.campusId)
+                    }}
+                  >
+                    <LabelList dataKey="rate" content={renderPsychBarLabel} />
+                    {chartData.map((entry, idx) => (
+                      <Cell
+                        key={entry.campusId || idx}
+                        fill={idx % 2 === 0 ? "#00A19A" : "#003B3A"}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        <div
+          className={
+            chartData.length > 1 ? "xl:col-span-7 space-y-3" : "xl:col-span-12 space-y-3"
+          }
+        >
+          <div className="rounded-xl border border-[#E2E8F0] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                    <th className="py-2.5 px-3 text-left text-white">
+                      {isAllSystem ? "Đơn vị (Hệ thống / Cơ sở)" : "Đơn vị (Cơ sở / Khối)"}
+                    </th>
+                    <th className="py-2.5 px-3 text-right text-teal-100">HS nhập học</th>
+                    <th className="py-2.5 px-3 text-right text-teal-100">HS thuộc diện</th>
+                    <th className="py-2.5 px-3 text-right text-teal-100">Chưa PC</th>
+                    <th className="py-2.5 px-3 text-right text-teal-100">Quá hạn</th>
+                    <th className="py-2.5 px-3 text-right text-teal-100">Còn hạn</th>
+                    <th className="py-2.5 px-3 text-right text-[#5EEAD4]">Đã tổng kết</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                  {rows.map(({ node, depth }) => (
+                    <tr
+                      key={node.id}
+                      onClick={() => {
+                        if (node.nodeType === "CAMPUS" && node.campusId) {
+                          onJumpToTab("psychology", node.campusId)
+                        }
+                      }}
+                      className={`transition-colors align-middle ${
+                        node.nodeType === "SYSTEM"
+                          ? "bg-[#F0FDFA] font-bold text-[#003B3A]"
+                          : node.nodeType === "CAMPUS"
+                            ? "bg-[#F8FAFC] font-semibold text-[#003B3A] hover:bg-[#F0FDFA]/70 cursor-pointer"
+                            : "hover:bg-[#F8FAFC]"
+                      }`}
+                    >
+                      <td
+                        className="py-2.5 pr-3 whitespace-nowrap"
+                        style={{ paddingLeft: `${depth * 14 + 12}px` }}
+                      >
+                        {node.label}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">{node.enrolledStudentCount}</td>
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                        <strong>{node.totalStudents} HS</strong>{" "}
+                        <span className="text-[11px] font-normal text-slate-500">
+                          ({formatPct(node.enrolledShareRate)})
+                        </span>
+                      </td>
+                      <td
+                        className={`py-2.5 px-3 text-right ${
+                          node.unassignedStudents > 0 ? "text-rose-600 font-semibold" : "text-slate-500"
+                        }`}
+                      >
+                        {node.unassignedStudents}
+                      </td>
+                      <td
+                        className={`py-2.5 px-3 text-right ${
+                          node.overdueStudents > 0 ? "text-amber-700 font-semibold" : "text-slate-500"
+                        }`}
+                      >
+                        {node.overdueStudents}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">{node.duePendingStudents}</td>
+                      <td className="py-2.5 px-3 text-right font-semibold text-[#00736E] whitespace-nowrap">
+                        {formatRateWithFraction(
+                          node.monthSummarizedStudents,
+                          node.totalStudents,
+                          node.monthSummaryRate
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {evalData.weekSummary.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 tabular-nums">
+              {evalData.weekSummary.map((w) => (
+                <div
+                  key={w.weekNumber}
+                  className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[11px]"
+                >
+                  <div className="font-semibold text-[#003B3A]">{w.weekLabel}</div>
+                  <div className="text-slate-600 mt-0.5">
+                    Đã ĐG: <strong className="text-emerald-700">{w.evaluatedStudentCount}</strong> · Quá hạn:{" "}
+                    <strong className={w.overdueStudentCount > 0 ? "text-rose-600" : "text-slate-700"}>
+                      {w.overdueStudentCount}
+                    </strong>
+                  </div>
+                  <div className="text-[10.5px] text-slate-500">
+                    Tiến độ: {w.completedSessions}/{w.totalScheduledSessions} lượt
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -502,6 +1021,100 @@ export function OverviewTab({ data, onJumpToTab }: OverviewTabProps) {
           </table>
         </div>
       </div>
+
+      {/* 4. Ghi chú căn cứ tính Đạt chuẩn & Tỷ lệ (đồng bộ với PDF) */}
+      <div className="bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#00A19A] p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-700 leading-relaxed">
+        <div>
+          <div className="font-semibold text-[#003B3A] mb-1">
+            Ghi chú căn cứ tính Đạt chuẩn (Kỳ định kỳ gần nhất)
+          </div>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>
+              <strong>Kỳ lấy điểm:</strong> Tự động lấy kỳ gần nhất có điểm chính thức theo thứ tự{" "}
+              <strong>CK2 → GK2 → CK1 → GK1 → KSĐN</strong>.
+            </li>
+            <li>
+              <strong>Ngưỡng chuẩn (Khối Phổ thông K-12):</strong> Tiểu học (K1–5):{" "}
+              <strong>7–8</strong> Đạt chuẩn, <strong>9–10</strong> Tiến bộ vượt bậc · THCS (K6–9):{" "}
+              <strong>5–7</strong> Đạt chuẩn, <strong>8–10</strong> Tiến bộ vượt bậc.
+            </li>
+            <li>
+              <strong>Đơn vị lượt môn:</strong> Một HS có thể theo dõi nhiều môn (1–3 môn/HS); mỗi cặp
+              HS–môn đủ điểm kỳ gần nhất tính là 1 lượt xét chuẩn.
+            </li>
+          </ul>
+        </div>
+        <div>
+          <div className="font-semibold text-[#003B3A] mb-1">
+            Công thức tỷ lệ &amp; Phân bổ kỳ thực tế trong báo cáo
+          </div>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>
+              <strong>Tỷ lệ Đạt chuẩn</strong> = (Đạt chuẩn + Tiến bộ vượt bậc) / Tổng lượt HS–môn đủ
+              điểm · <strong>% nhập học</strong> = HS theo dõi / Tổng HS Chuyển đến K-12.
+            </li>
+            {data.basisPeriodSummary && (
+              <li>
+                <strong>Kỳ lấy điểm thực tế:</strong> Cam kết môn (
+                <em>{formatBasisCompact(data.basisPeriodSummary.academic) || "—"}</em>) · Homeschooling
+                (<em>{formatBasisCompact(data.basisPeriodSummary.homeschooling) || "—"}</em>) · Học
+                giao lưu (<em>{formatBasisCompact(data.basisPeriodSummary.exchange) || "—"}</em>).
+              </li>
+            )}
+            {showPsych && (
+              <li>
+                <strong>Tâm lý CKĐV:</strong> Tính tỷ lệ HS đã chốt phiếu{" "}
+                <em>Tổng kết {data.basisPeriodSummary?.psychologyMonthLabel || "tháng"}</em> trên tổng
+                HS thuộc diện.
+              </li>
+            )}
+          </ul>
+        </div>
+      </div>
+
+      {/* 5. Báo cáo đánh giá 4 phân hệ theo Hệ thống & Cơ sở (đồng bộ 1-1 với PDF Tổng quan) */}
+      {data.cohortEvaluations && (
+        <div className="space-y-5">
+          <AcademicCohortEvalSection
+            sectionNumber={2}
+            title="Học sinh cam kết đầu vào theo môn học"
+            cohortLabel="HS cam kết"
+            tab="academic"
+            evalData={data.cohortEvaluations.academic}
+            isAllSystem={data.filters.campusId === "ALL"}
+            onJumpToTab={onJumpToTab}
+          />
+
+          {showPsych && data.cohortEvaluations.psychology && (
+            <PsychCohortEvalSection
+              sectionNumber={3}
+              evalData={data.cohortEvaluations.psychology}
+              isAllSystem={data.filters.campusId === "ALL"}
+              onJumpToTab={onJumpToTab}
+            />
+          )}
+
+          <AcademicCohortEvalSection
+            sectionNumber={showPsych && data.cohortEvaluations.psychology ? 4 : 3}
+            title="Học sinh Homeschooling nhập học"
+            cohortLabel="HS Homeschooling"
+            tab="homeschooling"
+            evalData={data.cohortEvaluations.homeschooling}
+            isAllSystem={data.filters.campusId === "ALL"}
+            onJumpToTab={onJumpToTab}
+          />
+
+          <AcademicCohortEvalSection
+            sectionNumber={showPsych && data.cohortEvaluations.psychology ? 5 : 4}
+            title="Học sinh diện Học giao lưu"
+            cohortLabel="HS Học giao lưu"
+            tab="exchange"
+            evalData={data.cohortEvaluations.exchange}
+            isAllSystem={data.filters.campusId === "ALL"}
+            onJumpToTab={onJumpToTab}
+          />
+        </div>
+      )}
     </div>
   )
 }
