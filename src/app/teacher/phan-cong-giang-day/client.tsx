@@ -241,10 +241,25 @@ export function TeachingAssignmentClient({
       groups[key].semesters.add(a.semester)
     })
 
-    return Object.values(groups).map(g => ({
-      ...g,
-      uniqueClassCount: g.uniqueClassIds.size || g.classes.length
-    }))
+    return Object.values(groups).map(g => {
+      const mergedMap = new Map<string, { id: string; className: string; classCode: string; semesters: number[] }>()
+      g.classes.forEach(c => {
+        const key = c.id || c.className
+        const existing = mergedMap.get(key)
+        if (!existing) {
+          mergedMap.set(key, { id: c.id, className: c.className, classCode: c.classCode, semesters: [c.semester] })
+        } else if (!existing.semesters.includes(c.semester)) {
+          existing.semesters.push(c.semester)
+          existing.semesters.sort()
+        }
+      })
+      const mergedClasses = Array.from(mergedMap.values())
+      return {
+        ...g,
+        mergedClasses,
+        uniqueClassCount: mergedClasses.length
+      }
+    })
   }, [filteredMyAssignments])
 
   const currentYearName = useMemo(() => {
@@ -293,9 +308,9 @@ export function TeachingAssignmentClient({
   }, [initialMyAssignments, selectedYearId, initialDeptTeachers])
 
   return (
-    <div className="space-y-6 pb-12 teacher-fade-in">
+    <div className="space-y-4 pb-8 teacher-fade-in">
       {/* Header bar */}
-      <div className="group/card relative overflow-hidden bg-white border border-slate-200/80 shadow-xs rounded-3xl px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4" style={{ background: "linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 52%, #E6F7F5 100%)" }}>
+      <div className="group/card relative overflow-hidden bg-white border border-[#E2E8F0] shadow-2xs rounded-2xl px-5 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3" style={{ background: "linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 52%, #E6F7F5 100%)" }}>
         {/* Đường viền dải nhận diện cơ sở ở đỉnh thẻ */}
         <div
           className="absolute top-0 left-0 right-0 h-1.5 z-30"
@@ -358,9 +373,9 @@ export function TeachingAssignmentClient({
         <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-2xl pointer-events-none" />
         <div className="absolute left-1/3 bottom-0 w-48 h-48 bg-teal-400/10 rounded-full -mb-20 blur-xl pointer-events-none" />
 
-        <div className="p-6 relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-            <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/20 flex items-center justify-center flex-shrink-0 text-xl font-black shadow-inner">
+        <div className="px-5 py-4 relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3.5 text-center sm:text-left">
+            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center flex-shrink-0 text-lg font-black shadow-inner">
               {teacher.teacherName.split(" ").slice(-1)[0].charAt(0).toUpperCase()}
             </div>
             <div>
@@ -385,7 +400,7 @@ export function TeachingAssignmentClient({
                   </>
                 )}
               </p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-[11px] text-white/70 mt-3">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-0.5 text-[11px] text-white/75 mt-1.5">
                 {teacher.email && (
                   <span className="flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-teal-300/80" /> {teacher.email}
@@ -419,7 +434,7 @@ export function TeachingAssignmentClient({
 
         {/* Dải tóm tắt Môn phân công: Số lớp */}
         {stats.subjectSummary.length > 0 && (
-          <div className="relative z-10 px-6 py-3 bg-black/15 border-t border-white/10 flex items-center gap-2 flex-wrap tabular-nums">
+          <div className="relative z-10 px-5 py-2.5 bg-black/15 border-t border-white/10 flex items-center gap-2 flex-wrap tabular-nums">
             <span className="text-xs font-bold text-[#5EEAD4] mr-1">Môn phân công:</span>
             {stats.subjectSummary.map((sub, i) => (
               <span
@@ -558,10 +573,10 @@ export function TeachingAssignmentClient({
           </div>
         ) : viewMode === "grouped" ? (
           /* GROUPED BY SUBJECT VIEW */
-          <div className="space-y-6">
+          <div className="space-y-3.5">
             {groupedMyAssignments.map((group, idx) => (
-              <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 hover:shadow-md transition-shadow">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div key={idx} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs p-4 space-y-3 hover:border-[#00A19A]/40 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-2.5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 flex items-center justify-center text-white font-black shadow-md">
                       <BookOpen className="w-5 h-5" />
@@ -623,26 +638,25 @@ export function TeachingAssignmentClient({
                   </div>
                 </div>
 
-                {/* Class badges grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-                  {group.classes.map((cls, cIdx) => (
-                    <div
-                      key={cIdx}
-                      className="group flex flex-col p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-teal-300 hover:bg-teal-50/20 transition-all"
-                    >
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="font-black text-slate-800 text-xs group-hover:text-teal-700 transition-colors truncate">
+                {/* Compact merged class chips (1 chip per unique class across HK1 & HK2) */}
+                <div className="flex flex-wrap gap-1.5 tabular-nums">
+                  {group.mergedClasses.map((cls, cIdx) => {
+                    const semLabel = cls.semesters.length > 1 ? "HK1·2" : `HK${cls.semesters[0]}`
+                    return (
+                      <div
+                        key={cIdx}
+                        title={`${cls.className} (${cls.classCode})`}
+                        className="group inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA] transition-colors"
+                      >
+                        <span className="font-bold text-[#003B3A] text-xs group-hover:text-[#00736E] whitespace-nowrap">
                           {cls.className}
                         </span>
-                        <span className="text-[9px] font-bold text-slate-400 px-1 rounded bg-white border border-slate-200 shrink-0">
-                          HK{cls.semester}
+                        <span className="text-[10px] font-semibold text-slate-500 px-1.5 py-0.2 rounded bg-white border border-[#E2E8F0] shrink-0">
+                          {semLabel}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-semibold truncate">
-                        {cls.classCode}
-                      </span>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}
