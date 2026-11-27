@@ -182,11 +182,15 @@ export function TeacherTargetTracker({
                 <button
                   type="button"
                   onClick={onOpenConfirmModal}
-                  className="px-2 py-0.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold border border-slate-200 flex items-center gap-1 cursor-pointer transition-all"
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border flex items-center gap-1.5 cursor-pointer transition-all ${
+                    observerType === "Giáo viên mới"
+                      ? "bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200"
+                      : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200"
+                  }`}
                   title="Bấm để xem lại hoặc điều chỉnh đối tượng GV"
                 >
-                  <span>{observerType === "Giáo viên mới" ? "🌱 GV mới (< 2 năm)" : "⭐ GV cũ (≥ 2 năm)"}</span>
-                  {onOpenConfirmModal && <span className="text-[10px] text-teal-700 underline font-normal ml-0.5">Thay đổi</span>}
+                  <span>{observerType === "Giáo viên mới" ? "GV mới (< 2 năm)" : "GV thâm niên (≥ 2 năm)"}</span>
+                  {onOpenConfirmModal && <span className="text-[10px] text-[#00736E] underline font-semibold ml-0.5">Thay đổi</span>}
                 </button>
               )}
             </div>

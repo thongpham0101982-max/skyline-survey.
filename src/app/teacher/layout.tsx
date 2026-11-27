@@ -91,6 +91,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             "KTDBCL_TK_DUYET_MO_SO",
             "KTDBCL_TK_PHAN_HOI",
             "KTDBCL_PHAN_TICH_THKQ",
+            "KTDBCL_GIAM_SAT_TIEN_DO",
+            "KTDBCL_GSTD_HS_THIEU_DIEM",
+            "KTDBCL_GSTD_TINH_HINH_NHAP",
             "KTDBCL_XUAT_BANG_DIEM",
           ].forEach((code) => {
             if (!readableModules.includes(code)) readableModules.push(code)
@@ -108,6 +111,13 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     academicYearName: string;
     academicYearId: string;
     currentObserverType: string | null;
+  } | null = null;
+
+  let confirmedTeacherStatus: {
+    teacherName: string;
+    teacherCode: string | null;
+    observerType: string;
+    isNewTeacher: boolean;
   } | null = null;
 
   if (session?.user?.id) {
@@ -175,7 +185,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
 
         // Kiểm tra chức vụ: "Chỉ áp dụng cho tài khoản GV không có chức vụ"
         const NON_CHUC_VU = ["", "gv", "gvbm", "gvcn", "giáo viên", "giao vien", "giáo viên bộ môn", "giáo viên chủ nhiệm", "teacher", "homeroom teacher"];
-        const LEADERSHIP_ROLES = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "TTCM", "TPCM", "TO_TRUONG", "TO_PHO", "TBP", "TRUONG_BO_PHAN", "PHO_BO_PHAN", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "BAN_DHCM", "TB_DHCM", "QLCM", "BGH", "BGH_MN", "KT_DBCL", "NHOM_TRUONG", "NHOM_TRUONG_CM"];
+        const LEADERSHIP_ROLES = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "TTCM", "TPCM", "TO_TRUONG", "TO_PHO", "TBP", "TRUONG_BO_PHAN", "PHO_BO_PHAN", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "BAN_DHCM", "TB_DHCM", "QLCM", "BGH", "BGH_MN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "NHOM_TRUONG", "NHOM_TRUONG_CM"];
 
         const hasChucVu = 
           LEADERSHIP_ROLES.includes((roleCode || "").toUpperCase().trim()) ||
@@ -183,28 +193,35 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           teacher.departmentAssignments?.some((da: any) => da.position && !NON_CHUC_VU.includes(da.position.toLowerCase().trim())) ||
           (teacher.divisionAssignments && teacher.divisionAssignments.length > 0);
 
-        if (!hasChucVu) {
-          const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }).catch(() => null);
-          if (activeYear) {
-            const target = await prisma.teacherAcademicYearTarget.findUnique({
-              where: {
-                teacherId_academicYearId: {
-                  teacherId: teacher.id,
-                  academicYearId: activeYear.id
-                }
-              }
-            }).catch(() => null);
-
-            // "GV nào đã xác nhận thì không hiển thị"
-            if (!target || !target.confirmed) {
-              unconfirmedTeacherData = {
+        const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }).catch(() => null);
+        if (activeYear) {
+          const target = await prisma.teacherAcademicYearTarget.findUnique({
+            where: {
+              teacherId_academicYearId: {
                 teacherId: teacher.id,
-                teacherName: teacher.teacherName || "",
-                academicYearName: activeYear.name || "",
-                academicYearId: activeYear.id,
-                currentObserverType: target?.observerType || null
-              };
+                academicYearId: activeYear.id
+              }
             }
+          }).catch(() => null);
+
+          if (target?.confirmed && target.observerType) {
+            confirmedTeacherStatus = {
+              teacherName: teacher.teacherName || "",
+              teacherCode: teacher.teacherCode || null,
+              observerType: target.observerType,
+              isNewTeacher: target.observerType === "Giáo viên mới"
+            };
+          }
+
+          // "GV nào đã xác nhận thì không hiển thị"
+          if (!hasChucVu && (!target || !target.confirmed)) {
+            unconfirmedTeacherData = {
+              teacherId: teacher.id,
+              teacherName: teacher.teacherName || "",
+              academicYearName: activeYear.name || "",
+              academicYearId: activeYear.id,
+              currentObserverType: target?.observerType || null
+            };
           }
         }
       }
@@ -216,8 +233,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   return (
     <div className="teacher-layout-wrapper flex min-h-dvh text-xs font-medium text-slate-800 bg-[#F8FAFC]">
       <Sidebar role="TEACHER" permissionModules={readableModules} actualRole={roleCode} isGVCN={isGVCN} isTTCM={isTTCM} isPreschoolTeacher={isPreschoolTeacher} assignedSpecialSubjects={assignedSpecialSubjects} />
-      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-[#F8FAFC]">
-        <header className="teacher-layout-header h-16 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs">
+      <main className="flex-1 flex flex-col relative min-w-0 overflow-x-hidden md:overflow-x-auto bg-[#F8FAFC]">
+        <header className="teacher-layout-header h-14 md:h-16 border-b border-[#E2E8F0] border-t-2 border-t-[#003B3A] bg-white/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-3 sm:px-6 shrink-0 shadow-xs">
           <div className="flex items-center gap-3">
             <MobileMenuTrigger />
             <div className="flex items-center gap-2">
@@ -232,8 +249,33 @@ export default async function TeacherLayout({ children }: { children: React.Reac
                     SQMS
                   </span>
                   <span className="hidden md:inline text-xs font-semibold text-slate-600">Không gian Giáo viên</span>
+                  {confirmedTeacherStatus && (
+                    <span className="hidden lg:inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-0.5 rounded-full bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] font-semibold text-[#003B3A] shadow-2xs tabular-nums">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00A19A] shrink-0" />
+                      <span className="font-bold truncate max-w-[160px]">{confirmedTeacherStatus.teacherName}</span>
+                      {confirmedTeacherStatus.teacherCode && (
+                        <span className="text-slate-400 font-medium">({confirmedTeacherStatus.teacherCode})</span>
+                      )}
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border ${
+                          confirmedTeacherStatus.isNewTeacher
+                            ? "bg-amber-50 text-amber-800 border-amber-200"
+                            : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        }`}
+                      >
+                        {confirmedTeacherStatus.isNewTeacher ? "GV mới (< 2 năm)" : "GV thâm niên (≥ 2 năm)"}
+                      </span>
+                    </span>
+                  )}
                 </span>
-                <span className="md:hidden text-[10px] text-[#00736E] font-semibold leading-none mt-0.5">Giáo viên</span>
+                <span className="md:hidden text-[10px] text-[#00736E] font-semibold leading-none mt-0.5 flex items-center gap-1">
+                  <span>Giáo viên</span>
+                  {confirmedTeacherStatus && (
+                    <span className="text-slate-500">
+                      • {confirmedTeacherStatus.isNewTeacher ? "GV mới (< 2 năm)" : "GV ≥ 2 năm"}
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
 
@@ -241,13 +283,13 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             <div id="teacher-top-header-slot" className="hidden sm:flex items-center gap-2 ml-2 sm:ml-4" />
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-             <LanguageSwitcher />
-             <AcademicYearSelector />
+             <div className="hidden md:flex items-center gap-2 sm:gap-3"><LanguageSwitcher /><AcademicYearSelector /></div>
+
              <NotificationBell />
              <UserMenu session={session} />
           </div>
         </header>
-        <div className="p-4 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-sm font-normal text-slate-800">
+        <div className="p-3.5 sm:p-6 md:p-7 pb-24 md:pb-12 flex-1 text-sm font-normal text-slate-800">
           {children}
         </div>
         
