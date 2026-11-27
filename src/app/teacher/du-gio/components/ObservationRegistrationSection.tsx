@@ -1168,7 +1168,8 @@ export function ObservationRegistrationSection(props: any) {
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-300">
 
-      {/* 2. 4 OVERVIEW METRIC CARDS */}
+      {/* 2. 4 OVERVIEW METRIC CARDS (hidden inside CreateObservationModal) */}
+      {!props.hideModeTabs && (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {/* Card 1: Tiết trong tháng */}
         <div 
@@ -1256,6 +1257,7 @@ export function ObservationRegistrationSection(props: any) {
           </div>
         </div>
       </div>
+      )}
 
       {/* 3. SWITCHER TABS (hidden when parent CreateObservationModal renders top mode switcher) */}
       {!props.hideModeTabs && (
