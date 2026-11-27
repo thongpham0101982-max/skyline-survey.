@@ -211,6 +211,7 @@ export function TeachingAssignmentClient({
       subjectCode: string
       isSpecialSubject?: boolean
       classes: Array<{ id: string, className: string, classCode: string, semester: number, academicYearName: string }>
+      uniqueClassIds: Set<string>
       semesters: Set<number>
     }> = {}
 
@@ -223,6 +224,7 @@ export function TeachingAssignmentClient({
           subjectCode: a.subject.subjectCode,
           isSpecialSubject: a.isSpecialSubject,
           classes: [],
+          uniqueClassIds: new Set<string>(),
           semesters: new Set<number>()
         }
       }
@@ -235,10 +237,14 @@ export function TeachingAssignmentClient({
           academicYearName: a.academicYear.name
         })
       }
+      if (a.classId) groups[key].uniqueClassIds.add(a.classId)
       groups[key].semesters.add(a.semester)
     })
 
-    return Object.values(groups)
+    return Object.values(groups).map(g => ({
+      ...g,
+      uniqueClassCount: g.uniqueClassIds.size || g.classes.length
+    }))
   }, [filteredMyAssignments])
 
   const currentYearName = useMemo(() => {
@@ -246,19 +252,43 @@ export function TeachingAssignmentClient({
     return year ? year.name : "N/A"
   }, [academicYears, selectedYearId])
 
-  // Calculate stats for current teacher
+  // Calculate stats for current teacher (including per-subject distinct class counts)
   const stats = useMemo(() => {
     const myYearAssignments = initialMyAssignments.filter(a => a.academicYearId === selectedYearId)
     
     // Unique classes
     const classes = new Set(myYearAssignments.map(a => a.classId))
-    // Unique subjects
-    const subjects = new Set(myYearAssignments.map(a => a.subjectId))
+    // Unique subjects + per-subject distinct class counts
+    const subjectMap = new Map<string, { subjectName: string; subjectCode: string; classIds: Set<string>; isSpecialSubject?: boolean }>()
+    myYearAssignments.forEach(a => {
+      const key = a.subjectId || a.subject.subjectName
+      const existing = subjectMap.get(key)
+      if (!existing) {
+        const set = new Set<string>()
+        if (a.classId) set.add(a.classId)
+        subjectMap.set(key, {
+          subjectName: a.subject.subjectName,
+          subjectCode: a.subject.subjectCode,
+          classIds: set,
+          isSpecialSubject: a.isSpecialSubject
+        })
+      } else if (a.classId) {
+        existing.classIds.add(a.classId)
+      }
+    })
+
+    const subjectSummary = Array.from(subjectMap.values()).map(s => ({
+      subjectName: s.subjectName,
+      subjectCode: s.subjectCode,
+      classCount: s.classIds.size,
+      isSpecialSubject: s.isSpecialSubject
+    }))
     
     return {
       totalClasses: classes.size,
-      totalSubjects: subjects.size,
-      totalDepartmentTeachers: initialDeptTeachers.length
+      totalSubjects: subjectMap.size,
+      totalDepartmentTeachers: initialDeptTeachers.length,
+      subjectSummary
     }
   }, [initialMyAssignments, selectedYearId, initialDeptTeachers])
 
@@ -371,23 +401,37 @@ export function TeachingAssignmentClient({
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-4 self-stretch lg:self-auto justify-items-center">
-            <div className="text-center px-2">
-              <p className="text-[10px] text-teal-200 font-bold uppercase tracking-wider">Lớp dạy</p>
-              <p className="text-xl font-black mt-1 text-white">{stats.totalClasses}</p>
+          <div className="flex items-center justify-around divide-x divide-white/15 bg-white/10 backdrop-blur-md border border-white/15 rounded-xl py-3.5 px-2 self-stretch lg:self-auto shrink-0 tabular-nums">
+            <div className="text-center px-4">
+              <p className="text-[11px] text-teal-200 font-semibold">Lớp dạy</p>
+              <p className="text-xl font-black mt-0.5 text-white">{stats.totalClasses}</p>
             </div>
-            <div className="w-px bg-white/10 self-stretch" />
-            <div className="text-center px-2">
-              <p className="text-[10px] text-teal-200 font-bold uppercase tracking-wider">Môn dạy</p>
-              <p className="text-xl font-black mt-1 text-white">{stats.totalSubjects}</p>
+            <div className="text-center px-4">
+              <p className="text-[11px] text-teal-200 font-semibold">Môn dạy</p>
+              <p className="text-xl font-black mt-0.5 text-white">{stats.totalSubjects}</p>
             </div>
-            <div className="w-px bg-white/10 self-stretch" />
-            <div className="text-center px-2">
-              <p className="text-[10px] text-teal-200 font-bold uppercase tracking-wider">Tổ viên</p>
-              <p className="text-xl font-black mt-1 text-white">{stats.totalDepartmentTeachers}</p>
+            <div className="text-center px-4">
+              <p className="text-[11px] text-teal-200 font-semibold">Tổ viên</p>
+              <p className="text-xl font-black mt-0.5 text-white">{stats.totalDepartmentTeachers}</p>
             </div>
           </div>
         </div>
+
+        {/* Dải tóm tắt Môn phân công: Số lớp */}
+        {stats.subjectSummary.length > 0 && (
+          <div className="relative z-10 px-6 py-3 bg-black/15 border-t border-white/10 flex items-center gap-2 flex-wrap tabular-nums">
+            <span className="text-xs font-bold text-[#5EEAD4] mr-1">Môn phân công:</span>
+            {stats.subjectSummary.map((sub, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/12 border border-white/15 text-xs font-semibold text-white"
+              >
+                <span>{sub.subjectName}:</span>
+                <strong className="font-extrabold text-[#5EEAD4]">{sub.classCount} lớp</strong>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tabs Control */}
@@ -534,8 +578,14 @@ export function TeachingAssignmentClient({
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 font-semibold mt-0.5">
-                        Tổng số: <span className="font-extrabold text-slate-800">{group.classes.length} lớp học</span>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5 tabular-nums">
+                        Môn phân công: <span className="font-bold text-[#003B3A]">{group.subjectName}</span>:{" "}
+                        <span className="font-extrabold text-[#00736E]">{group.uniqueClassCount} lớp</span>
+                        {group.classes.length > group.uniqueClassCount && (
+                          <span className="text-slate-400 font-medium ml-1.5">
+                            ({group.classes.length} lượt phân công HK1 & HK2)
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
