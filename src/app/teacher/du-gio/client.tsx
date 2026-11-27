@@ -1322,6 +1322,17 @@ export function ObservationClient(props: ObservationClientProps) {
   const [selfTaughtUnit, setSelfTaughtUnit] = useState(currentTeacher?.taughtUnit || "tháng")
   const [showExperienceModal, setShowExperienceModal] = useState(false)
   const [isSubmittingExperience, setIsSubmittingExperience] = useState(false)
+  const [localTargetConfirmed, setLocalTargetConfirmed] = useState<boolean>(Boolean(currentTeacher?.targetConfirmed))
+  const [localObserverType, setLocalObserverType] = useState<string | null>(currentTeacher?.observerType || null)
+
+  useEffect(() => {
+    if (currentTeacher?.targetConfirmed) {
+      setLocalTargetConfirmed(true)
+    }
+    if (currentTeacher?.observerType) {
+      setLocalObserverType(currentTeacher.observerType)
+    }
+  }, [currentTeacher?.targetConfirmed, currentTeacher?.observerType])
 
   // Evaluation modal state
   const [evalModal, setEvalModal] = useState<{ registration: any; slot: any } | null>(null)
@@ -2137,6 +2148,8 @@ export function ObservationClient(props: ObservationClientProps) {
           currentTeacher.targetConfirmed = true;
           currentTeacher.targetConfirmedAt = res.target.confirmedAt;
         }
+        setLocalTargetConfirmed(true);
+        setLocalObserverType(res.target.observerType);
         setSelfRequiredObserved(res.target.requiredObserved);
         setSelfObservedUnit(res.target.observedUnit);
         setSelfRequiredTaught(res.target.requiredTaught);
@@ -6192,8 +6205,8 @@ export function ObservationClient(props: ObservationClientProps) {
             monthlyStatsList={teacherMonthlyStatsList}
             onViewReport={() => setActiveMainTab("teacher_report")}
             onGoToPendingEvals={() => setMyScheduleSubTab("observed")}
-            observerType={currentTeacher?.observerType}
-            targetConfirmed={currentTeacher?.targetConfirmed}
+            observerType={localObserverType || currentTeacher?.observerType}
+            targetConfirmed={localTargetConfirmed || Boolean(currentTeacher?.targetConfirmed)}
             isRegularTeacher={isRegularTeacher}
             onOpenConfirmModal={() => setShowExperienceModal(true)}
           />
@@ -9323,7 +9336,7 @@ export function ObservationClient(props: ObservationClientProps) {
         onConfirm={handleConfirmExperienceCategory}
         academicYearName={activeAcademicYear?.name || "2026-2027"}
         teacherName={currentTeacher?.teacherName || ""}
-        currentObserverType={currentTeacher?.observerType}
+        currentObserverType={localObserverType || currentTeacher?.observerType}
         isSubmitting={isSubmittingExperience}
       />
     </>

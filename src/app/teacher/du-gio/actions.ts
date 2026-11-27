@@ -309,7 +309,7 @@ export async function getObservationData(academicYearId?: string) {
     }
 
     let activeYearTarget = null
-    if (activeYearId && currentTeacher && !isAdmin) {
+    if (activeYearId && currentTeacher) {
       activeYearTarget = await prisma.teacherAcademicYearTarget.findUnique({
         where: {
           teacherId_academicYearId: {
@@ -1713,6 +1713,7 @@ export async function confirmTeacherExperienceCategory(data: {
       }
     })
 
+    revalidatePath("/teacher", "layout")
     revalidatePath("/teacher/du-gio")
     revalidatePath("/teacher/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
