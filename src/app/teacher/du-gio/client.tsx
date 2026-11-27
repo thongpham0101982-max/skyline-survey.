@@ -886,7 +886,22 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [selectedEvalMonth, setSelectedEvalMonth] = useState('ALL');
-  const [showCreateActionMenu, setShowCreateActionMenu] = useState(false);
+  const [showCreateActionMenu, setShowCreateActionMenu] = useState(false)
+  const createActionBtnRef = useRef<HTMLButtonElement | null>(null)
+  const [createMenuPos, setCreateMenuPos] = useState<{ top: number; right: number }>({ top: 120, right: 24 })
+  const toggleCreateActionMenu = () => {
+    setShowCreateActionMenu((prev) => {
+      const next = !prev
+      if (next && createActionBtnRef.current && typeof window !== "undefined") {
+        const rect = createActionBtnRef.current.getBoundingClientRect()
+        setCreateMenuPos({
+          top: Math.round(rect.bottom + 8),
+          right: Math.max(12, Math.round(window.innerWidth - rect.right))
+        })
+      }
+      return next
+    })
+  };
   const [activeMainTab, setActiveMainTab] = useState<"admin_dashboard" | "register_request" | "overview_slots" | "my_schedule" | "evaluations" | "teacher_report" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab"), (props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))));
   const [myScheduleSubTab, setMyScheduleSubTab] = useState<"register" | "all" | "taught" | "observed" | "requests">("all");
   type FilterTab = "all" | "self_open" | "assigned" | "expired" | "gbm_request" | "my_dept" | "other_dept";
@@ -4459,11 +4474,12 @@ export function ObservationClient(props: ObservationClientProps) {
               </>
             )}
 
-            {/* Consolidated Primary Action Dropdown (Elevated z-50 Action Launcher) */}
+            {/* Consolidated Primary Action Dropdown (Portal to document.body at z-[9999] — immune to sticky/stacking overlap) */}
             <div className="relative z-40">
               <button
+                ref={createActionBtnRef}
                 type="button"
-                onClick={() => setShowCreateActionMenu(prev => !prev)}
+                onClick={toggleCreateActionMenu}
                 className="px-4 py-2 rounded-xl bg-white text-[#003B3A] hover:bg-[#F0FDFA] font-bold text-xs transition-all shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer border border-white/70"
               >
                 <span className="w-5 h-5 rounded-md bg-[#00A19A] text-white flex items-center justify-center shrink-0">
@@ -4473,13 +4489,16 @@ export function ObservationClient(props: ObservationClientProps) {
                 <ChevronDown className={`w-3.5 h-3.5 text-[#00736E] transition-transform duration-200 ${showCreateActionMenu ? "rotate-180" : ""}`} />
               </button>
 
-              {showCreateActionMenu && (
+              {showCreateActionMenu && typeof document !== "undefined" && createPortal(
                 <>
                   <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-[9998]"
                     onClick={() => setShowCreateActionMenu(false)}
                   />
-                  <div className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl shadow-2xl border border-[#E2E8F0] overflow-hidden z-50 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div
+                    style={{ top: createMenuPos.top, right: createMenuPos.right }}
+                    className="fixed w-80 max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-2xl border border-[#E2E8F0] overflow-hidden z-[9999] text-slate-800 animate-in fade-in slide-in-from-top-1 duration-150"
+                  >
                     {/* Launcher Header */}
                     <div className="px-4 py-2.5 bg-[#003B3A] text-white flex items-center justify-between">
                       <span className="text-xs font-bold tracking-tight">Chọn hình thức tạo lịch</span>
@@ -4594,7 +4613,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       <span>Tự động khử trùng lặp — tối đa 01 email/GV</span>
                     </div>
                   </div>
-                </>
+                </>,
+                document.body
               )}
             </div>
           </div>
@@ -9084,7 +9104,6 @@ export function ObservationClient(props: ObservationClientProps) {
         selectedTeachingPlanLink={selectedTeachingPlanLink}
         setSelectedTeachingPlanLink={setSelectedTeachingPlanLink}
         setLinkedTkbSlotId={setLinkedTkbSlotId}
-        selectedYearId={selectedYearId}
         isMamNonTeacher={isMamNonTeacher}
         isAdminUser={isAdminUser}
         isTTCM={isTTCM}
