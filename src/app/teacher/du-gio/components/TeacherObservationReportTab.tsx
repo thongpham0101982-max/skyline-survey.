@@ -21,8 +21,21 @@ import {
   Clock,
   Check,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  BarChart3,
+  Table2
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine
+} from "recharts";
 import * as XLSX from "xlsx";
 import { getSlotCategoryInfo } from "../client";
 
@@ -96,6 +109,48 @@ export function TeacherObservationReportTab({
   const [selectedCategory, setSelectedCategory] = useState<"ALL" | "MAM_NON" | "K12" | "GVNN_ESL">("ALL");
   const [expandedMonthKey, setExpandedMonthKey] = useState<string | null>(null);
   const [drillDownCategory, setDrillDownCategory] = useState<"ALL" | "K12" | "MAM_NON" | "GVNN_ESL" | "TAUGHT">("ALL");
+  const [monthlyViewMode, setMonthlyViewMode] = useState<"BOTH" | "CHART" | "TABLE">("BOTH");
+
+  // Chronological monthly chart data (oldest -> newest from left to right)
+  const monthlyChartData = useMemo(() => {
+    return [...(monthlyStatsList || [])]
+      .sort((a, b) => (a.year - b.year) || (a.month - b.month))
+      .map((st) => {
+        const parsedScore = st.avgScore ? Number(st.avgScore) : null;
+        return {
+          monthKey: st.monthKey,
+          shortLabel: `T${st.month}/${String(st.year).slice(-2)}`,
+          monthStr: st.monthStr,
+          taughtCount: st.taughtCount || 0,
+          observedCount: st.observedCount || 0,
+          pendingCount: st.pendingObservedCount || 0,
+          targetObserved: st.targetObserved || 1,
+          avgScore: parsedScore !== null && !Number.isNaN(parsedScore) ? parsedScore : null,
+          k12Taught: st.k12Taught || 0,
+          mamNonTaught: st.mamNonTaught || 0,
+          eslTaught: st.eslTaught || 0,
+          k12Observed: st.k12Observed || 0,
+          mamNonObserved: st.mamNonObserved || 0,
+          eslObserved: st.eslObserved || 0
+        };
+      });
+  }, [monthlyStatsList]);
+
+  const monthlyChartSummary = useMemo(() => {
+    const totalMonths = monthlyChartData.length;
+    const metMonths = monthlyChartData.filter((m) => m.observedCount >= m.targetObserved && m.pendingCount === 0).length;
+    const totalTaught = monthlyChartData.reduce((s, m) => s + m.taughtCount, 0);
+    const totalObserved = monthlyChartData.reduce((s, m) => s + m.observedCount, 0);
+    const totalPending = monthlyChartData.reduce((s, m) => s + m.pendingCount, 0);
+    const scoredMonths = monthlyChartData.filter((m) => m.avgScore !== null);
+    const bestMonth = scoredMonths.reduce<typeof monthlyChartData[number] | null>(
+      (best, cur) => (!best || (cur.avgScore ?? 0) > (best.avgScore ?? 0) ? cur : best),
+      null
+    );
+    const hasPending = totalPending > 0;
+    const commonTarget = monthlyChartData[0]?.targetObserved || 1;
+    return { totalMonths, metMonths, totalTaught, totalObserved, totalPending, bestMonth, hasPending, commonTarget };
+  }, [monthlyChartData]);
 
   // Filter slots based on selected month & category
   const filteredTaughtSlots = useMemo(() => {
@@ -663,13 +718,354 @@ export function TeacherObservationReportTab({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                📅 <strong>{monthlyStatsList.length}</strong> tháng trong năm
+            <div className="flex items-center gap-2 flex-wrap self-start sm:self-center shrink-0">
+              <div className="inline-flex items-center bg-[#F8FAFC] p-1 rounded-xl border border-[#E2E8F0] text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setMonthlyViewMode("BOTH")}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    monthlyViewMode === "BOTH"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A]"
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>Biểu đồ & Bảng</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMonthlyViewMode("CHART")}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    monthlyViewMode === "CHART"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A]"
+                  }`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Biểu đồ</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMonthlyViewMode("TABLE")}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    monthlyViewMode === "TABLE"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A]"
+                  }`}
+                >
+                  <Table2 className="w-3.5 h-3.5" />
+                  <span>Bảng</span>
+                </button>
+              </div>
+              <span className="text-xs font-bold text-slate-600 bg-[#F8FAFC] px-3 py-1.5 rounded-xl border border-[#E2E8F0] tabular-nums">
+                {monthlyStatsList.length} tháng trong năm
               </span>
             </div>
           </div>
 
+          {/* Interactive Monthly Observation & Teaching Chart (Sky-Line Academic Ledger) */}
+          {monthlyViewMode !== "TABLE" && monthlyChartData.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch print:hidden">
+              {/* Left (8 cols): Composed Bar + Line Chart */}
+              <div className="lg:col-span-8 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC]/60 p-4 flex flex-col justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-[#003B3A]">
+                      Biểu đồ tiến độ tiết dạy, dự giờ & điểm trung bình theo tháng
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Nhấn vào cột tháng để mở nhanh chi tiết các tiết học trong bảng bên dưới
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap text-[11px] font-semibold text-slate-600">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-[#D97706]" />
+                      <span>Tiết dạy</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-[#00A19A]" />
+                      <span>Tiết dự (đã nộp)</span>
+                    </span>
+                    {monthlyChartSummary.hasPending && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#E11D48]" />
+                        <span>Nợ phiếu</span>
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-3.5 h-0.5 bg-[#003B3A] rounded-full" />
+                      <span>Điểm TB ({maxScore}đ)</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full h-[270px] tabular-nums">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                      data={monthlyChartData}
+                      margin={{ top: 10, right: 12, left: -12, bottom: 4 }}
+                      onClick={(state: any) => {
+                        const clickedKey = state?.activePayload?.[0]?.payload?.monthKey;
+                        if (clickedKey) {
+                          setExpandedMonthKey((prev) => (prev === clickedKey ? null : clickedKey));
+                        }
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                      <XAxis
+                        dataKey="shortLabel"
+                        tick={{ fontSize: 11, fill: "#475569", fontWeight: 600 }}
+                        axisLine={{ stroke: "#CBD5E1" }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        yAxisId="left"
+                        allowDecimals={false}
+                        tick={{ fontSize: 11, fill: "#475569", fontWeight: 600 }}
+                        axisLine={false}
+                        tickLine={false}
+                        label={{
+                          value: "Số tiết",
+                          angle: -90,
+                          position: "insideLeft",
+                          offset: 20,
+                          style: { fontSize: 10, fill: "#64748B", fontWeight: 600 }
+                        }}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        domain={[0, maxScore]}
+                        tick={{ fontSize: 11, fill: "#003B3A", fontWeight: 700 }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v: number) => `${v}đ`}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "rgba(0, 161, 154, 0.08)" }}
+                        content={({ active, payload }: any) => {
+                          if (!active || !payload || payload.length === 0) return null;
+                          const d = payload[0]?.payload;
+                          if (!d) return null;
+                          const pct = d.targetObserved > 0 ? Math.round((d.observedCount / d.targetObserved) * 100) : 0;
+                          return (
+                            <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-lg overflow-hidden min-w-[215px] text-xs tabular-nums">
+                              <div className="px-3 py-2 bg-[#003B3A] text-white font-bold flex items-center justify-between gap-2">
+                                <span>{d.monthStr}</span>
+                                <span className="text-[10px] font-semibold text-[#5EEAD4]">
+                                  {pct}% chỉ tiêu
+                                </span>
+                              </div>
+                              <div className="p-3 space-y-1.5">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-slate-600 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-xs bg-[#D97706]" />
+                                    Tiết trực tiếp dạy
+                                  </span>
+                                  <strong className="text-slate-900">{d.taughtCount} tiết</strong>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-slate-600 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-xs bg-[#00A19A]" />
+                                    Tiết đi dự (đã nộp)
+                                  </span>
+                                  <strong className="text-[#00736E]">
+                                    {d.observedCount} / {d.targetObserved} tiết
+                                  </strong>
+                                </div>
+                                {d.pendingCount > 0 && (
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-rose-700 flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-xs bg-[#E11D48]" />
+                                      Nợ phiếu đánh giá
+                                    </span>
+                                    <strong className="text-[#E11D48]">{d.pendingCount} phiếu</strong>
+                                  </div>
+                                )}
+                                <div className="pt-1.5 mt-1.5 border-t border-slate-100 flex items-center justify-between gap-3">
+                                  <span className="text-slate-600">Điểm TB tiết dạy</span>
+                                  <strong className="text-[#003B3A]">
+                                    {d.avgScore !== null ? `${d.avgScore.toFixed(2)} / ${maxScore}đ` : "Chưa có"}
+                                  </strong>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
+                      <ReferenceLine
+                        yAxisId="left"
+                        y={monthlyChartSummary.commonTarget}
+                        stroke="#059669"
+                        strokeDasharray="4 4"
+                        strokeWidth={1.5}
+                        label={{
+                          value: `Chỉ tiêu (${monthlyChartSummary.commonTarget} tiết)`,
+                          position: "insideTopRight",
+                          fill: "#059669",
+                          fontSize: 10,
+                          fontWeight: 700
+                        }}
+                      />
+                      <Bar
+                        yAxisId="left"
+                        dataKey="taughtCount"
+                        name="Tiết dạy"
+                        fill="#D97706"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={28}
+                      />
+                      <Bar
+                        yAxisId="left"
+                        dataKey="observedCount"
+                        name="Tiết dự (đã nộp)"
+                        fill="#00A19A"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={28}
+                      />
+                      {monthlyChartSummary.hasPending && (
+                        <Bar
+                          yAxisId="left"
+                          dataKey="pendingCount"
+                          name="Nợ phiếu"
+                          fill="#E11D48"
+                          radius={[6, 6, 0, 0]}
+                          maxBarSize={22}
+                        />
+                      )}
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="avgScore"
+                        name="Điểm TB dạy"
+                        stroke="#003B3A"
+                        strokeWidth={2.5}
+                        connectNulls
+                        dot={{ r: 4.5, fill: "#FFFFFF", stroke: "#003B3A", strokeWidth: 2.5 }}
+                        activeDot={{ r: 6, fill: "#00A19A", stroke: "#003B3A", strokeWidth: 2 }}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Right (4 cols): Monthly Insight Summary Cards */}
+              <div className="lg:col-span-4 flex flex-col justify-between gap-3 tabular-nums">
+                {/* 1. Tỷ lệ tháng đạt chỉ tiêu */}
+                <div className="rounded-2xl border border-[#E2E8F0] bg-gradient-to-br from-[#003B3A] to-[#005854] p-4 text-white shadow-2xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-[#CCFBF1]">Số tháng đạt chỉ tiêu</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#5EEAD4]" />
+                  </div>
+                  <div className="mt-1.5 flex items-baseline gap-1.5">
+                    <span className="text-2xl font-extrabold">{monthlyChartSummary.metMonths}</span>
+                    <span className="text-xs text-teal-100/80">/ {monthlyChartSummary.totalMonths} tháng</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden mt-2.5">
+                    <div
+                      className="h-full bg-[#5EEAD4] rounded-full transition-all"
+                      style={{
+                        width: `${
+                          monthlyChartSummary.totalMonths > 0
+                            ? Math.round((monthlyChartSummary.metMonths / monthlyChartSummary.totalMonths) * 100)
+                            : 0
+                        }%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Cơ cấu tiết dạy & tiết dự */}
+                <div className="rounded-2xl border border-[#E2E8F0] bg-white p-3.5 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600">
+                    <span>Cơ cấu Dạy / Dự giờ năm học</span>
+                    <span className="text-[#003B3A] font-bold">
+                      {monthlyChartSummary.totalTaught + monthlyChartSummary.totalObserved} tiết
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden flex">
+                    {monthlyChartSummary.totalTaught + monthlyChartSummary.totalObserved > 0 && (
+                      <>
+                        <div
+                          className="h-full bg-[#D97706]"
+                          style={{
+                            width: `${Math.round(
+                              (monthlyChartSummary.totalTaught /
+                                (monthlyChartSummary.totalTaught + monthlyChartSummary.totalObserved)) *
+                                100
+                            )}%`
+                          }}
+                        />
+                        <div
+                          className="h-full bg-[#00A19A]"
+                          style={{
+                            width: `${Math.round(
+                              (monthlyChartSummary.totalObserved /
+                                (monthlyChartSummary.totalTaught + monthlyChartSummary.totalObserved)) *
+                                100
+                            )}%`
+                          }}
+                        />
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-amber-800 font-semibold">
+                      Dạy: {monthlyChartSummary.totalTaught} tiết
+                    </span>
+                    <span className="text-[#00736E] font-semibold">
+                      Dự: {monthlyChartSummary.totalObserved} tiết
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. Điểm TB đỉnh & Nợ phiếu */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3">
+                    <div className="text-[11px] font-semibold text-slate-500">Điểm TB cao nhất</div>
+                    <div className="text-lg font-extrabold text-[#003B3A] mt-0.5">
+                      {monthlyChartSummary.bestMonth?.avgScore != null
+                        ? `${monthlyChartSummary.bestMonth.avgScore.toFixed(2)}đ`
+                        : "—"}
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                      {monthlyChartSummary.bestMonth?.monthStr || "Chưa có đánh giá"}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`rounded-2xl border p-3 ${
+                      monthlyChartSummary.totalPending > 0
+                        ? "border-rose-200 bg-rose-50/70"
+                        : "border-emerald-200 bg-emerald-50/60"
+                    }`}
+                  >
+                    <div
+                      className={`text-[11px] font-semibold ${
+                        monthlyChartSummary.totalPending > 0 ? "text-rose-700" : "text-emerald-700"
+                      }`}
+                    >
+                      Tình trạng phiếu
+                    </div>
+                    <div
+                      className={`text-lg font-extrabold mt-0.5 ${
+                        monthlyChartSummary.totalPending > 0 ? "text-[#E11D48]" : "text-[#059669]"
+                      }`}
+                    >
+                      {monthlyChartSummary.totalPending > 0
+                        ? `${monthlyChartSummary.totalPending} nợ`
+                        : "Đủ 100%"}
+                    </div>
+                    <div className="text-[10px] text-slate-600 truncate mt-0.5">
+                      {monthlyChartSummary.totalPending > 0 ? "Cần nộp bổ sung" : "Không có phiếu nợ"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {monthlyViewMode !== "CHART" && (
           <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
@@ -1044,6 +1440,7 @@ export function TeacherObservationReportTab({
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
 
