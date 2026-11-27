@@ -157,7 +157,7 @@ export async function POST(req: Request) {
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px;">
                       <tr>
                         <td bgcolor="#005854" style="background-color: #005854; border: 1px solid rgba(72, 191, 227, 0.45); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 800; color: #48BFE3; letter-spacing: 1.2px; text-transform: uppercase;">
-                          🏫 HỆ THỐNG GIÁO DỤC SKY-LINE &bull; BAN ĐIỀU HÀNH CHUYÊN MÔN
+                          <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span> &bull; BAN ĐIỀU HÀNH CHUYÊN MÔN
                         </td>
                       </tr>
                     </table>
@@ -474,7 +474,7 @@ export async function POST(req: Request) {
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px;">
                       <tr>
                         <td bgcolor="#005854" style="background-color: #005854; border: 1px solid rgba(72, 191, 227, 0.45); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 800; color: #48BFE3; letter-spacing: 1.2px; text-transform: uppercase;">
-                          🏫 HỆ THỐNG GIÁO DỤC SKY-LINE &bull; TRUNG TÂM ĐIỀU HÀNH DỰ GIỜ
+                          <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span> &bull; TRUNG TÂM ĐIỀU HÀNH DỰ GIỜ
                         </td>
                       </tr>
                     </table>
@@ -682,21 +682,30 @@ export async function POST(req: Request) {
 
       const results = [];
       const errors = [];
+      const sentEmails = new Set<string>();
+      const parsedCc = parseCc(customCc);
 
       for (const item of gdcsList) {
-        const recipient = item.email;
+        const recipient = String(item.email || "").trim();
         if (!recipient || !recipient.includes("@")) {
           errors.push(`${item.name} (${item.campus}): Chưa có email`);
           continue;
         }
 
+        const recipientLower = recipient.toLowerCase();
+        if (sentEmails.has(recipientLower)) {
+          continue; // Tránh gửi lặp nhiều email báo cáo cho cùng 1 GĐCS
+        }
+        sentEmails.add(recipientLower);
+
         const html = buildSingleGdcsHtml(item, notes, baseUrl);
         const subject = `[Sky-line SMS - Dự Giờ] Báo cáo tiến độ dự giờ & dạy - GĐCS ${item.name} (${item.campus}) - ${monthLabel}`;
 
         try {
+          const filteredCc = parsedCc.filter((e) => e.toLowerCase() !== recipientLower);
           const res = await sendEmail({
             to: recipient,
-            cc: parseCc(customCc),
+            cc: filteredCc.length > 0 ? filteredCc : undefined,
             subject,
             html
           });

@@ -12,6 +12,22 @@ export interface SendEmailOptions {
   from?: string;
   throwOnError?: boolean;
   enableAuditBcc?: boolean;
+  /** Optional override to bypass short-window duplicate email guard */
+  skipDedup?: boolean;
+}
+
+// Short-window in-process deduplication cache to prevent accidental double-sends
+// (e.g., double-click, concurrent retries, or overlapping triggers) to the same recipient.
+const RECENT_EMAIL_DISPATCH_CACHE = new Map<string, number>();
+const RECENT_EMAIL_TTL_MS = 60_000; // 60 seconds
+
+function pruneRecentEmailCache(now: number) {
+  if (RECENT_EMAIL_DISPATCH_CACHE.size < 200) return;
+  for (const [key, expiresAt] of RECENT_EMAIL_DISPATCH_CACHE.entries()) {
+    if (expiresAt <= now) {
+      RECENT_EMAIL_DISPATCH_CACHE.delete(key);
+    }
+  }
 }
 
 export interface SendEmailResult {
@@ -23,6 +39,28 @@ export interface SendEmailResult {
   provider?: string;
   failover?: boolean;
   [key: string]: any;
+}
+
+const rawPublicAppUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "").trim();
+export const SKYLINE_LOGO_URL =
+  rawPublicAppUrl && !/localhost|127\.0\.0\.1/i.test(rawPublicAppUrl)
+    ? `${rawPublicAppUrl.replace(/\/+$/, "")}/logo.png`
+    : "https://ssm.skylineschool.edu.vn/logo.png";
+
+export function getSkylineEmailLogoImg(height = 16): string {
+  return `<img src="${SKYLINE_LOGO_URL}" alt="Sky-Line" height="${height}" style="height: ${height}px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" />`;
+}
+
+/**
+ * Ensures any remaining school emoji (🏫) used on Sky-Line email headers is automatically replaced
+ * with the official Sky-Line logo from the SSM project.
+ */
+export function normalizeEmailBrandingHtml(rawHtml?: string): string {
+  if (!rawHtml || typeof rawHtml !== "string") return rawHtml || "";
+  return rawHtml.replace(
+    /🏫\s*((?:(?:BẬC MẦM NON|HỆ PHỔ THÔNG)\s*[•&bull;]\s*)?HỆ THỐNG GIÁO DỤC SKY-LINE)/gu,
+    (_m, label) => `${getSkylineEmailLogoImg(16)}<span style="vertical-align: middle;">${label}</span>`
+  );
 }
 
 /**
@@ -59,7 +97,15 @@ export function formatEmailSubject(rawSubject?: string): string {
   s = s.replace(/^\[Sky-?Line\]\s*/i, "[Sky-line SMS] ");
   s = s.replace(/^\[Skyline\]\s*/i, "[Sky-line SMS] ");
 
-  // 4. Ensure exact casing if it starts with [Sky-line SMS]
+  // 4. Preserve explicit [SSM] or [SSM - <Campus>] prefixes
+  if (/^\[SSM(?:\s*[-–].*?)?\]/i.test(s)) {
+    s = s.replace(/^\[ssm(\s*[-–]\s*.*?)?\]\s*/i, (_m, suffix) =>
+      suffix ? `[SSM${suffix}] ` : "[SSM] "
+    );
+    return s;
+  }
+
+  // 5. Ensure exact casing if it starts with [Sky-line SMS]
   if (/^\[Sky-?Line\s+SMS\]/i.test(s)) {
     s = s.replace(/^\[Sky-?Line\s+SMS\]\s*/i, "[Sky-line SMS] ");
   } else if (!/^\[Sky-line SMS/i.test(s)) {
@@ -81,8 +127,33 @@ export async function sendEmail({
   replyTo,
   from,
   throwOnError = false,
-  enableAuditBcc = false
+  enableAuditBcc = false,
+  skipDedup = false
 }: SendEmailOptions): Promise<SendEmailResult> {
+  const mailDriver = String(process.env.MAIL_DRIVER || "").trim().toLowerCase();
+  const isMockMode =
+    mailDriver === "mock" ||
+    mailDriver === "sandbox" ||
+    (process.env.NODE_ENV === "test" && mailDriver !== "smtp");
+
+  if (isMockMode) {
+    const normalizedSubject = formatEmailSubject(subject);
+    const mockId = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    console.info("[MAIL][SANDBOX/MOCK] Intercepted email dispatch:", {
+      messageId: mockId,
+      toCount: Array.isArray(to) ? to.length : to ? 1 : 0,
+      subject: normalizedSubject,
+      driver: mailDriver || "test-auto-mock",
+    });
+    return {
+      success: true,
+      skipped: true,
+      messageId: mockId,
+      provider: "MOCK_SANDBOX",
+      reason: "MAIL_DRIVER is set to mock/sandbox (no external SMTP email sent)",
+    };
+  }
+
   const rawUser = (process.env.SMTP_USER || "").trim();
   const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
 
@@ -123,7 +194,7 @@ export async function sendEmail({
 
   const transporter = createTransporter(host, port, secure, user, pass);
 
-  // Helper to split and filter valid unique email strings
+  // Helper to split and filter valid unique email strings (case-insensitive deduplication)
   const cleanEmails = (input?: string | string[]): string | string[] | undefined => {
     if (!input) return undefined;
     const rawList: string[] = Array.isArray(input) ? input : String(input).split(/[,;]/);
@@ -132,8 +203,16 @@ export async function sendEmail({
       .map(e => e.trim().replace(/^["']|["']$/g, "").replace(/@dkylineschool\.edu\.vn$/i, "@skylineschool.edu.vn"))
       .map(e => e.toLowerCase() === "cc@skylineschool.edu.vn" ? "ktdbcl@skylineschool.edu.vn" : e)
       .filter(e => e && e.includes("@") && !e.includes(" ") && e.length > 5);
-    
-    const unique = Array.from(new Set(valid));
+
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const e of valid) {
+      const lower = e.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        unique.push(e);
+      }
+    }
     if (unique.length === 0) return undefined;
     return unique.length === 1 && !Array.isArray(input) ? unique[0] : unique;
   };
@@ -158,14 +237,59 @@ export async function sendEmail({
   }
 
   const toList = Array.isArray(validTo) ? validTo : [validTo];
-  const validCc = cleanEmails(cc);
-  const ccList = validCc ? (Array.isArray(validCc) ? validCc : [validCc]) : [];
+  const toLowerSet = new Set(toList.map(e => e.toLowerCase()));
+  const rawValidCc = cleanEmails(cc);
+  const ccList = (rawValidCc ? (Array.isArray(rawValidCc) ? rawValidCc : [rawValidCc]) : []).filter(
+    c => !toLowerSet.has(c.toLowerCase())
+  );
+  const validCc = ccList.length > 0 ? ccList : undefined;
   const existingRecipients = new Set([...toList, ...ccList].map(e => e.toLowerCase()));
 
   const rawBcc = cleanEmails(bcc);
   const bccList = rawBcc ? (Array.isArray(rawBcc) ? rawBcc : [rawBcc]) : [];
   const defaultBccTargets = enableAuditBcc ? ["ktdbcl@skylineschool.edu.vn"] : [];
-  const resolvedBcc = Array.from(new Set([...bccList, ...defaultBccTargets])).filter(b => !existingRecipients.has(b.toLowerCase()));
+  const bccSeen = new Set<string>();
+  const resolvedBcc: string[] = [];
+  for (const b of [...bccList, ...defaultBccTargets]) {
+    const lower = b.toLowerCase();
+    if (!existingRecipients.has(lower) && !bccSeen.has(lower)) {
+      bccSeen.add(lower);
+      resolvedBcc.push(b);
+    }
+  }
+
+  const resolvedSubject = formatEmailSubject(subject);
+  let effectiveTo: string | string[] = validTo;
+
+  // Short-window deduplication: filter out any recipient who already received this exact subject within 60s
+  if (!skipDedup) {
+    const now = Date.now();
+    pruneRecentEmailCache(now);
+    const filteredTo = toList.filter(addr => {
+      const key = `${addr.toLowerCase()}::${resolvedSubject.toLowerCase()}`;
+      const expiresAt = RECENT_EMAIL_DISPATCH_CACHE.get(key);
+      return !(expiresAt && expiresAt > now);
+    });
+
+    if (filteredTo.length === 0) {
+      console.info("[mail.ts][DEDUP] Skipped duplicate email dispatch within 60s window:", {
+        to: toList,
+        subject: resolvedSubject,
+      });
+      return {
+        success: true,
+        skipped: true,
+        provider: "DEDUP_GUARD",
+        reason: "Duplicate email suppressed within 60s window",
+      };
+    }
+
+    for (const addr of filteredTo) {
+      const key = `${addr.toLowerCase()}::${resolvedSubject.toLowerCase()}`;
+      RECENT_EMAIL_DISPATCH_CACHE.set(key, now + RECENT_EMAIL_TTL_MS);
+    }
+    effectiveTo = filteredTo.length === 1 && !Array.isArray(to) ? filteredTo[0] : filteredTo;
+  }
 
   const resolvedReplyTo = cleanEmails(replyTo) || "ktdbcl@skylineschool.edu.vn";
 
@@ -187,13 +311,13 @@ export async function sendEmail({
         .trim()
     : undefined);
 
-  const resolvedSubject = formatEmailSubject(subject);
+  const resolvedHtml = normalizeEmailBrandingHtml(html);
 
   const mailOptions: any = {
     from: resolvedFrom,
-    to: validTo,
+    to: effectiveTo,
     subject: resolvedSubject,
-    html,
+    html: resolvedHtml,
   };
 
   if (resolvedText) mailOptions.text = resolvedText;

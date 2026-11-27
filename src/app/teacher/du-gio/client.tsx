@@ -13,6 +13,7 @@ import { QuickCommentPresets } from './components/QuickCommentPresets';
 import { TeacherTargetTracker } from './components/TeacherTargetTracker';
 import { TeacherExperienceConfirmModal } from './components/TeacherExperienceConfirmModal';
 import { AdminObservationKpiCards } from './components/AdminObservationKpiCards';
+import { AdminObservationDashboard } from './components/AdminObservationDashboard';
 import { TeacherObservationReportTab } from './components/TeacherObservationReportTab';
 import dynamic from 'next/dynamic';
 
@@ -581,15 +582,16 @@ const getAvatarGradient = (name: string) => {
 };
 
 
-const mapTabToMainTab = (tab: string | null | undefined, isDefaultAdmin = false): "my_schedule" | "overview_slots" | "evaluations" | "teacher_report" | "ttcm_summary" | "re_evaluations" => {
-  if (!tab) return isDefaultAdmin ? "overview_slots" : "my_schedule";
+const mapTabToMainTab = (tab: string | null | undefined, isDefaultAdmin = false): "admin_dashboard" | "my_schedule" | "overview_slots" | "evaluations" | "teacher_report" | "ttcm_summary" | "re_evaluations" => {
+  if (!tab) return isDefaultAdmin ? "admin_dashboard" : "my_schedule";
+  if (tab === "admin_dashboard" || tab === "dashboard" || tab === "dieu-hanh") return "admin_dashboard";
   if (tab === "my_schedule" || tab === "my-schedule" || tab === "lich-day" || tab === "schedule") return "my_schedule";
   if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview" || tab === "slots" || tab === "danh-sach" || tab === "dang-ky-du-gio" || tab === "dang-ky" || tab === "register_request") return "overview_slots";
   if (tab === "evaluations" || tab === "evaluation" || tab === "danh-gia") return "evaluations";
   if (tab === "teacher_report" || tab === "report" || tab === "bao-cao" || tab === "thong-ke" || tab === "bao-cao-thong-ke") return "teacher_report";
   if (tab === "ttcm_summary" || tab === "ttcm" || tab === "theo-doi-tong-hop" || tab === "tong-hop-ttcm" || tab === "to-chuyen-mon") return "ttcm_summary";
   if (tab === "re_evaluations" || tab === "re-evaluations" || tab === "xet-duyet" || tab === "xet-duyet-danh-gia-lai") return "re_evaluations";
-  return isDefaultAdmin ? "overview_slots" : "my_schedule";
+  return isDefaultAdmin ? "admin_dashboard" : "my_schedule";
 };
 
 const formatDeptName = (name: string | null | undefined): string => {
@@ -884,7 +886,8 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [selectedEvalMonth, setSelectedEvalMonth] = useState('ALL');
-  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "teacher_report" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab"), (props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))));
+  const [showCreateActionMenu, setShowCreateActionMenu] = useState(false);
+  const [activeMainTab, setActiveMainTab] = useState<"admin_dashboard" | "register_request" | "overview_slots" | "my_schedule" | "evaluations" | "teacher_report" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab"), (props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))));
   const [myScheduleSubTab, setMyScheduleSubTab] = useState<"register" | "all" | "taught" | "observed" | "requests">("all");
   type FilterTab = "all" | "self_open" | "assigned" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
@@ -4215,7 +4218,7 @@ export function ObservationClient(props: ObservationClientProps) {
   return (
     <>
       {/* MOBILE PWA VIEW (< 768px): GIAO DIỆN CHUYÊN BIỆT CHO SMARTPHONE */}
-      <div className="md:hidden w-full">
+      <div className="md:hidden -m-3.5 sm:-m-6">
         <ObservationMobileView
           initialSlots={slots}
           currentTeacher={currentTeacher}
@@ -4256,9 +4259,9 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* Dynamic Tab & Sub-tab Styles according to Campus Theme */}
       {(() => null)()}
       
-      {/* TOP APP BAR: Streamlined Campus-Themed Enterprise Header */}
+      {/* TOP APP BAR: Streamlined Academic Ledger Header */}
       <div 
-        className="relative overflow-hidden rounded-3xl p-5 sm:p-6 text-white shadow-xl border border-white/20 transition-all duration-300 font-sans"
+        className="relative z-30 rounded-2xl px-5 py-4 text-white shadow-sm border border-[#003B3A]/20 transition-all duration-300 font-sans"
         style={{ background: campusTheme.headerGradient }}
       >
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
@@ -4361,8 +4364,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       type="button"
                       onClick={() => {
                         setViewMode("ADMIN");
-                        if (activeMainTab === "my_schedule" || activeMainTab === "register_request") {
-                          setActiveMainTab("overview_slots");
+                        if (activeMainTab === "my_schedule" || activeMainTab === "register_request" || activeMainTab === "teacher_report") {
+                          setActiveMainTab("admin_dashboard");
                         }
                       }}
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
@@ -4379,7 +4382,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       type="button"
                       onClick={() => {
                         setViewMode("TEACHER");
-                        if (activeMainTab === "ttcm_summary") {
+                        if (activeMainTab === "ttcm_summary" || activeMainTab === "admin_dashboard") {
                           setActiveMainTab("my_schedule");
                         }
                       }}
@@ -4423,8 +4426,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       type="button"
                       onClick={() => {
                         setViewMode("ADMIN");
-                        if (activeMainTab === "my_schedule" || activeMainTab === "register_request") {
-                          setActiveMainTab("overview_slots");
+                        if (activeMainTab === "my_schedule" || activeMainTab === "register_request" || activeMainTab === "teacher_report") {
+                          setActiveMainTab("admin_dashboard");
                         }
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -4439,7 +4442,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       type="button"
                       onClick={() => {
                         setViewMode("TEACHER");
-                        if (activeMainTab === "ttcm_summary") {
+                        if (activeMainTab === "ttcm_summary" || activeMainTab === "admin_dashboard") {
                           setActiveMainTab("my_schedule");
                         }
                       }}
@@ -4456,125 +4459,144 @@ export function ObservationClient(props: ObservationClientProps) {
               </>
             )}
 
-            {/* Mode Switcher trực tiếp trên Hero Banner */}
-            {(isManagerRole || isAdminUser) ? (
-              <div className="bg-white/15 backdrop-blur-md p-1 rounded-xl border border-white/25 flex items-center gap-1 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("ADMIN");
-                    if (activeMainTab === "my_schedule" || activeMainTab === "register_request") {
-                      setActiveMainTab("overview_slots");
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === "ADMIN"
-                      ? "bg-white text-[#003B3A] shadow-md font-black scale-102"
-                      : "text-white/80 hover:text-white hover:bg-white/10"
-                  }`}
-                  title="Chuyển sang Chế độ Quản lý & Điều hành"
-                >
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>Chế độ Quản lý</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("TEACHER");
-                    if (activeMainTab === "ttcm_summary") {
-                      setActiveMainTab("my_schedule");
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === "TEACHER"
-                      ? "bg-[#00A19A] text-white shadow-md font-black scale-102"
-                      : "text-white/80 hover:text-white hover:bg-white/10"
-                  }`}
-                  title="Chuyển sang Chế độ Cá nhân (Lịch dạy & đi dự của tôi)"
-                >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>Chế độ Cá nhân</span>
-                </button>
-              </div>
-            ) : (
-              <div className="bg-white/15 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 flex items-center gap-1.5 text-xs font-bold text-white shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Chế độ Cá nhân GV</span>
-              </div>
-            )}
-
-            {/* Primary Action Button: Đăng ký tiết dạy */}
-            <button
-              type="button"
-              onClick={() => {
-                setCreationMode("TEACHER_OPEN");
-                setShowCreateModal(true);
-              }}
-              className="px-4 py-2 rounded-xl bg-white text-slate-900 hover:bg-white/90 font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 border border-white/30"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Đăng ký tiết dạy</span>
-            </button>
-
-            {/* Đăng ký lịch Cơ sở (Tổ CTHS / Công tác cơ sở) */}
-            <button
-              type="button"
-              onClick={() => {
-                setCreationMode("CAMPUS_SCHEDULE");
-                setShowCreateModal(true);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-teal-500/25 hover:bg-teal-500/40 text-teal-100 border border-teal-300/40 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 backdrop-blur-md"
-              title="Đăng ký hoặc ghi nhận lịch làm việc tại cơ sở (Tổ CTHS)"
-            >
-              <Building2 className="w-3.5 h-3.5 text-teal-200" />
-              <span>Đăng ký lịch Cơ sở</span>
-            </button>
-
-            {/* Secondary: Xin dự giờ */}
-            {viewMode === "TEACHER" && (
+            {/* Consolidated Primary Action Dropdown (Elevated z-50 Action Launcher) */}
+            <div className="relative z-40">
               <button
                 type="button"
-                onClick={() => {
-                  setCreationMode("OBSERVER_REQUEST");
-                  setShowCreateModal(true);
-                }}
-                className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs transition-all border border-white/25 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95 backdrop-blur-md"
+                onClick={() => setShowCreateActionMenu(prev => !prev)}
+                className="px-4 py-2 rounded-xl bg-white text-[#003B3A] hover:bg-[#F0FDFA] font-bold text-xs transition-all shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer border border-white/70"
               >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Xin dự giờ</span>
+                <span className="w-5 h-5 rounded-md bg-[#00A19A] text-white flex items-center justify-center shrink-0">
+                  <Plus className="w-3.5 h-3.5" />
+                </span>
+                <span>Tạo lịch dự giờ</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#00736E] transition-transform duration-200 ${showCreateActionMenu ? "rotate-180" : ""}`} />
               </button>
-            )}
 
-            {/* Đột xuất */}
-            {canCreateSurprise && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCreationMode("SURPRISE");
-                  setShowCreateModal(true);
-                }}
-                className="px-3.5 py-2 rounded-xl bg-amber-500/30 hover:bg-amber-500/40 text-amber-200 border border-amber-400/40 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
-              >
-                <span>⚡</span>
-                <span>Đột xuất</span>
-              </button>
-            )}
+              {showCreateActionMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowCreateActionMenu(false)}
+                  />
+                  <div className="absolute right-0 mt-2.5 w-80 bg-white rounded-2xl shadow-2xl border border-[#E2E8F0] overflow-hidden z-50 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-150">
+                    {/* Launcher Header */}
+                    <div className="px-4 py-2.5 bg-[#003B3A] text-white flex items-center justify-between">
+                      <span className="text-xs font-bold tracking-tight">Chọn hình thức tạo lịch</span>
+                      <span className="text-[10px] font-semibold text-[#5EEAD4]">Dự giờ Sky-Line</span>
+                    </div>
 
-            {/* Chỉ định dự giờ */}
-            {canAssignObservation && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCreationMode("ASSIGNED");
-                  setShowCreateModal(true);
-                }}
-                className="px-3.5 py-2 rounded-xl bg-teal-500/30 hover:bg-teal-500/40 text-teal-700 border border-teal-400/40 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
-                title="Chỉ định dự giờ đối với giáo viên (Dành cho Quản lý / BGH / TTCM)"
-              >
-                <UserCheck className="w-3.5 h-3.5 text-teal-700" />
-                <span>Chỉ định dự giờ</span>
-              </button>
-            )}
+                    <div className="p-1.5 space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreateActionMenu(false);
+                          setCreationMode("TEACHER_OPEN");
+                          setShowCreateModal(true);
+                        }}
+                        className="group w-full px-3 py-2.5 rounded-xl text-left hover:bg-[#F0FDFA] flex items-center gap-3 transition-colors cursor-pointer"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#00A19A] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                          <PlusCircle className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-[#003B3A]">Đăng ký tiết dạy</div>
+                          <div className="text-[11px] text-slate-500 leading-snug">Mở tiết dạy theo kế hoạch để GV đăng ký dự</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#00A19A] shrink-0" />
+                      </button>
+
+                      {canAssignObservation && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCreateActionMenu(false);
+                            setCreationMode("ASSIGNED");
+                            setShowCreateModal(true);
+                          }}
+                          className="group w-full px-3 py-2.5 rounded-xl text-left hover:bg-[#F0FDFA] flex items-center gap-3 transition-colors cursor-pointer"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-[#003B3A] text-[#5EEAD4] flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                            <UserCheck className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-bold text-[#003B3A]">Chỉ định dự giờ</div>
+                            <div className="text-[11px] text-slate-500 leading-snug">Phân công trực tiếp người dự cho tiết dạy</div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#003B3A] shrink-0" />
+                        </button>
+                      )}
+
+                      {canCreateSurprise && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCreateActionMenu(false);
+                            setCreationMode("SURPRISE");
+                            setShowCreateModal(true);
+                          }}
+                          className="group w-full px-3 py-2.5 rounded-xl text-left hover:bg-amber-50/70 flex items-center gap-3 transition-colors cursor-pointer"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-[#D97706] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                            <Zap className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-bold text-[#003B3A]">Dự giờ đột xuất</div>
+                            <div className="text-[11px] text-slate-500 leading-snug">Ghi nhận & đánh giá tiết dự giờ đột xuất</div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#D97706] shrink-0" />
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreateActionMenu(false);
+                          setCreationMode("CAMPUS_SCHEDULE");
+                          setShowCreateModal(true);
+                        }}
+                        className="group w-full px-3 py-2.5 rounded-xl text-left hover:bg-emerald-50/70 flex items-center gap-3 transition-colors cursor-pointer"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#059669] text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-[#003B3A]">Đăng ký lịch Cơ sở</div>
+                          <div className="text-[11px] text-slate-500 leading-snug">Ghi nhận lịch công tác tại cơ sở</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#059669] shrink-0" />
+                      </button>
+
+                      {viewMode === "TEACHER" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCreateActionMenu(false);
+                            setCreationMode("OBSERVER_REQUEST");
+                            setShowCreateModal(true);
+                          }}
+                          className="group w-full px-3 py-2.5 rounded-xl text-left hover:bg-[#F0FDFA] flex items-center gap-3 transition-colors cursor-pointer border-t border-slate-100 mt-1 pt-2.5"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] border border-[#99F6E4] text-[#00736E] flex items-center justify-center shrink-0 group-hover:bg-[#00736E] group-hover:text-white transition-colors">
+                            <Eye className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-bold text-[#003B3A]">Xin dự giờ</div>
+                            <div className="text-[11px] text-slate-500 leading-snug">Gửi đề xuất dự giờ tới giáo viên bộ môn</div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#00A19A] shrink-0" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="px-3.5 py-2 bg-[#F8FAFC] border-t border-[#E2E8F0] text-[11px] text-slate-500 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
+                      <span>Tự động khử trùng lặp — tối đa 01 email/GV</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -4582,105 +4604,87 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* MODERN TAB NAVIGATION: UNIFIED ENTERPRISE STYLING */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-1.5 shadow-2xs sticky top-2 z-20 font-sans">
         {viewMode === "ADMIN" ? (
-          /* ADMIN MODE TAB BAR (4 TABS) */
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
-            {/* Admin Tab 1: Báo cáo & Thống kê TCM */}
+          /* ADMIN MODE TAB BAR — Clean Sky-Line Academic Ledger Navigation */
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none tabular-nums">
             <button
               type="button"
-              onClick={() => setActiveMainTab("ttcm_summary")}
-              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs transition-all duration-200 cursor-pointer ${
-                activeMainTab === "ttcm_summary"
-                  ? (campusTheme.type === "HILL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
-                      : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
-                      : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
-                  : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
+              onClick={() => setActiveMainTab("admin_dashboard")}
+              className={`flex items-center gap-2 py-2 px-3.5 rounded-xl text-xs transition-colors cursor-pointer shrink-0 ${
+                activeMainTab === "admin_dashboard"
+                  ? "bg-[#003B3A] text-white font-semibold shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-[#003B3A] font-medium"
               }`}
             >
-              <span className="truncate">1. Báo cáo & Thống kê TCM</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold shrink-0 ${
-                activeMainTab === "ttcm_summary" 
-                  ? "bg-white/25 text-white border border-white/30" 
-                  : "bg-white text-slate-700 border border-slate-300/80"
-              }`}>
-                TCM
-              </span>
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Dashboard & Năng lực</span>
             </button>
 
-            {/* Admin Tab 2: Quản lý Tiết dạy theo phân quyền vai trò */}
             <button
               type="button"
               onClick={() => setActiveMainTab("overview_slots")}
-              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-2 py-2 px-3.5 rounded-xl text-xs transition-colors cursor-pointer shrink-0 ${
                 activeMainTab === "overview_slots"
-                  ? (campusTheme.type === "HILL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
-                      : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
-                      : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
-                  : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
+                  ? "bg-[#003B3A] text-white font-semibold shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-[#003B3A] font-medium"
               }`}
             >
-              <span className="truncate">
-                {managementScope === "BAN_DHCM"
-                  ? "2. Quản lý Tiết dạy toàn trường"
-                  : managementScope === "GDCS"
-                  ? `2. Quản lý Tiết dạy ${myCampusName}`
-                  : managementScope === "TBP"
-                  ? `2. Quản lý Tiết dạy Bộ phận`
-                  : `2. Quản lý Tiết dạy ${formatDeptName(myTTCMDeptNames)}`}
-              </span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold shrink-0 ${
-                activeMainTab === "overview_slots" 
-                  ? "bg-white/25 text-white border border-white/30" 
-                  : "bg-white text-slate-700 border border-slate-300/80"
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Quản lý tiết dự giờ</span>
+              <span className={`px-1.5 py-0.5 text-[10px] rounded-md font-semibold ${
+                activeMainTab === "overview_slots"
+                  ? "bg-white/20 text-white"
+                  : "bg-slate-100 text-slate-600"
               }`}>
-                {scopedManagementSlots.length}
+                {scopedManagementSlots.length.toLocaleString("vi-VN")}
               </span>
             </button>
 
-            {/* Admin Tab 3: Kết quả đánh giá */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("ttcm_summary")}
+              className={`flex items-center gap-2 py-2 px-3.5 rounded-xl text-xs transition-colors cursor-pointer shrink-0 ${
+                activeMainTab === "ttcm_summary"
+                  ? "bg-[#003B3A] text-white font-semibold shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-[#003B3A] font-medium"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Báo cáo chi tiết TCM</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveMainTab("evaluations")}
-              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-2 py-2 px-3.5 rounded-xl text-xs transition-colors cursor-pointer shrink-0 ${
                 activeMainTab === "evaluations"
-                  ? (campusTheme.type === "HILL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
-                      : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
-                      : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
-                  : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
+                  ? "bg-[#003B3A] text-white font-semibold shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-[#003B3A] font-medium"
               }`}
             >
-              <span className="truncate">3. Kết quả đánh giá</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold shrink-0 ${
-                activeMainTab === "evaluations" 
-                  ? "bg-white/25 text-white border border-white/30" 
-                  : "bg-white text-slate-700 border border-slate-300/80"
-              }`}>
-                {receivedEvaluations.length}
-              </span>
+              <Award className="w-3.5 h-3.5" />
+              <span>Kết quả đánh giá</span>
+              {receivedEvaluations.length > 0 && (
+                <span className={`px-1.5 py-0.5 text-[10px] rounded-md font-semibold ${
+                  activeMainTab === "evaluations" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                }`}>
+                  {receivedEvaluations.length}
+                </span>
+              )}
             </button>
 
-            {/* Admin Tab 4: Duyệt chấm lại */}
             <button
               type="button"
               onClick={() => setActiveMainTab("re_evaluations")}
-              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-2 py-2 px-3.5 rounded-xl text-xs transition-colors cursor-pointer shrink-0 ${
                 activeMainTab === "re_evaluations"
-                  ? (campusTheme.type === "HILL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#AE882E] text-white shadow-md shadow-[#AE882E]/25 scale-[1.01] border border-white/20 font-black"
-                      : campusTheme.type === "GLOBAL"
-                      ? "bg-gradient-to-r from-[#01A49D] to-[#003B3A] text-white shadow-md shadow-[#003B3A]/25 scale-[1.01] border border-white/20 font-black"
-                      : "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-white/20 font-black")
-                  : "text-slate-700 bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 font-bold hover:text-slate-900"
+                  ? "bg-[#003B3A] text-white font-semibold shadow-2xs"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-[#003B3A] font-medium"
               }`}
             >
-              <span className="truncate">4. Duyệt chấm lại</span>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Duyệt chấm lại</span>
               {pendingReEvalCount > 0 && (
-                <span className="px-2 py-0.5 text-[10px] rounded-full font-bold shrink-0 bg-red-500 text-white border border-white animate-pulse">
+                <span className="px-1.5 py-0.5 text-[10px] rounded-md font-semibold bg-rose-600 text-white">
                   {pendingReEvalCount}
                 </span>
               )}
@@ -5049,6 +5053,34 @@ export function ObservationClient(props: ObservationClientProps) {
           getMamNonRankingDetails={getMamNonRankingDetails}
         />
       )}
+      {/* TAB 0: DASHBOARD ĐIỀU HÀNH & NĂNG LỰC DẠY HỌC (ADMIN MODE) */}
+      {activeMainTab === "admin_dashboard" && viewMode === "ADMIN" && (
+        <AdminObservationDashboard
+          slots={scopedManagementSlots}
+          departments={departments}
+          campuses={campuses}
+          teachers={teachers}
+          isPreschool={isMamNonTeacher}
+          academicYearName={activeAcademicYear?.name}
+          scopeLabel={
+            managementScope === "BAN_DHCM"
+              ? "Toàn trường"
+              : managementScope === "GDCS"
+              ? myCampusName
+              : managementScope === "TBP"
+              ? `Bộ phận ${myTBPDivisionName}`
+              : formatDeptName(myTTCMDeptNames)
+          }
+          onNavigateToSlots={(opts) => {
+            if (opts?.deptId) setFilterDeptId(opts.deptId);
+            if (opts?.campusId) setFilterCampusId(opts.campusId);
+            if (opts?.searchQuery) setSearchTeacherQuery(opts.searchQuery);
+            setActiveMainTab("overview_slots");
+          }}
+          onNavigateToTTCMReport={() => setActiveMainTab("ttcm_summary")}
+        />
+      )}
+
       {/* TAB 2: TỔNG HỢP & DANH SÁCH TIẾT DẠY */}
       {activeMainTab === "overview_slots" && (
         <div className="w-full space-y-5 animate-in fade-in duration-300">
@@ -5244,198 +5276,103 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
           )}
 
-        {/* ROW 2: Danh sách tiết dạy đăng ký dự giờ (Full-width Data Table) */}
-      <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#00A19A] flex items-center justify-center">
-              {viewMode === "ADMIN" ? <LayoutDashboard className="w-5 h-5 text-teal-700" /> : <SlidersHorizontal className="w-5 h-5" />}
-            </div>
+        {/* ROW 2: Danh sách tiết dạy đăng ký dự giờ (Academic Ledger Card) */}
+      <div className="w-full bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs p-5 flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-8 rounded-full bg-[#003B3A] shrink-0" />
             <div>
-              <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
+              <h3 className="font-bold text-sm text-[#003B3A]">
                 {viewMode === "ADMIN" 
                   ? (managementScope === "BAN_DHCM"
-                      ? "Quản lý Tiết Dự giờ"
+                      ? "Quản lý tiết dự giờ"
                       : managementScope === "GDCS"
-                      ? `Quản lý Tiết Dự giờ - ${myCampusName}`
+                      ? `Quản lý tiết dự giờ — ${myCampusName}`
                       : managementScope === "TBP"
-                      ? `Quản lý Tiết Dự giờ - Bộ phận ${myTBPDivisionName}`
-                      : `Quản lý Tiết Dự giờ - ${formatDeptName(myTTCMDeptNames)}`)
+                      ? `Quản lý tiết dự giờ — Bộ phận ${myTBPDivisionName}`
+                      : `Quản lý tiết dự giờ — ${formatDeptName(myTTCMDeptNames)}`)
                   : (myTeacherDivisionCodes.size > 0 && !isSuperOrBanDHCM
-                      ? `Danh sách đăng ký tiết dạy - ${myTeacherDivisionName}`
+                      ? `Danh sách đăng ký tiết dạy — ${myTeacherDivisionName}`
                       : "Danh sách đăng ký tiết dạy")}
               </h3>
-              <p className="text-xs text-slate-400 font-medium">
+              <p className="text-xs text-slate-500">
                 {viewMode === "ADMIN" 
                   ? (managementScope === "BAN_DHCM"
-                      ? "Quản lý, điều phối, phê duyệt và theo dõi tiến độ dự giờ toàn trường"
-                      : `Quản lý, điều phối và theo dõi tiến độ dự giờ trong phạm vi ${managementScope === "GDCS" ? myCampusName : managementScope === "TBP" ? myTBPDivisionName : formatDeptName(myTTCMDeptNames)}`)
+                      ? "Điều phối, phê duyệt và theo dõi tiến độ dự giờ toàn trường"
+                      : `Điều phối và theo dõi tiến độ dự giờ trong phạm vi ${managementScope === "GDCS" ? myCampusName : managementScope === "TBP" ? myTBPDivisionName : formatDeptName(myTTCMDeptNames)}`)
                   : (myTeacherDivisionCodes.size > 0 && !isSuperOrBanDHCM
-                      ? `Chỉ hiển thị các tiết dạy thuộc ${myTeacherDivisionName}. Thầy/Cô có thể lọc theo tổ chuyên môn để chọn tiết dự giờ phù hợp.`
+                      ? `Chỉ hiển thị các tiết dạy thuộc ${myTeacherDivisionName}.`
                       : "Tìm kiếm, lọc theo tổ chuyên môn và chọn tiết dự giờ phù hợp")}
               </p>
             </div>
             {isSearching && (
-              <div className="flex items-center gap-1.5 ml-2 text-xs font-bold text-teal-600 animate-pulse">
+              <div className="flex items-center gap-1.5 ml-2 text-xs font-medium text-[#00736E]">
                 <div className="w-2 h-2 border border-teal-500 border-t-transparent rounded-full animate-spin" />
                 <span>Đang tải...</span>
               </div>
             )}
           </div>
 
-          {/* Unified Filter Tabs Bar (7 Thẻ Lọc: Tất cả, Tiết tự mở, Dự giờ chỉ định, Hết hạn, Xin dự giờ, Thuộc TCM, TCM khác) */}
-          <div className="flex flex-wrap items-center gap-2 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-inner">
-            {/* 1. Tất cả */}
+          {(props.isAdminPage || managementScope === "BAN_DHCM" || managementScope === "GDCS") && (
             <button
               type="button"
-              onClick={() => setActiveFilterTab("all")}
-              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-                activeFilterTab === "all"
-                  ? "bg-gradient-to-r from-[#003B3A] to-slate-900 text-white shadow-md shadow-slate-900/30 border border-slate-500/40 scale-[1.02]"
-                  : "text-slate-700 bg-white/80 hover:bg-white hover:text-slate-900 border border-slate-200/80"
-              }`}
+              onClick={handleSyncStatuses}
+              disabled={isSyncingStatuses}
+              className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-white hover:bg-slate-50 text-[#003B3A] border border-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 self-start sm:self-auto"
+              title="Rà soát và tự động cập nhật lại toàn bộ các tiết Chờ duyệt sang Đã duyệt hoặc Hết hạn"
             >
-              <span>Tất cả</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
-                activeFilterTab === "all" ? "bg-white/25 text-white border border-white/30" : "bg-slate-200 text-slate-800 border border-slate-300"
-              }`}>
-                {tabCounts.all}
-              </span>
+              <RotateCcw className={`w-3.5 h-3.5 text-[#00A19A] ${isSyncingStatuses ? "animate-spin" : ""}`} />
+              <span>{isSyncingStatuses ? "Đang đồng bộ..." : "Rà soát trạng thái"}</span>
             </button>
+          )}
+        </div>
 
-            {/* 2. Tiết GV Dạy tự mở */}
-            <button
-              type="button"
-              onClick={() => setActiveFilterTab("self_open")}
-              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-                activeFilterTab === "self_open"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30 border border-emerald-400/40 scale-[1.02]"
-                  : "text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200/80"
-              }`}
-            >
-              <span>Tiết GV Dạy tự mở</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
-                activeFilterTab === "self_open" ? "bg-white/25 text-white border border-white/30" : "bg-emerald-200/80 text-emerald-950 border border-emerald-300"
-              }`}>
-                {tabCounts.self_open}
-              </span>
-            </button>
-
-            {/* 3. Dự giờ chỉ định */}
-            <button
-              type="button"
-              onClick={() => setActiveFilterTab("assigned")}
-              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-                activeFilterTab === "assigned"
-                  ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-purple-700/30 border border-teal-400/40 scale-[1.02]"
-                  : "text-teal-800 bg-teal-50/70 hover:bg-teal-50 border border-teal-200/80"
-              }`}
-            >
-              <span>Dự giờ chỉ định</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold tabular-nums ${
-                activeFilterTab === "assigned" ? "bg-white/25 text-white border border-white/30" : "bg-teal-200/80 text-teal-800 border border-teal-400"
-              }`}>
-                {tabCounts.assigned}
-              </span>
-            </button>
-
-            {/* 4. Hết hạn */}
-            <button
-              type="button"
-              onClick={() => setActiveFilterTab("expired")}
-              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-                activeFilterTab === "expired"
-                  ? "bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md shadow-rose-600/30 border border-rose-400/40 scale-[1.02]"
-                  : "text-rose-900 bg-rose-50/70 hover:bg-rose-100 border border-rose-200/80"
-              }`}
-            >
-              <span>Hết hạn</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
-                activeFilterTab === "expired" ? "bg-white/25 text-white border border-white/30" : "bg-rose-200/80 text-rose-950 border border-rose-300"
-              }`}>
-                {tabCounts.expired}
-              </span>
-            </button>
-
-            {/* 5. Xin dự giờ */}
-            <button
-              type="button"
-              onClick={() => setActiveFilterTab("gbm_request")}
-              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-                activeFilterTab === "gbm_request"
-                  ? "bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-md shadow-indigo-600/30 border border-teal-400/40 scale-[1.02]"
-                  : "text-teal-800 bg-teal-50/70 hover:bg-teal-50 border border-teal-200/80"
-              }`}
-            >
-              <span>Xin dự giờ</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
-                activeFilterTab === "gbm_request" ? "bg-white/25 text-white border border-white/30" : "bg-teal-200/80 text-teal-800 border border-teal-200"
-              }`}>
-                {tabCounts.gbm_request}
-              </span>
-            </button>
-
-            {/* 6. Thuộc TCM */}
-            <button
-              type="button"
-              onClick={() => setActiveFilterTab("my_dept")}
-              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-                activeFilterTab === "my_dept"
-                  ? "bg-gradient-to-r from-teal-700 to-emerald-800 text-white shadow-md shadow-teal-900/30 border border-teal-400/40 scale-[1.02]"
-                  : "text-teal-950 bg-teal-50/70 hover:bg-teal-100 border border-teal-200/80"
-              }`}
-            >
-              <span>Thuộc TCM</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
-                activeFilterTab === "my_dept" ? "bg-white/25 text-white border border-white/30" : "bg-teal-200/80 text-teal-950 border border-teal-300"
-              }`}>
-                {tabCounts.my_dept}
-              </span>
-            </button>
-
-            {/* 7. TCM khác */}
-            <button
-              type="button"
-              onClick={() => setActiveFilterTab("other_dept")}
-              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-                activeFilterTab === "other_dept"
-                  ? "bg-gradient-to-r from-sky-700 to-blue-800 text-white shadow-md shadow-sky-900/30 border border-sky-400/40 scale-[1.02]"
-                  : "text-sky-950 bg-sky-50/70 hover:bg-sky-100 border border-sky-200/80"
-              }`}
-            >
-              <span>TCM khác</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
-                activeFilterTab === "other_dept" ? "bg-white/25 text-white border border-white/30" : "bg-sky-200/80 text-sky-950 border border-sky-300"
-              }`}>
-                {tabCounts.other_dept}
-              </span>
-            </button>
-
-            {/* Nút Rà soát & Đồng bộ trạng thái cho Ban ĐHCM / Admin / GĐCS */}
-            {(props.isAdminPage || managementScope === "BAN_DHCM" || managementScope === "GDCS") && (
+        {/* Clean Segmented Status Filter Bar */}
+        <div className="flex flex-wrap items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 tabular-nums">
+          {(
+            [
+              { key: "all", label: "Đang mở", count: tabCounts.all },
+              { key: "self_open", label: "GV tự mở", count: tabCounts.self_open },
+              { key: "assigned", label: "Chỉ định", count: tabCounts.assigned },
+              { key: "gbm_request", label: "Xin dự giờ", count: tabCounts.gbm_request },
+              { key: "expired", label: "Đã qua / Hết hạn", count: tabCounts.expired },
+              { key: "my_dept", label: "Thuộc TCM", count: tabCounts.my_dept },
+              { key: "other_dept", label: "TCM khác", count: tabCounts.other_dept },
+            ] as const
+          ).map((item) => {
+            const isActive = activeFilterTab === item.key;
+            return (
               <button
+                key={item.key}
                 type="button"
-                onClick={handleSyncStatuses}
-                disabled={isSyncingStatuses}
-                className="ml-auto px-3.5 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-700 hover:to-amber-600 text-white shadow-md shadow-amber-900/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 hover:scale-[1.02]"
-                title="Rà soát và tự động cập nhật lại toàn bộ các tiết Chờ duyệt sang Đã duyệt hoặc Hết hạn"
+                onClick={() => setActiveFilterTab(item.key)}
+                className={`px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? "bg-[#003B3A] text-white font-semibold shadow-2xs"
+                    : "text-slate-600 hover:text-[#003B3A] hover:bg-white/70 font-medium"
+                }`}
               >
-                <span>{isSyncingStatuses ? "Đang đồng bộ..." : "Rà soát trạng thái"}</span>
+                <span>{item.label}</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded font-semibold ${
+                  isActive ? "bg-white/20 text-white" : "bg-slate-200/80 text-slate-700"
+                }`}>
+                  {item.count.toLocaleString("vi-VN")}
+                </span>
               </button>
-            )}
-          </div>
+            );
+          })}
         </div>
         
-        {/* Thanh tìm kiếm theo Họ tên Giáo viên hoặc Mã SKL */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-gradient-to-r from-teal-50/70 via-slate-50 to-emerald-600/70 p-3 rounded-2xl border border-teal-200/80 shadow-2xs">
+        {/* Clean Integrated Search Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-teal-600 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchTeacherQuery}
               onChange={e => setSearchTeacherQuery(e.target.value)}
-              placeholder="Điền Họ tên Giáo viên, hoặc Mã SKL..."
-              className="w-full pl-10 pr-9 py-2 text-xs font-bold rounded-xl bg-white border border-teal-300/80 text-slate-800 placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-2xs transition-all"
+              placeholder="Tìm theo họ tên giáo viên, mã SKL hoặc tên bài dạy..."
+              className="w-full pl-10 pr-9 py-2 text-xs font-medium rounded-xl bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
             />
             {searchTeacherQuery && (
               <button
@@ -5465,10 +5402,10 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
 
         {/* Compact Advanced Filter Bar (5 Filters: Tháng, Cơ sở, Tổ chuyên môn, Bậc học, Tiết dạy) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs">
           {/* 1. Tháng */}
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Tháng</span>
+            <span className="text-[11px] font-medium text-slate-500">Tháng</span>
             <select value={filterMonth} onChange={e => handleMonthChange(e.target.value)}
               className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#00A19A] focus:ring-1 focus:ring-[#00A19A]">
               <option value="all">Tất cả tháng</option>
@@ -5486,7 +5423,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
           {/* 2. Cơ sở */}
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Cơ sở</span>
+            <span className="text-[11px] font-medium text-slate-500">Cơ sở</span>
             {viewMode === "ADMIN" && managementScope === "GDCS" ? (
               <select 
                 value={myCampusId} 
@@ -5507,7 +5444,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
           {/* 3. Tổ chuyên môn */}
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Tổ chuyên môn</span>
+            <span className="text-[11px] font-medium text-slate-500">Tổ chuyên môn</span>
             <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
               className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#00A19A] focus:ring-1 focus:ring-[#00A19A]">
               {viewMode === "ADMIN" && managementScope === "TTCM" ? (
@@ -5543,7 +5480,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
           {/* 4. Bậc học */}
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Bậc học</span>
+            <span className="text-[11px] font-medium text-slate-500">Bậc học</span>
             <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); setFilterClassId("all"); }}
               className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#00A19A] focus:ring-1 focus:ring-[#00A19A]">
               <option value="all">Tất cả bậc</option>
@@ -5557,7 +5494,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
           {/* 5. Tiết dạy */}
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Tiết dạy</span>
+            <span className="text-[11px] font-medium text-slate-500">Tiết dạy</span>
             <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
               className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#00A19A] focus:ring-1 focus:ring-[#00A19A]">
               <option value="all">Tất cả tiết</option>

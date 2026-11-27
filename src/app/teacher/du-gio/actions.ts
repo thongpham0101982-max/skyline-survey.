@@ -1370,7 +1370,7 @@ const isAssigned = slot.requestOrigin === "ASSIGNED" || isAssignedSlotCreator(sl
         }
 
         // 3. Email Confirmation to Observer Teacher (Biên nhận đã đăng ký thành công)
-        if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+        if (observerEmail && observerEmail.includes("@") && observerEmail.toLowerCase() !== hostEmail?.toLowerCase()) {
           const observerHtml = renderObservationRequestSubmittedForObserver({
             observerName: currentTeacher.teacherName,
             hostName: hostTeacher?.teacherName || "Giáo viên dạy",
@@ -2407,6 +2407,7 @@ export async function approveRegistration(registrationId: string) {
     if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
     const registration = await prisma.observationRegistration.findUnique({ where: { id: registrationId }, include: { slot: true } })
     if (!registration) return { success: false, error: "Registration not found" }
+    if (registration.isApproved) return { success: true }
     const isObsAdmin = await checkIsObservationAdmin(session.user.role || "", session.user.id);
     if (registration.slot.teacherId !== currentTeacher.id && !isObsAdmin) {
       return { success: false, error: "Bạn không phải giáo viên chủ trì hoặc không có quyền quản trị để duyệt đăng ký này" };
@@ -2800,7 +2801,7 @@ export async function submitEvaluation(data: {
       }
 
       // 2. Gửi Email xác nhận & bản lưu cho Người dự giờ (Observer / Evaluator)
-      if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+      if (observerEmail && observerEmail.includes("@") && observerEmail.toLowerCase() !== hostEmail?.toLowerCase()) {
         const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
         const observerSubject = isSurprise
           ? `[Sky-line SMS - Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`
@@ -3507,7 +3508,7 @@ export async function requestObservationSlot(data: {
         }
 
         // 3. Email Confirmation to Observer Teacher (Skipped if self-observation)
-        if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+        if (observerEmail && observerEmail.includes("@") && observerEmail.toLowerCase() !== hostEmail?.toLowerCase()) {
           const observerSubject = `[Sky-line SMS - Dự Giờ] Đã gửi thành công đề xuất xin dự giờ tới Thầy/Cô ${hostTeacher.teacherName}`;
           const observerHtml = renderObservationRequestSubmittedForObserver({
             observerName: observerTeacher.teacherName,
@@ -3587,6 +3588,10 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
     const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://ssm.skylineschool.edu.vn";
 
     if (accept) {
+      if (slot.status === "ACTIVE" && slot.registrations.every(r => r.isApproved)) {
+        return { success: true };
+      }
+
       await prisma.observationSlot.update({
         where: { id: slotId },
         data: {
@@ -3603,34 +3608,43 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
         }
       })
 
-      // Send email to observer teachers confirming approval
-      try {
-        for (const reg of slot.registrations) {
-          const obsTeacher = reg.teacher;
-          const obsEmail = getTeacherResolvedEmail(obsTeacher);
-          if (obsEmail && obsEmail.includes("@")) {
-            const emailSubject = `[Sky-line SMS - Dự Giờ] Đề xuất dự giờ của bạn đã được Thầy/Cô ${hostTeacher?.teacherName} đồng ý`;
-            const linkUrl = SKYLINE_SSM_LOGIN_URL;
-            const emailHtml = renderObservationRequestResponseForObserver({
-              observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
-              hostName: hostTeacher?.teacherName || "Giáo viên dạy",
-              hostCode: hostTeacher?.teacherCode || undefined,
-              topic: slot.topic,
-              subjectName: slot.subjectName,
-              grade: slot.grade,
-              className: slot.className || undefined,
-              dateStr: formattedDateVi,
-              period: slot.startTime,
-              accepted: true,
-              directLink: linkUrl
-            });
-            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Accept observation request email error:", e));
+      // Send email to observer teachers confirming approval (deduplicated per recipient via after())
+      after(async () => {
+        try {
+          const sentEmails = new Set<string>();
+          for (const reg of slot.registrations) {
+            const obsTeacher = reg.teacher;
+            const obsEmail = getTeacherResolvedEmail(obsTeacher);
+            const obsEmailLower = obsEmail?.trim().toLowerCase();
+            if (obsEmail && obsEmailLower && obsEmail.includes("@") && !sentEmails.has(obsEmailLower)) {
+              sentEmails.add(obsEmailLower);
+              const emailSubject = `[Sky-line SMS - Dự Giờ] Đề xuất dự giờ của bạn đã được Thầy/Cô ${hostTeacher?.teacherName} đồng ý`;
+              const linkUrl = SKYLINE_SSM_LOGIN_URL;
+              const emailHtml = renderObservationRequestResponseForObserver({
+                observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
+                hostName: hostTeacher?.teacherName || "Giáo viên dạy",
+                hostCode: hostTeacher?.teacherCode || undefined,
+                topic: slot.topic,
+                subjectName: slot.subjectName,
+                grade: slot.grade,
+                className: slot.className || undefined,
+                dateStr: formattedDateVi,
+                period: slot.startTime,
+                accepted: true,
+                directLink: linkUrl
+              });
+              await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Accept observation request email error:", e));
+            }
           }
+        } catch (mailErr) {
+          console.error("Failed sending acceptance emails:", mailErr);
         }
-      } catch (mailErr) {
-        console.error("Failed sending acceptance emails:", mailErr);
-      }
+      });
     } else {
+      if (slot.status === "REJECTED") {
+        return { success: true };
+      }
+
       try {
         await prisma.observationSlot.update({
           where: { id: slotId },
@@ -3652,33 +3666,38 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
         }
       }
 
-      // Send decline email to observer teachers
-      try {
-        for (const reg of slot.registrations) {
-          const obsTeacher = reg.teacher;
-          const obsEmail = getTeacherResolvedEmail(obsTeacher);
-          if (obsEmail && obsEmail.includes("@")) {
-            const emailSubject = `[Sky-line SMS - Dự Giờ] Phản hồi đề xuất dự giờ: "${slot.topic}" - GV: ${hostTeacher?.teacherName}`;
-            const emailHtml = renderObservationRequestResponseForObserver({
-              observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
-              hostName: hostTeacher?.teacherName || "Giáo viên dạy",
-              hostCode: hostTeacher?.teacherCode || undefined,
-              topic: slot.topic,
-              subjectName: slot.subjectName,
-              grade: slot.grade,
-              className: slot.className || undefined,
-              dateStr: formattedDateVi,
-              period: slot.startTime,
-              accepted: false,
-              reason: reason || undefined,
-              directLink: SKYLINE_SSM_LOGIN_URL
-            });
-            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Decline observation request email error:", e));
+      // Send decline email to observer teachers (deduplicated per recipient via after())
+      after(async () => {
+        try {
+          const sentEmails = new Set<string>();
+          for (const reg of slot.registrations) {
+            const obsTeacher = reg.teacher;
+            const obsEmail = getTeacherResolvedEmail(obsTeacher);
+            const obsEmailLower = obsEmail?.trim().toLowerCase();
+            if (obsEmail && obsEmailLower && obsEmail.includes("@") && !sentEmails.has(obsEmailLower)) {
+              sentEmails.add(obsEmailLower);
+              const emailSubject = `[Sky-line SMS - Dự Giờ] Phản hồi đề xuất dự giờ: "${slot.topic}" - GV: ${hostTeacher?.teacherName}`;
+              const emailHtml = renderObservationRequestResponseForObserver({
+                observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
+                hostName: hostTeacher?.teacherName || "Giáo viên dạy",
+                hostCode: hostTeacher?.teacherCode || undefined,
+                topic: slot.topic,
+                subjectName: slot.subjectName,
+                grade: slot.grade,
+                className: slot.className || undefined,
+                dateStr: formattedDateVi,
+                period: slot.startTime,
+                accepted: false,
+                reason: reason || undefined,
+                directLink: SKYLINE_SSM_LOGIN_URL
+              });
+              await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Decline observation request email error:", e));
+            }
           }
+        } catch (mailErr) {
+          console.error("Failed sending decline emails:", mailErr);
         }
-      } catch (mailErr) {
-        console.error("Failed sending decline emails:", mailErr);
-      }
+      });
     }
 
     revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
@@ -5076,8 +5095,11 @@ export async function createSurpriseObservation(data: {
             }
           }
 
-          // Send confirmation to recorder if different
-          if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+          const hostEmailLower = hostEmail?.trim().toLowerCase() || "";
+          const observerEmailLower = observerEmail?.trim().toLowerCase() || "";
+
+          // Send confirmation to recorder if different (case-insensitive)
+          if (observerEmail && observerEmail.includes("@") && observerEmailLower !== hostEmailLower) {
             await sendEmail({ from: "HỆ THỐNG SKY-LINE CTHS", to: observerEmail, subject: cthsSubject, html: cthsEmailHtml }).catch(e => console.error("CTHS observer email error:", e));
           }
 
@@ -5090,8 +5112,8 @@ export async function createSurpriseObservation(data: {
               targetCampusId,
               targetDeptId
             );
-            const gdcsList = leaderRecipients.gdcsEmails.filter(e => e !== hostEmail && e !== observerEmail);
-            const tbpList = leaderRecipients.tbpEmails.filter(e => e !== hostEmail && e !== observerEmail);
+            const gdcsList = leaderRecipients.gdcsEmails.filter(e => e.toLowerCase() !== hostEmailLower && e.toLowerCase() !== observerEmailLower);
+            const tbpList = leaderRecipients.tbpEmails.filter(e => e.toLowerCase() !== hostEmailLower && e.toLowerCase() !== observerEmailLower);
 
             // Combine leader recipients to ensure both GĐCS and TBP of related campus receive email
             const allLeaderEmails = Array.from(new Set([...gdcsList, ...tbpList]));
@@ -5212,8 +5234,11 @@ export async function createSurpriseObservation(data: {
             }
           }
 
+          const surpriseHostLower = hostEmail?.trim().toLowerCase() || "";
+          const surpriseObsLower = observerEmail?.trim().toLowerCase() || "";
+
           // 2. Email xác nhận & bản lưu cho Người dự giờ (Observer / TTCM / Ban ĐHCM)
-          if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+          if (observerEmail && observerEmail.includes("@") && surpriseObsLower !== surpriseHostLower) {
             const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
             const observerSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${data.topic}" - GV dạy: ${hostTeacher.teacherName}`;
             const observerHtml = renderObservationEvaluationCompletedForObserver({
@@ -5257,8 +5282,9 @@ export async function createSurpriseObservation(data: {
               data.targetDeptId || hostTeacher.departmentId
             );
 
-            const gdcsList = leaderRecipients.gdcsEmails.filter(e => e !== hostEmail && e !== observerEmail);
-            const tbpList = leaderRecipients.tbpEmails.filter(e => e !== hostEmail && e !== observerEmail && !gdcsList.includes(e));
+            const gdcsList = leaderRecipients.gdcsEmails.filter(e => e.toLowerCase() !== surpriseHostLower && e.toLowerCase() !== surpriseObsLower);
+            const gdcsLowerSet = new Set(gdcsList.map(e => e.toLowerCase()));
+            const tbpList = leaderRecipients.tbpEmails.filter(e => e.toLowerCase() !== surpriseHostLower && e.toLowerCase() !== surpriseObsLower && !gdcsLowerSet.has(e.toLowerCase()));
 
             if (gdcsList.length > 0) {
               const campusLabel = hostTeacher.campus?.campusName || "Sky-Line";
@@ -6367,7 +6393,7 @@ function renderAssignedObservationEmailHtml(params: {
           <tr>
             <td bgcolor="#003B3A" style="background: linear-gradient(135deg, #003B3A 0%, #005A57 100%); padding: 32px 28px; text-align: center;">
               <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.15); border-radius: 20px; color: #99F6E4; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2);">
-                🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
               </div>
               <h1 style="margin: 0; color: #FFFFFF; font-size: 20px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.35;">
                 ${roleTitle}
@@ -6807,10 +6833,45 @@ export async function createAssignedObservation(data: {
 
           const emailSubject = `[Sky-line SSM] Chỉ định dự giờ chuyên môn từ ${creatorDisplayInfo}: Lớp ${existingSlot.className} - ${formattedDate} (${existingSlot.startTime})`;
 
-          // Gửi cho từng người dự mới được phân công
+          // Deduplicate emails across HOST -> OBSERVER -> CREATOR so each teacher receives at most 1 email
+          const sentJoinEmails = new Set<string>();
+
+          // 1. Gửi cho GV dạy
+          const hostJoinLower = hostEmail?.trim().toLowerCase();
+          if (hostEmail && hostJoinLower && hostEmail.includes("@") && !sentJoinEmails.has(hostJoinLower)) {
+            sentJoinEmails.add(hostJoinLower);
+            const hostEmailHtml = renderAssignedObservationEmailHtml({
+              role: "HOST",
+              recipientName: hostName,
+              creatorName,
+              creatorEmail,
+              creatorCode,
+              creatorDept,
+              creatorCampus,
+              creatorPosition,
+              hostName,
+              hostCode,
+              hostDept,
+              observerListText,
+              topic: existingSlot.topic,
+              formattedDate,
+              period: existingSlot.startTime || "",
+              timeRangeStr,
+              campusName: existingSlot.campusName || "",
+              className: existingSlot.className,
+              room: existingSlot.room || "Phòng học",
+              notes: data.notes || existingSlot.description,
+              slotId: existingSlot.id
+            });
+            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: hostEmailHtml }).catch(() => {});
+          }
+
+          // 2. Gửi cho từng người dự mới được phân công (loại trùng email)
           for (const obs of observerTeachers) {
             const obsEmail = getTeacherResolvedEmail(obs);
-            if (obsEmail && obsEmail.includes("@")) {
+            const obsLower = obsEmail?.trim().toLowerCase();
+            if (obsEmail && obsLower && obsEmail.includes("@") && !sentJoinEmails.has(obsLower)) {
+              sentJoinEmails.add(obsLower);
               const obsEmailHtml = renderAssignedObservationEmailHtml({
                 role: "OBSERVER",
                 recipientName: obs.teacherName,
@@ -6838,36 +6899,10 @@ export async function createAssignedObservation(data: {
             }
           }
 
-          // Gửi cho GV dạy
-          if (hostEmail && hostEmail.includes("@")) {
-            const hostEmailHtml = renderAssignedObservationEmailHtml({
-              role: "HOST",
-              recipientName: hostName,
-              creatorName,
-              creatorEmail,
-              creatorCode,
-              creatorDept,
-              creatorCampus,
-              creatorPosition,
-              hostName,
-              hostCode,
-              hostDept,
-              observerListText,
-              topic: existingSlot.topic,
-              formattedDate,
-              period: existingSlot.startTime || "",
-              timeRangeStr,
-              campusName: existingSlot.campusName || "",
-              className: existingSlot.className,
-              room: existingSlot.room || "Phòng học",
-              notes: data.notes || existingSlot.description,
-              slotId: existingSlot.id
-            });
-            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: hostEmailHtml }).catch(() => {});
-          }
-
-          // Gửi cho người chỉ định
-          if (resolvedCreatorEmail && resolvedCreatorEmail.includes("@")) {
+          // 3. Gửi cho người chỉ định (chỉ gửi nếu chưa nhận email với vai trò GV dạy hoặc Người dự)
+          const creatorJoinLower = resolvedCreatorEmail?.trim().toLowerCase();
+          if (resolvedCreatorEmail && creatorJoinLower && resolvedCreatorEmail.includes("@") && !sentJoinEmails.has(creatorJoinLower)) {
+            sentJoinEmails.add(creatorJoinLower);
             const creatorEmailHtml = renderAssignedObservationEmailHtml({
               role: "CREATOR",
               recipientName: creatorName,
@@ -7093,7 +7128,12 @@ export async function createAssignedObservation(data: {
           }).catch(e => console.error("[createAssignedObservation] Host in-app notif error:", e));
         }
 
-        if (hostEmail && hostEmail.includes("@")) {
+        // Deduplicate emails across HOST -> OBSERVER -> CREATOR so each teacher receives at most 1 email
+        const sentAssignedEmails = new Set<string>();
+        const hostEmailLower = hostEmail?.trim().toLowerCase();
+
+        if (hostEmail && hostEmailLower && hostEmail.includes("@") && !sentAssignedEmails.has(hostEmailLower)) {
+          sentAssignedEmails.add(hostEmailLower);
           const hostEmailHtml = renderAssignedObservationEmailHtml({
             role: "HOST",
             recipientName: hostName,
@@ -7126,7 +7166,7 @@ export async function createAssignedObservation(data: {
           }).catch(e => console.error("[createAssignedObservation] Email to host error:", e));
         }
 
-        // 11.2. Thông báo & Email cho từng Người dự được phân công (Observers)
+        // 11.2. Thông báo & Email cho từng Người dự được phân công (Observers - loại trùng email)
         for (const obs of observerTeachers) {
           if (obs.user?.id) {
             await prisma.notification.create({
@@ -7141,7 +7181,9 @@ export async function createAssignedObservation(data: {
           }
 
           const obsEmail = getTeacherResolvedEmail(obs);
-          if (obsEmail && obsEmail.includes("@")) {
+          const obsEmailLower = obsEmail?.trim().toLowerCase();
+          if (obsEmail && obsEmailLower && obsEmail.includes("@") && !sentAssignedEmails.has(obsEmailLower)) {
+            sentAssignedEmails.add(obsEmailLower);
             const obsEmailHtml = renderAssignedObservationEmailHtml({
               role: "OBSERVER",
               recipientName: obs.teacherName,
@@ -7175,8 +7217,9 @@ export async function createAssignedObservation(data: {
           }
         }
 
-        // 11.3. Thông báo & Email cho Tài khoản người tạo Chỉ định dự giờ (Creator)
-        if (session.user?.id && session.user.id !== hostTeacher.user?.id) {
+        // 11.3. Thông báo & Email cho Tài khoản người tạo Chỉ định dự giờ (Creator - chỉ gửi nếu chưa nhận email với vai trò khác)
+        const observerUserIds = new Set(observerTeachers.map(o => o.user?.id).filter(Boolean));
+        if (session.user?.id && session.user.id !== hostTeacher.user?.id && !observerUserIds.has(session.user.id)) {
           await prisma.notification.create({
             data: {
               userId: session.user.id,
@@ -7188,7 +7231,9 @@ export async function createAssignedObservation(data: {
           }).catch(e => console.error("[createAssignedObservation] Creator in-app notif error:", e));
         }
 
-        if (resolvedCreatorEmail && resolvedCreatorEmail.includes("@")) {
+        const creatorEmailLower = resolvedCreatorEmail?.trim().toLowerCase();
+        if (resolvedCreatorEmail && creatorEmailLower && resolvedCreatorEmail.includes("@") && !sentAssignedEmails.has(creatorEmailLower)) {
+          sentAssignedEmails.add(creatorEmailLower);
           const creatorEmailHtml = renderAssignedObservationEmailHtml({
             role: "CREATOR",
             recipientName: creatorName,
