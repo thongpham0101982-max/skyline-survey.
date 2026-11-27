@@ -199,6 +199,13 @@ export interface PrePublishCheckResult {
     periodIndexInLesson: number
     missingFields: string[]
   }>
+  incompletePeriodWarnings: Array<{
+    lessonCode: string
+    lessonName: string
+    periodCode: string
+    periodIndexInLesson: number
+    missingFields: string[]
+  }>
   unconfirmedAssessments: Array<{
     lessonId: string
     lessonCode: string

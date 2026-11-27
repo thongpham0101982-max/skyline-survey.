@@ -1273,6 +1273,7 @@ export async function checkVersionBeforePublish(
   const detail = await getVersionDetail(versionId)
 
   const missingPeriodFields: PrePublishCheckResult["missingPeriodFields"] = []
+  const incompletePeriodWarnings: PrePublishCheckResult["incompletePeriodWarnings"] = []
   const unconfirmedAssessments: PrePublishCheckResult["unconfirmedAssessments"] = []
   const draftPeriodByStableId = new Map<
     string,
@@ -1302,8 +1303,6 @@ export async function checkVersionBeforePublish(
       const missing: string[] = []
       if (!lesson.periodCount || lesson.periodCount <= 0) missing.push("Số tiết của bài")
       if (!period.plannedWeek || period.plannedWeek <= 0) missing.push("Tuần dự kiến")
-      if (!period.focus.trim()) missing.push("Trọng tâm tiết")
-      if (!period.objectives.trim()) missing.push("Yêu cầu cần đạt")
 
       if (missing.length > 0) {
         missingPeriodFields.push({
@@ -1312,6 +1311,19 @@ export async function checkVersionBeforePublish(
           periodCode: period.periodCode,
           periodIndexInLesson: period.periodIndexInLesson,
           missingFields: missing,
+        })
+      }
+
+      const optionalMissing: string[] = []
+      if (!period.focus.trim()) optionalMissing.push("Trọng tâm tiết")
+      if (!period.objectives.trim()) optionalMissing.push("Yêu cầu cần đạt")
+      if (optionalMissing.length > 0) {
+        incompletePeriodWarnings.push({
+          lessonCode: lesson.lessonCode,
+          lessonName: lesson.lessonName,
+          periodCode: period.periodCode,
+          periodIndexInLesson: period.periodIndexInLesson,
+          missingFields: optionalMissing,
         })
       }
     }
@@ -1445,6 +1457,7 @@ export async function checkVersionBeforePublish(
       unconfirmedAssessments.length === 0 &&
       impactedLinks.length === 0,
     missingPeriodFields,
+    incompletePeriodWarnings,
     unconfirmedAssessments,
     impactedLinks,
     weekShiftWarnings,
@@ -1575,7 +1588,7 @@ export async function transitionVersionWorkflow(params: {
 
   if (check.missingPeriodFields.length > 0) {
     throw new TeachingPlanAccessError(
-      `Còn ${check.missingPeriodFields.length} tiết chưa đủ thông tin bắt buộc (số tiết, tuần dự kiến, trọng tâm, yêu cầu cần đạt). Vui lòng hoàn thiện trước khi công bố.`,
+      `Còn ${check.missingPeriodFields.length} tiết chưa đủ thông tin bắt buộc (số tiết của bài, tuần dự kiến). Vui lòng hoàn thiện trước khi công bố.`,
       "VALIDATION_ERROR",
       400
     )
@@ -2103,7 +2116,8 @@ export async function resolveObservationTeachingPlanView(
       )) as any[]
       const periodRows = (await prisma.$queryRawUnsafe(
         `SELECT p.*, l."lessonCode", l."lessonName", l."topicName", l."semester",
-                l."periodCount", l."adjustments" as "lessonAdjustments", l."projectNotes"
+                l."periodCount", l."objectives" as "lessonObjectives",
+                l."adjustments" as "lessonAdjustments", l."projectNotes"
          FROM "teaching_plan_periods" p
          JOIN "teaching_plan_lessons" l ON l."id" = p."lessonId"
          WHERE p."versionId" = ? AND p."stablePeriodId" = ?
@@ -2114,7 +2128,7 @@ export async function resolveObservationTeachingPlanView(
 
       if (verRows[0] && periodRows[0]) {
         const pr = periodRows[0]
-        const objText = String(pr.objectives || "")
+        const objText = String(pr.objectives || "").trim() || String(pr.lessonObjectives || "").trim()
         data = {
           planId: plan.id,
           planTitle: plan.title,

@@ -140,7 +140,7 @@ export function TeachingPlanPublishModal({
 
           {check && !loading && (
             <>
-              {/* 1. Missing period fields */}
+              {/* 1. Missing required period fields (blocking) */}
               {check.missingPeriodFields.length > 0 && (
                 <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 space-y-2">
                   <div className="text-xs font-semibold text-rose-900 flex items-center gap-1.5">
@@ -149,10 +149,30 @@ export function TeachingPlanPublishModal({
                       Còn {check.missingPeriodFields.length} tiết chưa đủ thông tin bắt buộc (cần bổ sung trước khi công bố)
                     </span>
                   </div>
-                  <ul className="text-xs text-rose-800 space-y-1 list-disc pl-5 max-h-40 overflow-y-auto">
+                  <ul className="text-xs text-rose-800 space-y-1 list-disc pl-5 max-h-40 overflow-y-auto tabular-nums">
                     {check.missingPeriodFields.map((m, idx) => (
                       <li key={idx}>
                         <strong>{m.periodCode}</strong> ({m.lessonName} – Tiết {m.periodIndexInLesson}): thiếu{" "}
+                        {m.missingFields.join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 1b. Optional period details (non-blocking — can be supplemented later) */}
+              {(check.incompletePeriodWarnings?.length || 0) > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+                  <div className="text-xs font-semibold text-amber-900 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      Có {check.incompletePeriodWarnings.length} tiết chưa có Trọng tâm tiết / Yêu cầu cần đạt chi tiết (có thể công bố ngay và bổ sung sau)
+                    </span>
+                  </div>
+                  <ul className="text-xs text-amber-800 space-y-1 list-disc pl-5 max-h-32 overflow-y-auto tabular-nums">
+                    {check.incompletePeriodWarnings.map((m, idx) => (
+                      <li key={idx}>
+                        <strong>{m.periodCode}</strong> ({m.lessonName} – Tiết {m.periodIndexInLesson}): chưa nhập{" "}
                         {m.missingFields.join(", ")}
                       </li>
                     ))}
