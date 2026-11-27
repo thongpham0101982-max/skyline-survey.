@@ -1257,7 +1257,8 @@ export function ObservationRegistrationSection(props: any) {
         </div>
       </div>
 
-      {/* 3. SWITCHER TABS (Pills layout matching mockup) */}
+      {/* 3. SWITCHER TABS (hidden when parent CreateObservationModal renders top mode switcher) */}
+      {!props.hideModeTabs && (
       <div className="flex flex-wrap items-center gap-2.5">
         <button
           type="button"
@@ -1336,6 +1337,7 @@ export function ObservationRegistrationSection(props: any) {
           </button>
         )}
       </div>
+      )}
 
       {/* 4. MAIN FORM: Mở rộng giao diện full-width 100% cho tất cả các thẻ tag như thẻ Đột xuất */}
       <div className="w-full flex flex-col gap-6">

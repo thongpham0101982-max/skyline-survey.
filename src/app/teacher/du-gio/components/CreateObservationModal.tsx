@@ -146,7 +146,27 @@ export function CreateObservationModal(props: any) {
                   <button
                     key={mode.id}
                     type="button"
-                    onClick={() => props.setCreationMode(mode.id)}
+                    onClick={() => {
+                      props.setCreationMode(mode.id)
+                      if (mode.id === "CAMPUS_SCHEDULE") {
+                        const cthsDept = (props.departments || []).find((d: any) =>
+                          String(d?.name || "").toLowerCase().includes("cths") ||
+                          String(d?.name || "").toLowerCase().includes("công tác học sinh")
+                        )
+                        if (cthsDept && typeof props.setSurpriseDeptId === "function") {
+                          props.setSurpriseDeptId(cthsDept.id)
+                        }
+                        if (!props.surpriseTeacherId && props.currentTeacher?.id && typeof props.setSurpriseTeacherId === "function") {
+                          props.setSurpriseTeacherId(props.currentTeacher.id)
+                        }
+                        if (!props.surpriseTopic && typeof props.setSurpriseTopic === "function") {
+                          props.setSurpriseTopic("Làm việc tại cơ sở - Tổ CTHS")
+                        }
+                        if (!props.surpriseSubjectName && typeof props.setSurpriseSubjectName === "function") {
+                          props.setSurpriseSubjectName("Công tác học sinh (CTHS)")
+                        }
+                      }
+                    }}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap ${
                       isSelected
                         ? mode.activeTabClass
@@ -169,7 +189,7 @@ export function CreateObservationModal(props: any) {
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 bg-[#F8FAFC]/40">
-          <ObservationRegistrationSection {...props} />
+          <ObservationRegistrationSection {...props} hideModeTabs />
         </div>
       </div>
     </div>
