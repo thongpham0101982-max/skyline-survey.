@@ -35,6 +35,53 @@ import {
   sendOverdueExplanationRequestEmail,
   sendReportItemsCompletedEmail,
 } from "@/lib/qa-workspace/weeklyReportEmailService"
+import { getQaMetadataMapForTasks } from "@/lib/qa-workspace/schemaInit"
+import { getPositionRaciCatalogData } from "@/lib/qa-workspace/positionRaciSchema"
+
+export interface AssignedWorkTaskOption {
+  id: string
+  title: string
+  description: string
+  taskGroupName: string
+  category: string
+  progress: string
+  workflowStatus: string
+  endDate: string | null
+  endDateLabel: string
+  isOverdue: boolean
+  isCollaborator: boolean
+  deliverables: string
+  templateItemCode: string | null
+  positionCodes: string[]
+  kpiTarget: string | null
+}
+
+export interface AssignedPositionTemplateOption {
+  id: string
+  itemCode: string
+  title: string
+  mainTask: string
+  functionGroup: string
+  taskGroupName: string
+  positionCode: string
+  positionName: string
+  frequency: string
+  reportCadences: string[]
+  deliverables: string
+  kpiTarget: string
+}
+
+export interface MemberAssignmentContext {
+  userId: string
+  positions: Array<{
+    positionCode: string
+    positionName: string
+    shortCode: string
+    taskGroupName: string
+  }>
+  assignedTasks: AssignedWorkTaskOption[]
+  positionTemplates: AssignedPositionTemplateOption[]
+}
 
 export interface EnrichedWeeklyReportItem {
   id: string
@@ -149,8 +196,8 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
     const memberIds = roster.members.map((m) => m.id)
     const memberMap = new Map(roster.members.map((m) => [m.id, m]))
 
-    // Fetch all reports in the selected month for Ban KT&ĐBCL members
-    const [monthReports, workTasks] = await Promise.all([
+    // Fetch all reports in the selected month for Ban KT&ĐBCL members + WorkTasks + Position RACI catalog
+    const [monthReports, workTasks, positionCatalog] = await Promise.all([
       prisma.weeklyReport.findMany({
         where: {
           month,
@@ -164,23 +211,41 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
         orderBy: [{ weekNumber: "asc" }, { updatedAt: "desc" }],
       }),
       prisma.workTask.findMany({
-        where: memberIds.length > 0 ? { assignedToUserId: { in: memberIds }, progress: { not: "CANCELLED" } } : {},
+        where:
+          memberIds.length > 0
+            ? {
+                progress: { not: "CANCELLED" },
+                OR: [
+                  { assignedToUserId: { in: memberIds } },
+                  { collaborators: { not: null } },
+                ],
+              }
+            : { progress: { not: "CANCELLED" } },
         select: {
           id: true,
           title: true,
           description: true,
           category: true,
           progress: true,
+          acceptanceStatus: true,
           priority: true,
           startDate: true,
           endDate: true,
           assignedToUserId: true,
+          collaborators: true,
           taskGroup: { select: { id: true, name: true } },
         },
         orderBy: { updatedAt: "desc" },
-        take: 250,
+        take: 300,
       }),
+      getPositionRaciCatalogData().catch(() => ({
+        positions: [],
+        staffMappings: [],
+        templates: [],
+      })),
     ])
+
+    const qaTaskMetaMap = await getQaMetadataMapForTasks(workTasks)
 
     const allItemIds = monthReports.flatMap((r) => r.items.map((i) => i.id))
     const itemMetaMap = await getWeeklyItemMetaMap(allItemIds)
@@ -375,6 +440,119 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
       new Set([...KTDBCL_DEFAULT_GROUPS, ...roster.taskGroups.map((g) => g.name)])
     )
 
+    // Build per-member Assigned Tasks & Position RACI Templates context so weekly reporting adheres strictly to assigned tasks
+    const positionByCode = new Map(
+      (positionCatalog.positions || []).map((p: any) => [String(p.positionCode), p])
+    )
+    const memberAssignmentMap: Record<string, MemberAssignmentContext> = {}
+
+    for (const m of roster.members) {
+      const userPosCodes = Array.from(
+        new Set(
+          (positionCatalog.staffMappings || [])
+            .filter((sm: any) => String(sm.userId) === m.id)
+            .map((sm: any) => String(sm.positionCode))
+        )
+      )
+
+      const positions = userPosCodes
+        .map((code) => positionByCode.get(code))
+        .filter(Boolean)
+        .map((p: any) => ({
+          positionCode: String(p.positionCode),
+          positionName: String(p.positionName),
+          shortCode: String(p.shortCode || p.positionCode),
+          taskGroupName: String(p.taskGroupName || m.specialistGroups?.[0] || "ĐBCL"),
+        }))
+
+      const assignedTasks: AssignedWorkTaskOption[] = []
+      for (const t of workTasks) {
+        const tMeta = qaTaskMetaMap.get(t.id)
+        const isPrimaryAssignee = t.assignedToUserId === m.id
+        const isMetaCollab = Boolean(tMeta?.collaboratorUserIds?.includes(m.id))
+        const isTextCollab = Boolean(t.collaborators && t.collaborators.includes(m.id))
+        if (!isPrimaryAssignee && !isMetaCollab && !isTextCollab) continue
+
+        const scopeMeta: any = tMeta?.scopeMeta || {}
+        const tplSnap: any = scopeMeta?.templateSnapshot || null
+        const templateItemCode: string | null =
+          scopeMeta?.templateItemCode || tplSnap?.itemCode || null
+        const positionCodes: string[] = Array.isArray(scopeMeta?.positionCodes)
+          ? scopeMeta.positionCodes
+          : []
+        const endDateObj = t.endDate ? new Date(t.endDate) : null
+        const endDateLabel = endDateObj ? endDateObj.toLocaleDateString("vi-VN") : ""
+        const isCompleted =
+          t.progress === "COMPLETED" || tMeta?.workflowStatus === "COMPLETED"
+        const isOverdue = Boolean(!isCompleted && endDateObj && endDateObj.getTime() < now.getTime())
+
+        assignedTasks.push({
+          id: t.id,
+          title: t.title,
+          description: t.description || "",
+          taskGroupName: t.taskGroup?.name || m.specialistGroups?.[0] || "ĐBCL",
+          category: t.category || (templateItemCode ? `RACI ${templateItemCode}` : "Chuyên môn"),
+          progress: t.progress,
+          workflowStatus: tMeta?.workflowStatus || t.progress,
+          endDate: endDateObj ? endDateObj.toISOString() : null,
+          endDateLabel,
+          isOverdue,
+          isCollaborator: !isPrimaryAssignee,
+          deliverables: tMeta?.deliverables || tplSnap?.deliverables || "",
+          templateItemCode,
+          positionCodes,
+          kpiTarget: tplSnap?.kpiTarget || null,
+        })
+      }
+
+      // Sort: overdue first, then in-progress/pending, then completed; within group by earliest deadline
+      const taskRank = (t: AssignedWorkTaskOption) => {
+        if (t.isOverdue) return 0
+        if (t.progress === "IN_PROGRESS") return 1
+        if (t.progress === "PENDING") return 2
+        if (t.progress === "COMPLETED") return 3
+        return 4
+      }
+      assignedTasks.sort((a, b) => {
+        const diff = taskRank(a) - taskRank(b)
+        if (diff !== 0) return diff
+        if (a.endDate && b.endDate) return a.endDate.localeCompare(b.endDate)
+        return 0
+      })
+
+      const posCodeSet = new Set(userPosCodes)
+      const positionTemplates: AssignedPositionTemplateOption[] = []
+      if (posCodeSet.size > 0) {
+        for (const tpl of positionCatalog.templates || []) {
+          if (!tpl.isActive) continue
+          const matchedPosCode = (tpl.rPositions || []).find((c: string) => posCodeSet.has(c))
+          if (!matchedPosCode) continue
+          const posObj: any = positionByCode.get(matchedPosCode)
+          positionTemplates.push({
+            id: tpl.id,
+            itemCode: tpl.itemCode,
+            title: tpl.title,
+            mainTask: tpl.mainTask,
+            functionGroup: tpl.functionGroup,
+            taskGroupName: posObj?.taskGroupName || m.specialistGroups?.[0] || "ĐBCL",
+            positionCode: matchedPosCode,
+            positionName: posObj?.positionName || matchedPosCode,
+            frequency: tpl.frequency,
+            reportCadences: tpl.reportCadences || [],
+            deliverables: tpl.deliverables,
+            kpiTarget: tpl.kpiTarget,
+          })
+        }
+      }
+
+      memberAssignmentMap[m.id] = {
+        userId: m.id,
+        positions,
+        assignedTasks,
+        positionTemplates,
+      }
+    }
+
     return {
       success: true,
       period: {
@@ -403,6 +581,7 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
       weekItems: JSON.parse(JSON.stringify(weekItems)),
       monthItems: JSON.parse(JSON.stringify(monthItems)),
       memberWeeklyTimeline: JSON.parse(JSON.stringify(memberWeeklyTimeline)),
+      memberAssignmentMap: JSON.parse(JSON.stringify(memberAssignmentMap)),
       weeklyAnalysis: cachedWeeklyAi || weeklyBaseline,
       monthlyAnalysis: cachedMonthlyAi || monthlyBaseline,
       automationConfig,
@@ -451,7 +630,16 @@ export async function syncQaWorkspaceTasksToReportDraft(params: {
       take: 30,
     })
 
+    const taskMetaMap = await getQaMetadataMapForTasks(tasks)
+
     const draftItems = tasks.map((t) => {
+      const tMeta = taskMetaMap.get(t.id)
+      const scopeMeta: any = tMeta?.scopeMeta || {}
+      const itemCode: string | null =
+        scopeMeta?.templateItemCode || scopeMeta?.templateSnapshot?.itemCode || null
+      const deliverablesText =
+        tMeta?.deliverables || scopeMeta?.templateSnapshot?.deliverables || ""
+
       const endDateStr = t.endDate
         ? new Date(t.endDate).toLocaleDateString("vi-VN")
         : ""
@@ -462,12 +650,20 @@ export async function syncQaWorkspaceTasksToReportDraft(params: {
           ? "DOING"
           : "NOT_STARTED"
 
+      const displayTitle =
+        itemCode && !t.title.includes(itemCode) ? `[${itemCode}] ${t.title}` : t.title
+      const contentParts: string[] = []
+      if (deliverablesText) contentParts.push(`Đầu ra: ${deliverablesText}`)
+      if (t.description && t.description.trim() !== t.title.trim()) {
+        contentParts.push(t.description.trim().slice(0, 220))
+      }
+
       return {
         linkedWorkTaskId: t.id,
         taskGroup: t.taskGroup?.name || "ĐBCL",
-        category: t.category || "Khảo Sát",
-        mainTask: t.title,
-        workContent: t.description ? `${t.title} — ${t.description.slice(0, 240)}` : t.title,
+        category: itemCode ? `RACI ${itemCode}` : t.category || "Chuyên môn",
+        mainTask: displayTitle,
+        workContent: contentParts.length > 0 ? contentParts.join(" — ") : displayTitle,
         expectedCompletion: endDateStr,
         progress: mappedProgress,
         proposedSolution: "",

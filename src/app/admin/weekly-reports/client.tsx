@@ -19,6 +19,7 @@ import {
   EnrichedWeeklyReportItem,
   flagOverdueAndRequestExplanationAction,
   getKtdbclWorkspaceSnapshot,
+  MemberAssignmentContext,
   saveKtdbclWeeklyReport,
   scanAndRequestOverdueExplanationsAction,
   sendKtdbclDirectorReportNowAction,
@@ -79,6 +80,7 @@ interface SnapshotData {
   weekItems: EnrichedWeeklyReportItem[]
   monthItems: EnrichedWeeklyReportItem[]
   memberWeeklyTimeline: any[]
+  memberAssignmentMap?: Record<string, MemberAssignmentContext>
   weeklyAnalysis: KtdbclAiQualityReport
   monthlyAnalysis: KtdbclAiQualityReport
   automationConfig: KtdbclWeeklyAutomationConfig
@@ -745,6 +747,7 @@ export function WeeklyReportClient({
           allMonthItemsForTarget={snapshot.monthItems.filter(
             (i) => i.userId === composeTargetUserId
           )}
+          assignmentContext={snapshot.memberAssignmentMap?.[composeTargetUserId] || null}
           onSyncFromQaWorkspace={async (targetUid) => {
             const res = await syncQaWorkspaceTasksToReportDraft({
               targetUserId: targetUid,
