@@ -1362,9 +1362,23 @@ export async function createTaskGroup(data: { name: string; description?: string
     if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
+    const cleanName = data.name.trim()
+    if (!cleanName) {
+      return { success: false, error: "Vui lòng nhập tên nhóm chuyên môn." }
+    }
+    const duplicate = await prisma.taskGroup.findFirst({
+      where: { name: cleanName },
+      select: { id: true, name: true },
+    })
+    if (duplicate) {
+      return {
+        success: false,
+        error: `Nhóm chuyên môn "${cleanName}" đã tồn tại. Vui lòng chọn tên khác hoặc bấm Sửa trên nhóm đã có.`,
+      }
+    }
     const group = await prisma.taskGroup.create({
       data: {
-        name: data.name.trim(),
+        name: cleanName,
         description: data.description?.trim() || null,
         department: data.department || "KT&ĐBCL",
         leaderUserId: data.leaderUserId || null,
@@ -1386,8 +1400,22 @@ export async function updateTaskGroup(id: string, data: { name: string; descript
     if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
+    const cleanName = data.name.trim()
+    if (!cleanName) {
+      return { success: false, error: "Vui lòng nhập tên nhóm chuyên môn." }
+    }
+    const duplicate = await prisma.taskGroup.findFirst({
+      where: { name: cleanName, id: { not: id } },
+      select: { id: true, name: true },
+    })
+    if (duplicate) {
+      return {
+        success: false,
+        error: `Tên nhóm "${cleanName}" đã tồn tại ở một nhóm khác. Vui lòng chọn tên khác, hoặc bấm nút Sửa trực tiếp trên nhóm "${cleanName}".`,
+      }
+    }
     const updatePayload: any = {
-      name: data.name.trim(),
+      name: cleanName,
       department: data.department || "KT&ĐBCL",
     }
     if (data.memberUserIds !== undefined) {
