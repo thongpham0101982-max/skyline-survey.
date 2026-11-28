@@ -80,6 +80,8 @@ export interface CreateQaTaskInput {
   externalSyncKey?: string | null
   recurrenceRule?: QaRecurrenceRule | null
   academicYearId?: string | null
+  positionCodes?: string[]
+  templateSnapshot?: Record<string, any> | null
 }
 
 function buildNormalizedScopeMeta(
@@ -104,6 +106,20 @@ function buildNormalizedScopeMeta(
   if (input.scopeSurveyPeriod !== undefined) {
     base.periodCode = input.scopeSurveyPeriod || null
     base.surveyPeriod = input.scopeSurveyPeriod || null
+  }
+  if (input.positionCodes && input.positionCodes.length > 0) {
+    base.positionCodes = input.positionCodes
+  }
+  if (input.templateSnapshot) {
+    base.templateId = input.templateSnapshot.templateId || null
+    base.templateItemCode = input.templateSnapshot.itemCode || null
+    base.templateVersion = input.templateSnapshot.version || 1
+    base.reportCadences = input.templateSnapshot.reportCadences || []
+    base.positionCodes =
+      input.positionCodes && input.positionCodes.length > 0
+        ? input.positionCodes
+        : input.templateSnapshot.rPositions || []
+    base.templateSnapshot = input.templateSnapshot
   }
   return base
 }

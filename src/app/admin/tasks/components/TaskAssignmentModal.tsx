@@ -23,6 +23,9 @@ import type {
 } from "@/lib/qa-workspace/types"
 import { DEFAULT_WORKSPACE_CARDS } from "@/lib/qa-workspace/workflowEngine"
 import { createQaWorkspaceTask, updateQaWorkspaceTask } from "../qa_workspace_actions"
+import { POSITION_NAME_BY_CODE } from "@/lib/qa-workspace/positionRaciParser"
+import type { PositionCatalogBundle } from "./PositionTasksView"
+import type { PositionTaskTemplateRecord } from "@/lib/qa-workspace/positionRaciSchema"
 
 interface TaskAssignmentModalProps {
   isOpen: boolean
@@ -53,6 +56,8 @@ interface TaskAssignmentModalProps {
     sourceModule?: string | null
     sourceRecordId?: string | null
     sourceUrl?: string | null
+    templateId?: string | null
+    selectedPositionCode?: string | null
   } | null
   taskGroups: any[]
   dbCategories: any[]
@@ -61,6 +66,7 @@ interface TaskAssignmentModalProps {
   campuses: any[]
   defaultDepartment?: string
   departments?: any[]
+  positionCatalog?: PositionCatalogBundle
 }
 
 export function TaskAssignmentModal({
@@ -76,6 +82,7 @@ export function TaskAssignmentModal({
   campuses,
   defaultDepartment = "KT&ĐBCL",
   departments = [],
+  positionCatalog,
 }: TaskAssignmentModalProps) {
   const todayStr = new Date().toISOString().slice(0, 10)
   const nextWeekStr = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10)
@@ -128,6 +135,67 @@ export function TaskAssignmentModal({
 
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // Position & RACI Template selection state
+  const [selectedPositionCode, setSelectedPositionCode] = useState<string>("")
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
+
+  const activeRaciTemplates = React.useMemo(() => {
+    const list = (positionCatalog?.templates || []).filter((t) => t.isActive)
+    if (!selectedPositionCode) return list
+    return list.filter((t) => t.rPositions.includes(selectedPositionCode))
+  }, [positionCatalog?.templates, selectedPositionCode])
+
+  const selectedTemplateObj: PositionTaskTemplateRecord | null = React.useMemo(() => {
+    if (!selectedTemplateId) return null
+    return (positionCatalog?.templates || []).find((t) => t.id === selectedTemplateId) || null
+  }, [positionCatalog?.templates, selectedTemplateId])
+
+  const applyTemplateToForm = (tpl: PositionTaskTemplateRecord, posCode?: string | null) => {
+    setSelectedTemplateId(tpl.id)
+    if (posCode) setSelectedPositionCode(posCode)
+    setTitle(tpl.title)
+    const descParts = [
+      `Nhiệm vụ chính: ${tpl.mainTask}`,
+      `Nhiệm vụ chi tiết: ${tpl.detailTask}`,
+      tpl.kpiTarget ? `KPI cụ thể: ${tpl.kpiTarget}` : "",
+      tpl.adminNote ? `Lưu ý quản trị: ${tpl.adminNote}` : "",
+    ].filter(Boolean)
+    setDescription(descParts.join("\n"))
+    setDeliverables(tpl.deliverables || "")
+    setCompletionCriteria(tpl.completionCriteria || "")
+
+    // Match task group by position's taskGroupName
+    const primaryPosCode = posCode || tpl.rPositions[0]
+    const posDef = (positionCatalog?.positions || []).find(
+      (p) => p.positionCode === primaryPosCode
+    )
+    if (posDef) {
+      const matchedGrp = taskGroups.find(
+        (g) => String(g.name || "").toLowerCase() === posDef.taskGroupName.toLowerCase()
+      )
+      if (matchedGrp) setTaskGroupId(matchedGrp.id)
+    }
+
+    // Suggest assignee(s) from position staff mappings
+    const staffMappings = positionCatalog?.staffMappings || []
+    const primaryCandidates = staffMappings.filter((s) => s.positionCode === primaryPosCode)
+    const leadUser =
+      primaryCandidates.find((s) => s.isPrimary)?.userId || primaryCandidates[0]?.userId || ""
+    if (leadUser) setAssignedToUserId(leadUser)
+
+    // Multi-R joint task (e.g. 4.6.2: VT250 + VT303) -> 1 unified task, suggest other R staff as collaborators
+    if (tpl.rPositions.length > 1) {
+      setAssignmentMode("INDIVIDUAL")
+      const otherRPositions = tpl.rPositions.filter((c) => c !== primaryPosCode)
+      const coStaffIds = staffMappings
+        .filter((s) => otherRPositions.includes(s.positionCode) && s.userId !== leadUser)
+        .map((s) => s.userId)
+      if (coStaffIds.length > 0) {
+        setCollaboratorUserIds(Array.from(new Set(coStaffIds)))
+      }
+    }
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -198,7 +266,18 @@ export function TaskAssignmentModal({
       setSourceModule(presetDraft.sourceModule || "")
       setSourceRecordId(presetDraft.sourceRecordId || "")
       setSourceUrl(presetDraft.sourceUrl || "")
+      if (presetDraft.templateId && positionCatalog?.templates) {
+        const foundTpl = positionCatalog.templates.find((t) => t.id === presetDraft.templateId)
+        if (foundTpl) {
+          applyTemplateToForm(foundTpl, presetDraft.selectedPositionCode || foundTpl.rPositions[0])
+        }
+      } else {
+        setSelectedPositionCode(presetDraft.selectedPositionCode || "")
+        setSelectedTemplateId("")
+      }
     } else {
+      setSelectedPositionCode("")
+      setSelectedTemplateId("")
       setAssignmentMode("INDIVIDUAL")
       setTitle("")
       setDescription("")
@@ -322,6 +401,33 @@ export function TaskAssignmentModal({
           checklist: checklistSteps,
           checklistSteps,
           requiresApproval,
+          positionCodes: selectedTemplateObj
+            ? selectedTemplateObj.rPositions
+            : selectedPositionCode
+            ? [selectedPositionCode]
+            : undefined,
+          templateSnapshot: selectedTemplateObj
+            ? {
+                templateId: selectedTemplateObj.id,
+                itemCode: selectedTemplateObj.itemCode,
+                version: selectedTemplateObj.version,
+                title: selectedTemplateObj.title,
+                detailTask: selectedTemplateObj.detailTask,
+                mainTask: selectedTemplateObj.mainTask,
+                functionGroup: selectedTemplateObj.functionGroup,
+                frequency: selectedTemplateObj.frequency,
+                reportCadences: selectedTemplateObj.reportCadences,
+                deliverables: selectedTemplateObj.deliverables,
+                kpiTarget: selectedTemplateObj.kpiTarget,
+                completionCriteria: selectedTemplateObj.completionCriteria,
+                accountablePositionCode: selectedTemplateObj.accountablePositionCode,
+                rPositions: selectedTemplateObj.rPositions,
+                cPositions: selectedTemplateObj.cPositions,
+                iPositions: selectedTemplateObj.iPositions,
+                selectedPositionCode: selectedPositionCode || selectedTemplateObj.rPositions[0] || null,
+                capturedAt: new Date().toISOString(),
+              }
+            : null,
           sendEmailNotification,
           scopeCampusId: scopeCampusId || null,
           scopeGradeLevel: scopeGradeLevel || null,
@@ -358,6 +464,33 @@ export function TaskAssignmentModal({
           checklist: checklistSteps,
           checklistSteps,
           requiresApproval,
+          positionCodes: selectedTemplateObj
+            ? selectedTemplateObj.rPositions
+            : selectedPositionCode
+            ? [selectedPositionCode]
+            : undefined,
+          templateSnapshot: selectedTemplateObj
+            ? {
+                templateId: selectedTemplateObj.id,
+                itemCode: selectedTemplateObj.itemCode,
+                version: selectedTemplateObj.version,
+                title: selectedTemplateObj.title,
+                detailTask: selectedTemplateObj.detailTask,
+                mainTask: selectedTemplateObj.mainTask,
+                functionGroup: selectedTemplateObj.functionGroup,
+                frequency: selectedTemplateObj.frequency,
+                reportCadences: selectedTemplateObj.reportCadences,
+                deliverables: selectedTemplateObj.deliverables,
+                kpiTarget: selectedTemplateObj.kpiTarget,
+                completionCriteria: selectedTemplateObj.completionCriteria,
+                accountablePositionCode: selectedTemplateObj.accountablePositionCode,
+                rPositions: selectedTemplateObj.rPositions,
+                cPositions: selectedTemplateObj.cPositions,
+                iPositions: selectedTemplateObj.iPositions,
+                selectedPositionCode: selectedPositionCode || selectedTemplateObj.rPositions[0] || null,
+                capturedAt: new Date().toISOString(),
+              }
+            : null,
           workflowStatus: saveAsDraft ? "DRAFT" : "ASSIGNED",
           isDraft: saveAsDraft,
           sendEmailNotification: !saveAsDraft && sendEmailNotification,
@@ -430,6 +563,115 @@ export function TaskAssignmentModal({
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* 0. Chọn mẫu nhiệm vụ theo vị trí (Ma trận RACI Ban KT&ĐBCL) */}
+          {!editingTask && positionCatalog && positionCatalog.templates.length > 0 && (
+            <div className="rounded-2xl border border-teal-200 bg-[#F0FDFA]/70 p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-[#003B3A]">
+                    Chọn mẫu nhiệm vụ theo vị trí (Ma trận RACI Ban KT&amp;ĐBCL)
+                  </label>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    Chọn vị trí để gợi ý mẫu vai trò R — hệ thống tự điền tiêu đề, mô tả, đầu ra, KPI và lưu phiên bản mẫu tại thời điểm giao.
+                  </p>
+                </div>
+                {selectedTemplateObj && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedTemplateId("")
+                      setSelectedPositionCode("")
+                    }}
+                    className="text-[11px] font-semibold text-rose-600 hover:underline cursor-pointer"
+                  >
+                    Bỏ chọn mẫu
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Vị trí phụ trách (07 vị trí Ban KT&amp;ĐBCL)
+                  </label>
+                  <select
+                    value={selectedPositionCode}
+                    onChange={(e) => {
+                      setSelectedPositionCode(e.target.value)
+                      setSelectedTemplateId("")
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white text-xs font-semibold text-[#003B3A]"
+                  >
+                    <option value="">-- Tất cả 07 vị trí ({positionCatalog.templates.filter(t => t.isActive).length} mẫu) --</option>
+                    {positionCatalog.positions.map((pos) => (
+                      <option key={pos.positionCode} value={pos.positionCode}>
+                        {pos.positionCode} — {pos.positionName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                    Chọn mẫu nhiệm vụ ({activeRaciTemplates.length} mẫu R phù hợp)
+                  </label>
+                  <select
+                    value={selectedTemplateId}
+                    onChange={(e) => {
+                      const found = positionCatalog.templates.find((t) => t.id === e.target.value)
+                      if (found) applyTemplateToForm(found, selectedPositionCode || found.rPositions[0])
+                      else setSelectedTemplateId("")
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-teal-300 bg-white text-xs font-semibold text-[#003B3A]"
+                  >
+                    <option value="">-- Chọn mẫu nhiệm vụ để điền sẵn --</option>
+                    {activeRaciTemplates.map((tpl) => (
+                      <option key={tpl.id} value={tpl.id}>
+                        {tpl.title} ({tpl.rPositions.join(" + ")})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {selectedTemplateObj && (
+                <div className="rounded-xl bg-white border border-teal-200 p-3 space-y-1.5 text-[11px]">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white font-bold">
+                      Mã {selectedTemplateObj.itemCode} · v{selectedTemplateObj.version}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200 font-semibold">
+                      R: {selectedTemplateObj.rPositions.join(", ")}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-50 text-[#059669] border border-emerald-200 font-semibold">
+                      A: {selectedTemplateObj.accountablePositionCode} ({POSITION_NAME_BY_CODE[selectedTemplateObj.accountablePositionCode]})
+                    </span>
+                    {selectedTemplateObj.cPositions.length > 0 && (
+                      <span className="px-2 py-0.5 rounded bg-amber-50 text-[#D97706] border border-amber-200 font-medium">
+                        C (Tham vấn): {selectedTemplateObj.cPositions.join(", ")}
+                      </span>
+                    )}
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+                      Tần suất: {selectedTemplateObj.frequency}
+                    </span>
+                  </div>
+
+                  {selectedTemplateObj.rPositions.length > 1 && (
+                    <div className="text-[#00736E] font-medium">
+                      • Nhiệm vụ phối hợp đa vị trí ({selectedTemplateObj.rPositions.join(" & ")}): Mặc định tạo <strong>01 công việc chung</strong> cho cùng đợt/phạm vi — chọn 01 đầu mối tổng hợp chính và thêm người cùng thực hiện ở mục Người phối hợp.
+                    </div>
+                  )}
+
+                  {selectedTemplateObj.adminNote && (
+                    <div className="text-[#D97706] font-semibold">
+                      • Lưu ý: {selectedTemplateObj.adminNote}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

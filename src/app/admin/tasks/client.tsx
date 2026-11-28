@@ -81,6 +81,8 @@ import { WorkspaceCardsView } from "./components/WorkspaceCardsView"
 import { CommandRoomView } from "./components/CommandRoomView"
 import { MemberWorkspacePanel } from "./components/MemberWorkspacePanel"
 import { TaskAssignmentModal } from "./components/TaskAssignmentModal"
+import { PositionTasksView, type PositionCatalogBundle } from "./components/PositionTasksView"
+import { Briefcase } from "lucide-react"
 import { QaAssistantPanel } from "./components/QaAssistantPanel"
 import {
   QaAnalyticsReportModal,
@@ -143,6 +145,7 @@ export function TasksClient({
   initialImprovementActions = [],
   initialSourceModules = [],
   initialRecentReminders = [],
+  initialPositionCatalog = { positions: [], staffMappings: [], templates: [] },
 }: any) {
   const searchParams = useSearchParams()
   const [tasks, setTasks] = useState(initialTasks || [])
@@ -171,6 +174,10 @@ export function TasksClient({
   const [recentReminders, setRecentReminders] = useState<any[]>(
     initialRecentReminders || []
   )
+  const [positionCatalog, setPositionCatalog] = useState<PositionCatalogBundle>(
+    initialPositionCatalog || { positions: [], staffMappings: [], templates: [] }
+  )
+  const [filterPosition, setFilterPosition] = useState<string>("ALL")
 
   const [showCapaModal, setShowCapaModal] = useState(false)
   const [editingCapaAction, setEditingCapaAction] = useState<any | null>(null)
@@ -821,6 +828,12 @@ export function TasksClient({
       const matchYear =
         filterYear === "ALL" || t.academicYearId === filterYear
 
+      const taskPosCodes: string[] = Array.isArray(t.qaMeta?.scopeMeta?.positionCodes)
+        ? t.qaMeta.scopeMeta.positionCodes
+        : []
+      const matchPosition =
+        filterPosition === "ALL" || taskPosCodes.includes(filterPosition)
+
       const query = searchQuery.trim().toLowerCase()
       const matchQuery =
         !query ||
@@ -840,6 +853,7 @@ export function TasksClient({
         matchCategory &&
         matchAcceptance &&
         matchYear &&
+        matchPosition &&
         matchQuery
       )
     })
@@ -852,6 +866,7 @@ export function TasksClient({
     filterCategory,
     filterAcceptance,
     filterYear,
+    filterPosition,
     searchQuery,
   ])
 
@@ -971,6 +986,11 @@ export function TasksClient({
                 id: "workspace" as QaWorkspaceViewMode,
                 label: "Nhóm & cá nhân",
                 icon: Users,
+              },
+              {
+                id: "positions" as QaWorkspaceViewMode,
+                label: "Nhiệm vụ theo vị trí",
+                icon: Briefcase,
               },
               {
                 id: "list" as QaWorkspaceViewMode,
@@ -1199,6 +1219,20 @@ export function TasksClient({
               </option>
             ))}
           </select>
+          {positionCatalog.positions.length > 0 && (
+            <select
+              value={filterPosition}
+              onChange={e => setFilterPosition(e.target.value)}
+              className="border border-teal-200 rounded-xl px-2.5 py-1.5 text-xs font-bold bg-[#F0FDFA] text-[#003B3A]"
+            >
+              <option value="ALL">Mọi vị trí ({positionCatalog.positions.length})</option>
+              {positionCatalog.positions.map((pos) => (
+                <option key={pos.positionCode} value={pos.positionCode}>
+                  {pos.positionCode} — {pos.positionName}
+                </option>
+              ))}
+            </select>
+          )}
           <select
             value={filterPriority}
             onChange={e => setFilterPriority(e.target.value)}
@@ -1274,6 +1308,29 @@ export function TasksClient({
             })
           }
           onSelectTask={t => setDetailTask(t)}
+        />
+      )}
+
+      {/* =====================================================================
+       * CHẾ ĐỘ 2B: NHIỆM VỤ THEO VỊ TRÍ (07 VỊ TRÍ & 78 MẪU RACI BAN KT&ĐBCL)
+       * ===================================================================== */}
+      {viewMode === "positions" && (
+        <PositionTasksView
+          catalog={positionCatalog}
+          onCatalogChange={setPositionCatalog}
+          allStaffUsers={allStaffUsers}
+          canConfigure={isAdmin}
+          onAssignFromTemplate={(template, selectedPosCode) => {
+            setEditingTaskForModal(null)
+            setPresetAssignmentDraft({
+              templateId: template.id,
+              selectedPositionCode: selectedPosCode || template.rPositions[0] || null,
+              title: template.title,
+              deliverables: template.deliverables,
+              completionCriteria: template.completionCriteria,
+            })
+            setShowAssignmentModal(true)
+          }}
         />
       )}
 
@@ -2370,6 +2427,7 @@ export function TasksClient({
           selectedDepartment !== "ALL" ? selectedDepartment : defaultDepartment
         }
         departments={roles}
+        positionCatalog={positionCatalog}
       />
 
       {/* 4. Panel QA Assistant — Trợ lý Điều hành AI/NLP (Mục VI) */}

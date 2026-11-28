@@ -570,6 +570,36 @@ export function TaskDetailPanel({
               <h3 className="text-base font-extrabold text-white leading-snug">
                 {task.title}
               </h3>
+              {(qaMeta as any)?.scopeMeta?.templateSnapshot && (() => {
+                const snap = (qaMeta as any).scopeMeta.templateSnapshot
+                return (
+                  <div className="mt-2 p-2.5 rounded-xl bg-white/10 border border-white/15 text-[11px] text-teal-50 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded bg-[#00A19A] text-white font-bold">
+                        Mẫu RACI {snap.itemCode} · v{snap.version}
+                      </span>
+                      {Array.isArray(snap.rPositions) && snap.rPositions.length > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-white/15 text-[#5EEAD4] font-semibold">
+                          R: {snap.rPositions.join(" + ")}
+                        </span>
+                      )}
+                      {snap.accountablePositionCode && (
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/25 text-emerald-100 font-semibold">
+                          A: {snap.accountablePositionCode}
+                        </span>
+                      )}
+                      {snap.frequency && (
+                        <span className="text-teal-100/90">• {snap.frequency}</span>
+                      )}
+                    </div>
+                    {snap.kpiTarget && (
+                      <div className="text-[11px] text-teal-100/95 line-clamp-2">
+                        <strong>KPI gốc tại thời điểm giao:</strong> {snap.kpiTarget}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {isReviewerOrManager && currentWfStatus !== "DRAFT" && (

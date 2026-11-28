@@ -1,6 +1,7 @@
 export type QaWorkspaceViewMode =
   | "workspace"
   | "command_room"
+  | "positions"
   | "list"
   | "kanban"
   | "calendar"
