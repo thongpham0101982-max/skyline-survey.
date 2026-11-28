@@ -1,5 +1,3 @@
-import fs from "node:fs"
-import path from "node:path"
 import { prisma } from "@/lib/db"
 import {
   KTDBCL_ACCOUNTABLE_POSITION,
@@ -10,6 +8,7 @@ import {
   parseKtdbclRaciMatrixRows,
   RaciRoleCode,
 } from "./positionRaciParser"
+import { KTDBCL_RACI_CSV_RAW } from "./positionRaciCsvData"
 
 export interface PositionStaffMapping {
   positionCode: string
@@ -146,16 +145,7 @@ export async function ensurePositionRaciSchema(): Promise<void> {
 }
 
 export function loadCanonicalRaciTemplatesFromDisk(): ParsedPositionTaskTemplate[] {
-  const candidates = [
-    path.join(process.cwd(), "docs", "KTDBCL_MaTran_RACI_ChuanHoa_18_8_2026.csv"),
-    path.join(process.cwd(), "skyline-survey", "docs", "KTDBCL_MaTran_RACI_ChuanHoa_18_8_2026.csv"),
-  ]
-  const foundPath = candidates.find((p) => fs.existsSync(p))
-  if (!foundPath) {
-    throw new Error("Không tìm thấy tệp dữ liệu nguồn KTDBCL_MaTran_RACI_ChuanHoa_18_8_2026.csv")
-  }
-  const csvText = fs.readFileSync(foundPath, "utf-8")
-  const rows = parseCsvMatrix(csvText)
+  const rows = parseCsvMatrix(KTDBCL_RACI_CSV_RAW)
   return parseKtdbclRaciMatrixRows(rows)
 }
 
