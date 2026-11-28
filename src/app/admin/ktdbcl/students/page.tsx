@@ -73,7 +73,7 @@ export default async function StudentsPage() {
   })
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full max-w-[1600px] mx-auto">
       <ExamTabs
         activeTab="students"
         pendingRequestsCount={pendingRequestsCount}

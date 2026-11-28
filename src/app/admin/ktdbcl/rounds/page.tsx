@@ -43,7 +43,7 @@ export default async function RoundsPage() {
   })
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full max-w-[1600px] mx-auto">
       <ExamTabs
         activeTab="rounds"
         pendingRequestsCount={pendingRequestsCount}

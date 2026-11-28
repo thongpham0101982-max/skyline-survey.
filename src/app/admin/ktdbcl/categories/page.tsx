@@ -43,7 +43,7 @@ export default async function CategoriesPage() {
   })
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full max-w-[1600px] mx-auto">
       <ExamTabs
         activeTab="categories"
         pendingRequestsCount={pendingRequestsCount}

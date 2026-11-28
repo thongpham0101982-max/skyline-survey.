@@ -239,7 +239,9 @@ export function ResultsClient({
   const [bulkLevel, setBulkLevel] = useState("")
   const [bulkTeacherId, setBulkTeacherId] = useState("")
 
-  // Quick-Add Bar State (Direct Student + Award Entry without leaving page)
+  // Quick-Add Bar State (Collapsible on desktop to keep the table front-and-center)
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [showQuickChips, setShowQuickChips] = useState(true)
   const [quickMode, setQuickMode] = useState<"search" | "paste" | "class">("search")
   const [quickQuery, setQuickQuery] = useState("")
   const [quickResults, setQuickResults] = useState<any[]>([])
@@ -1133,88 +1135,105 @@ export function ResultsClient({
        * =================================================================== */}
       {subTab === "input" && (
         <div className="space-y-3.5 no-print">
-          {/* 1. Compact Exam Control & Ledger Strip */}
-          <div className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] p-4 shadow-xs space-y-3">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-              {/* Exam Selector + Quick Actions */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1 min-w-0">
-                <div className="flex-1 max-w-2xl flex items-center gap-2">
-                  {activeYearName && (
-                    <span
-                      className="hidden sm:inline-flex items-center px-2.5 py-2 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] text-[#003B3A] text-xs font-bold shrink-0 tabular-nums"
-                      title="Danh sách kỳ thi được lọc theo Năm học đang chọn"
-                    >
-                      NH {activeYearName} ({filteredExams.length})
-                    </span>
+          {/* 1. Single-Row Desktop Exam Control Bar */}
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs px-4 py-3 space-y-3">
+            <div className="flex flex-wrap xl:flex-nowrap items-center justify-between gap-2.5">
+              {/* Left: Exam Selector + Compact Actions */}
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 flex-1 min-w-0">
+                {activeYearName && (
+                  <span
+                    className="hidden 2xl:inline-flex items-center px-2.5 py-2 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] text-[#003B3A] text-xs font-bold shrink-0 tabular-nums whitespace-nowrap"
+                    title="Danh sách kỳ thi được lọc theo Năm học đang chọn"
+                  >
+                    {filteredExams.length} kỳ thi
+                  </span>
+                )}
+                {filteredExams.length > 8 && (
+                  <div className="relative w-36 shrink-0 hidden lg:block">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={examSearchFilter}
+                      onChange={(e) => setExamSearchFilter(e.target.value)}
+                      placeholder="Lọc kỳ thi..."
+                      className="w-full pl-8 pr-2.5 py-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] text-xs outline-none"
+                    />
+                  </div>
+                )}
+
+                <select
+                  value={selectedExamId}
+                  onChange={(e) => {
+                    if (
+                      hasChanges &&
+                      !confirm(
+                        "Bạn đang có thay đổi chưa lưu trên lưới kết quả. Chuyển sang kỳ thi khác sẽ hủy thay đổi này?"
+                      )
+                    ) {
+                      return
+                    }
+                    setSelectedExamId(e.target.value)
+                  }}
+                  disabled={filteredExams.length === 0}
+                  className="flex-1 min-w-[240px] max-w-xl border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#003B3A] bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none cursor-pointer truncate"
+                >
+                  {displayedExamsDropdown.length === 0 ? (
+                    <option value="">-- Chưa có kỳ thi phù hợp trong năm học --</option>
+                  ) : (
+                    displayedExamsDropdown.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        [{e.code}] {e.name}
+                      </option>
+                    ))
                   )}
-                  {filteredExams.length > 8 && (
-                    <div className="relative w-36 shrink-0 hidden md:block">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={examSearchFilter}
-                        onChange={(e) => setExamSearchFilter(e.target.value)}
-                        placeholder="Lọc kỳ thi..."
-                        className="w-full pl-8 pr-2.5 py-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] text-xs outline-none"
-                      />
-                    </div>
-                  )}
+                </select>
 
-                  <select
-                    value={selectedExamId}
-                    onChange={(e) => {
-                      if (
-                        hasChanges &&
-                        !confirm(
-                          "Bạn đang có thay đổi chưa lưu trên lưới kết quả. Chuyển sang kỳ thi khác sẽ hủy thay đổi này?"
-                        )
-                      ) {
-                        return
-                      }
-                      setSelectedExamId(e.target.value)
-                    }}
-                    disabled={filteredExams.length === 0}
-                    className="flex-1 min-w-0 border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#003B3A] bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none cursor-pointer"
-                  >
-                    {displayedExamsDropdown.length === 0 ? (
-                      <option value="">-- Chưa có kỳ thi phù hợp trong năm học --</option>
-                    ) : (
-                      displayedExamsDropdown.map((e) => (
-                        <option key={e.id} value={e.id}>
-                          [{e.code}] {e.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAdd((v) => !v)}
+                  disabled={!selectedExamId}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap disabled:opacity-40 ${
+                    showQuickAdd || (selectedExamId && gridRows.length === 0)
+                      ? "bg-[#003B3A] text-white border-[#003B3A]"
+                      : "bg-white hover:bg-[#F8FAFC] text-[#003B3A] border-[#E2E8F0]"
+                  }`}
+                  title="Mở thanh thêm nhanh học sinh vào bảng kết quả"
+                >
+                  <UserPlus
+                    className={`w-3.5 h-3.5 ${
+                      showQuickAdd || (selectedExamId && gridRows.length === 0)
+                        ? "text-[#5EEAD4]"
+                        : "text-[#008B85]"
+                    }`}
+                  />
+                  <span>Thêm HS</span>
+                </button>
 
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setIsQuickExamOpen(true)}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-slate-700 hover:text-[#003B3A] text-xs font-semibold cursor-pointer shrink-0"
-                    title="Tạo nhanh kỳ thi mới và chọn nhập kết quả ngay"
-                  >
-                    <Plus className="w-3.5 h-3.5 text-[#008B85]" />
-                    <span>Tạo nhanh kỳ thi</span>
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => setIsQuickExamOpen(true)}
+                  className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-slate-700 hover:text-[#003B3A] text-xs font-semibold cursor-pointer shrink-0 whitespace-nowrap"
+                  title="Tạo nhanh kỳ thi mới và chọn nhập kết quả ngay"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#008B85]" />
+                  <span>Kỳ thi mới</span>
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setDirectAwardModal({ isOpen: true, student: null })}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] hover:bg-[#CCFBF1]/60 text-[#003B3A] text-xs font-semibold cursor-pointer shrink-0"
-                    title="Ghi nhận giải thưởng ngoài danh sách kỳ thi hoặc giấy khen lẻ"
-                  >
-                    <Trophy className="w-3.5 h-3.5 text-[#008B85]" />
-                    <span>Ghi nhận lẻ / Ngoài hệ thống</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setDirectAwardModal({ isOpen: true, student: null })}
+                  className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-[#CCFBF1] bg-[#F0FDFA] hover:bg-[#CCFBF1]/60 text-[#003B3A] text-xs font-semibold cursor-pointer shrink-0 whitespace-nowrap"
+                  title="Ghi nhận giải thưởng ngoài danh sách kỳ thi hoặc giấy khen lẻ"
+                >
+                  <Trophy className="w-3.5 h-3.5 text-[#008B85]" />
+                  <span>Ghi nhận lẻ</span>
+                </button>
               </div>
 
               {/* Right: Inline Metrics + Primary Save CTA */}
-              <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 pt-2 xl:pt-0 border-t xl:border-t-0 border-[#F1F5F9] tabular-nums">
+              <div className="flex items-center justify-end gap-3 shrink-0 tabular-nums">
                 {selectedExamId && (
-                  <div className="flex items-center gap-3 text-xs">
+                  <div className="flex items-center gap-2.5 text-xs whitespace-nowrap">
                     <span className="text-slate-500">
                       Dự thi: <strong className="text-slate-900">{totalUniqueStudents}</strong>
                     </span>
@@ -1226,7 +1245,7 @@ export function ResultsClient({
                       <>
                         <span className="text-slate-300">|</span>
                         <span className="px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[#D97706] font-semibold">
-                          Chưa lưu: {changedStudentIds.size} HS
+                          Chưa lưu: {changedStudentIds.size}
                         </span>
                       </>
                     )}
@@ -1237,7 +1256,7 @@ export function ResultsClient({
                   type="button"
                   onClick={handleSaveGrid}
                   disabled={savingGrid || !hasChanges || !selectedExamId}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                     hasChanges
                       ? "bg-[#003B3A] hover:bg-[#005250] text-white shadow-sm"
                       : "bg-slate-100 text-slate-400 cursor-not-allowed"
@@ -1254,9 +1273,9 @@ export function ResultsClient({
               </div>
             </div>
 
-            {/* 2. Zero-Friction Quick-Add Student & Direct Award Bar */}
-            {selectedExamId && (
-              <div className="pt-3 border-t border-[#F1F5F9] bg-[#F8FAFC]/80 -mx-4 -mb-4 px-4 py-3 rounded-b-2xl space-y-2.5">
+            {/* 2. Collapsible Quick-Add Student & Direct Award Bar (Auto-open only if exam has 0 rows) */}
+            {selectedExamId && (showQuickAdd || (!loadingStudents && gridRows.length === 0)) && (
+              <div className="pt-3 border-t border-[#E2E8F0] bg-[#F8FAFC] -mx-4 -mb-3 px-4 py-3 rounded-b-2xl space-y-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="font-bold text-[#003B3A] flex items-center gap-1.5 mr-1">
@@ -1555,8 +1574,22 @@ export function ResultsClient({
                   )}
                 </div>
 
-                {/* Right: Search in Grid + Excel Import/Template */}
+                {/* Right: Search in Grid + Quick Chips Toggle + Excel Import/Template */}
                 <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickChips((v) => !v)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
+                      showQuickChips
+                        ? "bg-[#F0FDFA] text-[#003B3A] border-[#CCFBF1]"
+                        : "bg-white text-slate-500 border-[#E2E8F0] hover:text-[#003B3A]"
+                    }`}
+                    title="Bật/tắt cột nút chọn nhanh mức giải 1 chạm"
+                  >
+                    <Award className="w-3.5 h-3.5 text-[#008B85]" />
+                    <span>Chọn nhanh 1 chạm</span>
+                  </button>
+
                   <div className="relative w-full sm:w-52">
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                     <input
@@ -1728,7 +1761,7 @@ export function ResultsClient({
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[1160px] tabular-nums">
+                  <table className="w-full text-left border-collapse min-w-[1100px] tabular-nums">
                     <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                       <tr className="text-[11px] font-semibold whitespace-nowrap">
                         <th className="py-3 px-2.5 w-9 text-center font-semibold">
@@ -1754,21 +1787,25 @@ export function ResultsClient({
                         <th className="py-3 px-2 w-10 text-center text-teal-100 font-semibold">
                           STT
                         </th>
-                        <th className="py-3 px-3 min-w-[190px] font-semibold">Học sinh</th>
-                        <th className="py-3 px-2.5 w-20 text-center text-teal-100 font-semibold">
+                        <th className="py-3 px-3 min-w-[180px] font-semibold">Học sinh</th>
+                        <th className="py-3 px-2.5 w-24 text-center text-teal-100 font-semibold">
                           Lớp
                         </th>
-                        <th className="py-3 px-3 min-w-[235px] text-[#5EEAD4] font-semibold">
-                          Chọn nhanh mức giải (1 chạm)
+                        {showQuickChips && (
+                          <th className="py-3 px-3 min-w-[215px] max-w-[245px] text-[#5EEAD4] font-semibold">
+                            Chọn nhanh mức giải
+                          </th>
+                        )}
+                        <th className="py-3 px-2.5 w-[118px] min-w-[118px] text-teal-100 font-semibold">
+                          Hình thức
                         </th>
-                        <th className="py-3 px-2.5 w-28 text-teal-100 font-semibold">Hình thức</th>
-                        <th className="py-3 px-2.5 w-36 text-teal-100 font-semibold">
-                          Loại & Mức giải
+                        <th className="py-3 px-2.5 w-[180px] min-w-[180px] text-teal-100 font-semibold">
+                          Loại &amp; Mức giải
                         </th>
-                        <th className="py-3 px-3 min-w-[190px] text-teal-100 font-semibold">
-                          Tên danh hiệu / Ghi chú giải
+                        <th className="py-3 px-3 min-w-[180px] text-teal-100 font-semibold">
+                          Tên danh hiệu / Ghi chú
                         </th>
-                        <th className="py-3 px-3 w-52 text-teal-100 font-semibold">
+                        <th className="py-3 px-3 w-[205px] min-w-[205px] text-teal-100 font-semibold">
                           GV bồi dưỡng
                         </th>
                         <th className="py-3 px-2.5 w-20 text-right font-semibold">Thao tác</th>
@@ -1841,38 +1878,40 @@ export function ResultsClient({
                             </td>
 
                             {/* 1-Click Preset Chips */}
-                            <td className="py-2.5 px-3">
-                              <div className="flex flex-wrap items-center gap-1">
-                                {awardPresets.map((p) => {
-                                  const active =
-                                    row.category === p.category && row.level === p.level
-                                  let activeCls =
-                                    "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
-                                  if (active && p.tone === "gold")
-                                    activeCls = "bg-[#D97706] text-white border-[#D97706]"
-                                  else if (active && p.tone === "teal")
-                                    activeCls = "bg-[#059669] text-white border-[#059669]"
+                            {showQuickChips && (
+                              <td className="py-2.5 px-3 max-w-[245px]">
+                                <div className="flex flex-wrap items-center gap-1">
+                                  {awardPresets.map((p) => {
+                                    const active =
+                                      row.category === p.category && row.level === p.level
+                                    let activeCls =
+                                      "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
+                                    if (active && p.tone === "gold")
+                                      activeCls = "bg-[#D97706] text-white border-[#D97706]"
+                                    else if (active && p.tone === "teal")
+                                      activeCls = "bg-[#059669] text-white border-[#059669]"
 
-                                  return (
-                                    <button
-                                      key={p.key}
-                                      type="button"
-                                      onClick={() => applyPresetToRow(row.gridRowId, p)}
-                                      title={`Gán nhanh: ${p.fullLabel} (${
-                                        CATEGORY_LABELS[p.category] || p.category
-                                      })`}
-                                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${
-                                        active
-                                          ? activeCls
-                                          : "bg-[#F8FAFC] text-slate-600 border-[#E2E8F0] hover:border-[#008B85] hover:text-[#003B3A]"
-                                      }`}
-                                    >
-                                      {p.shortLabel}
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </td>
+                                    return (
+                                      <button
+                                        key={p.key}
+                                        type="button"
+                                        onClick={() => applyPresetToRow(row.gridRowId, p)}
+                                        title={`Gán nhanh: ${p.fullLabel} (${
+                                          CATEGORY_LABELS[p.category] || p.category
+                                        })`}
+                                        className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer leading-tight ${
+                                          active
+                                            ? activeCls
+                                            : "bg-[#F8FAFC] text-slate-600 border-[#E2E8F0] hover:border-[#008B85] hover:text-[#003B3A]"
+                                        }`}
+                                      >
+                                        {p.shortLabel}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </td>
+                            )}
 
                             {/* Hình thức */}
                             <td className="py-2.5 px-2.5">

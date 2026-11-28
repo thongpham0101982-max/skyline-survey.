@@ -147,8 +147,12 @@ export function TasksClient({
   const searchParams = useSearchParams()
   const [tasks, setTasks] = useState(initialTasks || [])
 
-  // 5 Chế độ làm việc chuẩn (Mục II.3): Không gian công việc / Phòng điều hành / Danh sách / Kanban / Lịch
+  // 5 Chế độ làm việc chuẩn (Mục II.3): Không gian công việc / Phòng điều hành / Danh sách / Dashboard trạng thái / Lịch
   const [viewMode, setViewMode] = useState<QaWorkspaceViewMode>("workspace")
+  const [dashboardStatusFilter, setDashboardStatusFilter] = useState<
+    "ALL" | "ASSIGNED" | "IN_PROGRESS" | "PENDING_REVIEW" | "NEEDS_REVISION" | "COMPLETED"
+  >("ALL")
+  const [dashboardOverdueOnly, setDashboardOverdueOnly] = useState(false)
 
   // Modals & Panels state
   const [showAssignmentModal, setShowAssignmentModal] = useState(false)
@@ -796,12 +800,18 @@ export function TasksClient({
       const matchPriority =
         filterPriority === "ALL" || (t.priority || "MEDIUM") === filterPriority
 
-      const wfStatus = t.qaMeta?.workflowStatus || t.progress
+      const wfStatus =
+        t.qaMeta?.workflowStatus ||
+        (t.progress === "COMPLETED"
+          ? "COMPLETED"
+          : t.progress === "IN_PROGRESS"
+          ? "IN_PROGRESS"
+          : "ASSIGNED")
       const matchProgress =
         filterProgress === "ALL" ||
-        t.progress === filterProgress ||
-        wfStatus === filterProgress ||
-        (filterProgress === "OVERDUE" && Boolean(t.deadlineInfo?.isOverdue))
+        (filterProgress === "OVERDUE"
+          ? Boolean(t.deadlineInfo?.isOverdue || t.progress === "OVERDUE")
+          : wfStatus === filterProgress)
 
       const matchCategory =
         filterCategory === "ALL" || t.category === filterCategory
@@ -969,7 +979,7 @@ export function TasksClient({
               },
               {
                 id: "kanban" as QaWorkspaceViewMode,
-                label: "Kanban",
+                label: "Dashboard trạng thái",
                 icon: Kanban,
               },
               {
@@ -1268,109 +1278,247 @@ export function TasksClient({
       )}
 
       {/* =====================================================================
-       * CHẾ ĐỘ 3: DANH SÁCH NHIỆM VỤ CHI TIẾT (LIST VIEW)
+       * CHẾ ĐỘ 3: DANH SÁCH NHIỆM VỤ CHI TIẾT (LIST VIEW — ACADEMIC LEDGER)
        * ===================================================================== */}
       {viewMode === "list" && (
         <div className="space-y-4">
-          {/* 4 Thẻ tóm tắt nhanh trên chế độ Danh sách */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div
-              onClick={() => setFilterProgress("ALL")}
-              className="p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50/70 cursor-pointer flex items-center justify-between"
+          {/* Unified Academic Ledger Summary Strip */}
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-[#E2E8F0] overflow-hidden tabular-nums">
+            <button
+              type="button"
+              onClick={() =>
+                setFilterProgress(
+                  filterProgress === "COMPLETED" ? "ALL" : "COMPLETED"
+                )
+              }
+              className={`p-4 text-left flex items-center justify-between gap-3 transition-colors cursor-pointer ${
+                filterProgress === "COMPLETED"
+                  ? "bg-[#F0FDFA]"
+                  : "hover:bg-[#F8FAFC]"
+              }`}
             >
-              <div>
-                <div className="text-xl font-black text-emerald-950">
-                  {stats.completed}/{stats.total}
-                </div>
-                <div className="text-xs font-bold text-emerald-800">
-                  Đã nghiệm thu hoàn thành ({stats.completionRate}%)
-                </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-500">
+                  Hoàn thành ({stats.completionRate}%)
+                </p>
+                <p className="text-xl font-bold text-[#059669] mt-0.5">
+                  {stats.completed}
+                  <span className="text-xs font-medium text-slate-400">
+                    /{stats.total}
+                  </span>
+                </p>
               </div>
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            </div>
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/70 text-[#059669] flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               onClick={() =>
                 setFilterProgress(
                   filterProgress === "IN_PROGRESS" ? "ALL" : "IN_PROGRESS"
                 )
               }
-              className="p-3.5 rounded-2xl border border-sky-200 bg-sky-50/70 cursor-pointer flex items-center justify-between"
+              className={`p-4 text-left flex items-center justify-between gap-3 transition-colors cursor-pointer ${
+                filterProgress === "IN_PROGRESS"
+                  ? "bg-[#F0FDFA]"
+                  : "hover:bg-[#F8FAFC]"
+              }`}
             >
-              <div>
-                <div className="text-xl font-black text-sky-950">
-                  {stats.inProgress}
-                </div>
-                <div className="text-xs font-bold text-sky-800">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-500">
                   Đang thực hiện
-                </div>
+                </p>
+                <p className="text-xl font-bold text-[#003B3A] mt-0.5">
+                  {stats.inProgress}
+                </p>
               </div>
-              <Clock className="w-5 h-5 text-sky-600" />
-            </div>
+              <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] text-[#008B85] flex items-center justify-center shrink-0">
+                <Clock className="w-4 h-4" />
+              </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               onClick={() =>
                 setFilterProgress(
                   filterProgress === "PENDING_REVIEW" ? "ALL" : "PENDING_REVIEW"
                 )
               }
-              className="p-3.5 rounded-2xl border border-teal-200 bg-teal-50/70 cursor-pointer flex items-center justify-between"
+              className={`p-4 text-left flex items-center justify-between gap-3 transition-colors cursor-pointer ${
+                filterProgress === "PENDING_REVIEW"
+                  ? "bg-amber-50/60"
+                  : "hover:bg-[#F8FAFC]"
+              }`}
             >
-              <div>
-                <div className="text-xl font-black text-teal-800">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-500">
+                  Đang chờ duyệt
+                </p>
+                <p className="text-xl font-bold text-[#D97706] mt-0.5">
                   {stats.pendingReview}
-                </div>
-                <div className="text-xs font-bold text-teal-800">
-                  Chờ duyệt (Chưa tính hoàn thành)
-                </div>
+                </p>
               </div>
-              <ShieldCheck className="w-5 h-5 text-teal-800" />
-            </div>
+              <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200/80 text-[#D97706] flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               onClick={() =>
                 setFilterProgress(
                   filterProgress === "OVERDUE" ? "ALL" : "OVERDUE"
                 )
               }
-              className="p-3.5 rounded-2xl border border-rose-200 bg-rose-50/70 cursor-pointer flex items-center justify-between"
+              className={`p-4 text-left flex items-center justify-between gap-3 transition-colors cursor-pointer ${
+                filterProgress === "OVERDUE"
+                  ? "bg-rose-50/70"
+                  : "hover:bg-[#F8FAFC]"
+              }`}
             >
-              <div>
-                <div className="text-xl font-black text-rose-950">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-500">
+                  Quá hạn ({stats.overdueExecution} TH · {stats.overdueReview} duyệt)
+                </p>
+                <p className="text-xl font-bold text-[#E11D48] mt-0.5">
                   {stats.totalOverdue}
-                </div>
-                <div className="text-xs font-bold text-rose-800">
-                  {stats.overdueExecution} chậm TH • {stats.overdueReview} chậm duyệt
-                </div>
+                </p>
               </div>
-              <AlertTriangle className="w-5 h-5 text-rose-600" />
-            </div>
+              <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-200/80 text-[#E11D48] flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+            </button>
           </div>
 
+          {/* Main Ledger Table Card with Status Filter Tags */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xs overflow-hidden">
-            <div className="px-5 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
-              <span className="text-xs font-extrabold text-[#003B3A] tabular-nums">
-                Danh sách nhiệm vụ ({displayedTasks.length})
-              </span>
+            <div className="px-4 py-3 bg-white border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3">
+              {/* Left: Title + Interactive Status Tags */}
+              <div className="flex flex-wrap items-center gap-2.5 tabular-nums">
+                <h2 className="text-sm font-bold text-[#003B3A] whitespace-nowrap">
+                  Danh sách nhiệm vụ ({displayedTasks.length})
+                </h2>
+
+                <div className="hidden sm:block w-px h-4 bg-[#E2E8F0]" />
+
+                <div
+                  role="tablist"
+                  aria-label="Lọc theo trạng thái nhiệm vụ"
+                  className="inline-flex flex-wrap items-center gap-1.5"
+                >
+                  {[
+                    {
+                      id: "ALL",
+                      label: "Tất cả",
+                      count: stats.total,
+                      dot: "bg-slate-400",
+                      activeCls:
+                        "bg-[#003B3A] text-white border-[#003B3A]",
+                      idleCls:
+                        "bg-[#F8FAFC] text-slate-600 border-[#E2E8F0] hover:border-slate-300 hover:text-[#003B3A]",
+                    },
+                    {
+                      id: "IN_PROGRESS",
+                      label: "Đang thực hiện",
+                      count: stats.inProgress,
+                      dot: "bg-[#00A19A]",
+                      activeCls:
+                        "bg-[#008B85] text-white border-[#008B85]",
+                      idleCls:
+                        "bg-[#F0FDFA] text-[#00736E] border-[#CCFBF1] hover:border-[#00A19A]/60",
+                    },
+                    {
+                      id: "PENDING_REVIEW",
+                      label: "Đang chờ duyệt",
+                      count: stats.pendingReview,
+                      dot: "bg-[#D97706]",
+                      activeCls:
+                        "bg-[#D97706] text-white border-[#D97706]",
+                      idleCls:
+                        "bg-amber-50 text-[#B45309] border-amber-200 hover:border-amber-300",
+                    },
+                    {
+                      id: "COMPLETED",
+                      label: "Hoàn thành",
+                      count: stats.completed,
+                      dot: "bg-[#059669]",
+                      activeCls:
+                        "bg-[#059669] text-white border-[#059669]",
+                      idleCls:
+                        "bg-emerald-50 text-[#047857] border-emerald-200 hover:border-emerald-300",
+                    },
+                    ...(stats.totalOverdue > 0
+                      ? [
+                          {
+                            id: "OVERDUE",
+                            label: "Quá hạn",
+                            count: stats.totalOverdue,
+                            dot: "bg-[#E11D48]",
+                            activeCls:
+                              "bg-[#E11D48] text-white border-[#E11D48]",
+                            idleCls:
+                              "bg-rose-50 text-[#BE123C] border-rose-200 hover:border-rose-300",
+                          },
+                        ]
+                      : []),
+                  ].map((tag) => {
+                    const isActive = filterProgress === tag.id
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => setFilterProgress(tag.id)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
+                          isActive ? tag.activeCls : tag.idleCls
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            isActive ? "bg-white" : tag.dot
+                          }`}
+                        />
+                        <span>{tag.label}</span>
+                        <span
+                          className={`px-1.5 py-0.2 rounded text-[11px] font-bold leading-tight ${
+                            isActive
+                              ? "bg-white/20 text-white"
+                              : "bg-white/80 text-current"
+                          }`}
+                        >
+                          {tag.count}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Right: Export Excel */}
               <button
                 type="button"
                 onClick={handleExportExcel}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E2E8F0] text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#003B3A] cursor-pointer shrink-0 whitespace-nowrap"
               >
-                <Download className="w-3.5 h-3.5 text-[#059669]" /> Xuất Excel
+                <Download className="w-3.5 h-3.5 text-[#059669]" />
+                <span>Xuất Excel</span>
               </button>
             </div>
+
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-xs border-collapse min-w-[1060px] tabular-nums">
                 <thead className="bg-[#003B3A] border-b border-[#003B3A]">
                   <tr className="text-[11px] font-semibold whitespace-nowrap">
-                    <th className="py-3 px-3 text-center w-12 font-semibold text-teal-100">STT</th>
-                    <th className="py-3 px-3 w-44 font-semibold text-teal-100">Nhóm & danh mục</th>
-                    <th className="py-3 px-3 min-w-[280px] font-semibold text-white">Nhiệm vụ & sản phẩm</th>
-                    <th className="py-3 px-3 w-48 font-semibold text-teal-100">Chịu trách nhiệm chính</th>
-                    <th className="py-3 px-3 w-36 font-semibold text-teal-100">Hạn & nhãn bước</th>
-                    <th className="py-3 px-3 w-44 font-semibold text-[#5EEAD4]">Xác nhận & trạng thái</th>
-                    <th className="py-3 px-3 text-center w-32 font-semibold text-white">Thao tác</th>
+                    <th className="py-3 px-3 text-center w-11 font-semibold text-teal-100">STT</th>
+                    <th className="py-3 px-3 w-44 font-semibold text-teal-100">Nhóm &amp; danh mục</th>
+                    <th className="py-3 px-3 min-w-[300px] font-semibold text-white">Nhiệm vụ &amp; sản phẩm</th>
+                    <th className="py-3 px-3 w-48 font-semibold text-teal-100">Chịu trách nhiệm</th>
+                    <th className="py-3 px-3 w-36 font-semibold text-teal-100">Hạn thực hiện</th>
+                    <th className="py-3 px-3 w-48 font-semibold text-[#5EEAD4]">Trạng thái</th>
+                    <th className="py-3 px-3 text-right w-40 font-semibold text-white">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
@@ -1399,101 +1547,142 @@ export function TasksClient({
                           c.actionStatus !== "RESOLVED"
                       )
 
+                      const statusBadge =
+                        wfStatus === "COMPLETED"
+                          ? {
+                              label: "Hoàn thành",
+                              cls: "bg-emerald-50 text-[#059669] border border-emerald-200",
+                              dot: "bg-[#059669]",
+                            }
+                          : wfStatus === "PENDING_REVIEW"
+                          ? {
+                              label: "Đang chờ duyệt",
+                              cls: "bg-amber-50 text-[#B45309] border border-amber-200",
+                              dot: "bg-[#D97706]",
+                            }
+                          : wfStatus === "IN_PROGRESS"
+                          ? {
+                              label: "Đang thực hiện",
+                              cls: "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]",
+                              dot: "bg-[#00A19A]",
+                            }
+                          : wfStatus === "NEEDS_REVISION"
+                          ? {
+                              label: "Cần bổ sung",
+                              cls: "bg-amber-50 text-[#D97706] border border-amber-200",
+                              dot: "bg-[#D97706]",
+                            }
+                          : {
+                              label: WORKFLOW_STATUS_LABELS[wfStatus] || "Đã giao",
+                              cls: "bg-slate-100 text-slate-600 border border-slate-200",
+                              dot: "bg-slate-400",
+                            }
+
                       return (
                         <tr
                           key={t.id}
-                          className={`hover:bg-slate-50/80 transition-colors ${
-                            isOverdue ? "bg-rose-50/30" : ""
+                          className={`transition-colors align-middle ${
+                            isOverdue
+                              ? "bg-rose-50/25 hover:bg-rose-50/45"
+                              : "hover:bg-[#F8FAFC]"
                           }`}
                         >
-                          <td className="p-3 text-center font-bold text-slate-400">
+                          <td className="py-3 px-3 text-center font-medium text-slate-400">
                             {i + 1}
                           </td>
-                          <td className="p-3 space-y-1">
-                            {t.taskGroup?.name && (
-                              <div className="text-[10px] font-extrabold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md w-fit">
-                                {t.taskGroup.name}
-                              </div>
-                            )}
-                            <span
-                              className={`border font-extrabold px-2 py-0.5 rounded-full text-[10px] inline-block ${getCategoryBadgeStyle(
-                                t.category
-                              )}`}
-                            >
-                              {t.category || "Công việc"}
-                            </span>
+
+                          <td className="py-3 px-3">
+                            <div className="flex flex-col items-start gap-1">
+                              {t.taskGroup?.name && (
+                                <span className="text-[11px] font-semibold text-[#003B3A] bg-[#F0FDFA] border border-[#CCFBF1] px-2 py-0.5 rounded-md leading-tight">
+                                  {t.taskGroup.name}
+                                </span>
+                              )}
+                              <span
+                                className={`border font-medium px-2 py-0.5 rounded-md text-[11px] leading-tight ${getCategoryBadgeStyle(
+                                  t.category
+                                )}`}
+                              >
+                                {t.category || "Công việc"}
+                              </span>
+                            </div>
                           </td>
-                          <td className="p-3">
+
+                          <td className="py-3 px-3">
                             <div className="flex items-start gap-1.5 flex-wrap">
                               {t.priority === "URGENT" && (
-                                <span className="bg-rose-600 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                                <span className="bg-rose-50 text-[#E11D48] border border-rose-200 font-semibold text-[11px] px-2 py-0.5 rounded-md leading-tight shrink-0">
                                   Khẩn cấp
                                 </span>
                               )}
                               {t.priority === "HIGH" && (
-                                <span className="bg-amber-500 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                                <span className="bg-amber-50 text-[#D97706] border border-amber-200 font-semibold text-[11px] px-2 py-0.5 rounded-md leading-tight shrink-0">
                                   Ưu tiên cao
                                 </span>
                               )}
                               <button
                                 type="button"
                                 onClick={() => setDetailTask(t)}
-                                className="font-bold text-slate-900 hover:text-teal-800 text-left cursor-pointer"
+                                className="font-semibold text-slate-900 hover:text-[#00736E] text-left cursor-pointer leading-snug"
                               >
                                 {t.title}
                               </button>
                             </div>
                             {t.qaMeta?.deliverables && (
-                              <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                              <div className="text-[11px] text-slate-500 mt-1 line-clamp-1">
                                 Sản phẩm: {t.qaMeta.deliverables}
                               </div>
                             )}
-                            {(t.checklistStats?.totalSteps ?? 0) > 0 && (
-                              <div className="text-[10px] font-semibold text-teal-700 mt-0.5">
-                                Checklist: {t.checklistStats?.completedSteps ?? 0}/
-                                {t.checklistStats?.totalSteps ?? 0} bước (
-                                {t.checklistStats?.percent ?? 0}%)
-                              </div>
-                            )}
-                            {blockers.length > 0 && (
-                              <div className="mt-1 text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded w-fit">
-                                {blockers.length} vướng mắc chờ xử lý
-                              </div>
-                            )}
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              {(t.checklistStats?.totalSteps ?? 0) > 0 && (
+                                <span className="text-[11px] font-medium text-[#00736E]">
+                                  Checklist: {t.checklistStats?.completedSteps ?? 0}/
+                                  {t.checklistStats?.totalSteps ?? 0} (
+                                  {t.checklistStats?.percent ?? 0}%)
+                                </span>
+                              )}
+                              {blockers.length > 0 && (
+                                <span className="text-[11px] font-semibold text-[#E11D48] bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded">
+                                  {blockers.length} vướng mắc
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="p-3">
+
+                          <td className="py-3 px-3">
                             {t.assignedToUser ? (
                               <button
                                 type="button"
                                 onClick={() =>
                                   setSelectedMemberId(t.assignedToUser.id)
                                 }
-                                className="font-bold text-teal-800 hover:underline flex items-center gap-1 cursor-pointer"
+                                className="font-semibold text-[#003B3A] hover:text-[#008B85] hover:underline flex items-center gap-1.5 cursor-pointer text-left"
                               >
-                                <User className="w-3.5 h-3.5" />
-                                {t.assignedToUser.fullName}
+                                <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{t.assignedToUser.fullName}</span>
                               </button>
                             ) : (
-                              <span className="text-slate-600 font-semibold">
+                              <span className="text-slate-700 font-semibold">
                                 {t.assignedToRole}
                               </span>
                             )}
                             {t.reviewerUser && (
-                              <div className="text-[10px] text-slate-400 mt-0.5">
+                              <div className="text-[11px] text-slate-400 mt-0.5 truncate">
                                 Duyệt: {t.reviewerUser.fullName}
                               </div>
                             )}
                           </td>
-                          <td className="p-3">
-                            <div className="font-bold text-slate-800">
+
+                          <td className="py-3 px-3">
+                            <div className="font-semibold text-slate-800 whitespace-nowrap">
                               {new Date(t.endDate).toLocaleDateString("vi-VN")}
                             </div>
                             {isOverdue && (
                               <span
-                                className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                                className={`inline-block mt-1 px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap ${
                                   isOverdueReview
-                                    ? "bg-amber-100 text-amber-900"
-                                    : "bg-rose-100 text-rose-800"
+                                    ? "bg-amber-50 text-[#B45309] border border-amber-200"
+                                    : "bg-rose-50 text-[#E11D48] border border-rose-200"
                                 }`}
                               >
                                 {isOverdueReview
@@ -1502,43 +1691,38 @@ export function TasksClient({
                               </span>
                             )}
                           </td>
-                          <td className="py-3 px-3 align-middle space-y-1">
+
+                          <td className="py-3 px-3">
                             <span
-                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-block ${
-                                wfStatus === "COMPLETED"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : wfStatus === "PENDING_REVIEW"
-                                  ? "bg-teal-50 text-[#00736E] border border-teal-200"
-                                  : wfStatus === "NEEDS_REVISION"
-                                  ? "bg-amber-100 text-amber-800"
-                                  : wfStatus === "IN_PROGRESS"
-                                  ? "bg-sky-100 text-sky-800"
-                                  : "bg-slate-100 text-slate-700"
-                              }`}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${statusBadge.cls}`}
                             >
-                              {WORKFLOW_STATUS_LABELS[wfStatus] || wfStatus}
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusBadge.dot}`}
+                              />
+                              <span>{statusBadge.label}</span>
                             </span>
                             {wfStatus !== "DRAFT" && wfStatus !== "CANCELLED" && (
-                              <div className="text-[10px] font-semibold">
+                              <div className="text-[11px] font-medium mt-1 whitespace-nowrap">
                                 {(t.acceptanceStatus || "WAITING_CONFIRMATION") ===
                                   "WAITING_CONFIRMATION" && wfStatus === "ASSIGNED" ? (
                                   <span className="text-[#D97706]">
-                                    • Chờ xác nhận nhận việc
+                                    Chờ xác nhận nhận việc
                                   </span>
                                 ) : t.acceptanceStatus === "REJECTED" ? (
                                   <span className="text-[#E11D48]">
-                                    • Có phản hồi nhận việc
+                                    Có phản hồi nhận việc
                                   </span>
                                 ) : (
-                                  <span className="text-[#059669]">
-                                    • Đã xác nhận nhận việc
+                                  <span className="text-slate-400">
+                                    Đã xác nhận nhận việc
                                   </span>
                                 )}
                               </div>
                             )}
                           </td>
-                          <td className="py-3 px-3 text-center align-middle">
-                            <div className="flex items-center justify-center gap-1">
+
+                          <td className="py-3 px-3 text-right">
+                            <div className="inline-flex items-center justify-end gap-1">
                               {(t.acceptanceStatus || "WAITING_CONFIRMATION") ===
                                 "WAITING_CONFIRMATION" &&
                                 wfStatus === "ASSIGNED" &&
@@ -1547,7 +1731,7 @@ export function TasksClient({
                                     type="button"
                                     disabled={actionLoading}
                                     onClick={() => handleConfirmTaskAction(t.id)}
-                                    className="px-2 py-1 rounded-lg bg-[#003B3A] hover:bg-[#004D47] text-white text-[11px] font-bold cursor-pointer"
+                                    className="px-2.5 py-1 rounded-lg bg-[#003B3A] hover:bg-[#005250] text-white text-[11px] font-semibold cursor-pointer whitespace-nowrap"
                                     title="Xác nhận tiếp nhận nhiệm vụ ngay"
                                   >
                                     Xác nhận
@@ -1556,7 +1740,7 @@ export function TasksClient({
                               <button
                                 type="button"
                                 onClick={() => setDetailTask(t)}
-                                className="p-1.5 text-[#00736E] hover:bg-teal-50 rounded-lg font-bold cursor-pointer"
+                                className="p-1.5 text-[#00736E] hover:bg-[#F0FDFA] rounded-lg cursor-pointer"
                                 title="Mở chi tiết, xác nhận & nghiệm thu"
                               >
                                 <MessageSquare className="w-4 h-4" />
@@ -1574,7 +1758,7 @@ export function TasksClient({
                                   <button
                                     type="button"
                                     onClick={() => handleEditTask(t)}
-                                    className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-lg cursor-pointer"
+                                    className="p-1.5 text-slate-500 hover:text-[#003B3A] hover:bg-slate-100 rounded-lg cursor-pointer"
                                     title="Chỉnh sửa phiếu"
                                   >
                                     <Edit className="w-4 h-4" />
@@ -1582,7 +1766,7 @@ export function TasksClient({
                                   <button
                                     type="button"
                                     onClick={() => handleDelete(t.id)}
-                                    className="p-1.5 text-[#E11D48] hover:bg-rose-50 rounded-lg cursor-pointer"
+                                    className="p-1.5 text-slate-400 hover:text-[#E11D48] hover:bg-rose-50 rounded-lg cursor-pointer"
                                     title="Xóa"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -1603,108 +1787,387 @@ export function TasksClient({
       )}
 
       {/* =====================================================================
-       * CHẾ ĐỘ 4: BẢNG KANBAN THEO LUỒNG THỰC HIỆN & DUYỆT (MỤC V)
+       * CHẾ ĐỘ 4: DASHBOARD TRẠNG THÁI CÔNG VIỆC & BẢNG ĐẦU VIỆC (ACADEMIC LEDGER)
        * ===================================================================== */}
-      {viewMode === "kanban" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {[
-            {
-              key: "ASSIGNED",
-              match: ["DRAFT", "ASSIGNED", "PENDING"],
-              title: "Nháp / Đã giao",
-              color: "border-slate-300 bg-slate-50/70",
-              badge: "bg-slate-700 text-white",
-            },
-            {
-              key: "IN_PROGRESS",
-              match: ["IN_PROGRESS"],
-              title: "Đang thực hiện",
-              color: "border-sky-300 bg-sky-50/40",
-              badge: "bg-sky-600 text-white",
-            },
-            {
-              key: "PENDING_REVIEW",
-              match: ["PENDING_REVIEW"],
-              title: "Chờ duyệt nghiệm thu",
-              color: "border-teal-200 bg-teal-50/40",
-              badge: "bg-teal-500 text-white",
-            },
-            {
-              key: "NEEDS_REVISION",
-              match: ["NEEDS_REVISION", "PAUSED"],
-              title: "Cần bổ sung / Tạm dừng",
-              color: "border-amber-300 bg-amber-50/40",
-              badge: "bg-amber-600 text-white",
-            },
-            {
-              key: "COMPLETED",
-              match: ["COMPLETED"],
-              title: "Đã hoàn thành",
-              color: "border-emerald-300 bg-emerald-50/40",
-              badge: "bg-emerald-600 text-white",
-            },
-          ].map(col => {
-            const colTasks = displayedTasks.filter((t: any) => {
-              const st = t.qaMeta?.workflowStatus || t.progress
-              return col.match.includes(st)
-            })
-            return (
-              <div
-                key={col.key}
-                className={`border rounded-2xl p-3.5 flex flex-col space-y-3 ${col.color}`}
-              >
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                  <h3 className="font-extrabold text-xs text-slate-900">
-                    {col.title}
+      {viewMode === "kanban" && (() => {
+        const statusBuckets = [
+          {
+            key: "ASSIGNED" as const,
+            match: ["DRAFT", "ASSIGNED", "PENDING"],
+            title: "Nháp / Đã giao",
+            barColor: "bg-slate-500",
+            accentBorder: "border-t-slate-500",
+            badgeCls: "bg-slate-100 text-slate-700 border-slate-200",
+            countCls: "text-slate-800",
+          },
+          {
+            key: "IN_PROGRESS" as const,
+            match: ["IN_PROGRESS"],
+            title: "Đang thực hiện",
+            barColor: "bg-[#00A19A]",
+            accentBorder: "border-t-[#00A19A]",
+            badgeCls: "bg-[#F0FDFA] text-[#00736E] border-teal-200",
+            countCls: "text-[#00736E]",
+          },
+          {
+            key: "PENDING_REVIEW" as const,
+            match: ["PENDING_REVIEW"],
+            title: "Chờ duyệt nghiệm thu",
+            barColor: "bg-[#003B3A]",
+            accentBorder: "border-t-[#003B3A]",
+            badgeCls: "bg-[#003B3A]/10 text-[#003B3A] border-[#003B3A]/25",
+            countCls: "text-[#003B3A]",
+          },
+          {
+            key: "NEEDS_REVISION" as const,
+            match: ["NEEDS_REVISION", "PAUSED"],
+            title: "Cần bổ sung / Tạm dừng",
+            barColor: "bg-[#D97706]",
+            accentBorder: "border-t-[#D97706]",
+            badgeCls: "bg-amber-50 text-[#D97706] border-amber-200",
+            countCls: "text-[#D97706]",
+          },
+          {
+            key: "COMPLETED" as const,
+            match: ["COMPLETED"],
+            title: "Đã hoàn thành",
+            barColor: "bg-[#059669]",
+            accentBorder: "border-t-[#059669]",
+            badgeCls: "bg-emerald-50 text-[#059669] border-emerald-200",
+            countCls: "text-[#059669]",
+          },
+        ]
+
+        const totalCount = displayedTasks.length
+        const bucketMetrics = statusBuckets.map(bucket => {
+          const items = displayedTasks.filter((t: any) => {
+            const st = t.qaMeta?.workflowStatus || t.progress
+            return bucket.match.includes(st)
+          })
+          const overdueCount = items.filter((t: any) => Boolean(t.deadlineInfo?.isOverdue)).length
+          const pct = totalCount > 0 ? Math.round((items.length / totalCount) * 100) : 0
+          return { ...bucket, items, count: items.length, overdueCount, pct }
+        })
+
+        const totalOverdueInScope = displayedTasks.filter((t: any) =>
+          Boolean(t.deadlineInfo?.isOverdue)
+        ).length
+        const completedCount =
+          bucketMetrics.find(b => b.key === "COMPLETED")?.count || 0
+        const completedRate =
+          totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+
+        const activeBucket =
+          dashboardStatusFilter === "ALL"
+            ? null
+            : bucketMetrics.find(b => b.key === dashboardStatusFilter) || null
+
+        const tableTasks = displayedTasks.filter((t: any) => {
+          if (activeBucket) {
+            const st = t.qaMeta?.workflowStatus || t.progress
+            if (!activeBucket.match.includes(st)) return false
+          }
+          if (dashboardOverdueOnly && !t.deadlineInfo?.isOverdue) return false
+          return true
+        })
+
+        const getStatusMeta = (rawStatus: string) => {
+          const found = statusBuckets.find(b => b.match.includes(rawStatus))
+          return (
+            found || {
+              title: rawStatus || "Khác",
+              badgeCls: "bg-slate-100 text-slate-600 border-slate-200",
+            }
+          )
+        }
+
+        return (
+          <div className="space-y-5 tabular-nums">
+            {/* 1. DASHBOARD TRẠNG THÁI CÔNG VIỆC */}
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#F1F5F9]">
+                <div className="border-l-4 border-[#003B3A] pl-3">
+                  <h3 className="text-sm font-bold text-[#003B3A]">
+                    Dashboard trạng thái công việc
                   </h3>
-                  <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${col.badge}`}
-                  >
-                    {colTasks.length}
-                  </span>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Tổng quan phân bổ {totalCount} đầu việc theo 5 trạng thái luồng xử lý — nhấp từng thẻ để lọc nhanh bảng bên dưới
+                  </p>
                 </div>
 
-                <div className="space-y-2.5 overflow-y-auto max-h-[70vh] pr-1">
-                  {colTasks.map((t: any) => {
-                    const isOverdue = Boolean(t.deadlineInfo?.isOverdue)
-                    return (
-                      <div
-                        key={t.id}
-                        onClick={() => setDetailTask(t)}
-                        className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-teal-200 transition-all cursor-pointer space-y-2"
-                      >
-                        <div className="flex items-center justify-between gap-1 flex-wrap">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                            {t.taskGroup?.name || t.category}
-                          </span>
-                          {isOverdue && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">
-                              {t.deadlineInfo?.code === "OVERDUE_REVIEW"
-                                ? "Chậm duyệt"
-                                : "Chậm TH"}
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="font-extrabold text-xs text-slate-900 leading-snug">
-                          {t.title}
-                        </h4>
-                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-100">
-                          <span className="truncate max-w-[110px]">
-                            {t.assignedToUser?.fullName || t.assignedToRole}
-                          </span>
-                          <span className="font-bold">
-                            {new Date(t.endDate).toLocaleDateString("vi-VN")}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })}
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                  <span className="px-2.5 py-1 rounded-lg bg-[#F0FDFA] text-[#00736E] border border-teal-200">
+                    Hoàn thành: {completedCount}/{totalCount} ({completedRate}%)
+                  </span>
+                  <span
+                    className={`px-2.5 py-1 rounded-lg border ${
+                      totalOverdueInScope > 0
+                        ? "bg-rose-50 text-[#E11D48] border-rose-200"
+                        : "bg-emerald-50 text-[#059669] border-emerald-200"
+                    }`}
+                  >
+                    Chậm hạn: {totalOverdueInScope}
+                  </span>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+
+              {/* 5 Thẻ trạng thái tương tác */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {bucketMetrics.map(b => {
+                  const isSelected = dashboardStatusFilter === b.key
+                  return (
+                    <button
+                      key={b.key}
+                      type="button"
+                      onClick={() =>
+                        setDashboardStatusFilter(isSelected ? "ALL" : b.key)
+                      }
+                      className={`text-left rounded-xl border border-t-[3px] p-3.5 transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                        b.accentBorder
+                      } ${
+                        isSelected
+                          ? "bg-[#F0FDFA]/80 border-[#003B3A] ring-1 ring-[#003B3A]/20 shadow-xs"
+                          : "bg-[#F8FAFC]/70 border-[#E2E8F0] hover:bg-white hover:border-[#00A19A]"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-xs font-semibold text-slate-700 leading-snug">
+                          {b.title}
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-500 shrink-0">
+                          {b.pct}%
+                        </span>
+                      </div>
+
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className={`text-2xl font-bold ${b.countCls}`}>
+                          {b.count}
+                        </span>
+                        {b.overdueCount > 0 ? (
+                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-50 text-[#E11D48] border border-rose-200">
+                            {b.overdueCount} chậm
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">đầu việc</span>
+                        )}
+                      </div>
+
+                      <div className="h-1.5 w-full rounded-full bg-slate-200/80 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${b.barColor}`}
+                          style={{ width: `${b.pct}%` }}
+                        />
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Thanh phân bổ tỷ trọng 5 trạng thái */}
+              <div className="space-y-1.5">
+                <div className="h-2.5 w-full rounded-full bg-slate-100 border border-[#E2E8F0] overflow-hidden flex gap-0.5 p-0.5">
+                  {bucketMetrics
+                    .filter(b => b.count > 0)
+                    .map(b => (
+                      <button
+                        key={b.key}
+                        type="button"
+                        onClick={() =>
+                          setDashboardStatusFilter(
+                            dashboardStatusFilter === b.key ? "ALL" : b.key
+                          )
+                        }
+                        style={{ width: `${Math.max(b.pct, 4)}%` }}
+                        title={`${b.title}: ${b.count} đầu việc (${b.pct}%)`}
+                        className={`h-full rounded-full transition-opacity cursor-pointer ${b.barColor} ${
+                          dashboardStatusFilter === "ALL" ||
+                          dashboardStatusFilter === b.key
+                            ? "opacity-100"
+                            : "opacity-35 hover:opacity-80"
+                        }`}
+                      />
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. BẢNG DANH SÁCH CÁC ĐẦU VIỆC (SKY-LINE ACADEMIC LEDGER TABLE) */}
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+              <div className="px-5 py-3.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold text-[#003B3A]">
+                    Bảng danh sách các đầu việc ({tableTasks.length}/{totalCount})
+                  </span>
+
+                  {activeBucket && (
+                    <button
+                      type="button"
+                      onClick={() => setDashboardStatusFilter("ALL")}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#003B3A] text-white hover:bg-[#005250] transition-colors cursor-pointer"
+                    >
+                      Trạng thái: {activeBucket.title} ×
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDashboardOverdueOnly(prev => !prev)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                      dashboardOverdueOnly
+                        ? "bg-[#E11D48] text-white border-[#E11D48]"
+                        : "bg-white text-[#E11D48] border-rose-200 hover:bg-rose-50"
+                    }`}
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Chỉ việc chậm hạn ({totalOverdueInScope})
+                  </button>
+
+                  {(dashboardStatusFilter !== "ALL" || dashboardOverdueOnly) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDashboardStatusFilter("ALL")
+                        setDashboardOverdueOnly(false)
+                      }}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 bg-white border border-[#E2E8F0] hover:bg-slate-50 cursor-pointer"
+                    >
+                      Đặt lại lọc
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleExportExcel}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#E2E8F0] text-xs font-semibold text-[#003B3A] hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#059669]" />
+                    Xuất Excel
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse tabular-nums">
+                  <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                    <tr className="text-[11px] font-semibold whitespace-nowrap">
+                      <th className="py-3 px-3 text-white text-center w-12">STT</th>
+                      <th className="py-3 px-3 text-white min-w-[280px]">Tên đầu việc</th>
+                      <th className="py-3 px-3 text-teal-100 min-w-[140px]">Nhóm chuyên môn</th>
+                      <th className="py-3 px-3 text-teal-100 min-w-[150px]">Người phụ trách</th>
+                      <th className="py-3 px-3 text-[#5EEAD4] text-center min-w-[155px]">Trạng thái</th>
+                      <th className="py-3 px-3 text-teal-100 text-center min-w-[135px]">Hạn bàn giao</th>
+                      <th className="py-3 px-3 text-white text-right min-w-[105px]">Thao tác</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                    {tableTasks.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="py-10 text-center text-xs text-slate-500"
+                        >
+                          Không có đầu việc nào phù hợp với bộ lọc trạng thái hiện tại.
+                        </td>
+                      </tr>
+                    ) : (
+                      tableTasks.map((t: any, idx: number) => {
+                        const rawSt = t.qaMeta?.workflowStatus || t.progress
+                        const stMeta = getStatusMeta(rawSt)
+                        const isOverdue = Boolean(t.deadlineInfo?.isOverdue)
+                        const overdueLabel =
+                          t.deadlineInfo?.code === "OVERDUE_REVIEW"
+                            ? "Chậm duyệt"
+                            : "Chậm thực hiện"
+
+                        return (
+                          <tr
+                            key={t.id}
+                            onClick={() => setDetailTask(t)}
+                            className={`transition-colors align-middle cursor-pointer ${
+                              isOverdue
+                                ? "bg-rose-50/25 hover:bg-rose-50/50"
+                                : "hover:bg-[#F8FAFC]"
+                            }`}
+                          >
+                            <td className="py-3 px-3 text-center text-slate-500 font-semibold">
+                              {idx + 1}
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <div className="font-semibold text-[#003B3A] leading-snug">
+                                {t.title}
+                              </div>
+                              {t.priority &&
+                                (t.priority === "HIGH" || t.priority === "URGENT") && (
+                                  <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-[#D97706] border border-amber-200">
+                                    Ưu tiên {t.priority === "URGENT" ? "khẩn cấp" : "cao"}
+                                  </span>
+                                )}
+                            </td>
+
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              <span className="inline-block px-2 py-0.5 rounded-md bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] text-[11px] font-medium">
+                                {t.taskGroup?.name || t.category || "KT&ĐBCL"}
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-3 font-medium text-slate-700 whitespace-nowrap">
+                              {t.assignedToUser?.fullName || t.assignedToRole || "Chưa phân công"}
+                            </td>
+
+                            <td className="py-3 px-3 text-center whitespace-nowrap">
+                              <span
+                                className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${stMeta.badgeCls}`}
+                              >
+                                {stMeta.title}
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-3 text-center whitespace-nowrap">
+                              <div className="font-semibold text-slate-700">
+                                {t.endDate
+                                  ? new Date(t.endDate).toLocaleDateString("vi-VN")
+                                  : "—"}
+                              </div>
+                              {isOverdue ? (
+                                <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-[#E11D48] border border-rose-200">
+                                  {overdueLabel}
+                                </span>
+                              ) : rawSt === "COMPLETED" ? (
+                                <span className="text-[10px] text-[#059669] font-medium">
+                                  Đã nghiệm thu
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-400">Đúng tiến độ</span>
+                              )}
+                            </td>
+
+                            <td className="py-3 px-3 text-right whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation()
+                                  setDetailTask(t)
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F0FDFA] hover:bg-teal-100 text-[#003B3A] border border-teal-200 transition-colors cursor-pointer"
+                              >
+                                Chi tiết
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* =====================================================================
        * CHẾ ĐỘ 5: LỊCH CÔNG VIỆC & MỐC BÀN GIAO (CALENDAR VIEW)

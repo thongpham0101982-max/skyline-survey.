@@ -861,7 +861,7 @@ export function ProfilesSubTab({
       ) : !selectedStudentProfile ? (
         <div className="bg-white rounded-2xl border border-[#E2E8F0] py-14 text-center text-slate-500">
           <BookOpen className="w-9 h-9 mx-auto mb-2 text-slate-300" />
-          <p className="text-sm font-bold text-slate-700">Chưa chọn học sinh</p>
+          <p className="text-sm font-bold text-slate-700">Tra cứu thành tích học sinh</p>
           <p className="text-xs text-slate-400 mt-0.5">
             Tìm nhanh bằng Mã HS / Họ tên hoặc chọn lớp học phía trên để xem toàn bộ lịch sử thành tích.
           </p>
