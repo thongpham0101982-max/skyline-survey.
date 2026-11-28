@@ -221,9 +221,18 @@ export function TasksClient({
   )
 
   // Quick Context & Team Filters (dùng chung cho mọi chế độ xem)
-  const [selectedTeamFilter, setSelectedTeamFilter] = useState(() =>
-    searchParams?.get("scope") === "mine" ? "MY_TASKS" : "ALL"
-  )
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState(() => {
+    if (searchParams?.get("scope") === "mine") return "MY_TASKS"
+    const isMgr = Boolean(
+      operationalScope?.isManager ||
+        operationalScope?.isSuperAdmin ||
+        operationalScope?.isHeadOfAcademic ||
+        operationalScope?.isDirectTBP ||
+        operationalScope?.isDirectTTCM ||
+        currentRole === "ADMIN"
+    )
+    return isMgr ? "ALL" : "MY_TASKS"
+  })
   const [filterPriority, setFilterPriority] = useState("ALL")
   const [searchQuery, setSearchQuery] = useState("")
   const [filterProgress, setFilterProgress] = useState("ALL")

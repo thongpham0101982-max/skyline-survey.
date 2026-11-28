@@ -63,28 +63,12 @@ export default async function TasksPage() {
         ],
       }
     } else {
-      const userTeacher = await prisma.teacher.findUnique({
-        where: { userId },
-        select: {
-          departmentRel: { select: { name: true, code: true } },
-          mainSubjectRel: { select: { subjectName: true, subjectCode: true } },
-        },
-      })
-      const deptName = userTeacher?.departmentRel?.name || ""
-      const deptCode = userTeacher?.departmentRel?.code || ""
-      const subjName = userTeacher?.mainSubjectRel?.subjectName || ""
-      const subjCode = userTeacher?.mainSubjectRel?.subjectCode || ""
-
+      // Tài khoản nhân sự không phải Quản lý/Trưởng nhóm: CHỈ thấy các công việc được gán trực tiếp hoặc phối hợp
       whereClause = {
         OR: [
           { assignedToUserId: userId },
           { assignedById: userId },
           { collaborators: { contains: userId } },
-          { assignedToRole: role, assignedToUserId: null },
-          ...(deptName ? [{ assignedToRole: deptName, assignedToUserId: null }] : []),
-          ...(deptCode ? [{ assignedToRole: deptCode, assignedToUserId: null }] : []),
-          ...(subjName ? [{ assignedToRole: subjName, assignedToUserId: null }] : []),
-          ...(subjCode ? [{ assignedToRole: subjCode, assignedToUserId: null }] : []),
         ],
       }
     }
@@ -312,6 +296,33 @@ export default async function TasksPage() {
     } catch {}
   }
 
+  // Phạm vi hiển thị Nhiệm vụ theo vị trí RACI:
+  // - Admin / GĐB / TBP: xem đủ 07 vị trí & 78 mẫu
+  // - Tài khoản nhân sự thường: CHỈ thấy vị trí & nhiệm vụ RACI được gán cho chính mình
+  const canViewAllPositions =
+    opScope.isSuperAdmin ||
+    opScope.isHeadOfAcademic ||
+    opScope.isDirectTBP ||
+    ["ADMIN", "SUPER_ADMIN", "SUPERADMIN"].includes(String(role || "").toUpperCase())
+
+  const scopedPositionCatalog = canViewAllPositions
+    ? positionCatalog
+    : (() => {
+        const myMappings = (positionCatalog.staffMappings || []).filter(
+          (m: any) => m.userId === userId
+        )
+        const myPosCodes = new Set(myMappings.map((m: any) => m.positionCode))
+        return {
+          positions: (positionCatalog.positions || []).filter((p: any) =>
+            myPosCodes.has(p.positionCode)
+          ),
+          staffMappings: myMappings,
+          templates: (positionCatalog.templates || []).filter((t: any) =>
+            (t.raciLinks || []).some((l: any) => myPosCodes.has(l.positionCode))
+          ),
+        }
+      })()
+
   return (
     <Suspense
       fallback={
@@ -335,7 +346,7 @@ export default async function TasksPage() {
         initialImprovementActions={JSON.parse(JSON.stringify(improvementActions))}
         initialSourceModules={JSON.parse(JSON.stringify(hydratedSourceModules))}
         initialRecentReminders={JSON.parse(JSON.stringify(recentReminders))}
-        initialPositionCatalog={JSON.parse(JSON.stringify(positionCatalog))}
+        initialPositionCatalog={JSON.parse(JSON.stringify(scopedPositionCatalog))}
         ktdbclStaffUsers={JSON.parse(JSON.stringify((ktdbclRoster as any)?.members || []))}
       />
     </Suspense>

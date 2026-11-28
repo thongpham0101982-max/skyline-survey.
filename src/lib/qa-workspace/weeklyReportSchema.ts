@@ -577,8 +577,11 @@ export async function resolveKtdbclRoster(): Promise<{
     const isManager =
       isDirector ||
       isGroupLeader ||
-      KTDBCL_ROLE_CODES.includes(upperRole) ||
-      upperPositions.some((p) => ["TTCM", "TPTCM", "PHÓ BAN", "PHO BAN", "QL"].some((kw) => p.includes(kw)))
+      upperPositions.some((p) =>
+        ["TTCM", "TPTCM", "PHÓ BAN", "PHO BAN", "TRƯỞNG NHÓM", "TRUONG NHOM", "QUẢN LÝ", "QUAN LY"].some((kw) =>
+          p.includes(kw)
+        )
+      )
 
     const primaryPosition =
       ktDeptAssign?.position ||

@@ -135,14 +135,39 @@ async function resolveCallerAuthority() {
   const isDirectorAuthority =
     isAuthorizedKtdbcl &&
     (opScope.isSuperAdmin ||
+      opScope.isHeadOfAcademic ||
+      opScope.isDirectTBP ||
       ["ADMIN", "SUPER_ADMIN", "SUPERADMIN"].includes(role) ||
       Boolean(memberInKt?.isDirector))
 
   const isLeadership =
     isAuthorizedKtdbcl &&
     (isDirectorAuthority ||
-      ["KT_DBCL", "KTDBCL", "KHAO_THI", "DBCL"].includes(role) ||
+      opScope.isDirectTTCM ||
       Boolean(memberInKt?.isManager))
+
+  // Xác định phạm vi nhân sự mà tài khoản đăng nhập được phép xem:
+  // - Admin / GĐB / TBP: toàn bộ Ban KT&ĐBCL
+  // - Trưởng nhóm (leaderUserId của TaskGroup): các thành viên trong nhóm mình phụ trách + bản thân
+  // - Nhân sự (NV): CHỈ thấy dữ liệu công việc, vị trí RACI và báo cáo của chính mình
+  let scopedMemberIds: string[] | null = null
+  if (!isDirectorAuthority) {
+    if (isLeadership) {
+      const ledGroups = roster.taskGroups.filter((g) => g.leaderUserId === userId)
+      if (ledGroups.length > 0) {
+        const ids = new Set<string>([userId])
+        ledGroups.forEach((g) => g.memberUserIds.forEach((id) => ids.add(id)))
+        scopedMemberIds = Array.from(ids)
+      } else if (opScope.scopedUserIds && opScope.scopedUserIds.length > 0) {
+        const ids = new Set<string>([userId, ...opScope.scopedUserIds])
+        scopedMemberIds = Array.from(ids)
+      } else {
+        scopedMemberIds = [userId]
+      }
+    } else {
+      scopedMemberIds = [userId]
+    }
+  }
 
   return {
     authenticated: true,
@@ -152,6 +177,7 @@ async function resolveCallerAuthority() {
     role,
     isLeadership,
     isDirectorAuthority,
+    scopedMemberIds,
     roster,
   }
 }
@@ -193,8 +219,14 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
     }
 
     const roster = authCtx.roster || (await resolveKtdbclRoster())
-    const memberIds = roster.members.map((m) => m.id)
-    const memberMap = new Map(roster.members.map((m) => [m.id, m]))
+    const scopedIdSet =
+      authCtx.scopedMemberIds !== null ? new Set(authCtx.scopedMemberIds) : null
+    const visibleMembers = scopedIdSet
+      ? roster.members.filter((m) => scopedIdSet.has(m.id))
+      : roster.members
+    const memberIds = visibleMembers.map((m) => m.id)
+    const memberMap = new Map(visibleMembers.map((m) => [m.id, m]))
+    const isPersonalRestricted = !authCtx.isDirectorAuthority && scopedIdSet !== null
 
     // Fetch all reports in the selected month for Ban KT&ĐBCL members + WorkTasks + Position RACI catalog
     const [monthReports, workTasks, positionCatalog] = await Promise.all([
@@ -348,7 +380,7 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
         month,
         year,
         expectedWeeksCount: 1,
-        members: roster.members,
+        members: visibleMembers,
         taskGroupNames: roster.taskGroups.map((g) => g.name),
         reports: weekReports as any,
         itemMetaMap,
@@ -367,7 +399,7 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
         month,
         year,
         expectedWeeksCount,
-        members: roster.members,
+        members: visibleMembers,
         taskGroupNames: roster.taskGroups.map((g) => g.name),
         reports: monthReports as any,
         itemMetaMap,
@@ -379,11 +411,11 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
       generatedAt: now.toISOString(),
     }
 
-    // Check if cached Gemini AI report exists for this week/month
+    // Check if cached Gemini AI report exists for this week/month (ONLY for full-department view)
     const pAny = prisma as any
     let cachedWeeklyAi: KtdbclAiQualityReport | null = null
     let cachedMonthlyAi: KtdbclAiQualityReport | null = null
-    if (typeof pAny.$queryRawUnsafe === "function") {
+    if (!isPersonalRestricted && typeof pAny.$queryRawUnsafe === "function") {
       try {
         const wkKey = `WEEKLY_${year}_${month}_W${weekNumber}`
         const moKey = `MONTHLY_${year}_${month}_W0`
@@ -406,7 +438,7 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
     }
 
     // Build per-member weekly matrix (Week 1 .. Week N submission status)
-    const memberWeeklyTimeline = roster.members.map((m) => {
+    const memberWeeklyTimeline = visibleMembers.map((m) => {
       const mReports = monthReports.filter((r) => r.userId === m.id)
       const weekStatuses = allWeeks.map((w) => {
         const found = mReports.find((r) => r.weekNumber === w.weekNum)
@@ -446,7 +478,7 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
     )
     const memberAssignmentMap: Record<string, MemberAssignmentContext> = {}
 
-    for (const m of roster.members) {
+    for (const m of visibleMembers) {
       const userPosCodes = Array.from(
         new Set(
           (positionCatalog.staffMappings || [])
@@ -573,7 +605,7 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
         name: "Ban KT&ĐBCL",
         divisionCode: "BAN_KT_DBCL",
       },
-      members: roster.members,
+      members: visibleMembers,
       directorCandidates: roster.directorCandidates,
       taskGroups: roster.taskGroups,
       specialistGroupNames,

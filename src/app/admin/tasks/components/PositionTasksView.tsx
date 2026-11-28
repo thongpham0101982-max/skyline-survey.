@@ -431,25 +431,33 @@ export function PositionTasksView({
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#F1F5F9]">
           <div className="border-l-4 border-[#003B3A] pl-3">
             <h2 className="text-sm sm:text-base font-bold text-[#003B3A]">
-              Nhiệm vụ theo vị trí — Ban Khảo thí &amp; Đảm bảo chất lượng
+              {canConfigure
+                ? "Nhiệm vụ theo vị trí — Ban Khảo thí & Đảm bảo chất lượng"
+                : "Nhiệm vụ theo vị trí được gán cho bạn"}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Chuẩn hóa 07 vị trí &amp; {catalog.templates.length} mẫu nhiệm vụ từ Ma trận RACI (Accountable: VT123 — Trưởng phòng KT&amp;ĐBCL Dạy và Học)
+              {canConfigure
+                ? `Chuẩn hóa ${catalog.positions.length} vị trí & ${catalog.templates.length} mẫu nhiệm vụ từ Ma trận RACI (Accountable: VT123 — Trưởng phòng KT&ĐBCL Dạy và Học)`
+                : `Chế độ xem cá nhân: chỉ hiển thị ${catalog.positions.length} vị trí & ${catalog.templates.length} mẫu nhiệm vụ RACI được gán cho tài khoản của bạn.`}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedPositionCode("ALL")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
-                selectedPositionCode === "ALL"
-                  ? "bg-[#003B3A] text-white border-[#003B3A]"
-                  : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0] hover:border-[#00A19A]"
-              }`}
-            >
-              Tất cả 07 vị trí ({catalog.templates.length} mẫu)
-            </button>
+            {(canConfigure || catalog.positions.length > 1) && (
+              <button
+                type="button"
+                onClick={() => setSelectedPositionCode("ALL")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                  selectedPositionCode === "ALL"
+                    ? "bg-[#003B3A] text-white border-[#003B3A]"
+                    : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0] hover:border-[#00A19A]"
+                }`}
+              >
+                {canConfigure
+                  ? `Tất cả ${catalog.positions.length} vị trí (${catalog.templates.length} mẫu)`
+                  : `Tất cả vị trí của tôi (${catalog.positions.length})`}
+              </button>
+            )}
 
             {canConfigure && (
               <button
@@ -466,8 +474,21 @@ export function PositionTasksView({
           </div>
         </div>
 
-        {/* 07 Position Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+        {/* Position Cards (or Personal Empty State) */}
+        {catalog.positions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[#E2E8F0] bg-[#F8FAFC] px-4 py-6 text-center text-xs text-slate-600">
+            Tài khoản của bạn hiện chưa được gán vào vị trí RACI nào trong Ban KT&amp;ĐBCL. Vui lòng liên hệ Trưởng phòng / Quản trị Ban để được phân công vị trí.
+          </div>
+        ) : (
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 ${
+            catalog.positions.length <= 2
+              ? "lg:grid-cols-2"
+              : catalog.positions.length <= 4
+              ? "lg:grid-cols-4"
+              : "lg:grid-cols-4 xl:grid-cols-7"
+          } gap-2.5`}
+        >
           {catalog.positions.map((pos) => {
             const isSelected = selectedPositionCode === pos.positionCode
             const counts = roleCountsByPosition.get(pos.positionCode) || { R: 0, C: 0, I: 0 }
@@ -537,6 +558,7 @@ export function PositionTasksView({
             )
           })}
         </div>
+        )}
 
         {/* Selected Position Profile Detail Strip */}
         {selectedPosition && (

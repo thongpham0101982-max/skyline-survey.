@@ -111,9 +111,10 @@ export function WeeklyReportClient({
   initialTab,
 }: WeeklyReportClientProps) {
   const [snapshot, setSnapshot] = useState<SnapshotData>(initialSnapshot)
-  const [activeTab, setActiveTab] = useState<ActiveTabKey>(() =>
-    normalizeInitialTab(initialTab)
-  )
+  const [activeTab, setActiveTab] = useState<ActiveTabKey>(() => {
+    if (initialTab) return normalizeInitialTab(initialTab)
+    return initialSnapshot?.authority?.isLeadership ? "dashboard" : "compose"
+  })
   const [scopeMode, setScopeMode] = useState<"WEEKLY" | "MONTHLY">("WEEKLY")
 
   const [weekNumber, setWeekNumber] = useState<number>(
@@ -588,18 +589,20 @@ export function WeeklyReportClient({
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("automation")}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
-              activeTab === "automation"
-                ? "bg-[#003B3A] text-white shadow-xs"
-                : "bg-[#F8FAFC] text-slate-700 hover:bg-slate-100 border border-[#E2E8F0]"
-            }`}
-          >
-            <Settings className="w-3.5 h-3.5" />
-            Tự động hóa & cấu hình Ban
-          </button>
+          {snapshot.authority.isLeadership && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("automation")}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                activeTab === "automation"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "bg-[#F8FAFC] text-slate-700 hover:bg-slate-100 border border-[#E2E8F0]"
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              Tự động hóa & cấu hình Ban
+            </button>
+          )}
         </div>
       </div>
 

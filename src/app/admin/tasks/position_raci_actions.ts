@@ -28,7 +28,7 @@ async function resolveAdminAuthority() {
     opScope.isSuperAdmin ||
     opScope.isHeadOfAcademic ||
     opScope.isDirectTBP ||
-    ["ADMIN", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "DBCL"].includes(role)
+    ["ADMIN", "SUPER_ADMIN", "SUPERADMIN"].includes(role)
 
   return { authenticated: true, canConfigure, userId, userName }
 }
@@ -40,6 +40,22 @@ export async function getPositionRaciCatalogAction() {
       return { success: false, error: "Chưa đăng nhập" }
     }
     const data = await getPositionRaciCatalogData()
+    if (!authCtx.canConfigure) {
+      const myMappings = data.staffMappings.filter((m) => m.userId === authCtx.userId)
+      const myPosCodes = new Set(myMappings.map((m) => m.positionCode))
+      const myPositions = data.positions.filter((p: any) => myPosCodes.has(p.positionCode))
+      const myTemplates = data.templates.filter((t) =>
+        t.raciLinks.some((l) => myPosCodes.has(l.positionCode))
+      )
+      return {
+        success: true,
+        data: {
+          positions: myPositions,
+          staffMappings: myMappings,
+          templates: myTemplates,
+        },
+      }
+    }
     return { success: true, data }
   } catch (err: any) {
     console.error("[getPositionRaciCatalogAction] Error:", err)
