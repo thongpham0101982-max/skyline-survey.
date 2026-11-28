@@ -531,9 +531,21 @@ export function ReviewAndConfirmTab({
                         </div>
                       </td>
                       <td className="py-3 px-3 align-middle">
-                        <span className="inline-flex px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-[11px] font-medium">
-                          {it.taskGroup}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="inline-flex px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-[11px] font-medium">
+                            {it.taskGroup}
+                          </span>
+                          {it.category && /^RACI\s+/i.test(it.category) && (
+                            <span className="inline-flex px-1.5 py-0.5 rounded-md bg-[#003B3A] text-white text-[10px] font-bold">
+                              MTCV · {it.category.replace(/^RACI\s+/i, "")}
+                            </span>
+                          )}
+                          {it.meta.linkedWorkTaskId && (
+                            <span className="inline-flex px-1.5 py-0.5 rounded-md bg-emerald-50 text-[#059669] border border-emerald-200 text-[10px] font-semibold">
+                              Gắn việc QA
+                            </span>
+                          )}
+                        </div>
                         <div className="mt-1 font-medium text-slate-700">{it.mainTask}</div>
                       </td>
                       <td className="py-3 px-3 align-middle min-w-[260px] max-w-[360px]">

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import toast from "react-hot-toast"
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -168,6 +169,16 @@ export function ComposeAndExplainTab({
   const [rows, setRows] = useState<DraftReportRow[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [showBindingErrors, setShowBindingErrors] = useState(false)
+
+  const requiresJobDescBinding = positionTemplates.length > 0 || assignedTasks.length > 0
+
+  const isRowBoundToJobDesc = (row: DraftReportRow): boolean => {
+    if (row.linkedWorkTaskId && String(row.linkedWorkTaskId).trim()) return true
+    if (/^RACI\s+\d+(\.\d+)+$/i.test((row.category || "").trim())) return true
+    if (/^\[\d+(\.\d+)+\]/.test((row.mainTask || "").trim())) return true
+    return false
+  }
 
   // Assigned context tray state
   const [trayExpanded, setTrayExpanded] = useState(true)
@@ -431,6 +442,31 @@ export function ComposeAndExplainTab({
   }
 
   const handleSave = async () => {
+    const meaningfulRows = rows.filter(
+      (r) => r.workContent.trim().length > 0 || r.mainTask.trim().length > 0 || Boolean(r.linkedWorkTaskId)
+    )
+    if (meaningfulRows.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 nhiệm vụ mô tả công việc để lập báo cáo tuần.")
+      return
+    }
+    if (requiresJobDescBinding) {
+      const unboundIdx: number[] = []
+      rows.forEach((r, idx) => {
+        const hasContent =
+          r.workContent.trim().length > 0 || r.mainTask.trim().length > 0 || Boolean(r.linkedWorkTaskId)
+        if (hasContent && !isRowBoundToJobDesc(r)) {
+          unboundIdx.push(idx + 1)
+        }
+      })
+      if (unboundIdx.length > 0) {
+        setShowBindingErrors(true)
+        toast.error(
+          `Dòng ${unboundIdx.join(", ")} chưa gắn với Nhiệm vụ mô tả công việc (MTCV/RACI) hoặc Công việc được giao. Vui lòng chọn trước khi nộp.`
+        )
+        return
+      }
+    }
+    setShowBindingErrors(false)
     setIsSaving(true)
     try {
       await onSaveReport(targetUserId, rows)
@@ -928,8 +964,8 @@ export function ComposeAndExplainTab({
                 <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-44">
                   Nhóm chuyên môn
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-64">
-                  Nhiệm vụ được gán / Đầu việc chính
+                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-72">
+                  Nhiệm vụ mô tả công việc (MTCV) <span className="text-[#5EEAD4]">*</span>
                 </th>
                 <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white min-w-[280px]">
                   Nội dung công việc thực hiện chi tiết
@@ -952,8 +988,20 @@ export function ComposeAndExplainTab({
               {rows.map((row, idx) => {
                 const linkedTask = row.linkedWorkTaskId ? taskById.get(row.linkedWorkTaskId) : null
                 const selectVal = resolveRowSelectValue(row)
+                const isBound = isRowBoundToJobDesc(row)
+                const hasAnyInput =
+                  row.workContent.trim().length > 0 ||
+                  row.mainTask.trim().length > 0 ||
+                  Boolean(row.linkedWorkTaskId)
+                const isMissingBinding = requiresJobDescBinding && !isBound && (showBindingErrors || hasAnyInput)
+
                 return (
-                  <tr key={row.id || `draft_${idx}`} className="align-top hover:bg-[#F8FAFC]">
+                  <tr
+                    key={row.id || `draft_${idx}`}
+                    className={`align-top transition-colors ${
+                      isMissingBinding ? "bg-rose-50/40" : "hover:bg-[#F8FAFC]"
+                    }`}
+                  >
                     <td className="py-3 px-3 text-center font-semibold text-slate-500 pt-4">
                       {idx + 1}
                     </td>
@@ -974,11 +1022,28 @@ export function ComposeAndExplainTab({
                       <select
                         value={selectVal}
                         onChange={(e) => handleRowSourceSelect(idx, e.target.value)}
-                        className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#00A19A]"
+                        className={`w-full rounded-xl border px-2.5 py-1.5 text-xs focus:outline-none ${
+                          isMissingBinding
+                            ? "border-rose-300 bg-rose-50 text-[#E11D48] font-semibold focus:border-rose-500"
+                            : "border-[#E2E8F0] bg-[#F8FAFC] text-slate-700 focus:border-[#00A19A]"
+                        }`}
                       >
-                        <option value="">-- Chọn từ công việc được giao / Mẫu RACI --</option>
+                        <option value="">
+                          {requiresJobDescBinding
+                            ? "-- Bắt buộc chọn nhiệm vụ MTCV / việc được giao --"
+                            : "-- Chọn danh mục công việc --"}
+                        </option>
+                        {positionTemplates.length > 0 && (
+                          <optgroup label={`Nhiệm vụ mô tả công việc theo vị trí RACI (${positionTemplates.length})`}>
+                            {positionTemplates.map((tpl) => (
+                              <option key={tpl.id} value={`RACI:${tpl.id}`}>
+                                [{tpl.itemCode}] {tpl.title}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
                         {assignedTasks.length > 0 && (
-                          <optgroup label={`Công việc được giao (${assignedTasks.length})`}>
+                          <optgroup label={`Công việc được giao trên QA Workspace (${assignedTasks.length})`}>
                             {assignedTasks.map((t) => (
                               <option key={t.id} value={`TASK:${t.id}`}>
                                 {t.templateItemCode ? `[${t.templateItemCode}] ` : ""}
@@ -988,16 +1053,7 @@ export function ComposeAndExplainTab({
                             ))}
                           </optgroup>
                         )}
-                        {positionTemplates.length > 0 && (
-                          <optgroup label={`Nhiệm vụ vị trí RACI (${positionTemplates.length})`}>
-                            {positionTemplates.map((tpl) => (
-                              <option key={tpl.id} value={`RACI:${tpl.id}`}>
-                                [{tpl.itemCode}] {tpl.title}
-                              </option>
-                            ))}
-                          </optgroup>
-                        )}
-                        {taskCategories.length > 0 && (
+                        {!requiresJobDescBinding && taskCategories.length > 0 && (
                           <optgroup label="Danh mục công việc chung">
                             {taskCategories.map((c) => (
                               <option key={c.id} value={`CAT:${c.name}`}>
@@ -1011,25 +1067,32 @@ export function ComposeAndExplainTab({
                         type="text"
                         value={row.mainTask}
                         onChange={(e) => updateRow(idx, { mainTask: e.target.value })}
-                        placeholder="Tên đầu việc chính..."
+                        placeholder="Tên đầu việc bám theo nhiệm vụ MTCV..."
                         className="w-full rounded-xl border border-[#E2E8F0] px-2.5 py-1.5 text-xs font-medium text-[#003B3A] focus:outline-none focus:border-[#00A19A]"
                       />
-                      {(row.linkedWorkTaskId || row.category.startsWith("RACI ")) && (
-                        <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                          {row.linkedWorkTaskId && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200">
-                              <Link2 className="w-3 h-3" />
-                              Gắn việc QA
-                            </span>
-                          )}
-                          {(linkedTask?.templateItemCode || row.category.startsWith("RACI ")) && (
-                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-[#003B3A] text-white">
-                              {linkedTask?.templateItemCode
-                                ? `RACI ${linkedTask.templateItemCode}`
-                                : row.category}
-                            </span>
-                          )}
+                      {isMissingBinding ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-50 text-[#E11D48] border border-rose-200">
+                          <AlertTriangle className="w-3 h-3 shrink-0" />
+                          Bắt buộc gắn nhiệm vụ MTCV hoặc việc được giao
                         </div>
+                      ) : (
+                        (row.linkedWorkTaskId || row.category.startsWith("RACI ")) && (
+                          <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                            {row.linkedWorkTaskId && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200">
+                                <Link2 className="w-3 h-3" />
+                                Gắn việc QA
+                              </span>
+                            )}
+                            {(linkedTask?.templateItemCode || row.category.startsWith("RACI ")) && (
+                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-[#003B3A] text-white">
+                                {linkedTask?.templateItemCode
+                                  ? `MTCV · ${linkedTask.templateItemCode}`
+                                  : `MTCV · ${row.category.replace(/^RACI\s+/i, "")}`}
+                              </span>
+                            )}
+                          </div>
+                        )
                       )}
                     </td>
                     <td className="py-3 px-3">

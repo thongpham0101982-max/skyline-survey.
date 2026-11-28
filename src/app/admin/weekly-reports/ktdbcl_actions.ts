@@ -770,6 +770,53 @@ export async function saveKtdbclWeeklyReport(data: {
       return { success: false, error: "Vui lòng nhập ít nhất 1 đầu việc trong báo cáo tuần." }
     }
 
+    // Bắt buộc báo cáo công việc cá nhân phải gắn với Nhiệm vụ mô tả công việc (MTCV/RACI) hoặc Công việc được giao
+    const [posCatalogForCheck, assignedTaskCount] = await Promise.all([
+      getPositionRaciCatalogData().catch(() => ({
+        positions: [],
+        staffMappings: [],
+        templates: [],
+        leaderManagedMembers: [],
+      })),
+      prisma.workTask
+        .count({
+          where: {
+            OR: [{ assignedToUserId: userId }, { collaborators: { contains: userId } }],
+            progress: { not: "CANCELLED" },
+          },
+        })
+        .catch(() => 0),
+    ])
+
+    const userPosCodes = (posCatalogForCheck.staffMappings || [])
+      .filter((sm: any) => String(sm.userId) === userId)
+      .map((sm: any) => String(sm.positionCode))
+    const requiresJobDescBinding = userPosCodes.length > 0 || assignedTaskCount > 0
+
+    if (requiresJobDescBinding) {
+      const unboundLineNumbers: number[] = []
+      cleanItems.forEach((item, idx) => {
+        const cat = String(item.category || "").trim()
+        const mainT = String(item.mainTask || "").trim()
+        const hasLinkedTask = Boolean(item.linkedWorkTaskId && String(item.linkedWorkTaskId).trim())
+        const hasRaciCat = /^RACI\s+\d+(\.\d+)+$/i.test(cat)
+        const mainCodeMatch = mainT.match(/^\[(\d+(?:\.\d+)+)\]/)
+        if (!hasRaciCat && mainCodeMatch) {
+          item.category = `RACI ${mainCodeMatch[1]}`
+        }
+        if (!hasLinkedTask && !hasRaciCat && !mainCodeMatch) {
+          unboundLineNumbers.push(idx + 1)
+        }
+      })
+
+      if (unboundLineNumbers.length > 0) {
+        return {
+          success: false,
+          error: `Báo cáo công việc cá nhân bắt buộc phải gắn với Nhiệm vụ mô tả công việc (MTCV/RACI) hoặc Công việc được giao. Vui lòng chọn nhiệm vụ cho dòng: ${unboundLineNumbers.join(", ")}.`,
+        }
+      }
+    }
+
     let report = await prisma.weeklyReport.findFirst({
       where: {
         userId,
