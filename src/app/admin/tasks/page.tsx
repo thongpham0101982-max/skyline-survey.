@@ -15,6 +15,7 @@ import {
 import { inspectConnectedSourceModules } from "@/lib/qa-workspace/sourceSyncService"
 import { ensureCoordinationTables } from "@/lib/coordination/schemaInit"
 import { getPositionRaciCatalogData } from "@/lib/qa-workspace/positionRaciSchema"
+import { resolveKtdbclRoster } from "@/lib/qa-workspace/weeklyReportSchema"
 
 export const metadata = { title: "QA Workspace | KT&ĐBCL — Điều hành Công việc | SSM Sky-Line" }
 export const dynamic = "force-dynamic"
@@ -164,6 +165,7 @@ export default async function TasksPage() {
     sourceModules,
     recentReminders,
     positionCatalog,
+    ktdbclRoster,
   ] = await Promise.all([
     prisma.workTask.findMany({
       where: whereClause,
@@ -253,6 +255,7 @@ export default async function TasksPage() {
       staffMappings: [],
       templates: [],
     })),
+    resolveKtdbclRoster().catch(() => ({ members: [] })),
   ])
 
   // Hydrate QA Workspace extended governance metadata & step-aware deadline statuses
@@ -333,6 +336,7 @@ export default async function TasksPage() {
         initialSourceModules={JSON.parse(JSON.stringify(hydratedSourceModules))}
         initialRecentReminders={JSON.parse(JSON.stringify(recentReminders))}
         initialPositionCatalog={JSON.parse(JSON.stringify(positionCatalog))}
+        ktdbclStaffUsers={JSON.parse(JSON.stringify((ktdbclRoster as any)?.members || []))}
       />
     </Suspense>
   )

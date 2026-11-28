@@ -934,7 +934,7 @@ export function PositionTasksView({
                 type="text"
                 value={staffSearch}
                 onChange={(e) => setStaffSearch(e.target.value)}
-                placeholder="Tìm tên hoặc email nhân sự SSM..."
+                placeholder="Tìm nhân sự thuộc Ban KT&ĐBCL..."
                 className="w-full px-3 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:border-[#00A19A]"
               />
 
@@ -1282,17 +1282,17 @@ export function PositionTasksView({
             <div className="p-5 space-y-3.5 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Nhân sự chịu trách nhiệm chính *
+                  Nhân sự Ban KT&amp;ĐBCL chịu trách nhiệm chính * ({(allStaffUsers || []).length} nhân sự)
                 </label>
                 <select
                   value={batchAssigneeId}
                   onChange={(e) => setBatchAssigneeId(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white font-semibold text-[#003B3A]"
                 >
-                  <option value="">-- Chọn nhân sự thực hiện --</option>
+                  <option value="">-- Chọn nhân sự Ban KT&amp;ĐBCL --</option>
                   {(allStaffUsers || []).map((u: any) => (
                     <option key={u.id} value={u.id}>
-                      {u.fullName} {u.email ? `(${u.email})` : ""}
+                      {u.fullName} {u.position ? `· ${u.position}` : ""} {u.email ? `(${u.email})` : ""}
                     </option>
                   ))}
                 </select>

@@ -146,6 +146,7 @@ export function TasksClient({
   initialSourceModules = [],
   initialRecentReminders = [],
   initialPositionCatalog = { positions: [], staffMappings: [], templates: [] },
+  ktdbclStaffUsers = [],
 }: any) {
   const searchParams = useSearchParams()
   const [tasks, setTasks] = useState(initialTasks || [])
@@ -1318,7 +1319,7 @@ export function TasksClient({
         <PositionTasksView
           catalog={positionCatalog}
           onCatalogChange={setPositionCatalog}
-          allStaffUsers={allStaffUsers}
+          allStaffUsers={ktdbclStaffUsers.length > 0 ? ktdbclStaffUsers : allStaffUsers}
           years={years}
           campuses={campuses}
           canConfigure={isAdmin}
