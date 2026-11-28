@@ -1440,7 +1440,7 @@ export async function dispatchKtdbclSaturdayPlanReminders(options?: {
   })
 
   const appBaseUrl = resolveQaAppBaseUrl()
-  const planUrl = `${appBaseUrl}/admin/workhub/plans`
+  const planUrl = `${appBaseUrl}/admin/weekly-reports?tab=compose`
   let notificationCount = 0
   let emailSentCount = 0
 
@@ -1453,9 +1453,9 @@ export async function dispatchKtdbclSaturdayPlanReminders(options?: {
         data: {
           userId: member.id,
           title: `[Ban KT&ĐBCL] Nhắc lập Kế hoạch Tuần ${nextPeriod.weekNumber}/Tháng ${nextPeriod.month} (Sáng Thứ Bảy)`,
-          message: `Lịch định kỳ Sáng Thứ Bảy (08:30): Vui lòng lập Kế hoạch công tác ${nextWeekDef.label} và chuẩn bị báo cáo tiến độ định kỳ vào Thứ Tư (14:00).`,
+          message: `Lịch định kỳ Sáng Thứ Bảy (08:30): Vui lòng rà soát đầu việc & lập Kế hoạch Tuần ${nextWeekDef.label} và chuẩn bị báo cáo tiến độ định kỳ vào Thứ Tư (14:00).`,
           isRead: false,
-          link: `/admin/workhub/plans`,
+          link: `/admin/weekly-reports?tab=compose`,
         },
       })
       .then(() => {

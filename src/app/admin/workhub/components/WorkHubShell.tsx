@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BarChart3,
-  Calendar,
   ClipboardList,
   FileSpreadsheet,
   LayoutDashboard,
@@ -28,7 +27,7 @@ const ROLE_TIER_LABELS: Record<WorkHubActorScope["roleTier"], string> = {
 export function WorkHubShell({ actor, children }: WorkHubShellProps) {
   const pathname = usePathname() || ""
 
-  // 5 trụ cột nghiệp vụ hợp nhất trong QA Workspace • KT&ĐBCL (đã loại bỏ hoàn toàn các màn hình chồng chéo)
+  // 4 trụ cột nghiệp vụ hợp nhất trong QA Workspace • KT&ĐBCL
   const navItems = [
     {
       href: "/admin/workhub",
@@ -40,11 +39,6 @@ export function WorkHubShell({ actor, children }: WorkHubShellProps) {
       href: "/admin/tasks",
       label: "Điều hành & giao việc",
       icon: ClipboardList,
-    },
-    {
-      href: "/admin/workhub/plans",
-      label: "Kế hoạch công tác",
-      icon: Calendar,
     },
     {
       href: "/admin/weekly-reports",
@@ -73,7 +67,7 @@ export function WorkHubShell({ actor, children }: WorkHubShellProps) {
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {actor.userName} • Không gian điều hành công việc, kế hoạch, báo cáo tiến độ nhóm/cá nhân &amp; KPI chuyên biệt Ban KT&amp;ĐBCL
+              {actor.userName} • Không gian điều hành công việc, báo cáo tiến độ nhóm/cá nhân &amp; KPI chuyên biệt Ban KT&amp;ĐBCL
             </p>
           </div>
         </div>

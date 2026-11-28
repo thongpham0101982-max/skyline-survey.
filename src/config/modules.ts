@@ -66,7 +66,6 @@ export interface AppCategoryItem {
 
 export const WORKHUB_MODULE_CODES = [
   "WORKHUB_OVERVIEW",
-  "WORKHUB_PLANS",
   "WORKHUB_KPIS",
 ] as const
 
@@ -553,7 +552,6 @@ export const APP_CATEGORIES: AppCategoryItem[] = [
     modules: [
       { code: "WORKHUB_OVERVIEW", name: "Tổng quan tiến độ & KPI", icon: LayoutDashboard, href: "/admin/workhub" },
       { code: "TASKS", name: "Điều hành & giao việc", icon: ClipboardList, href: "/admin/tasks" },
-      { code: "WORKHUB_PLANS", name: "Kế hoạch công tác", icon: Calendar, href: "/admin/workhub/plans" },
       { code: "WEEKLY_REPORTS", name: "Báo cáo tuần & tháng", icon: FileSpreadsheet, href: "/admin/weekly-reports" },
       { code: "WORKHUB_KPIS", name: "Chỉ tiêu & đánh giá KPI", icon: BarChart3, href: "/admin/workhub/kpis" },
     ]
@@ -568,3 +566,4 @@ export const ALL_APP_MODULES = APP_CATEGORIES.flatMap(c => {
     return [m];
   });
 }).filter((m: any) => !!m.code);
+
