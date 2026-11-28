@@ -224,8 +224,8 @@ export function ComposeAndExplainTab({
     return false
   }
 
-  // Assigned context tray state
-  const [trayExpanded, setTrayExpanded] = useState(true)
+  // Assigned context tray state — tự thu gọn khi đã có dòng báo cáo để nhường không gian cho bảng nhập liệu
+  const [trayExpanded, setTrayExpanded] = useState(() => existingWeekItems.length === 0)
   const [trayMode, setTrayMode] = useState<"TASKS" | "RACI">("TASKS")
   const [raciSearch, setRaciSearch] = useState("")
   const [raciCadenceFilter, setRaciCadenceFilter] = useState<string>("ALL")
@@ -1073,31 +1073,31 @@ export function ComposeAndExplainTab({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#003B3A] border-b border-[#003B3A]">
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white w-10 text-center">
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-white w-9 text-center">
                   STT
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-44">
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-36">
                   Nhóm chuyên môn
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-64">
-                  Nhiệm vụ mô tả công việc (MTCV) <span className="text-[#5EEAD4]">*</span>
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-56">
+                  Nhiệm vụ MTCV <span className="text-[#5EEAD4]">*</span>
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white min-w-[210px]">
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-white min-w-[180px]">
                   Task việc
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white min-w-[260px]">
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-white min-w-[230px]">
                   Nội dung xử lý task việc
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-36">
-                  Dự kiến hoàn thành
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-28">
+                  Dự kiến HT
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-[#5EEAD4] w-36">
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-[#5EEAD4] w-32">
                   Tiến độ
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 min-w-[200px]">
-                  Đề xuất giải pháp / Kiến nghị
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-teal-100 min-w-[165px]">
+                  Đề xuất / Kiến nghị
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white w-12 text-center">
+                <th className="py-3 px-2.5 text-[11px] font-semibold whitespace-nowrap text-white w-10 text-center">
                   Xóa
                 </th>
               </tr>
@@ -1295,6 +1295,45 @@ export function ComposeAndExplainTab({
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Thanh tổng kết & thao tác nhanh cuối bảng */}
+        <div className="px-4 py-3 bg-[#F8FAFC] border-t border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3 tabular-nums">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+            <span>
+              Tổng: <strong className="text-[#003B3A]">{rows.length}</strong> dòng
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="text-[#059669] font-medium">
+              Hoàn thành: {rows.filter((r) => r.progress === "COMPLETED").length}
+            </span>
+            <span className="text-[#D97706] font-medium">
+              Đang thực hiện: {rows.filter((r) => r.progress === "DOING").length}
+            </span>
+            <span className="text-slate-500 font-medium">
+              Chưa bắt đầu: {rows.filter((r) => r.progress === "NOT_STARTED").length}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAddRow}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#003B3A] border border-[#E2E8F0] hover:border-[#00A19A] transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-[#00A19A]" />
+              Thêm dòng việc
+            </button>
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={handleSave}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-[#003B3A] text-white hover:bg-[#005250] transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {isSaving ? "Đang lưu..." : `Lưu & Nộp báo cáo Tuần ${weekNumber}`}
+            </button>
+          </div>
         </div>
       </div>
     </div>
