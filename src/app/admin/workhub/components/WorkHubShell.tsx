@@ -65,7 +65,7 @@ export function WorkHubShell({ actor, children }: WorkHubShellProps) {
           <div className="border-l-4 border-[#003B3A] pl-3.5">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-base sm:text-lg font-bold text-[#003B3A]">
-                QA Workspace • KT&amp;ĐBCL — Quản lý công việc, báo cáo &amp; KPI
+                QA Workspace • KT&amp;ĐBCL — Quản lý công việc
               </h1>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200">
                 <ShieldCheck className="w-3.5 h-3.5" />
