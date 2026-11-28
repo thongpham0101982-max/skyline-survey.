@@ -38,7 +38,7 @@ export async function GET() {
     const isAdmin = [
       "ADMIN",
       "ADMINISTRATOR",
-      "KT_DBCL",
+      "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL",
       "GDCS",
       "GĐCS",
       "GD_CS",
@@ -136,7 +136,7 @@ export async function POST(req: Request) {
     const isAdmin = [
       "ADMIN",
       "ADMINISTRATOR",
-      "KT_DBCL",
+      "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL",
       "GDCS",
       "GĐCS",
       "GD_CS",

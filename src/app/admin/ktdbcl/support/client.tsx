@@ -1044,11 +1044,21 @@ export function SupportClient({
     return matchesType && matchesSource && matchesStatus && matchesSearch
   })
 
-  // Helper: check if a subject string is non-academic (Tâm lý / Hướng nghiệp)
+  // Helper: check if a subject string is Psychology or Career Guidance
+  const isPsychSub = (sub: string) => {
+    const l = (sub || "").toLowerCase()
+    return l.includes("tâm lý") || l.includes("tam ly") || l.includes("tâm lí") || l.includes("psychology")
+  }
   const isNonAcademicSub = (sub: string) => {
     const l = (sub || "").toLowerCase()
-    return l.includes("tâm lý") || l.includes("tam ly") || l.includes("tâm lí") || l.includes("psychology") ||
-           l.includes("hướng nghiệp") || l.includes("huong nghiep")
+    return isPsychSub(l) || l.includes("hướng nghiệp") || l.includes("huong nghiep")
+  }
+  const shouldExcludeFromAcademicTarget = (sub: string, target: any) => {
+    if (isPsychSub(sub)) return true
+    const isAdmissionTarget =
+      target?.sourceType === "ADMISSION" ||
+      Boolean(target?.notes && target.notes.includes("Cam kết Khảo sát đầu vào"))
+    return isAdmissionTarget && isNonAcademicSub(sub)
   }
 
   // Group targets by responsible teacher (GVCN & GVBM theo phân công for Academic, or createdBy/assigned for Psychology)
@@ -1057,11 +1067,11 @@ export function SupportClient({
       if (activeTab === "academic") {
         if (t.supportType !== "ACADEMIC") return false
         const reasonParts = (t.reason || "").split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
-        const academicParts = reasonParts.filter((p: string) => !isNonAcademicSub(p))
+        const academicParts = reasonParts.filter((p: string) => !shouldExcludeFromAcademicTarget(p, t))
         const committedAcad = (t.commitmentSubjects || []).filter((p: string) => !isNonAcademicSub(p))
         return academicParts.length > 0 || committedAcad.length > 0
       }
-      if (activeTab === "psychology") return t.supportType === "PSYCHOLOGICAL"
+      if (activeTab === "psychology") return t.supportType === "PSYCHOLOGICAL" || t.supportType === "CAREER_INTENSIVE"
       return true
     })
 
@@ -1107,7 +1117,7 @@ export function SupportClient({
         subjectLabel
           .split(/[,;]/)
           .map((s: string) => s.trim())
-          .filter((s: string) => s && (activeTab !== "academic" || !isNonAcademicSub(s)))
+          .filter((s: string) => s && (activeTab !== "academic" || !shouldExcludeFromAcademicTarget(s, target)))
           .forEach((cleanSub: string) => {
             if (!group.teacherSubjects.some((existing: string) => existing.toLowerCase() === cleanSub.toLowerCase())) {
               group.teacherSubjects.push(cleanSub)
@@ -1122,7 +1132,7 @@ export function SupportClient({
           ? (subjectLabel || target.reason || "")
               .split(/[,;]/)
               .map((s: string) => s.trim())
-              .filter((s: string) => s && !isNonAcademicSub(s))
+              .filter((s: string) => s && !shouldExcludeFromAcademicTarget(s, target))
               .join(", ")
           : target.reason
 
@@ -3892,7 +3902,7 @@ export function SupportClient({
         // Filter targets to match current tab's program type in detail view
         const modalTargets = selectedTeacherForDetail.targets.filter((t: any) => {
           if (activeTab === "academic") return t.supportType === "ACADEMIC"
-          if (activeTab === "psychology") return t.supportType === "PSYCHOLOGICAL"
+          if (activeTab === "psychology") return t.supportType === "PSYCHOLOGICAL" || t.supportType === "CAREER_INTENSIVE"
           return true
         })
 

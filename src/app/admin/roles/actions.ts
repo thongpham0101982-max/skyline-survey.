@@ -1,10 +1,29 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { getAdminSession } from "@/lib/session"
+import { writeSecurityAuditLog } from "@/lib/security-guard"
+
+async function assertFullAdminAccess() {
+  const session = await getAdminSession()
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Forbidden: Chỉ Quản trị viên cấp cao mới có quyền thay đổi phân quyền hệ thống.")
+  }
+  return session
+}
 
 export async function createRole(code: string, name: string, desc: string) {
   try {
+    const session = await assertFullAdminAccess()
     await prisma.role.create({ data: { code, name, description: desc } })
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "CREATE_ROLE",
+      targetTable: "Role",
+      targetId: code,
+      newValues: { code, name, description: desc }
+    })
     revalidatePath("/admin/roles")
     return { success: true }
   } catch (e: any) {
@@ -14,7 +33,16 @@ export async function createRole(code: string, name: string, desc: string) {
 
 export async function updateRole(code: string, name: string, desc: string) {
   try {
+    const session = await assertFullAdminAccess()
     await prisma.role.update({ where: { code }, data: { name, description: desc } })
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "UPDATE_ROLE",
+      targetTable: "Role",
+      targetId: code,
+      newValues: { code, name, description: desc }
+    })
     revalidatePath("/admin/roles")
     return { success: true }
   } catch(e:any) {
@@ -24,6 +52,7 @@ export async function updateRole(code: string, name: string, desc: string) {
 
 export async function savePermissions(roleCode: string, permissions: any[]) {
   try {
+    const session = await assertFullAdminAccess()
     // Drop all old and set new to avoid duplicate keys
     await prisma.permission.deleteMany({ where: { roleCode } })
 
@@ -117,6 +146,14 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
         })));
       }
     }
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "UPDATE_ROLE_PERMISSIONS",
+      targetTable: "Permission",
+      targetId: roleCode,
+      newValues: { roleCode, permissionCount: permissions.length }
+    })
     revalidatePath("/admin/roles")
     revalidatePath("/admin/xet-duyet-ket-qua")
     revalidatePath("/admin", "layout")
@@ -128,10 +165,18 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
 
 export async function deleteRole(code: string) {
   try {
+    const session = await assertFullAdminAccess()
     if (code === 'ADMIN' || code === 'TEACHER' || code === 'PARENT') {
        return { success: false, error: 'Không thể xóa nhóm quyền hệ thống này.' };
     }
     await prisma.role.delete({ where: { code } });
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "DELETE_ROLE",
+      targetTable: "Role",
+      targetId: code
+    });
     revalidatePath("/admin/roles");
     return { success: true };
   } catch(e:any) {

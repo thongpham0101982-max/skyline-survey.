@@ -223,7 +223,7 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin-bottom: 12px;">
           <tr>
             <td align="left" style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #00A19A;">
-              🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+              <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
             </td>
             <td align="right" style="font-size: 11px; font-weight: 600; color: #94A3B8;">
               Khảo Thí & ĐBCL

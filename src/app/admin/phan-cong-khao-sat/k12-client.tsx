@@ -6,6 +6,13 @@ import {
   AlertCircle, X, Plus, RefreshCw, Users, ExternalLink, ArrowUpRight, Sparkles, Check, RotateCcw,
   Award, ShieldCheck, Zap, FileCheck2, School, Clock, Download
 } from "lucide-react"
+import { EmailSendConfirmModal, EmailConfirmRecipient } from "@/components/EmailSendConfirmModal"
+import {
+  getCurrentMonthYearKey,
+  getBatchMonthYearKey,
+  getStudentSurveyMonthKey,
+  sortMonthYearKeysDesc
+} from "@/lib/surveyMonth"
 import {
   analyzeStudentAcademicAndRegulation,
   matchRecommendedSubjectIds,
@@ -13,7 +20,11 @@ import {
   DEFAULT_ADMISSION_REGULATIONS,
   parseAdmissionRegulationConfig,
   isStudentEligibleByRegulation,
-  exportEligibleStudentsRegulationExcel
+  exportEligibleStudentsRegulationExcel,
+  getStudentK12Track,
+  K12TrackType,
+  isIntlSystemCode,
+  isPreschoolSystem
 } from "@/lib/admissionRegulationEngine"
 
 // ─── Helpers ───
@@ -52,7 +63,7 @@ function Empty({ icon: Icon, text, sub }: { icon: any; text: string; sub?: strin
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-center gap-0.5 text-[11px] font-bold uppercase tracking-wider text-slate-600 ml-0.5">
+      <label className="flex items-center gap-0.5 text-[11px] font-semibold text-slate-600 ml-0.5">
         {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
       </label>
       {children}
@@ -84,6 +95,7 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; on
 
 // ─── Props ───
 interface Props {
+  mode?: "k12" | "transfer"
   academicYears: any[]
   initialPeriods: any[]
   teachers: any[]
@@ -92,11 +104,29 @@ interface Props {
   eduSystems: any[]
   grades: string[]
   campuses: any[]
-  currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null
+  currentUser?: {
+    id: string
+    role: string
+    campusIds: string[]
+    fullName?: string
+    email?: string
+    primaryCampus?: { id: string; campusCode: string; campusName: string } | null
+  } | null
   rolePermissions?: any[]
 }
 
+function isTransferPeriodItem(p: any): boolean {
+  if (!p) return false
+  const name = String(p.name || "").toLowerCase()
+  const hasBatch = (p.batches || []).some((b: any) => {
+    const bName = String(b?.name || "").toLowerCase()
+    return bName.includes("chuyen_he") || bName.includes("chuyển hệ") || bName.includes("chuyen he")
+  })
+  return name.includes("chuyển hệ") || name.includes("chuyen he") || name.includes("chuyenhe") || hasBatch
+}
+
 export function PhanCongK12Client({
+  mode = "k12",
   academicYears = [],
   initialPeriods = [],
   teachers = [],
@@ -109,7 +139,7 @@ export function PhanCongK12Client({
   rolePermissions = []
 }: Props) {
   const userRole = (currentUser?.role || "").toUpperCase()
-  const isAdmin = userRole === "ADMIN" || userRole === "KT_DBCL"
+  const isAdmin = userRole === "ADMIN" || ["KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KHAO_THI", "ĐBCL", "DBCL"].includes(userRole)
   const canCreate = isAdmin || (rolePermissions.some(p => (p.module === "PHAN_CONG_K12" || p.module === "PHAN_CONG_KHAO_SAT" || p.module === "INPUT_ASSESSMENTS_ASSIGNMENTS" || p.module === "INPUT_ASSESSMENTS") && p.canCreate))
   const canUpdate = isAdmin || (rolePermissions.some(p => (p.module === "PHAN_CONG_K12" || p.module === "PHAN_CONG_KHAO_SAT" || p.module === "INPUT_ASSESSMENTS_ASSIGNMENTS" || p.module === "INPUT_ASSESSMENTS") && p.canUpdate))
   const canDelete = isAdmin || (rolePermissions.some(p => (p.module === "PHAN_CONG_K12" || p.module === "PHAN_CONG_KHAO_SAT" || p.module === "INPUT_ASSESSMENTS_ASSIGNMENTS" || p.module === "INPUT_ASSESSMENTS") && p.canDelete))
@@ -121,6 +151,11 @@ export function PhanCongK12Client({
   // ─── Year ───
   const defaultYear = academicYears.find(y => !y.isOff) || academicYears[0]
   const [yearId, setYearId] = useState(defaultYear?.id || "")
+
+  // ─── Chuẩn quy trình chất lượng Sky-Line: Chọn Danh sách Hệ S / Hệ I (riêng Chuyển hệ không tách Hệ S/I, áp dụng Quy chế Hệ I) ───
+  const isTransferMode = mode === "transfer"
+  const [activeK12Track, setActiveK12Track] = useState<K12TrackType>(isTransferMode ? "HE_I" : "HE_S")
+  const [trackStudentCounts, setTrackStudentCounts] = useState<{ heS: number; heI: number }>({ heS: 0, heI: 0 })
 
   // ─── Grades ───
   const [activeGrades, setActiveGrades] = useState<string[]>(grades)
@@ -145,8 +180,8 @@ export function PhanCongK12Client({
 
     if (!currentUser?.role) return activeBatchesPeriods
     if (isAdmin) return activeBatchesPeriods
-    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
-      const allowedIds = currentUser.campusIds || []
+    const allowedIds = currentUser.campusIds || []
+    if (allowedIds.length > 0) {
       return activeBatchesPeriods
         .map(p => ({
           ...p,
@@ -174,7 +209,13 @@ export function PhanCongK12Client({
         fetch(`/api/input-assessments?academicYearId=${yearId}&t=${Date.now()}`),
         fetch(`/api/input-assessments?getGrades=true&academicYearId=${yearId}&t=${Date.now()}`)
       ])
-      if (periodsRes.ok) setPeriods(await periodsRes.json())
+      if (periodsRes.ok) {
+        const fetchedPeriods = await periodsRes.json()
+        const filtered = Array.isArray(fetchedPeriods)
+          ? fetchedPeriods.filter((p: any) => (mode === "transfer" ? isTransferPeriodItem(p) : !isTransferPeriodItem(p)))
+          : []
+        setPeriods(filtered)
+      }
       if (gradesRes.ok) {
         const fetchedGrades = await gradesRes.json()
         setActiveGrades(fetchedGrades)
@@ -182,7 +223,7 @@ export function PhanCongK12Client({
     } catch (err) {
       console.error(err)
     } finally { setPLoading(false) }
-  }, [yearId])
+  }, [yearId, mode])
 
   useEffect(() => { fetchPeriods() }, [fetchPeriods])
 
@@ -191,6 +232,7 @@ export function PhanCongK12Client({
   const [asLoading, setAsLoading] = useState(false)
   const [asPeriodId, setAsPeriodId] = useState("")
   const [asBatchId, setAsBatchId] = useState("")
+  const [asMonthFilter, setAsMonthFilter] = useState(() => getCurrentMonthYearKey())
   const [asFilterBatchId, setAsFilterBatchId] = useState("")
   const [asSessionId, setAsSessionId] = useState("")
   const [asNotifyingId, setAsNotifyingId] = useState<string | null>(null)
@@ -215,7 +257,7 @@ export function PhanCongK12Client({
     } finally {
       setSLoading(false)
     }
-  }, [yearId])
+  }, [yearId, mode])
 
   useEffect(() => { fetchSessions() }, [fetchSessions])
 
@@ -238,6 +280,13 @@ export function PhanCongK12Client({
   const [studentStats, setStudentStats] = useState<Record<string, any[]>>({})
   const [statsLoading, setStatsLoading] = useState(false)
   const [expandedGrades, setExpandedGrades] = useState<Record<string, boolean>>({})
+  const [rosterGradeFilter, setRosterGradeFilter] = useState<string>("all")
+  const [selectedRosterStudentIds, setSelectedRosterStudentIds] = useState<string[]>([])
+
+  useEffect(() => {
+    setRosterGradeFilter("all")
+    setSelectedRosterStudentIds([])
+  }, [asPeriodId, asBatchId, asSessionId, activeK12Track])
 
   // ─── Filtered Batch Students (cho danh sách phân công và modal học sinh) ───
   const [filterBatchStudents, setFilterBatchStudents] = useState<any[]>([])
@@ -249,7 +298,12 @@ export function PhanCongK12Client({
     if (asSessionId) {
       const sess = sessions.find((s: any) => s.id === asSessionId)
       if (sess) {
-        const sessionStudents = (sess.studentSessions || []).map((ss: any) => ss.student).filter(Boolean)
+        const allSessionStudents = (sess.studentSessions || []).map((ss: any) => ss.student).filter(Boolean)
+        const heSCount = allSessionStudents.filter((s: any) => getStudentK12Track(s) === "HE_S").length
+        setTrackStudentCounts({ heS: heSCount, heI: allSessionStudents.length - heSCount })
+        const sessionStudents = isTransferMode
+          ? allSessionStudents
+          : allSessionStudents.filter((s: any) => getStudentK12Track(s) === activeK12Track)
         const grouped: Record<string, any[]> = {}
         sessionStudents.forEach((s: any) => {
           const g = String(s.grade || "Chưa xác định").replace(/^Khối\s+/i, "").trim() || "Chưa xác định"
@@ -269,12 +323,14 @@ export function PhanCongK12Client({
 
     if (!asPeriodId) {
       setStudentStats({})
+      setTrackStudentCounts({ heS: 0, heI: 0 })
       return
     }
     const rawPeriod = periods.find((p: any) => p.id === asPeriodId)
     const activeBatchesInPeriod = (rawPeriod?.batches || []).filter((b: any) => b.status === "ACTIVE")
     if ((rawPeriod?.batches?.length || 0) > 0 && activeBatchesInPeriod.length === 0) {
       setStudentStats({})
+      setTrackStudentCounts({ heS: 0, heI: 0 })
       return
     }
     setStatsLoading(true)
@@ -284,7 +340,16 @@ export function PhanCongK12Client({
       const res = await fetch(url)
       if (res.ok) {
         const rawStudents = await res.json()
-        const students = (Array.isArray(rawStudents) ? rawStudents : []).filter((s: any) => s.batch?.status !== "COMPLETED")
+        const activeStudents = (Array.isArray(rawStudents) ? rawStudents : []).filter((s: any) => s.batch?.status !== "COMPLETED")
+        const heSCount = activeStudents.filter((s: any) => getStudentK12Track(s) === "HE_S").length
+        setTrackStudentCounts({ heS: heSCount, heI: activeStudents.length - heSCount })
+        const trackStudents = isTransferMode
+          ? activeStudents
+          : activeStudents.filter((s: any) => getStudentK12Track(s) === activeK12Track)
+        const allBatchesPool = periods.flatMap((p: any) => p.batches || [])
+        const students = (asMonthFilter && asMonthFilter !== "all" && !asBatchId)
+          ? trackStudents.filter((s: any) => getStudentSurveyMonthKey(s, allBatchesPool) === asMonthFilter)
+          : trackStudents
         const grouped: Record<string, any[]> = {}
         students.forEach((s: any) => {
           const g = s.grade || "Chưa xác định"
@@ -301,14 +366,16 @@ export function PhanCongK12Client({
         }
       } else {
         setStudentStats({})
+        setTrackStudentCounts({ heS: 0, heI: 0 })
       }
     } catch (e) {
       console.error(e)
       setStudentStats({})
+      setTrackStudentCounts({ heS: 0, heI: 0 })
     } finally {
       setStatsLoading(false)
     }
-  }, [asPeriodId, asBatchId, asSessionId, sessions])
+  }, [asPeriodId, asBatchId, asSessionId, sessions, activeK12Track, periods, isTransferMode, asMonthFilter])
 
   useEffect(() => {
     fetchStudentStats()
@@ -327,7 +394,11 @@ export function PhanCongK12Client({
       const res = await fetch(`/api/input-assessment-students?periodId=${asPeriodId}${activeBatchParam}&excludeCompletedBatches=true&t=${Date.now()}`)
       if (res.ok) {
         const data = await res.json()
-        setFilterBatchStudents((Array.isArray(data) ? data : []).filter((s: any) => s.batch?.status !== "COMPLETED"))
+        setFilterBatchStudents(
+          (Array.isArray(data) ? data : []).filter(
+            (s: any) => s.batch?.status !== "COMPLETED" && (isTransferMode || getStudentK12Track(s) === activeK12Track)
+          )
+        )
       } else {
         setFilterBatchStudents([])
       }
@@ -337,7 +408,7 @@ export function PhanCongK12Client({
     } finally {
       setFilterStudentsLoading(false)
     }
-  }, [asPeriodId, asFilterBatchId, asBatchId])
+  }, [asPeriodId, asFilterBatchId, asBatchId, activeK12Track])
 
   useEffect(() => {
     fetchFilterBatchStudents()
@@ -387,8 +458,47 @@ export function PhanCongK12Client({
     }
   }, [visiblePeriods, asPeriodId])
 
-  // ─── Computed ───
-  const currentEduSystems = useMemo(() => eduSystems.filter((es: any) => es.academicYearId === yearId), [eduSystems, yearId])
+  // ─── Computed (Chỉ lấy Hệ đào tạo Phổ thông K-12, loại bỏ tuyệt đối hệ Mầm non MNS/MNG) ───
+  const allYearEduSystems = useMemo(() => {
+    const byYear = eduSystems.filter(
+      (es: any) => es.academicYearId === yearId && !isPreschoolSystem(es.code, es.name)
+    )
+    if (byYear.length > 0) return byYear
+    return [
+      { id: "fallback-hns", code: "HNS", name: "Hệ Hội nhập S" },
+      { id: "fallback-hng", code: "HNG", name: "Hệ Hội nhập Global" },
+      { id: "fallback-sb", code: "SB", name: "Hệ Song bằng" },
+      { id: "fallback-hnc", code: "HNC", name: "Hệ Hội nhập Compass" }
+    ]
+  }, [eduSystems, yearId])
+
+  const currentEduSystems = useMemo(() => {
+    if (isTransferMode || activeK12Track === "HE_I") {
+      const intl = allYearEduSystems.filter((es: any) => isIntlSystemCode(es.code))
+      const existingCodes = new Set(intl.map((es: any) => String(es.code || "").toUpperCase()))
+      const merged = [...intl]
+      ;[
+        { id: "std-hng", code: "HNG", name: "Hệ Hội nhập Global" },
+        { id: "std-sb", code: "SB", name: "Hệ Song bằng" },
+        { id: "std-hnc", code: "HNC", name: "Hệ Hội nhập Compass" }
+      ].forEach(std => {
+        if (!existingCodes.has(std.code)) merged.push(std)
+      })
+      return merged
+    }
+    const hns = allYearEduSystems.filter((es: any) => !isIntlSystemCode(es.code))
+    return hns.length > 0 ? hns : [{ id: "std-hns", code: "HNS", name: "Hệ Hội nhập S" }]
+  }, [allYearEduSystems, activeK12Track, isTransferMode])
+
+  // Khi chuyển Danh sách Hệ S <-> Hệ I, tự động đồng bộ Hệ đào tạo được chọn theo đúng quy trình
+  useEffect(() => {
+    const allowedCodes = new Set(currentEduSystems.map((es: any) => es.code))
+    setAsSelSystems(prev => {
+      const kept = prev.filter(c => allowedCodes.has(c))
+      if (kept.length > 0) return kept
+      return currentEduSystems.map((es: any) => es.code)
+    })
+  }, [activeK12Track, currentEduSystems])
   const filteredTeachers = useMemo(() => {
     let list = asDeptId ? teachers.filter(t => t.departmentId === asDeptId) : teachers
     if (teacherQuickSearch.trim()) {
@@ -417,7 +527,7 @@ export function PhanCongK12Client({
     return sorted[0] || null
   }, [asSelPeriod])
 
-  // Tự động gán Đợt mới nhất khi chọn Kỳ khảo sát (chỉ khi không đang chọn Phiên / Lịch ca thi)
+  // Mặc định hiển thị toàn kỳ (không tự động gán 1 đợt lẻ cụ thể trừ khi URL truyền batchId)
   useEffect(() => {
     if (asSessionId) return
     if (typeof window !== "undefined") {
@@ -430,24 +540,17 @@ export function PhanCongK12Client({
         return
       }
     }
-    if (latestBatch) {
-      setAsBatchId(latestBatch.id)
-      setAsFilterBatchId(latestBatch.id)
-    } else {
-      setAsBatchId("")
-      setAsFilterBatchId("all")
-    }
+    setAsBatchId("")
+    setAsFilterBatchId("all")
     setShowCustomBatch(false)
-  }, [asPeriodId, latestBatch, asSessionId, asSelPeriod])
+  }, [asPeriodId, asSessionId, asSelPeriod])
 
   // Chọn Phiên / Lịch ca thi (InputAssessmentSession)
   const handleSelectSession = useCallback((sessionId: string) => {
     if (!sessionId) {
       setAsSessionId("")
-      if (latestBatch) {
-        setAsBatchId(latestBatch.id)
-        setAsFilterBatchId(latestBatch.id)
-      }
+      setAsBatchId("")
+      setAsFilterBatchId("all")
       return
     }
     const sess = sessions.find((s: any) => s.id === sessionId)
@@ -532,7 +635,12 @@ export function PhanCongK12Client({
     const completedBatchIds = new Set(
       periods.flatMap((p: any) => p.batches || []).filter((b: any) => b.status === "COMPLETED").map((b: any) => b.id)
     )
-    const activeAssignments = assignments.filter(a => !a.batchId || (!completedBatchIds.has(a.batchId) && a.batch?.status !== "COMPLETED"))
+    const activeAssignments = assignments.filter(a => {
+      if (a.batchId && (completedBatchIds.has(a.batchId) || a.batch?.status === "COMPLETED")) return false
+      if (isTransferMode) return true
+      const isIntl = isIntlSystemCode(a.educationSystem || "")
+      return activeK12Track === "HE_I" ? isIntl : !isIntl
+    })
     const targetAssignments = (!asFilterBatchId || asFilterBatchId === "all")
       ? activeAssignments
       : activeAssignments.filter(a => a.batchId === asFilterBatchId)
@@ -556,7 +664,7 @@ export function PhanCongK12Client({
       (g.subjects || []).some((s: string) => s.toLowerCase().includes(q)) ||
       (g.grades || []).some((gr: string) => String(gr).toLowerCase().includes(q))
     )
-  }, [assignments, asFilterBatchId, assignTableSearch])
+  }, [assignments, asFilterBatchId, assignTableSearch, activeK12Track, periods])
 
   // ─── Fetch Assignments ───
   const fetchAssignments = useCallback(async () => {
@@ -571,7 +679,12 @@ export function PhanCongK12Client({
   useEffect(() => { fetchAssignments() }, [fetchAssignments])
 
   // ─── Actions ───
-  const [autoSendEmailOnAssign, setAutoSendEmailOnAssign] = useState(true)
+  const [autoSendEmailOnAssign, setAutoSendEmailOnAssign] = useState(false)
+  const [emailConfirmState, setEmailConfirmState] = useState<{
+    open: boolean
+    mode: "SINGLE" | "BULK"
+    targetAssignment?: any
+  }>({ open: false, mode: "BULK" })
 
   const submitAssignment = async () => {
     if (!canCreate) return
@@ -671,20 +784,32 @@ export function PhanCongK12Client({
     finally { setAsNotifyingId(null) }
   }
 
-  const sendAllNotifications = async () => {
+  const sendAllNotifications = async (selectedGroupKeys?: string[]) => {
     if (!canUpdate || groupedAssignments.length === 0) return notify("Không có phân công nào để gửi thông báo", "err")
+    const chosenGroups = Array.isArray(selectedGroupKeys) && selectedGroupKeys.length > 0
+      ? groupedAssignments.filter((g: any) => selectedGroupKeys.includes(g.id))
+      : groupedAssignments
+    const selectedAssignmentIds = chosenGroups.flatMap((g: any) => Array.isArray(g.ids) ? g.ids : [])
+    if (selectedAssignmentIds.length === 0) return notify("Vui lòng chọn ít nhất 1 giáo viên để gửi email", "err")
+
     setAsNotifyingAll(true)
     try {
       const res = await fetch("/api/input-assessment-assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "NOTIFY_ALL", periodId: asPeriodId, batchId: asFilterBatchId || null })
+        body: JSON.stringify({
+          action: "NOTIFY_ALL",
+          periodId: asPeriodId,
+          batchId: asFilterBatchId || null,
+          assignmentIds: selectedAssignmentIds,
+          confirmAllBatches: true
+        })
       })
       if (res.ok) {
         const result = await res.json()
         if (result.success) {
-          notify(`Đã gửi thông báo thành công cho ${result.sentCount} giáo viên!`)
-          if (result.failedCount > 0) notify(`Gửi thất bại cho ${result.failedCount} giáo viên`, "err")
+          notify(`Đã gửi thông báo thành công cho ${result.sentCount} lượt giáo viên!`)
+          if (result.failedCount > 0) notify(`Gửi thất bại cho ${result.failedCount} lượt giáo viên`, "err")
         } else { notify("Gửi thông báo hàng loạt thất bại", "err") }
       } else {
         const errData = await res.json().catch(() => null)
@@ -692,6 +817,16 @@ export function PhanCongK12Client({
       }
     } catch { notify("Có lỗi xảy ra", "err") }
     finally { setAsNotifyingAll(false) }
+  }
+
+  const openSingleEmailConfirm = (a: any) => {
+    if (!canUpdate || !a?.userId || !asPeriodId) return
+    setEmailConfirmState({ open: true, mode: "SINGLE", targetAssignment: a })
+  }
+
+  const openBulkEmailConfirm = () => {
+    if (!canUpdate || groupedAssignments.length === 0) return notify("Không có phân công nào để gửi thông báo", "err")
+    setEmailConfirmState({ open: true, mode: "BULK" })
   }
 
   const deleteAssignment = async (ids: string[]) => {
@@ -797,6 +932,17 @@ export function PhanCongK12Client({
     }
   }, [asBatchId, asSessionId, gradesWithStudents, studentStats, currentEduSystems])
 
+  // Đối chiếu Quy chế tuyển sinh: Học sinh nội bộ Chuyển hệ từ Hệ S sang Hệ I luôn áp dụng quy tắc CHUYEN_HE_S_I (EPT + ESL vấn đáp)
+  const evaluateStudentRegulation = useCallback((st: any) => {
+    if (isTransferMode) {
+      return analyzeStudentAcademicAndRegulation(
+        { ...st, surveyFormType: "CHUYEN_HE_S_I", surveySystem: "CHUYEN_HE_S_I" },
+        regulationConfig
+      )
+    }
+    return analyzeStudentAcademicAndRegulation(st, regulationConfig)
+  }, [isTransferMode, regulationConfig])
+
   // Tự động nạp phạm vi Môn • Khối • Hệ dựa trên Kết quả học tập & Quy chế tuyển sinh của 1 hoặc nhiều học sinh
   const applyRegulationScopeForStudents = (targetStudents: any[], label: string) => {
     if (!targetStudents || targetStudents.length === 0) return
@@ -805,7 +951,7 @@ export function PhanCongK12Client({
     const allSystems = new Set<string>()
 
     targetStudents.forEach(st => {
-      const insight = analyzeStudentAcademicAndRegulation(st, regulationConfig)
+      const insight = evaluateStudentRegulation(st)
       insight.recommendedSubjectNames.forEach(n => allRecSubjectNames.add(n))
       if (st.grade) allGrades.add(String(st.grade).replace(/\D/g, "") || String(st.grade))
       const sys = String(insight.resolvedSystemCode || st.surveyFormType || st.surveySystem || "").toUpperCase().trim()
@@ -850,7 +996,11 @@ export function PhanCongK12Client({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xs sm:text-sm font-bold text-[#003B3A]">Ngữ cảnh Kỳ, Đợt &amp; Phiên / Lịch ca thi K-12</h2>
+                <h2 className="text-xs sm:text-sm font-bold text-[#003B3A]">
+                  {mode === "transfer"
+                    ? "Ngữ cảnh Kỳ, Đợt & Phiên / Lịch ca thi Chuyển hệ"
+                    : "Ngữ cảnh Kỳ, Đợt & Phiên / Lịch ca thi K-12"}
+                </h2>
                 {asPeriodId && (
                   <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#00A19A]/15 text-[#005854] border border-[#00A19A]/25">
                     Tổng: {totalStudentsInBatch} học sinh
@@ -867,6 +1017,34 @@ export function PhanCongK12Client({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {(() => {
+              const curMk = getCurrentMonthYearKey()
+              const periodBatches = asSelPeriod?.batches || []
+              const monthKeys = sortMonthYearKeysDesc([
+                curMk,
+                ...periodBatches.map((b: any) => getBatchMonthYearKey(b)),
+                ...visibleSessions.map((s: any) => getBatchMonthYearKey(s))
+              ])
+              return (
+                <select
+                  value={asMonthFilter}
+                  onChange={e => {
+                    setAsMonthFilter(e.target.value)
+                    setAsBatchId("")
+                    setAsSessionId("")
+                  }}
+                  aria-label="Lọc theo Tháng khảo sát"
+                  className="bg-white border border-slate-200 hover:border-[#008B85] rounded-xl px-2.5 py-1.5 text-xs font-semibold text-[#003B3A] outline-none cursor-pointer tabular-nums"
+                >
+                  <option value="all">Tất cả Tháng</option>
+                  {monthKeys.map(mk => (
+                    <option key={mk} value={mk}>
+                      Tháng {mk}{mk === curMk ? " (Hiện tại)" : ""}
+                    </option>
+                  ))}
+                </select>
+              )
+            })()}
             {asPeriodId && (
               <button
                 type="button"
@@ -906,7 +1084,7 @@ export function PhanCongK12Client({
               href="/admin/dieu-hanh-khao-sat"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#003B3A] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all"
             >
-              <span>📊 Tiến độ 8 bước</span>
+              <span>Tiến độ 7 bước</span>
             </a>
             <button
               onClick={() => { fetchPeriods(); fetchSessions(); }}
@@ -921,6 +1099,121 @@ export function PhanCongK12Client({
         </div>
 
         <div className="p-4 sm:p-5 space-y-4">
+          {/* BƯỚC 1: CHUẨN QUY TRÌNH CHẤT LƯỢNG SKY-LINE — CHỌN DANH SÁCH HỆ S / HỆ I (ẨN VỚI HS CHUYỂN HỆ) */}
+          {!isTransferMode ? (
+            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5 tabular-nums">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 border-l-4 border-[#003B3A] pl-2.5">
+                  <span className="text-xs font-bold text-[#003B3A]">
+                    Bước 1. Chọn Danh sách Khảo sát (Chuẩn quy trình chất lượng Sky-Line)
+                  </span>
+                </div>
+                <span className="text-[11px] font-medium text-slate-500">
+                  Chọn Hệ danh sách trước, sau đó chọn Kỳ khảo sát → Đợt khảo sát → Phiên / Lịch ca thi
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveK12Track("HE_S")}
+                  className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-left transition-colors cursor-pointer ${
+                    activeK12Track === "HE_S"
+                      ? "bg-[#003B3A] text-white border-[#003B3A] shadow-xs"
+                      : "bg-white text-slate-700 border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA]/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      activeK12Track === "HE_S" ? "bg-white/15 text-[#5EEAD4]" : "bg-[#F0FDFA] text-[#00736E]"
+                    }`}>
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm font-bold truncate">
+                        2. Danh sách Khảo sát Hệ S
+                      </div>
+                      <div className={`text-[11px] truncate ${activeK12Track === "HE_S" ? "text-teal-100" : "text-slate-500"}`}>
+                        Hệ Hội nhập S (HNS) · Độc lập quy chế &amp; môn khảo sát
+                      </div>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 ${
+                    activeK12Track === "HE_S"
+                      ? "bg-[#00A19A] text-white"
+                      : "bg-[#F0FDFA] text-[#005854] border border-teal-200"
+                  }`}>
+                    {trackStudentCounts.heS} HS
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveK12Track("HE_I")}
+                  className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-left transition-colors cursor-pointer ${
+                    activeK12Track === "HE_I"
+                      ? "bg-[#003B3A] text-white border-[#003B3A] shadow-xs"
+                      : "bg-white text-slate-700 border-[#E2E8F0] hover:border-[#00A19A] hover:bg-[#F0FDFA]/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      activeK12Track === "HE_I" ? "bg-white/15 text-[#5EEAD4]" : "bg-sky-50 text-sky-700"
+                    }`}>
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs sm:text-sm font-bold truncate">
+                        3. Danh sách Khảo sát Hệ I
+                      </div>
+                      <div className={`text-[11px] truncate ${activeK12Track === "HE_I" ? "text-teal-100" : "text-slate-500"}`}>
+                        Hệ Song bằng / Hội nhập Quốc tế (HNG · SB)
+                      </div>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 ${
+                    activeK12Track === "HE_I"
+                      ? "bg-[#00A19A] text-white"
+                      : "bg-sky-50 text-sky-800 border border-sky-200"
+                  }`}>
+                    {trackStudentCounts.heI} HS
+                  </span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 border-l-4 border-l-amber-600 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="space-y-0.5">
+                <div className="font-bold text-[#003B3A]">
+                  Quy chế Tuyển sinh Học sinh nội bộ Chuyển hệ từ Hệ S sang Hệ I
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  Học sinh nội bộ chuyển hệ từ Hệ S sang Hệ I được tự động đối chiếu và nạp danh sách môn khảo sát bắt buộc gồm <strong>EPT</strong> và <strong>ESL (vấn đáp)</strong>.
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white text-amber-800 border border-amber-200 shrink-0">
+                Khảo sát: EPT &amp; ESL (vấn đáp)
+              </span>
+            </div>
+          )}
+
+          {/* BƯỚC 2: CHỌN KỲ KHẢO SÁT ÁP DỤNG → ĐỢT KHẢO SÁT TRONG KỲ → PHIÊN / LỊCH CA THI */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 border-l-4 border-[#00736E] pl-2.5">
+              <span className="text-xs font-bold text-[#003B3A]">
+                {isTransferMode
+                  ? "Chọn Kỳ khảo sát Chuyển hệ · Đợt khảo sát trong kỳ · Phiên / Lịch ca thi"
+                  : "Bước 2. Chọn Kỳ khảo sát áp dụng · Đợt khảo sát trong kỳ · Phiên / Lịch ca thi"}
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#F0FDFA] text-[#005854] border border-teal-200">
+                {isTransferMode
+                  ? "Quy chế Hệ I (HNG • SB • HNC)"
+                  : activeK12Track === "HE_I"
+                  ? "Đang lọc: Hệ I (HNG • SB)"
+                  : "Đang lọc: Hệ S (HNS)"}
+              </span>
+            </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             {/* Chọn Kỳ khảo sát */}
             <div className="lg:col-span-4">
@@ -944,84 +1237,60 @@ export function PhanCongK12Client({
               </Field>
             </div>
 
-            {/* Đợt khảo sát đang áp dụng */}
+            {/* Đợt khảo sát trong kỳ (trực quan, mặc định Toàn kỳ — không ép chọn sẵn 1 đợt) */}
             <div className="lg:col-span-4">
-              <Field label="Đợt khảo sát trong kỳ">
+              <Field label={`Đợt khảo sát trong kỳ${asSelPeriod?.batches?.length ? ` (${asSelPeriod.batches.length} đợt)` : ""}`}>
                 {!asPeriodId ? (
                   <div className="h-[42px] px-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center text-xs text-slate-400">
-                    Vui lòng chọn Kỳ khảo sát để tự động nhận diện đợt mới nhất
+                    Vui lòng chọn Kỳ khảo sát trước
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <div className="min-h-[42px] px-3.5 py-2 bg-gradient-to-r from-teal-50/80 via-emerald-50/30 to-white border border-teal-200/80 rounded-xl flex items-center justify-between gap-2 shadow-2xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-7 h-7 rounded-lg bg-[#00736E]/15 text-[#00736E] flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-3.5 h-3.5 text-[#00736E]" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-xs text-[#003B3A] truncate">
-                              {asSelSession
-                                ? `Theo Phiên: ${asSelSession.name}`
-                                : asBatchId
-                                ? (asSelPeriod?.batches?.find((b: any) => b.id === asBatchId)?.name || "Đợt khảo sát")
-                                : "Áp dụng Toàn kỳ / Khảo sát lẻ"}
-                            </span>
-                            {!asSelSession && latestBatch && asBatchId === latestBatch.id && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#00736E] text-white">
-                                Mới nhất
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                  <div className="relative flex items-center gap-1.5">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#00736E]">
+                        <Layers className="w-4 h-4" />
                       </div>
-
-                      {asSelPeriod?.batches && asSelPeriod.batches.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowCustomBatch(!showCustomBatch)}
-                          className="px-2.5 py-1 text-xs font-bold text-[#005854] bg-white hover:bg-teal-50 border border-teal-200 rounded-lg transition-colors cursor-pointer flex-shrink-0 shadow-2xs"
-                        >
-                          {showCustomBatch ? "Đóng" : "Đổi đợt"}
-                        </button>
-                      )}
+                      <select
+                        value={asSelSession ? "" : asBatchId}
+                        onChange={e => {
+                          setAsSessionId("")
+                          setAsBatchId(e.target.value)
+                          setAsFilterBatchId(e.target.value || "all")
+                        }}
+                        className={inp + " pl-10 " + (asBatchId && !asSelSession ? "border-[#00736E] bg-teal-50/40 font-semibold text-[#003B3A]" : "")}
+                      >
+                        <option value="">
+                          {asSelSession
+                            ? `Đang lọc theo Phiên: ${asSelSession.name}`
+                            : "-- Tất cả đợt trong kỳ (Toàn kỳ) --"}
+                        </option>
+                        {[...(asSelPeriod?.batches || [])]
+                          .filter((b: any) => !asMonthFilter || asMonthFilter === "all" || getBatchMonthYearKey(b) === asMonthFilter || b.id === asBatchId)
+                          .sort((a: any, b: any) => (Number(b.batchNumber) || 0) - (Number(a.batchNumber) || 0))
+                          .map((b: any) => {
+                            const bTrackCount = Array.isArray(b.students)
+                              ? (isTransferMode ? b.students.length : b.students.filter((st: any) => getStudentK12Track(st) === activeK12Track).length)
+                              : (b._count?.students ?? 0)
+                            return (
+                              <option key={b.id} value={b.id}>
+                                [{bTrackCount} HS] {b.name}
+                              </option>
+                            )
+                          })}
+                      </select>
                     </div>
-
-                    {showCustomBatch && asSelPeriod?.batches && asSelPeriod.batches.length > 0 && (
-                      <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/80 space-y-1.5 animate-in fade-in duration-200">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-semibold text-slate-600">Chuyển sang đợt khảo sát khác:</label>
-                          {latestBatch && asBatchId !== latestBatch.id && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setAsSessionId("")
-                                setAsBatchId(latestBatch.id)
-                                setAsFilterBatchId(latestBatch.id)
-                              }}
-                              className="text-xs font-bold text-[#00736E] hover:underline cursor-pointer"
-                            >
-                              &larr; Về đợt mới nhất ({latestBatch.name})
-                            </button>
-                          )}
-                        </div>
-                        <select
-                          value={asBatchId}
-                          onChange={e => {
-                            setAsSessionId("")
-                            setAsBatchId(e.target.value)
-                            setAsFilterBatchId(e.target.value || "all")
-                          }}
-                          className={inp}
-                        >
-                          <option value="">-- Áp dụng toàn kỳ / Khảo sát lẻ --</option>
-                          {asSelPeriod.batches.map((b: any) => (
-                            <option key={b.id} value={b.id}>
-                              {b.name} {b.id === latestBatch?.id ? "(Mới nhất)" : ""}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    {asBatchId && !asSelSession && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAsBatchId("")
+                          setAsFilterBatchId("all")
+                        }}
+                        title="Bỏ lọc đợt, xem tất cả đợt trong kỳ"
+                        className="h-[42px] px-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                      >
+                        ✕
+                      </button>
                     )}
                   </div>
                 )}
@@ -1043,7 +1312,9 @@ export function PhanCongK12Client({
                     >
                       <option value="">-- Chọn theo Phiên / Lịch ca thi ({visibleSessions.length}) --</option>
                       {visibleSessions.map((s: any) => {
-                        const stCount = s.studentSessions?.length || 0
+                        const stCount = (s.studentSessions || [])
+                          .map((ss: any) => ss.student)
+                          .filter((st: any) => st && (isTransferMode || getStudentK12Track(st) === activeK12Track)).length
                         const dStr = s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("vi-VN") : ""
                         const cCode = s.campus?.campusCode || s.campus?.campusName || ""
                         return (
@@ -1068,14 +1339,15 @@ export function PhanCongK12Client({
               </Field>
             </div>
           </div>
+          </div>
 
           {/* Thanh chọn nhanh Phiên / Lịch ca thi đang mở */}
           {visibleSessions.length > 0 && (
-            <div className="p-3 bg-gradient-to-r from-teal-50/60 via-slate-50/80 to-white rounded-xl border border-teal-200/70 space-y-2">
+            <div className="p-3 bg-gradient-to-r from-teal-50/60 via-slate-50/80 to-white rounded-xl border border-teal-200/70 space-y-2 tabular-nums">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[#003B3A]">
                   <Clock className="w-3.5 h-3.5 text-[#00736E]" />
-                  <span>Chọn nhanh Phiên / Lịch ca thi ({visibleSessions.length} phiên đang mở):</span>
+                  <span>Chọn nhanh Phiên / Lịch ca thi ({visibleSessions.length} phiên đang mở · {isTransferMode ? "Chuyển hệ" : activeK12Track === "HE_I" ? "Hệ I" : "Hệ S"}):</span>
                 </div>
                 {asSessionId && (
                   <button
@@ -1090,7 +1362,9 @@ export function PhanCongK12Client({
               <div className="flex flex-wrap gap-2">
                 {visibleSessions.map((s: any) => {
                   const isSel = asSessionId === s.id
-                  const stCount = s.studentSessions?.length || 0
+                  const stCount = (s.studentSessions || [])
+                    .map((ss: any) => ss.student)
+                    .filter((st: any) => st && (isTransferMode || getStudentK12Track(st) === activeK12Track)).length
                   const dStr = s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("vi-VN") : ""
                   const cCode = s.campus?.campusCode || s.campus?.campusName || ""
                   const exCount = (s.examiners?.length || 0) + (s.batch?.InputAssessmentTeacherAssignment?.length ? 1 : 0)
@@ -1143,349 +1417,353 @@ export function PhanCongK12Client({
             </div>
           )}
 
-          {/* Thanh chip phân bổ Học sinh theo Khối */}
-          {asPeriodId && (
-            <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/70 space-y-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#003B3A]">
-                  <Users className="w-4 h-4 text-[#00736E]" />
-                  <span>
-                    {asSelSession
-                      ? `Phân bổ Học sinh theo Khối trong Phiên: ${asSelSession.name}`
-                      : "Phân bổ Học sinh theo Khối trong đợt"}
-                  </span>
-                  {statsLoading && <Loader2 className="w-3.5 h-3.5 text-[#00736E] animate-spin" />}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const allStudentsInScope = Object.values(studentStats).flat()
-                      const res = exportEligibleStudentsRegulationExcel({
-                        students: allStudentsInScope,
-                        customConfig: regulationConfig,
-                        campuses,
-                        periods
-                      })
-                      if (res.isSample) {
-                        notify(`Đợt hiện tại chưa có HS thuộc diện miễn môn văn hóa. Đã tải File Mẫu chuẩn (${res.fileName})!`)
-                      } else {
-                        notify(`Đã xuất ${res.exportedCount} HS đủ điều kiện Xét học bạ / Tuyển thẳng theo quy chế (${res.fileName})!`)
-                      }
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
-                    title="Xuất danh sách Học sinh đủ điều kiện Xét học bạ / Tuyển thẳng (được miễn môn văn hóa theo quy chế) ra Excel"
-                  >
-                    <Download className="w-3 h-3 text-emerald-700" />
-                    <span>Xuất DS HS Đủ ĐK Quy chế</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const res = exportEligibleStudentsRegulationExcel({
-                        customConfig: regulationConfig,
-                        templateOnly: true
-                      })
-                      notify(`Đã tải mẫu danh sách HS đủ điều kiện khảo sát theo quy chế (${res.fileName})!`)
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-teal-50 text-[#005854] border border-teal-200 text-[11px] font-bold transition-colors cursor-pointer shadow-2xs"
-                    title="Tải file Excel mẫu danh sách Học sinh đủ điều kiện khảo sát theo quy chế"
-                  >
-                    <Download className="w-3 h-3 text-[#00736E]" />
-                    <span>Tải mẫu Quy chế</span>
-                  </button>
-                  {gradesWithStudents.length > 0 && (
+          {/* Bảng hợp nhất: Hồ sơ Kết quả Học tập & Quy chế Tuyển sinh — Tất cả HS để chọn Phân công */}
+          {asPeriodId && (() => {
+            const sortedGradeEntries = Object.entries(studentStats).sort(
+              ([a], [b]) => (parseInt(a, 10) || 99) - (parseInt(b, 10) || 99)
+            )
+            const allScopeStudents = sortedGradeEntries.flatMap(([grade, list]) =>
+              list.map((st: any) => ({ ...st, _displayGrade: grade }))
+            )
+            const displayedStudents =
+              rosterGradeFilter === "all"
+                ? allScopeStudents
+                : allScopeStudents.filter(st => String(st._displayGrade) === rosterGradeFilter)
+
+            const visibleIds = displayedStudents.map((st: any) => st.id).filter(Boolean)
+            const allVisibleChecked =
+              visibleIds.length > 0 && visibleIds.every((id: string) => selectedRosterStudentIds.includes(id))
+            const selectedStudentsList = allScopeStudents.filter((st: any) =>
+              selectedRosterStudentIds.includes(st.id)
+            )
+
+            return (
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden tabular-nums">
+                {/* Header hợp nhất gọn gàng */}
+                <div className="px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="border-l-4 border-[#003B3A] pl-2.5 flex items-center gap-2">
+                      <h3 className="text-xs sm:text-sm font-bold text-[#003B3A]">
+                        Hồ sơ Kết quả Học tập &amp; Quy chế Tuyển sinh
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#F0FDFA] text-[#005854] border border-teal-200">
+                        {allScopeStudents.length} HS
+                      </span>
+                    </div>
+                    {statsLoading && <Loader2 className="w-3.5 h-3.5 text-[#00736E] animate-spin" />}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {selectedStudentsList.length > 0 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            applyRegulationScopeForStudents(
+                              selectedStudentsList,
+                              `${selectedStudentsList.length} HS đã chọn`
+                            )
+                          }
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005854] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                          <span>Nạp phạm vi phân công ({selectedStudentsList.length} HS)</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRosterStudentIds([])}
+                          className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-[#E2E8F0] text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          Bỏ chọn
+                        </button>
+                      </>
+                    ) : allScopeStudents.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          applyRegulationScopeForStudents(
+                            displayedStudents,
+                            rosterGradeFilter === "all"
+                              ? `tất cả ${displayedStudents.length} HS`
+                              : `Khối ${rosterGradeFilter} (${displayedStudents.length} HS)`
+                          )
+                        }
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005854] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                        title="Tự động nạp danh sách Môn khảo sát, Khối và Hệ theo Quy chế xuống Khung Phạm vi Phân công"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                        <span>
+                          Nạp phạm vi {rosterGradeFilter === "all" ? `tất cả (${displayedStudents.length} HS)` : `Khối ${rosterGradeFilter} (${displayedStudents.length} HS)`}
+                        </span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => {
-                        setAsSelGrades(gradesWithStudents)
-                        notify(`Đã chọn nhanh ${gradesWithStudents.length} khối có học sinh dự khảo sát!`)
+                        const res = exportEligibleStudentsRegulationExcel({
+                          students: displayedStudents,
+                          customConfig: regulationConfig,
+                          campuses,
+                          periods
+                        })
+                        if (res.isSample) {
+                          notify(`Chưa có HS thuộc diện miễn môn văn hóa. Đã tải File Mẫu chuẩn (${res.fileName})!`)
+                        } else {
+                          notify(`Đã xuất ${res.exportedCount} HS đủ ĐK Quy chế (${res.fileName})!`)
+                        }
                       }}
-                      className="text-[11px] font-bold text-[#00736E] hover:text-[#003B3A] underline cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#F0FDFA] text-[#005854] border border-[#E2E8F0] text-[11px] font-semibold transition-colors cursor-pointer"
+                      title="Xuất danh sách Học sinh đủ điều kiện miễn môn văn hóa theo Quy chế ra Excel"
                     >
-                      + Chọn nhanh các khối có HS ({gradesWithStudents.length} khối)
+                      <Download className="w-3 h-3 text-[#00736E]" />
+                      <span>Xuất DS Đủ ĐK</span>
                     </button>
-                  )}
-                  <span className="text-[11px] text-slate-400 font-normal">
-                    Bấm vào từng khối để xem KQHT & đối chiếu Quy chế
-                  </span>
-                </div>
-              </div>
-
-              {Object.keys(studentStats).length === 0 ? (
-                <div className="text-xs text-slate-400 font-normal text-center py-2">
-                  {statsLoading ? "Đang tải dữ liệu học sinh..." : "Không có học sinh trong đợt khảo sát này"}
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  <div className="flex flex-wrap gap-1.5">
-                    {Object.entries(studentStats).map(([grade, studentsList]) => {
-                      const isExpanded = !!expandedGrades[grade]
-                      const isGradeInScope = asSelGrades.includes(String(grade))
-                      return (
-                        <button
-                          key={grade}
-                          type="button"
-                          onClick={() => setExpandedGrades(prev => ({ ...prev, [grade]: !prev[grade] }))}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer border ${
-                            isExpanded
-                              ? "bg-[#003B3A] border-[#003B3A] text-white font-bold shadow-xs"
-                              : isGradeInScope
-                              ? "bg-teal-50 border-[#00A19A] text-[#005854] font-semibold"
-                              : "bg-white border-slate-200/80 text-slate-700 hover:border-teal-300 hover:bg-teal-50/40"
-                          }`}
-                        >
-                          <span>Khối {grade}</span>
-                          <span className={`px-1.5 py-0.2 rounded-md text-[11px] font-bold ${
-                            isExpanded
-                              ? "bg-white/20 text-white"
-                              : "bg-teal-50 text-[#00736E]"
-                          }`}>
-                            {studentsList.length}
-                          </span>
-                        </button>
-                      )
-                    })}
                   </div>
-
-                  {/* Hiển thị danh sách KQHT Học sinh & Đối chiếu Quy chế Tuyển sinh nếu có khối được bấm mở */}
-                  {Object.entries(studentStats).filter(([grade]) => expandedGrades[grade]).map(([grade, studentsList]) => (
-                    <div key={grade} className="p-3.5 bg-white border border-teal-200/90 rounded-2xl space-y-3 shadow-xs animate-in fade-in duration-200">
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-[#003B3A] pb-2 border-b border-slate-100">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-black text-[#003B3A]">
-                            <FileCheck2 className="w-4 h-4 text-[#00736E]" />
-                            Hồ sơ Kết quả Học tập & Quy chế Tuyển sinh — Khối {grade} ({studentsList.length} HS)
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => applyRegulationScopeForStudents(studentsList, `Khối ${grade} (${studentsList.length} HS)`)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#005854] to-[#00736E] hover:from-[#003B3A] hover:to-[#005854] text-white text-[11px] font-bold shadow-2xs transition-all cursor-pointer"
-                            title="Tự động nạp danh sách Môn khảo sát, Khối và Hệ theo Quy chế Tuyển sinh của các học sinh Khối này"
-                          >
-                            <Zap className="w-3 h-3 text-teal-200" />
-                            <span>Nạp Môn • Khối • Hệ theo Quy chế</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const res = exportEligibleStudentsRegulationExcel({
-                                students: studentsList,
-                                customConfig: regulationConfig,
-                                campuses,
-                                periods,
-                                fileName: `DS_HS_Du_DK_Quy_Che_Khoi_${grade}.xlsx`
-                              })
-                              if (res.isSample) {
-                                notify(`Khối ${grade} chưa có HS diện miễn môn văn hóa. Đã xuất File Mẫu chuẩn (${res.fileName})!`)
-                              } else {
-                                notify(`Đã xuất ${res.exportedCount} HS Khối ${grade} đủ ĐK Xét học bạ / Tuyển thẳng (${res.fileName})!`)
-                              }
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition-colors cursor-pointer"
-                            title="Xuất danh sách học sinh Khối này đủ điều kiện Xét học bạ / Tuyển thẳng (miễn môn văn hóa theo quy chế)"
-                          >
-                            <Download className="w-3 h-3 text-emerald-700" />
-                            <span>Xuất DS Đủ ĐK Khối {grade}</span>
-                          </button>
-                          {!asSelGrades.includes(String(grade)) && (
-                            <button
-                              type="button"
-                              onClick={() => setAsSelGrades(p => [...p, String(grade)])}
-                              className="px-2.5 py-1 rounded-lg bg-teal-50 text-[#00736E] border border-teal-200 text-[11px] font-bold hover:bg-teal-100 cursor-pointer"
-                            >
-                              + Chỉ chọn Khối {grade}
-                            </button>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setExpandedGrades(prev => ({ ...prev, [grade]: false }))}
-                          className="text-slate-400 hover:text-slate-700 text-[11px] font-semibold cursor-pointer px-2 py-0.5 rounded hover:bg-slate-100"
-                        >
-                          Thu gọn ✕
-                        </button>
-                      </div>
-
-                      <div className="overflow-x-auto max-h-72 overflow-y-auto rounded-xl border border-slate-200/80 custom-scrollbar">
-                        <table className="w-full text-left border-collapse text-xs">
-                          <thead className="bg-[#003B3A] sticky top-0 z-10 border-b text-white border-[#003B3A]">
-                            <tr className="text-[11px] font-semibold whitespace-nowrap">
-                              <th className="px-3 py-2 font-bold text-[10px] w-8 text-center">#</th>
-                              <th className="px-3 py-2 font-bold text-[10px] min-w-[170px]">Học sinh & Trường cũ</th>
-                              <th className="px-3 py-2 font-bold text-[10px] min-w-[125px]">Nguyện vọng ĐK</th>
-                              <th className="px-3 py-2 font-bold text-[10px] min-w-[250px]">Kết quả Học tập & Điểm trường cũ</th>
-                              <th className="px-3 py-2 font-bold text-[10px] min-w-[260px]">Đối chiếu Quy chế & Môn cần KS</th>
-                              <th className="px-3 py-2 font-bold text-[10px] text-right w-32">Thao tác</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#E2E8F0] bg-white">
-                            {studentsList.map((st: any, sIdx: number) => {
-                              const insight = analyzeStudentAcademicAndRegulation(st, regulationConfig)
-                              const sysCode = st.surveySystem || "HNS"
-                              const criteria = st.admissionCriteria || "Khảo sát"
-                              const campusObj = campuses.find((c: any) =>
-                                c.id === st.registeredCampus ||
-                                c.campusCode === st.registeredCampus ||
-                                c.campusName === st.registeredCampus ||
-                                c.id === st.admissionCampus ||
-                                c.campusCode === st.admissionCampus ||
-                                c.campusName === st.admissionCampus
-                              )
-                              const campusDisplay = campusObj
-                                ? (campusObj.campusCode || campusObj.campusName)
-                                : (st.admissionCampus && !/^cm[a-z0-9]{15,}$/i.test(st.admissionCampus)
-                                  ? st.admissionCampus
-                                  : (st.registeredCampus && !/^cm[a-z0-9]{15,}$/i.test(st.registeredCampus) ? st.registeredCampus : ""))
-                              return (
-                                <tr key={st.id || sIdx} className="hover:bg-teal-50/30 transition-colors align-top">
-                                  <td className="px-3 py-2.5 text-center text-slate-400 font-semibold">{sIdx + 1}</td>
-                                  <td className="px-3 py-2.5">
-                                    <div className="font-bold text-slate-800">{st.fullName}</div>
-                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                      <span className="text-[#00736E] font-mono text-[10px] font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200/60">
-                                        {st.studentCode}
-                                      </span>
-                                      {campusDisplay && (
-                                        <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200/60" title={campusObj?.campusName || campusDisplay}>
-                                          {campusDisplay}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {(st.oldSchoolName || st.cityName) && (
-                                      <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1 truncate max-w-[210px]" title={`${st.oldSchoolName || ""} ${st.cityName ? `(${st.cityName})` : ""}`}>
-                                        <School className="w-3 h-3 text-slate-400 shrink-0" />
-                                        <span className="truncate">{st.oldSchoolName || st.cityName}</span>
-                                      </div>
-                                    )}
-                                  </td>
-
-                                    <td className="px-3 py-2.5">
-                                      <div className="flex flex-wrap items-center gap-1">
-                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${getSystemBadgeStyle(insight.resolvedSystemCode || sysCode)}`}>
-                                          Hệ {insight.resolvedSystemCode || sysCode}
-                                        </span>
-                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/70">
-                                          {criteria}
-                                        </span>
-                                      </div>
-                                      <div className="text-[11px] text-slate-500 mt-1">
-                                        Thời điểm: <strong className="text-[#003B3A] font-semibold">{insight.intakeTimingLabel}</strong>
-                                      </div>
-                                    </td>
-
-                                  <td className="px-3 py-2.5">
-                                    <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                                        {insight.programLabel} • {insight.transcriptPeriodLabel}
-                                      </span>
-                                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                                        insight.hasRecordData
-                                          ? "bg-teal-50 text-[#005854] border-teal-200"
-                                          : "bg-amber-50 text-amber-700 border-amber-200"
-                                      }`}>
-                                        KQHT: {insight.academicRating || "Chưa nhập"}
-                                      </span>
-                                      {insight.conductRating && (
-                                        <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                          RL: {insight.conductRating}
-                                        </span>
-                                      )}
-                                    </div>
-
-                                    {insight.scores.length > 0 ? (
-                                      <div className="flex flex-wrap gap-1 mt-1">
-                                        {insight.scores.map((sc, idx) => (
-                                          <span
-                                            key={idx}
-                                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] text-slate-700 shadow-2xs"
-                                          >
-                                            <span className="text-slate-500">{sc.name}:</span>
-                                            <strong className="font-bold text-[#003B3A]">{sc.score}</strong>
-                                          </span>
-                                        ))}
-                                        {insight.combinationSummary && (
-                                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-teal-50 border border-teal-200 text-[10px] font-bold text-teal-800">
-                                            {insight.combinationSummary}
-                                          </span>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <p className="text-[11px] text-slate-400 italic">Chưa cập nhật điểm chi tiết các môn trường cũ</p>
-                                    )}
-
-                                    {insight.achievements && (
-                                      <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50/90 border border-amber-200 text-[10px] font-bold text-amber-800">
-                                        <Award className="w-3 h-3 text-amber-600 shrink-0" />
-                                        <span className="truncate max-w-[230px]" title={insight.achievements}>{insight.achievements}</span>
-                                      </div>
-                                    )}
-                                  </td>
-
-                                  <td className="px-3 py-2.5">
-                                    <div className="flex items-center gap-1.5 mb-1">
-                                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${insight.regulationBadgeColor}`}>
-                                        <ShieldCheck className="w-3 h-3 shrink-0" />
-                                        {insight.regulationBadgeLabel}
-                                      </span>
-                                    </div>
-                                      <div className="flex flex-wrap items-center gap-1 mt-1">
-                                        <span className="text-[10px] font-semibold text-slate-500 mr-0.5">Cần KS:</span>
-                                        {insight.recommendedSubjectNames.map((subName, idx) => {
-                                          const isOrient = insight.orientationSubjectNames?.includes(subName)
-                                          return (
-                                            <span
-                                              key={idx}
-                                              title={isOrient ? "Chỉ dùng để định hướng đầu vào, không dùng làm tiêu chí xét tuyển" : undefined}
-                                              className={`px-1.5 py-0.2 rounded border text-[10px] font-bold ${
-                                                isOrient
-                                                  ? "bg-teal-50/70 text-[#00736E] border-teal-200"
-                                                  : "bg-[#00736E]/10 text-[#005854] border-[#00736E]/25"
-                                              }`}
-                                            >
-                                              {subName}
-                                              {isOrient ? " (Định hướng)" : ""}
-                                            </span>
-                                          )
-                                        })}
-                                      {insight.exemptedSubjectNames.map((exName, idx) => (
-                                        <span
-                                          key={idx}
-                                          title="Đủ điều kiện xét học bạ / đề xuất miễn khảo sát môn này"
-                                          className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-400 line-through border border-slate-200 text-[10px] font-medium"
-                                        >
-                                          Miễn: {exName}
-                                        </span>
-                                      ))}
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 mt-1 leading-snug" title={insight.regulationReason}>
-                                      {insight.regulationReason}
-                                    </p>
-                                  </td>
-
-                                  <td className="px-3 py-2.5 text-right">
-                                    <button
-                                      type="button"
-                                      onClick={() => applyRegulationScopeForStudents([st], `HS ${st.fullName}`)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-teal-50 hover:bg-[#00736E] text-[#005854] hover:text-white border border-teal-200/90 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
-                                      title="Nạp tự động các môn cần khảo sát, khối và hệ của học sinh này xuống Khung Phạm vi Phân công"
-                                    >
-                                      <Zap className="w-3 h-3 shrink-0" />
-                                      <span>Chọn phạm vi</span>
-                                    </button>
-                                  </td>
-                                </tr>
-                              )
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
                 </div>
-              )}
-            </div>
-          )}
+
+                {/* Thanh lọc nhanh theo Khối (1 dòng gọn, không tạo nhiều bảng tách rời) */}
+                {sortedGradeEntries.length > 0 && (
+                  <div className="px-4 py-2 bg-white border-b border-[#F1F5F9] flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-semibold text-slate-500 mr-1">Lọc nhanh theo khối:</span>
+                      <button
+                        type="button"
+                        onClick={() => setRosterGradeFilter("all")}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
+                          rosterGradeFilter === "all"
+                            ? "bg-[#003B3A] text-white border-[#003B3A]"
+                            : "bg-[#F8FAFC] text-slate-600 border-[#E2E8F0] hover:border-slate-300"
+                        }`}
+                      >
+                        <span>Tất cả</span>
+                        <span className={`px-1 rounded text-[10px] ${rosterGradeFilter === "all" ? "bg-white/20 text-white" : "bg-slate-200/80 text-slate-600"}`}>
+                          {allScopeStudents.length}
+                        </span>
+                      </button>
+                      {sortedGradeEntries.map(([grade, list]) => {
+                        const isActive = rosterGradeFilter === String(grade)
+                        return (
+                          <button
+                            key={grade}
+                            type="button"
+                            onClick={() => setRosterGradeFilter(isActive ? "all" : String(grade))}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
+                              isActive
+                                ? "bg-[#00736E] text-white border-[#00736E]"
+                                : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-[#F0FDFA] hover:border-teal-200 hover:text-[#005854]"
+                            }`}
+                          >
+                            <span>Khối {grade}</span>
+                            <span className={`px-1 rounded text-[10px] ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+                              {list.length}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      Tích chọn 1 hoặc nhiều HS để nạp nhanh phạm vi phân công cho GV
+                    </span>
+                  </div>
+                )}
+
+                {/* Bảng duy nhất hiển thị toàn bộ HS */}
+                {displayedStudents.length === 0 ? (
+                  <div className="text-xs text-slate-400 font-normal text-center py-8">
+                    {statsLoading
+                      ? "Đang tải danh sách học sinh..."
+                      : isTransferMode
+                      ? "Chưa có học sinh Chuyển hệ trong phạm vi đã chọn"
+                      : `Chưa có học sinh ${activeK12Track === "HE_I" ? "Hệ I" : "Hệ S"} trong phạm vi đã chọn`}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto max-h-[380px] overflow-y-auto custom-scrollbar">
+                    <table className="w-full text-left border-collapse text-xs tabular-nums">
+                      <thead className="bg-[#003B3A] sticky top-0 z-10 border-b border-[#003B3A] text-white">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="px-3 py-2.5 w-10 text-center text-white">
+                            <input
+                              type="checkbox"
+                              checked={allVisibleChecked}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setSelectedRosterStudentIds(prev => Array.from(new Set([...prev, ...visibleIds])))
+                                } else {
+                                  const removeSet = new Set(visibleIds)
+                                  setSelectedRosterStudentIds(prev => prev.filter(id => !removeSet.has(id)))
+                                }
+                              }}
+                              className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
+                              title="Chọn tất cả học sinh đang hiển thị"
+                            />
+                          </th>
+                          <th className="px-3 py-2.5 min-w-[185px] text-white font-semibold">Học sinh</th>
+                          <th className="px-3 py-2.5 min-w-[125px] text-teal-100 font-semibold">Khối &amp; Nguyện vọng</th>
+                          <th className="px-3 py-2.5 min-w-[215px] text-teal-100 font-semibold">Học bạ &amp; Điểm đầu vào</th>
+                          <th className="px-3 py-2.5 min-w-[270px] text-[#5EEAD4] font-semibold">Môn cần khảo sát (Quy chế)</th>
+                          <th className="px-3 py-2.5 text-right w-32 text-white font-semibold">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E2E8F0] bg-white">
+                        {displayedStudents.map((st: any, sIdx: number) => {
+                          const insight = evaluateStudentRegulation(st)
+                          const sysCode = isTransferMode || insight.resolvedSystemCode === "CHUYEN_HE_S_I"
+                            ? "Chuyển hệ S→I"
+                            : (insight.resolvedSystemCode || st.surveyFormType || st.surveySystem || "HNS")
+                          const isChecked = selectedRosterStudentIds.includes(st.id)
+                          const campusObj = campuses.find((c: any) =>
+                            c.id === st.registeredCampus ||
+                            c.campusCode === st.registeredCampus ||
+                            c.campusName === st.registeredCampus ||
+                            c.id === st.admissionCampus ||
+                            c.campusCode === st.admissionCampus ||
+                            c.campusName === st.admissionCampus
+                          )
+                          const campusDisplay = campusObj
+                            ? (campusObj.campusCode || campusObj.campusName)
+                            : (st.admissionCampus && !/^cm[a-z0-9]{15,}$/i.test(st.admissionCampus)
+                              ? st.admissionCampus
+                              : (st.registeredCampus && !/^cm[a-z0-9]{15,}$/i.test(st.registeredCampus) ? st.registeredCampus : ""))
+
+                          return (
+                            <tr
+                              key={st.id || sIdx}
+                              onClick={() => {
+                                if (!st.id) return
+                                setSelectedRosterStudentIds(prev =>
+                                  prev.includes(st.id) ? prev.filter(id => id !== st.id) : [...prev, st.id]
+                                )
+                              }}
+                              className={`transition-colors align-middle cursor-pointer ${
+                                isChecked ? "bg-[#F0FDFA]/80 hover:bg-[#F0FDFA]" : "hover:bg-[#F8FAFC]"
+                              }`}
+                            >
+                              <td className="px-3 py-2.5 text-center" onClick={e => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={e => {
+                                    if (!st.id) return
+                                    setSelectedRosterStudentIds(prev =>
+                                      e.target.checked ? [...prev, st.id] : prev.filter(id => id !== st.id)
+                                    )
+                                  }}
+                                  className="w-3.5 h-3.5 rounded accent-[#00A19A] cursor-pointer"
+                                />
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <div className="font-semibold text-slate-900">{st.fullName}</div>
+                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                  <span className="text-[#00736E] font-mono text-[10px] font-semibold bg-[#F0FDFA] px-1.5 py-0.2 rounded border border-teal-200/70">
+                                    {st.studentCode}
+                                  </span>
+                                  {campusDisplay && (
+                                    <span className="text-[10px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200/70">
+                                      {campusDisplay}
+                                    </span>
+                                  )}
+                                  {st.oldSchoolName && (
+                                    <span className="text-[10px] text-slate-400 truncate max-w-[130px]" title={st.oldSchoolName}>
+                                      · {st.oldSchoolName}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              <td className="px-3 py-2.5 whitespace-nowrap">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-[#003B3A] text-white">
+                                    K{st._displayGrade}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-md text-[10.5px] font-semibold border ${getSystemBadgeStyle(sysCode)}`}>
+                                    {sysCode}
+                                  </span>
+                                </div>
+                                <div className="text-[10.5px] text-slate-500 mt-1">
+                                  {insight.intakeTimingLabel}
+                                </div>
+                              </td>
+
+                              <td className="px-3 py-2.5">
+                                <div className="flex flex-wrap items-center gap-1">
+                                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                                    insight.hasRecordData
+                                      ? "bg-[#F0FDFA] text-[#005854] border-teal-200"
+                                      : "bg-slate-50 text-slate-500 border-slate-200"
+                                  }`}>
+                                    {insight.academicRating || "Chưa nhập KQHT"}
+                                  </span>
+                                  {insight.scores.length > 0 ? (
+                                    insight.scores.slice(0, 3).map((sc, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10.5px] text-slate-700"
+                                      >
+                                        <span className="text-slate-500">{sc.name}:</span>
+                                        <strong className="font-bold text-[#003B3A]">{sc.score}</strong>
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-[10.5px] text-slate-400">Chưa có điểm</span>
+                                  )}
+                                </div>
+                              </td>
+
+                              <td className="px-3 py-2.5" title={insight.regulationReason}>
+                                <div className="flex flex-wrap items-center gap-1">
+                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${insight.regulationBadgeColor}`}>
+                                    <ShieldCheck className="w-3 h-3 shrink-0" />
+                                    {insight.regulationBadgeLabel}
+                                  </span>
+                                  {insight.recommendedSubjectNames.map((subName, idx) => {
+                                    const isOrient = insight.orientationSubjectNames?.includes(subName)
+                                    return (
+                                      <span
+                                        key={idx}
+                                        className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${
+                                          isOrient
+                                            ? "bg-teal-50/70 text-[#00736E] border-teal-200"
+                                            : "bg-[#00736E]/10 text-[#005854] border-[#00736E]/25"
+                                        }`}
+                                      >
+                                        {subName}
+                                        {isOrient ? " (ĐH)" : ""}
+                                      </span>
+                                    )
+                                  })}
+                                  {insight.exemptedSubjectNames.map((exName, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-400 line-through border border-slate-200 text-[10px]"
+                                    >
+                                      Miễn: {exName}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+
+                              <td className="px-3 py-2.5 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={() => applyRegulationScopeForStudents([st], `HS ${st.fullName}`)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#F0FDFA] hover:bg-[#003B3A] text-[#005854] hover:text-white border border-teal-200 text-[11px] font-semibold transition-colors cursor-pointer"
+                                  title="Nạp môn cần khảo sát, khối và hệ của học sinh này xuống Khung Phạm vi Phân công"
+                                >
+                                  <Zap className="w-3 h-3 shrink-0" />
+                                  <span>Chọn phân công</span>
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       </div>
 
@@ -2090,10 +2368,10 @@ export function PhanCongK12Client({
               {(asFilterBatchId || groupedAssignments.length > 0) && (
                 <button
                   type="button"
-                  onClick={sendAllNotifications}
+                  onClick={openBulkEmailConfirm}
                   disabled={asNotifyingAll || groupedAssignments.length === 0 || !canUpdate}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#00736E] hover:bg-[#005854] active:scale-[0.99] text-white text-xs font-bold rounded-xl transition-all shadow-2xs disabled:opacity-50 cursor-pointer"
-                  title="Gửi email thông báo phân công cho tất cả giáo viên"
+                  title="Kiểm tra danh sách và xác nhận gửi email thông báo phân công"
                 >
                   {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                   <span>Gửi email hàng loạt</span>
@@ -2295,9 +2573,7 @@ export function PhanCongK12Client({
                 </a>
                 <button
                   type="button"
-                  onClick={async () => {
-                    await sendTeacherNotification(viewingStudentAssignment)
-                  }}
+                  onClick={() => openSingleEmailConfirm(viewingStudentAssignment)}
                   disabled={asNotifyingId === viewingStudentAssignment.id || !canUpdate}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#00736E] hover:bg-[#005854] text-white text-xs font-bold transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
                 >
@@ -2408,6 +2684,70 @@ export function PhanCongK12Client({
           </div>
         </div>
       )}
+
+      {/* Modal Cảnh báo & Xác nhận Gửi Email Phân công K-12 */}
+      {(() => {
+        const rawCampus =
+          currentUser?.primaryCampus?.campusName ||
+          currentUser?.primaryCampus?.campusCode ||
+          ""
+        const cleanCampus = rawCampus.replace(/^cơ\s*sở\s*/i, "").trim()
+        const senderLabel = cleanCampus
+          ? `Giáo vụ cơ sở ${cleanCampus}${currentUser?.fullName ? ` (${currentUser.fullName})` : ""}`
+          : `Giáo vụ cơ sở${currentUser?.fullName ? ` (${currentUser.fullName})` : ""}`
+        const subjectPrefix = cleanCampus ? `[SSM - ${cleanCampus}]` : "[SSM]"
+        return (
+      <EmailSendConfirmModal
+        open={emailConfirmState.open}
+        onClose={() => setEmailConfirmState({ open: false, mode: "BULK" })}
+        loading={asNotifyingAll || Boolean(asNotifyingId)}
+        mode={emailConfirmState.mode}
+        periodName={asSelPeriod?.name || "Kỳ khảo sát"}
+        senderSummary={senderLabel}
+        subjectPreview={`${subjectPrefix} Thông báo Phân công Khảo sát Học sinh Phổ thông`}
+        ccHint={
+          currentUser?.email
+            ? `ktdbcl@skylineschool.edu.vn, Giáo vụ cơ sở & ${currentUser.email}`
+            : "ktdbcl@skylineschool.edu.vn & Giáo vụ cơ sở"
+        }
+        batchLabel={
+          emailConfirmState.mode === "SINGLE"
+            ? emailConfirmState.targetAssignment?.batch?.name || "Tất cả đợt"
+            : asFilterBatchId && asFilterBatchId !== "all"
+            ? asSelPeriod?.batches?.find((b: any) => b.id === asFilterBatchId)?.name || "Đợt đã chọn"
+            : "Tất cả các đợt của kỳ (Toàn kỳ)"
+        }
+        isAllBatches={
+          emailConfirmState.mode === "BULK" &&
+          (!asFilterBatchId || asFilterBatchId === "all")
+        }
+        recipients={(() => {
+          const sourceList =
+            emailConfirmState.mode === "SINGLE"
+              ? emailConfirmState.targetAssignment
+                ? [emailConfirmState.targetAssignment]
+                : []
+              : groupedAssignments
+          return sourceList.map((a: any): EmailConfirmRecipient => ({
+            key: a.id,
+            teacherName: a.user?.fullName || "Giáo viên",
+            teacherEmail: a.user?.email || "",
+            batchName: a.batch?.name || "Tất cả đợt",
+            scopeLabel: `${(a.subjects || []).join(", ")} • Khối ${(a.grades || []).join(", ")} (${(a.educationSystems || []).join(", ")})`,
+            studentCount: getAssignedStudentsForGroup(a).length,
+          }))
+        })()}
+        onConfirm={async (selectedKeys) => {
+          if (emailConfirmState.mode === "SINGLE" && emailConfirmState.targetAssignment) {
+            await sendTeacherNotification(emailConfirmState.targetAssignment)
+          } else {
+            await sendAllNotifications(selectedKeys)
+          }
+          setEmailConfirmState({ open: false, mode: "BULK" })
+        }}
+      />
+        )
+      })()}
     </div>
   )
 }

@@ -8,6 +8,7 @@ import {
 } from "@/lib/qa-workspace/nlpDraftParser"
 import { getQaMetadataMapForTasks } from "@/lib/qa-workspace/schemaInit"
 import { computeTaskDeadlineStatus, WORKFLOW_STATUS_CONFIG } from "@/lib/qa-workspace/workflowEngine"
+import { resolveCurrentWeekInMonth } from "@/lib/qa-workspace/weeklyReportSchema"
 
 export const dynamic = "force-dynamic"
 
@@ -43,6 +44,278 @@ export async function POST(req: NextRequest) {
           ],
         }
       }
+    }
+
+    if (action === "PERSONAL_SSM_BRIEFING") {
+      const requestedUserId = body.targetUserId ? String(body.targetUserId).trim() : userId
+      const canInspectOther =
+        opScope.isSuperAdmin ||
+        opScope.isHeadOfAcademic ||
+        (Array.isArray(opScope.scopedUserIds) && opScope.scopedUserIds.includes(requestedUserId))
+      const targetUserId = canInspectOther ? requestedUserId : userId
+
+      const now = new Date()
+      const currentPeriod = resolveCurrentWeekInMonth(now)
+      const in72Hours = new Date(now.getTime() + 72 * 60 * 60 * 1000)
+
+      const [
+        targetUser,
+        assignedTasks,
+        reviewerTasks,
+        weeklyReport,
+        pendingKsdvCount,
+        openSurveysCount,
+        draftPvdhCount,
+        recentObsCount,
+      ] = await Promise.all([
+        prisma.user
+          .findUnique({
+            where: { id: targetUserId },
+            select: { id: true, fullName: true, email: true, role: true },
+          })
+          .catch(() => null),
+        prisma.workTask
+          .findMany({
+            where: {
+              OR: [
+                { assignedToUserId: targetUserId },
+                { collaborators: { contains: targetUserId } },
+              ],
+            },
+            include: {
+              taskGroup: { select: { id: true, name: true } },
+            },
+            orderBy: { endDate: "asc" },
+            take: 80,
+          })
+          .catch(() => []),
+        prisma.workTask
+          .findMany({
+            where: { assignedById: targetUserId },
+            select: { id: true, title: true, progress: true, endDate: true },
+            take: 50,
+          })
+          .catch(() => []),
+        prisma.weeklyReport
+          .findFirst({
+            where: {
+              userId: targetUserId,
+              month: currentPeriod.month,
+              year: currentPeriod.year,
+              weekNumber: currentPeriod.weekNumber,
+            },
+            include: { items: { select: { id: true, status: true } } },
+          })
+          .catch(() => null),
+        (prisma as any).inputAssessmentStudent
+          ?.count({
+            where: {
+              admissionResult: { in: ["PENDING", "WAITING", ""] },
+            },
+          })
+          .catch(() => 0) ?? Promise.resolve(0),
+        prisma.survey
+          .count({
+            where: { status: { in: ["PUBLISHED", "ACTIVE", "OPEN"] } },
+          })
+          .catch(() => 0),
+        (prisma as any).$queryRawUnsafe
+          ? (prisma as any)
+              .$queryRawUnsafe(
+                `SELECT COUNT(*) AS cnt FROM "pvdh_assessment_records" WHERE "isLocked" = 0`
+              )
+              .then((rows: any[]) => Number(rows?.[0]?.cnt || 0))
+              .catch(() => 0)
+          : Promise.resolve(0),
+        (prisma as any).classroomObservation
+          ?.count({
+            where: {
+              status: { in: ["DRAFT", "SUBMITTED", "PENDING"] },
+            },
+          })
+          .catch(() => 0) ?? Promise.resolve(0),
+      ])
+
+      const metaMap = await getQaMetadataMapForTasks(assignedTasks as any)
+      let overdueCount = 0
+      let dueSoonCount = 0
+      let unconfirmedCount = 0
+      let inProgressCount = 0
+      const urgentTaskTitles: string[] = []
+
+      for (const t of assignedTasks as any[]) {
+        const meta = metaMap.get(t.id)
+        const wf = String(meta?.workflowStatus || t.progress || "PENDING").toUpperCase()
+        if (wf === "COMPLETED" || wf === "CANCELLED") continue
+        inProgressCount++
+        if (!t.isConfirmed && wf === "ASSIGNED") unconfirmedCount++
+        const dl = computeTaskDeadlineStatus(
+          {
+            endDate: t.endDate,
+            completedAt: t.completedAt,
+            workflowStatus: meta?.workflowStatus || ("IN_PROGRESS" as any),
+            reviewDueDate: meta?.reviewDueDate || null,
+            submittedForReviewAt: meta?.submittedForReviewAt || null,
+            checklist: meta?.checklist || [],
+          },
+          now
+        )
+        if (dl.isOverdueExecution) {
+          overdueCount++
+          if (urgentTaskTitles.length < 3) urgentTaskTitles.push(t.title)
+        } else if (t.endDate && new Date(t.endDate) <= in72Hours) {
+          dueSoonCount++
+          if (urgentTaskTitles.length < 3) urgentTaskTitles.push(t.title)
+        }
+      }
+
+      const reviewerMetaMap = await getQaMetadataMapForTasks(reviewerTasks as any)
+      const pendingMyApprovalCount = (reviewerTasks as any[]).filter(
+        (t) => reviewerMetaMap.get(t.id)?.workflowStatus === "PENDING_REVIEW"
+      ).length
+
+      const hasWeeklyReport = Boolean(weeklyReport && (weeklyReport.items?.length || 0) > 0)
+      const weeklyReportStatus = weeklyReport?.status || "NOT_STARTED"
+      const periodLabel = `Tuần ${currentPeriod.weekNumber} • Tháng ${currentPeriod.month}/${currentPeriod.year}`
+
+      const suggestions: Array<{
+        id: string
+        priority: "HIGH" | "MEDIUM" | "INFO"
+        category: string
+        title: string
+        detail: string
+        actionLabel: string
+        actionHref?: string
+        suggestedTaskPrompt?: string
+      }> = []
+
+      if (overdueCount > 0) {
+        suggestions.push({
+          id: "sug-overdue",
+          priority: "HIGH",
+          category: "Công việc cá nhân",
+          title: `Ưu tiên xử lý ${overdueCount} đầu việc đã quá hạn`,
+          detail:
+            urgentTaskTitles.length > 0
+              ? `Cần cập nhật ngay: ${urgentTaskTitles.join("; ")}.`
+              : "Cập nhật tiến độ, đính kèm minh chứng hoặc báo vướng mắc để Trưởng nhóm hỗ trợ.",
+          actionLabel: "Lọc việc quá hạn",
+          actionHref: "/admin/tasks",
+        })
+      }
+
+      if (!hasWeeklyReport) {
+        suggestions.push({
+          id: "sug-weekly-report",
+          priority: "HIGH",
+          category: "Báo cáo tuần",
+          title: `Chưa lập Báo cáo ${periodLabel}`,
+          detail:
+            "Có thể đồng bộ nhanh các đầu việc đang phụ trách từ QA Workspace sang Báo cáo Tuần để gửi trước hạn Thứ Tư 14:00.",
+          actionLabel: "Lập báo cáo tuần ngay",
+          actionHref: "/admin/weekly-reports",
+        })
+      }
+
+      if (pendingMyApprovalCount > 0) {
+        suggestions.push({
+          id: "sug-pending-review",
+          priority: "MEDIUM",
+          category: "Nghiệm thu",
+          title: `${pendingMyApprovalCount} đầu việc đang chờ bạn duyệt nghiệm thu`,
+          detail: "Kiểm tra sản phẩm/minh chứng và xác nhận hoàn thành để cập nhật chính xác KPI nhóm.",
+          actionLabel: "Mở danh sách chờ duyệt",
+          actionHref: "/admin/tasks",
+        })
+      }
+
+      if (dueSoonCount > 0) {
+        suggestions.push({
+          id: "sug-due-soon",
+          priority: "MEDIUM",
+          category: "Công việc cá nhân",
+          title: `${dueSoonCount} đầu việc sắp đến hạn trong 72 giờ tới`,
+          detail: "Rà soát checklist và chuẩn bị minh chứng sớm để tránh trễ hạn cuối tuần.",
+          actionLabel: "Xem lịch công việc",
+          actionHref: "/admin/tasks",
+        })
+      }
+
+      if (Number(draftPvdhCount) > 0 || Number(pendingKsdvCount) > 0) {
+        suggestions.push({
+          id: "sug-ssm-ksdv",
+          priority: "MEDIUM",
+          category: "Dữ liệu SSM • KSDV",
+          title: `SSM đang có ${draftPvdhCount} phiếu PVDH chưa khóa & ${pendingKsdvCount} hồ sơ KSDV chờ chốt`,
+          detail:
+            "Gợi ý rà soát tiến độ chấm điểm, khóa phiếu phỏng vấn định hướng và xét duyệt kết quả đầu vào trên SSM.",
+          actionLabel: "Tạo việc rà soát KSDV",
+          actionHref: "/admin/xet-duyet-ket-qua",
+          suggestedTaskPrompt: `Rà soát ${draftPvdhCount} phiếu PVDH chưa khóa và ${pendingKsdvCount} hồ sơ KSDV chờ chốt trước 16:00 thứ Sáu tuần này; nộp bảng tổng hợp tình trạng từng cơ sở.`,
+        })
+      }
+
+      if (Number(recentObsCount) > 0) {
+        suggestions.push({
+          id: "sug-ssm-dugio",
+          priority: "INFO",
+          category: "Dữ liệu SSM • Dự giờ",
+          title: `Có ${recentObsCount} phiếu dự giờ đang ở trạng thái nháp/chờ duyệt trên SSM`,
+          detail: "Nhóm ĐBCL nên kiểm tra tổng hợp tiến độ dự giờ chuyên môn trước kỳ báo cáo tuần.",
+          actionLabel: "Mở tổng hợp dự giờ",
+          actionHref: "/admin/tong-hop-du-gio",
+          suggestedTaskPrompt: `Tổng hợp và đôn đốc hoàn thiện ${recentObsCount} phiếu dự giờ đang chờ xử lý trên SSM trước thứ Sáu tuần này.`,
+        })
+      }
+
+      if (Number(openSurveysCount) > 0) {
+        suggestions.push({
+          id: "sug-ssm-survey",
+          priority: "INFO",
+          category: "Dữ liệu SSM • Khảo sát",
+          title: `${openSurveysCount} đợt khảo sát chất lượng (NPS/Hài lòng) đang mở`,
+          detail: "Theo dõi tỷ lệ phản hồi theo cơ sở và chuẩn bị phân tích số liệu cho báo cáo tháng.",
+          actionLabel: "Xem khảo sát",
+          actionHref: "/admin/surveys",
+        })
+      }
+
+      if (suggestions.length === 0) {
+        suggestions.push({
+          id: "sug-all-clear",
+          priority: "INFO",
+          category: "Trạng thái tốt",
+          title: "Tiến độ công việc và báo cáo tuần hiện tại đều ổn định",
+          detail: "Bạn có thể dùng tab 'Soạn Phiếu Giao việc AI' hoặc 'Dự thảo Báo cáo Tuần/Tháng' để chuẩn bị kế hoạch kỳ tới.",
+          actionLabel: "Xem tổng quan KPI",
+          actionHref: "/admin/workhub",
+        })
+      }
+
+      return NextResponse.json({
+        success: true,
+        briefing: {
+          targetUser: targetUser || { id: targetUserId, fullName: "Cán bộ KT&ĐBCL", email: "" },
+          periodLabel,
+          personalCounts: {
+            inProgress: inProgressCount,
+            overdue: overdueCount,
+            dueSoon: dueSoonCount,
+            unconfirmed: unconfirmedCount,
+            pendingApproval: pendingMyApprovalCount,
+            hasWeeklyReport,
+            weeklyReportStatus,
+            weeklyReportItemsCount: weeklyReport?.items?.length || 0,
+          },
+          ssmSignals: {
+            pendingKsdvCount: Number(pendingKsdvCount || 0),
+            draftPvdhCount: Number(draftPvdhCount || 0),
+            recentObsCount: Number(recentObsCount || 0),
+            openSurveysCount: Number(openSurveysCount || 0),
+          },
+          suggestions,
+        },
+      })
     }
 
     if (action === "PARSE_DRAFT") {

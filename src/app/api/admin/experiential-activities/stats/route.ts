@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseDbJson } from "@/lib/experiential/formula";
 import { formatTimeFrameAndSemester } from "@/lib/experiential/timeframe-helper";
+import { requireStaffSession } from "@/lib/security-guard";
 
 export async function GET(req: NextRequest) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const academicYearId = searchParams.get("academicYearId");
     const campusId = searchParams.get("campusId");

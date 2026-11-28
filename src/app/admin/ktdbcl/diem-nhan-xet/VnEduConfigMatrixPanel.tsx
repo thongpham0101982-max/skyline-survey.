@@ -23,6 +23,7 @@ import {
   buildSecondaryTt22VnEduDefaultConfig,
   DEFAULT_RATING_CODES_TT27,
   extractGradeNumber,
+  findExactPeriodInternalOverrideConfig,
   getPrimaryPeriodMeta,
   getSubjectCurriculumGroup,
   GradeColumnDef,
@@ -124,6 +125,10 @@ export function VnEduConfigMatrixPanel({
   const [hasRatingColumn, setHasRatingColumn] = useState(true)
   const [ratingColumnName, setRatingColumnName] = useState("XL CK1")
   const [hasRemarkColumn, setHasRemarkColumn] = useState(true)
+  const [internalFormula, setInternalFormula] = useState<string>("AVERAGE")
+  const [internalFormulaCustom, setInternalFormulaCustom] = useState<string | null>(null)
+  const [internalWeights, setInternalWeights] = useState<string | null>(null)
+  const [internalRoundingRule, setInternalRoundingRule] = useState<string>("ROUND_1")
   const [changeNote, setChangeNote] = useState("")
   const [showAdvancedColumns, setShowAdvancedColumns] = useState(false)
 
@@ -1028,6 +1033,10 @@ export function VnEduConfigMatrixPanel({
           setHasRatingColumn(Boolean(refCfg.hasRatingColumn))
           setRatingColumnName(refCfg.ratingColumnName || "Xếp loại")
           setHasRemarkColumn(refCfg.hasRemarkColumn !== false)
+          setInternalFormula(refCfg.formula || "AVERAGE")
+          setInternalFormulaCustom(refCfg.formulaCustom || null)
+          setInternalWeights(refCfg.weights || null)
+          setInternalRoundingRule(refCfg.roundingRule || "ROUND_1")
           setConfirmationStatus("CONFIRMED")
           return
         }
@@ -1186,6 +1195,20 @@ export function VnEduConfigMatrixPanel({
         c.evaluationPeriod === period &&
         ((c.program || "ALL") === program || c.program === "ALL" || c.program === "Hệ S" || c.program === "Hệ I")
     )
+    const exactInternalOverride = findExactPeriodInternalOverrideConfig(internalConfigs, {
+      academicYearId,
+      program,
+      grade,
+      subjectId: activeSingleSubjectId,
+      evaluationPeriod: period,
+    })
+    const existingTime = existing?.updatedAt ? new Date(existing.updatedAt).getTime() : 0
+    const internalTime = exactInternalOverride?.updatedAt ? new Date(exactInternalOverride.updatedAt).getTime() : 0
+    if (exactInternalOverride && (!existing || internalTime > existingTime)) {
+      applyInternalSkylineStructureMode("FROM_SAVED", activeSingleSubjectId)
+      return
+    }
+
     if (existing) {
       setConfirmationStatus(existing.confirmationStatus === "UNCONFIRMED" ? "UNCONFIRMED" : "CONFIRMED")
       setHasCompositeColumn(Boolean(existing.hasCompositeColumn))
@@ -1193,6 +1216,10 @@ export function VnEduConfigMatrixPanel({
       setHasRatingColumn(Boolean(existing.hasRatingColumn))
       setRatingColumnName(existing.ratingColumnName || (isPrimaryGrade(grade) ? primaryMeta.xlColumnLabel : "Xếp loại"))
       setHasRemarkColumn(existing.hasRemarkColumn !== false)
+      setInternalFormula(existing.formula || "AVERAGE")
+      setInternalFormulaCustom(existing.formulaCustom || null)
+      setInternalWeights(existing.weights || null)
+      setInternalRoundingRule(existing.roundingRule || "ROUND_1")
       const defs = normalizeGradeColumnDefs(existing).filter(c => c.group !== "REMARK" && c.key !== "ratingValue")
       setColumns(defs)
       if (isPrimaryGrade(grade)) {
@@ -1213,10 +1240,7 @@ export function VnEduConfigMatrixPanel({
     // If this subject is a Sky-Line / Bilingual subject or has an explicit INTERNAL config for this period, load it
     const subj = subjects.find(s => s.id === activeSingleSubjectId)
     const currGroup = getSubjectCurriculumGroup(subj)
-    const internalForPeriod = internalConfigs.find(
-      c => c.subjectId === activeSingleSubjectId && c.evaluationPeriod === period && (c.grade === grade || c.grade === "ALL")
-    )
-    if (internalForPeriod || currGroup === "SKL" || currGroup === "BILINGUAL") {
+    if (exactInternalOverride || currGroup === "SKL" || currGroup === "BILINGUAL") {
       const refInternal = findInternalConfigForScope(activeSingleSubjectId, grade, period)
       if (refInternal) {
         applyInternalSkylineStructureMode("FROM_SAVED", activeSingleSubjectId)
@@ -2100,11 +2124,17 @@ export function VnEduConfigMatrixPanel({
 
         const numericCols = colsForPeriod.filter(c => c.dataType === "NUMBER")
         const effectiveHasComposite = isPrimary && !isInternalMode ? false : hasCompositeColumn
+        const rawInternalCompositeName = compositeColumnName || "Điểm"
+        const adaptedInternalCompositeName =
+          /^(KT\s*)(GK1|CK1|GK2|CK2)$/i.test(rawInternalCompositeName.trim())
+            ? rawInternalCompositeName.trim().replace(/(GK1|CK1|GK2|CK2)$/i, pCode)
+            : rawInternalCompositeName
+
         const effectiveCompositeName =
           isPrimary && !isInternalMode
             ? ""
             : isInternalMode
-            ? compositeColumnName || "Điểm"
+            ? adaptedInternalCompositeName
             : pCode === "CN"
             ? "TB Cả năm"
             : compositeColumnName && compositeColumnName !== "Điểm"
@@ -2137,6 +2167,14 @@ export function VnEduConfigMatrixPanel({
             : DEFAULT_RATING_CODES_TT27,
           hasRemarkColumn,
           confirmationStatus,
+          ...(isInternalMode
+            ? {
+                formula: internalFormula || "AVERAGE",
+                formulaCustom: internalFormulaCustom || null,
+                weights: internalWeights || null,
+                roundingRule: internalRoundingRule || "ROUND_1",
+              }
+            : {}),
           changeNote:
             changeNote ||
             (isInternalMode
@@ -3236,9 +3274,26 @@ export function VnEduConfigMatrixPanel({
                             )
                           }
 
-                          const savedPeriodCfg = savedConfigs.find(
+                          const savedVnEduPeriodCfg = savedConfigs.find(
                             c => c.evaluationPeriod === p.code
                           )
+                          const exactInternalPeriodCfg = findExactPeriodInternalOverrideConfig(internalConfigs, {
+                            academicYearId,
+                            program,
+                            grade: rowGrade,
+                            subjectId: subj.id,
+                            evaluationPeriod: p.code,
+                          })
+                          const vnEduUpdatedAt = savedVnEduPeriodCfg?.updatedAt
+                            ? new Date(savedVnEduPeriodCfg.updatedAt).getTime()
+                            : 0
+                          const internalUpdatedAt = exactInternalPeriodCfg?.updatedAt
+                            ? new Date(exactInternalPeriodCfg.updatedAt).getTime()
+                            : 0
+                          const savedPeriodCfg =
+                            exactInternalPeriodCfg && (!savedVnEduPeriodCfg || internalUpdatedAt > vnEduUpdatedAt)
+                              ? exactInternalPeriodCfg
+                              : savedVnEduPeriodCfg
                           const savedDefs = savedPeriodCfg
                             ? normalizeGradeColumnDefs(savedPeriodCfg).filter(
                                 d => d.group !== "REMARK" && d.key !== "ratingValue"
@@ -3247,10 +3302,11 @@ export function VnEduConfigMatrixPanel({
                           const isSavedInternalMode = Boolean(
                             savedPeriodCfg &&
                               p.code !== "CN" &&
-                              (isRowPrimary
-                                ? savedPeriodCfg.hasCompositeColumn || savedDefs.length > 1
-                                : savedDefs.length > 0 &&
-                                  !savedDefs.some(d => d.group === "GK" || d.group === "CK"))
+                              ((savedPeriodCfg.configType || "VNEDU") === "INTERNAL" ||
+                                (isRowPrimary
+                                  ? savedPeriodCfg.hasCompositeColumn || savedDefs.length > 1
+                                  : savedDefs.length > 0 &&
+                                    !savedDefs.some(d => d.group === "GK" || d.group === "CK")))
                           )
                           const savedTxCount =
                             savedDefs.filter(d => d.group === "TX" && d.dataType === "NUMBER").length || 4

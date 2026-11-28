@@ -1,5 +1,7 @@
 import {
   buildSubjectLookupMaps,
+  detectHighSchoolTrack,
+  getHighSchoolTrackPair,
   resolveGradeQuotaValue,
   type SubjectQuotaRow,
   type SubjectRef,
@@ -131,6 +133,7 @@ export interface GradeSubjectStatRow {
   hasMixedProgramQuotas: boolean
   cycleQuota: number
   isHalfPeriodSubject: boolean
+  isElectiveSubject: boolean
   isDualGvvnGvnn: boolean
   perClass: GradeSubjectClassCell[]
   completedClassCount: number
@@ -319,13 +322,39 @@ export function buildSingleGradeStats(params: {
 
     const quotaHeS = resolveSystemQuota(subId, "Hệ S")
     const quotaHeI = resolveSystemQuota(subId, "Hệ I")
+    const rawRowS =
+      rawQuotaRowMap.get(`${subId}::Hệ S`) || rawQuotaRowMap.get(`${subId}::DEFAULT`)
+    const rawRowI =
+      rawQuotaRowMap.get(`${subId}::Hệ I`) || rawQuotaRowMap.get(`${subId}::DEFAULT`)
+    const pairS = getHighSchoolTrackPair(rawRowS, gradeNum)
+    const pairI = getHighSchoolTrackPair(rawRowI, gradeNum)
+    const isElectiveSubject = Boolean(
+      pairS?.isTrackOnlyElective || pairI?.isTrackOnlyElective
+    )
+
+    const resolveEffectiveClassQuota = (
+      cls: ClassForGradeStats,
+      scheduled: number
+    ): number => {
+      const qItem = quotaByClassSub.get(`${cls.id}::${subId}`)
+      if (qItem) return qItem.weeklyQuota
+      const studyProgram = resolveClassStudyProgram(cls)
+      const exactRow = studyProgram === "Hệ I" ? rawRowI : rawRowS
+      const pair = studyProgram === "Hệ I" ? pairI : pairS
+      const track = detectHighSchoolTrack(cls.className)
+      if (!track && pair?.isTrackOnlyElective && scheduled <= 0) {
+        return 0
+      }
+      if (exactRow) {
+        return resolveGradeQuotaValue(exactRow, gradeNum, levelNorm, cls.className)
+      }
+      return studyProgram === "Hệ I" ? quotaHeI : quotaHeS
+    }
 
     const perClass: GradeSubjectClassCell[] = filteredClasses.map((cls) => {
-      const qItem = quotaByClassSub.get(`${cls.id}::${subId}`)
       const studyProgram = resolveClassStudyProgram(cls)
-      const fallbackSysQuota = studyProgram === "Hệ I" ? quotaHeI : quotaHeS
-      const quota = qItem ? qItem.weeklyQuota : fallbackSysQuota
       const scheduled = slotSummary.scheduledByClassSubject.get(`${cls.id}::${subId}`) || 0
+      const quota = resolveEffectiveClassQuota(cls, scheduled)
       return {
         classId: cls.id,
         className: cls.className,
@@ -347,9 +376,8 @@ export function buildSingleGradeStats(params: {
 
     for (const cls of allGradeClasses) {
       const sp = resolveClassStudyProgram(cls)
-      const qItem = quotaByClassSub.get(`${cls.id}::${subId}`)
-      const sysQuota = qItem ? qItem.weeklyQuota : sp === "Hệ I" ? quotaHeI : quotaHeS
       const sch = slotSummary.scheduledByClassSubject.get(`${cls.id}::${subId}`) || 0
+      const sysQuota = resolveEffectiveClassQuota(cls, sch)
       const d = round2(sch - sysQuota)
       if (sp === "Hệ I") {
         if (sch > maxScheduledHeI) maxScheduledHeI = sch
@@ -448,6 +476,7 @@ export function buildSingleGradeStats(params: {
         quotaHeS % 1 !== 0 ||
         quotaHeI % 1 !== 0 ||
         perClass.some((c) => c.scheduled % 1 !== 0),
+      isElectiveSubject,
       isDualGvvnGvnn:
         Boolean(sampleQuota?.isDualGvvnGvnn) ||
         isDualGvvnGvnnSubject({ subjectCode, subjectName }),
@@ -470,12 +499,36 @@ export function buildSingleGradeStats(params: {
     for (const s of params.subjects) allKnownSubIds.add(s.id)
   }
 
-  const totalQuotaHeS = round2(
-    Array.from(allKnownSubIds).reduce((sum, subId) => sum + resolveSystemQuota(subId, "Hệ S"), 0)
-  )
-  const totalQuotaHeI = round2(
-    Array.from(allKnownSubIds).reduce((sum, subId) => sum + resolveSystemQuota(subId, "Hệ I"), 0)
-  )
+  const computeProgramGradeStandardTotal = (program: "Hệ S" | "Hệ I"): number => {
+    if (
+      params.subjectQuotas &&
+      params.subjectQuotas.length > 0 &&
+      (gradeNum === 10 || gradeNum === 11 || gradeNum === 12)
+    ) {
+      let mandatorySum = 0
+      let trackTnSum = 0
+      let trackXhSum = 0
+      for (const subId of allKnownSubIds) {
+        const exactRow =
+          rawQuotaRowMap.get(`${subId}::${program}`) ||
+          rawQuotaRowMap.get(`${subId}::DEFAULT`)
+        const pair = getHighSchoolTrackPair(exactRow, gradeNum)
+        if (pair && pair.hasTrackSplit) {
+          trackTnSum += pair.tn
+          trackXhSum += pair.xh
+        } else {
+          mandatorySum += resolveSystemQuota(subId, program)
+        }
+      }
+      return round2(mandatorySum + Math.max(trackTnSum, trackXhSum))
+    }
+    return round2(
+      Array.from(allKnownSubIds).reduce((sum, subId) => sum + resolveSystemQuota(subId, program), 0)
+    )
+  }
+
+  const totalQuotaHeS = computeProgramGradeStandardTotal("Hệ S")
+  const totalQuotaHeI = computeProgramGradeStandardTotal("Hệ I")
 
   const totalGradeQuota =
     effectiveProgram === "Hệ I"

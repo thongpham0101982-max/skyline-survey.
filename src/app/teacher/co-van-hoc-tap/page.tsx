@@ -4,7 +4,6 @@ import StudentSnapshotPopover from "@/components/advisory/StudentSnapshotPopover
 import { AcademicComparisonWidget } from "@/components/advisory/AcademicComparisonWidget";
 import MultiLevelAdvisoryDashboard from "@/components/advisory/MultiLevelAdvisoryDashboard";
 import AiAdvisorModal, { AiModalMode } from "@/components/advisory/AiAdvisorModal";
-import TriPartyWorkflowBanner from "@/components/advisory/TriPartyWorkflowBanner";
 import TeacherTriPartyHub from "@/components/advisory/TeacherTriPartyHub";
 import SklPsychStatsDashboard from "@/components/advisory/SklPsychStatsDashboard";
 import AdvisoryJourneyTab, { TeacherStudentJourneyBar } from "@/components/advisory/AdvisoryJourneyTab";
@@ -60,26 +59,118 @@ export default function TeacherAdvisoryPage() {
   const [aiModalMode, setAiModalMode] = useState<AiModalMode>("PROGRESS_ANALYSIS")
   const [aiModalStudentId, setAiModalStudentId] = useState("")
 
-  const [activeTab, setActiveTab] = useState<"dashboard" | "journey" | "consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks" | "requests" | "skl_psych" | "student_feedback" | "companion_support">("dashboard")
+  const [workspaceMode, setWorkspaceMode] = useState<"CLASS" | "STUDENT">("CLASS")
+  const [activeStudentStep, setActiveStudentStep] = useState<number>(3)
+  const [classViewTab, setClassViewTab] = useState<"journey" | "dashboard" | "progress_matrix" | "rubric_eval" | "requests" | "sos">("journey")
+  const [activeTab, setActiveTab] = useState<
+    | "dashboard"
+    | "journey"
+    | "skl_psych"
+    | "tracking"
+    | "goal_extended"
+    | "unlocks"
+    | "requests"
+    | "consultations"
+    | "student_feedback"
+    | "companion_support"
+    | "sos"
+    | "rubric_eval"
+    | "progress_matrix"
+  >("journey")
+  const [companionSubMode, setCompanionSubMode] = useState<"gvbm_tlhn" | "tri_party">("gvbm_tlhn")
   const [preselectedGoalForCompanion, setPreselectedGoalForCompanion] = useState<{ goalId: string; title: string; category: string } | null>(null)
+
+  const openStudentCycle = (studentId: string, stepNumber?: number, targetTab?: string) => {
+    if (studentId) {
+      setSelectedStudentId(studentId)
+    }
+    setWorkspaceMode("STUDENT")
+    const resolvedStep =
+      stepNumber ??
+      (targetTab === "skl_psych"
+        ? 2
+        : targetTab === "tracking" || targetTab === "goal_extended"
+        ? 3
+        : targetTab === "unlocks"
+        ? 4
+        : targetTab === "consultations" || targetTab === "student_feedback"
+        ? 5
+        : targetTab === "companion_support" || targetTab === "requests" || targetTab === "sos"
+        ? 6
+        : targetTab === "rubric_eval"
+        ? 7
+        : 3)
+    setActiveStudentStep(resolvedStep)
+    if (targetTab) {
+      setActiveTab(targetTab as any)
+    } else if (resolvedStep === 1 || resolvedStep === 2) {
+      setActiveTab("skl_psych")
+    } else if (resolvedStep === 3) {
+      setActiveTab("tracking")
+    } else if (resolvedStep === 4) {
+      setActiveTab("unlocks")
+      loadClassUnlocks()
+    } else if (resolvedStep === 5) {
+      setActiveTab("consultations")
+    } else if (resolvedStep === 6) {
+      setActiveTab("companion_support")
+    } else {
+      setActiveTab("rubric_eval")
+      loadClassTermEvaluations()
+    }
+  }
+
+  const switchToClassOverview = (view: "journey" | "dashboard" | "progress_matrix" | "rubric_eval" | "requests" | "sos" = "journey") => {
+    setWorkspaceMode("CLASS")
+    setClassViewTab(view)
+    setActiveTab(view)
+    if (view === "rubric_eval") loadClassTermEvaluations()
+    if (view === "requests") loadClassAdjustmentRequests()
+  }
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
       const tabParam = params.get("tab")
       const stParam = params.get("studentId")
-      if (stParam) setSelectedStudentId(stParam)
-      if (tabParam === "journey" || tabParam === "tracking" || tabParam === "consultations" || tabParam === "rubric_eval" || tabParam === "unlocks" || tabParam === "sos" || tabParam === "requests" || tabParam === "skl_psych" || tabParam === "student_feedback" || tabParam === "companion_support") {
+      if (stParam) {
+        setSelectedStudentId(stParam)
+        setWorkspaceMode("STUDENT")
+      }
+      if (
+        tabParam === "dashboard" ||
+        tabParam === "journey" ||
+        tabParam === "skl_psych" ||
+        tabParam === "tracking" ||
+        tabParam === "goal_extended" ||
+        tabParam === "unlocks" ||
+        tabParam === "requests" ||
+        tabParam === "consultations" ||
+        tabParam === "student_feedback" ||
+        tabParam === "companion_support" ||
+        tabParam === "sos" ||
+        tabParam === "rubric_eval" ||
+        tabParam === "progress_matrix"
+      ) {
         setActiveTab(tabParam)
+        if (stParam) {
+          openStudentCycle(stParam, undefined, tabParam)
+        } else if (
+          tabParam === "journey" ||
+          tabParam === "dashboard" ||
+          tabParam === "progress_matrix" ||
+          tabParam === "rubric_eval" ||
+          tabParam === "requests" ||
+          tabParam === "sos"
+        ) {
+          setClassViewTab(tabParam)
+        }
       }
     }
   }, [])
 
-  const handleNavigateToJourneyAction = (studentId: string, targetTab: TeacherAdvisoryTab, actionMode?: string) => {
-    if (studentId) {
-      setSelectedStudentId(studentId)
-    }
-    setActiveTab(targetTab)
+  const handleNavigateToJourneyAction = (studentId: string, targetTab: TeacherAdvisoryTab, actionMode?: string, stepNumber?: number) => {
+    openStudentCycle(studentId, stepNumber, targetTab)
     if (targetTab === "unlocks") {
       loadClassUnlocks()
     } else if (targetTab === "rubric_eval") {
@@ -1019,580 +1110,719 @@ export default function TeacherAdvisoryPage() {
   })
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
-      
-      {/* Top Banner Header */}
-      <div className="group/card relative overflow-hidden bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-3xl p-6 text-white shadow-xl space-y-3">
-        {/* Ảnh minh họa trường học Sky-Line khớp khung phải & mờ dần */}
-        <div
-          className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[54%] md:w-[48%] z-0 pointer-events-none select-none overflow-hidden"
-          style={{
-            WebkitMaskImage:
-              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)",
-            maskImage:
-              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 15%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)"
-          }}
+    <div className="max-w-7xl mx-auto p-0 md:p-4 space-y-3 md:space-y-4 font-sans text-slate-800 pb-20">
+
+      {/* MOBILE COMPACT SEGMENTED SWITCHER (< 768px) */}
+      <div className="md:hidden grid grid-cols-2 gap-1 p-1 bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs tabular-nums">
+        <button
+          type="button"
+          onClick={() => switchToClassOverview(classViewTab)}
+          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+            workspaceMode === "CLASS"
+              ? "bg-[#003B3A] text-white shadow-2xs"
+              : "text-slate-600 hover:bg-slate-50"
+          }`}
         >
-          <img
-            src="/images/skyline-campus-banner.png"
-            alt="Sky-Line Campus"
-            className="w-full h-full object-cover object-[center_65%] opacity-35 mix-blend-luminosity"
-          />
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-white/15 uppercase tracking-wider text-teal-200">
-            <Compass className="w-4 h-4 text-teal-300" />
-            <span>QUẢN LÝ CỐ VẤN HỌC TẬP & NHẬT KÝ THEO DÕI MỤC TIÊU</span>
-          </div>
-
-          {/* Class & Student Filter Selectors */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-teal-100">Chọn Lớp:</span>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="px-3.5 py-1.5 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
-            >
-              {classes.length === 0 ? (
-                <option value="" disabled className="text-slate-800">Không có lớp CN ({academicYearId ? "năm đang chọn" : "năm hiện hành"})</option>
-              ) : (
-                classes.map(c => (
-                  <option key={c.id} value={c.id} className="text-slate-800">Lớp: {c.className}</option>
-                ))
-              )}
-            </select>
-
-            <span className="text-xs font-bold text-teal-100 ml-2">Chọn Học Sinh:</span>
-            <select
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="px-3.5 py-1.5 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
-            >
-              {students.map(s => (
-                <option key={s.id} value={s.id} className="text-slate-800">HS: {s.studentName} ({s.studentCode})</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black">
-            Cố Vấn Học Tập — {activeStudent?.studentName || "Chọn Học Sinh"} ({activeStudent?.studentCode || ""})
-          </h1>
-          <p className="text-xs text-teal-100 font-medium mt-1">
-            Theo dõi tiến độ mục tiêu cá nhân từng học sinh (Khối {selectedClass?.grade || ""}), nhật ký tham vấn và Đánh giá kỳ theo Rubric.
-          </p>
-        </div>
-
-        {/* Empty classes warning notice */}
-        {!loading && classes.length === 0 && (
-          <div className="bg-amber-500/20 border border-amber-300/40 rounded-2xl p-4 text-xs font-semibold text-amber-100 flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-300 shrink-0" />
-            <span>
-              Thầy/Cô chưa có phân công làm Giáo viên Chủ nhiệm (GVCN) trong năm học này. Vui lòng chọn năm học khác trên thanh tiêu đề hoặc liên hệ Quản trị viên.
-            </span>
-          </div>
-        )}
-
-        {/* Feature Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-white/15">
-          <button
-            onClick={() => setActiveTab("dashboard")}
-            className={
-              activeTab === "dashboard" || activeTab === "journey"
-                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
-                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
-            }
-          >
-            <Compass className="w-4 h-4 text-teal-600" />
-            <span>1. Tổng quan</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("skl_psych")}
-            className={
-              activeTab === "skl_psych"
-                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
-                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
-            }
-          >
-            <User className="w-4 h-4 text-teal-600" />
-            <span>2. Hồ sơ học sinh</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("tracking")}
-            className={
-              activeTab === "tracking" || activeTab === "unlocks" || activeTab === "requests"
-                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
-                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
-            }
-          >
-            <Target className="w-4 h-4 text-teal-600" />
-            <span>3. Mục tiêu & Kế hoạch</span>
-            {pendingAdjustmentCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
-                {pendingAdjustmentCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("consultations")}
-            className={
-              activeTab === "consultations" || activeTab === "sos"
-                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
-                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
-            }
-          >
-            <MessageSquare className="w-4 h-4 text-teal-600" />
-            <span>4. Tư vấn 1:1</span>
-            {classConsultationStats.totalStudents > 0 && (
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-black tabular-nums ${
-                  classConsultationStats.unconsultedCount === 0
-                    ? "bg-emerald-400 text-emerald-950"
-                    : activeTab === "consultations" || activeTab === "sos"
-                    ? "bg-teal-100 text-teal-900 border border-teal-200"
-                    : "bg-white/20 text-teal-200"
-                }`}
-              >
-                {classConsultationStats.consultedCount}/{classConsultationStats.totalStudents} HS
-              </span>
-            )}
-            {helpRequests.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
-                SOS:{helpRequests.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("student_feedback")}
-            className={
-              activeTab === "student_feedback"
-                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
-                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
-            }
-          >
-            <FileText className="w-4 h-4 text-teal-600" />
-            <span>5. Phản hồi học sinh</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("companion_support")}
-            className={
-              activeTab === "companion_support"
-                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
-                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
-            }
-          >
-            <Users className="w-4 h-4 text-teal-600" />
-            <span>6. Đồng hành & Hỗ trợ</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("rubric_eval")
-              loadClassTermEvaluations()
-            }}
-            className={
-              activeTab === "rubric_eval"
-                ? "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md cursor-pointer"
-                : "px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25 cursor-pointer"
-            }
-          >
-            <Award className="w-4 h-4 text-amber-500" />
-            <span>7. Đánh giá & Tiến bộ</span>
-          </button>
-        </div>
-        <div className="hidden">
-          <button
-            onClick={() => setActiveTab("dashboard")}
-            className={
-              activeTab === "dashboard"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <Compass className="w-4 h-4 text-teal-600" />
-            <span>0. Tổng Quan & Đo Lường Đa Cấp</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("journey")}
-            className={
-              activeTab === "journey"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md ring-2 ring-teal-300"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-teal-500/30 text-white border border-teal-300/40 hover:bg-teal-500/40"
-            }
-          >
-            <Layers className="w-4 h-4 text-teal-500" />
-            <span>Lộ Trình Cố Vấn (8 Giai Đoạn)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("tracking")}
-            className={
-              activeTab === "tracking"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <TrendingUp className="w-4 h-4 text-teal-600" />
-            <span>1. Theo Dõi Mục Tiêu Theo Học Sinh</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("unlocks")
-              loadClassUnlocks()
-            }}
-            className={
-              activeTab === "unlocks"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <Key className="w-4 h-4 text-amber-300" />
-            <span>2. Mở Khóa Mục Tiêu (K9–12)</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("rubric_eval")
-              loadClassTermEvaluations()
-            }}
-            className={
-              activeTab === "rubric_eval"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <Award className="w-4 h-4 text-amber-500" />
-            <span>3. Đánh Giá Kỳ theo Rubric</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("consultations")}
-            className={
-              activeTab === "consultations"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <MessageSquare className="w-4 h-4 text-blue-500" />
-            <span>4. Theo Dõi & Nhật Ký Tư Vấn</span>
-            {classConsultationStats.totalStudents > 0 && (
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                classConsultationStats.unconsultedCount === 0
-                  ? "bg-emerald-400 text-emerald-950"
-                  : activeTab === "consultations"
-                    ? "bg-teal-100 text-teal-900 border border-teal-200"
-                    : "bg-white/20 text-teal-200"
-              }`}>
-                {classConsultationStats.consultedCount}/{classConsultationStats.totalStudents} HS
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("sos")}
-            className={
-              activeTab === "sos"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-            <span>5. Yêu Cầu SOS ({helpRequests.length})</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("requests")
-              loadClassAdjustmentRequests()
-            }}
-            className={
-              activeTab === "requests"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <Edit3 className="w-4 h-4 text-amber-300" />
-            <span>6. Yêu Cầu Mở Phiếu</span>
-            {pendingAdjustmentCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black animate-pulse">
-                {pendingAdjustmentCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("skl_psych")}
-            className={
-              activeTab === "skl_psych"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-[#003B3A] text-white border border-teal-300/60 shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>7. Hướng Nghiệp • SKL_PSYCH (5 Bộ Công Cụ)</span>
-          </button>
-          <button className="hidden">
-            {pendingAdjustmentCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black animate-pulse">
-                {pendingAdjustmentCount}
-              </span>
-            )}
-          </button>
-        </div>
+          <Users className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">Cả lớp {selectedClass?.className || ""}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const targetId = selectedStudentId || students[0]?.id || ""
+            openStudentCycle(targetId, activeStudentStep || 3)
+          }}
+          className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+            workspaceMode === "STUDENT"
+              ? "bg-[#008B85] text-white shadow-2xs"
+              : "text-[#00736E] hover:bg-[#F0FDFA]"
+          }`}
+        >
+          <User className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">{activeStudent?.studentName || "Từng học sinh"}</span>
+        </button>
       </div>
 
+      {/* ===================================================================== */}
+      {/* THANH CHUYỂN ĐỔI 2 KHU VỰC RÕ MÀU SẮC (DESKTOP >= 768px)              */}
+      {/* ===================================================================== */}
+      <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-3 tabular-nums">
+        {/* BÊN TRÁI: TỔNG QUAN CẢ LỚP — Deep Pine (#003B3A) */}
+        <button
+          type="button"
+          onClick={() => switchToClassOverview(classViewTab)}
+          className={`text-left px-5 py-3.5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${
+            workspaceMode === "CLASS"
+              ? "bg-[#003B3A] border-[#003B3A] text-white shadow-sm"
+              : "bg-white border-[#E2E8F0] text-slate-700 hover:border-[#003B3A]/50 hover:bg-[#F8FAFC]"
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <span
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                workspaceMode === "CLASS"
+                  ? "bg-white/15 text-teal-200"
+                  : "bg-slate-100 text-[#003B3A]"
+              }`}
+            >
+              <Users className="w-5 h-5" />
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold ${workspaceMode === "CLASS" ? "text-white" : "text-[#003B3A]"}`}>
+                  1. Tổng quan cả lớp
+                </span>
+                {selectedClass?.className && (
+                  <span
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                      workspaceMode === "CLASS"
+                        ? "bg-white/15 text-teal-100"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    Lớp {selectedClass.className} · {students.length} HS
+                  </span>
+                )}
+              </div>
+              <p className={`text-xs mt-0.5 truncate ${workspaceMode === "CLASS" ? "text-teal-100/90" : "text-slate-500"}`}>
+                Phân bổ 8 bước, cảnh báo sớm, ma trận & tổng hợp Rubric cả lớp
+              </p>
+            </div>
+          </div>
+          {workspaceMode === "CLASS" && (
+            <span className="px-2.5 py-1 rounded-lg bg-[#00A19A] text-white text-[11px] font-semibold shrink-0">
+              Đang xem
+            </span>
+          )}
+        </button>
+
+        {/* BÊN PHẢI: THEO TỪNG HỌC SINH — Brand Teal (#008B85) */}
+        <button
+          type="button"
+          onClick={() => {
+            const targetId = selectedStudentId || students[0]?.id || ""
+            openStudentCycle(targetId, activeStudentStep || 3)
+          }}
+          className={`text-left px-5 py-3.5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${
+            workspaceMode === "STUDENT"
+              ? "bg-[#008B85] border-[#00736E] text-white shadow-sm"
+              : "bg-[#F0FDFA]/70 border-teal-200 text-slate-800 hover:border-[#008B85] hover:bg-[#F0FDFA]"
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <span
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                workspaceMode === "STUDENT"
+                  ? "bg-white/20 text-white"
+                  : "bg-teal-100 text-[#00736E]"
+              }`}
+            >
+              <User className="w-5 h-5" />
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold ${workspaceMode === "STUDENT" ? "text-white" : "text-[#00736E]"}`}>
+                  2. Chức năng theo từng học sinh
+                </span>
+                {activeStudent && (
+                  <span
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-semibold truncate max-w-[160px] ${
+                      workspaceMode === "STUDENT"
+                        ? "bg-white/20 text-white"
+                        : "bg-white text-[#00736E] border border-teal-200"
+                    }`}
+                  >
+                    {activeStudent.studentName}
+                  </span>
+                )}
+              </div>
+              <p className={`text-xs mt-0.5 truncate ${workspaceMode === "STUDENT" ? "text-teal-50" : "text-slate-600"}`}>
+                Chu trình Cố vấn & Đồng hành 8 bước và công cụ hỗ trợ cá nhân
+              </p>
+            </div>
+          </div>
+          {workspaceMode === "STUDENT" && (
+            <span className="px-2.5 py-1 rounded-lg bg-[#003B3A] text-white text-[11px] font-semibold shrink-0">
+              Đang xem
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ===================================================================== */}
+      {/* CẤP 1: TỔNG QUAN CẢ LỚP (TÔNG DEEP PINE #003B3A)                      */}
+      {/* ===================================================================== */}
+      {workspaceMode === "CLASS" && (
+        <>
+          {/* Compact Class Masthead */}
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] px-3.5 py-3 sm:px-5 sm:py-3.5 shadow-2xs space-y-3">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-lg sm:text-xl font-bold text-[#003B3A] tracking-tight">
+                    Tổng quan cả lớp {selectedClass?.className || ""}
+                  </h1>
+                  {selectedClass?.className && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-slate-100 text-[#003B3A] border border-slate-200 text-xs font-semibold tabular-nums">
+                      Khối {selectedClass?.grade || currentGrade} · {students.length} học sinh
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Theo dõi toàn lớp theo từng bước. Bấm vào bất kỳ học sinh nào để chuyển sang khu vực Chức năng theo từng học sinh.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full lg:w-auto">
+                <select
+                  aria-label="Chọn lớp"
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="w-full sm:w-auto min-h-[38px] px-3 py-1.5 rounded-xl bg-[#F8FAFC] text-slate-800 font-semibold text-xs border border-[#E2E8F0] focus:outline-none focus:border-[#003B3A] cursor-pointer"
+                >
+                  {classes.length === 0 ? (
+                    <option value="" disabled>
+                      Chưa có lớp chủ nhiệm ({academicYearId ? "năm đang chọn" : "năm hiện hành"})
+                    </option>
+                  ) : (
+                    classes.map(c => (
+                      <option key={c.id} value={c.id}>
+                        Lớp {c.className}
+                      </option>
+                    ))
+                  )}
+                </select>
+
+                <select
+                  aria-label="Mở nhanh chu trình học sinh"
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      openStudentCycle(e.target.value, 3, "tracking")
+                    }
+                  }}
+                  className="w-full sm:w-auto sm:max-w-[240px] min-h-[38px] px-3 py-1.5 rounded-xl bg-[#008B85] text-white font-semibold text-xs border border-[#00736E] focus:outline-none cursor-pointer"
+                >
+                  <option value="" className="text-slate-800 bg-white">
+                    Mở nhanh 1 học sinh ({students.length} HS)...
+                  </option>
+                  {students.map((s, idx) => (
+                    <option key={s.id} value={s.id} className="text-slate-800 bg-white">
+                      {idx + 1}. {s.studentName} ({s.studentCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {!loading && classes.length === 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-medium text-amber-900 flex items-center gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  Thầy/Cô chưa có phân công làm Giáo viên Chủ nhiệm (GVCN) trong năm học này. Vui lòng chọn năm học khác trên thanh tiêu đề hoặc liên hệ Quản trị viên.
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Single Clean Class-Level Navigation Bar */}
+          <div className="bg-white rounded-2xl p-1.5 border border-[#E2E8F0] shadow-2xs flex items-center gap-1 overflow-x-auto no-scrollbar sm:flex-wrap tabular-nums">
+            <button
+              type="button"
+              onClick={() => switchToClassOverview("journey")}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                classViewTab === "journey"
+                  ? "bg-[#003B3A] text-white"
+                  : "text-slate-600 hover:bg-[#F8FAFC] hover:text-slate-900"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Tổng quan 8 bước cả lớp</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchToClassOverview("dashboard")}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                classViewTab === "dashboard"
+                  ? "bg-[#003B3A] text-white"
+                  : "text-slate-600 hover:bg-[#F8FAFC] hover:text-slate-900"
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Cảnh báo sớm & Việc cần làm</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchToClassOverview("progress_matrix")}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                classViewTab === "progress_matrix"
+                  ? "bg-[#003B3A] text-white"
+                  : "text-slate-600 hover:bg-[#F8FAFC] hover:text-slate-900"
+              }`}
+            >
+              <Table className="w-3.5 h-3.5" />
+              <span>Ma trận tiến bộ lớp</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchToClassOverview("rubric_eval")}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                classViewTab === "rubric_eval"
+                  ? "bg-[#003B3A] text-white"
+                  : "text-slate-600 hover:bg-[#F8FAFC] hover:text-slate-900"
+              }`}
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>Đánh giá Rubric lớp</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchToClassOverview("requests")}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                classViewTab === "requests"
+                  ? "bg-[#003B3A] text-white"
+                  : "text-slate-600 hover:bg-[#F8FAFC] hover:text-slate-900"
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Mở phiếu điều chỉnh</span>
+              {pendingAdjustmentCount > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  classViewTab === "requests" ? "bg-amber-400 text-slate-900" : "bg-amber-100 text-amber-800"
+                }`}>
+                  {pendingAdjustmentCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchToClassOverview("sos")}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                classViewTab === "sos"
+                  ? "bg-rose-600 text-white"
+                  : "text-slate-600 hover:bg-rose-50 hover:text-rose-700"
+              }`}
+            >
+              <Heart className={`w-3.5 h-3.5 ${classViewTab === "sos" ? "text-white" : "text-rose-500"}`} />
+              <span>Yêu cầu SOS</span>
+              {helpRequests.length > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  classViewTab === "sos" ? "bg-white/25 text-white" : "bg-rose-100 text-rose-700"
+                }`}>
+                  {helpRequests.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ===================================================================== */}
+      {/* CẤP 2: CHỨC NĂNG THEO TỪNG HỌC SINH (TÔNG BRAND TEAL #008B85)         */}
+      {/* ===================================================================== */}
+      {workspaceMode === "STUDENT" && (
+        <>
+          {/* Compact Student Masthead — Distinct Teal Identity */}
+          <div className="bg-[#F0FDFA]/80 rounded-2xl border border-teal-200 border-l-4 border-l-[#008B85] px-5 py-3.5 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={() => switchToClassOverview("journey")}
+                className="px-3 py-1.5 rounded-xl border border-teal-200 bg-white hover:bg-teal-50 text-[#003B3A] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Về Tổng quan lớp</span>
+              </button>
+
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-lg sm:text-xl font-bold text-[#00736E] tracking-tight truncate">
+                    {activeStudent?.studentName || "Chọn học sinh"}
+                  </h1>
+                  {activeStudent?.studentCode && (
+                    <span className="text-xs font-semibold text-slate-600 tabular-nums">
+                      ({activeStudent.studentCode})
+                    </span>
+                  )}
+                  {selectedClass?.className && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white text-[#00736E] border border-teal-200 text-[11px] font-semibold tabular-nums">
+                      Lớp {selectedClass.className}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center rounded-xl border border-teal-200 bg-white overflow-hidden">
+                <button
+                  type="button"
+                  onClick={handlePrevStudent}
+                  disabled={activeStudentIndex <= 0}
+                  title="Học sinh trước"
+                  className="px-2 py-1.5 text-[#00736E] hover:bg-teal-50 disabled:opacity-35 cursor-pointer transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <select
+                  aria-label="Chuyển học sinh"
+                  value={selectedStudentId}
+                  onChange={(e) => setSelectedStudentId(e.target.value)}
+                  className="px-2 py-1.5 bg-transparent text-slate-800 font-semibold text-xs focus:outline-none cursor-pointer max-w-[220px] tabular-nums"
+                >
+                  {students.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.studentName} ({s.studentCode})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleNextStudent}
+                  disabled={activeStudentIndex >= students.length - 1}
+                  title="Học sinh tiếp theo"
+                  className="px-2 py-1.5 text-[#00736E] hover:bg-teal-50 disabled:opacity-35 cursor-pointer transition-colors"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {selectedStudentId && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.open(
+                        `/teacher/ho-so-hoc-sinh?studentId=${selectedStudentId}&academicYearId=${academicYearId}`,
+                        "_blank"
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-xl border border-teal-200 bg-white hover:bg-teal-50 text-[#003B3A] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#008B85]" />
+                    <span>Hồ sơ 360°</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAiModalStudentId(selectedStudentId)
+                      setAiModalMode("PROGRESS_ANALYSIS")
+                      setShowAiModal(true)
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#008B85] hover:bg-[#00736E] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>AI gợi ý</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Single Navigation for Student: Chu trình Cố vấn & Đồng hành 8 bước */}
+          {selectedClassId && selectedStudentId && (
+            <TeacherStudentJourneyBar
+              academicYearId={academicYearId}
+              selectedClassId={selectedClassId}
+              selectedStudentId={selectedStudentId}
+              activeStepNumber={activeStudentStep}
+              compactStudentMode={true}
+              onNavigateAction={(stId, targetTab, actionMode, stepNumber) => {
+                handleNavigateToJourneyAction(stId, targetTab, actionMode, stepNumber)
+              }}
+            />
+          )}
+
+          {/* Contextual Support Switch ONLY when a step has 2+ companion tools */}
+          {activeStudentStep === 3 && (
+            <div className="flex items-center gap-1.5 bg-[#F8FAFC] rounded-xl p-1 border border-[#E2E8F0] w-fit">
+              <button
+                type="button"
+                onClick={() => setActiveTab("tracking")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  activeTab === "tracking"
+                    ? "bg-white text-[#003B3A] shadow-2xs border border-[#E2E8F0]"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Phiếu mục tiêu SMART (4 mốc)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("goal_extended")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  activeTab === "goal_extended"
+                    ? "bg-white text-[#003B3A] shadow-2xs border border-[#E2E8F0]"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Kế hoạch chi tiết & Xác nhận 3 bên
+              </button>
+            </div>
+          )}
+
+          {activeStudentStep === 5 && (
+            <div className="flex items-center gap-1.5 bg-[#F8FAFC] rounded-xl p-1 border border-[#E2E8F0] w-fit">
+              <button
+                type="button"
+                onClick={() => setActiveTab("consultations")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  activeTab === "consultations"
+                    ? "bg-white text-[#003B3A] shadow-2xs border border-[#E2E8F0]"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Nhật ký tư vấn 1:1
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("student_feedback")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  activeTab === "student_feedback"
+                    ? "bg-white text-[#003B3A] shadow-2xs border border-[#E2E8F0]"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Phản hồi học sinh sau tư vấn
+              </button>
+            </div>
+          )}
+
+          {activeStudentStep === 6 && (
+            <div className="flex flex-wrap items-center gap-1.5 bg-[#F8FAFC] rounded-xl p-1 border border-[#E2E8F0] w-fit">
+              <button
+                type="button"
+                onClick={() => {
+                  setCompanionSubMode("gvbm_tlhn")
+                  setActiveTab("companion_support")
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  activeTab === "companion_support" && companionSubMode === "gvbm_tlhn"
+                    ? "bg-white text-[#003B3A] shadow-2xs border border-[#E2E8F0]"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Phối hợp GVBM & Tổ TLHN
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCompanionSubMode("tri_party")
+                  setActiveTab("companion_support")
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  activeTab === "companion_support" && companionSubMode === "tri_party"
+                    ? "bg-white text-[#003B3A] shadow-2xs border border-[#E2E8F0]"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Trao đổi & Xác nhận 3 bên (PHHS)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("requests")
+                  loadClassAdjustmentRequests()
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+                  activeTab === "requests"
+                    ? "bg-white text-[#003B3A] shadow-2xs border border-[#E2E8F0]"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span>Yêu cầu mở phiếu</span>
+                {pendingAdjustmentCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                    {pendingAdjustmentCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("sos")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+                  activeTab === "sos"
+                    ? "bg-rose-600 text-white"
+                    : "text-slate-600 hover:text-rose-700"
+                }`}
+              >
+                <span>Hỗ trợ khẩn (SOS)</span>
+                {helpRequests.length > 0 && (
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    activeTab === "sos" ? "bg-white/25 text-white" : "bg-rose-100 text-rose-700"
+                  }`}>
+                    {helpRequests.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
       {toastMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold flex items-center gap-3 animate-bounce">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2.5">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* TRUNG TÂM ĐIỀU PHỐI CỐ VẤN 3 BÊN (GV ⇄ HS ⇄ PHHS) */}
-      {/* THANH LỘ TRÌNH CỐ VẤN 8 BƯỚC TƯƠNG TÁC TRỰC TIẾP (PHHS STYLE) + SLIM NEXT BEST ACTION */}
-      {selectedClassId && activeTab !== "journey" && (
-        <TeacherStudentJourneyBar
+      {/* ================= NỘI DUNG CẤP LỚP: CẢNH BÁO SỚM & VIỆC CẦN LÀM ================= */}
+      {workspaceMode === "CLASS" && activeTab === "dashboard" && (
+        <div className="space-y-4">
+          <TeacherOverviewSummaryCards
+            compactStrip={true}
+            classId={selectedClassId}
+            schoolYear={academicYearId}
+            semester={evalTerm}
+            selectedStudentId={selectedStudentId}
+            selectedStudentName={activeStudent?.studentName}
+            onNavigateTab={(t) => {
+              const targetId = selectedStudentId || students[0]?.id || ""
+              if (t === "student_goals") openStudentCycle(targetId, 3, "tracking")
+              else if (t === "consultation_logs") openStudentCycle(targetId, 5, "consultations")
+              else if (t === "student_feedback") openStudentCycle(targetId, 5, "student_feedback")
+              else if (t === "companion_support") openStudentCycle(targetId, 6, "companion_support")
+              else if (t === "evaluation_progress") switchToClassOverview("rubric_eval")
+            }}
+          />
+          <MultiLevelAdvisoryDashboard
+            hideJourneyCard={true}
+            selectedStudentId={selectedStudentId}
+            onSelectStudentFor1on1={(stId) => openStudentCycle(stId, 5, "consultations")}
+            onNavigateJourneyAction={handleNavigateToJourneyAction}
+            onOpenAiAdvisor={(stId) => {
+              setAiModalStudentId(stId)
+              setAiModalMode("PROGRESS_ANALYSIS")
+              setShowAiModal(true)
+            }}
+            onOpenFullJourneyTab={() => switchToClassOverview("journey")}
+            academicYearId={academicYearId}
+            selectedClassId={selectedClassId}
+            classes={classes}
+            onOpenProfile360={(stId) => {
+              window.open(`/teacher/ho-so-hoc-sinh?studentId=${stId}&academicYearId=${academicYearId}`, "_blank")
+            }}
+          />
+        </div>
+      )}
+
+      {/* ================= NỘI DUNG CẤP LỚP: TỔNG QUAN 8 BƯỚC CẢ LỚP ================= */}
+      {workspaceMode === "CLASS" && activeTab === "journey" && (
+        <AdvisoryJourneyTab
+          role="TEACHER"
+          classOverviewOnly={true}
           academicYearId={academicYearId}
           selectedClassId={selectedClassId}
+          classesList={classes.map((c: any) => ({
+            id: c.id,
+            className: c.className || c.name || "Lớp",
+            gradeLevel: c.grade
+          }))}
           selectedStudentId={selectedStudentId}
-          onNavigateAction={(stId, targetTab, actionMode) => {
-            handleNavigateToJourneyAction(stId, targetTab, actionMode)
-          }}
-          onOpenAiAdvisor={(stId) => {
+          onNavigateToStudentAction={handleNavigateToJourneyAction}
+          onOpenAiAdvisor={(stId: string) => {
             setAiModalStudentId(stId)
             setAiModalMode("PROGRESS_ANALYSIS")
             setShowAiModal(true)
           }}
-          onOpenFullJourney={() => setActiveTab("journey")}
         />
       )}
 
-      {/* SUB-NAVIGATION BAR THEO GIAI ĐOẠN LỘ TRÌNH */}
-      {(activeTab === "dashboard" || activeTab === "journey") && (
-        <div className="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setActiveTab("dashboard")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                activeTab === "dashboard"
-                  ? "bg-[#003B3A] text-white shadow-2xs"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span>Tổng quan Lớp & Cảnh báo sớm</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("journey")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-                activeTab === "journey"
-                  ? "bg-[#003B3A] text-white shadow-2xs"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Bảng Việc cần làm & Điều phối 8 Bước cả lớp</span>
-            </button>
-          </div>
-          {selectedStudentId && (
-            <button
-              type="button"
-              onClick={() =>
-                window.open(
-                  `/teacher/ho-so-hoc-sinh?studentId=${selectedStudentId}&academicYearId=${academicYearId}`,
-                  "_blank"
-                )
-              }
-              className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Mở Hồ sơ 360° (Bước 1)</span>
-            </button>
-          )}
-        </div>
+      {/* ================= NỘI DUNG CẤP HỌC SINH: BƯỚC 1 & 2 (HỒ SƠ & SKL_PSYCH) ================= */}
+      {workspaceMode === "STUDENT" && activeTab === "skl_psych" && (
+        <SklPsychStatsDashboard
+          role="TEACHER"
+          academicYearId={academicYearId}
+          defaultClassId={selectedClassId || "ALL"}
+          classesList={classes.map((c: any) => ({
+            id: c.id,
+            className: c.className || c.name || "Lớp",
+            gradeLevel: c.grade
+          }))}
+        />
       )}
 
-      {(activeTab === "tracking" || activeTab === "unlocks" || activeTab === "requests") && (
-        <div className="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setActiveTab("tracking")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "tracking"
-                ? "bg-[#003B3A] text-white shadow-2xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Bước 3: Phiếu Mục tiêu SMART & 4 Mốc kiểm tra</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("unlocks")
-              loadClassUnlocks()
-            }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "unlocks"
-                ? "bg-[#003B3A] text-white shadow-2xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <Key className="w-3.5 h-3.5 text-amber-500" />
-            <span>Bước 4: Kế hoạch Hành động 7 ngày & Mở khóa (K9–12)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("requests")
-              loadClassAdjustmentRequests()
-            }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "requests"
-                ? "bg-[#003B3A] text-white shadow-2xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <Edit3 className="w-3.5 h-3.5 text-teal-600" />
-            <span>Bước 6: Yêu cầu Mở phiếu điều chỉnh ({pendingAdjustmentCount})</span>
-          </button>
-        </div>
-      )}
-
-      {(activeTab === "consultations" || activeTab === "sos") && (
-        <div className="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-2xs flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setActiveTab("consultations")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "consultations"
-                ? "bg-[#003B3A] text-white shadow-2xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>
-              Bước 5: Nhật ký Tư vấn 1:1 & Phối hợp 3 Bên (Đã TV: {classConsultationStats.consultedCount}/{classConsultationStats.totalStudents} HS • HS phản hồi 1:1: {classConsultationStats.feedbackRespondedCount}/{classConsultationStats.consultedCount} HS)
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("sos")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "sos"
-                ? "bg-rose-600 text-white shadow-2xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-            <span>Bước 6: Yêu cầu SOS & Hỗ trợ khẩn ({helpRequests.length})</span>
-          </button>
-        </div>
-      )}
-
-      {/* TRUNG TÂM ĐIỀU PHỐI CỐ VẤN 3 BÊN (CHỈ HIỂN THỊ TRONG B5–B6 TƯ VẤN & PHỐI HỢP) */}
-      {false && selectedStudentId && activeTab === "consultations" && (
+      {/* ================= NỘI DUNG CẤP HỌC SINH: BƯỚC 3 PHỤ (KẾ HOẠCH CHI TIẾT & 3 BÊN) ================= */}
+      {workspaceMode === "STUDENT" && activeTab === "goal_extended" && (
         <div className="space-y-4">
-          <TeacherTriPartyHub
-            studentId={selectedStudentId}
-            studentName={activeStudent?.studentName}
-            studentCode={activeStudent?.studentCode}
-            classId={selectedClassId}
-            academicYearId={academicYearId}
-            onRefreshParent={() => {
-              loadStudentTracking()
-              loadClassSubmissionStatus()
-            }}
-          />
-        </div>
-      )}
-
-      {false && selectedStudentId && activeTab !== "dashboard" && activeTab !== "journey" && activeTab !== "skl_psych" && (
-        <div className="space-y-4">
-          <TriPartyWorkflowBanner
-            goals={singleStudentTrackingRows}
-            consultations={consultations.filter((c: any) => c.studentId === selectedStudentId)}
-            termEvaluations={classTermEvaluations.filter((e: any) => e.studentId === selectedStudentId)}
-            viewerRole="TEACHER"
-          />
-          <TeacherTriPartyHub
-            studentId={selectedStudentId}
-            studentName={activeStudent?.studentName}
-            studentCode={activeStudent?.studentCode}
-            classId={selectedClassId}
-            academicYearId={academicYearId}
-            onRefreshParent={() => {
-              loadStudentTracking()
-              loadClassSubmissionStatus()
-            }}
-          />
-        </div>
-      )}
-
-      {/* ----------------- TAB 2: HỒ SƠ HỌC SINH & KHÁM PHÁ HƯỚNG NGHIỆP ----------------- */}
-      {activeTab === "skl_psych" && (
-        <div className="space-y-4">
-          {activeStudent && (
-            <div className="bg-white rounded-xl border border-slate-200 border-l-4 border-l-[#003B3A] p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-bold text-[#003B3A]">
-                  Hồ sơ học sinh đang chọn: {activeStudent.studentName} ({activeStudent.studentCode})
-                </h3>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  Lớp: <strong>{selectedClass?.className}</strong> • Khối: <strong>{currentGrade}</strong> • Xem kết quả khảo sát Holland (RIASEC), hồ sơ năng lực học tập và lịch sử cố vấn.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("companion_support")}
-                  className="px-3 py-1.5 rounded-lg border border-teal-200 bg-teal-50 text-[#008B85] text-xs font-bold hover:bg-teal-100"
-                >
-                  Hồ sơ Holland & Phân công TLHN
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.open(
-                      `/teacher/ho-so-hoc-sinh?studentId=${selectedStudentId}&academicYearId=${academicYearId}`,
-                      "_blank"
-                    )
-                  }
-                  className="px-3.5 py-1.5 rounded-lg bg-[#003B3A] text-white text-xs font-bold hover:bg-[#00524F]"
-                >
-                  Mở Hồ sơ Học sinh 360°
-                </button>
-              </div>
+          {!selectedStudentId ? (
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8 text-center text-sm text-slate-500">
+              Vui lòng chọn một học sinh ở thanh tiêu đề để xem kế hoạch chi tiết và xác nhận 3 bên.
             </div>
+          ) : (
+            <>
+              <TeacherTriPartyHub
+                stageMode="B3_B4"
+                studentId={selectedStudentId}
+                studentName={activeStudent?.studentName}
+                studentCode={activeStudent?.studentCode}
+                classId={selectedClassId}
+                academicYearId={academicYearId}
+                onRefreshParent={() => {
+                  loadStudentTracking()
+                  loadClassSubmissionStatus()
+                }}
+              />
+              <GoalPlanExtendedPanel
+                studentId={selectedStudentId}
+                studentCode={activeStudent?.studentCode || selectedStudentId}
+                studentName={activeStudent?.studentName || "Học sinh"}
+                classId={selectedClassId}
+                className={selectedClass?.className}
+                schoolYear={academicYearId}
+                semester={evalTerm}
+                goals={singleStudentTrackingRows.map((r: any, idx: number) => ({
+                  goalId: r.id || r.goalId || `GOAL_${idx + 1}`,
+                  category: r.categoryKey || r.category || "HOC_TAP",
+                  title: r.subCategory || r.targetExpectation || `Mục tiêu #${idx + 1}`,
+                  actionPlan: r.actionPlan || "",
+                  checkpoint: r.checkpoint || evalTerm,
+                  targetExpectation: r.targetExpectation || "",
+                  deadline: r.deadline || evalTerm,
+                }))}
+                onOpenCreateConsultation={(goal) => {
+                  setEditingConsultationId(null)
+                  setConsultationForm((prev: any) => ({
+                    ...prev,
+                    studentId: selectedStudentId,
+                    meetingDate: new Date().toISOString().split("T")[0],
+                    linkedGoalIds: [goal.goalId],
+                    content: `Tư vấn 1:1 về mục tiêu: ${goal.title}`,
+                  }))
+                  setShowConsultationModal(true)
+                }}
+                onOpenAssignCompanion={(goal) => {
+                  setPreselectedGoalForCompanion(goal)
+                  setCompanionSubMode("gvbm_tlhn")
+                  setActiveStudentStep(6)
+                  setActiveTab("companion_support")
+                }}
+                onOpenTrackCoordination={() => {
+                  setPreselectedGoalForCompanion(null)
+                  setCompanionSubMode("gvbm_tlhn")
+                  setActiveStudentStep(6)
+                  setActiveTab("companion_support")
+                }}
+                onRefresh={() => {
+                  loadStudentTracking()
+                }}
+              />
+            </>
           )}
-          <SklPsychStatsDashboard
-            role="TEACHER"
-            academicYearId={academicYearId}
-            defaultClassId={selectedClassId || "ALL"}
-            classesList={classes.map((c: any) => ({
-              id: c.id,
-              className: c.className || c.name || "Lớp",
-              gradeLevel: c.grade
-            }))}
-          />
         </div>
       )}
 
-      {/* ----------------- TAB 5: PHẢN HỒI HỌC SINH (MỤC VI) ----------------- */}
-      {activeTab === "student_feedback" && (
+      {/* ================= NỘI DUNG CẤP HỌC SINH: BƯỚC 5 PHỤ (PHẢN HỒI HỌC SINH) ================= */}
+      {workspaceMode === "STUDENT" && activeTab === "student_feedback" && (
         <StudentFeedbackWorkspace
           classId={selectedClassId}
-          schoolYear={academicYearId || "2025-2026"}
+          schoolYear={academicYearId}
           semester={evalTerm}
           selectedStudentId={activeStudent?.studentCode || selectedStudentId}
           onOpenScheduleConsult={(stCode, stName) => {
@@ -1615,80 +1845,69 @@ export default function TeacherAdvisoryPage() {
               title: "Hỗ trợ theo phản hồi của học sinh",
               category: "HOC_TAP"
             })
+            setCompanionSubMode("gvbm_tlhn")
+            setActiveStudentStep(6)
             setActiveTab("companion_support")
           }}
         />
       )}
 
-      {/* ----------------- TAB 6: ĐỒNG HÀNH & HỖ TRỢ (GVBM & TỔ TLHN - MỤC IV & VII) ----------------- */}
-      {activeTab === "companion_support" && (
-        <CompanionSupportWorkspace
-          classId={selectedClassId}
-          className={selectedClass?.className}
-          gradeLevel={String(currentGrade).replace("K", "")}
-          schoolYear={academicYearId || "2025-2026"}
-          semester={evalTerm}
-          selectedStudentId={selectedStudentId}
-          selectedStudentCode={activeStudent?.studentCode}
-          selectedStudentName={activeStudent?.studentName}
-          preselectedGoal={preselectedGoalForCompanion}
-        />
+      {/* ================= NỘI DUNG CẤP HỌC SINH: BƯỚC 6 (ĐỒNG HÀNH & PHỐI HỢP) ================= */}
+      {workspaceMode === "STUDENT" && activeTab === "companion_support" && (
+        <div className="space-y-4">
+          {companionSubMode === "gvbm_tlhn" ? (
+            <CompanionSupportWorkspace
+              classId={selectedClassId}
+              className={selectedClass?.className}
+              gradeLevel={String(currentGrade).replace("K", "")}
+              schoolYear={academicYearId}
+              semester={evalTerm}
+              selectedStudentId={selectedStudentId}
+              selectedStudentCode={activeStudent?.studentCode}
+              selectedStudentName={activeStudent?.studentName}
+              preselectedGoal={preselectedGoalForCompanion}
+            />
+          ) : selectedStudentId ? (
+            <TeacherTriPartyHub
+              stageMode="B5_B6"
+              studentId={selectedStudentId}
+              studentName={activeStudent?.studentName}
+              studentCode={activeStudent?.studentCode}
+              classId={selectedClassId}
+              academicYearId={academicYearId}
+              onRefreshParent={() => {
+                loadStudentTracking()
+                loadClassSubmissionStatus()
+              }}
+            />
+          ) : (
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-8 text-center text-sm text-slate-500">
+              Vui lòng chọn một học sinh ở thanh tiêu đề để xem trao đổi 3 bên.
+            </div>
+          )}
+        </div>
       )}
 
-      {/* ----------------- TAB LỘ TRÌNH CỐ VẤN & ĐỒNG HÀNH HỌC SINH (8 GIAI ĐOẠN) ----------------- */}
-      {activeTab === "journey" && (
-        <AdvisoryJourneyTab
+      {/* ================= NỘI DUNG CẤP LỚP: MA TRẬN TIẾN BỘ TỔNG HỢP CẢ LỚP ================= */}
+      {workspaceMode === "CLASS" && activeTab === "progress_matrix" && selectedClassId && (
+        <UnifiedStudentProgressMatrix
           role="TEACHER"
-          academicYearId={academicYearId}
-          selectedClassId={selectedClassId}
+          schoolYear={academicYearId}
+          semester={evalTerm}
+          defaultClassId={selectedClassId}
           classesList={classes.map((c: any) => ({
             id: c.id,
             className: c.className || c.name || "Lớp",
-            gradeLevel: c.grade
+            gradeLevel: String(c.grade || ""),
           }))}
-          selectedStudentId={selectedStudentId}
-          onNavigateToStudentAction={handleNavigateToJourneyAction}
-          onOpenAiAdvisor={(stId, mode) => {
-            setAiModalStudentId(stId)
-            setAiModalMode((mode as AiModalMode) || "PROGRESS_ANALYSIS")
-            setShowAiModal(true)
-          }}
-        />
-      )}
-
-      {/* ----------------- TAB 0: TỔNG QUAN & ĐO LƯỜNG ĐA CẤP ----------------- */}
-      {activeTab === "dashboard" && (
-        <TeacherOverviewSummaryCards
-          classId={selectedClassId}
-          schoolYear={academicYearId || "2025-2026"}
-          semester={evalTerm}
-          selectedStudentId={selectedStudentId}
-          selectedStudentName={activeStudent?.studentName}
-          onNavigateTab={(t) => {
-            if (t === "student_goals") setActiveTab("tracking")
-            else if (t === "consultation_logs") setActiveTab("consultations")
-            else if (t === "student_feedback") setActiveTab("student_feedback")
-            else if (t === "companion_support") setActiveTab("companion_support")
-            else if (t === "evaluation_progress") setActiveTab("rubric_eval")
-          }}
-        />
-      )}
-      {activeTab === "dashboard" && (
-        <MultiLevelAdvisoryDashboard
-          hideJourneyCard={true}
-          selectedStudentId={selectedStudentId}
-          onNavigateJourneyAction={handleNavigateToJourneyAction}
-          onOpenAiAdvisor={(stId) => {
-            setAiModalStudentId(stId)
-            setAiModalMode("PROGRESS_ANALYSIS")
-            setShowAiModal(true)
-          }}
-          onOpenFullJourneyTab={() => setActiveTab("journey")}
-          academicYearId={academicYearId}
-          selectedClassId={selectedClassId}
-          classes={classes}
-          onOpenProfile360={(stId) => {
-            window.open(`/teacher/ho-so-hoc-sinh?studentId=${stId}&academicYearId=${academicYearId}`, "_blank")
+          onNavigateStudentAction={(stId, stCode, targetTab) => {
+            const matched = students.find(s => s.id === stId || s.studentCode === stCode)
+            const resolvedId = matched?.id || stId
+            if (targetTab === "tracking") openStudentCycle(resolvedId, 3, "tracking")
+            else if (targetTab === "consultations") openStudentCycle(resolvedId, 5, "consultations")
+            else if (targetTab === "student_feedback") openStudentCycle(resolvedId, 5, "student_feedback")
+            else if (targetTab === "companion_support") openStudentCycle(resolvedId, 6, "companion_support")
+            else openStudentCycle(resolvedId, 3, "tracking")
           }}
         />
       )}
@@ -1845,62 +2064,7 @@ export default function TeacherAdvisoryPage() {
 
 
 
-          {selectedStudentId && (
-            <>
-              <TeacherTriPartyHub
-                stageMode="B3_B4"
-                studentId={selectedStudentId}
-                studentName={activeStudent?.studentName}
-                studentCode={activeStudent?.studentCode}
-                classId={selectedClassId}
-                academicYearId={academicYearId}
-                onRefreshParent={() => {
-                  loadStudentTracking()
-                  loadClassSubmissionStatus()
-                }}
-              />
-              <GoalPlanExtendedPanel
-                studentId={selectedStudentId}
-                studentCode={activeStudent?.studentCode || selectedStudentId}
-                studentName={activeStudent?.studentName || "Học sinh"}
-                classId={selectedClassId}
-                className={selectedClass?.className}
-                schoolYear={academicYearId || "2025-2026"}
-                semester={evalTerm}
-                goals={singleStudentTrackingRows.map((r: any, idx: number) => ({
-                  goalId: r.id || r.goalId || `GOAL_${idx + 1}`,
-                  category: r.categoryKey || r.category || "HOC_TAP",
-                  title: r.subCategory || r.targetExpectation || `Mục tiêu #${idx + 1}`,
-                  actionPlan: r.actionPlan || "",
-                  checkpoint: r.checkpoint || evalTerm,
-                  targetExpectation: r.targetExpectation || "",
-                  deadline: r.deadline || evalTerm,
-                }))}
-                onOpenCreateConsultation={(goal) => {
-                  setEditingConsultationId(null)
-                  setConsultationForm((prev: any) => ({
-                    ...prev,
-                    studentId: selectedStudentId,
-                    meetingDate: new Date().toISOString().split("T")[0],
-                    linkedGoalIds: [goal.goalId],
-                    content: `Tư vấn 1:1 về mục tiêu: ${goal.title}`,
-                  }))
-                  setShowConsultationModal(true)
-                }}
-                onOpenAssignCompanion={(goal) => {
-                  setPreselectedGoalForCompanion(goal)
-                  setActiveTab("companion_support")
-                }}
-                onOpenTrackCoordination={(goal) => {
-                  setPreselectedGoalForCompanion(null)
-                  setActiveTab("companion_support")
-                }}
-                onRefresh={() => {
-                  loadStudentTracking()
-                }}
-              />
-            </>
-          )}
+          {/* Nội dung theo dõi 4 mốc độc lập cho học sinh đang chọn (Kế hoạch chi tiết & Xác nhận 3 bên đã tách sang tab riêng) */}
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 pt-2">
             <div>
@@ -2444,28 +2608,7 @@ export default function TeacherAdvisoryPage() {
         </div>
       )}
 
-      {/* ----------------- TAB 3: ĐÁNH GIÁ KỲ THEO RUBRIC (BẢNG CẢ LỚP & CHI TIẾT HỌC SINH) ----------------- */}
-      {activeTab === "rubric_eval" && selectedClassId && (
-        <UnifiedStudentProgressMatrix
-          role="TEACHER"
-          schoolYear={academicYearId || "2025-2026"}
-          semester={evalTerm}
-          defaultClassId={selectedClassId}
-          classesList={classes.map((c: any) => ({
-            id: c.id,
-            className: c.className || c.name || "Lớp",
-            gradeLevel: String(c.grade || ""),
-          }))}
-          onNavigateStudentAction={(stId, stCode, targetTab) => {
-            const matched = students.find(s => s.id === stId || s.studentCode === stCode)
-            if (matched) setSelectedStudentId(matched.id)
-            if (targetTab === "tracking") setActiveTab("tracking")
-            else if (targetTab === "consultations") setActiveTab("consultations")
-            else if (targetTab === "student_feedback") setActiveTab("student_feedback")
-            else if (targetTab === "companion_support") setActiveTab("companion_support")
-          }}
-        />
-      )}
+      {/* ----------------- GIAI ĐOẠN 4: ĐÁNH GIÁ KỲ THEO RUBRIC (ĐỘC LẬP, KHÔNG CHỒNG MA TRẬN) ----------------- */}
       {activeTab === "rubric_eval" && (
         <div className="space-y-6">
 
@@ -4065,22 +4208,7 @@ export default function TeacherAdvisoryPage() {
         </div>
       )}
 
-      {selectedStudentId && activeTab === "consultations" && (
-        <TeacherTriPartyHub
-          stageMode="B5_B6"
-          studentId={selectedStudentId}
-          studentName={activeStudent?.studentName}
-          studentCode={activeStudent?.studentCode}
-          classId={selectedClassId}
-          academicYearId={academicYearId}
-          onRefreshParent={() => {
-            loadStudentTracking()
-            loadClassSubmissionStatus()
-          }}
-        />
-      )}
-
-      {/* ----------------- TAB 4: YÊU CẦU HỖ TRỢ KHẨN CẤP TỪ HỌC SINH (SOS) ----------------- */}
+      {/* ----------------- GIAI ĐOẠN 3: YÊU CẦU HỖ TRỢ KHẨN CẤP (SOS) ----------------- */}
       {activeTab === "sos" && (
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">

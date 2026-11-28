@@ -7,10 +7,12 @@ import {
   CheckCircle2,
   Edit3,
   FileSpreadsheet,
+  Lock,
   MessageSquare,
   Plus,
   Sparkles,
   Trash2,
+  Unlock,
   Wand2,
   X,
 } from "lucide-react"
@@ -50,6 +52,8 @@ export interface VnEduPrimaryGradebookProps {
   onOpenMultiSheetImport?: () => void
   onSave?: () => void
   saving?: boolean
+  onToggleLock?: () => void
+  togglingLock?: boolean
 }
 
 interface RemarkTemplateItem {
@@ -264,6 +268,8 @@ export function VnEduPrimaryGradebook({
   onOpenMultiSheetImport,
   onSave,
   saving = false,
+  onToggleLock,
+  togglingLock = false,
 }: VnEduPrimaryGradebookProps) {
   const periodMeta = useMemo(() => getPrimaryPeriodMeta(evaluationPeriod), [evaluationPeriod])
   const gradeNum = useMemo(
@@ -801,6 +807,23 @@ export function VnEduPrimaryGradebook({
             >
               <Check className="w-3.5 h-3.5 text-[#5EEAD4]" />
               {saving ? "Đang lưu..." : `Lưu điểm HK${periodMeta.semesterNumber} (${periodMeta.periodCode})`}
+            </button>
+          )}
+
+          {onToggleLock && (
+            <button
+              type="button"
+              disabled={togglingLock}
+              onClick={onToggleLock}
+              title={isLocked ? "Mở khóa sổ điểm để cho phép chỉnh sửa" : "Khóa sổ điểm lớp và môn này"}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold border transition-colors disabled:opacity-50 ${
+                isLocked
+                  ? "bg-emerald-50 hover:bg-emerald-100 text-[#059669] border-emerald-200"
+                  : "bg-rose-50 hover:bg-rose-100 text-[#E11D48] border-rose-200"
+              }`}
+            >
+              {isLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+              {togglingLock ? "Đang xử lý..." : isLocked ? "Mở điểm" : "Khóa điểm"}
             </button>
           )}
         </div>

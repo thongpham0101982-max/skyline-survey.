@@ -180,33 +180,33 @@ export default function MultiLevelAdvisoryDashboard({
         />
       )}
 
-      {/* 1. TOP STATS CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 1. TOP STATS CARDS — Sky-Line Academic Ledger */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 tabular-nums">
         {/* Card 1: Tổng số HS */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh theo dõi</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+            <span className="text-xs font-semibold text-slate-600">Học sinh theo dõi</span>
+            <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-[#003B3A]">
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-black text-slate-900">{stats?.totalStudents || 0}</div>
-            <div className="text-xs text-slate-500 mt-1">Lớp đang chọn</div>
+          <div className="mt-2.5">
+            <div className="text-2xl font-bold text-[#003B3A]">{stats?.totalStudents || 0}</div>
+            <div className="text-xs text-slate-500 mt-0.5">Sĩ số lớp đang chọn</div>
           </div>
         </div>
 
         {/* Card 2: Mục tiêu SMART */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Đã chốt SMART</span>
-            <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-teal-800">
+            <span className="text-xs font-semibold text-slate-600">Đã chốt mục tiêu SMART</span>
+            <div className="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-[#008B85]">
               <Target className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-2.5">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-teal-800">{stats?.smartGoalStats?.submittedPercent || 0}%</span>
+              <span className="text-2xl font-bold text-[#008B85]">{stats?.smartGoalStats?.submittedPercent || 0}%</span>
               <span className="text-xs text-slate-500">({stats?.smartGoalStats?.submitted || 0}/{stats?.totalStudents || 0} HS)</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
@@ -219,16 +219,16 @@ export default function MultiLevelAdvisoryDashboard({
         </div>
 
         {/* Card 3: Phiên cố vấn 1-1 */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+        <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tỷ lệ Cố vấn 1-1</span>
+            <span className="text-xs font-semibold text-slate-600">Tỷ lệ tư vấn 1:1</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
               <Calendar className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-2.5">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-emerald-600">{stats?.consultationStats?.consultationRate || 0}%</span>
+              <span className="text-2xl font-bold text-emerald-600">{stats?.consultationStats?.consultationRate || 0}%</span>
               <span className="text-xs text-slate-500">({stats?.consultationStats?.uniqueConsultedStudents || 0} HS đã gặp)</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
@@ -241,22 +241,22 @@ export default function MultiLevelAdvisoryDashboard({
         </div>
 
         {/* Card 4: Cảnh báo & Việc quá hạn */}
-        <div className="bg-white p-5 rounded-2xl border border-rose-200 shadow-xs flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-white p-4 rounded-2xl border border-rose-200/90 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">Việc quá hạn / Nguy cơ</span>
-            <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 animate-pulse">
+            <span className="text-xs font-semibold text-rose-700">Việc quá hạn & nguy cơ</span>
+            <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3">
-            <div className="flex items-baseline gap-3">
-              <span className="text-2xl font-black text-rose-600">{stats?.actionItemStats?.overdue || 0}</span>
-              <span className="text-xs text-rose-500 font-medium">việc chậm hạn</span>
+          <div className="mt-2.5">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-rose-600">{stats?.actionItemStats?.overdue || 0}</span>
+              <span className="text-xs text-rose-600/80 font-medium">việc chậm hạn</span>
             </div>
-            <div className="flex items-center gap-2 mt-2 text-[11px] font-semibold">
-              <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">{stats?.riskStats?.red || 0} Đỏ</span>
-              <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">{stats?.riskStats?.yellow || 0} Vàng</span>
-              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">{stats?.riskStats?.green || 0} Xanh</span>
+            <div className="flex items-center gap-1.5 mt-2 text-[11px] font-semibold">
+              <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200/70">{stats?.riskStats?.red || 0} Đỏ</span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200/70">{stats?.riskStats?.yellow || 0} Vàng</span>
+              <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/70">{stats?.riskStats?.green || 0} Xanh</span>
             </div>
           </div>
         </div>

@@ -452,13 +452,13 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
       {isOpen && (
         <div 
           onClick={() => setIsOpen(false)}
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40 transition-opacity duration-300 animate-in fade-in"
+          className="md:hidden fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-[45] transition-opacity duration-300 animate-in fade-in"
         />
       )}
 
       {/* Sidebar Content */}
-      <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#003B3A] text-white p-6 flex flex-col shadow-xl fixed md:sticky inset-y-0 left-0 z-40 h-screen transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-2'} mb-8`}>
+      <aside className={`${isCollapsed ? 'w-20' : 'w-[280px] md:w-64'} bg-[#003B3A] text-white p-4 md:p-6 flex flex-col shadow-2xl md:shadow-xl fixed md:sticky inset-y-0 left-0 z-50 md:z-40 h-dvh transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-2'} mb-5 md:mb-8`}>
           <div className="flex items-center">
             <Link href="/teacher" className="inline-block transition-transform hover:scale-105 active:scale-95" title="Trang chủ - Tổng quan cá nhân">
               <img src="/logo.png" alt="Sky-Line" className={`h-8 w-auto object-contain brightness-0 invert opacity-95 transition-all ${isCollapsed ? 'scale-75' : ''}`} />
@@ -1404,6 +1404,33 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         {!isCollapsed && <span className="break-words leading-tight py-0.5">{lang === "en" ? "Sex Education" : "Đánh giá GD Giới tính"}</span>}
                       </Link>
                     )}
+
+                    {/* Hành trình Sky-Line (Chỉ dành cho GVBM được phân công dạy các môn đặc thù) */}
+                    <Link
+                      href="/teacher/special-subjects/skyline-journey"
+                      onClick={() => setIsOpen(false)}
+                      className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
+                        pathname.startsWith("/teacher/special-subjects/skyline-journey")
+                          ? "bg-gradient-to-r from-amber-500/25 via-teal-500/15 to-transparent border border-amber-400/50 text-white shadow-md shadow-black/10"
+                          : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                      }`}
+                    >
+                      <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
+                        pathname.startsWith("/teacher/special-subjects/skyline-journey")
+                          ? "bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                          : "bg-white/5 border border-white/10 text-amber-300/80 group-hover:text-amber-300 group-hover:scale-110"
+                      }`}>
+                        <Compass className="w-4 h-4" />
+                      </div>
+                      {!isCollapsed && (
+                        <div className="flex items-center justify-between flex-1 min-w-0">
+                          <span className="break-words leading-tight py-0.5">{lang === "en" ? "Sky-Line Journey" : "Hành trình Sky-Line"}</span>
+                          <span className="text-[9px] bg-amber-500/25 text-amber-200 px-1.5 py-0.5 rounded-full font-bold ml-1 shrink-0">
+                            1–5
+                          </span>
+                        </div>
+                      )}
+                    </Link>
                   </div>
                 </div>
               )}
@@ -1659,33 +1686,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       <Globe className="w-4 h-4" />
                     </div>
                     {!isCollapsed && <span className="break-words leading-tight py-0.5">{lang === "en" ? "English – Bilingual Program" : "Tiếng Anh – Chương trình Song ngữ"}</span>}
-                  </Link>
-
-                  {/* Hành trình Sky-Line */}
-                  <Link
-                    href="/teacher/special-subjects/skyline-journey"
-                    onClick={() => setIsOpen(false)}
-                    className={`group relative flex items-center ${isCollapsed ? "justify-center px-2" : "px-3"} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
-                      pathname.startsWith("/teacher/special-subjects/skyline-journey")
-                        ? "bg-gradient-to-r from-amber-500/25 via-teal-500/15 to-transparent border border-amber-400/50 text-white shadow-md shadow-black/10"
-                        : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? "mx-auto" : "mr-2.5"} ${
-                      pathname.startsWith("/teacher/special-subjects/skyline-journey")
-                        ? "bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
-                        : "bg-white/5 border border-white/10 text-amber-300/80 group-hover:text-amber-300 group-hover:scale-110"
-                    }`}>
-                      <Compass className="w-4 h-4" />
-                    </div>
-                    {!isCollapsed && (
-                      <div className="flex items-center justify-between flex-1 min-w-0">
-                        <span className="break-words leading-tight py-0.5">{lang === "en" ? "Sky-Line Journey" : "Hành trình Sky-Line"}</span>
-                        <span className="text-[9px] bg-amber-500/25 text-amber-200 px-1.5 py-0.5 rounded-full font-bold ml-1 shrink-0">
-                          1–5
-                        </span>
-                      </div>
-                    )}
                   </Link>
                 </div>
               </div>

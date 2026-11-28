@@ -204,21 +204,17 @@ export function UserWelcomeCard({
     <>
       {!isExpanded ? (
         <div
-          className={`group/card bg-white rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-xs px-4 py-3 sm:px-5 sm:py-3.5 relative overflow-hidden transition-all duration-200 ${className}`}
+          className={`group/card bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.05)] hover:shadow-[0_6px_20px_-6px_rgba(0,161,154,0.12)] px-4 py-3 sm:px-5 sm:py-3.5 relative overflow-hidden transition-all duration-300 ${className}`}
           style={{
-            background: `linear-gradient(135deg, ${campusTheme.lightBg} 0%, #FFFFFF 55%, ${campusTheme.lightAccentBg} 100%)`
+            background: "linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 50%, #F8FAFC 100%)"
           }}
         >
-          <div
-            className="absolute top-0 left-0 right-0 h-1 z-30"
-            style={{ background: campusTheme.heroBadgeGradient }}
-          />
-          <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-[32%] z-0 pointer-events-none opacity-45">
+          <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-[32%] z-0 pointer-events-none opacity-55">
             <SchoolCampusArtwork
               theme={campusTheme}
               imageSrc={bannerImageSrc}
               alt={`${campusName || campusTheme.name}`}
-              opacityClass="opacity-60"
+              opacityClass="opacity-70"
             />
           </div>
 
@@ -230,8 +226,8 @@ export function UserWelcomeCard({
                   type="button"
                   onClick={() => setIsAvatarModalOpen(true)}
                   title="Nhấn để tải lên / đổi ảnh đại diện"
-                  className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden text-white flex items-center justify-center font-bold text-sm sm:text-base shadow-xs border border-white group/avatar cursor-pointer"
-                  style={{ background: campusTheme.heroBadgeGradient }}
+                  className="relative w-10 h-10 rounded-xl overflow-hidden text-white flex items-center justify-center font-bold text-sm sm:text-base shadow-sm border-2 border-white group/avatar cursor-pointer"
+                  style={{ background: "linear-gradient(135deg, #00A19A 0%, #00736E 100%)" }}
                 >
                   {avatarUrl ? (
                     <img
@@ -254,23 +250,21 @@ export function UserWelcomeCard({
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-sm sm:text-base font-bold text-slate-800 tracking-tight truncate">
+                  <h1 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight truncate">
                     {effectiveTitle}
                   </h1>
-                  <div
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${campusTheme.campusBadge.bg} ${campusTheme.campusBadge.text} ${campusTheme.campusBadge.border}`}
-                  >
-                    <School className="w-3 h-3 shrink-0" />
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
+                    <School className="w-3 h-3 text-[#00A19A] shrink-0" />
                     <span>{campusName || campusTheme.name}</span>
                   </div>
                   {roleBadgeText && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#003B3A] bg-[#003B3A]/8 border border-[#003B3A]/20 px-2.5 py-0.5 rounded-md tracking-tight">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-white/90 border border-slate-200/80 px-2.5 py-0.5 rounded-full">
                       <Sparkles className="w-2.5 h-2.5 text-[#00A19A] shrink-0" />
                       <span>{roleBadgeText}</span>
                     </span>
                   )}
                   {showAcademicYear && academicYear && (
-                    <span className="hidden xl:inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-white/90 border border-slate-200/80 px-2.5 py-0.5 rounded-full tabular-nums">
+                    <span className="hidden xl:inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-white/90 border border-slate-200/80 px-2.5 py-0.5 rounded-full tabular-nums">
                       <GraduationCap className="w-3 h-3 text-[#AE882E] shrink-0" />
                       <span>NH {academicYear}</span>
                     </span>
@@ -295,7 +289,7 @@ export function UserWelcomeCard({
             </div>
 
             {/* Right: Quick Actions & Expand Button */}
-            <div className="flex items-center gap-2 flex-wrap shrink-0">
+            <div className="flex items-center gap-1.5 flex-wrap shrink-0">
               {customActions}
 
               {onRefresh && (
@@ -304,7 +298,7 @@ export function UserWelcomeCard({
                   onClick={onRefresh}
                   disabled={isRefreshing}
                   title="Đồng bộ dữ liệu mới nhất"
-                  className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
+                  className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-[#00A19A]/40 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
                 >
                   <RefreshCw
                     className={`w-3.5 h-3.5 text-[#00A19A] ${isRefreshing ? "animate-spin" : ""}`}
@@ -318,7 +312,7 @@ export function UserWelcomeCard({
                   <button
                     type="button"
                     onClick={() => setIsAvatarModalOpen(true)}
-                    className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
+                    className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-[#00A19A]/40 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
                   >
                     <Camera className="w-3.5 h-3.5 text-[#00A19A]" />
                     <span className="hidden sm:inline">Đổi ảnh đại diện</span>
@@ -326,7 +320,7 @@ export function UserWelcomeCard({
                   <button
                     type="button"
                     onClick={() => setIsPasswordModalOpen(true)}
-                    className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
+                    className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-[#00A19A]/40 rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all cursor-pointer active:scale-95"
                   >
                     <KeyRound className="w-3.5 h-3.5 text-[#00A19A]" />
                     <span className="hidden sm:inline">Đổi mật khẩu</span>
@@ -338,7 +332,7 @@ export function UserWelcomeCard({
                 type="button"
                 onClick={() => setIsExpanded(true)}
                 title="Mở rộng banner chào mừng"
-                className="bg-slate-100/90 hover:bg-slate-200/80 text-slate-600 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
+                className="bg-slate-100/80 hover:bg-slate-200/70 text-slate-600 rounded-xl px-2.5 py-1.5 text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1"
               >
                 <span>Mở rộng</span>
                 <ChevronRight className="w-3 h-3 rotate-90" />
@@ -348,21 +342,21 @@ export function UserWelcomeCard({
         </div>
       ) : (
       <div
-        className={`group/card bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md p-5 sm:p-6 lg:px-7 lg:py-6 relative overflow-hidden transition-all duration-300 ${className}`}
+        className={`group/card bg-white rounded-3xl border border-slate-200/80 shadow-[0_4px_20px_-6px_rgba(15,23,42,0.05)] p-5 sm:p-6 lg:px-7 lg:py-6 relative overflow-hidden transition-all duration-300 ${className}`}
         style={{
-          background: `linear-gradient(135deg, ${campusTheme.lightBg} 0%, #FFFFFF 50%, ${campusTheme.lightAccentBg} 100%)`
+          background: "linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 52%, #F8FAFC 100%)"
         }}
       >
-        {/* Đường viền dải nhận diện cơ sở ở đỉnh thẻ */}
+        {/* Điểm nhấn hào quang nhẹ góc trái trên */}
         <div
-          className="absolute top-0 left-0 right-0 h-1.5 z-30"
+          className="absolute -top-20 -left-20 w-72 h-72 rounded-full pointer-events-none opacity-40 blur-3xl"
           style={{
-            background: campusTheme.heroBadgeGradient
+            background: "radial-gradient(circle, rgba(0, 161, 154, 0.22) 0%, transparent 70%)"
           }}
         />
 
         {/* Ảnh minh họa trường học khớp sát khung phải (full-bleed) và mờ dần sang trái */}
-        <div className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[58%] md:w-[56%] lg:w-[54%] xl:w-[52%] z-0 pointer-events-none">
+        <div className="hidden sm:block absolute top-0 right-0 bottom-0 sm:w-[56%] md:w-[54%] lg:w-[52%] xl:w-[50%] z-0 pointer-events-none">
           <SchoolCampusArtwork
             theme={campusTheme}
             imageSrc={bannerImageSrc}
@@ -373,18 +367,11 @@ export function UserWelcomeCard({
         {/* Slogan / Motto thương hiệu nổi bật ở góc phải trên */}
         {effectiveMotto && (
           <div className="hidden sm:flex absolute top-3.5 right-5 z-20 items-center">
-            <div
-              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/85 backdrop-blur-md border shadow-2xs"
-              style={{ borderColor: campusTheme.borderSubtle }}
-            >
-              <Sparkles
-                className="w-3.5 h-3.5 shrink-0"
-                style={{ color: campusTheme.primaryColor }}
-              />
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/85 backdrop-blur-md border border-slate-200/70 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
               <span
-                className="text-xs md:text-sm font-bold tracking-wide select-none"
+                className="text-xs md:text-sm font-bold tracking-wide select-none text-[#005854]"
                 style={{
-                  color: campusTheme.accentColor,
                   fontFamily: "'Dancing Script', 'Caveat', 'Segoe Script', cursive"
                 }}
               >
@@ -395,41 +382,39 @@ export function UserWelcomeCard({
         )}
 
         {/* Nội dung chính bên trái */}
-        <div className="relative z-10 max-w-xl lg:max-w-[56%]">
+        <div className="relative z-10 max-w-xl lg:max-w-[58%]">
           {/* Hàng 1: Huy hiệu Cơ sở biên chế, Phân hệ & Mã định danh */}
           <div className="flex items-center gap-2 flex-wrap mb-3.5">
-            <div
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs backdrop-blur-md ${campusTheme.campusBadge.bg} ${campusTheme.campusBadge.text} ${campusTheme.campusBadge.border}`}
-            >
-              <School className="w-3.5 h-3.5 shrink-0" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#99F6E4]/80 shadow-2xs">
+              <School className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
               <span>{campusName || campusTheme.name}</span>
-              <span className={`w-1.5 h-1.5 rounded-full ${campusTheme.campusBadge.dotColor} animate-pulse`} />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00A19A]" />
             </div>
 
             {roleBadgeText && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-white/90 border border-slate-200/80 px-2.5 py-1 rounded-full shadow-2xs">
-                <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-white/90 border border-slate-200/80 px-2.5 py-1 rounded-full shadow-2xs">
+                <Sparkles className="w-3 h-3 text-[#00A19A] shrink-0" />
                 <span>{roleBadgeText}</span>
               </span>
             )}
 
             {cleanTeacherCode && (
-              <span className="inline-flex items-center text-[11px] font-mono font-bold text-slate-600 bg-white/90 border border-slate-200/80 px-2.5 py-1 rounded-full shadow-2xs">
+              <span className="inline-flex items-center text-[11px] font-mono font-semibold tabular-nums text-slate-600 bg-white/90 border border-slate-200/80 px-2.5 py-1 rounded-full shadow-2xs">
                 {codeLabel}: {cleanTeacherCode}
               </span>
             )}
           </div>
 
           {/* Hàng 2: Avatar & Lời chào */}
-          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 mb-3">
+          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 mb-3.5">
             <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setIsAvatarModalOpen(true)}
                 title="Nhấn để tải lên / đổi ảnh đại diện"
-                className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden text-white flex items-center justify-center font-extrabold text-lg sm:text-xl shadow-md border-2 border-white ring-1 ring-slate-900/5 group/avatar cursor-pointer"
+                className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden text-white flex items-center justify-center font-extrabold text-lg sm:text-xl shadow-md border-2 border-white ring-1 ring-[#00A19A]/20 group/avatar cursor-pointer"
                 style={{
-                  background: campusTheme.heroBadgeGradient
+                  background: "linear-gradient(135deg, #00A19A 0%, #00736E 100%)"
                 }}
               >
                 {avatarUrl ? (
@@ -452,34 +437,34 @@ export function UserWelcomeCard({
             </div>
 
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight leading-snug">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-snug">
                 {effectiveTitle}
               </h1>
               {greetingSubtitle && (
-                <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1 leading-relaxed">
+                <p className="text-xs sm:text-sm font-normal text-slate-500 mt-1 leading-relaxed">
                   {greetingSubtitle}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Hàng 3: Các Chip chức danh sư phạm / thông tin bổ sung */}
+          {/* Hàng 3: Các Chip chức danh sư phạm nhẹ nhàng, tinh tế */}
           {(cleanHomeroom || cleanSubject || cleanPositions || customMetaChips) && (
-            <div className="flex items-center gap-2 flex-wrap mb-3">
+            <div className="flex items-center gap-2 flex-wrap mb-3.5">
               {cleanHomeroom && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-white/90 border border-slate-200/80 text-slate-700 shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-white/90 border border-slate-200/80 text-slate-700 shadow-2xs tabular-nums">
                   <GraduationCap className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
                   <span>Chủ nhiệm: {cleanHomeroom}</span>
                 </span>
               )}
               {cleanSubject && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-white/90 border border-slate-200/80 text-slate-700 shadow-2xs">
-                  <BookOpen className="w-3.5 h-3.5 text-[#AE882E] shrink-0" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-white/90 border border-slate-200/80 text-slate-700 shadow-2xs">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span>Bộ môn: {cleanSubject}</span>
                 </span>
               )}
               {cleanPositions && (
-                <span className="inline-flex items-center text-[11px] font-semibold text-slate-600 bg-white/85 border border-slate-200/80 px-2.5 py-1 rounded-xl shadow-2xs">
+                <span className="inline-flex items-center text-[11px] font-medium text-slate-600 bg-white/85 border border-slate-200/80 px-2.5 py-1 rounded-xl shadow-2xs">
                   {cleanPositions}
                 </span>
               )}
@@ -498,26 +483,25 @@ export function UserWelcomeCard({
             />
             {effectiveMotto && (
               <div
-                className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-white/85 backdrop-blur-md text-[11px] font-bold shadow-2xs"
-                style={{ color: campusTheme.accentColor }}
+                className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-white/90 text-[#005854] backdrop-blur-md text-[11px] font-bold shadow-2xs"
               >
                 {effectiveMotto}
               </div>
             )}
           </div>
 
-          {/* Hàng 4: Badges Thời gian & Nút thao tác nhanh */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap pt-3.5 mt-3.5 border-t border-slate-200/70">
+          {/* Hàng 4: Thanh công cụ Thời gian & Thao tác nhanh (Soft Glassmorphic Pills) */}
+          <div className="flex items-center gap-2 flex-wrap pt-3 mt-3 border-t border-slate-200/60">
             {/* Pill Ngày Giờ */}
-            <div className="bg-white/95 backdrop-blur-xs border border-slate-200/80 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600 shadow-2xs">
+            <div className="bg-white/90 backdrop-blur-xs border border-slate-200/80 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-600 shadow-2xs tabular-nums">
               <CalendarDays className="w-3.5 h-3.5 text-[#00A19A] shrink-0" />
               <span className="capitalize">{currentDateStr || "Đang cập nhật..."}</span>
             </div>
 
             {/* Pill Năm Học */}
             {showAcademicYear && academicYear && (
-              <div className="bg-white/95 backdrop-blur-xs border border-slate-200/80 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600 shadow-2xs">
-                <GraduationCap className="w-3.5 h-3.5 text-[#AE882E] shrink-0" />
+              <div className="bg-white/90 backdrop-blur-xs border border-slate-200/80 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-600 shadow-2xs tabular-nums">
+                <GraduationCap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 <span>Năm học: {academicYear}</span>
               </div>
             )}
@@ -529,11 +513,11 @@ export function UserWelcomeCard({
                 onClick={onRefresh}
                 disabled={isRefreshing}
                 title="Đồng bộ dữ liệu mới nhất"
-                className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600 shadow-2xs transition-all cursor-pointer group active:scale-95"
+                className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-[#00A19A]/50 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-[#00736E] shadow-2xs transition-all cursor-pointer group active:scale-95"
               >
                 <RefreshCw
-                  className={`w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 ${
-                    isRefreshing ? "animate-spin text-[#00A19A]" : ""
+                  className={`w-3.5 h-3.5 text-[#00A19A] ${
+                    isRefreshing ? "animate-spin" : ""
                   }`}
                 />
                 <span>{isRefreshing ? "Đang đồng bộ..." : "Làm mới"}</span>
@@ -546,20 +530,18 @@ export function UserWelcomeCard({
                 <button
                   type="button"
                   onClick={() => setIsAvatarModalOpen(true)}
-                  className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer group active:scale-95"
+                  className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-[#00A19A]/50 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-[#00736E] shadow-2xs transition-all cursor-pointer group active:scale-95"
                 >
                   <Camera className="w-3.5 h-3.5 text-[#00A19A] group-hover:scale-110 transition-transform" />
                   <span>Đổi ảnh đại diện</span>
-                  <ChevronRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsPasswordModalOpen(true)}
-                  className="bg-white/95 hover:bg-white border border-slate-200/80 hover:border-slate-300 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition-all cursor-pointer group active:scale-95"
+                  className="bg-white/90 hover:bg-white border border-slate-200/80 hover:border-[#00A19A]/50 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-[#00736E] shadow-2xs transition-all cursor-pointer group active:scale-95"
                 >
                   <KeyRound className="w-3.5 h-3.5 text-[#00A19A] group-hover:rotate-12 transition-transform" />
                   <span>Đổi mật khẩu</span>
-                  <ChevronRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </>
             )}
@@ -570,7 +552,7 @@ export function UserWelcomeCard({
               type="button"
               onClick={() => setIsExpanded(false)}
               title="Thu gọn banner chào mừng"
-              className="bg-slate-100/90 hover:bg-slate-200/80 text-slate-600 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1"
+              className="bg-slate-100/80 hover:bg-slate-200/70 text-slate-500 hover:text-slate-700 rounded-full px-3 py-1.5 text-xs font-medium transition-all cursor-pointer flex items-center gap-1"
             >
               <span>Thu gọn</span>
               <ChevronRight className="w-3 h-3 -rotate-90" />

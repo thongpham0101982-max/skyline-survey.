@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ export async function GET(req: any) {
 
 export async function POST(req: any) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await req.json();
     const grades = body.grades || [];
     const eduSystems = body.eduSystems || [];
@@ -42,6 +45,8 @@ export async function POST(req: any) {
 
 export async function DELETE(req: any) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const subjectId = searchParams.get("subjectId");

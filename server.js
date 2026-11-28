@@ -177,6 +177,79 @@ app.prepare().then(() => {
     }, 2000);
     
     // =========================================================================
+    // BỘ LẬP LỊCH TỰ ĐỘNG BÁO CÁO TUẦN / THÁNG BAN KT&ĐBCL (GIỜ VIỆT NAM GMT+7)
+    // - Thứ Tư 14:00: Nhắc thành viên Ban KT&ĐBCL nộp Báo cáo Tuần
+    // - Thứ Sáu 16:00: Tự động gửi Báo cáo Tuần cho Giám đốc Ban (Phạm Nguyên Thông)
+    // - Ngày cuối tháng 17:00: Tự động gửi Báo cáo Tháng cho Giám đốc Ban (Phạm Nguyên Thông)
+    // =========================================================================
+    const qaCronFiredKeys = new Set();
+    const triggerInternalCron = (cronPath) => {
+      const http = require('http');
+      const headers = {};
+      if (process.env.CRON_SECRET) {
+        headers['Authorization'] = `Bearer ${process.env.CRON_SECRET}`;
+      }
+      const reqCron = http.request(
+        { hostname: '127.0.0.1', port, path: cronPath, method: 'GET', headers, timeout: 60000 },
+        (resCron) => {
+          let body = '';
+          resCron.on('data', (chunk) => { body += chunk; });
+          resCron.on('end', () => {
+            console.log(`[KT&ĐBCL Auto-Scheduler] ${cronPath} -> HTTP ${resCron.statusCode}: ${body.slice(0, 220)}`);
+          });
+        }
+      );
+      reqCron.on('error', (err) => {
+        console.error(`[KT&ĐBCL Auto-Scheduler] Lỗi gọi ${cronPath}:`, err.message);
+      });
+      reqCron.end();
+    };
+
+    setInterval(() => {
+      try {
+        const now = new Date();
+        // Quy đổi sang giờ Việt Nam (UTC+7)
+        const vn = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        const vnYear = vn.getUTCFullYear();
+        const vnMonth = vn.getUTCMonth() + 1;
+        const vnDay = vn.getUTCDate();
+        const vnDow = vn.getUTCDay(); // 0=CN, 3=Thứ 4, 5=Thứ 6
+        const vnHour = vn.getUTCHours();
+        const lastDayOfMonth = new Date(Date.UTC(vnYear, vnMonth, 0)).getUTCDate();
+        const dateKey = `${vnYear}-${String(vnMonth).padStart(2, '0')}-${String(vnDay).padStart(2, '0')}`;
+
+        // 1. Nhắc nộp báo cáo tuần vào Thứ Tư 14:00 - 14:59
+        if (vnDow === 3 && vnHour === 14) {
+          const k = `WED_${dateKey}`;
+          if (!qaCronFiredKeys.has(k)) {
+            qaCronFiredKeys.add(k);
+            triggerInternalCron('/api/cron/ktdbcl-weekly-report?mode=wednesday_reminder');
+          }
+        }
+
+        // 2. Gửi Báo cáo Tuần cho Giám đốc Ban vào Thứ Sáu 16:00 - 16:59
+        if (vnDow === 5 && vnHour === 16) {
+          const k = `DIR_WEEKLY_${dateKey}`;
+          if (!qaCronFiredKeys.has(k)) {
+            qaCronFiredKeys.add(k);
+            triggerInternalCron('/api/cron/ktdbcl-weekly-report?mode=director_weekly');
+          }
+        }
+
+        // 3. Gửi Báo cáo Tháng cho Giám đốc Ban vào ngày cuối tháng 17:00 - 17:59
+        if (vnDay === lastDayOfMonth && vnHour === 17) {
+          const k = `DIR_MONTHLY_${vnYear}-${String(vnMonth).padStart(2, '0')}`;
+          if (!qaCronFiredKeys.has(k)) {
+            qaCronFiredKeys.add(k);
+            triggerInternalCron('/api/cron/ktdbcl-weekly-report?mode=director_monthly');
+          }
+        }
+      } catch (cronErr) {
+        console.error('[KT&ĐBCL Auto-Scheduler] Lỗi kiểm tra lịch:', cronErr);
+      }
+    }, 10 * 60 * 1000); // Kiểm tra mỗi 10 phút
+
+    // =========================================================================
     // GIÁM SÁT HỆ THỐNG SAO LƯU DỮ LIỆU ĐỊNH KỲ (PASSIVE WATCHDOG)
     // =========================================================================
     const lockFilePath = path.join(__dirname, 'data-backups', '.last_backup_date');

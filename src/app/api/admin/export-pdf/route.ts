@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { requireStaffSession, sanitizeFileName, writeSecurityAuditLog } from '@/lib/security-guard';
 
 export async function POST(req: Request) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { html, fileName } = await req.json();
 
     if (!html || !fileName) {
@@ -16,7 +21,8 @@ export async function POST(req: Request) {
       fs.mkdirSync(exportDir, { recursive: true });
     }
 
-    const safeFileName = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+    const cleanedBase = sanitizeFileName(fileName, 'report');
+    const safeFileName = cleanedBase.endsWith('.pdf') ? cleanedBase : `${cleanedBase}.pdf`;
     const filePath = path.join(exportDir, safeFileName);
     const relativePath = `/exports/pdf/${safeFileName}`;
 
@@ -56,6 +62,15 @@ export async function POST(req: Request) {
 
     const stats = fs.statSync(filePath);
     const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+    await writeSecurityAuditLog({
+      userId: ctx.userId,
+      userEmail: ctx.userEmail,
+      action: 'EXPORT_PDF',
+      targetTable: 'ExportPdf',
+      targetId: safeFileName,
+      newValues: { filePath: relativePath, fileSize: fileSizeInMB }
+    });
 
     return NextResponse.json({
       success: true,

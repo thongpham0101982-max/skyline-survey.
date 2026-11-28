@@ -77,6 +77,39 @@ export function QaAssistantPanel({
   const [generatingReport, setGeneratingReport] = useState(false)
   const [copiedReport, setCopiedReport] = useState(false)
 
+  // Personal + SSM live briefing state
+  const [briefingTargetUserId, setBriefingTargetUserId] = useState<string>("")
+  const [loadingBriefing, setLoadingBriefing] = useState(false)
+  const [ssmBriefing, setSsmBriefing] = useState<any | null>(null)
+
+  const loadPersonalSsmBriefing = async (targetUid?: string) => {
+    setLoadingBriefing(true)
+    try {
+      const res = await fetch("/api/admin/qa-workspace/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "PERSONAL_SSM_BRIEFING",
+          targetUserId: targetUid || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (data.success && data.briefing) {
+        setSsmBriefing(data.briefing)
+      }
+    } catch {
+      // keep existing UI summary
+    } finally {
+      setLoadingBriefing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      loadPersonalSsmBriefing(briefingTargetUserId || undefined)
+    }
+  }, [isOpen, briefingTargetUserId])
+
   useEffect(() => {
     if (initialPrompt && initialPrompt.trim()) {
       setPromptInput(initialPrompt)
@@ -320,10 +353,134 @@ export function QaAssistantPanel({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* TAB 1: TỔNG HỢP HÔM NAY, THEO DÕI NHÓM/CÁ NHÂN & GỢI Ý BƯỚC TIẾP THEO */}
+          {/* TAB 1: TỔNG HỢP HÔM NAY, DỮ LIỆU SSM & GỢI Ý HỖ TRỢ CÔNG VIỆC CÁ NHÂN */}
           {activeTab === "OVERVIEW" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="space-y-5">
+              {/* Khối Trợ lý cá nhân dựa trên dữ liệu được gán & tín hiệu thực tế từ SSM */}
+              <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="border-l-4 border-[#003B3A] pl-2.5">
+                    <div className="text-xs font-bold text-[#003B3A]">
+                      Gợi ý hỗ trợ công việc từ dữ liệu cá nhân &amp; SSM
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      {ssmBriefing?.periodLabel || "Đồng bộ trực tiếp việc được gán, Báo cáo tuần, KSDV, Dự giờ & Khảo sát"}
+                    </div>
+                  </div>
+                  <select
+                    value={briefingTargetUserId}
+                    onChange={(e) => setBriefingTargetUserId(e.target.value)}
+                    className="rounded-xl border border-[#E2E8F0] bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700"
+                  >
+                    <option value="">Tài khoản của tôi</option>
+                    {(allStaffUsers || []).map((u: any) => (
+                      <option key={u.id} value={u.id}>
+                        {u.fullName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {loadingBriefing ? (
+                  <div className="py-4 text-center text-xs text-slate-500">
+                    Đang tổng hợp dữ liệu công việc cá nhân và tín hiệu SSM...
+                  </div>
+                ) : ssmBriefing ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs tabular-nums">
+                      <div className="rounded-xl bg-white border border-[#E2E8F0] p-2.5">
+                        <div className="text-[11px] text-slate-500">Báo cáo tuần</div>
+                        <div
+                          className={`font-bold mt-0.5 ${
+                            ssmBriefing.personalCounts?.hasWeeklyReport
+                              ? "text-[#059669]"
+                              : "text-[#E11D48]"
+                          }`}
+                        >
+                          {ssmBriefing.personalCounts?.hasWeeklyReport
+                            ? `Đã lập (${ssmBriefing.personalCounts.weeklyReportItemsCount} mục)`
+                            : "Chưa nộp tuần này"}
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-white border border-[#E2E8F0] p-2.5">
+                        <div className="text-[11px] text-slate-500">PVDH chưa khóa</div>
+                        <div className="font-bold text-[#003B3A] mt-0.5">
+                          {ssmBriefing.ssmSignals?.draftPvdhCount ?? 0} phiếu
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-white border border-[#E2E8F0] p-2.5">
+                        <div className="text-[11px] text-slate-500">Dự giờ chờ xử lý</div>
+                        <div className="font-bold text-[#003B3A] mt-0.5">
+                          {ssmBriefing.ssmSignals?.recentObsCount ?? 0} phiếu
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-white border border-[#E2E8F0] p-2.5">
+                        <div className="text-[11px] text-slate-500">Khảo sát đang mở</div>
+                        <div className="font-bold text-[#00736E] mt-0.5">
+                          {ssmBriefing.ssmSignals?.openSurveysCount ?? 0} đợt
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {(ssmBriefing.suggestions || []).map((sug: any) => (
+                        <div
+                          key={sug.id}
+                          className={`rounded-xl border p-3 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                            sug.priority === "HIGH"
+                              ? "border-rose-200"
+                              : sug.priority === "MEDIUM"
+                              ? "border-amber-200"
+                              : "border-[#E2E8F0]"
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                  sug.priority === "HIGH"
+                                    ? "bg-rose-50 text-[#E11D48]"
+                                    : sug.priority === "MEDIUM"
+                                    ? "bg-amber-50 text-[#D97706]"
+                                    : "bg-[#F0FDFA] text-[#00736E]"
+                                }`}
+                              >
+                                {sug.category}
+                              </span>
+                              <span className="text-xs font-bold text-[#003B3A]">{sug.title}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600">{sug.detail}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {sug.suggestedTaskPrompt && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPromptInput(sug.suggestedTaskPrompt)
+                                  setActiveTab("NLP_DRAFT")
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005250] text-white text-[11px] font-semibold cursor-pointer"
+                              >
+                                Tạo việc AI
+                              </button>
+                            )}
+                            {sug.actionHref && (
+                              <a
+                                href={sug.actionHref}
+                                className="px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-slate-100 text-[#003B3A] text-[11px] font-semibold"
+                              >
+                                {sug.actionLabel}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 tabular-nums">
                 <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200">
                   <div className="text-[11px] font-bold text-sky-800">Việc hôm nay</div>
                   <div className="text-2xl font-black text-sky-900 mt-0.5">

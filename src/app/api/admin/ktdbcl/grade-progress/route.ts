@@ -52,6 +52,7 @@ export async function GET(request: Request) {
     // Optional student details modal query
     const detailClassId = searchParams.get("detailClassId")
     const detailSubjectId = searchParams.get("detailSubjectId")
+    const mode = searchParams.get("mode") || "SUMMARY" // "SUMMARY" | "MISSING_STUDENTS"
 
     // Determine target academic year
     let targetYearId = academicYearId
@@ -717,6 +718,224 @@ export async function GET(request: Request) {
     const lockedCount = rawItems.filter(i => i.isLocked).length
     const unlockedCount = rawItems.filter(i => !i.isLocked).length
     const remindedTotal = rawItems.filter(i => (i.reminderCount || 0) > 0).length
+
+    // --- SUB-FEATURE: THỐNG KÊ HỌC SINH THIẾU ĐIỂM (mode === "MISSING_STUDENTS") ---
+    if (mode === "MISSING_STUDENTS") {
+      // Lấy các phân công lớp-môn chưa hoàn thành 100% (gradedCount < totalStudents)
+      const incompleteRawItems = rawItems.filter(it => it.totalStudents > 0 && it.gradedCount < it.totalStudents)
+      const incompleteClassIds = Array.from(new Set(incompleteRawItems.map(it => it.classId)))
+
+      const activeStudents = incompleteClassIds.length > 0
+        ? await prisma.student.findMany({
+            where: {
+              classId: { in: incompleteClassIds },
+              status: "ACTIVE"
+            },
+            orderBy: [{ classId: "asc" }, { studentName: "asc" }],
+            select: {
+              id: true,
+              studentCode: true,
+              vnEduCode: true,
+              studentName: true,
+              gender: true,
+              dateOfBirth: true,
+              classId: true
+            }
+          })
+        : []
+
+      const studentsByClassMap = new Map<string, any[]>()
+      activeStudents.forEach(st => {
+        const list = studentsByClassMap.get(st.classId) || []
+        list.push(st)
+        studentsByClassMap.set(st.classId, list)
+      })
+
+      // Danh sách từng lượt học sinh thiếu điểm (Student x Subject)
+      const rawMissingRecords: any[] = []
+      // Nhóm theo từng học sinh (1 học sinh có thể thiếu nhiều môn)
+      const missingByStudentMap = new Map<string, {
+        studentId: string
+        studentCode: string
+        vnEduCode: string
+        studentName: string
+        gender: string
+        dateOfBirth: Date | null
+        classId: string
+        className: string
+        grade: string
+        campusId: string
+        campusName: string
+        missingSubjects: Array<{
+          subjectId: string
+          subjectName: string
+          subjectCode: string
+          configType: "VNEDU" | "INTERNAL"
+          teacherId: string | null
+          teacherName: string
+          teacherEmail: string
+          evaluationPeriod: string
+          isLocked: boolean
+          classCompletionRate: number
+          classStatus: string
+        }>
+      }>()
+
+      incompleteRawItems.forEach(item => {
+        const classStudents = studentsByClassMap.get(item.classId) || []
+        const entryStat = entryStatsMap.get(`${item.classId}_${item.subjectId}`)
+        const gradedIds = entryStat ? entryStat.gradedStudentIds : new Set<string>()
+
+        classStudents.forEach(st => {
+          if (!gradedIds.has(st.id)) {
+            const record = {
+              recordKey: `${st.id}_${item.subjectId}_${item.evaluationPeriod}`,
+              studentId: st.id,
+              studentCode: st.studentCode,
+              vnEduCode: st.vnEduCode || "",
+              studentName: st.studentName,
+              gender: st.gender || "",
+              dateOfBirth: st.dateOfBirth,
+              classId: item.classId,
+              className: item.className,
+              grade: item.grade,
+              campusId: item.campusId,
+              campusName: item.campusName,
+              subjectId: item.subjectId,
+              subjectName: item.subjectName,
+              subjectCode: item.subjectCode,
+              configType: item.configType,
+              teacherId: item.teacherId,
+              teacherName: item.teacherName,
+              teacherCode: item.teacherCode,
+              teacherEmail: item.teacherEmail,
+              evaluationPeriod: item.evaluationPeriod,
+              isLocked: item.isLocked,
+              classTotalStudents: item.totalStudents,
+              classGradedCount: item.gradedCount,
+              classMissingCount: Math.max(0, item.totalStudents - item.gradedCount),
+              classCompletionRate: item.completionRate,
+              classStatus: item.status
+            }
+            rawMissingRecords.push(record)
+
+            if (!missingByStudentMap.has(st.id)) {
+              missingByStudentMap.set(st.id, {
+                studentId: st.id,
+                studentCode: st.studentCode,
+                vnEduCode: st.vnEduCode || "",
+                studentName: st.studentName,
+                gender: st.gender || "",
+                dateOfBirth: st.dateOfBirth,
+                classId: item.classId,
+                className: item.className,
+                grade: item.grade,
+                campusId: item.campusId,
+                campusName: item.campusName,
+                missingSubjects: []
+              })
+            }
+            missingByStudentMap.get(st.id)!.missingSubjects.push({
+              subjectId: item.subjectId,
+              subjectName: item.subjectName,
+              subjectCode: item.subjectCode,
+              configType: item.configType,
+              teacherId: item.teacherId,
+              teacherName: item.teacherName,
+              teacherEmail: item.teacherEmail,
+              evaluationPeriod: item.evaluationPeriod,
+              isLocked: item.isLocked,
+              classCompletionRate: item.completionRate,
+              classStatus: item.status
+            })
+          }
+        })
+      })
+
+      let filteredMissingRecords = rawMissingRecords
+      if (status !== "ALL") {
+        filteredMissingRecords = filteredMissingRecords.filter(r => r.classStatus === status)
+      }
+      if (searchTerm) {
+        filteredMissingRecords = filteredMissingRecords.filter(r => {
+          return (
+            r.studentName.toLowerCase().includes(searchTerm) ||
+            r.studentCode.toLowerCase().includes(searchTerm) ||
+            (r.vnEduCode || "").toLowerCase().includes(searchTerm) ||
+            r.className.toLowerCase().includes(searchTerm) ||
+            r.subjectName.toLowerCase().includes(searchTerm) ||
+            r.subjectCode.toLowerCase().includes(searchTerm) ||
+            r.teacherName.toLowerCase().includes(searchTerm)
+          )
+        })
+      }
+
+      let filteredStudentGroups = Array.from(missingByStudentMap.values())
+      if (status !== "ALL") {
+        filteredStudentGroups = filteredStudentGroups
+          .map(g => ({
+            ...g,
+            missingSubjects: g.missingSubjects.filter(ms => ms.classStatus === status)
+          }))
+          .filter(g => g.missingSubjects.length > 0)
+      }
+      if (searchTerm) {
+        filteredStudentGroups = filteredStudentGroups.filter(g => {
+          const matchStudent =
+            g.studentName.toLowerCase().includes(searchTerm) ||
+            g.studentCode.toLowerCase().includes(searchTerm) ||
+            (g.vnEduCode || "").toLowerCase().includes(searchTerm) ||
+            g.className.toLowerCase().includes(searchTerm)
+          const matchSub = g.missingSubjects.some(
+            ms =>
+              ms.subjectName.toLowerCase().includes(searchTerm) ||
+              ms.subjectCode.toLowerCase().includes(searchTerm) ||
+              ms.teacherName.toLowerCase().includes(searchTerm)
+          )
+          return matchStudent || matchSub
+        })
+      }
+
+      const uniqueMissingStudentsCount = missingByStudentMap.size
+      const totalMissingSubjectEntries = rawMissingRecords.length
+      const affectedClassesCount = new Set(rawMissingRecords.map(r => r.classId)).size
+      const affectedSubjectsCount = new Set(rawMissingRecords.map(r => r.subjectId)).size
+      const affectedTeachersCount = new Set(rawMissingRecords.map(r => r.teacherName).filter(t => t && t !== "Chưa phân công")).size
+
+      return NextResponse.json({
+        success: true,
+        mode: "MISSING_STUDENTS",
+        evaluationPeriod,
+        isPeriodLocked,
+        periodLockInfo: periodLock || null,
+        configuredSubjectsSummary,
+        availableConfiguredSubjects,
+        missingSummary: {
+          uniqueMissingStudentsCount,
+          totalMissingSubjectEntries,
+          affectedClassesCount,
+          affectedSubjectsCount,
+          affectedTeachersCount,
+          incompleteAssignmentsCount: incompleteRawItems.length,
+          totalAssignments
+        },
+        summary: {
+          totalAssignments,
+          completedCount,
+          inProgressCount,
+          notStartedCount,
+          noStudentsCount,
+          overallRate,
+          totalGradedStudents,
+          totalExpectedStudents,
+          lockedCount,
+          unlockedCount,
+          remindedTotal
+        },
+        missingRecords: filteredMissingRecords,
+        missingByStudents: filteredStudentGroups
+      })
+    }
 
     return NextResponse.json({
       success: true,

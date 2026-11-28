@@ -72,6 +72,11 @@ function SpecialSubjectNavInner({
       icon: Sparkles
     },
     {
+      name: "Báo cáo Game GD Tài chính",
+      href: "/admin/special-subjects/fin-game-report",
+      icon: ClipboardList
+    },
+    {
       name: "Giám sát Hướng nghiệp (6–12)",
       href: "/admin/special-subjects/monitor?subject=GDHN",
       icon: Compass

@@ -34,7 +34,10 @@ export function OverviewClient({ initialData }: { initialData: OverviewData }) {
     if (filterContext.selectedScopeGroup !== "LIEN_CAP") {
       qs.set("scopeGroup", filterContext.selectedScopeGroup)
     }
-    if (filterContext.selectedCampusId) qs.set("campusId", filterContext.selectedCampusId)
+    const campusFilter = filterContext.selectedCampusFilter || "ALL"
+    if (campusFilter && campusFilter !== "ALL") {
+      qs.set("campusId", campusFilter)
+    }
     if (versionId || filterContext.selectedVersionId) {
       qs.set("versionId", versionId || filterContext.selectedVersionId)
     }
@@ -69,6 +72,99 @@ export function OverviewClient({ initialData }: { initialData: OverviewData }) {
         loading={loading}
         showGradeAndClass={false}
       />
+
+      {/* Guided 4-Step End-to-End Timetable Roadmap */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] border-l-4 border-l-[#003B3A] p-4 shadow-xs tabular-nums">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h2 className="text-xs font-bold text-[#003B3A]">
+              Lộ trình 4 bước lập Thời khóa biểu chuẩn Sky-Line (40 tiết/tuần)
+            </h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Đi lần lượt từ Bước 1 → Bước 4 để đảm bảo đủ định mức QĐ 82/2026, đồng bộ GVVN/GVNN và gom cụm lịch giáo viên liên cơ sở trước khi chia tự động
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <Link
+            href={buildPageHref("/admin/thoi-khoa-bieu/cau-hinh")}
+            className="rounded-xl border border-[#E2E8F0] hover:border-[#00A19A] bg-[#F8FAFC]/70 hover:bg-[#F0FDFA]/40 p-3 transition-colors"
+          >
+            <div className="text-xs font-bold text-[#003B3A]">
+              Bước 1. Khung giờ & Quy tắc
+            </div>
+            <p className="text-[11px] text-slate-600 mt-1">
+              Thiết lập ca Sáng/Chiều, tiết cố định (Chào cờ/HĐTT), phòng chức năng, lịch bận và thời gian di chuyển CS1–CS5.
+            </p>
+          </Link>
+
+          <Link
+            href={buildPageHref("/admin/thoi-khoa-bieu/phan-cong")}
+            className="rounded-xl border border-[#E2E8F0] hover:border-[#00A19A] bg-[#F8FAFC]/70 hover:bg-[#F0FDFA]/40 p-3 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-xs font-bold text-[#003B3A]">
+                Bước 2. Định mức 40t & Phân công
+              </span>
+              <span
+                className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+                  metrics.missingAssignmentCount > 0
+                    ? "bg-amber-50 text-[#D97706] border border-amber-200"
+                    : "bg-emerald-50 text-[#059669] border border-emerald-200"
+                }`}
+              >
+                {metrics.missingAssignmentCount > 0
+                  ? `Thiếu ${metrics.missingAssignmentCount} GV`
+                  : "Đủ GV"}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 mt-1">
+              Áp chuẩn 40 tiết QĐ 82/2026 cho Hệ S & Hệ I, đồng bộ từ Phân công giảng dạy và tách tiết GVVN / GVNN.
+            </p>
+          </Link>
+
+          <Link
+            href={buildPageHref("/admin/thoi-khoa-bieu/xep-lich")}
+            className="rounded-xl border border-[#00A19A]/40 hover:border-[#00A19A] bg-[#F0FDFA]/50 hover:bg-[#F0FDFA] p-3 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-xs font-bold text-[#003B3A]">
+                Bước 3. Xếp TKB (Kéo thả & Tự động)
+              </span>
+              <span className="px-1.5 py-0.2 rounded bg-white text-[#00736E] border border-teal-200 text-[10px] font-semibold">
+                {metrics.scheduledWeeklyTotal}/{metrics.requiredWeeklyTotal}t
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 mt-1">
+              Lọc xếp & khóa cụm GV dạy nhiều cơ sở trước, sau đó chạy Chia tự động (nhớ lịch nền & đóng cặp luân phiên).
+            </p>
+          </Link>
+
+          <Link
+            href={buildPageHref("/admin/thoi-khoa-bieu/ban-hanh")}
+            className="rounded-xl border border-[#E2E8F0] hover:border-[#00A19A] bg-[#F8FAFC]/70 hover:bg-[#F0FDFA]/40 p-3 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-1.5">
+              <span className="text-xs font-bold text-[#003B3A]">
+                Bước 4. Duyệt & Ban hành
+              </span>
+              <span
+                className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+                  metrics.conflictCount > 0
+                    ? "bg-rose-50 text-[#E11D48] border border-rose-200"
+                    : "bg-emerald-50 text-[#059669] border border-emerald-200"
+                }`}
+              >
+                {metrics.conflictCount > 0 ? `${metrics.conflictCount} lỗi` : "0 lỗi"}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 mt-1">
+              Kiểm định 10 quy tắc bắt buộc, phê duyệt hiệu lực và công bố đồng bộ sang cổng Giáo viên, Phụ huynh & Học sinh.
+            </p>
+          </Link>
+        </div>
+      </div>
 
       {errorMessage && (
         <div className="bg-rose-50 border border-rose-200 text-[#E11D48] rounded-2xl px-4 py-3 text-xs font-medium">

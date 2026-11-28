@@ -1,10 +1,11 @@
 "use client"
 
-import React, { useEffect } from "react"
+import React, { useEffect, useRef, useState } from "react"
+import { ChevronDown } from "lucide-react"
 import type { LevelFilterCode, ScopeGroup } from "@/lib/timetable/types"
 import { VERSION_STATUS_BADGE } from "./TimetableShell"
 
-const SCOPE_FILTER_MEMORY_KEY = "ssm_tkb_scope_filter_memory_v1"
+const SCOPE_FILTER_MEMORY_KEY = "ssm_tkb_scope_filter_memory_v2"
 
 interface RememberedScopeFilter {
   campusId?: string
@@ -58,6 +59,9 @@ export interface SerializedFilterContext {
   campusesForScope: Array<{ id: string; campusCode: string; displayName: string }>
   permittedCampuses: Array<{ id: string; campusCode: string; displayName: string }>
   selectedCampusId: string
+  selectedCampusIds?: string[]
+  selectedCampusFilter?: string
+  isAllCampusesSelected?: boolean
   levelOptions: Array<{ code: LevelFilterCode; label: string }>
   selectedLevelCode: LevelFilterCode
   availableStudyPrograms?: Array<{ code: "Hệ S" | "Hệ I"; count: number }>
@@ -73,6 +77,7 @@ export interface SerializedFilterContext {
     studyProgram?: "Hệ S" | "Hệ I"
     homeroomTeacherId: string
     campusId: string
+    campusCode?: string
   }>
   selectedClassId: string
   versions: Array<{
@@ -128,10 +133,27 @@ export function TimetableFilterBar({
   viewedWeekDate,
   extraSlot,
 }: TimetableFilterBarProps) {
+  const [campusDropdownOpen, setCampusDropdownOpen] = useState(false)
+  const campusDropdownRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!campusDropdownOpen) return
+    const handleOutside = (e: MouseEvent) => {
+      if (
+        campusDropdownRef.current &&
+        !campusDropdownRef.current.contains(e.target as Node)
+      ) {
+        setCampusDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleOutside)
+    return () => document.removeEventListener("mousedown", handleOutside)
+  }, [campusDropdownOpen])
+
   useEffect(() => {
     if (!context.selectedYearId || !context.selectedScopeGroup) return
     writeScopeMemory(context.selectedYearId, context.semester, context.selectedScopeGroup, {
-      campusId: context.selectedCampusId,
+      campusId: context.selectedCampusFilter || "ALL",
       levelCode: context.selectedLevelCode,
       studyProgram: context.selectedStudyProgram || "ALL",
       grade: context.selectedGrade,
@@ -142,7 +164,7 @@ export function TimetableFilterBar({
     context.selectedYearId,
     context.semester,
     context.selectedScopeGroup,
-    context.selectedCampusId,
+    context.selectedCampusFilter,
     context.selectedLevelCode,
     context.selectedStudyProgram,
     context.selectedGrade,
@@ -178,7 +200,7 @@ export function TimetableFilterBar({
               const mem = readScopeMemory(nextYearId, context.semester, context.selectedScopeGroup)
               guardAndEmit({
                 academicYearId: nextYearId,
-                campusId: mem?.campusId || "",
+                campusId: mem?.campusId || "ALL",
                 versionId: mem?.versionId || "",
               })
             }}
@@ -205,7 +227,7 @@ export function TimetableFilterBar({
               const mem = readScopeMemory(context.selectedYearId, nextSem, context.selectedScopeGroup)
               guardAndEmit({
                 semester: nextSem,
-                campusId: mem?.campusId || context.selectedCampusId,
+                campusId: mem?.campusId || context.selectedCampusFilter || "ALL",
                 versionId: mem?.versionId || "",
               })
             }}
@@ -229,8 +251,9 @@ export function TimetableFilterBar({
               const mem = readScopeMemory(context.selectedYearId, context.semester, nextScope)
               guardAndEmit({
                 scopeGroup: nextScope,
-                campusId: mem?.campusId || "",
+                campusId: mem?.campusId || "ALL",
                 levelCode: mem?.levelCode || "ALL",
+                studyProgram: mem?.studyProgram || "ALL",
                 grade: mem?.grade || "ALL",
                 classId: mem?.classId || "ALL",
                 versionId: mem?.versionId || "",
@@ -246,34 +269,157 @@ export function TimetableFilterBar({
           </select>
         </div>
 
-        {/* Cơ sở */}
-        <div>
+        {/* Cơ sở đào tạo (Chọn hết / Chọn gộp nhiều cơ sở / Chọn riêng lẻ) */}
+        <div className="relative" ref={campusDropdownRef}>
           <label className="block text-[11px] font-semibold text-slate-600 mb-1">
             Cơ sở đào tạo
           </label>
-          <select
-            value={context.selectedCampusId}
-            disabled={loading || context.campusesForScope.length === 0}
-            onChange={(e) =>
+          {(() => {
+            const allScopeCampuses = context.campusesForScope || []
+            const activeIds =
+              context.selectedCampusIds && context.selectedCampusIds.length > 0
+                ? context.selectedCampusIds
+                : context.selectedCampusId
+                ? [context.selectedCampusId]
+                : []
+            const activeSet = new Set(activeIds)
+            const isAll =
+              Boolean(context.isAllCampusesSelected) ||
+              (allScopeCampuses.length > 0 && activeSet.size >= allScopeCampuses.length)
+
+            const selectedShortCodes = allScopeCampuses
+              .filter((c) => activeSet.has(c.id))
+              .map((c) => c.campusCode || c.displayName)
+
+            const buttonLabel =
+              allScopeCampuses.length === 0
+                ? "Không có cơ sở hợp lệ"
+                : isAll
+                ? allScopeCampuses.length === 1
+                  ? allScopeCampuses[0].displayName
+                  : `Tất cả cơ sở (${allScopeCampuses.length}) — ${selectedShortCodes.join(", ")}`
+                : activeSet.size === 1
+                ? allScopeCampuses.find((c) => activeSet.has(c.id))?.displayName ||
+                  selectedShortCodes[0]
+                : `Đã chọn ${activeSet.size}/${allScopeCampuses.length} (${selectedShortCodes.join(", ")})`
+
+            const applyCampusIds = (nextIds: string[]) => {
+              const allIds = allScopeCampuses.map((c) => c.id)
+              const ordered = allIds.filter((id) => nextIds.includes(id))
+              const nextParam =
+                ordered.length === 0 || ordered.length >= allIds.length
+                  ? "ALL"
+                  : ordered.join(",")
               guardAndEmit({
-                campusId: e.target.value,
+                campusId: nextParam,
                 grade: "ALL",
                 classId: "ALL",
-                versionId: "",
               })
             }
-            className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#00A19A] focus:outline-none"
-          >
-            {context.campusesForScope.length === 0 ? (
-              <option value="">Không có cơ sở hợp lệ</option>
-            ) : (
-              context.campusesForScope.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.displayName}
-                </option>
-              ))
-            )}
-          </select>
+
+            return (
+              <>
+                <button
+                  type="button"
+                  disabled={loading || allScopeCampuses.length === 0}
+                  onClick={() => setCampusDropdownOpen((v) => !v)}
+                  title={buttonLabel}
+                  className="w-full flex items-center justify-between gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-medium text-slate-800 hover:border-[#00A19A] focus:border-[#00A19A] focus:outline-none tabular-nums cursor-pointer"
+                >
+                  <span className="truncate text-left">{buttonLabel}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                </button>
+
+                {campusDropdownOpen && allScopeCampuses.length > 0 && (
+                  <div className="absolute left-0 right-0 z-40 mt-1.5 min-w-[270px] rounded-2xl border border-[#E2E8F0] bg-white shadow-lg overflow-hidden tabular-nums">
+                    <div className="px-3 py-2 bg-[#F0FDFA] border-b border-[#E2E8F0] flex items-center justify-between gap-2">
+                      <label className="flex items-center gap-2 text-xs font-bold text-[#003B3A] cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={isAll}
+                          onChange={() => {
+                            if (!isAll) {
+                              applyCampusIds(allScopeCampuses.map((c) => c.id))
+                            } else if (allScopeCampuses.length > 0) {
+                              applyCampusIds([allScopeCampuses[0].id])
+                            }
+                          }}
+                          className="w-3.5 h-3.5 accent-[#003B3A] rounded"
+                        />
+                        <span>Chọn tất cả cơ sở ({allScopeCampuses.length})</span>
+                      </label>
+                      {!isAll && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            applyCampusIds(allScopeCampuses.map((c) => c.id))
+                            setCampusDropdownOpen(false)
+                          }}
+                          className="text-[11px] font-semibold text-[#008B85] hover:underline cursor-pointer"
+                        >
+                          Chọn hết
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-60 overflow-y-auto divide-y divide-[#F1F5F9]">
+                      {allScopeCampuses.map((c) => {
+                        const checked = activeSet.has(c.id)
+                        return (
+                          <div
+                            key={c.id}
+                            className={`px-3 py-2 flex items-center justify-between gap-2 text-xs transition-colors ${
+                              checked ? "bg-[#F8FAFC]" : "bg-white hover:bg-[#F8FAFC]"
+                            }`}
+                          >
+                            <label className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  if (checked) {
+                                    const remaining = activeIds.filter((id) => id !== c.id)
+                                    if (remaining.length === 0) return
+                                    applyCampusIds(remaining)
+                                  } else {
+                                    applyCampusIds([...activeIds, c.id])
+                                  }
+                                }}
+                                className="w-3.5 h-3.5 accent-[#003B3A] rounded shrink-0"
+                              />
+                              <span
+                                className={`truncate ${
+                                  checked
+                                    ? "font-semibold text-[#003B3A]"
+                                    : "text-slate-600"
+                                }`}
+                              >
+                                {c.displayName}
+                              </span>
+                            </label>
+
+                            {allScopeCampuses.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  applyCampusIds([c.id])
+                                  setCampusDropdownOpen(false)
+                                }}
+                                title={`Chỉ xem riêng ${c.displayName}`}
+                                className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] text-[10.5px] font-semibold text-[#00736E] hover:bg-[#F0FDFA] hover:border-[#00A19A] shrink-0 cursor-pointer"
+                              >
+                                Chỉ cơ sở này
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
 
         {/* Cấp học */}

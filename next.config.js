@@ -6,6 +6,7 @@ const nextConfig = {
   
   experimental: {
     serverActions: {
+      bodySizeLimit: '10mb',
       allowedOrigins: [
         'ssm.skylineschool.edu.vn',
         '*.skylineschool.edu.vn',

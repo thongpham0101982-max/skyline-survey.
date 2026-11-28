@@ -15,6 +15,7 @@ export interface StudentEvaluationInput {
   scores: Record<string, SubjectScoreItem> // key: subjectId hoặc subjectCode
   conductRating?: string | null // "Tốt", "Khá", "Đạt", "Chưa đạt"
   semester: "HK1" | "HK2" | "CN"
+  absencesTotal?: number
 }
 
 export interface StudentEvaluationResult {
@@ -23,6 +24,16 @@ export interface StudentEvaluationResult {
   reward?: "Học sinh Xuất sắc" | "Học sinh Giỏi" | ""
   notes?: string
   promoted?: boolean
+  explanation?: string
+  metrics?: {
+    numericCount: number
+    countGte90: number
+    countGte80: number
+    countGte65: number
+    countGte50: number
+    minScore: number | null
+    assessmentFailedCount: number
+  }
 }
 
 /**
@@ -185,7 +196,7 @@ export function evaluateAwardTitle(
 }
 
 /**
- * Hàm đánh giá trọn gói cho 1 học sinh theo Thông tư 22
+ * Hàm đánh giá trọn gói cho 1 học sinh theo Thông tư 22/2021/TT-BGDĐT (Điều 9, Điều 12, Điều 15)
  */
 export function evaluateStudentTT22(input: StudentEvaluationInput): StudentEvaluationResult {
   const scoresArray = Object.values(input.scores)
@@ -193,12 +204,70 @@ export function evaluateStudentTT22(input: StudentEvaluationInput): StudentEvalu
   const conductRating = (input.conductRating as any) || "Tốt"
   const reward = evaluateAwardTitle(academicRating, conductRating, scoresArray, input.semester)
 
+  const numericScores: number[] = []
+  const failedAssessmentNames: string[] = []
+  const below35Names: string[] = []
+  const below50Names: string[] = []
+
+  scoresArray.forEach(item => {
+    const isAssess = item.isEvaluationOnly ?? isAssessmentOnlySubject(item.subjectName || item.subjectCode)
+    const evalGrade = normalizeEvaluationGrade(item.evaluationGrade)
+    if (isAssess) {
+      if (evalGrade === "CĐ") {
+        failedAssessmentNames.push(item.subjectName || item.subjectCode)
+      }
+    } else {
+      if (evalGrade === "Miễn" || String(item.score).toLowerCase() === "miễn") return
+      if (item.score !== undefined && item.score !== null && !isNaN(Number(item.score))) {
+        const num = Number(item.score)
+        numericScores.push(num)
+        if (num < 3.5) below35Names.push(`${item.subjectName || item.subjectCode} (${num})`)
+        else if (num < 5.0) below50Names.push(`${item.subjectName || item.subjectCode} (${num})`)
+      }
+    }
+  })
+
+  const countGte90 = numericScores.filter(s => s >= 9.0).length
+  const countGte80 = numericScores.filter(s => s >= 8.0).length
+  const countGte65 = numericScores.filter(s => s >= 6.5).length
+  const countGte50 = numericScores.filter(s => s >= 5.0).length
+  const minScore = numericScores.length > 0 ? Math.min(...numericScores) : null
+
+  let explanation = ""
+  if (academicRating === "Tốt") {
+    explanation = `Tất cả môn nhận xét Đạt, tất cả môn tính điểm >= 6.5 và có ${countGte80}/${numericScores.length} môn >= 8.0${
+      reward === "Học sinh Xuất sắc" ? ` (${countGte90} môn >= 9.0 → HS Xuất sắc)` : reward === "Học sinh Giỏi" ? " (→ HS Giỏi)" : ""
+    } (Điều 9 & 15 TT22).`
+  } else if (academicRating === "Khá") {
+    explanation = `Tất cả môn nhận xét Đạt, tất cả môn tính điểm >= 5.0 và có ${countGte65}/${numericScores.length} môn >= 6.5 (${countGte80} môn >= 8.0) (Điều 9 TT22).`
+  } else if (academicRating === "Đạt") {
+    explanation = `Có ${countGte50}/${numericScores.length} môn >= 5.0, không có môn nào < 3.5${
+      failedAssessmentNames.length > 0 ? `, 1 môn nhận xét CĐ (${failedAssessmentNames.join(", ")})` : ""
+    } (Điều 9 TT22).`
+  } else {
+    const reasons: string[] = []
+    if (below35Names.length > 0) reasons.push(`môn dưới 3.5: ${below35Names.join(", ")}`)
+    if (countGte50 < Math.min(6, numericScores.length)) reasons.push(`chỉ có ${countGte50} môn >= 5.0 (${below50Names.join(", ")})`)
+    if (failedAssessmentNames.length > 1) reasons.push(`${failedAssessmentNames.length} môn nhận xét CĐ (${failedAssessmentNames.join(", ")})`)
+    explanation = `Xếp loại Chưa đạt do ${reasons.join("; ") || "chưa đủ điều kiện mức Đạt"} (Điều 9 TT22).`
+  }
+
   let notes = ""
   let promoted = true
+  const absencesTotal = Number(input.absencesTotal || 0)
 
   if (input.semester === "CN") {
-    if (academicRating === "Chưa đạt" || conductRating === "Chưa đạt") {
-      notes = "Rèn luyện thêm trong hè"
+    if (absencesTotal > 45) {
+      notes = `Nghỉ ${absencesTotal} buổi (> 45 buổi/năm - Không được lên lớp theo Điều 12 TT22)`
+      promoted = false
+    } else if (academicRating === "Chưa đạt" && conductRating === "Chưa đạt") {
+      notes = "Không được lên lớp (KQHT & KQRL cả năm Chưa đạt - Điều 12 TT22)"
+      promoted = false
+    } else if (academicRating === "Chưa đạt") {
+      notes = "Kiểm tra, đánh giá lại các môn Chưa đạt trong hè (Điều 12 TT22)"
+      promoted = false
+    } else if (conductRating === "Chưa đạt") {
+      notes = "Rèn luyện thêm trong hè (Điều 12 TT22)"
       promoted = false
     } else {
       notes = "Được lên lớp"
@@ -211,6 +280,16 @@ export function evaluateStudentTT22(input: StudentEvaluationInput): StudentEvalu
     conductRating,
     reward,
     notes,
-    promoted
+    promoted,
+    explanation,
+    metrics: {
+      numericCount: numericScores.length,
+      countGte90,
+      countGte80,
+      countGte65,
+      countGte50,
+      minScore,
+      assessmentFailedCount: failedAssessmentNames.length
+    }
   }
 }

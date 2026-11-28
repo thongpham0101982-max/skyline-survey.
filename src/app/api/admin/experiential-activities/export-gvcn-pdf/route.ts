@@ -2,6 +2,7 @@
 // @ts-nocheck
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireStaffSession } from "@/lib/security-guard";
 import fs from "fs";
 import path from "path";
 
@@ -30,6 +31,10 @@ function parseDbJson<T>(value: string | null | undefined, fallback: T): T {
 }
 
 export async function GET(req: Request) {
+  const ctx = await requireStaffSession();
+  if (!ctx) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { searchParams } = new URL(req.url);
   const academicYearParam = searchParams.get("academicYear");
   const targetClassId = searchParams.get("classId");

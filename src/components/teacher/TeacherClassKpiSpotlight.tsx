@@ -155,40 +155,34 @@ export function TeacherClassKpiSpotlight() {
   const studentKpi = data.studentSurveyKpi;
 
   return (
-    <section className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs space-y-4 border-l-4 border-l-[#003B3A]">
+    <section className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-2xs border-l-4 border-l-[#003B3A]">
       {/* Header bar: Tiêu đề khối & Bộ lọc ngữ cảnh */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#003B3A]/10 text-[#003B3A] flex items-center justify-center font-bold">
-            <Sparkles className="w-4 h-4 text-[#00A19A]" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-[#003B3A] text-[#5EEAD4] flex items-center justify-center shrink-0">
+            <Award className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-slate-900 tracking-tight">
-                KPIs lớp phụ trách
-              </h2>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#00A19A]/15 text-[#00736E] border border-[#00A19A]/30">
-                Thước đo thực tế
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 font-medium">
-              Chỉ số tín nhiệm Phụ huynh và khảo sát Tự hào Học sinh Sky-Line
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-[#003B3A] tracking-tight truncate">
+              Chỉ số chất lượng lớp phụ trách
+            </h2>
+            <p className="text-[11px] text-slate-500 truncate">
+              Tín nhiệm Phụ huynh & Khảo sát Tự hào Học sinh Sky-Line
             </p>
           </div>
         </div>
 
         {/* Filter Controls: Kiêm nhiệm role switch & Class Selector */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Giáo viên kiêm nhiệm: Tab chuyển đổi Chủ nhiệm / Bộ môn */}
           {isDualRole && (
-            <div className="inline-flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-[11px] font-bold">
+            <div className="inline-flex items-center bg-white p-0.5 rounded-xl border border-[#E2E8F0] text-[11px] font-semibold">
               <button
                 type="button"
                 onClick={() => handleScopeChange("HOMEROOM")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
                   selectedScope === "HOMEROOM"
-                    ? "bg-[#003B3A] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                    ? "bg-[#003B3A] text-white"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
                 Lớp chủ nhiệm
@@ -196,10 +190,10 @@ export function TeacherClassKpiSpotlight() {
               <button
                 type="button"
                 onClick={() => handleScopeChange("SUBJECT")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
                   selectedScope === "SUBJECT"
-                    ? "bg-[#003B3A] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                    ? "bg-[#003B3A] text-white"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
                 Lớp giảng dạy
@@ -207,14 +201,13 @@ export function TeacherClassKpiSpotlight() {
             </div>
           )}
 
-          {/* Dropdown chọn lớp nếu có từ 2 lớp trở lên */}
           {data.classes.length > 1 ? (
             <div className="relative">
               <select
                 value={selectedClassId}
                 onChange={handleClassChange}
                 aria-label="Chọn lớp phụ trách"
-                className="bg-slate-50 border border-slate-200/90 text-slate-800 text-xs font-bold rounded-xl px-3 py-1.5 pr-7 focus:ring-2 focus:ring-[#00A19A] focus:border-transparent outline-none cursor-pointer appearance-none shadow-2xs"
+                className="bg-white border border-[#E2E8F0] text-[#003B3A] text-xs font-semibold rounded-xl px-3 py-1.5 pr-7 focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none cursor-pointer appearance-none tabular-nums"
               >
                 {data.classes.map((cls) => (
                   <option key={cls.id} value={cls.id}>
@@ -229,18 +222,17 @@ export function TeacherClassKpiSpotlight() {
               </div>
             </div>
           ) : (
-            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[#003B3A] bg-white px-3 py-1.5 rounded-xl border border-[#E2E8F0] flex items-center gap-1.5 tabular-nums">
               <GraduationCap className="w-3.5 h-3.5 text-[#00A19A]" />
               {currentClass.className} ({currentClass.studentCount} HS)
             </span>
           )}
 
-          {/* Nút làm mới */}
           <button
             type="button"
             onClick={() => loadKpis(selectedScope, selectedClassId, true)}
             disabled={refreshing}
-            className="p-1.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all border border-slate-200/80 cursor-pointer shadow-2xs"
+            className="p-1.5 text-slate-500 hover:text-[#003B3A] bg-white hover:bg-[#F0FDFA] rounded-xl transition-colors border border-[#E2E8F0] cursor-pointer"
             title="Cập nhật số liệu mới nhất"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-[#00A19A]" : ""}`} />
@@ -248,184 +240,158 @@ export function TeacherClassKpiSpotlight() {
         </div>
       </div>
 
-      {/* 2 Thẻ Trọng tâm: Tín nhiệm PHHS & Khảo sát Học sinh */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* THẺ A: TÍN NHIỆM PHHS */}
-        <div className="bg-[#F8FAFC] border border-slate-200/90 rounded-xl p-4 flex flex-col justify-between transition-all hover:border-[#00A19A]/40 shadow-2xs">
+      {/* 2 Cột Sổ cái: Tín nhiệm PHHS & Khảo sát Học sinh */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-[#E2E8F0] bg-white">
+        {/* CỘT A: TÍN NHIỆM PHHS */}
+        <div className="p-4 sm:px-5 flex flex-col justify-between gap-3">
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-teal-50 border border-teal-200/80 flex items-center justify-center text-[#00A19A]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-[#F0FDFA] border border-[#CCFBF1] text-[#00736E] flex items-center justify-center shrink-0">
                   <MessageSquareHeart className="w-4 h-4" />
                 </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 tracking-tight">
-                    Tín nhiệm PHHS
+                <div className="min-w-0">
+                  <h3 className="text-xs font-bold text-[#003B3A]">
+                    Tín nhiệm Phụ huynh
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[11px] text-slate-500 truncate">
                     {parentKpi.periodName || "Khảo sát ý kiến Phụ huynh"}
                   </p>
                 </div>
               </div>
 
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-md border shrink-0 ${
                   parentKpi.hasData
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-slate-200/70 text-slate-600"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-slate-50 text-slate-500 border-[#E2E8F0]"
                 }`}
               >
-                {parentKpi.hasData ? "Đã có kết quả" : "Chưa có kết quả"}
+                {parentKpi.hasData ? "Đã có kết quả" : "Chưa có dữ liệu"}
               </span>
             </div>
 
-            {/* Nội dung kết quả số liệu */}
             {parentKpi.hasData ? (
-              <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-200/70 bg-white rounded-lg p-2.5">
-                <div>
-                  <span className="text-[10px] font-medium text-slate-500 block">Điểm NPS</span>
-                  <span className="text-lg font-black text-slate-900 tabular-nums">
+              <div className="grid grid-cols-3 divide-x divide-[#E2E8F0] border border-[#E2E8F0] bg-[#F8FAFC] rounded-xl py-2.5 px-1 tabular-nums">
+                <div className="px-3">
+                  <span className="text-[11px] text-slate-500 block">Điểm NPS</span>
+                  <span className="text-lg font-bold text-[#003B3A]">
                     {parentKpi.npsScore !== null ? `${parentKpi.npsScore > 0 ? "+" : ""}${parentKpi.npsScore}` : "—"}
                   </span>
-                  <span className="text-[9px] text-slate-400 block font-medium">thang đo chuẩn</span>
                 </div>
-
-                <div>
-                  <span className="text-[10px] font-medium text-slate-500 block">Số phản hồi</span>
-                  <span className="text-lg font-black text-[#003B3A] tabular-nums">
+                <div className="px-3">
+                  <span className="text-[11px] text-slate-500 block">Phản hồi</span>
+                  <span className="text-lg font-bold text-[#003B3A]">
                     {parentKpi.submittedCount}
-                  </span>
-                  <span className="text-[9px] text-slate-500 block font-medium tabular-nums">
-                    / {parentKpi.totalInvited} PHHS
+                    <span className="text-xs font-medium text-slate-400">/{parentKpi.totalInvited}</span>
                   </span>
                 </div>
-
-                <div>
-                  <span className="text-[10px] font-medium text-slate-500 block">Tỷ lệ tham gia</span>
-                  <span className="text-lg font-black text-[#00A19A] tabular-nums">
+                <div className="px-3">
+                  <span className="text-[11px] text-slate-500 block">Tỷ lệ nộp</span>
+                  <span className="text-lg font-bold text-[#00736E]">
                     {parentKpi.responseRatePercent !== null ? `${parentKpi.responseRatePercent}%` : "—"}
                   </span>
-                  <span className="text-[9px] text-slate-400 block font-medium">tiến độ nộp</span>
                 </div>
               </div>
             ) : (
-              <div className="py-4 px-3 bg-white/70 border border-dashed border-slate-200 rounded-lg text-center space-y-1">
-                <span className="text-xs font-semibold text-slate-600 block">
-                  Chưa có dữ liệu phản hồi khảo sát
-                </span>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  {parentKpi.reason || "Kỳ khảo sát PHHS chưa mở hoặc lớp chưa ghi nhận lượt phản hồi nào."}
+              <div className="py-2.5 px-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl flex items-center gap-2.5">
+                <Info className="w-4 h-4 text-slate-400 shrink-0" />
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {parentKpi.reason || "Kỳ khảo sát PHHS chưa mở hoặc lớp chưa ghi nhận lượt phản hồi."}
                 </p>
               </div>
             )}
           </div>
 
-          <div className="pt-3 mt-2 flex items-center justify-between text-xs border-t border-slate-200/60">
-            <span className="text-[11px] text-slate-400 font-medium">
-              Đối tượng: {currentClass.type === "HOMEROOM" ? "Lớp chủ nhiệm" : "Lớp giảng dạy"}
+          <div className="pt-2.5 flex items-center justify-between text-xs border-t border-[#F1F5F9]">
+            <span className="text-[11px] text-slate-500">
+              Phạm vi: {currentClass.type === "HOMEROOM" ? "Lớp chủ nhiệm" : "Lớp giảng dạy"}
             </span>
             <Link
               href={parentKpi.detailUrl}
-              className="inline-flex items-center gap-1 font-bold text-[#00A19A] hover:text-[#003B3A] transition-colors"
+              className="inline-flex items-center gap-1 font-semibold text-[#00736E] hover:text-[#003B3A] transition-colors"
             >
-              <span>Xem chi tiết khảo sát</span>
+              <span>Xem chi tiết</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
 
-        {/* THẺ B: KHẢO SÁT HỌC SINH */}
-        <div className="bg-[#F8FAFC] border border-slate-200/90 rounded-xl p-4 flex flex-col justify-between transition-all hover:border-[#00A19A]/40 shadow-2xs">
+        {/* CỘT B: KHẢO SÁT HỌC SINH */}
+        <div className="p-4 sm:px-5 flex flex-col justify-between gap-3">
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200/80 text-[#D97706] flex items-center justify-center shrink-0">
                   <Award className="w-4 h-4" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <h3 className="text-xs font-bold text-slate-900 tracking-tight">
+                    <h3 className="text-xs font-bold text-[#003B3A]">
                       Khảo sát Học sinh
                     </h3>
-                    <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded">
+                    <span className="text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/80 px-1.5 py-0.2 rounded tabular-nums">
                       {studentKpi.frameworkCode}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[11px] text-slate-500 truncate">
                     {studentKpi.surveyName}
                   </p>
                 </div>
               </div>
 
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-md border shrink-0 ${
                   studentKpi.hasData
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-slate-200/70 text-slate-600"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-slate-50 text-slate-500 border-[#E2E8F0]"
                 }`}
               >
-                {studentKpi.hasData ? "Đã có kết quả" : "Chưa có kết quả"}
+                {studentKpi.hasData ? "Đã có kết quả" : "Chưa có dữ liệu"}
               </span>
             </div>
 
-            {/* Nội dung kết quả số liệu */}
             {studentKpi.hasData ? (
-              <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-200/70 bg-white rounded-lg p-2.5">
-                <div>
-                  <span className="text-[10px] font-medium text-slate-500 block">NPS Tự hào</span>
-                  <span className="text-lg font-black text-amber-700 tabular-nums">
+              <div className="grid grid-cols-3 divide-x divide-[#E2E8F0] border border-[#E2E8F0] bg-[#F8FAFC] rounded-xl py-2.5 px-1 tabular-nums">
+                <div className="px-3">
+                  <span className="text-[11px] text-slate-500 block">NPS Tự hào</span>
+                  <span className="text-lg font-bold text-[#D97706]">
                     {studentKpi.npsScore !== null ? `${studentKpi.npsScore > 0 ? "+" : ""}${studentKpi.npsScore}` : "—"}
                   </span>
-                  <span className="text-[9px] text-slate-400 block font-medium">chỉ số trải nghiệm</span>
                 </div>
-
-                <div>
-                  <span className="text-[10px] font-medium text-slate-500 block">Lượt phản hồi</span>
-                  <span className="text-lg font-black text-[#003B3A] tabular-nums">
+                <div className="px-3">
+                  <span className="text-[11px] text-slate-500 block">Phản hồi</span>
+                  <span className="text-lg font-bold text-[#003B3A]">
                     {studentKpi.responsesCount}
-                  </span>
-                  <span className="text-[9px] text-slate-500 block font-medium tabular-nums">
-                    / {studentKpi.totalStudents} HS
+                    <span className="text-xs font-medium text-slate-400">/{studentKpi.totalStudents}</span>
                   </span>
                 </div>
-
-                <div>
-                  <span className="text-[10px] font-medium text-slate-500 block">Tiến độ hoàn thành</span>
-                  <span className="text-lg font-black text-[#00A19A] tabular-nums">
+                <div className="px-3">
+                  <span className="text-[11px] text-slate-500 block">Hoàn thành</span>
+                  <span className="text-lg font-bold text-[#00736E]">
                     {studentKpi.progressPercent !== null ? `${studentKpi.progressPercent}%` : "—"}
                   </span>
-                  <span className="text-[9px] text-slate-400 block font-medium">đã tham gia</span>
                 </div>
               </div>
             ) : (
-              <div className="py-4 px-3 bg-white/70 border border-dashed border-slate-200 rounded-lg text-center space-y-1">
-                <span className="text-xs font-semibold text-slate-600 block">
-                  Chưa có đợt khảo sát nào được công bố
-                </span>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  {studentKpi.reason || "Kỳ khảo sát Tự hào Học sinh (IP2.1) sẽ được tự động hiển thị khi mở đợt khảo sát."}
+              <div className="py-2.5 px-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl flex items-center gap-2.5">
+                <Info className="w-4 h-4 text-slate-400 shrink-0" />
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  {studentKpi.reason || "Kỳ khảo sát Tự hào Học sinh sẽ hiển thị khi có kết quả công bố."}
                 </p>
               </div>
             )}
-
-            {/* Ghi chú bảo mật & tôn trọng bản chất khảo sát */}
-            <div className="flex items-start gap-1.5 text-[10px] text-slate-400 bg-slate-50 p-2 rounded-lg border border-slate-100">
-              <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-              <span className="leading-tight">
-                {studentKpi.note}
-              </span>
-            </div>
           </div>
 
-          <div className="pt-3 mt-2 flex items-center justify-between text-xs border-t border-slate-200/60">
-            <span className="text-[11px] text-slate-400 font-medium">
-              Chỉ số tự hào & trải nghiệm học sinh
+          <div className="pt-2.5 flex items-center justify-between gap-3 text-xs border-t border-[#F1F5F9]">
+            <span className="text-[11px] text-slate-500 truncate" title={studentKpi.note}>
+              {studentKpi.note || "Chỉ số trải nghiệm học đường — không dùng đánh giá cá nhân GV."}
             </span>
             <Link
               href={studentKpi.detailUrl}
-              className="inline-flex items-center gap-1 font-bold text-[#00A19A] hover:text-[#003B3A] transition-colors"
+              className="inline-flex items-center gap-1 font-semibold text-[#00736E] hover:text-[#003B3A] transition-colors shrink-0"
             >
-              <span>Xem báo cáo chi tiết</span>
+              <span>Xem báo cáo</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>

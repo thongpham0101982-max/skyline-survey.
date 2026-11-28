@@ -14,7 +14,8 @@ import {
   Clock, 
   Edit3, 
   GraduationCap,
-  Sparkles
+  Sparkles,
+  Lock
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -30,6 +31,7 @@ export interface ChildRecord {
   id: string
   studentName?: string | null
   studentCode?: string | null
+  dateOfBirth?: string | Date | null
   homeroomTeacherName?: string | null
   class?: {
     className?: string | null
@@ -46,18 +48,37 @@ export interface AcademicYearRecord {
   name?: string | null
 }
 
+interface PeriodicGradeValue {
+  display: string | null
+  numeric: number | null
+  badge: "good" | "fair" | "avg" | "weak" | "pass" | "fail" | "empty"
+}
+
 interface SubjectGradeItem {
   id: string
   stt: number
   name: string
   code?: string
+  subjectGroup?: "MOET" | "SPECIAL"
+  isSpecialSubject?: boolean
+  isCommentOnly?: boolean
   score: number | null
+  scoreDisplay?: string | null
   remark?: string
   scoreBadge: string
+  ddgGk?: PeriodicGradeValue
+  ddgCk?: PeriodicGradeValue
+  dtbMhk?: PeriodicGradeValue
+  specialScore?: PeriodicGradeValue
 }
 
 interface GradeResponseData {
   success: boolean
+  isLockedForParent?: boolean
+  lockReason?: string
+  lockedPeriods?: string[]
+  displayMode?: "KSDN" | "MIDTERM" | "ENDTERM"
+  isPrimary?: boolean
   student?: {
     id: string
     studentCode: string
@@ -77,6 +98,8 @@ interface GradeResponseData {
   evaluationPeriod: string
   periodLabel: string
   subjects: SubjectGradeItem[]
+  moetSubjects?: SubjectGradeItem[]
+  specialSubjects?: SubjectGradeItem[]
   hasGrades: boolean
   exchange?: {
     teacherRemark: string
@@ -92,12 +115,21 @@ interface GradeResponseData {
 interface Props {
   initialChildren: ChildRecord[]
   defaultYear: AcademicYearRecord | null
+  initialLockedPeriods?: string[]
 }
 
-export default function ParentGradesClient({ initialChildren = [], defaultYear }: Props) {
+export default function ParentGradesClient({
+  initialChildren = [],
+  defaultYear,
+  initialLockedPeriods = ["GK1", "GK2"],
+}: Props) {
   const [childrenList, setChildrenList] = useState<ChildRecord[]>(initialChildren)
   const [selectedStudentId, setSelectedStudentId] = useState<string>(initialChildren[0]?.id || "")
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("KSĐN")
+  const [lockedPeriods, setLockedPeriods] = useState<string[]>(initialLockedPeriods)
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(() => {
+    const firstOpen = EVAL_PERIODS.find((p) => !initialLockedPeriods.includes(p.code))
+    return firstOpen?.code || ""
+  })
   const [academicYearId, setAcademicYearId] = useState<string>(defaultYear?.id || "")
   
   const [loading, setLoading] = useState<boolean>(true)
@@ -107,6 +139,22 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
   const [isEditingFeedback, setIsEditingFeedback] = useState<boolean>(false)
   const [savingFeedback, setSavingFeedback] = useState<boolean>(false)
   const [isPrinting, setIsPrinting] = useState<boolean>(false)
+
+  const openPeriods = useMemo(
+    () => EVAL_PERIODS.filter((p) => !lockedPeriods.includes(p.code)),
+    [lockedPeriods]
+  )
+  const allPeriodsLocked = openPeriods.length === 0
+
+  useEffect(() => {
+    if (openPeriods.length === 0) {
+      if (selectedPeriod !== "") setSelectedPeriod("")
+      return
+    }
+    if (!openPeriods.some((p) => p.code === selectedPeriod)) {
+      setSelectedPeriod(openPeriods[0].code)
+    }
+  }, [openPeriods, selectedPeriod])
 
   useEffect(() => {
     let year = ""
@@ -156,11 +204,15 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
     }
     setLoading(true)
     try {
-      const url = `/api/parent/grades?studentId=${selectedStudentId}&evaluationPeriod=${selectedPeriod}&academicYearId=${academicYearId}`
+      const targetPeriod = selectedPeriod || "CK1"
+      const url = `/api/parent/grades?studentId=${selectedStudentId}&evaluationPeriod=${encodeURIComponent(targetPeriod)}&academicYearId=${encodeURIComponent(academicYearId)}`
       const res = await fetch(url)
       const json = (await res.json()) as GradeResponseData
       if (json.success) {
         setData(json)
+        if (Array.isArray(json.lockedPeriods)) {
+          setLockedPeriods(json.lockedPeriods)
+        }
         const existingParentMsg = json.exchange?.parentFeedback || ""
         setFeedbackInput(existingParentMsg)
         setIsEditingFeedback(!existingParentMsg)
@@ -240,6 +292,50 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
     "Cảm ơn Thầy/Cô đã tận tâm đồng hành cùng con."
   ]
 
+  const effectiveDisplayMode: "KSDN" | "MIDTERM" | "ENDTERM" =
+    data?.displayMode ||
+    (selectedPeriod === "KSĐN"
+      ? "KSDN"
+      : selectedPeriod === "GK1" || selectedPeriod === "GK2"
+        ? "MIDTERM"
+        : "ENDTERM")
+
+  const moetSubjectsList = useMemo(() => {
+    if (data?.moetSubjects) return data.moetSubjects
+    return (data?.subjects || []).filter(s => !s.isSpecialSubject && s.subjectGroup !== "SPECIAL")
+  }, [data])
+
+  const specialSubjectsList = useMemo(() => {
+    if (data?.specialSubjects) return data.specialSubjects
+    return (data?.subjects || []).filter(s => s.isSpecialSubject || s.subjectGroup === "SPECIAL")
+  }, [data])
+
+  const renderPeriodicBadge = (val?: PeriodicGradeValue | null, emphasize = false) => {
+    if (!val || val.display === null || val.display === undefined || val.display === "") {
+      return <span className="text-slate-400 font-semibold text-xs">-</span>
+    }
+    const badgeClass =
+      val.badge === "good"
+        ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+        : val.badge === "fair"
+          ? "bg-sky-50 text-sky-700 border-sky-300"
+          : val.badge === "avg"
+            ? "bg-amber-50 text-amber-700 border-amber-300"
+            : val.badge === "pass"
+              ? "bg-teal-50 text-teal-800 border-teal-300"
+              : "bg-rose-50 text-rose-700 border-rose-300"
+
+    return (
+      <span
+        className={`inline-block px-2.5 py-0.5 rounded-lg border text-xs tabular-nums shadow-2xs ${
+          emphasize ? "font-black ring-1 ring-teal-500/20" : "font-bold"
+        } ${badgeClass}`}
+      >
+        {val.display}
+      </span>
+    )
+  }
+
   const getFullPrintHtml = () => {
     const student = data?.student || currentChild || {}
     const dob = student?.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "-"
@@ -249,24 +345,119 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
     const teacherRemark = data?.exchange?.teacherRemark || "Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh."
     const parentMsg = feedbackInput.trim() || data?.exchange?.parentFeedback || "Gia đình đã xem kết quả và sẽ tiếp tục đồng hành cùng con."
 
-    const rowsHtml = subjects.map((sub, idx: number) => {
-      const score = sub.score !== null && sub.score !== undefined ? Number(sub.score) : null
-      let badgeHtml = '<span class="score-empty">-</span>'
-      if (score !== null && !isNaN(score)) {
-        let sc = "score-weak"
-        if (score >= 8.0) sc = "score-good"
-        else if (score >= 6.5) sc = "score-fair"
-        else if (score >= 5.0) sc = "score-avg"
-        badgeHtml = `<span class="score-badge ${sc}">${score.toFixed(1)}</span>`
+    const formatPrintBadge = (val?: PeriodicGradeValue | null, fallbackNum?: number | null) => {
+      const display =
+        val?.display ??
+        (fallbackNum !== null && fallbackNum !== undefined && !isNaN(Number(fallbackNum))
+          ? Number(fallbackNum).toFixed(1)
+          : null)
+      if (!display) return '<span class="score-empty">-</span>'
+      const b = val?.badge || (fallbackNum !== null && fallbackNum !== undefined
+        ? (fallbackNum >= 8.0 ? "good" : fallbackNum >= 6.5 ? "fair" : fallbackNum >= 5.0 ? "avg" : "weak")
+        : "pass")
+      const sc =
+        b === "good" || b === "pass"
+          ? "score-good"
+          : b === "fair"
+            ? "score-fair"
+            : b === "avg"
+              ? "score-avg"
+              : "score-weak"
+      return `<span class="score-badge ${sc}">${display}</span>`
+    }
+
+    const buildPrintTableHtml = () => {
+      if (effectiveDisplayMode === "ENDTERM") {
+        const moetRows = (moetSubjectsList.length > 0 ? moetSubjectsList : subjects).map((sub, idx) => `
+          <tr>
+            <td class="stt">${idx + 1}</td>
+            <td class="subj-name">${sub.name} ${sub.code ? `<span class="subj-code">(${sub.code})</span>` : ""}</td>
+            <td class="score">${formatPrintBadge(sub.ddgGk)}</td>
+            <td class="score">${formatPrintBadge(sub.ddgCk)}</td>
+            <td class="score">${formatPrintBadge(sub.dtbMhk)}</td>
+          </tr>
+        `).join("")
+
+        const specialTableHtml = specialSubjectsList.length > 0 ? `
+          <div class="section-bar" style="margin-top: 10px;">
+            <div class="section-title">CÁC MÔN ĐẶC THÙ — ${periodLabel.toUpperCase()}</div>
+            <div class="section-count">${specialSubjectsList.length} môn đặc thù</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th class="text-center" style="width: 40px;">STT</th>
+                <th>Môn đặc thù</th>
+                <th class="text-center" style="width: 78px;">ĐĐGgk</th>
+                <th class="text-center" style="width: 78px;">ĐĐGck</th>
+                <th class="text-center" style="width: 95px;">Điểm đặc thù</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${specialSubjectsList.map((sub, idx) => `
+                <tr>
+                  <td class="stt">${idx + 1}</td>
+                  <td class="subj-name">${sub.name} ${sub.code ? `<span class="subj-code">(${sub.code})</span>` : ""}</td>
+                  <td class="score">${formatPrintBadge(sub.ddgGk)}</td>
+                  <td class="score">${formatPrintBadge(sub.ddgCk)}</td>
+                  <td class="score">${formatPrintBadge(sub.specialScore ?? sub.dtbMhk)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        ` : ""
+
+        return `
+          <table>
+            <thead>
+              <tr>
+                <th class="text-center" style="width: 40px;">STT</th>
+                <th>Môn học</th>
+                <th class="text-center" style="width: 78px;">ĐĐGgk</th>
+                <th class="text-center" style="width: 78px;">ĐĐGck</th>
+                <th class="text-center" style="width: 85px;">ĐTBmhk</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${moetRows}
+            </tbody>
+          </table>
+          ${specialTableHtml}
+        `
       }
+
+      const singleColLabel = effectiveDisplayMode === "MIDTERM" ? "ĐĐGgk" : "Điểm KS"
+      const rowsHtml = subjects.map((sub, idx: number) => {
+        const badgeHtml =
+          effectiveDisplayMode === "MIDTERM"
+            ? formatPrintBadge(sub.isSpecialSubject ? (sub.specialScore ?? sub.ddgGk) : sub.ddgGk, sub.score)
+            : formatPrintBadge(null, sub.score)
+        return `
+          <tr>
+            <td class="stt">${idx + 1}</td>
+            <td class="subj-name">${sub.name} ${sub.code ? `<span class="subj-code">(${sub.code})</span>` : ""}</td>
+            <td class="score">${badgeHtml}</td>
+          </tr>
+        `
+      }).join("")
+
       return `
-        <tr>
-          <td class="stt">${idx + 1}</td>
-          <td class="subj-name">${sub.name} ${sub.code ? `<span class="subj-code">(${sub.code})</span>` : ""}</td>
-          <td class="score">${badgeHtml}</td>
-        </tr>
+        <table>
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 40px;">STT</th>
+              <th>Môn học</th>
+              <th class="text-center" style="width: 90px;">${singleColLabel}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
       `
-    }).join("")
+    }
+
+    const printTablesHtml = buildPrintTableHtml()
 
     return `<!DOCTYPE html>
 <html lang="vi">
@@ -584,18 +775,7 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
       <div class="section-count">${subjects.length} môn học</div>
     </div>
 
-    <table>
-      <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-        <tr className="text-[11px] font-semibold whitespace-nowrap">
-          <th class="text-center" style="width: 40px;">STT</th>
-          <th>Môn học</th>
-          <th class="text-center" style="width: 90px;">Điểm KS</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
-        ${rowsHtml}
-      </tbody>
-    </table>
+    ${printTablesHtml}
 
     <div class="exchange-section">
       <div class="box-card">
@@ -700,17 +880,17 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handlePrint}
-              disabled={loading || isPrinting}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-[#003B3A] hover:bg-teal-50 font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              disabled={loading || isPrinting || allPeriodsLocked || Boolean(data?.isLockedForParent)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-[#003B3A] hover:bg-teal-50 font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Printer className="w-4 h-4 text-teal-700" />
               <span>{isPrinting ? "Đang chuẩn bị in..." : "In phiếu điểm (A4)"}</span>
             </button>
             <button
               onClick={handleOpenHtmlTab}
-              disabled={loading}
+              disabled={loading || allPeriodsLocked || Boolean(data?.isLockedForParent)}
               title="Mở phiếu điểm trong tab mới"
-              className="p-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold transition-all border border-white/20"
+              className="p-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold transition-all border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ExternalLink className="w-4 h-4" />
             </button>
@@ -757,40 +937,85 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
           </div>
         )}
 
-        <div>
-          <div className="text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-[#008c82]" />
-            <span>Kỳ khảo sát / Học kỳ:</span>
+        {openPeriods.length > 0 && (
+          <div>
+            <div className="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-[#008B85]" />
+              <span>Kỳ đánh giá đang mở:</span>
+            </div>
+            <div
+              className={`grid gap-2 ${
+                openPeriods.length === 1
+                  ? "grid-cols-1 sm:max-w-xs"
+                  : openPeriods.length === 2
+                    ? "grid-cols-2 sm:max-w-md"
+                    : openPeriods.length === 3
+                      ? "grid-cols-2 sm:grid-cols-3"
+                      : openPeriods.length === 4
+                        ? "grid-cols-2 sm:grid-cols-4"
+                        : "grid-cols-2 sm:grid-cols-5"
+              }`}
+            >
+              {openPeriods.map((period) => {
+                const isActive = period.code === selectedPeriod
+                return (
+                  <button
+                    key={period.code}
+                    onClick={() => setSelectedPeriod(period.code)}
+                    className={`py-2.5 px-3 rounded-2xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#003B3A] to-[#00736E] border-[#003B3A] text-white shadow-md"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-teal-50/50 hover:border-teal-200"
+                    }`}
+                  >
+                    <div>{period.short}</div>
+                    <div className={`text-[10px] font-normal truncate mt-0.5 ${isActive ? "text-teal-100" : "text-slate-500"}`}>
+                      {period.label}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {EVAL_PERIODS.map((period) => {
-              const isActive = period.code === selectedPeriod
-              return (
-                <button
-                  key={period.code}
-                  onClick={() => setSelectedPeriod(period.code)}
-                  className={`py-2.5 px-3 rounded-2xl border text-xs font-extrabold transition-all text-center cursor-pointer ${
-                    isActive
-                      ? "bg-gradient-to-r from-[#005B58] to-[#008c82] border-[#005B58] text-white shadow-md"
-                      : "bg-white border-slate-200 text-slate-700 hover:bg-teal-50/50 hover:border-teal-200"
-                  }`}
-                >
-                  <div>{period.short}</div>
-                  <div className={`text-[10px] font-normal truncate mt-0.5 ${isActive ? "text-teal-100" : "text-slate-500"}`}>
-                    {period.label}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 3. Main Grade Report Card (Preview) */}
       {loading ? (
         <div className="bg-white rounded-3xl p-12 border border-slate-200/90 shadow-sm text-center space-y-3">
           <div className="w-10 h-10 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs font-bold text-slate-500">Đang tải phiếu điểm khảo sát...</p>
+          <p className="text-xs font-bold text-slate-500">Đang tải phiếu điểm...</p>
+        </div>
+      ) : allPeriodsLocked || data?.isLockedForParent ? (
+        <div className="bg-white rounded-2xl p-8 sm:p-10 border border-[#E2E8F0] border-l-4 border-l-[#003B3A] shadow-xs text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center mx-auto">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5 max-w-lg mx-auto">
+            <h2 className="text-base sm:text-lg font-bold text-[#003B3A]">
+              {allPeriodsLocked
+                ? "Bảng điểm hiện đang tạm khóa hiển thị"
+                : `Điểm ${periodLabel} hiện đang khóa hiển thị`}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              {data?.lockReason ||
+                "Nhà trường hiện đang tạm khóa hiển thị điểm các kỳ đánh giá trên cổng Phụ huynh để rà soát và tổng hợp. Quý phụ huynh vui lòng quay lại sau khi nhà trường công bố hoặc liên hệ Giáo viên chủ nhiệm khi cần trao đổi thêm."}
+            </p>
+          </div>
+          {openPeriods.length > 0 && (
+            <div className="pt-1 flex flex-wrap items-center justify-center gap-2">
+              {openPeriods.map((p) => (
+                <button
+                  key={p.code}
+                  type="button"
+                  onClick={() => setSelectedPeriod(p.code)}
+                  className="px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005B58] text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Xem điểm {p.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200/90 shadow-md space-y-6">
@@ -886,81 +1111,226 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
             </div>
           </div>
 
-          {/* 3-Column Subject Grades Table */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
+          {/* Periodic Subject Grades Table (Only Periodic Columns: Special Subjects, ĐĐGgk, ĐĐGck, ĐTBmhk) */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wide flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-teal-600" />
-                <span>BẢNG ĐIỂM MÔN HỌC — {periodLabel}</span>
+                <BookOpen className="w-4 h-4 text-[#008B85]" />
+                <span>
+                  {effectiveDisplayMode === "ENDTERM"
+                    ? `Bảng điểm định kỳ — ${periodLabel}`
+                    : `Bảng điểm môn học — ${periodLabel}`}
+                </span>
               </h3>
-              <span className="text-xs font-bold text-teal-800 italic">
+              <span className="text-xs font-semibold text-teal-800 tabular-nums">
                 {data?.subjects?.length || 0} môn học
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-teal-600/30 shadow-xs">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                  <tr className="text-white text-[11px] font-semibold">
-                    <th className="py-2.5 px-3 text-center w-12 border-r border-teal-700 font-semibold">STT</th>
-                    <th className="py-2.5 px-4 border-r border-teal-700 font-semibold">Môn học</th>
-                    <th className="py-2.5 px-4 text-center w-32 font-semibold">Điểm KS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-teal-100">
-                  {data?.subjects && data.subjects.length > 0 ? (
-                    data.subjects.map((sub, idx: number) => {
-                      const isEven = idx % 2 === 0
-                      const score = sub.score !== null && sub.score !== undefined ? Number(sub.score) : null
-                      return (
-                        <tr
-                          key={sub.id}
-                          className={`transition-colors ${isEven ? "bg-white" : "bg-teal-50/20"} hover:bg-teal-50/50`}
-                        >
-                          <td className="py-2.5 px-3 text-center font-bold text-slate-500 border-r border-teal-100">
-                            {idx + 1}
-                          </td>
-                          <td className="py-2.5 px-4 font-black text-[#003B3A] border-r border-teal-100">
-                            <span>{sub.name}</span>
-                            {sub.code && <span className="text-[10px] font-normal text-slate-400 ml-1.5">({sub.code})</span>}
-                            {sub.remark && (
-                              <div className="text-[10px] font-normal text-slate-500 italic mt-0.5">
-                                Ghi chú: {sub.remark}
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-4 text-center font-black">
-                            {score !== null && !isNaN(score) ? (
-                              <span
-                                className={`inline-block px-3 py-0.5 rounded-lg border text-xs font-black shadow-2xs ${
-                                  score >= 8.0
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                    : score >= 6.5
-                                    ? "bg-sky-50 text-sky-700 border-sky-300"
-                                    : score >= 5.0
-                                    ? "bg-amber-50 text-amber-700 border-amber-300"
-                                    : "bg-rose-50 text-rose-700 border-rose-300 font-black"
-                                }`}
+            {effectiveDisplayMode !== "KSDN" && (
+              <div className="text-[11px] text-slate-600 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-2">
+                Chỉ hiển thị các cột điểm định kỳ ({effectiveDisplayMode === "ENDTERM" ? "cột điểm các môn đặc thù, ĐĐGgk, ĐĐGck, ĐTBmhk" : "ĐĐGgk và điểm định kỳ môn đặc thù"}), không hiển thị điểm đánh giá thường xuyên (ĐĐGtx).
+              </div>
+            )}
+
+            {effectiveDisplayMode === "ENDTERM" ? (
+              <div className="space-y-5">
+                {/* 1. Standard MOET Subjects Table */}
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs tabular-nums">
+                      <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                        <tr className="text-[11px] font-semibold whitespace-nowrap">
+                          <th className="py-2.5 px-3 text-center w-12 text-white font-semibold">STT</th>
+                          <th className="py-2.5 px-3 text-white font-semibold">Môn học</th>
+                          <th className="py-2.5 px-3 text-center w-24 text-teal-100 font-semibold">ĐĐGgk</th>
+                          <th className="py-2.5 px-3 text-center w-24 text-teal-100 font-semibold">ĐĐGck</th>
+                          <th className="py-2.5 px-3 text-center w-28 text-[#5EEAD4] font-semibold">ĐTBmhk</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                        {moetSubjectsList.length > 0 ? (
+                          moetSubjectsList.map((sub, idx: number) => (
+                            <tr
+                              key={sub.id}
+                              className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                            >
+                              <td className="py-3 px-3 text-center font-semibold text-slate-500 align-middle">
+                                {idx + 1}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-[#003B3A] align-middle">
+                                <span>{sub.name}</span>
+                                {sub.code && <span className="text-[10px] font-normal text-slate-400 ml-1.5">({sub.code})</span>}
+                                {sub.remark && (
+                                  <div className="text-[10px] font-normal text-slate-500 italic mt-0.5">
+                                    Nhận xét: {sub.remark}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center align-middle">
+                                {renderPeriodicBadge(sub.ddgGk)}
+                              </td>
+                              <td className="py-3 px-3 text-center align-middle">
+                                {renderPeriodicBadge(sub.ddgCk)}
+                              </td>
+                              <td className="py-3 px-3 text-center align-middle">
+                                {renderPeriodicBadge(sub.dtbMhk, true)}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="py-8 text-center text-slate-400 font-medium italic">
+                              Chưa có dữ liệu điểm định kỳ cho các môn học chuẩn trong học kỳ này.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 2. Special Subjects Table (Sky-Line Đặc thù & Song ngữ / Quốc tế) */}
+                {specialSubjectsList.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-[#003B3A] flex items-center gap-1.5">
+                        <span className="w-1.5 h-4 rounded-full bg-[#00A19A] inline-block" />
+                        <span>Cột điểm các môn đặc thù</span>
+                      </h4>
+                      <span className="text-[11px] font-semibold text-teal-700 tabular-nums">
+                        {specialSubjectsList.length} môn đặc thù
+                      </span>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs tabular-nums">
+                          <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="py-2.5 px-3 text-center w-12 text-white font-semibold">STT</th>
+                              <th className="py-2.5 px-3 text-white font-semibold">Môn đặc thù</th>
+                              <th className="py-2.5 px-3 text-center w-24 text-teal-100 font-semibold">ĐĐGgk</th>
+                              <th className="py-2.5 px-3 text-center w-24 text-teal-100 font-semibold">ĐĐGck</th>
+                              <th className="py-2.5 px-3 text-center w-28 text-[#5EEAD4] font-semibold">Điểm đặc thù</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                            {specialSubjectsList.map((sub, idx: number) => (
+                              <tr
+                                key={sub.id}
+                                className="transition-colors align-middle hover:bg-[#F8FAFC]"
                               >
-                                {score.toFixed(1)}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 font-bold text-xs">-</span>
-                            )}
+                                <td className="py-3 px-3 text-center font-semibold text-slate-500 align-middle">
+                                  {idx + 1}
+                                </td>
+                                <td className="py-3 px-3 font-bold text-[#003B3A] align-middle">
+                                  <span>{sub.name}</span>
+                                  {sub.code && <span className="text-[10px] font-normal text-slate-400 ml-1.5">({sub.code})</span>}
+                                  {sub.remark && (
+                                    <div className="text-[10px] font-normal text-slate-500 italic mt-0.5">
+                                      Nhận xét: {sub.remark}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center align-middle">
+                                  {renderPeriodicBadge(sub.ddgGk)}
+                                </td>
+                                <td className="py-3 px-3 text-center align-middle">
+                                  {renderPeriodicBadge(sub.ddgCk)}
+                                </td>
+                                <td className="py-3 px-3 text-center align-middle">
+                                  {renderPeriodicBadge(sub.specialScore ?? sub.dtbMhk, true)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* KSĐN or MIDTERM (GK1 / GK2) 3-Column Table */
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs tabular-nums">
+                    <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                      <tr className="text-[11px] font-semibold whitespace-nowrap">
+                        <th className="py-2.5 px-3 text-center w-12 text-white font-semibold">STT</th>
+                        <th className="py-2.5 px-3 text-white font-semibold">Môn học</th>
+                        <th className="py-2.5 px-3 text-center w-32 text-[#5EEAD4] font-semibold">
+                          {effectiveDisplayMode === "MIDTERM" ? "ĐĐGgk" : "Điểm KS"}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                      {data?.subjects && data.subjects.length > 0 ? (
+                        data.subjects.map((sub, idx: number) => {
+                          const cellVal: PeriodicGradeValue | null =
+                            effectiveDisplayMode === "MIDTERM"
+                              ? (sub.isSpecialSubject ? (sub.specialScore ?? sub.ddgGk ?? null) : (sub.ddgGk ?? null))
+                              : sub.scoreDisplay
+                                ? {
+                                    display: sub.scoreDisplay,
+                                    numeric: sub.score,
+                                    badge: (sub.scoreBadge as PeriodicGradeValue["badge"]) || "pass",
+                                  }
+                                : sub.score !== null && sub.score !== undefined
+                                  ? {
+                                      display: Number(sub.score).toFixed(1),
+                                      numeric: Number(sub.score),
+                                      badge:
+                                        Number(sub.score) >= 8.0
+                                          ? "good"
+                                          : Number(sub.score) >= 6.5
+                                            ? "fair"
+                                            : Number(sub.score) >= 5.0
+                                              ? "avg"
+                                              : "weak",
+                                    }
+                                  : null
+                          return (
+                            <tr
+                              key={sub.id}
+                              className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                            >
+                              <td className="py-3 px-3 text-center font-semibold text-slate-500 align-middle">
+                                {idx + 1}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-[#003B3A] align-middle">
+                                <span>{sub.name}</span>
+                                {sub.code && <span className="text-[10px] font-normal text-slate-400 ml-1.5">({sub.code})</span>}
+                                {sub.isSpecialSubject && (
+                                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-teal-50 text-[#00736E] border border-teal-200 text-[10px] font-medium">
+                                    Môn đặc thù
+                                  </span>
+                                )}
+                                {sub.remark && (
+                                  <div className="text-[10px] font-normal text-slate-500 italic mt-0.5">
+                                    Ghi chú: {sub.remark}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center align-middle">
+                                {renderPeriodicBadge(cellVal, true)}
+                              </td>
+                            </tr>
+                          )
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={3} className="py-8 text-center text-slate-400 font-medium italic">
+                            Chưa có danh sách môn học được cấu hình cho kỳ đánh giá này.
                           </td>
                         </tr>
-                      )
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={3} className="py-8 text-center text-slate-400 font-medium italic">
-                        Chưa có danh sách môn học được cấu hình cho kỳ khảo sát này.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 4. Trao Đổi Với GVCN Section */}
@@ -1058,7 +1428,7 @@ export default function ParentGradesClient({ initialChildren = [], defaultYear }
                         <button
                           type="button"
                           onClick={() => {
-                            setFeedbackInput(data.exchange.parentFeedback)
+                            setFeedbackInput(data.exchange?.parentFeedback || "")
                             setIsEditingFeedback(false)
                           }}
                           className="text-[11px] font-bold text-slate-500 hover:text-slate-700 cursor-pointer"

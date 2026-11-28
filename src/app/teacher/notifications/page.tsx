@@ -13,9 +13,7 @@ import {
   ChevronRight,
   CheckCheck,
   RefreshCw,
-  Filter
 } from "lucide-react"
-import { PwaBottomNav } from "@/components/pwa/PwaBottomNav"
 
 interface NotificationItem {
   id: string
@@ -203,7 +201,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F8F7] pb-24 font-sans text-slate-800">
+    <div className="pwa-notifications-view -m-3.5 sm:-m-6 md:m-0 min-h-dvh bg-[#F8FAFC] pb-24 md:pb-8 font-sans text-slate-800">
       {/* 1. TOP APP BAR */}
       <div className="bg-[#003B3A] text-white px-4 pt-4 pb-4 sticky top-0 z-30 shadow-md">
         <div className="flex items-center justify-between">
@@ -405,7 +403,7 @@ export default function NotificationsPage() {
                       </div>
 
                       {!item.isRead && (
-                        <span className="w-2 h-2 rounded-full bg-[#00A19A] animate-pulse"></span>
+                        <span className="w-2 h-2 rounded-full bg-[#00A19A]" />
                       )}
                     </div>
                   </div>
@@ -416,7 +414,7 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      <PwaBottomNav role="TEACHER" />
+      {/* Bottom navigation is rendered once by TeacherLayout */}
     </div>
   )
 }

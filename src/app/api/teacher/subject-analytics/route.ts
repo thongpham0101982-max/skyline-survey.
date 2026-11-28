@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { resolveAccountGradebookScope } from "@/lib/gradebook/subjectPermissions"
 
 export async function GET(request: Request) {
   try {
@@ -113,6 +114,19 @@ export async function GET(request: Request) {
         })
       }
     })
+    const scope = await resolveAccountGradebookScope(userId, userRole, academicYearId)
+    if (scope.assignedSubjects.length > 0) {
+      scope.assignedSubjects.forEach(s => {
+        if (!assignedSubjectMap.has(s.id)) {
+          assignedSubjectMap.set(s.id, {
+            id: s.id,
+            name: s.subjectName,
+            code: s.subjectCode,
+            category: s.category || "MOET"
+          })
+        }
+      })
+    }
     const assignedSubjects = Array.from(assignedSubjectMap.values())
 
     // If no assignments found

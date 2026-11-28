@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     const userRole = (session.user as any)?.role || ""
     const currentUserId = (session.user as any)?.id || ""
     const allowedCampusIds = (session.user as any)?.campusIds || []
-    const isFullAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KTDBCL"].includes(userRole)
+    const isFullAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL"].includes(userRole)
 
     let canAccess = isFullAdmin
     if (!canAccess && ["GDCS", "GD_CS", "GIAO_VU_CS", "GIAO_VU"].includes(userRole)) {

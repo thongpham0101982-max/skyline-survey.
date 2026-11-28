@@ -647,6 +647,30 @@ export async function resolveKtdbclRoster(): Promise<{
   }
 }
 
+export function isDefaultDirectorAccountName(fullName?: string | null): boolean {
+  const norm = String(fullName || "")
+    .trim()
+    .toLowerCase()
+    .replace(/đ/g, "d")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+  return norm.includes("pham nguyen thong")
+}
+
+async function resolveDefaultDirectorIds(): Promise<string[]> {
+  try {
+    const users = await prisma.user.findMany({
+      where: { status: "ACTIVE", role: { not: "PARENT" } },
+      select: { id: true, fullName: true },
+    })
+    const matched = users.filter((u) => isDefaultDirectorAccountName(u.fullName)).map((u) => u.id)
+    return matched
+  } catch {
+    return []
+  }
+}
+
 export async function getKtdbclAutomationConfig(): Promise<KtdbclWeeklyAutomationConfig> {
   await ensureKtdbclWeeklySchema()
   const pAny = prisma as any
@@ -673,8 +697,16 @@ export async function getKtdbclAutomationConfig(): Promise<KtdbclWeeklyAutomatio
     const rows: any[] = await pAny.$queryRawUnsafe(
       `SELECT * FROM "qa_weekly_automation_config" WHERE "id" = 'KTDBCL_DEFAULT' LIMIT 1`
     )
-    if (!rows || rows.length === 0) return fallback
+    if (!rows || rows.length === 0) {
+      fallback.directorUserIds = await resolveDefaultDirectorIds()
+      return fallback
+    }
     const r = rows[0]
+    let directorUserIds = safeParseJson<string[]>(r.directorUserIdsJson, [])
+    const directorEmails = safeParseJson<string[]>(r.directorEmailsJson, [])
+    if (directorUserIds.length === 0 && directorEmails.length === 0) {
+      directorUserIds = await resolveDefaultDirectorIds()
+    }
     return {
       id: "KTDBCL_DEFAULT",
       wednesdayReminderEnabled: Boolean(Number(r.wednesdayReminderEnabled ?? 1)),
@@ -684,8 +716,8 @@ export async function getKtdbclAutomationConfig(): Promise<KtdbclWeeklyAutomatio
       weeklyDirectorSendDayOfWeek: Number(r.weeklyDirectorSendDayOfWeek ?? 5),
       weeklyDirectorSendHourVn: Number(r.weeklyDirectorSendHourVn ?? 16),
       monthlyDirectorReportEnabled: Boolean(Number(r.monthlyDirectorReportEnabled ?? 1)),
-      directorUserIds: safeParseJson<string[]>(r.directorUserIdsJson, []),
-      directorEmails: safeParseJson<string[]>(r.directorEmailsJson, []),
+      directorUserIds,
+      directorEmails,
       ccManagerEmails: safeParseJson<string[]>(r.ccManagerEmailsJson, []),
       overdueAutoFlagEnabled: Boolean(Number(r.overdueAutoFlagEnabled ?? 1)),
       updatedByName: r.updatedByName || null,

@@ -2119,17 +2119,22 @@ export async function aggregateTeacherTasks(
 
       // 9.6. Liên thông Nhiệm vụ Phối hợp Tư vấn GVBM ⇄ GVCN (SubjectTeacherAdvisoryTask)
       try {
-        const gvbmAdvisoryRows = await prisma.$queryRawUnsafe<any[]>(
-          `SELECT t.*, s."studentName", s."studentCode", c."className"
-           FROM "SubjectTeacherAdvisoryTask" t
-           LEFT JOIN "Student" s ON s."id" = t."studentId"
-           LEFT JOIN "Class" c ON c."id" = t."classId"
-           WHERE (t."assignedToTeacherId" = ? OR t."assignedByTeacherId" = ?)
-           ORDER BY t."updatedAt" DESC
-           LIMIT 30`,
-          teacherId,
-          teacherId
-        ).catch(() => [])
+        const gvbmAdvisoryRows =
+          typeof (prisma as any).$queryRawUnsafe === "function"
+            ? await prisma
+                .$queryRawUnsafe<any[]>(
+                  `SELECT t.*, s."studentName", s."studentCode", c."className"
+                   FROM "SubjectTeacherAdvisoryTask" t
+                   LEFT JOIN "Student" s ON s."id" = t."studentId"
+                   LEFT JOIN "Class" c ON c."id" = t."classId"
+                   WHERE (t."assignedToTeacherId" = ? OR t."assignedByTeacherId" = ?)
+                   ORDER BY t."updatedAt" DESC
+                   LIMIT 30`,
+                  teacherId,
+                  teacherId
+                )
+                .catch(() => [])
+            : []
 
         for (const t of gvbmAdvisoryRows || []) {
           const isAssignedToMe = t.assignedToTeacherId === teacherId
@@ -2414,31 +2419,35 @@ export async function aggregateTeacherTasks(
   if (teacherId) {
     try {
       const [testingTasks, proctorSessions] = await Promise.all([
-        prisma.testingTaskAssignment
-          .findMany({
-            where: { teacherId },
-            include: {
-              subjectExam: {
-                include: { period: true },
-              },
-            },
-            orderBy: { dueDate: "asc" },
-            take: 30,
-          })
-          .catch(() => []),
-        prisma.testingSessionProctor
-          .findMany({
-            where: { teacherId },
-            include: {
-              session: {
+        typeof (prisma as any).testingTaskAssignment?.findMany === "function"
+          ? prisma.testingTaskAssignment
+              .findMany({
+                where: { teacherId },
                 include: {
-                  subjectExam: { include: { period: true } },
+                  subjectExam: {
+                    include: { period: true },
+                  },
                 },
-              },
-            },
-            take: 20,
-          })
-          .catch(() => []),
+                orderBy: { dueDate: "asc" },
+                take: 30,
+              })
+              .catch(() => [])
+          : Promise.resolve([]),
+        typeof (prisma as any).testingSessionProctor?.findMany === "function"
+          ? prisma.testingSessionProctor
+              .findMany({
+                where: { teacherId },
+                include: {
+                  session: {
+                    include: {
+                      subjectExam: { include: { period: true } },
+                    },
+                  },
+                },
+                take: 20,
+              })
+              .catch(() => [])
+          : Promise.resolve([]),
       ])
 
       const roleLabelMap: Record<string, string> = {

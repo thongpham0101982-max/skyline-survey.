@@ -10,13 +10,24 @@ import {
   Brain,
   Sparkles,
   Search,
-  ExternalLink
+  ExternalLink,
 } from "lucide-react"
 
 interface Props {
-  students: any[]
+  students?: any[]
+  targetStudents?: any[]
   totalCount: number
-  countsByGroup: {
+  countsByGroup?: {
+    allFocus?: number
+    belowSkyline: number
+    belowMoet: number
+    commitment: number
+    psychological: number
+    perfect10: number
+    score8To10?: number
+    totalAll?: number
+  }
+  countsByTargetGroup?: {
     allFocus?: number
     belowSkyline: number
     belowMoet: number
@@ -27,131 +38,138 @@ interface Props {
     totalAll?: number
   }
   selectedTargetType: string
-  setSelectedTargetType: (t: string) => void
+  setSelectedTargetType?: (t: string) => void
+  onSelectTargetType?: (t: string) => void
 }
 
 export function ThkqTargetStudentsTable({
-  students = [],
+  students,
+  targetStudents,
   totalCount = 0,
-  countsByGroup = { belowSkyline: 0, belowMoet: 0, commitment: 0, psychological: 0, perfect10: 0 },
+  countsByGroup,
+  countsByTargetGroup,
   selectedTargetType = "ALL",
-  setSelectedTargetType
+  setSelectedTargetType,
+  onSelectTargetType,
 }: Props) {
   const [searchTerm, setSearchTerm] = useState("")
 
-  const filteredStudents = students.filter(s => {
+  const studentList = students || targetStudents || []
+  const groupCounts = countsByGroup ||
+    countsByTargetGroup || {
+      belowSkyline: 0,
+      belowMoet: 0,
+      commitment: 0,
+      psychological: 0,
+      perfect10: 0,
+    }
+  const handleSelect = setSelectedTargetType || onSelectTargetType || (() => {})
+
+  const filteredStudents = studentList.filter((s) => {
     if (!searchTerm.trim()) return true
     const kw = searchTerm.toLowerCase().trim()
     return (
-      s.studentName.toLowerCase().includes(kw) ||
-      s.studentCode.toLowerCase().includes(kw) ||
-      s.className.toLowerCase().includes(kw) ||
-      s.subjectName.toLowerCase().includes(kw) ||
-      s.campusName.toLowerCase().includes(kw)
+      String(s.studentName || "").toLowerCase().includes(kw) ||
+      String(s.studentCode || "").toLowerCase().includes(kw) ||
+      String(s.className || "").toLowerCase().includes(kw) ||
+      String(s.subjectName || "").toLowerCase().includes(kw) ||
+      String(s.campusName || "").toLowerCase().includes(kw)
     )
   })
 
   const tabs = [
     {
       id: "ALL",
-      label: "Tất cả trọng tâm",
-      count: countsByGroup.allFocus !== undefined ? countsByGroup.allFocus : totalCount,
+      label: "Tất cả diện theo dõi",
+      count: groupCounts.allFocus !== undefined ? groupCounts.allFocus : totalCount,
       icon: Users,
-      color: "text-slate-700"
+      color: "text-slate-700",
     },
     {
       id: "BELOW_MOET",
-      label: "Dưới Chuẩn Bộ (<5.0)",
-      count: countsByGroup.belowMoet ?? 0,
+      label: "Dưới chuẩn Bộ (< 5.0)",
+      count: groupCounts.belowMoet ?? 0,
       icon: AlertTriangle,
-      color: "text-rose-600"
+      color: "text-[#E11D48]",
     },
     {
       id: "BELOW_SKYLINE",
-      label: "Dưới Chuẩn Sky-Line",
-      count: countsByGroup.belowSkyline ?? 0,
+      label: "Dưới chuẩn Sky-Line",
+      count: groupCounts.belowSkyline ?? 0,
       icon: AlertCircle,
-      color: "text-amber-600"
+      color: "text-[#D97706]",
     },
     {
       id: "COMMITMENT",
       label: "Cam kết đầu vào",
-      count: countsByGroup.commitment ?? 0,
+      count: groupCounts.commitment ?? 0,
       icon: HeartHandshake,
-      color: "text-sky-600"
+      color: "text-[#00736E]",
     },
     {
       id: "PSYCHOLOGICAL",
       label: "Theo dõi tâm lý",
-      count: countsByGroup.psychological ?? 0,
+      count: groupCounts.psychological ?? 0,
       icon: Brain,
-      color: "text-teal-800"
+      color: "text-[#003B3A]",
     },
     {
       id: "PERFECT_10",
-      label: "Điểm 10 Tuyệt đối",
-      count: countsByGroup.perfect10 ?? 0,
+      label: "Điểm 10 tuyệt đối",
+      count: groupCounts.perfect10 ?? 0,
       icon: Sparkles,
-      color: "text-emerald-600"
-    }
+      color: "text-[#059669]",
+    },
   ]
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 mb-6 border-l-4 border-l-[#003B3A]">
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[#003B3A] flex items-center justify-center text-white shadow-md shadow-[#003B3A]/20">
-            <Users className="h-5 w-5 text-[#00A19A]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-800 tracking-tight">
-                Danh sách Học sinh Trọng điểm & Phân nhóm Can thiệp
-              </h3>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-[#00736E] border border-teal-200">
-                Nhận diện & Can thiệp Sớm
-              </span>
-            </div>
-            <p className="text-xs text-slate-500">
-              Nhận diện sớm học sinh dưới chuẩn Sky-Line, chuẩn Bộ GD&ĐT, học sinh cam kết đầu vào và theo dõi tâm lý học đường
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F1F5F9]">
+        <div className="border-l-4 border-[#003B3A] pl-3">
+          <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+            Danh sách học sinh theo ngưỡng điểm &amp; diện hỗ trợ học tập
+          </h3>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Theo dõi học sinh dưới chuẩn Bộ GD&amp;ĐT (&lt; 5.0), dưới chuẩn Sky-Line, diện cam kết đầu vào và đạt điểm 10 tuyệt đối.
+          </p>
         </div>
 
-        {/* Ô tìm kiếm */}
         <div className="relative min-w-[240px]">
           <input
             type="text"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm tên HS, mã số, lớp, môn học..."
-            className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A]"
+            className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] pl-8 pr-3 py-1.5 text-slate-800 focus:outline-none focus:border-[#008B85]"
           />
           <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
         </div>
       </div>
 
       {/* Tabs phân nhóm học sinh */}
-      <div className="flex flex-wrap gap-2 pt-4 pb-3 border-b border-slate-100">
-        {tabs.map(tab => {
+      <div className="flex flex-wrap gap-2 pt-3.5 pb-3 border-b border-[#F1F5F9]">
+        {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = selectedTargetType === tab.id
           return (
             <button
               key={tab.id}
-              onClick={() => setSelectedTargetType(tab.id)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+              type="button"
+              onClick={() => handleSelect(tab.id)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                 isActive
-                  ? "bg-[#003B3A] text-white shadow-sm"
-                  : "bg-slate-100 hover:bg-slate-200/80 text-slate-600"
+                  ? "bg-[#003B3A] text-white"
+                  : "bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-slate-100 text-slate-700"
               }`}
             >
-              <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#00A19A]" : tab.color}`} />
+              <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#5EEAD4]" : tab.color}`} />
               <span>{tab.label}</span>
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold tabular-nums ${
-                  isActive ? "bg-white/20 text-white" : "bg-white text-slate-700 border border-slate-200"
+                className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums ${
+                  isActive
+                    ? "bg-white/15 text-white"
+                    : "bg-white text-slate-700 border border-[#E2E8F0]"
                 }`}
               >
                 {tab.count}
@@ -161,30 +179,30 @@ export function ThkqTargetStudentsTable({
         })}
       </div>
 
-      {/* Bảng danh sách chi tiết */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 mt-4 max-h-[500px]">
-        <table className="w-full text-left border-collapse text-xs">
-          <thead className="bg-[#003B3A] sticky top-0 z-20 backdrop-blur-xs text-white border-b border-[#003B3A]">
-            <tr className="divide-x text-[11px] font-semibold">
-              <th className="py-2.5 px-3 font-bold text-teal-100">Mã HS</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Họ và Tên</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Lớp</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Cơ sở</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Kỳ khảo sát</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Môn học</th>
-              <th className="py-2.5 px-3 font-bold text-center bg-[#003B3A]">Điểm số</th>
-              <th className="py-2.5 px-3 font-bold text-center">Chuẩn Sky-Line</th>
-              <th className="py-2.5 px-3 font-bold text-center">Chênh lệch (Δ)</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Diện theo dõi đặc thù</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">GVCN</th>
-              <th className="py-2.5 px-3 font-bold text-center">Thao tác</th>
+      {/* Bảng danh sách chuẩn Sky-Line Academic Ledger */}
+      <div className="overflow-x-auto rounded-2xl border border-[#E2E8F0] shadow-xs mt-3.5 max-h-[500px]">
+        <table className="w-full text-left border-collapse text-xs tabular-nums">
+          <thead className="bg-[#003B3A] sticky top-0 z-20 text-white border-b border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="py-3 px-3 text-white">Mã học sinh</th>
+              <th className="py-3 px-3 text-white">Họ và tên</th>
+              <th className="py-3 px-3 text-teal-100">Lớp</th>
+              <th className="py-3 px-3 text-teal-100">Cơ sở</th>
+              <th className="py-3 px-3 text-teal-100">Kỳ kiểm tra</th>
+              <th className="py-3 px-3 text-teal-100">Môn học</th>
+              <th className="py-3 px-3 text-center text-[#5EEAD4]">Điểm số</th>
+              <th className="py-3 px-3 text-center text-teal-100">Chuẩn Sky-Line</th>
+              <th className="py-3 px-3 text-center text-teal-100">Chênh lệch (Δ)</th>
+              <th className="py-3 px-3 text-teal-100">Phân nhóm theo dõi</th>
+              <th className="py-3 px-3 text-teal-100">GVCN</th>
+              <th className="py-3 px-3 text-center text-white">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#E2E8F0]">
+          <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
             {filteredStudents.length === 0 ? (
               <tr>
-                <td colSpan={12} className="py-8 text-center text-slate-400">
-                  Không tìm thấy học sinh nào thuộc diện này
+                <td colSpan={12} className="py-10 text-center text-slate-400">
+                  Không tìm thấy học sinh nào thuộc nhóm điều kiện đang chọn.
                 </td>
               </tr>
             ) : (
@@ -194,110 +212,101 @@ export function ThkqTargetStudentsTable({
                 const isPerfect10 = s.isPerfect10
 
                 return (
-                  <tr key={`${s.studentId}_${s.subjectId}_${s.evaluationPeriod}_${idx}`} className="hover:bg-slate-50 transition divide-x divide-slate-100">
-                    <td className="py-2.5 px-3 font-mono font-semibold text-slate-600 whitespace-nowrap tabular-nums">
+                  <tr
+                    key={`${s.studentId}_${s.subjectId}_${s.evaluationPeriod}_${idx}`}
+                    className="hover:bg-[#F8FAFC] transition-colors align-middle"
+                  >
+                    <td className="py-3 px-3 font-medium text-slate-700 whitespace-nowrap">
                       {s.studentCode}
                     </td>
-                    <td className="py-2.5 px-3 font-bold text-slate-800 whitespace-nowrap">
+                    <td className="py-3 px-3 font-semibold text-slate-900 whitespace-nowrap">
                       {s.studentName}
                     </td>
-                    <td className="py-2.5 px-3 font-medium text-slate-700 whitespace-nowrap">
+                    <td className="py-3 px-3 font-medium text-slate-800 whitespace-nowrap">
                       {s.className}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap">
+                    <td className="py-3 px-3 text-slate-600 whitespace-nowrap">
                       {s.campusName}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-700 whitespace-nowrap">
-                      <span className="inline-block px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono text-[11px] font-semibold">
+                    <td className="py-3 px-3 text-slate-700 whitespace-nowrap">
+                      <span className="inline-block px-2 py-0.5 rounded bg-[#F8FAFC] border border-[#E2E8F0] text-slate-700 text-[11px] font-medium">
                         {s.evaluationPeriod || "—"}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 font-semibold text-slate-700 whitespace-nowrap">
+                    <td className="py-3 px-3 font-medium text-slate-800 whitespace-nowrap">
                       {s.subjectName}
                     </td>
-
-                    {/* Điểm số */}
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                    <td className="py-3 px-3 text-center whitespace-nowrap">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded-lg font-black text-xs tabular-nums ${
+                        className={`inline-block px-2.5 py-0.5 rounded-lg font-bold text-xs ${
                           isBelowMoet
-                            ? "bg-rose-100 text-rose-800 border border-rose-200"
+                            ? "bg-rose-50 text-[#E11D48] border border-rose-200"
                             : isBelowSkyline
-                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            ? "bg-amber-50 text-[#D97706] border border-amber-200"
                             : isPerfect10
-                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs"
+                            ? "bg-emerald-50 text-[#059669] border border-emerald-200"
                             : "bg-slate-100 text-slate-800"
                         }`}
                       >
                         {s.score}
                       </span>
                     </td>
-
-                    {/* Chuẩn Sky-Line */}
-                    <td className="py-2.5 px-3 text-center text-slate-600 font-semibold tabular-nums">
+                    <td className="py-3 px-3 text-center text-slate-600 font-medium">
                       {s.skylineBenchmark}
                     </td>
-
-                    {/* Chênh lệch với chuẩn */}
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                    <td className="py-3 px-3 text-center whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold text-[10px] tabular-nums ${
-                          s.deltaSkyline >= 0 ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-rose-700 bg-rose-50 border border-rose-200"
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded font-semibold text-[11px] ${
+                          s.deltaSkyline >= 0
+                            ? "text-[#059669] bg-emerald-50 border border-emerald-200"
+                            : "text-[#E11D48] bg-rose-50 border border-rose-200"
                         }`}
                       >
                         {s.deltaSkyline >= 0 ? `+${s.deltaSkyline}` : s.deltaSkyline}
                       </span>
                     </td>
-
-                    {/* Diện đối tượng */}
-                    <td className="py-2.5 px-3 whitespace-nowrap">
+                    <td className="py-3 px-3 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
                         {isBelowMoet && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
-                            <AlertTriangle className="h-2.5 w-2.5" /> Dưới 5.0 (Cần can thiệp)
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-rose-50 text-[#E11D48] border border-rose-200">
+                            Dưới 5.0
                           </span>
                         )}
                         {isBelowSkyline && !isBelowMoet && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                            <AlertCircle className="h-2.5 w-2.5" /> &lt; Chuẩn Sky-Line
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-[#D97706] border border-amber-200">
+                            Dưới chuẩn SL
                           </span>
                         )}
                         {s.isCommitment && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-700 border border-sky-200">
-                            <HeartHandshake className="h-2.5 w-2.5" /> Cam kết đầu vào
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
+                            Cam kết đầu vào
                           </span>
                         )}
                         {s.isPsychological && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
-                            <Brain className="h-2.5 w-2.5" /> Tâm lý
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200">
+                            Tâm lý
                           </span>
                         )}
                         {isPerfect10 && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                            <Sparkles className="h-2.5 w-2.5" /> Điểm 10 ★
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-[#059669] border border-emerald-200">
+                            Điểm 10
                           </span>
-                        )}
-                        {!isBelowSkyline && !s.isCommitment && !s.isPsychological && !isPerfect10 && (
-                          <span className="text-[11px] text-slate-400">Đạt chuẩn</span>
                         )}
                       </div>
                     </td>
-
-                    {/* GVCN */}
-                    <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
+                    <td className="py-3 px-3 text-slate-600 whitespace-nowrap">
                       {s.homeroomTeacher || "—"}
                     </td>
-
-                    {/* Thao tác */}
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                    <td className="py-3 px-3 text-center whitespace-nowrap">
                       <a
-                        href={`/admin/ktdbcl/support?studentId=${s.studentId}&yearId=${s.academicYearId || ""}`}
+                        href={`/admin/ktdbcl/support?studentId=${s.studentId}&yearId=${
+                          s.academicYearId || ""
+                        }`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-semibold transition"
-                        title="Mở hồ sơ hỗ trợ học tập / phụ đạo"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#F0FDFA] hover:bg-[#CCFBF1]/60 text-[#00736E] border border-[#CCFBF1] text-[11px] font-semibold transition"
                       >
-                        Hỗ trợ / Phụ đạo
+                        Hỗ trợ học tập
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     </td>

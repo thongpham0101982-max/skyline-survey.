@@ -57,11 +57,13 @@ export async function GET(request: Request) {
     }
 
     if (mode === "preview_html") {
-      const code = searchParams.get("code") || "PVDH-01";
+      const code = searchParams.get("code") || "BM.KTĐBCL.31";
       const templates = await listPvdhTemplatesWithVersions();
       const found = templates.find((t: any) => t.code === code) || templates[0];
       const ver = found?.activeVersion;
       const seedFallback = PVDH_SEED_TEMPLATES.find((s) => s.code === code) || PVDH_SEED_TEMPLATES[0];
+      const effLayout = ver?.exportLayout || seedFallback.exportLayout;
+      const isBm = effLayout?.layoutVariant === "BM_KTDBCL_ABCD";
 
       const html = buildPvdhDocumentHtml({
         recordId: "PREVIEW-MAU",
@@ -71,25 +73,34 @@ export async function GET(request: Request) {
         templateVersionCode: ver?.versionCode || "v1.0",
         studentId: "PREVIEW",
         studentCode: "HS-XEM-TRUOC",
-        studentName: "[Họ và tên học sinh]",
+        studentName: isBm ? "" : "[Họ và tên học sinh]",
         studentDob: null,
         grade: `Khối ${(found?.grades || seedFallback.grades)[0] || "1"}`,
-        programName: "[Hệ/Chương trình]",
+        programName: isBm ? "" : "[Hệ/Chương trình]",
         oldSchoolAndClass: "[Trường/lớp đang học]",
-        registeredCampus: "[Cơ sở đăng ký]",
+        registeredCampus: isBm ? "" : "[Cơ sở đăng ký]",
         periodCode: "DOT-KS",
-        periodName: "[Đợt khảo sát]",
+        periodName: isBm ? "" : "[Đợt khảo sát]",
+        academicYearName: "",
         interviewDate: null,
-        studentInterviewerName: actor.userName,
+        studentInterviewerName: isBm ? "" : actor.userName,
         studentInterviewerTitle: "Giáo viên phỏng vấn",
-        parentFullName: "[Họ tên PHHS]",
-        parentRelationship: "[Quan hệ với HS]",
+        parentFullName: isBm ? "" : "[Họ tên PHHS]",
+        parentRelationship: isBm ? "" : "[Quan hệ với HS]",
         parentContactChannel: "[Điện thoại / Kênh liên hệ]",
         sections: ver?.sections || seedFallback.sections,
         fields: ver?.fields || seedFallback.fields,
-        exportLayout: ver?.exportLayout || seedFallback.exportLayout,
+        exportLayout: effLayout,
         studentResponses: {},
         parentResponses: {},
+        teacherSummary: {
+          d01: "",
+          d02: "",
+          d03: "",
+          d04: "",
+          sheetStatus: "",
+          psychInterviewRequested: false,
+        },
         planFurtherTopics: [],
         workflowStatus: "DRAFT",
         isLocked: false,

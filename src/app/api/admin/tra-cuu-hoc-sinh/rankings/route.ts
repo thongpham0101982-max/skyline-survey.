@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireStaffSession } from "@/lib/security-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const campusId = searchParams.get("campusId");
     const grade = searchParams.get("grade");
@@ -17,7 +22,11 @@ export async function GET(request: NextRequest) {
       status: "ACTIVE",
     };
 
-    if (campusId && campusId !== "all") {
+    if (ctx.isGDCS && ctx.allowedCampusIds.length > 0) {
+      studentWhere.campusId = campusId && campusId !== "all" && ctx.allowedCampusIds.includes(campusId)
+        ? campusId
+        : { in: ctx.allowedCampusIds };
+    } else if (campusId && campusId !== "all") {
       studentWhere.campusId = campusId;
     }
     if (classId && classId !== "all") {

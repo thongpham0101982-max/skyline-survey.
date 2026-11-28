@@ -14,7 +14,7 @@ async function checkCatalogReadPermission(session: any) {
   const upper = userRole.toUpperCase().trim();
   const ALLOWED = [
     'ADMIN', 'ADMINISTRATOR', 'SUPER_ADMIN', 
-    'KT_DBCL', 'KTDBCL', 'GDCS', 'GIAO_VU_CS', 'GIAO_VU', 
+    'KT_DBCL', 'KHAO_THI', 'ĐBCL', 'DBCL', 'KTDBCL', 'GDCS', 'GIAO_VU_CS', 'GIAO_VU', 
     'BGH', 'QLCM', 'TTCM', 
     'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS', 'GV_HDTN', 'BP_NK',
     'TEACHER', 'GIAO_VIEN', 'GV_MN', 'GVNN', 'GVCN'
@@ -29,7 +29,7 @@ async function checkAdminOrCTHSPermission(session: any) {
   const upper = userRole.toUpperCase().trim();
   const ALLOWED = [
     'ADMIN', 'ADMINISTRATOR', 'SUPER_ADMIN', 
-    'KT_DBCL', 'KTDBCL', 'GDCS', 'GIAO_VU_CS', 'GIAO_VU', 
+    'KT_DBCL', 'KHAO_THI', 'ĐBCL', 'DBCL', 'KTDBCL', 'GDCS', 'GIAO_VU_CS', 'GIAO_VU', 
     'BGH', 'QLCM', 'TTCM', 
     'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS', 'GV_HDTN', 'BP_NK'
   ];

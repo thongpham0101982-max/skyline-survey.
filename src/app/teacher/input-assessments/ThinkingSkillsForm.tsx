@@ -124,9 +124,10 @@ export default function ThinkingSkillsForm({ student, onClose, onSave, isLocked 
                     <div className="flex gap-3">
                         <button onClick={onClose} className="px-6 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 font-bold transition-colors text-sm">Hủy bỏ</button>
                         <button
+                            type="button"
                             onClick={handleSave}
                             disabled={isSaving || isLocked}
-                            className="flex items-center gap-2 hover:bg-[#003B3A] text-white font-bold shadow-md shadow-indigo-200 transition-all disabled:opacity-50 text-sm text-xs font-semibold"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#005250] text-white font-bold shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-xs"
                         >
                             {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save className="w-4 h-4" />}
                             Lưu Kết Quả

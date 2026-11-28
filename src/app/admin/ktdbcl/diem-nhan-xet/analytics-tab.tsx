@@ -558,232 +558,61 @@ export function GradeAnalyticsTab({
   const currentYearName = academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-12">
-      {/* 1. THANH TIÊU ĐỀ & CHUYỂN PHÂN HỆ PHÂN TÍCH */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-[#005B58] border border-teal-200 flex items-center gap-1">
-              <BarChart2 className="w-3.5 h-3.5" />
-              Khảo thí & Đảm bảo Chất lượng
-            </span>
-            <span className="text-xs font-semibold text-slate-500">[{currentYearName}]</span>
-          </div>
-          <h2 className="text-xl font-black text-slate-800 tracking-tight mt-1">
-            Phân tích Kết quả & Phổ điểm theo Giáo viên
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Đánh giá chất lượng học sinh theo từng phân công giảng dạy, đối soát chuẩn đầu ra (Tiểu học: 7.0đ, Trung học: 6.0đ) và theo dõi sát sao nhóm học sinh diện cam kết.
-          </p>
+    <div className="space-y-4">
+      {/* 1. THANH CHUYỂN CHẾ ĐỘ & TÓM TẮT SỔ CÁI HỌC THUẬT (KHÔNG TRÙNG LẶP VỚI KHOẢNG ĐIỂM / ĐTB) */}
+      <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3 text-xs tabular-nums">
+          <span className="px-2.5 py-1 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-slate-700">
+            Tổng phân công: <strong className="text-slate-900">{displayedTeacherDistributions.length}</strong> lớp–môn
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-slate-700">
+            Tổng học sinh: <strong className="text-slate-900">{data.summary.totalStudents.toLocaleString("vi-VN")}</strong>
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-[#F0FDFA] border border-[#CCFBF1] text-[#00736E]">
+            Đã có điểm: <strong>{data.summary.totalGraded.toLocaleString("vi-VN")}</strong>
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-slate-700">
+            ĐTB chung: <strong className="text-[#003B3A]">{data.summary.currentAverage || 0}</strong>/10
+          </span>
         </div>
 
-        {/* Sub-view Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl flex-wrap">
+        <div className="inline-flex items-center gap-1 bg-[#F8FAFC] p-1 rounded-xl border border-[#E2E8F0]">
           <button
+            type="button"
             onClick={() => setActiveSubView("teachers")}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
               activeSubView === "teachers"
-                ? "bg-white text-[#005B58] shadow-sm"
+                ? "bg-[#003B3A] text-white"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Chất lượng theo Giáo viên</span>
+            <span>Chất lượng kiểm tra theo giáo viên</span>
           </button>
 
-          {/* Tab 2: Chỉ HS Dưới Chuẩn môn học (bỏ cam kết) */}
           <button
-            onClick={() => setActiveSubView("below_benchmark")}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              activeSubView === "below_benchmark"
-                ? "bg-white text-amber-800 shadow-sm ring-1 ring-amber-300"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-            <span>HS Dưới chuẩn</span>
-            {data.summary.totalBelowBenchmark > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">
-                {data.summary.totalBelowBenchmark}
-              </span>
-            )}
-          </button>
-
-          {/* Tab 3: Bổ sung mới: HS Dưới ĐTB (< 5đ) */}
-          <button
-            onClick={() => setActiveSubView("below_average")}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              activeSubView === "below_average"
-                ? "bg-white text-rose-800 shadow-sm ring-1 ring-rose-300"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
-            <span>HS Dưới ĐTB (&lt; 5đ)</span>
-            {data.summary.totalBelowAverage > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">
-                {data.summary.totalBelowAverage}
-              </span>
-            )}
-          </button>
-
-          {/* Tab 4: Đối sánh KSĐV (Cam kết đầu vào) - Chỉ áp dụng Khối 2 đến Khối 12 */}
-          <button
+            type="button"
             onClick={() => setActiveSubView("ksdv_matrix")}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
               activeSubView === "ksdv_matrix"
-                ? "bg-white text-teal-800 shadow-sm ring-1 ring-indigo-300"
+                ? "bg-[#003B3A] text-white"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-teal-800" />
-            <span>Đối sánh KSĐV (Khối 2 - 12)</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Đối sánh cam kết KSĐV (Khối 2–12)</span>
             {(data.ksdvMatrix?.summary?.totalCommittedStudents || 0) > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-teal-50 text-teal-800">
+              <span
+                className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums ${
+                  activeSubView === "ksdv_matrix"
+                    ? "bg-white/15 text-white"
+                    : "bg-white text-slate-700 border border-[#E2E8F0]"
+                }`}
+              >
                 {data.ksdvMatrix?.summary?.totalCommittedStudents}
               </span>
             )}
           </button>
-
-          {/* Tab 5: Biểu đồ Phổ điểm */}
-          <button
-            onClick={() => setActiveSubView("charts")}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              activeSubView === "charts"
-                ? "bg-white text-[#005B58] shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Biểu đồ Phổ điểm</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. KHỐI KPI CARDS TỔNG HỢP */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5">
-        {/* KPI 1: Tổng phân công */}
-        <div 
-          onClick={() => setActiveSubView("teachers")}
-          className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm cursor-pointer hover:shadow-md hover:border-teal-300 transition-all"
-          title="Nhấp để xem Bảng Chất lượng theo Giáo viên"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Tổng phân công</span>
-            <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#005B58] flex items-center justify-center font-bold">
-              <BookOpen className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-800">{displayedTeacherDistributions.length}</span>
-            <span className="text-[11px] font-semibold text-slate-500">lớp-môn</span>
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">
-            Tổng HS: <strong className="text-slate-700">{data.summary.totalStudents.toLocaleString()}</strong>
-          </div>
-        </div>
-
-        {/* KPI 2: Điểm TB toàn trường */}
-        <div className="bg-white p-4 rounded-2xl border border-teal-200 shadow-sm bg-gradient-to-br from-white to-teal-50/30">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-teal-800">Điểm TB khảo sát</span>
-            <div className="w-8 h-8 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
-              <Award className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-teal-800">{data.summary.currentAverage || 0}</span>
-            <span className="text-[11px] font-bold text-teal-600">/10đ</span>
-          </div>
-          <div className="text-[11px] text-teal-700/80 mt-1 font-medium">
-            Đã nhập: {data.summary.totalGraded.toLocaleString()} HS
-          </div>
-        </div>
-
-        {/* KPI 3: Tỷ lệ Trên TB (>= 5.0) */}
-        <div className="bg-white p-4 rounded-2xl border border-emerald-200 shadow-sm bg-gradient-to-br from-white to-emerald-50/30">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-700">Tỷ lệ Trên TB (≥ 5đ)</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-emerald-700">
-              {data.summary.totalGraded > 0
-                ? Math.round(((data.summary.totalGraded - data.summary.totalBelowAverage) / data.summary.totalGraded) * 100)
-                : 0}%
-            </span>
-            <span className="text-[11px] font-bold text-emerald-600">toàn khối</span>
-          </div>
-          <div className="text-[11px] text-emerald-700/80 mt-1 font-medium">
-            Đạt chuẩn kiến thức cơ bản
-          </div>
-        </div>
-
-        {/* KPI 4: HS Dưới Chuẩn môn học */}
-        <div 
-          onClick={() => setActiveSubView("below_benchmark")}
-          className="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm bg-gradient-to-br from-white to-amber-50/30 cursor-pointer hover:shadow-md hover:border-amber-400 transition-all"
-          title="Nhấp để xem danh sách Học sinh Dưới chuẩn môn học"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-700">HS Dưới Chuẩn</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-amber-700">{data.summary.totalBelowBenchmark}</span>
-            <span className="text-[11px] font-bold text-amber-600">học sinh</span>
-          </div>
-          <div className="text-[11px] text-amber-700/80 mt-1 font-medium">
-            Dưới chuẩn điểm môn học
-          </div>
-        </div>
-
-        {/* KPI 5: HS Dưới Trung bình (< 5.0) */}
-        <div 
-          onClick={() => setActiveSubView("below_average")}
-          className="bg-white p-4 rounded-2xl border border-rose-200 shadow-sm bg-gradient-to-br from-white to-rose-50/30 cursor-pointer hover:shadow-md hover:border-rose-400 transition-all"
-          title="Nhấp để xem danh sách Học sinh Dưới điểm trung bình (< 5.0đ)"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-rose-700">HS Dưới TB (&lt; 5đ)</span>
-            <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold">
-              <AlertCircle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-rose-700">{data.summary.totalBelowAverage}</span>
-            <span className="text-[11px] font-bold text-rose-600">học sinh</span>
-          </div>
-          <div className="text-[11px] text-rose-700/80 mt-1 font-medium">
-            Cần phụ đạo, bồi dưỡng gấp
-          </div>
-        </div>
-
-        {/* KPI 6: HS Diện Cam kết đầu vào */}
-        <div 
-          onClick={() => setActiveSubView("ksdv_matrix")}
-          className="bg-white p-4 rounded-2xl border border-teal-200 shadow-sm bg-gradient-to-br from-white to-emerald-600/30 cursor-pointer hover:shadow-md hover:border-teal-200 transition-all"
-          title="Nhấp để xem Ma trận Đối sánh KSĐV (Cam kết đầu vào)"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-teal-800">Diện Cam kết</span>
-            <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-800 flex items-center justify-center font-bold">
-              <Sparkles className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-teal-800">
-              {Math.max(data.ksdvMatrix?.summary?.totalCommittedStudents || 0, data.summary.totalAdmissionCommitment + data.summary.totalLearningCommitment)}
-            </span>
-            <span className="text-[11px] font-bold text-teal-800">học sinh</span>
-          </div>
-          <div className="text-[11px] text-teal-800/80 mt-1 font-medium">
-            Có hồ sơ cam kết đầu vào / HT
-          </div>
         </div>
       </div>
 

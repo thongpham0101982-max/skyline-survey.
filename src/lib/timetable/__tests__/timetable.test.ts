@@ -108,6 +108,7 @@ import {
   doesClassBelongToScope,
   isHillCampus,
   mapEducationSystemToStudyProgram,
+  parseSelectedCampusIds,
   resolveWeekParity,
 } from "@/lib/timetable/scopeResolver"
 import {
@@ -140,6 +141,15 @@ import {
   buildSingleGradeStats,
   computeClassSlotSummary,
 } from "@/lib/timetable/gradeStatsHelper"
+import {
+  buildPrismaQuotaFieldsFromQd82Spec,
+  computeQd82ColumnSums,
+  QD82_2026_SUBJECT_STANDARDS,
+} from "@/lib/timetable/curriculumStandardQd82"
+import {
+  buildLearnedScheduleMemory,
+  computeTeacherMultiCampusPriority,
+} from "@/lib/timetable/learnedScheduleMemory"
 import {
   checkProctorTimetableConflict,
   getEffectiveClassWeekSchedule,
@@ -2305,5 +2315,353 @@ describe("SSM Sky-Line Timetable v2 — 8 Acceptance Scenarios", () => {
     expect(matrix.gradeColumns).toHaveLength(1)
     expect(matrix.gradeColumns[0].totalQuota).toBe(40)
     expect(matrix.gradeColumns[0].avgScheduled).toBe(20)
+  })
+
+  it("Scenario 18: supports selecting all campuses, multiple campuses, or a single campus within a Bộ TKB", () => {
+    const allowed = [
+      { id: "cs1", campusCode: "CS1", campusName: "CS1" },
+      { id: "cs3", campusCode: "CS3", campusName: "CS3" },
+      { id: "cs5", campusCode: "CS5", campusName: "CS5" },
+    ]
+
+    const allRes = parseSelectedCampusIds(undefined, allowed)
+    expect(allRes.isAllSelected).toBe(true)
+    expect(allRes.selectedCampusIds).toEqual(["cs1", "cs3", "cs5"])
+    expect(allRes.normalizedFilterValue).toBe("ALL")
+
+    const subRes = parseSelectedCampusIds("cs5,cs1", allowed)
+    expect(subRes.isAllSelected).toBe(false)
+    expect(subRes.selectedCampusIds).toEqual(["cs1", "cs5"])
+    expect(subRes.normalizedFilterValue).toBe("cs1,cs5")
+
+    const singleRes = parseSelectedCampusIds("cs3", allowed)
+    expect(singleRes.isAllSelected).toBe(false)
+    expect(singleRes.selectedCampusIds).toEqual(["cs3"])
+    expect(singleRes.normalizedFilterValue).toBe("cs3")
+
+    const invalidRes = parseSelectedCampusIds("cs4-hill", allowed)
+    expect(invalidRes.isAllSelected).toBe(true)
+    expect(invalidRes.selectedCampusIds).toEqual(["cs1", "cs3", "cs5"])
+  })
+
+  it("Scenario 19: aligns with QĐ 82/2026/QĐ-SKL (40 periods/week K1–K12 for Hệ S & Hệ I), avoids level-sum fallback, and handles THPT 3×2 electives", () => {
+    // 19a. Every column in QĐ 82/2026/QĐ-SKL (G1..G9, G10TN..G12XH) sums to exactly 40 periods/week
+    const sums = computeQd82ColumnSums()
+    for (const prog of ["Hệ S", "Hệ I"] as const) {
+      for (const [col, total] of Object.entries(sums[prog])) {
+        expect(total, `${prog} ${col}`).toBe(40)
+      }
+    }
+
+    // 19b. When per-grade quotas are populated (e.g. SCI Hệ S: G6=2, G7=0, quotaMiddle=2),
+    // Grade 7 must return 0 rather than falling back to quotaMiddle=2!
+    const sciHeSFields = buildPrismaQuotaFieldsFromQd82Spec(
+      QD82_2026_SUBJECT_STANDARDS.find((x) => x.subjectCode === "SCI")!.heS
+    )
+    const sciRow = {
+      id: "sq-sci-s",
+      subjectId: "sub-sci",
+      academicYearId: "ay-2026",
+      studyProgram: "Hệ S",
+      quota: 0,
+      ...sciHeSFields,
+    }
+    expect(resolveGradeQuotaValue(sciRow, 6, "THCS")).toBe(2)
+    expect(resolveGradeQuotaValue(sciRow, 7, "THCS")).toBe(0)
+    expect(resolveGradeQuotaValue(sciRow, 8, "THCS")).toBe(0)
+
+    // 19c. Full K1–K12 grade stats with QĐ 82/2026 quotas (including Grade 10 TN & XH electives)
+    const subjects = QD82_2026_SUBJECT_STANDARDS.map((e) => ({
+      id: `sub-${e.subjectCode}`,
+      subjectCode: e.subjectCode,
+      subjectName: e.subjectCode,
+    }))
+    const subjectQuotas = QD82_2026_SUBJECT_STANDARDS.flatMap((e) => [
+      {
+        id: `sq-${e.subjectCode}-S`,
+        subjectId: `sub-${e.subjectCode}`,
+        academicYearId: "ay-2026",
+        studyProgram: "Hệ S",
+        quota: 0,
+        ...buildPrismaQuotaFieldsFromQd82Spec(e.heS),
+      },
+      {
+        id: `sq-${e.subjectCode}-I`,
+        subjectId: `sub-${e.subjectCode}`,
+        academicYearId: "ay-2026",
+        studyProgram: "Hệ I",
+        quota: 0,
+        ...buildPrismaQuotaFieldsFromQd82Spec(e.heI),
+      },
+    ])
+
+    const classesG10 = [
+      { id: "c-101", className: "10.1_CS1", grade: "10", level: "THPT", educationSystem: "HNS" },
+      { id: "c-102", className: "10.2_CS1", grade: "10", level: "THPT", educationSystem: "HNS" },
+      { id: "c-10i", className: "10Compass_CS3", grade: "10", level: "THPT", educationSystem: "HNG" },
+    ]
+    // 10.1_CS1 picks TN electives (VLI, HHO, SHO); 10.2_CS1 picks XH electives (DLI, GKP, MTU); 10Compass_CS3 picks VLI, HHO, DLI
+    const taRows = [
+      ...["VLI", "HHO", "SHO"].map((code, i) => ({
+        id: `ta-101-${i}`,
+        classId: "c-101",
+        subjectId: `sub-${code}`,
+        teacherId: "t1",
+        academicYearId: "ay-2026",
+        semester: 1,
+      })),
+      ...["DLI", "GKP", "MTU"].map((code, i) => ({
+        id: `ta-102-${i}`,
+        classId: "c-102",
+        subjectId: `sub-${code}`,
+        teacherId: "t1",
+        academicYearId: "ay-2026",
+        semester: 1,
+      })),
+      ...["VLI", "HHO", "DLI"].map((code, i) => ({
+        id: `ta-10i-${i}`,
+        classId: "c-10i",
+        subjectId: `sub-${code}`,
+        teacherId: "t1",
+        academicYearId: "ay-2026",
+        semester: 1,
+      })),
+    ]
+
+    const reconciledG10 = reconcileQuotasAndAssignments({
+      classes: classesG10,
+      subjects,
+      teachers: [{ id: "t1", teacherCode: "GV1", teacherName: "Thầy A" }],
+      subjectQuotas,
+      teachingAssignments: taRows,
+      scheduledSlots: [],
+      cycleWeeks: 2,
+    })
+
+    const g10Stats = buildSingleGradeStats({
+      grade: "10",
+      classes: classesG10,
+      quotaItems: reconciledG10,
+      slots: [],
+      subjects,
+      subjectQuotas,
+      targetWeeklyPeriods: 40,
+    })
+
+    expect(g10Stats.totalQuotaHeS).toBe(40)
+    expect(g10Stats.totalQuotaHeI).toBe(40)
+    expect(g10Stats.classes.find((c) => c.classId === "c-101")?.quotaTotal).toBe(40)
+    expect(g10Stats.classes.find((c) => c.classId === "c-102")?.quotaTotal).toBe(40)
+    expect(g10Stats.classes.find((c) => c.classId === "c-10i")?.quotaTotal).toBe(40)
+  })
+
+  it("Scenario 20: learns from drag-and-drop & baseline memory, clusters multi-campus teachers away from Hill travel days, and pairs TOA 4.5 + GDCD 0.5", () => {
+    const campuses = [
+      { id: "cs1", campusCode: "CS1", campusName: "CS1", address: "Sky-Line Riverside" },
+      { id: "cs3", campusCode: "CS3", campusName: "CS3", address: "Sky-Line Global" },
+      { id: "cs4", campusCode: "CS4", campusName: "CS4", address: "Sky-Line Hill" },
+    ]
+
+    const mem = buildLearnedScheduleMemory({
+      campuses,
+      teacherAssignmentsMeta: [
+        { teacherId: "gv-hill", campusId: "cs1", level: "THCS" },
+        { teacherId: "gv-hill", campusId: "cs4", level: "THCS" },
+        { teacherId: "gv-urban", campusId: "cs1", level: "THCS" },
+        { teacherId: "gv-urban", campusId: "cs3", level: "THCS" },
+        { teacherId: "gv-local", campusId: "cs1", level: "THCS" },
+      ],
+    })
+
+    // Hill multi-campus teacher gets higher priority than urban CS1-CS3 teacher, which beats single-campus teacher
+    expect(computeTeacherMultiCampusPriority(mem, "gv-hill")).toBeGreaterThan(
+      computeTeacherMultiCampusPriority(mem, "gv-urban")
+    )
+    expect(computeTeacherMultiCampusPriority(mem, "gv-urban")).toBeGreaterThan(
+      computeTeacherMultiCampusPriority(mem, "gv-local")
+    )
+
+    // Auto-scheduler test: gv-hill is at CS4 Hill on THURSDAY morning; at CS1 has 2 periods of ICT (prefers clean 1-2 or 3-4 on baseline WEDNESDAY S3-S4, NOT THURSDAY)
+    // Plus TOA (4.5) + GDCD (0.5) should produce 2 clean double-blocks + 1 paired alternating cell!
+    const cfg = makeBaseConfig()
+    const baselineSlots = [
+      {
+        academicYearId: "ay-2026",
+        semester: 1,
+        campusId: "cs1",
+        level: "THCS",
+        grade: "6",
+        classId: "c-61",
+        className: "6.1_CS1",
+        dayOfWeek: "WEDNESDAY" as const,
+        session: "MORNING" as const,
+        periodNumber: 3,
+        subjectId: "sub-ict",
+        subjectCode: "ICT",
+        subjectName: "Tin học / ICT",
+        teacherId: "gv-hill",
+        teacherCode: "GV_HILL",
+        teacherName: "Thầy Hill",
+        weekType: "ALL" as const,
+      },
+      {
+        academicYearId: "ay-2026",
+        semester: 1,
+        campusId: "cs1",
+        level: "THCS",
+        grade: "6",
+        classId: "c-61",
+        className: "6.1_CS1",
+        dayOfWeek: "WEDNESDAY" as const,
+        session: "MORNING" as const,
+        periodNumber: 4,
+        subjectId: "sub-ict",
+        subjectCode: "ICT",
+        subjectName: "Tin học / ICT",
+        teacherId: "gv-hill",
+        teacherCode: "GV_HILL",
+        teacherName: "Thầy Hill",
+        weekType: "ALL" as const,
+      },
+    ]
+
+    const res = runAutoScheduler({
+      campusId: "cs1",
+      campusName: "CS1",
+      academicYearId: "ay-2026",
+      semester: 1,
+      config: cfg,
+      classes: [{ id: "c-61", className: "6.1_CS1", grade: "6", level: "THCS" }],
+      teachers: [
+        { id: "gv-hill", teacherCode: "GV_HILL", teacherName: "Thầy Hill" },
+        { id: "gv-math", teacherCode: "GV_TOA", teacherName: "Cô Toán" },
+        { id: "gv-gdcd", teacherCode: "GV_GDCD", teacherName: "Thầy GDCD" },
+      ],
+      campuses,
+      baselineSlots,
+      teacherAssignmentsMeta: [
+        { teacherId: "gv-hill", campusId: "cs1", level: "THCS" },
+        { teacherId: "gv-hill", campusId: "cs4", level: "THCS" },
+      ],
+      externalActiveSlots: [
+        {
+          campusId: "cs4",
+          campusName: "CS4 — Sky-Line Hill",
+          scopeGroup: "HILL",
+          startMinutes: 450,
+          endMinutes: 545,
+          slot: {
+            academicYearId: "ay-2026",
+            semester: 1,
+            campusId: "cs4",
+            level: "THCS",
+            grade: "6",
+            classId: "c-6hill",
+            className: "6S_CS4",
+            dayOfWeek: "THURSDAY",
+            session: "MORNING",
+            periodNumber: 1,
+            subjectId: "sub-ict",
+            subjectCode: "ICT",
+            subjectName: "Tin học / ICT",
+            teacherId: "gv-hill",
+            teacherCode: "GV_HILL",
+            teacherName: "Thầy Hill",
+            weekType: "ALL",
+          },
+        },
+      ],
+      quotaItems: [
+        {
+          classId: "c-61",
+          className: "6.1_CS1",
+          grade: "6",
+          level: "THCS",
+          educationSystem: "HNS",
+          studyProgram: "Hệ S",
+          subjectId: "sub-ict",
+          subjectCode: "ICT",
+          subjectName: "Tin học / ICT",
+          weeklyQuota: 2,
+          cycleQuota: 4,
+          cycleWeeks: 2,
+          scheduledWeeklyEquivalent: 0,
+          missingWeeklyPeriods: 2,
+          overScheduledWeeklyPeriods: 0,
+          primaryTeacherId: "gv-hill",
+          primaryTeacherCode: "GV_HILL",
+          primaryTeacherName: "Thầy Hill",
+          coTeacherId: null,
+          coTeacherCode: null,
+          coTeacherName: null,
+          assignmentSource: "TEACHING_ASSIGNMENT",
+          status: "UNDER_SCHEDULED",
+        },
+        {
+          classId: "c-61",
+          className: "6.1_CS1",
+          grade: "6",
+          level: "THCS",
+          educationSystem: "HNS",
+          studyProgram: "Hệ S",
+          subjectId: "sub-toa",
+          subjectCode: "TOA",
+          subjectName: "Toán học",
+          weeklyQuota: 4.5,
+          cycleQuota: 9,
+          cycleWeeks: 2,
+          scheduledWeeklyEquivalent: 0,
+          missingWeeklyPeriods: 4.5,
+          overScheduledWeeklyPeriods: 0,
+          primaryTeacherId: "gv-math",
+          primaryTeacherCode: "GV_TOA",
+          primaryTeacherName: "Cô Toán",
+          coTeacherId: null,
+          coTeacherCode: null,
+          coTeacherName: null,
+          assignmentSource: "TEACHING_ASSIGNMENT",
+          status: "UNDER_SCHEDULED",
+        },
+        {
+          classId: "c-61",
+          className: "6.1_CS1",
+          grade: "6",
+          level: "THCS",
+          educationSystem: "HNS",
+          studyProgram: "Hệ S",
+          subjectId: "sub-gdcd",
+          subjectCode: "GDCD",
+          subjectName: "GDCD",
+          weeklyQuota: 0.5,
+          cycleQuota: 1,
+          cycleWeeks: 2,
+          scheduledWeeklyEquivalent: 0,
+          missingWeeklyPeriods: 0.5,
+          overScheduledWeeklyPeriods: 0,
+          primaryTeacherId: "gv-gdcd",
+          primaryTeacherCode: "GV_GDCD",
+          primaryTeacherName: "Thầy GDCD",
+          coTeacherId: null,
+          coTeacherCode: null,
+          coTeacherName: null,
+          assignmentSource: "TEACHING_ASSIGNMENT",
+          status: "UNDER_SCHEDULED",
+        },
+      ],
+      existingSlots: [],
+    })
+
+    expect(res.outcome).toBe("COMPLETED")
+    const ictSlots = res.generatedSlots.filter((s) => s.subjectId === "sub-ict")
+    expect(ictSlots).toHaveLength(2)
+    // Anchors right onto baseline WEDNESDAY Morning P3-P4 (not THURSDAY when gv-hill is at CS4 Hill!)
+    expect(ictSlots.every((s) => s.dayOfWeek === "WEDNESDAY" && s.session === "MORNING")).toBe(true)
+    expect(ictSlots.map((s) => s.periodNumber).sort()).toEqual([3, 4])
+
+    // TOA (4.5) + GDCD (0.5) = 5 total physical cells (4 full TOA cells + 1 paired TOA/GDCD cell)
+    expect(res.generatedSlots).toHaveLength(7) // 2 ICT + 5 TOA/GDCD
+    const pairedSlot = res.generatedSlots.find((s) => s.altSubjectId === "sub-gdcd" || s.subjectId === "sub-gdcd")
+    expect(pairedSlot).toBeDefined()
+    expect(Boolean(pairedSlot?.altSubjectId)).toBe(true)
   })
 })

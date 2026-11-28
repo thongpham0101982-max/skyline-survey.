@@ -2,23 +2,18 @@
 // Testing: Deadline calculation, Urgency status, Export Formats (TT22, TT27, Cambridge), GAP Popover thresholds
 
 import assert from "node:assert";
-
-console.log("================================================================================");
-console.log("   SSM BATCH #03 — UI COMPONENTS & PEDAGOGICAL ERGONOMICS VERIFICATION SUITE   ");
-console.log("================================================================================");
+import { describe, it } from "vitest";
 
 let passedCount = 0;
 
 function runTest(name: string, fn: () => void) {
-  try {
+  it(name, () => {
     fn();
-    console.log(`  [PASS] ${name}`);
     passedCount++;
-  } catch (err: any) {
-    console.error(`  [FAIL] ${name}: ${err.message}`);
-    process.exit(1);
-  }
+  });
 }
+
+describe("SSM Batch #03 — UI Components & Pedagogical Ergonomics Verification Suite", () => {
 
 // 1. DeadlineCountdown calculation tests
 runTest("DeadlineCountdown: calculates remaining days/hours/minutes accurately", () => {
@@ -104,7 +99,4 @@ runTest("StudentSnapshotPopover: GAP calculation and threshold categorization", 
   assert.strictEqual(studentC.gap, -1.5);
   assert.strictEqual(studentC.category, "NEEDS_SUPPORT");
 });
-
-console.log("--------------------------------------------------------------------------------");
-console.log(`  ALL ${passedCount} LOGICAL & PEDAGOGICAL ASSERTIONS PASSED WITH ZERO REGRESSION!`);
-console.log("================================================================================");
+});

@@ -214,7 +214,7 @@ export async function resolvePsychReferralContext(student: any): Promise<PsychRe
 
     for (const rawFallback of String(getCampusGiaovuEmail(campusCode) || "").split(/[,;]/)) {
       const em = normalizeSkylineEmail(rawFallback);
-      if (em && !/^(giaovu|tuyensinh|tuvan)\.cs\d+@/i.test(em)) {
+      if (em && !/^(tuyensinh|tuvan)\.cs\d+@/i.test(em)) {
         addGiaovu({
           name: `Tổ Giáo vụ ${campusCode}`,
           email: em,
@@ -226,7 +226,7 @@ export async function resolvePsychReferralContext(student: any): Promise<PsychRe
     console.warn("[psych-referral-mail] resolve giaovu warning:", err);
     for (const rawFallback of String(getCampusGiaovuEmail(campusCode) || "").split(/[,;]/)) {
       const em = normalizeSkylineEmail(rawFallback);
-      if (em && !/^(giaovu|tuyensinh|tuvan)\.cs\d+@/i.test(em)) {
+      if (em && !/^(tuyensinh|tuvan)\.cs\d+@/i.test(em)) {
         addGiaovu({
           name: `Tổ Giáo vụ ${campusCode}`,
           email: em,

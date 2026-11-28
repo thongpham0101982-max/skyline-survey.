@@ -1,1021 +1,1082 @@
 "use client"
-// @ts-nocheck
-import { ACADEMIC_DIVISIONS, ACADEMIC_POSITIONS } from "@/config/divisions";
-
-function PositionBadge({ position, positions }: { position?: string | null, positions?: string[] }) {
-  const allPos = new Set<string>();
-  if (position) allPos.add(position.trim());
-  if (Array.isArray(positions)) positions.forEach(p => p && allPos.add(p.trim()));
-  
-  const list = Array.from(allPos);
-  if (list.length === 0) list.push("GV");
-
-  return (
-    <div className="flex flex-wrap gap-1 items-center">
-      {list.map(pos => {
-        if (pos === "NV") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-cyan-50 text-cyan-700 text-[10px] font-black border border-cyan-200">NV</span>;
-        if (pos === "TTCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-black border border-amber-200">TTCM</span>;
-        if (pos === "TPTCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 text-[10px] font-black border border-teal-200">TPTCM</span>;
-        if (pos === "TBP") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-black border border-teal-200">TBP</span>;
-        if (pos === "TB_DHCM" || pos === "Ban ĐHCM" || pos === "QLCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-black border border-teal-200">Ban ĐHCM</span>;
-        if (pos === "GĐCS" || pos === "GDCS") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-black border border-rose-200">GĐCS</span>;
-        return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">{pos || "GV"}</span>;
-      })}
-    </div>
-  );
-}
-import { useState, useRef, useMemo } from "react"
+import { useState, useRef, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
 import {
-  Plus, Trash2, Edit2, Check, X, Upload, Download,
-  Key, GraduationCap, Search, Users, UserCheck, Building2, Mail,
-  Filter, RefreshCw, ShieldCheck, AlertCircle, Layers
+  Plus, Trash2, Edit2, X, Upload, Download, Key, GraduationCap,
+  Search, Building2, Mail, RotateCcw, AlertCircle, Users,
+  ChevronLeft, ChevronRight, Shield, CheckCircle2, XCircle
 } from "lucide-react"
+import { PageHeader } from "@/components/PageHeader"
+import { ACADEMIC_DIVISIONS } from "@/config/divisions"
 import {
   createTeacherAction, updateTeacherAction, deleteTeacherAction,
   importTeachersAction, resetTeacherPasswordAction, assignTeachersToRoleAction
 } from "./actions"
+import { TeacherFormDrawer, TeacherFormState } from "./TeacherFormDrawer"
 
-const EMPTY_NEW = {
-  teacherCode: "", teacherName: "",
-  email: "", phone: "",
-  dateOfBirth: "", department: "", mainSubject: "", campus: "",
-  additionalCampusIds: [], position: "GV",
+const EMPTY_FORM: TeacherFormState = {
+  teacherCode: "",
+  teacherName: "",
+  email: "",
+  phone: "",
+  dateOfBirth: "",
+  department: "",
+  departmentAssignments: [],
+  mainSubject: "",
+  campusId: "",
+  additionalCampusIds: [],
+  position: "GV",
   positions: [],
-  divisionCodes: []
-}
-const EMPTY_EDIT = { 
-  teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE", 
-  email: "", additionalCampusIds: [], position: "GV",
-  positions: [] as string[],
-  divisionCodes: [] as string[]
+  divisionCodes: [],
+  status: "ACTIVE",
 }
 
-const DEPT_COLORS = {
-  "KT&DBCL": "bg-[#48BFE3]/5 text-[#48BFE3]",
-  "KT-DBCL": "bg-[#48BFE3]/5 text-[#48BFE3]",
-  "default": "bg-slate-50 text-slate-600"
-}
-function getDeptColor(dept) { return DEPT_COLORS[dept] || DEPT_COLORS["default"] }
-
-function StatusBadge({ status }) {
-  if (status === "ACTIVE") return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider text-xs font-semibold">
-      <span className="w-1.5 h-1.5 animate-pulse text-xs font-semibold" />On
-    </span>
-  )
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-rose-700 uppercase tracking-wider text-xs font-semibold">
-      <span className="w-1.5 h-1.5 text-xs font-semibold" />Off
-    </span>
-  )
-}
-
-const cleanStr = (s: string | null | undefined) => 
+const cleanStr = (s: string | null | undefined) =>
   (s || "")
-   .toLowerCase()
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g, "")
-   .replace(/đ/g, "d")
-   .replace(/Đ/g, "d");
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
 
-export function TeacherManagerClient({ 
-  initialTeachers, years, defaultYearId, classes, departments, subjects, campuses, isCampusLocked = false, defaultCampusId = null, roles = [] 
+function PositionBadges({ position, positions }: { position?: string | null; positions?: string[] }) {
+  const allPos = new Set<string>()
+  if (position) allPos.add(position.trim())
+  if (Array.isArray(positions)) positions.forEach((p) => p && allPos.add(p.trim()))
+  const list = Array.from(allPos)
+  if (list.length === 0) list.push("GV")
+
+  const styleFor = (pos: string) => {
+    if (pos === "GĐCS" || pos === "GDCS") return "bg-rose-50 text-rose-700 border-rose-200"
+    if (pos === "TTCM") return "bg-amber-50 text-amber-700 border-amber-200"
+    if (pos === "TPTCM" || pos === "TBP" || pos === "TB_DHCM" || pos === "Ban ĐHCM" || pos === "QLCM") {
+      return "bg-[#F0FDFA] text-[#00736E] border-[#99F6E4]"
+    }
+    if (pos === "NV") return "bg-sky-50 text-sky-700 border-sky-200"
+    return "bg-slate-100 text-slate-600 border-slate-200"
+  }
+
+  const labelFor = (pos: string) => {
+    if (pos === "TB_DHCM" || pos === "QLCM") return "Ban ĐHCM"
+    return pos || "GV"
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1 items-center">
+      {list.map((pos) => (
+        <span
+          key={pos}
+          className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold ${styleFor(pos)}`}
+        >
+          {labelFor(pos)}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function getVisiblePages(current: number, total: number): Array<number | "..."> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, "...", total]
+  if (current >= total - 3) return [1, "...", total - 4, total - 3, total - 2, total - 1, total]
+  return [1, "...", current - 1, current, current + 1, "...", total]
+}
+
+export function TeacherManagerClient({
+  initialTeachers,
+  defaultYearId,
+  departments,
+  subjects,
+  campuses,
+  isCampusLocked = false,
+  defaultCampusId = null,
+  roles = [],
 }: any) {
-  const [teachers, setTeachers] = useState(initialTeachers)
+  const router = useRouter()
+  const [teachers, setTeachers] = useState<any[]>(initialTeachers)
+
+  useEffect(() => {
+    setTeachers(initialTeachers)
+  }, [initialTeachers])
+
+  // Filters
   const [search, setSearch] = useState("")
+  const [activeBlockTab, setActiveBlockTab] = useState("")
+  const [filterCampus, setFilterCampus] = useState("")
   const [filterDepartment, setFilterDepartment] = useState("")
   const [filterSubject, setFilterSubject] = useState("")
   const [filterStatus, setFilterStatus] = useState("")
-  const [activeBlockTab, setActiveBlockTab] = useState("")
-  const [editingId, setEditingId] = useState(null)
-  const [editForm, setEditForm] = useState(EMPTY_EDIT)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newForm, setNewForm] = useState(() => {
-    if (isCampusLocked && defaultCampusId) {
-      const campusName = (campuses || []).find((c) => c.id === defaultCampusId)?.campusName || ""
-      return { ...EMPTY_NEW, campus: campusName }
-    }
-    return EMPTY_NEW
-  })
-  const [saving, setSaving] = useState(false)
-  const [importing, setImporting] = useState(false)
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(25)
+
+  // Selection & Bulk Actions
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [assigning, setAssigning] = useState(false)
-  const [importResult, setImportResult] = useState(null)
-  const [errorMsg, setErrorMsg] = useState("")
-  const [successMsg, setSuccessMsg] = useState("")
-  const fileInputRef = useRef(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
 
-  // Reset page to 1 when filters change:
-  const [prevFilters, setPrevFilters] = useState('')
-  const currentFiltersKey = search + filterDepartment + filterSubject + filterStatus + activeBlockTab
-  if (currentFiltersKey !== prevFilters) {
-    setPrevFilters(currentFiltersKey)
-    setCurrentPage(1)
-  }
+  // Drawer (Create / Edit)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create")
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formState, setFormState] = useState<TeacherFormState>(EMPTY_FORM)
+  const [drawerError, setDrawerError] = useState("")
+  const [saving, setSaving] = useState(false)
 
+  // Import & Warnings
+  const [importing, setImporting] = useState(false)
+  const [importWarningMsg, setImportWarningMsg] = useState("")
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const displayed = teachers.filter((t) => {
-    let match = true
-    if (search) {
-      const q = cleanStr(search)
-      const nameClean = cleanStr(t.teacherName)
-      const codeClean = cleanStr(t.teacherCode)
-      const campusClean = cleanStr(t.campus)
-      match = match && (nameClean.includes(q) || codeClean.includes(q) || campusClean.includes(q))
-    }
-    if (filterDepartment) {
-      match = match && (
-        t.department === filterDepartment ||
-        (t.departmentAssignments && t.departmentAssignments.some((da: any) => da.departmentName === filterDepartment || da.departmentId === filterDepartment))
-      )
-    }
-    if (filterSubject) match = match && t.mainSubject === filterSubject
-    if (filterStatus) match = match && t.status === filterStatus
-    if (activeBlockTab) {
-      const deptObj = (departments || []).find((d) => d.name === t.department)
-      match = match && deptObj?.blockCM === activeBlockTab
-    }
-    return match
-  })
-  const selectedDisplayedIds = selectedIds.filter(id => displayed.some(t => t.id === id));
+  const departmentByName = useMemo(() => {
+    const map = new Map<string, any>()
+    ;(departments || []).forEach((d: any) => map.set(d.name, d))
+    return map
+  }, [departments])
 
-  const activeCount = teachers.filter((t) => t.status === "ACTIVE").length
-  const inactiveCount = teachers.filter((t) => t.status !== "ACTIVE").length
+  const blocks = useMemo(() => {
+    const set = new Set<string>()
+    ;(departments || []).forEach((d: any) => {
+      if (d.blockCM) set.add(d.blockCM)
+    })
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "vi"))
+  }, [departments])
 
-  const handleCreate = async () => {
-    if (!newForm.teacherCode.trim() || !newForm.teacherName.trim()) { setErrorMsg("Vui lòng nhập Mã GV và Họ và tên!"); return }
-    setSaving(true); setErrorMsg("")
-    try {
-      const selectedCampus = (campuses || []).find((c) => c.campusName === newForm.campus)
-      const res = await createTeacherAction({ ...newForm, campusId: selectedCampus?.id, position: newForm.position })
-      if (res && !res.success) {
-        setErrorMsg(res.error || "Mã GV đã tồn tại hoặc có lỗi xảy ra!");
-        setSaving(false);
-        return;
+  const blockCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    teachers.forEach((t) => {
+      const b = departmentByName.get(t.department)?.blockCM
+      if (b) counts[b] = (counts[b] || 0) + 1
+    })
+    return counts
+  }, [teachers, departmentByName])
+
+  const displayed = useMemo(() => {
+    const q = search ? cleanStr(search) : ""
+    return teachers.filter((t) => {
+      if (q) {
+        const hit =
+          cleanStr(t.teacherName).includes(q) ||
+          cleanStr(t.teacherCode).includes(q) ||
+          cleanStr(t.email).includes(q) ||
+          cleanStr(t.campus).includes(q)
+        if (!hit) return false
       }
-      setTeachers([...teachers, {
-        id: "temp_" + Date.now(), teacherCode: newForm.teacherCode, teacherName: newForm.teacherName,
-        dateOfBirth: newForm.dateOfBirth || null,
-        department: (departments || []).find((d) => d.name === newForm.department)?.name || newForm.department || null,
-        mainSubject: (subjects || []).find((s) => s.subjectName === newForm.mainSubject)?.subjectName || newForm.mainSubject || null,
-        campus: selectedCampus?.campusName || null, campusId: selectedCampus?.id || null,
-        additionalCampuses: (campuses || []).filter((c) => newForm.additionalCampusIds?.includes(c.id)).map((c) => ({ id: c.id, campusName: c.campusName })),
-        additionalCampusIds: newForm.additionalCampusIds || [], homeroomClass: null,
-        email: newForm.email || null, phone: newForm.phone || null,
-        status: "ACTIVE", user: { email: newForm.teacherCode, status: "ACTIVE" }
-      }])
-      setNewForm(EMPTY_NEW); setShowAddForm(false)
-      setSuccessMsg("Đã tạo giáo viên và tài khoản đăng nhập thành công!")
-      setTimeout(() => setSuccessMsg(""), 4000)
-    } catch(e) { setErrorMsg(e.message || "Có lỗi xảy ra!") }
-    setSaving(false)
+      if (activeBlockTab) {
+        const deptObj = departmentByName.get(t.department)
+        if (deptObj?.blockCM !== activeBlockTab) return false
+      }
+      if (filterCampus) {
+        const matchPrimary = t.campusId === filterCampus
+        const matchAdditional =
+          Array.isArray(t.additionalCampusIds) && t.additionalCampusIds.includes(filterCampus)
+        if (!matchPrimary && !matchAdditional) return false
+      }
+      if (filterDepartment) {
+        const matchDept =
+          t.department === filterDepartment ||
+          (Array.isArray(t.departmentAssignments) &&
+            t.departmentAssignments.some(
+              (da: any) =>
+                da.departmentName === filterDepartment || da.departmentId === filterDepartment
+            ))
+        if (!matchDept) return false
+      }
+      if (filterSubject && t.mainSubject !== filterSubject) return false
+      if (filterStatus && t.status !== filterStatus) return false
+      return true
+    })
+  }, [
+    teachers,
+    search,
+    activeBlockTab,
+    filterCampus,
+    filterDepartment,
+    filterSubject,
+    filterStatus,
+    departmentByName,
+  ])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, activeBlockTab, filterCampus, filterDepartment, filterSubject, filterStatus, itemsPerPage])
+
+  const totalPages = Math.max(1, Math.ceil(displayed.length / itemsPerPage))
+  const safePage = Math.min(currentPage, totalPages)
+  const startIndex = (safePage - 1) * itemsPerPage
+  const paginated = displayed.slice(startIndex, startIndex + itemsPerPage)
+
+  const selectedDisplayedIds = useMemo(
+    () => selectedIds.filter((id) => displayed.some((t) => t.id === id)),
+    [selectedIds, displayed]
+  )
+
+  const activeCount = useMemo(() => teachers.filter((t) => t.status === "ACTIVE").length, [teachers])
+  const inactiveCount = teachers.length - activeCount
+
+  const hasFilters = Boolean(
+    search || activeBlockTab || filterCampus || filterDepartment || filterSubject || filterStatus
+  )
+
+  // Open Create Drawer
+  const openCreateDrawer = () => {
+    setDrawerMode("create")
+    setEditingId(null)
+    setDrawerError("")
+    setFormState({
+      ...EMPTY_FORM,
+      campusId: isCampusLocked && defaultCampusId ? defaultCampusId : "",
+    })
+    setDrawerOpen(true)
   }
 
-  const handleEdit = (t) => {
+  // Open Edit Drawer
+  const openEditDrawer = (t: any) => {
+    setDrawerMode("edit")
     setEditingId(t.id)
-    setEditForm({
-      teacherName: t.teacherName,
+    setDrawerError("")
+    const deptAssignments =
+      Array.isArray(t.departmentAssignments) && t.departmentAssignments.length > 0
+        ? t.departmentAssignments.map((da: any) => ({
+            departmentId: da.departmentId,
+            position: da.position || "GV",
+            isPrimary: da.isPrimary,
+          }))
+        : t.departmentId
+          ? [{ departmentId: t.departmentId, position: t.position || "GV", isPrimary: true }]
+          : []
+
+    setFormState({
+      teacherCode: t.teacherCode || "",
+      teacherName: t.teacherName || "",
+      email: t.email || "",
+      phone: t.phone || "",
       dateOfBirth: t.dateOfBirth ? new Date(t.dateOfBirth).toISOString().split("T")[0] : "",
       department: t.department || "",
-      departmentAssignments: t.departmentAssignments && t.departmentAssignments.length > 0
-        ? t.departmentAssignments.map((da: any) => ({ departmentId: da.departmentId, position: da.position || "GV", isPrimary: da.isPrimary }))
-        : (t.departmentId ? [{ departmentId: t.departmentId, position: t.position || "GV", isPrimary: true }] : []),
+      departmentAssignments: deptAssignments,
       mainSubject: t.mainSubject || "",
-      campusId: t.campusId || "", status: t.status || "ACTIVE",
-      email: t.email || "", additionalCampusIds: t.additionalCampusIds || [], 
+      campusId: t.campusId || "",
+      additionalCampusIds: Array.isArray(t.additionalCampusIds) ? t.additionalCampusIds : [],
       position: t.position || "GV",
       positions: Array.isArray(t.positions) ? t.positions : [],
-      divisionCodes: Array.isArray(t.divisionCodes) ? t.divisionCodes : []
+      divisionCodes: Array.isArray(t.divisionCodes) ? t.divisionCodes : [],
+      status: t.status || "ACTIVE",
     })
+    setDrawerOpen(true)
   }
 
-  const handleSaveEdit = async (id) => {
-    setSaving(true); setErrorMsg("")
-    try {
-      let deptAssignments = editForm.departmentAssignments || [];
-      if (editForm.position === "TTCM" && deptAssignments.length > 0) {
-        if (!deptAssignments.some((da: any) => da.position === "TTCM")) {
-          deptAssignments = deptAssignments.map((da: any, idx: number) => idx === 0 ? { ...da, position: "TTCM" } : da);
+  const handleSubmitDrawer = async () => {
+    if (drawerMode === "create") {
+      if (!formState.teacherCode.trim() || !formState.teacherName.trim()) {
+        setDrawerError("Vui lòng nhập đầy đủ Mã giáo viên và Họ và tên.")
+        return
+      }
+      setSaving(true)
+      setDrawerError("")
+      try {
+        const selectedCampus = (campuses || []).find((c: any) => c.id === formState.campusId)
+        const res = await createTeacherAction({
+          ...formState,
+          campus: selectedCampus?.campusName || "",
+          campusId: formState.campusId || undefined,
+        })
+        if (res && !res.success) {
+          setDrawerError(res.error || "Mã giáo viên đã tồn tại hoặc có lỗi xảy ra.")
+          setSaving(false)
+          return
         }
-      } else if (editForm.position !== "TTCM" && deptAssignments.length > 0) {
-        deptAssignments = deptAssignments.map((da: any) => da.position === "TTCM" ? { ...da, position: editForm.position || "GV" } : da);
+        setDrawerOpen(false)
+        toast.success(`Đã thêm giáo viên ${formState.teacherName} (${formState.teacherCode}).`)
+        router.refresh()
+      } catch (e: any) {
+        setDrawerError(e?.message || "Không thể tạo giáo viên. Vui lòng thử lại.")
+      }
+      setSaving(false)
+      return
+    }
+
+    if (!editingId) return
+    if (!formState.teacherName.trim()) {
+      setDrawerError("Họ và tên giáo viên không được để trống.")
+      return
+    }
+    setSaving(true)
+    setDrawerError("")
+    try {
+      let deptAssignments = formState.departmentAssignments || []
+      if (formState.position === "TTCM" && deptAssignments.length > 0) {
+        if (!deptAssignments.some((da) => da.position === "TTCM")) {
+          deptAssignments = deptAssignments.map((da, idx) =>
+            idx === 0 ? { ...da, position: "TTCM" } : da
+          )
+        }
+      } else if (formState.position !== "TTCM" && deptAssignments.length > 0) {
+        deptAssignments = deptAssignments.map((da) =>
+          da.position === "TTCM" ? { ...da, position: formState.position || "GV" } : da
+        )
       }
 
-      const res = await updateTeacherAction({ 
-        id, 
-        ...editForm, 
+      const res = await updateTeacherAction({
+        id: editingId,
+        teacherName: formState.teacherName,
+        dateOfBirth: formState.dateOfBirth,
+        department: formState.department,
         departmentAssignments: deptAssignments,
-        position: editForm.position,
-        positions: editForm.positions,
-        divisionCodes: editForm.divisionCodes
+        mainSubject: formState.mainSubject,
+        campusId: formState.campusId,
+        additionalCampusIds: formState.additionalCampusIds,
+        email: formState.email,
+        status: formState.status,
+        position: formState.position,
+        positions: formState.positions,
+        divisionCodes: formState.divisionCodes,
       })
+
       if (res && !res.success) {
-        setErrorMsg(res.error || "Lỗi khi lưu thay đổi!");
-        setSaving(false);
-        return;
+        setDrawerError(res.error || "Không thể lưu thay đổi.")
+        setSaving(false)
+        return
       }
 
-      setTeachers(teachers.map((t) => t.id === id ? {
-        ...t, 
-        teacherName: editForm.teacherName, 
-        dateOfBirth: editForm.dateOfBirth || null,
-        department: editForm.department || null,
-        departmentAssignments: deptAssignments.map((da: any) => ({
-          departmentId: da.departmentId,
-          departmentName: (departments || []).find((d: any) => d.id === da.departmentId)?.name || "",
-          position: da.position || "GV"
-        })),
-        divisionCodes: editForm.divisionCodes || [],
-        positions: editForm.positions || [],
-        mainSubject: editForm.mainSubject || null,
-        campusId: editForm.campusId || null, 
-        email: editForm.email || null,
-        campus: (campuses || []).find((c) => c.id === editForm.campusId)?.campusName || null,
-        additionalCampuses: (campuses || []).filter((c) => editForm.additionalCampusIds?.includes(c.id)).map((c) => ({ id: c.id, campusName: c.campusName })),
-        additionalCampusIds: editForm.additionalCampusIds || [], 
-        position: editForm.position || "GV", 
-        status: editForm.status
-      } : t))
+      setTeachers((prev) =>
+        prev.map((t) =>
+          t.id === editingId
+            ? {
+                ...t,
+                teacherName: formState.teacherName,
+                dateOfBirth: formState.dateOfBirth || null,
+                department: formState.department || null,
+                departmentAssignments: deptAssignments.map((da) => ({
+                  departmentId: da.departmentId,
+                  departmentName:
+                    (departments || []).find((d: any) => d.id === da.departmentId)?.name || "",
+                  position: da.position || "GV",
+                })),
+                divisionCodes: formState.divisionCodes || [],
+                positions: formState.positions || [],
+                mainSubject: formState.mainSubject || null,
+                campusId: formState.campusId || null,
+                email: formState.email || null,
+                campus:
+                  (campuses || []).find((c: any) => c.id === formState.campusId)?.campusName || null,
+                additionalCampuses: (campuses || [])
+                  .filter((c: any) => formState.additionalCampusIds?.includes(c.id))
+                  .map((c: any) => ({ id: c.id, campusName: c.campusName })),
+                additionalCampusIds: formState.additionalCampusIds || [],
+                position: formState.position || "GV",
+                status: formState.status,
+              }
+            : t
+        )
+      )
+      setDrawerOpen(false)
       setEditingId(null)
-      setSuccessMsg("Đã lưu thay đổi thành công!")
-      setTimeout(() => setSuccessMsg(""), 3000)
-    } catch(e: any) { setErrorMsg("Lỗi khi lưu: " + (e.message || "Vui lòng thử lại!")) }
+      toast.success(`Đã cập nhật hồ sơ giáo viên ${formState.teacherName}.`)
+    } catch (e: any) {
+      setDrawerError("Lỗi khi lưu: " + (e?.message || "Vui lòng thử lại."))
+    }
     setSaving(false)
   }
 
-  const handleDelete = async (id, name) => {
-    if (!confirm(`Xóa giáo viên "${name}"?\nTài khoản đăng nhập cũng sẽ bị xóa.`)) return
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Xóa giáo viên "${name}"?\nTài khoản đăng nhập liên kết cũng sẽ bị xóa.`)) return
     try {
       await deleteTeacherAction(id)
-      setTeachers(teachers.filter((t) => t.id !== id))
-      setSuccessMsg(`Đã xóa giáo viên ${name}.`)
-      setTimeout(() => setSuccessMsg(""), 3000)
-    } catch(e) { setErrorMsg("Lỗi khi xóa: " + e.message) }
+      setTeachers((prev) => prev.filter((t) => t.id !== id))
+      setSelectedIds((prev) => prev.filter((sid) => sid !== id))
+      toast.success(`Đã xóa giáo viên ${name}.`)
+    } catch (e: any) {
+      toast.error("Lỗi khi xóa: " + (e?.message || "Vui lòng thử lại."))
+    }
   }
 
-  const handleResetPassword = async (id, code, name) => {
-    if (!confirm(`Reset mật khẩu của "${name}" về: ${code}?`)) return
+  const handleResetPassword = async (id: string, code: string, name: string) => {
+    if (!confirm(`Đặt lại mật khẩu của "${name}" về mặc định (${code})?`)) return
     try {
       await resetTeacherPasswordAction(id)
-      setSuccessMsg(`Đã reset mật khẩu của ${name} về: ${code}`)
-      setTimeout(() => setSuccessMsg(""), 4000)
-    } catch(e) {}
+      toast.success(`Đã đặt lại mật khẩu của ${name} về: ${code}`)
+    } catch (e: any) {
+      toast.error("Không thể đặt lại mật khẩu: " + (e?.message || "Vui lòng thử lại."))
+    }
   }
 
-  const handleFileImport = async (e) => {
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!defaultYearId) { setErrorMsg("Không tìm thấy năm học đang hoạt động!"); return }
-    setImporting(true); setImportResult(null); setErrorMsg("")
+    if (!defaultYearId) {
+      toast.error("Không tìm thấy năm học đang hoạt động để import.")
+      return
+    }
+    setImporting(true)
+    setImportWarningMsg("")
     try {
       const formData = new FormData()
       formData.append("file", file)
       const res = await fetch("/api/admin/teachers/import", { method: "POST", body: formData })
       const parsed = await res.json()
-      if (!parsed.success) { setErrorMsg(parsed.error || "Lỗi đọc file"); setImporting(false); return }
+      if (!parsed.success) {
+        toast.error(parsed.error || "Không thể đọc tệp dữ liệu.")
+        setImporting(false)
+        return
+      }
       const result = await importTeachersAction(parsed.data, defaultYearId)
-      setImportResult(result)
       if (result.success) {
-        const msg = `Import thành công: ${result.created} giáo viên. Bỏ qua: ${result.skipped}.`
         if (result.warnings && result.warnings.length > 0) {
-          setErrorMsg(`Cảnh báo nhập trùng:\n` + result.warnings.join("\n"))
+          setImportWarningMsg("Cảnh báo nhập trùng:\n" + result.warnings.join("\n"))
         }
-        if (result.created > 0) {
-          setSuccessMsg(msg)
-          setTimeout(() => { setSuccessMsg(""); window.location.reload() }, 4000)
-        } else {
-          if (!result.warnings || result.warnings.length === 0) {
-            setErrorMsg("Không tìm thấy giáo viên mới nào để import.")
-          }
+        const createdCount = result.created ?? 0
+        const skippedCount = result.skipped ?? 0
+        if (createdCount > 0) {
+          toast.success(`Import thành công ${createdCount} giáo viên (bỏ qua ${skippedCount}).`)
+          router.refresh()
+        } else if (!result.warnings || result.warnings.length === 0) {
+          toast.error("Không có giáo viên mới nào trong tệp để import.")
         }
       }
-    } catch(e: any) { setErrorMsg("Lỗi khi import: " + e.message) }
+    } catch (err: any) {
+      toast.error("Lỗi khi import: " + (err?.message || "Vui lòng thử lại."))
+    }
     setImporting(false)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   const downloadTemplate = () => {
-    const csv = "STT,Mã GV,Họ và tên,Email nhận thông báo,Cơ sở,Tổ chuyên môn\n1,GV001,Nguyễn Văn A,nguyenvana@skylineschool.edu.vn,CS1,Tổ Tự Nhiên"
+    const csv =
+      "STT,Mã GV,Họ và tên,Email nhận thông báo,Cơ sở,Tổ chuyên môn\n1,GV001,Nguyễn Văn A,nguyenvana@skylineschool.edu.vn,CS1,Tổ Tự Nhiên"
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
-    a.href = url; a.download = "danh_sach_giao_vien.csv"; a.click()
+    a.href = url
+    a.download = "danh_sach_giao_vien.csv"
+    a.click()
     URL.revokeObjectURL(url)
   }
 
-  const hasFilters = search || filterDepartment || filterSubject || filterStatus
+  const handleBulkAssignRole = async (roleCode: string) => {
+    if (!roleCode || selectedDisplayedIds.length === 0) return
+    const roleName = (roles || []).find((r: any) => r.code === roleCode)?.name || roleCode
+    if (
+      !confirm(
+        `Cấp tài khoản và gán nhóm quyền "${roleName}" cho ${selectedDisplayedIds.length} giáo viên đã chọn?`
+      )
+    ) {
+      return
+    }
+    setAssigning(true)
+    const res = await assignTeachersToRoleAction(selectedDisplayedIds, roleCode)
+    if (res.success) {
+      setSelectedIds([])
+      toast.success(`Đã gán nhóm quyền "${roleName}" cho ${selectedDisplayedIds.length} giáo viên.`)
+      router.refresh()
+    } else {
+      toast.error("Lỗi phân quyền: " + res.error)
+    }
+    setAssigning(false)
+  }
+
+  const resetAllFilters = () => {
+    setSearch("")
+    setActiveBlockTab("")
+    setFilterCampus("")
+    setFilterDepartment("")
+    setFilterSubject("")
+    setFilterStatus("")
+  }
+
+  const allDisplayedSelected =
+    displayed.length > 0 && selectedDisplayedIds.length === displayed.length
 
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-5 pb-10 font-sans">
+      {/* Shared Sky-Line PageHeader */}
+      <PageHeader
+        title="Quản lý Giáo viên"
+        description="Quản lý hồ sơ nhân sự giảng dạy, phân công Tổ chuyên môn và quyền truy cập hệ thống."
+        breadcrumbs={[
+          { label: "Quản lý Đào tạo" },
+          { label: "Quản lý Giáo viên" },
+        ]}
+        icon={<Users className="w-5 h-5 text-[#003B3A]" />}
+      />
 
-      {/* Toast */}
-      {errorMsg && (
-        <div className="flex items-center gap-2.5 text-rose-800 text-sm font-medium shadow-sm transition-all duration-200 text-xs font-semibold">
-          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
-          <span className="whitespace-pre-line">{errorMsg}</span>
-          <button onClick={() => setErrorMsg("")} className="ml-auto text-rose-450 hover:text-rose-600 transition-colors">
+      {/* Import duplicate warnings (if any) */}
+      {importWarningMsg && (
+        <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+          <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <span className="whitespace-pre-line flex-1">{importWarningMsg}</span>
+          <button
+            type="button"
+            onClick={() => setImportWarningMsg("")}
+            className="text-amber-500 hover:text-amber-700 cursor-pointer"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
-      {successMsg && (
-        <div className="flex items-center gap-2.5 text-emerald-800 text-sm font-medium shadow-sm transition-all duration-200 text-xs font-semibold">
-          <ShieldCheck className="w-4 h-4 flex-shrink-0 text-emerald-600" />
-          <span>{successMsg}</span>
-        </div>
-      )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-[#48BFE3]/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-[#48BFE3]">
-          <div className="w-12 h-12 rounded-xl bg-[#48BFE3]/10 flex items-center justify-center flex-shrink-0">
-            <Users className="w-6 h-6 text-[#48BFE3]" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">{teachers.length}</p>
-            <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">Tổng giáo viên</p>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-emerald-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-emerald-550">
-          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
-            <UserCheck className="w-6 h-6 text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">{activeCount}</p>
-            <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">On</p>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-teal-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-violet-600">
-          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
-            <Building2 className="w-6 h-6 text-teal-800" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">{(departments || []).length}</p>
-            <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">Tổ chuyên môn</p>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-6 flex items-center gap-4 hover:border-amber-500/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-sm border-l-4 border-l-amber-500">
-          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
-            <GraduationCap className="w-6 h-6 text-amber-650" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-800 leading-none">{displayed.length}</p>
-            <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-wider font-bold">Đang hiển thị</p>
-          </div>
-        </div>
-      </div>
+      {/* Unified Academic Ledger Summary Strip (Blocks + Status + Search) */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs px-4 py-3 flex flex-wrap items-center justify-between gap-3 tabular-nums">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveBlockTab("")
+              setFilterStatus("")
+              setSelectedIds([])
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors border cursor-pointer ${
+              !activeBlockTab && !filterStatus
+                ? "bg-[#003B3A] text-white border-[#003B3A]"
+                : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0] hover:bg-slate-100"
+            }`}
+          >
+            Tất cả: <span className="font-semibold ml-1">{teachers.length}</span>
+          </button>
 
+          {blocks.map((block) => {
+            const isActive = activeBlockTab === block
+            return (
+              <button
+                key={block}
+                type="button"
+                onClick={() => {
+                  setActiveBlockTab(isActive ? "" : block)
+                  setSelectedIds([])
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors border cursor-pointer ${
+                  isActive
+                    ? "bg-[#003B3A] text-white border-[#003B3A]"
+                    : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0] hover:bg-slate-100"
+                }`}
+              >
+                {block}: <span className="font-semibold ml-1">{blockCounts[block] || 0}</span>
+              </button>
+            )
+          })}
 
-      {/* Block CM Tabs */}
-      {(() => {
-        const blockSet = new Set();
-        (departments || []).forEach((d) => { if (d.blockCM) blockSet.add(d.blockCM) });
-        const blocks = Array.from(blockSet).sort();
-        if (blocks.length === 0) return null;
-        const blockColors = {
-          "Mầm Non": { bg: "bg-amber-500", text: "text-amber-700", light: "bg-amber-50", border: "border-amber-200", ring: "ring-amber-200" },
-          "Phổ thông": { bg: "bg-[#003B3A]", text: "text-teal-800", light: "bg-teal-50", border: "border-teal-200", ring: "ring-indigo-200" },
-          "Điều hành": { bg: "bg-teal-500", text: "text-teal-700", light: "bg-teal-50", border: "border-teal-200", ring: "ring-teal-200" },
-          "Hỗ trợ người học": { bg: "bg-rose-500", text: "text-rose-700", light: "bg-rose-50", border: "border-rose-200", ring: "ring-rose-200" },
-        };
-        const defaultColor = { bg: "bg-slate-500", text: "text-slate-700", light: "bg-slate-50", border: "border-slate-200", ring: "ring-slate-200" };
-        const getBlockCount = (block) => teachers.filter(t => {
-          const d = (departments || []).find(dx => dx.name === t.department);
-          return d?.blockCM === block;
-        }).length;
-        return (
-          <div className="bg-white border border-slate-100 rounded-2xl p-2 shadow-sm flex flex-wrap gap-1.5">
+          <span className="hidden sm:inline-block h-5 w-px bg-[#E2E8F0] mx-0.5" />
+
+          <button
+            type="button"
+            onClick={() => setFilterStatus(filterStatus === "ACTIVE" ? "" : "ACTIVE")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors border flex items-center gap-1.5 cursor-pointer ${
+              filterStatus === "ACTIVE"
+                ? "bg-emerald-600 text-white border-emerald-600"
+                : "bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-100/70"
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            On: <span className="font-semibold">{activeCount}</span>
+          </button>
+
+          {inactiveCount > 0 && (
             <button
-              onClick={() => { setActiveBlockTab(""); setCurrentPage(1); setSelectedIds([]); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${!activeBlockTab ? "bg-[#48BFE3] text-white shadow-md" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}
+              type="button"
+              onClick={() => setFilterStatus(filterStatus === "INACTIVE" ? "" : "INACTIVE")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors border flex items-center gap-1.5 cursor-pointer ${
+                filterStatus === "INACTIVE"
+                  ? "bg-rose-600 text-white border-rose-600"
+                  : "bg-rose-50/70 text-rose-800 border-rose-200 hover:bg-rose-100/70"
+              }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Tất cả</span>
-              <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-black ${!activeBlockTab ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{teachers.length}</span>
-            </button>
-            {blocks.map(block => {
-              const c = blockColors[block] || defaultColor;
-              const count = getBlockCount(block);
-              const isActive = activeBlockTab === block;
-              return (
-                <button key={block}
-                  onClick={() => { setActiveBlockTab(isActive ? "" : block); setCurrentPage(1); setSelectedIds([]); }}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${isActive ? c.bg + " text-white shadow-md" : c.light + " " + c.text + " border " + c.border + " hover:shadow-sm"}`}
-                >
-                  <span>{block}</span>
-                  <span className={`ml-0.5 px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? "bg-white/20 text-white" : c.light + " " + c.text}`}>{count}</span>
-                </button>
-              );
-            })}
-          </div>
-        );
-      })()}
-      {/* Toolbar */}
-      <div className="bg-white border border-slate-100 shadow-md shadow-slate-100/40 rounded-3xl p-6 space-y-4 border-t-4 border-t-[#48BFE3]">
-        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="text" placeholder="Tìm tên, mã GV, cơ sở..."
-              value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 border border-slate-200 rounded-xl text-sm hover:border-[#48BFE3]/50 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/15 outline-none transition-all bg-white font-semibold" />
-            {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
-          </div>
-          <div className="flex flex-wrap items-center gap-2 justify-start lg:justify-end">
-            <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-slate-700 hover:bg-slate-50 hover:border-slate-350 text-sm font-bold transition-all cursor-pointer text-xs font-semibold">
-              <Download className="w-4 h-4" /><span>Tải mẫu</span>
-            </button>
-            <label className="flex items-center gap-1.5 px-4 py-2.5 border border-[#48BFE3]/20 bg-[#48BFE3]/5 rounded-xl text-[#48BFE3] hover:bg-[#48BFE3]/15 text-sm font-black cursor-pointer transition-all">
-              <Upload className="w-4 h-4" />{importing ? "Đang xử lý..." : "Import Excel"}
-              <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileImport} className="hidden" disabled={importing} />
-            </label>
-            <button onClick={() => { setShowAddForm(true); setErrorMsg("") }}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#003B3A] to-[#48BFE3] hover:brightness-110 text-white rounded-xl text-sm font-black transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-md shadow-[#48BFE3]/15">
-              <Plus className="w-4 h-4" />Thêm GV Mới
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-          <span className="text-xs font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5 mr-2"><Filter className="w-3.5 h-3.5" />Bộ lọc:</span>
-          <select value={filterDepartment} onChange={e => setFilterDepartment(e.target.value)}
-            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterDepartment ? "border-[#48BFE3] text-[#48BFE3] bg-[#48BFE3]/5" : "border-slate-200 text-slate-600 hover:border-[#48BFE3]/40 focus:border-[#48BFE3]"}`}>
-            <option value="">Tất cả Tổ CM</option>
-            {(departments || []).map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
-          </select>
-          <select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}
-            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterSubject ? "border-[#48BFE3] text-[#48BFE3] bg-[#48BFE3]/5" : "border-slate-200 text-slate-600 hover:border-[#48BFE3]/40 focus:border-[#48BFE3]"}`}>
-            <option value="">Tất cả Môn dạy</option>
-            {(subjects || []).map((s) => <option key={s.id} value={s.subjectName}>{s.subjectName}</option>)}
-          </select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className={`border rounded-xl px-3.5 py-2 text-xs font-bold outline-none bg-white transition-all cursor-pointer ${filterStatus ? "border-[#48BFE3] text-[#48BFE3] bg-[#48BFE3]/5" : "border-slate-200 text-slate-600 hover:border-[#48BFE3]/40 focus:border-[#48BFE3]"}`}>
-            <option value="">Tất cả Trạng thái</option>
-            <option value="ACTIVE">On</option>
-            <option value="INACTIVE">Off</option>
-          </select>
-          {hasFilters && (
-            <button onClick={() => { setSearch(""); setFilterDepartment(""); setFilterSubject(""); setFilterStatus("") }}
-              className="flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 hover:border-rose-400 transition-all cursor-pointer text-xs font-semibold">
-              <RefreshCw className="w-3 h-3" />Xóa lọc
+              <XCircle className="w-3.5 h-3.5" />
+              Off: <span className="font-semibold">{inactiveCount}</span>
             </button>
           )}
-          <span className="ml-auto text-xs text-slate-400 font-bold">{displayed.length}/{teachers.length} giáo viên</span>
+        </div>
+
+        <div className="relative w-full sm:w-72">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm theo tên, mã GV, email, cơ sở..."
+            className="w-full pl-9 pr-8 py-1.5 text-xs bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl outline-none focus:bg-white focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              title="Xóa từ khóa"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Add Form */}
-      {showAddForm && (
-        <div className="bg-gradient-to-br from-white to-slate-50/20 border border-teal-500/20 rounded-2xl p-6 shadow-md animate-in fade-in duration-200">
-          <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
-            <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#48BFE3]/15 flex items-center justify-center">
-                <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
-              </div>Thêm Giáo Viên Mới
-            </h3>
-            <button onClick={() => { setShowAddForm(false); setErrorMsg("") }} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"><X className="w-5 h-5" /></button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <div>
-              <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Mã GV *</label>
-              <input type="text" value={newForm.teacherCode}
-                onChange={e => setNewForm({ ...newForm, teacherCode: e.target.value.replace(/-/g, "").trim().toUpperCase() })}
-                placeholder="GV001"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-mono font-black transition-all bg-white" />
-            </div>
-            <div>
-              <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Họ và tên *</label>
-              <input type="text" value={newForm.teacherName}
-                onChange={e => setNewForm({ ...newForm, teacherName: e.target.value })}
-                placeholder="Nguyễn Văn A"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-bold transition-all bg-white" />
-            </div>
-            <div>
-              <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Email nhận thông báo</label>
-              <input type="email" value={newForm.email}
-                onChange={e => setNewForm({ ...newForm, email: e.target.value.trim() })}
-                placeholder="gv@skylineschool.edu.vn"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none transition-all bg-white font-semibold" />
-            </div>
-            <div>
-              <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Cơ sở</label>
-              <select value={newForm.campus} onChange={e => setNewForm({ ...newForm, campus: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-white transition-all font-bold cursor-pointer">
-                <option value="">-- Chọn Cơ sở --</option>
-                {(campuses || []).map((c) => <option key={c.id} value={c.campusName}>{c.campusName}</option>)}
+      {/* Filter & Action Toolbar */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {!isCampusLocked && (campuses || []).length > 1 && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-slate-700 whitespace-nowrap">Cơ sở:</label>
+              <select
+                value={filterCampus}
+                onChange={(e) => setFilterCampus(e.target.value)}
+                className="h-9 px-3 text-xs font-medium bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-slate-800 outline-none focus:bg-white focus:border-[#00A19A] min-w-[120px] cursor-pointer"
+              >
+                <option value="">Tất cả</option>
+                {(campuses || []).map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.campusName}
+                  </option>
+                ))}
               </select>
-            </div>
-            <div>
-              <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Tổ chuyên môn</label>
-              <select value={newForm.department} onChange={e => setNewForm({ ...newForm, department: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-white transition-all font-bold cursor-pointer">
-                <option value="">-- Chọn Tổ --</option>
-                {(departments || []).map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Chức vụ</label>
-              <select value={newForm.position} onChange={e => setNewForm({ ...newForm, position: e.target.value })}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-white transition-all font-bold cursor-pointer">
-                <option value="GV">GV (Giáo viên)</option>
-                <option value="NV">NV (Nhân viên)</option>
-                <option value="TTCM">TTCM (Tổ trưởng CM)</option>
-                <option value="TPTCM">TPTCM (Tổ phó CM)</option>
-                <option value="TBP">TBP (Trưởng Bộ Phận)</option>
-                <option value="TB_DHCM">Trưởng Ban ĐHCM</option>
-                <option value="GĐCS">GĐCS (Giám đốc CS)</option>
-              </select>
-            </div>
-          </div>
-          <div className="mt-4">
-            <label className="block text-xs font-black text-teal-800 mb-2 uppercase tracking-wider">🏢 Bộ Phận Phụ Trách (TBP)</label>
-            <div className="flex flex-wrap gap-2 p-3.5 bg-teal-50/20 border border-teal-200 rounded-2xl">
-              {ACADEMIC_DIVISIONS.map((div) => {
-                const isChecked = (newForm.divisionCodes || []).includes(div.code);
-                return (
-                  <label key={div.code} className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-xl border text-xs font-bold transition-all select-none ${isChecked ? "bg-[#003B3A] text-white border-teal-200 shadow-xs" : "bg-white border-slate-200 text-slate-700 hover:bg-teal-50"}`}>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => {
-                        const cur = newForm.divisionCodes || [];
-                        const next = e.target.checked ? [...cur, div.code] : cur.filter((x: string) => x !== div.code);
-                        const autoPos = next.length > 0 && newForm.position === "GV" ? "TBP" : newForm.position;
-                        setNewForm({ ...newForm, divisionCodes: next, position: autoPos });
-                      }}
-                      className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
-                    />
-                    {div.name}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          {(campuses || []).length > 1 && (
-            <div className="mt-4">
-              <label className="block text-xs font-black text-slate-550 mb-2 uppercase tracking-wider">Cơ sở làm việc thêm</label>
-              <div className="flex flex-wrap gap-2 p-3.5 text-xs font-semibold">
-                {(campuses || []).filter((c) => {
-                  const sel = (campuses || []).find((cx) => cx.campusName === newForm.campus)
-                  return c.id !== sel?.id
-                }).map((c) => {
-                  const isChecked = newForm.additionalCampusIds?.includes(c.id)
-                  return (
-                    <label key={c.id} className={`flex items-center gap-2 cursor-pointer px-3.5 py-2 rounded-xl border text-xs font-bold transition-all select-none ${isChecked ? "bg-[#48BFE3]/10 border-[#48BFE3] text-[#48BFE3]" : "bg-white border-slate-200 text-slate-700 hover:bg-[#48BFE3]/5 hover:border-slate-350"}`}>
-                      <input type="checkbox" checked={isChecked} onChange={() => {
-                        const cur = newForm.additionalCampusIds || []
-                        setNewForm({ ...newForm, additionalCampusIds: cur.includes(c.id) ? cur.filter((x) => x !== c.id) : [...cur, c.id] })
-                      }} className="w-4 h-4 rounded-md accent-[#48BFE3] cursor-pointer" />
-                      {c.campusName}
-                    </label>
-                  )
-                })}
-              </div>
             </div>
           )}
-          <div className="flex gap-3 mt-5 pt-4 border-t border-slate-100">
-            <button onClick={handleCreate} disabled={saving}
-              className="px-6 py-2.5 bg-[#48BFE3] hover:bg-[#135E5B] disabled:opacity-60 text-white rounded-xl font-black text-sm shadow-md shadow-teal-500/5 transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
-              {saving ? <><RefreshCw className="w-4 h-4 animate-spin" />Đang lưu...</> : <><Check className="w-4 h-4" />Lưu Giáo Viên</>}
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-slate-700 whitespace-nowrap">Tổ CM:</label>
+            <select
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
+              className="h-9 px-3 text-xs font-medium bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-slate-800 outline-none focus:bg-white focus:border-[#00A19A] min-w-[160px] max-w-[210px] cursor-pointer"
+            >
+              <option value="">Tất cả ({(departments || []).length})</option>
+              {(departments || []).map((d: any) => (
+                <option key={d.id} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-slate-700 whitespace-nowrap">Môn dạy:</label>
+            <select
+              value={filterSubject}
+              onChange={(e) => setFilterSubject(e.target.value)}
+              className="h-9 px-3 text-xs font-medium bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-slate-800 outline-none focus:bg-white focus:border-[#00A19A] min-w-[140px] max-w-[190px] cursor-pointer"
+            >
+              <option value="">Tất cả</option>
+              {(subjects || []).map((s: any) => (
+                <option key={s.id} value={s.subjectName}>
+                  {s.subjectName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={resetAllFilters}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Xóa lọc
             </button>
-            <button onClick={() => { setShowAddForm(false); setErrorMsg("") }}
-              className="hover:bg-slate-100 text-slate-800 font-bold text-sm transition-all cursor-pointer text-xs font-semibold">Hủy</button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={openCreateDrawer}
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#003B3A] hover:bg-[#002B2A] text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Thêm giáo viên
+          </button>
+
+          <label className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-[#F0FDFA] hover:bg-[#CCFBF1]/70 text-[#003B3A] border border-[#00A19A]/40 text-xs font-semibold transition-colors cursor-pointer">
+            <Upload className="w-3.5 h-3.5 text-[#008B85]" />
+            {importing ? "Đang xử lý..." : "Import Excel"}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleFileImport}
+              className="hidden"
+              disabled={importing}
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={downloadTemplate}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-[#E2E8F0] text-xs font-semibold transition-colors cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            Tải mẫu
+          </button>
+        </div>
+      </div>
+
+      {/* Contextual Bulk Action Bar */}
+      {selectedDisplayedIds.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-[#F0FDFA] border border-[#00A19A]/40 text-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="font-semibold text-[#003B3A] tabular-nums">
+              Đã chọn {selectedDisplayedIds.length} giáo viên
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedIds([])}
+              className="text-[#00736E] hover:underline font-medium cursor-pointer"
+            >
+              Bỏ chọn
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-slate-600 font-medium">Phân quyền hàng loạt:</label>
+            <select
+              defaultValue=""
+              disabled={assigning}
+              onChange={(e) => {
+                const val = e.target.value
+                e.target.value = ""
+                handleBulkAssignRole(val)
+              }}
+              className="h-8 px-3 rounded-xl border border-[#00A19A]/50 bg-white text-xs font-semibold text-[#003B3A] outline-none cursor-pointer"
+            >
+              <option value="">-- Cấp nhóm quyền --</option>
+              {(roles || []).map((r: any) => (
+                <option key={r.code} value={r.code}>
+                  {r.name} ({r.code})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white border border-slate-150 rounded-3xl overflow-hidden shadow-md shadow-slate-100/40 border-t-4 border-t-[#003B3A]">
-        <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
-          <div className="flex items-center gap-4 flex-wrap">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Danh sách giáo viên{hasFilters && <span className="ml-1.5 text-[#48BFE3] font-black">| Đang lọc: {displayed.length} kết quả</span>}
-            </p>
-            {selectedDisplayedIds.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-slate-600">Đã chọn: <span className="text-[#48BFE3] font-extrabold">{selectedDisplayedIds.length}</span></span>
-                <select
-                  onChange={async (e) => {
-                    const roleCode = e.target.value;
-                    if (!roleCode) return;
-                    const roleName = (roles || []).find((r) => r.code === roleCode)?.name || roleCode;
-                    if (confirm(`Bạn có chắc chắn muốn cấp tài khoản và gán Nhóm: ${roleName} cho ${selectedDisplayedIds.length} giáo viên đã chọn?`)) {
-                      setAssigning(true);
-                      const res = await assignTeachersToRoleAction(selectedDisplayedIds, roleCode);
-                      if (res.success) {
-                        alert("Đã cấp tài khoản/phân nhóm quyền thành công!");
-                        setSelectedIds([]);
-                        window.location.reload();
-                      } else {
-                        alert("Lỗi: " + res.error);
-                      }
-                      setAssigning(false);
-                    }
-                    e.target.value = "";
-                  }}
-                  disabled={assigning}
-                  className="p-1.5 rounded-xl border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/15 transition-all"
-                >
-                  <option value="">-- Cấp Quyền Nhóm --</option>
-                  {(roles || []).map((r) => (
-                    <option key={r.code} value={r.code}>{r.name} ({r.code})</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2 border border-slate-200/60 px-3 py-1 bg-white font-bold text-xs rounded-lg">
-            <span className="w-2 h-2 animate-pulse text-xs font-semibold" />
-            <span className="text-slate-655 font-bold">{activeCount} On</span>
-          </div>
-        </div>
+      {/* Sky-Line Academic Ledger Table */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-              <tr className="border-b bg-[#003B3A] text-white text-[11px] font-semibold">
-                <th className="p-2 text-center text-[11px] w-12 border border-white/15 font-semibold">
-                  <input type="checkbox" className="w-4 h-4 rounded text-[#48BFE3] cursor-pointer"
-                    checked={displayed.length > 0 && selectedDisplayedIds.length === displayed.length}
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-3 px-3 text-center w-10 text-white">
+                  <input
+                    type="checkbox"
+                    aria-label="Chọn tất cả giáo viên đang hiển thị"
+                    checked={allDisplayedSelected}
                     onChange={(e) => {
-                      if (e.target.checked) setSelectedIds(displayed.map(t => t.id));
-                      else setSelectedIds([]);
+                      if (e.target.checked) setSelectedIds(displayed.map((t) => t.id))
+                      else setSelectedIds([])
                     }}
+                    className="rounded border-white/40 accent-[#00A19A] cursor-pointer"
                   />
                 </th>
-                <th className="p-2 text-left text-[11px] w-12 border border-white/15 font-semibold">#</th>
-                <th className="p-2 text-left text-[11px] w-28 border border-white/15 font-semibold">Mã GV</th>
-                <th className="p-2 text-left text-[11px] min-w-[200px] border border-white/15 font-semibold">Họ và Tên</th>
-                <th className="p-2 text-left text-[11px] min-w-[180px] border border-white/15 font-semibold">Email</th>
-                <th className="p-2 text-left text-[11px] w-40 border border-white/15 font-semibold">Cơ sở</th>
-                <th className="p-2 text-left text-[11px] w-48 border border-white/15 font-semibold">Tổ chuyên môn</th>
-                <th className="p-2 text-left text-[11px] min-w-[180px] border border-white/15 font-semibold">Bộ phận phụ trách (TBP)</th>
-                <th className="p-2 text-left text-[11px] w-36 border border-white/15 font-semibold">Chức vụ</th>
-                <th className="p-2 text-left text-[11px] w-56 border border-white/15 font-semibold">Tài khoản</th>
-                <th className="p-2 text-center text-[11px] w-32 border border-white/15 font-semibold">Trạng thái</th>
-                <th className="p-2 text-center text-[11px] w-32 border border-white/15 font-semibold">Thao tác</th>
+                <th className="py-3 px-3 text-center text-teal-100 w-12">STT</th>
+                <th className="py-3 px-3 text-white w-32">Mã GV</th>
+                <th className="py-3 px-3 text-white min-w-[230px]">Giáo viên</th>
+                <th className="py-3 px-3 text-teal-100 w-32">Cơ sở</th>
+                <th className="py-3 px-3 text-teal-100 min-w-[200px]">Tổ chuyên môn & Phụ trách</th>
+                <th className="py-3 px-3 text-teal-100 w-32">Chức vụ</th>
+                <th className="py-3 px-3 text-center text-[#5EEAD4] w-24">Trạng thái</th>
+                <th className="py-3 px-3 text-center text-white w-32">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2E8F0]">
-              {displayed.length === 0 ? (
+
+            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+              {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="p-2 p-2 text-center border border-slate-200">
-                    <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4 text-xs font-semibold">
-                      <GraduationCap className="w-8 h-8 text-slate-400" />
+                  <td colSpan={9} className="py-14 px-4 text-center">
+                    <div className="flex flex-col items-center gap-2 text-slate-500">
+                      <GraduationCap className="w-8 h-8 text-slate-300" />
+                      <p className="font-medium text-slate-700">
+                        Không tìm thấy giáo viên phù hợp
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Thử thay đổi từ khóa tìm kiếm hoặc xóa bộ lọc đang áp dụng.
+                      </p>
                     </div>
-                    <p className="font-black text-slate-600">Không có giáo viên phù hợp</p>
-                    <p className="text-xs text-slate-400 mt-1 font-medium">Thử thay đổi bộ lọc tìm kiếm</p>
                   </td>
                 </tr>
               ) : (
-                (() => {
-                  const startIndex = (currentPage - 1) * itemsPerPage;
-                  const paginated = displayed.slice(startIndex, startIndex + itemsPerPage);
-                  return paginated.map((t, index) => {
-                    const idx = startIndex + index;
-                    const isEditing = editingId === t.id;
-                    return (
-                      <tr key={t.id} className={`group transition-all ${isEditing ? "bg-[#48BFE3]/5 border-l-4 border-l-[#48BFE3]" : "hover:bg-slate-50/20"} ${selectedDisplayedIds.includes(t.id) ? "bg-[#48BFE3]/5" : ""}`}>
+                paginated.map((t, index) => {
+                  const stt = startIndex + index + 1
+                  const isSelected = selectedDisplayedIds.includes(t.id)
+                  const loginUsername = t.user?.email || t.teacherCode
+                  const hasCustomLogin = loginUsername && loginUsername !== t.teacherCode
 
-                      <td className="p-2 p-2 text-center border border-slate-200">
-                        <input type="checkbox" className="w-4 h-4 rounded text-[#48BFE3] cursor-pointer"
-                          checked={selectedDisplayedIds.includes(t.id)}
+                  return (
+                    <tr
+                      key={t.id}
+                      className={`transition-colors align-middle ${
+                        isSelected
+                          ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]"
+                          : "hover:bg-[#F8FAFC]"
+                      }`}
+                    >
+                      <td className="py-3 px-3 text-center align-middle">
+                        <input
+                          type="checkbox"
+                          aria-label={`Chọn ${t.teacherName}`}
+                          checked={isSelected}
                           onChange={(e) => {
-                            if (e.target.checked) setSelectedIds([...selectedIds, t.id]);
-                            else setSelectedIds(selectedIds.filter(id => id !== t.id));
+                            if (e.target.checked) setSelectedIds((prev) => [...prev, t.id])
+                            else setSelectedIds((prev) => prev.filter((id) => id !== t.id))
                           }}
+                          className="rounded border-slate-300 accent-[#00A19A] cursor-pointer"
                         />
                       </td>
-                      <td className="p-2 p-2 text-slate-400 text-xs font-mono font-bold tabular-nums border border-slate-200">{idx + 1}</td>
 
-                      <td className="p-2 p-2 border border-slate-200">
-                        <span className="inline-block font-mono font-bold text-[#48BFE3] bg-[#48BFE3]/5 px-2.5 py-1 rounded-xl text-xs tracking-wide">
+                      <td className="py-3 px-3 text-center text-slate-500 font-medium align-middle">
+                        {stt}
+                      </td>
+
+                      <td className="py-3 px-3 align-middle whitespace-nowrap">
+                        <span className="inline-block font-mono text-[11px] font-semibold text-[#00736E] bg-[#F0FDFA] border border-[#CCFBF1] px-2 py-0.5 rounded-md">
                           {t.teacherCode}
                         </span>
-                      </td>
-
-                      <td className="p-2 p-2 border border-slate-200">
-                        {isEditing ? (
-                          <input type="text" value={editForm.teacherName}
-                            onChange={e => setEditForm({ ...editForm, teacherName: e.target.value })}
-                            className="border border-[#48BFE3] rounded-xl px-2.5 py-1.5 text-sm w-full outline-none font-bold bg-white"
-                            placeholder="Tên giáo viên" />
-                        ) : (
-                          <span className="font-bold text-slate-800 text-sm leading-tight">{t.teacherName}</span>
+                        {hasCustomLogin && (
+                          <div
+                            className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[130px]"
+                            title={`Tài khoản: ${loginUsername}`}
+                          >
+                            TK: {loginUsername}
+                          </div>
                         )}
                       </td>
 
-                      <td className="p-2 p-2 border border-slate-200">
-                        {isEditing ? (
-                          <input type="email" value={editForm.email || ""}
-                            onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                            className="border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs w-full outline-none text-slate-600 bg-white font-medium focus:border-[#48BFE3]"
-                            placeholder="Email thông báo" />
-                        ) : (
-                          t.email ? (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-650">
-                              <Mail className="w-3.5 h-3.5 text-slate-400" />{t.email}
+                      <td className="py-3 px-3 align-middle">
+                        <button
+                          type="button"
+                          onClick={() => openEditDrawer(t)}
+                          className="text-left group/name cursor-pointer"
+                          title="Nhấn để chỉnh sửa thông tin giáo viên"
+                        >
+                          <div className="font-semibold text-slate-900 group-hover/name:text-[#00736E] group-hover/name:underline leading-snug">
+                            {t.teacherName}
+                          </div>
+                        </button>
+                        <div className="mt-0.5 flex items-center gap-1.5 text-[11px]">
+                          {t.email ? (
+                            <span className="inline-flex items-center gap-1 text-slate-500">
+                              <Mail className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                              <span className="truncate max-w-[240px]">{t.email}</span>
                             </span>
                           ) : (
-                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-wide flex items-center gap-1">
-                              <AlertCircle className="w-3.5 h-3.5 text-amber-450" />Chưa có Email
+                            <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
+                              <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                              Chưa có email
                             </span>
-                          )
-                        )}
-                      </td>
-
-                      <td className="p-2 p-2 border border-slate-200">
-                        {isEditing ? (
-                          <div className="flex flex-col gap-2 max-w-xs">
-                            <select value={editForm.campusId} onChange={e => {
-                              const nid = e.target.value
-                              setEditForm({ ...editForm, campusId: nid, additionalCampusIds: (editForm.additionalCampusIds || []).filter((x) => x !== nid) })
-                            }} className="border border-[#48BFE3] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold w-full cursor-pointer">
-                              <option value="">-- Cơ sở chính --</option>
-                              {(campuses || []).map((c) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                            </select>
-                            <div className="flex flex-col gap-1 p-2 max-h-24 overflow-y-auto w-full text-xs font-semibold">
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1 mb-1">Cơ sở làm việc thêm:</p>
-                              {(campuses || []).filter((c) => c.id !== editForm.campusId).map((c) => {
-                                const isChk = editForm.additionalCampusIds?.includes(c.id)
-                                return (
-                                  <label key={c.id} className="flex items-center gap-2 cursor-pointer hover:bg-white p-1 rounded-md text-[10px] font-bold text-slate-600 select-none">
-                                    <input type="checkbox" checked={isChk} onChange={() => {
-                                      const cur = editForm.additionalCampusIds || []
-                                      setEditForm({ ...editForm, additionalCampusIds: cur.includes(c.id) ? cur.filter((x) => x !== c.id) : [...cur, c.id] })
-                                    }} className="w-3.5 h-3.5 rounded-md accent-[#48BFE3] cursor-pointer" />
-                                    {c.campusName}
-                                  </label>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center gap-1.5">
-                              <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                              <span className="font-bold text-slate-700 text-xs uppercase">{t.campus || "—"}</span>
-                            </div>
-                            {t.additionalCampuses?.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 pl-5.5">
-                                {t.additionalCampuses.map((ac) => (
-                                  <span key={ac.id} className="text-[9px] text-slate-500 font-bold uppercase tracking-wide text-xs font-semibold">{ac.campusName}</span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="p-2 p-2 border border-slate-200">
-                        {isEditing ? (
-                          <div className="flex flex-col gap-2 min-w-[200px]">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Tổ CM & Chức vụ:</p>
-                            <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto p-1.5 border border-[#48BFE3] rounded-xl bg-white text-xs">
-                              {(departments || []).map((d: any) => {
-                                const assigned = (editForm.departmentAssignments || []).find((a: any) => a.departmentId === d.id);
-                                const isChecked = !!assigned;
-                                return (
-                                  <div key={d.id} className="flex items-center justify-between p-1 rounded-lg hover:bg-slate-50 border border-slate-100">
-                                    <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-[11px]">
-                                      <input type="checkbox" checked={isChecked} onChange={(e) => {
-                                        const cur = editForm.departmentAssignments || [];
-                                        if (e.target.checked) {
-                                          const next = [...cur, { departmentId: d.id, position: "GV" }];
-                                          setEditForm({ ...editForm, departmentAssignments: next, department: d.name });
-                                        } else {
-                                          const next = cur.filter((x: any) => x.departmentId !== d.id);
-                                          setEditForm({ ...editForm, departmentAssignments: next, department: next[0] ? ((departments || []).find((dx: any) => dx.id === next[0].departmentId)?.name || "") : "" });
-                                        }
-                                      }} className="w-3.5 h-3.5 rounded accent-[#48BFE3] cursor-pointer" />
-                                      {d.name}
-                                    </label>
-                                    {isChecked && (
-                                      <select value={assigned.position || "GV"} onChange={(e) => {
-                                        const cur = editForm.departmentAssignments || [];
-                                        const next = cur.map((x: any) => x.departmentId === d.id ? { ...x, position: e.target.value } : x);
-                                        const hasTTCM = next.some((x: any) => x.position === "TTCM");
-                                        setEditForm({ ...editForm, departmentAssignments: next, position: hasTTCM ? "TTCM" : (editForm.position || "GV") });
-                                      }} className="text-[10px] font-extrabold px-1.5 py-0.5 border border-amber-300 rounded-md outline-none bg-amber-50 text-amber-800 cursor-pointer">
-                                        <option value="GV">GV</option>
-                                        <option value="NV">NV</option>
-                                        <option value="TTCM">TTCM</option>
-                                        <option value="TPTCM">TPTCM</option>
-                                        <option value="QLCM">QLCM</option>
-                                        <option value="Ban ĐHCM">Ban ĐHCM</option>
-                                        <option value="GĐCS">GĐCS</option>
-                                      </select>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-1 items-center">
-                            {t.departmentAssignments && t.departmentAssignments.length > 0 ? (
-                              t.departmentAssignments.map((da: any) => (
-                                <span key={da.departmentId || da.departmentName} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-extrabold bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20">
-                                  {da.departmentName || da.departmentCode}
-                                  {da.position && da.position !== "GV" && (
-                                    <span className="bg-amber-100 text-amber-800 text-[10px] px-1 py-0.2 rounded-md font-black">{da.position}</span>
-                                  )}
-                                </span>
-                              ))
-                            ) : t.department ? (
-                              <span className={"inline-block px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide self-start " + getDeptColor(t.department)}>
-                                {t.department}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 text-xs font-semibold italic">Không thuộc Tổ CM</span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="p-2 p-2 border border-slate-200">
-                        {isEditing ? (
-                          <div className="flex flex-col gap-1 max-h-36 overflow-y-auto p-1.5 border border-teal-200 rounded-xl bg-teal-50/20 text-xs min-w-[180px]">
-                            {ACADEMIC_DIVISIONS.map((div: any) => {
-                              const isChecked = (editForm.divisionCodes || []).includes(div.code);
-                              return (
-                                <label key={div.code} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-[11px] hover:bg-teal-50/50 p-1 rounded-md select-none">
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={(e) => {
-                                      const cur = editForm.divisionCodes || [];
-                                      const next = e.target.checked
-                                        ? [...cur, div.code]
-                                        : cur.filter((x: string) => x !== div.code);
-                                      const autoPos = next.length > 0 && editForm.position === "GV" ? "TBP" : editForm.position;
-                                      setEditForm({ ...editForm, divisionCodes: next, position: autoPos });
-                                    }}
-                                    className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
-                                  />
-                                  <span className="truncate">{div.name}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          t.divisionCodes && t.divisionCodes.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {t.divisionCodes.map((dCode: string) => {
-                                const div = ACADEMIC_DIVISIONS.find((x: any) => x.code === dCode);
-                                return (
-                                  <span key={dCode} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-50 text-teal-800 border border-teal-200 shadow-2xs">
-                                    🏢 {div?.shortName || div?.name || dCode}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <span className="text-slate-300 text-xs font-semibold">—</span>
-                          )
-                        )}
-                      </td>
-
-                      <td className="p-2 p-2 border border-slate-200">
-                        {isEditing ? (
-                          <select value={editForm.position || "GV"} onChange={e => {
-                            const newPos = e.target.value;
-                            let nextDeptAssignments = editForm.departmentAssignments || [];
-                            if (newPos === "TTCM") {
-                              nextDeptAssignments = nextDeptAssignments.map((da: any, idx: number) => idx === 0 ? { ...da, position: "TTCM" } : da);
-                            } else if (newPos === "GV") {
-                              nextDeptAssignments = nextDeptAssignments.map((da: any) => da.position === "TTCM" ? { ...da, position: "GV" } : da);
-                            }
-                            setEditForm({ ...editForm, position: newPos, departmentAssignments: nextDeptAssignments });
-                          }}
-                            className="border border-[#48BFE3] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#48BFE3] w-full cursor-pointer">
-                            <option value="GV">GV (Giáo viên)</option>
-                            <option value="NV">NV (Nhân viên)</option>
-                            <option value="TTCM">TTCM (Tổ trưởng CM)</option>
-                            <option value="TPTCM">TPTCM (Tổ phó CM)</option>
-                            <option value="TBP">TBP (Trưởng Bộ Phận)</option>
-                            <option value="TB_DHCM">Trưởng Ban ĐHCM</option>
-                            <option value="GĐCS">GĐCS (Giám đốc CS)</option>
-                          </select>
-                        ) : (
-                          <PositionBadge position={t.position} positions={t.positions} />
-                        )}
-                      </td>
-
-                      <td className="p-2 p-2 border border-slate-200">
-                        <div className="flex items-center gap-1.5 group/key">
-                          <span className="font-mono text-xs font-semibold text-slate-500 tracking-wide text-xs font-semibold">
-                            {t.user?.email || t.teacherCode}
-                          </span>
-                          <button onClick={() => handleResetPassword(t.id, t.teacherCode, t.teacherName)}
-                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 opacity-0 group-hover:opacity-100 transition-all cursor-pointer text-xs font-semibold" title="Reset mật khẩu">
-                            <Key className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-
-                      <td className="p-2 p-2 text-center border border-slate-200">
-                        {isEditing ? (
-                          <select value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}
-                            className="border border-[#48BFE3]/60 rounded-xl px-2 py-1.5 text-xs outline-none bg-white font-bold w-28 focus:border-[#48BFE3] cursor-pointer">
-                            <option value="ACTIVE">On</option>
-                            <option value="INACTIVE">Off</option>
-                          </select>
-                        ) : (
-                          t.status === "ACTIVE" ? (
-                            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider text-xs font-semibold">
-                              <span className="w-1.5 h-1.5 animate-pulse text-xs font-semibold" />On
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-rose-700 uppercase tracking-wider text-xs font-semibold">
-                              <span className="w-1.5 h-1.5 text-xs font-semibold" />Off
-                            </span>
-                          )
-                        )}
-                      </td>
-
-                      <td className="p-2 p-2 text-center border border-slate-200">
-                        <div className="flex items-center justify-center gap-1">
-                          {isEditing ? (
-                            <>
-                              <button onClick={() => handleSaveEdit(t.id)} disabled={saving}
-                                className="p-2 text-white hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/10 disabled:opacity-60 cursor-pointer text-xs font-semibold" title="Lưu">
-                                <Check className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => setEditingId(null)}
-                                className="p-2 text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-all cursor-pointer" title="Hủy">
-                                <X className="w-4 h-4" />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={() => handleEdit(t)}
-                                className="p-2 text-[#48BFE3] hover:bg-[#48BFE3]/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 cursor-pointer" title="Chỉnh sửa">
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => handleDelete(t.id, t.teacherName)}
-                                className="p-2 text-rose-500 hover:bg-rose-50 hover:text-rose-700 transition-all opacity-0 group-hover:opacity-100 cursor-pointer text-xs font-semibold" title="Xóa">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </>
                           )}
                         </div>
                       </td>
+
+                      <td className="py-3 px-3 align-middle whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-slate-800 font-semibold">
+                          <Building2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                          <span>{t.campus || "—"}</span>
+                        </div>
+                        {t.additionalCampuses?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {t.additionalCampuses.map((ac: any) => (
+                              <span
+                                key={ac.id}
+                                className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium"
+                              >
+                                +{ac.campusName}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3 align-middle">
+                        <div className="flex flex-wrap gap-1 items-center">
+                          {t.departmentAssignments && t.departmentAssignments.length > 0 ? (
+                            t.departmentAssignments.map((da: any) => (
+                              <span
+                                key={da.departmentId || da.departmentName}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200/80 text-[11px] font-medium"
+                              >
+                                {da.departmentName || da.departmentCode}
+                                {da.position && da.position !== "GV" && (
+                                  <span className="px-1 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold">
+                                    {da.position}
+                                  </span>
+                                )}
+                              </span>
+                            ))
+                          ) : t.department ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200/80 text-[11px] font-medium">
+                              {t.department}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic">Chưa phân tổ</span>
+                          )}
+                        </div>
+
+                        {t.divisionCodes && t.divisionCodes.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {t.divisionCodes.map((dCode: string) => {
+                              const div = ACADEMIC_DIVISIONS.find((x: any) => x.code === dCode)
+                              return (
+                                <span
+                                  key={dCode}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#F0FDFA] text-[#003B3A] border border-[#99F6E4] text-[10px] font-semibold"
+                                >
+                                  <Shield className="w-2.5 h-2.5 text-[#00736E]" />
+                                  {div?.shortName || div?.name || dCode}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3 align-middle">
+                        <PositionBadges position={t.position} positions={t.positions} />
+                        {t.mainSubject && (
+                          <div className="text-[11px] text-slate-500 mt-1 truncate max-w-[140px]">
+                            {t.mainSubject}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3 text-center whitespace-nowrap align-middle">
+                        {t.status === "ACTIVE" ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            On
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-semibold">
+                            <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                            Off
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3 text-center whitespace-nowrap align-middle">
+                        <div className="inline-flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openEditDrawer(t)}
+                            className="p-1.5 rounded-lg text-slate-600 hover:text-[#003B3A] hover:bg-[#F0FDFA] border border-transparent hover:border-[#99F6E4] transition-colors cursor-pointer"
+                            title="Chỉnh sửa hồ sơ"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleResetPassword(t.id, t.teacherCode, t.teacherName)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-700 hover:bg-amber-50 border border-transparent hover:border-amber-200 transition-colors cursor-pointer"
+                            title="Đặt lại mật khẩu về Mã GV"
+                          >
+                            <Key className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(t.id, t.teacherName)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
+                            title="Xóa giáo viên"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  );
-                  });
-                })()
+                  )
+                })
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Smart Pagination Footer */}
         {displayed.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold">
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs text-slate-450 font-bold">
-              <p>
-                Hiển thị <span className="font-black text-slate-700">{Math.min(displayed.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(displayed.length, currentPage * itemsPerPage)}</span> trong số <span className="font-black text-slate-700">{displayed.length}</span> giáo viên
-              </p>
-              <p className="hidden sm:block text-slate-300">|</p>
-              <p>
-                <span className="text-emerald-700 font-black">{activeCount}</span> On &middot; <span className="text-rose-600 font-black">{inactiveCount}</span> Off
-              </p>
+          <div className="px-4 py-3 border-t border-[#E2E8F0] bg-[#F8FAFC] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs tabular-nums">
+            <div className="flex flex-wrap items-center gap-3 text-slate-600">
+              <span>
+                Hiển thị{" "}
+                <strong className="text-slate-900">
+                  {startIndex + 1}–{Math.min(displayed.length, startIndex + itemsPerPage)}
+                </strong>{" "}
+                trong số <strong className="text-slate-900">{displayed.length}</strong> giáo viên
+              </span>
+              <span className="text-slate-300">|</span>
+              <label className="inline-flex items-center gap-1.5 text-slate-500">
+                <span>Số dòng:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="px-2 py-1 rounded-lg border border-[#E2E8F0] bg-white text-slate-800 font-semibold outline-none cursor-pointer"
+                >
+                  {[15, 25, 50, 100].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
-            
-            {displayed.length > itemsPerPage && (
+
+            {totalPages > 1 && (
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all cursor-pointer text-xs font-semibold"
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors cursor-pointer"
                 >
+                  <ChevronLeft className="w-3.5 h-3.5" />
                   Trước
                 </button>
-                {Array.from({ length: Math.ceil(displayed.length / itemsPerPage) }).map((_, i) => {
-                  const pageNum = i + 1;
-                  const isCurrent = currentPage === pageNum;
-                  return (
+
+                {getVisiblePages(safePage, totalPages).map((item, i) =>
+                  item === "..." ? (
+                    <span key={`ellipsis-${i}`} className="px-2 text-slate-400 select-none">
+                      …
+                    </span>
+                  ) : (
                     <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 flex items-center justify-center text-xs font-extrabold rounded-lg border transition-all cursor-pointer ${isCurrent ? 'bg-[#48BFE3] border-[#48BFE3] text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-[#48BFE3]/5'}`}
+                      key={item}
+                      type="button"
+                      onClick={() => setCurrentPage(item)}
+                      className={`min-w-[32px] h-8 px-2 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
+                        safePage === item
+                          ? "bg-[#003B3A] border-[#003B3A] text-white"
+                          : "bg-white border-[#E2E8F0] text-slate-700 hover:bg-slate-50"
+                      }`}
                     >
-                      {pageNum}
+                      {item}
                     </button>
-                  );
-                })}
+                  )
+                )}
+
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(displayed.length / itemsPerPage)))}
-                  disabled={currentPage === Math.ceil(displayed.length / itemsPerPage)}
-                  className="text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:hover:bg-white transition-all cursor-pointer text-xs font-semibold"
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safePage === totalPages}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors cursor-pointer"
                 >
                   Sau
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Add / Edit Slide-Over Drawer */}
+      <TeacherFormDrawer
+        open={drawerOpen}
+        mode={drawerMode}
+        form={formState}
+        setForm={setFormState}
+        departments={departments}
+        subjects={subjects}
+        campuses={campuses}
+        isCampusLocked={isCampusLocked}
+        saving={saving}
+        errorMsg={drawerError}
+        onClose={() => {
+          setDrawerOpen(false)
+          setDrawerError("")
+        }}
+        onSubmit={handleSubmitDrawer}
+      />
     </div>
   )
 }

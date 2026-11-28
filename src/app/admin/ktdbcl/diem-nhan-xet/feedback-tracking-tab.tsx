@@ -253,91 +253,206 @@ export function FeedbackTrackingTab({
   const { summary } = data
 
   return (
-    <div className="space-y-6">
-      {/* 1. TOP HEADER & SCOPE SELECTOR */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
-          <div>
-            <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-[#48BFE3]" />
-              Theo Dõi Phản Hồi PHHS & Nội Dung Trao Đổi GVCN - GVBM
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Giám sát đa cấp (Hệ thống • Cơ sở • Lớp) về tình hình ghi nhận ý kiến phụ huynh và phối hợp xử lý giữa giáo viên chủ nhiệm & giáo viên bộ môn.
-            </p>
+    <div className="space-y-4">
+      {/* 1. UNIFIED ACADEMIC LEDGER STRIP (5 Metrics + Progress Indicators) */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        <div className="grid grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 divide-x divide-[#E2E8F0] tabular-nums">
+          {/* Metric 1: Total Students */}
+          <div className="px-4 py-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-600">Tổng học sinh</span>
+              <div className="w-8 h-8 rounded-lg bg-[#003B3A]/10 text-[#003B3A] flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-2xl font-bold text-slate-900">
+                {summary.totalStudents.toLocaleString("vi-VN")}
+              </div>
+              <div className="text-[11px] text-slate-500 mt-1">
+                Trong phạm vi đang lọc
+              </div>
+            </div>
+          </div>
+
+          {/* Metric 2: Parent Feedback */}
+          <div className="px-4 py-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-600">PHHS đã phản hồi</span>
+              <div className="w-8 h-8 rounded-lg bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] flex items-center justify-center shrink-0">
+                <MessageSquare className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-[#003B3A]">
+                  {summary.parentFeedbackCount}
+                </span>
+                <span className="text-xs font-semibold text-[#00736E]">
+                  {summary.parentFeedbackPct}%
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#00A19A] rounded-full transition-all"
+                  style={{ width: `${Math.min(100, Number(summary.parentFeedbackPct) || 0)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Metric 3: GVCN Remarks */}
+          <div className="px-4 py-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-600">GVCN đã nhận xét</span>
+              <div className="w-8 h-8 rounded-lg bg-[#F0FDFA] text-[#008B85] border border-[#CCFBF1] flex items-center justify-center shrink-0">
+                <UserCheck className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-[#00736E]">
+                  {summary.homeroomRemarkCount}
+                </span>
+                <span className="text-xs font-semibold text-[#008B85]">
+                  {summary.homeroomRemarkPct}%
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#00736E] rounded-full transition-all"
+                  style={{ width: `${Math.min(100, Number(summary.homeroomRemarkPct) || 0)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Metric 4: Forwarded to GVBM */}
+          <div className="px-4 py-4 flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-600">Chuyển tiếp GVBM</span>
+              <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                <Send className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-bold text-slate-900">
+                  {summary.gvbmForwardCount}
+                </span>
+                <span className="text-xs text-slate-500">lượt</span>
+              </div>
+              <div className="text-[11px] text-slate-500 mt-1">
+                Phối hợp bộ môn hỗ trợ
+              </div>
+            </div>
+          </div>
+
+          {/* Metric 5: GVBM Responded */}
+          <div className="px-4 py-4 flex flex-col justify-between col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-600">GVBM đã phản hồi</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#059669] border border-emerald-200/70 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-[#059669]">
+                  {summary.gvbmRespondedCount}
+                </span>
+                <span className="text-xs font-semibold text-[#059669]">
+                  {summary.gvbmRespondedPct}%
+                </span>
+              </div>
+              <div className="text-[11px] mt-1 font-medium">
+                {summary.gvbmPendingCount > 0 ? (
+                  <span className="text-[#D97706]">Còn {summary.gvbmPendingCount} lượt chờ xử lý</span>
+                ) : (
+                  <span className="text-[#059669]">Đã hoàn thành phối hợp</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. SCOPE & FILTER LEDGER BAR */}
+      <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] shadow-xs space-y-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#F1F5F9]">
+          {/* Scope Selector Segmented Control */}
+          <div className="inline-flex flex-wrap items-center rounded-xl bg-[#F8FAFC] p-1 border border-[#E2E8F0] gap-1">
+            <button
+              type="button"
+              onClick={() => setScopeMode("DETAILS")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                scopeMode === "DETAILS"
+                  ? "bg-[#003B3A] text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Danh sách chi tiết ({data.filteredCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setScopeMode("SYSTEM")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                scopeMode === "SYSTEM"
+                  ? "bg-[#003B3A] text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Theo cơ sở ({campuses.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setScopeMode("CLASS")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                scopeMode === "CLASS"
+                  ? "bg-[#003B3A] text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Theo lớp học ({availableClasses.length})</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleExportExcel}
-              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-emerald-600/20 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               title="Xuất danh sách theo dõi ra file Excel"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
               <span>Xuất Excel</span>
             </button>
             <button
+              type="button"
               onClick={fetchData}
               disabled={loading}
-              className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-sky-500" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#008B85]" : ""}`} />
               <span>Làm mới</span>
             </button>
           </div>
         </div>
 
-        {/* Scope Selector Tabs */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">
-            Chế độ xem:
-          </span>
-          <button
-            onClick={() => setScopeMode("DETAILS")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              scopeMode === "DETAILS"
-                ? "bg-[#003B3A] text-white shadow-md shadow-[#003B3A]/20"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Danh sách Chi tiết ({data.filteredCount})</span>
-          </button>
-          <button
-            onClick={() => setScopeMode("SYSTEM")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              scopeMode === "SYSTEM"
-                ? "bg-[#003B3A] text-white shadow-md shadow-[#003B3A]/20"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Theo Cơ sở ({campuses.length})</span>
-          </button>
-          <button
-            onClick={() => setScopeMode("CLASS")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              scopeMode === "CLASS"
-                ? "bg-[#003B3A] text-white shadow-md shadow-[#003B3A]/20"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            <GraduationCap className="w-3.5 h-3.5" />
-            <span>Theo Lớp học ({availableClasses.length})</span>
-          </button>
-        </div>
-
         {/* Filter Controls Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {/* 1. Evaluation Period */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">
-              Kỳ khảo sát / Học kỳ
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+              Kỳ khảo sát
             </label>
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-sky-500"
+              className="w-full text-xs font-medium bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-2.5 py-1.5 text-slate-800 focus:bg-white focus:outline-none focus:border-[#008B85]"
             >
               {EVAL_PERIODS.map(p => (
                 <option key={p.code} value={p.code}>{p.name}</option>
@@ -347,7 +462,7 @@ export function FeedbackTrackingTab({
 
           {/* 2. Campus Filter */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
               Cơ sở
             </label>
             <select
@@ -356,9 +471,9 @@ export function FeedbackTrackingTab({
                 setSelectedCampusId(e.target.value)
                 setSelectedClassId("ALL")
               }}
-              className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-sky-500"
+              className="w-full text-xs font-medium bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-2.5 py-1.5 text-slate-800 focus:bg-white focus:outline-none focus:border-[#008B85]"
             >
-              <option value="ALL">-- Tất cả cơ sở (Hệ thống) --</option>
+              <option value="ALL">Tất cả cơ sở</option>
               {campuses.map(c => (
                 <option key={c.id} value={c.id}>{c.campusName}</option>
               ))}
@@ -367,7 +482,7 @@ export function FeedbackTrackingTab({
 
           {/* 3. Grade Filter */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
               Khối
             </label>
             <select
@@ -376,9 +491,9 @@ export function FeedbackTrackingTab({
                 setSelectedGrade(e.target.value)
                 setSelectedClassId("ALL")
               }}
-              className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-sky-500"
+              className="w-full text-xs font-medium bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-2.5 py-1.5 text-slate-800 focus:bg-white focus:outline-none focus:border-[#008B85]"
             >
-              <option value="ALL">-- Tất cả khối --</option>
+              <option value="ALL">Tất cả khối</option>
               {GRADES.map(g => (
                 <option key={g} value={g}>{g}</option>
               ))}
@@ -387,15 +502,15 @@ export function FeedbackTrackingTab({
 
           {/* 4. Class Filter */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
               Lớp học
             </label>
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-sky-500"
+              className="w-full text-xs font-medium bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-2.5 py-1.5 text-slate-800 focus:bg-white focus:outline-none focus:border-[#008B85]"
             >
-              <option value="ALL">-- Tất cả các lớp --</option>
+              <option value="ALL">Tất cả các lớp</option>
               {availableClasses.map(c => (
                 <option key={c.id} value={c.id}>{c.className}</option>
               ))}
@@ -404,13 +519,13 @@ export function FeedbackTrackingTab({
 
           {/* 5. Status Filter */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
               Trạng thái tương tác
             </label>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-sky-500"
+              className="w-full text-xs font-medium bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-2.5 py-1.5 text-slate-800 focus:bg-white focus:outline-none focus:border-[#008B85]"
             >
               {STATUS_OPTIONS.map(s => (
                 <option key={s.code} value={s.code}>{s.label}</option>
@@ -420,7 +535,7 @@ export function FeedbackTrackingTab({
 
           {/* 6. Quick Search Input */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1">
               Tìm kiếm nhanh
             </label>
             <div className="relative">
@@ -431,126 +546,8 @@ export function FeedbackTrackingTab({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchData()}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-2.5 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-sky-500 placeholder:text-slate-400"
+                className="w-full text-xs bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl pl-8 pr-2.5 py-1.5 text-slate-800 focus:bg-white focus:outline-none focus:border-[#008B85] placeholder:text-slate-400"
               />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. STATS OVERVIEW CARDS */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
-        {/* Card 1: Total Students */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Tổng Học Sinh</span>
-            <div className="p-2 bg-slate-100 rounded-xl text-slate-600">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl font-black text-slate-800">
-              {summary.totalStudents.toLocaleString("vi-VN")}
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium mt-0.5">
-              Học sinh trong phạm vi lọc
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Parent Feedback */}
-        <div className="bg-white p-4 rounded-2xl border border-blue-100 shadow-xs flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute -right-2 -bottom-2 opacity-5 text-blue-600 pointer-events-none">
-            <MessageSquare className="w-20 h-20" />
-          </div>
-          <div className="flex items-center justify-between text-blue-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">PHHS Đã Phản Hồi</span>
-            <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
-              <MessageSquare className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-blue-700">
-                {summary.parentFeedbackCount}
-              </span>
-              <span className="text-xs font-black px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700">
-                {summary.parentFeedbackPct}%
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium mt-0.5">
-              Phụ huynh có ý kiến trao đổi
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: GVCN Remarks */}
-        <div className="bg-white p-4 rounded-2xl border border-teal-100 shadow-xs flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between text-teal-700">
-            <span className="text-[11px] font-bold uppercase tracking-wider">GVCN Đã Nhận Xét</span>
-            <div className="p-2 bg-teal-50 rounded-xl text-teal-700">
-              <UserCheck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-teal-800">
-                {summary.homeroomRemarkCount}
-              </span>
-              <span className="text-xs font-black px-1.5 py-0.5 rounded-md bg-teal-100 text-teal-800">
-                {summary.homeroomRemarkPct}%
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium mt-0.5">
-              Đã ghi nhận & định hướng
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Forwarded to GVBM */}
-        <div className="bg-white p-4 rounded-2xl border border-teal-200 shadow-xs flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between text-teal-800">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Đã Chuyển GVBM</span>
-            <div className="p-2 bg-teal-50 rounded-xl text-teal-800">
-              <Send className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-teal-800">
-                {summary.gvbmForwardCount}
-              </span>
-              <span className="text-xs font-medium text-slate-400">lượt</span>
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium mt-0.5">
-              Chuyển tiếp bộ môn hỗ trợ
-            </div>
-          </div>
-        </div>
-
-        {/* Card 5: GVBM Responded */}
-        <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-xs flex flex-col justify-between relative overflow-hidden col-span-2 md:col-span-1">
-          <div className="flex items-center justify-between text-emerald-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">GVBM Đã Phản Hồi</span>
-            <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-emerald-700">
-                {summary.gvbmRespondedCount}
-              </span>
-              <span className="text-xs font-black px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                {summary.gvbmRespondedPct}%
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium mt-0.5">
-              {summary.gvbmPendingCount > 0 ? (
-                <span className="text-amber-600 font-bold">Còn {summary.gvbmPendingCount} lượt chờ xử lý</span>
-              ) : (
-                <span className="text-emerald-600 font-semibold">Đã hoàn thành phối hợp</span>
-              )}
             </div>
           </div>
         </div>
@@ -560,35 +557,35 @@ export function FeedbackTrackingTab({
 
       {/* VIEW A: BY CAMPUS (SYSTEM OVERVIEW) */}
       {scopeMode === "SYSTEM" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-sky-600" />
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                Bảng Thống Kê Tổng Hợp Theo Cơ Sở (Hệ Thống Sky-Line)
+              <Building2 className="w-4 h-4 text-[#00736E]" />
+              <h3 className="text-xs font-bold text-slate-800">
+                Tổng hợp phản hồi theo cơ sở
               </h3>
             </div>
-            <span className="text-xs text-slate-400 font-medium">
-              Kỳ: <strong className="text-slate-700">{selectedPeriod}</strong>
+            <span className="text-xs text-slate-500 font-medium tabular-nums">
+              Kỳ: <strong className="text-slate-800">{selectedPeriod}</strong>
             </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                <tr className="border-b text-[11px] font-semibold">
-                  <th className="py-3 px-4 font-semibold">Cơ sở</th>
-                  <th className="py-3 px-3 text-center font-semibold">Số Lớp</th>
-                  <th className="py-3 px-3 text-center font-semibold">Tổng Học Sinh</th>
-                  <th className="py-3 px-4 text-center font-semibold">PHHS Phản Hồi</th>
-                  <th className="py-3 px-4 text-center font-semibold">GVCN Đã Nhận Xét</th>
-                  <th className="py-3 px-4 text-center font-semibold">Chuyển Tiếp GVBM</th>
-                  <th className="py-3 px-4 text-center font-semibold">GVBM Đã Phản Hồi</th>
-                  <th className="py-3 px-4 text-center font-semibold">Tỷ Lệ Xử Lý</th>
-                  <th className="py-3 px-4 text-right font-semibold">Thao Tác</th>
+              <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-4 text-white font-semibold">Cơ sở</th>
+                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">Số lớp</th>
+                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">Tổng học sinh</th>
+                  <th className="py-3 px-4 text-center text-teal-100 font-semibold">PHHS phản hồi</th>
+                  <th className="py-3 px-4 text-center text-teal-100 font-semibold">GVCN nhận xét</th>
+                  <th className="py-3 px-4 text-center text-teal-100 font-semibold">Chuyển GVBM</th>
+                  <th className="py-3 px-4 text-center text-[#5EEAD4] font-semibold">GVBM phản hồi</th>
+                  <th className="py-3 px-4 text-center text-[#5EEAD4] font-semibold">Tỷ lệ xử lý</th>
+                  <th className="py-3 px-4 text-right text-white font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E2E8F0]">
+              <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
                 {data.byCampus.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-8 text-center text-slate-400">
@@ -665,35 +662,35 @@ export function FeedbackTrackingTab({
 
       {/* VIEW B: BY CLASS (CLASS OVERVIEW) */}
       {scopeMode === "CLASS" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <GraduationCap className="w-4 h-4 text-teal-600" />
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                Bảng Thống Kê Tiến Độ Trao Đổi Theo Từng Lớp Học
+              <GraduationCap className="w-4 h-4 text-[#00736E]" />
+              <h3 className="text-xs font-bold text-slate-800">
+                Tiến độ trao đổi theo từng lớp học
               </h3>
             </div>
-            <span className="text-xs text-slate-400 font-medium">
-              Số lớp: <strong className="text-slate-700">{data.byClass.length}</strong>
+            <span className="text-xs text-slate-500 font-medium tabular-nums">
+              Số lớp: <strong className="text-slate-800">{data.byClass.length}</strong>
             </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                <tr className="border-b text-[11px] font-semibold">
-                  <th className="py-3 px-4 font-semibold">Lớp Học</th>
-                  <th className="py-3 px-3 font-semibold">Cơ sở</th>
-                  <th className="py-3 px-4 font-semibold">Giáo viên chủ nhiệm</th>
-                  <th className="py-3 px-3 text-center font-semibold">Sĩ Số</th>
-                  <th className="py-3 px-4 text-center font-semibold">PHHS Phản Hồi</th>
-                  <th className="py-3 px-4 text-center font-semibold">GVCN Nhận Xét</th>
-                  <th className="py-3 px-4 text-center font-semibold">Chuyển GVBM</th>
-                  <th className="py-3 px-4 text-center font-semibold">GVBM Phản Hồi</th>
-                  <th className="py-3 px-4 text-right font-semibold">Hành Động</th>
+              <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-4 text-white font-semibold">Lớp học</th>
+                  <th className="py-3 px-3 text-teal-100 font-semibold">Cơ sở</th>
+                  <th className="py-3 px-4 text-teal-100 font-semibold">Giáo viên chủ nhiệm</th>
+                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">Sĩ số</th>
+                  <th className="py-3 px-4 text-center text-teal-100 font-semibold">PHHS phản hồi</th>
+                  <th className="py-3 px-4 text-center text-teal-100 font-semibold">GVCN nhận xét</th>
+                  <th className="py-3 px-4 text-center text-teal-100 font-semibold">Chuyển GVBM</th>
+                  <th className="py-3 px-4 text-center text-[#5EEAD4] font-semibold">GVBM phản hồi</th>
+                  <th className="py-3 px-4 text-right text-white font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E2E8F0]">
+              <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
                 {data.byClass.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-8 text-center text-slate-400">
@@ -756,55 +753,55 @@ export function FeedbackTrackingTab({
 
       {/* VIEW C: DETAILED STUDENT LIST WITH 3-WAY EXCHANGE */}
       {scopeMode === "DETAILS" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-[#003B3A]" />
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                Danh Sách Học Sinh & Nội Dung Trao Đổi Chi Tiết ({data.filteredCount})
+              <h3 className="text-xs font-bold text-slate-800">
+                Danh sách học sinh &amp; nội dung trao đổi chi tiết ({data.filteredCount})
               </h3>
             </div>
 
-            <div className="text-xs text-slate-500 font-medium">
+            <div className="text-xs text-slate-500 font-medium tabular-nums">
               Đang hiển thị: <strong className="text-slate-800">{data.filteredCount}</strong> / {data.totalStudentsCount} học sinh
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                <tr className="border-b text-[11px] font-semibold">
-                  <th className="py-3.5 px-3 text-center w-12 font-semibold">STT</th>
-                  <th className="py-3.5 px-4 w-44 font-semibold">Học Sinh</th>
-                  <th className="py-3.5 px-3 w-32 font-semibold">Lớp & GVCN</th>
-                  <th className="py-3.5 px-4 min-w-[220px] font-semibold">
-                    <div className="flex items-center gap-1 text-blue-700">
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>1. Ý kiến Phản hồi PHHS</span>
+              <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                <tr className="text-[11px] font-semibold whitespace-nowrap">
+                  <th className="py-3 px-3 text-center w-12 text-white font-semibold">STT</th>
+                  <th className="py-3 px-4 w-44 text-white font-semibold">Học sinh</th>
+                  <th className="py-3 px-3 w-32 text-teal-100 font-semibold">Lớp &amp; GVCN</th>
+                  <th className="py-3 px-4 min-w-[220px] text-teal-100 font-semibold">
+                    <div className="flex items-center gap-1.5">
+                      <MessageSquare className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                      <span>Ý kiến phản hồi PHHS</span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-4 min-w-[220px] font-semibold">
-                    <div className="flex items-center gap-1 text-teal-700">
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>2. Nhận xét & Trao đổi GVCN</span>
+                  <th className="py-3 px-4 min-w-[220px] text-teal-100 font-semibold">
+                    <div className="flex items-center gap-1.5">
+                      <UserCheck className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                      <span>Nhận xét &amp; trao đổi GVCN</span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-4 min-w-[200px] font-semibold">
-                    <div className="flex items-center gap-1 text-teal-800">
-                      <Send className="w-3.5 h-3.5" />
-                      <span>3. Chuyển tiếp GVBM</span>
+                  <th className="py-3 px-4 min-w-[200px] text-teal-100 font-semibold">
+                    <div className="flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                      <span>Chuyển tiếp GVBM</span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-4 min-w-[220px] font-semibold">
-                    <div className="flex items-center gap-1 text-emerald-700">
+                  <th className="py-3 px-4 min-w-[220px] text-[#5EEAD4] font-semibold">
+                    <div className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>4. Phản hồi Kết quả GVBM</span>
+                      <span>Phản hồi kết quả GVBM</span>
                     </div>
                   </th>
-                  <th className="py-3.5 px-3 text-center w-24 font-semibold">Thao Tác</th>
+                  <th className="py-3 px-3 text-center w-24 text-white font-semibold">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E2E8F0]">
+              <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
                 {data.items.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400">
@@ -968,8 +965,8 @@ export function FeedbackTrackingTab({
                             </div>
                           </div>
                         ) : item.hasGvbmForward ? (
-                          <div className="bg-amber-50 p-2 rounded-xl border border-amber-200/60 text-amber-800 text-[11px] font-medium flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-spin" />
+                          <div className="bg-amber-50 p-2 rounded-xl border border-amber-200/70 text-[#D97706] text-[11px] font-medium flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 shrink-0" />
                             <span>Đang chờ GVBM phản hồi giải pháp</span>
                           </div>
                         ) : (
@@ -1001,17 +998,17 @@ export function FeedbackTrackingTab({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
             {/* Modal Header */}
-            <div className="px-6 py-4.5 bg-gradient-to-r from-teal-900 via-sky-950 to-blue-950 text-white flex items-center justify-between">
+            <div className="px-6 py-4 bg-[#003B3A] text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-white/10 rounded-2xl backdrop-blur-xs">
-                  <MessageSquare className="w-5 h-5 text-sky-300" />
+                <div className="p-2 bg-white/10 rounded-xl">
+                  <MessageSquare className="w-5 h-5 text-[#5EEAD4]" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black tracking-tight">
-                    Lịch Sử Trao Đổi 3 Bên (PHHS - GVCN - GVBM)
+                  <h3 className="text-sm font-bold tracking-tight">
+                    Lịch sử trao đổi 3 bên (PHHS - GVCN - GVBM)
                   </h3>
-                  <p className="text-xs text-sky-200 mt-0.5">
-                    Học sinh: <strong className="text-white font-bold">{selectedTimelineItem.studentName}</strong> • Lớp: <strong>{selectedTimelineItem.className}</strong> ({selectedTimelineItem.campusName})
+                  <p className="text-xs text-teal-100/85 mt-0.5">
+                    Học sinh: <strong className="text-white font-semibold">{selectedTimelineItem.studentName}</strong> — Lớp: <strong className="text-white">{selectedTimelineItem.className}</strong> ({selectedTimelineItem.campusName})
                   </p>
                 </div>
               </div>

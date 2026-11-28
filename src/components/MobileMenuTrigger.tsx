@@ -8,11 +8,12 @@ export function MobileMenuTrigger() {
 
   return (
     <button
+      type="button"
       onClick={handleToggle}
-      className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all focus:outline-none"
-      aria-label="Toggle Menu"
+      className="md:hidden w-10 h-10 -ml-1.5 flex items-center justify-center text-[#003B3A] hover:bg-[#F0FDFA] active:bg-[#CCFBF1]/60 rounded-xl transition-colors focus:outline-none cursor-pointer"
+      aria-label="Mở danh mục chức năng"
     >
-      <Menu className="w-6 h-6 text-[#48BFE3]" />
+      <Menu className="w-5 h-5" />
     </button>
   )
 }

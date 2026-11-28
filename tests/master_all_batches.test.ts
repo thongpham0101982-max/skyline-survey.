@@ -1,22 +1,15 @@
 
+import { describe, it, expect } from "vitest";
 import { calculateSubjectGap, evaluateNonSubjectGoalProgress } from "../src/lib/advisory/advisoryGapService";
 import { validateExamMatrix, ExamMatrixDefinition } from "../src/lib/testing/examMatrixService";
 
-console.log("================================================================================");
-console.log("   SSM MASTER REGRESSION SUITE: BATCH #01 + BATCH #02 + BATCH #03 UI BATCH     ");
-console.log("================================================================================");
-let passed = 0;
-let failed = 0;
-
 function assert(condition: boolean, name: string) {
-  if (condition) {
-    passed++;
-    console.log(`  [PASS] ${name}`);
-  } else {
-    failed++;
-    console.error(`  [FAIL] ${name}`);
-  }
+  it(name, () => {
+    expect(condition).toBe(true);
+  });
 }
+
+describe("SSM Master Regression Suite: Batch #01 + Batch #02 + Batch #03", () => {
 
 // ---------------------------------------------------------
 // SUITE 1: BATCH #01 (IMP-003 GAP & Goal Calculation)
@@ -111,8 +104,4 @@ const evaluateGap = (target: number, current: number) => {
 assert(evaluateGap(8.0, 8.5).category === "EXCEEDS_OR_MEETS", "Batch03: GAP +0.5 is EXCEEDS_OR_MEETS");
 assert(evaluateGap(8.0, 7.8).category === "NEAR_TARGET", "Batch03: GAP -0.2 is NEAR_TARGET");
 assert(evaluateGap(8.0, 6.0).category === "NEEDS_SUPPORT", "Batch03: GAP -2.0 is NEEDS_SUPPORT");
-
-console.log("--------------------------------------------------------------------------------");
-console.log(`  TOTAL: ${passed} PASSED, ${failed} FAILED.`);
-if (failed > 0) process.exit(1);
-console.log("================================================================================");
+});

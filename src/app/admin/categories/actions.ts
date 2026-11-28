@@ -1,8 +1,16 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
+
+async function assertCategoryAdmin() {
+  const ctx = await requireAdminOrLeadershipSession()
+  if (!ctx) throw new Error("Unauthorized")
+  return ctx
+}
 
 export async function createCategoryAction(data: { name: string; code: string; sortOrder?: number; parentId?: string | null }) {
+  await assertCategoryAdmin()
   const newCat = await prisma.surveySection.create({
     data: {
       name: data.name,
@@ -24,6 +32,7 @@ export async function createCategoryAction(data: { name: string; code: string; s
 }
 
 export async function updateCategoryAction(data: { id: string; name?: string; code?: string; sortOrder?: number; status?: string; parentId?: string | null }) {
+  await assertCategoryAdmin()
   const { id, ...rest } = data
   if (rest.parentId === id) {
     rest.parentId = null
@@ -47,6 +56,7 @@ export async function updateCategoryAction(data: { id: string; name?: string; co
 }
 
 export async function bulkUpdateCategoriesAction(data: { ids: string[]; status?: string; parentId?: string | null }) {
+  await assertCategoryAdmin()
   const { ids, status, parentId } = data
   if (!ids || ids.length === 0) return { success: false }
 
@@ -64,6 +74,7 @@ export async function bulkUpdateCategoriesAction(data: { ids: string[]; status?:
 }
 
 export async function deleteCategoryAction(id: string) {
+  await assertCategoryAdmin()
   await prisma.surveySection.updateMany({
     where: { parentId: id },
     data: { parentId: null }
@@ -77,6 +88,7 @@ export async function deleteCategoryAction(id: string) {
 }
 
 export async function bulkDeleteCategoriesAction(ids: string[]) {
+  await assertCategoryAdmin()
   if (!ids || ids.length === 0) return { success: false }
 
   await prisma.surveySection.updateMany({

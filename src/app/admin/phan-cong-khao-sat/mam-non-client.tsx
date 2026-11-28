@@ -7,6 +7,7 @@ import {
   Mail, Loader2, Filter, Calendar, CheckCircle2, Layers,
   AlertCircle, X, RefreshCw, Users, Info, PlusCircle, Check, HelpCircle, Sparkles
 } from "lucide-react"
+import { EmailSendConfirmModal, EmailConfirmRecipient } from "@/components/EmailSendConfirmModal"
 
 // ─── Helpers ───
 
@@ -91,7 +92,14 @@ interface Props {
   campuses: any[]
   grades: string[]
   giaoVuCSUsers?: any[]
-  currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null
+  currentUser?: {
+    id: string
+    role: string
+    campusIds: string[]
+    fullName?: string
+    email?: string
+    primaryCampus?: { id: string; campusCode: string; campusName: string } | null
+  } | null
   rolePermissions?: any[]
 }
 
@@ -128,12 +136,34 @@ export function PhanCongMamNonClient({
   const [yearId, setYearId] = useState(defaultYear?.id || "")
 
   // ─── Periods ───
-  const [periods, setPeriods] = useState<any[]>(() => {
-    return initialPeriods.map(p => ({
+  const isSystemWide =
+    userRole === "ADMIN" ||
+    userRole === "SUPER_ADMIN" ||
+    ["KTDBCL", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "BAN_DHCM", "TB_DHCM", "BGH", "BAN_GIAM_HIEU"].includes(userRole)
+
+  const filterBatchesByCampus = useCallback((list: any[]) => {
+    const activeOnly = (list || []).map((p: any) => ({
       ...p,
       batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
     }))
-  })
+    const allowedIds = currentUser?.campusIds || []
+    if (isSystemWide || allowedIds.length === 0) return activeOnly
+    return activeOnly.map((p: any) => ({
+      ...p,
+      batches: (p.batches || []).filter((b: any) => {
+        if (!b.campusId) {
+          return allowedIds.some((id: string) => {
+            const campus = campuses.find((c: any) => c.id === id)
+            if (!campus) return false
+            return (b.name || "").includes(campus.campusCode) || (b.name || "").includes(campus.campusName)
+          })
+        }
+        return allowedIds.includes(b.campusId)
+      })
+    }))
+  }, [isSystemWide, currentUser, campuses])
+
+  const [periods, setPeriods] = useState<any[]>(() => filterBatchesByCampus(initialPeriods))
   const [pLoading, setPLoading] = useState(false)
 
   const fetchPeriods = useCallback(async () => {
@@ -143,13 +173,10 @@ export function PhanCongMamNonClient({
       const r = await fetch(`/api/preschool-input-assessments?academicYearId=${yearId}`)
       if (r.ok) {
         const data = await r.json()
-        setPeriods(data.map((p: any) => ({
-          ...p,
-          batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
-        })))
+        setPeriods(filterBatchesByCampus(data))
       }
     } finally { setPLoading(false) }
-  }, [yearId])
+  }, [yearId, filterBatchesByCampus])
 
   useEffect(() => { fetchPeriods() }, [fetchPeriods])
 
@@ -166,6 +193,11 @@ export function PhanCongMamNonClient({
   const [aSaving, setASaving] = useState(false)
   const [aNotifyingId, setANotifyingId] = useState<string | null>(null)
   const [aNotifyingAll, setANotifyingAll] = useState(false)
+  const [emailConfirmState, setEmailConfirmState] = useState<{
+    open: boolean
+    mode: "SINGLE" | "BULK"
+    targetAssignment?: any
+  }>({ open: false, mode: "BULK" })
 
   // Auto-set default period when available (ưu tiên tham số URL ?periodId=...&batchId=...)
   useEffect(() => {
@@ -573,15 +605,26 @@ export function PhanCongMamNonClient({
     finally { setANotifyingId(null) }
   }
 
-  const sendAllNotifications = async () => {
+  const sendAllNotifications = async (selectedAssignmentIds?: string[]) => {
     if (!canUpdate) return
     if (assignments.length === 0) return notify("Không có giáo viên nào được phân công để gửi thông báo", "err")
+    if (Array.isArray(selectedAssignmentIds) && selectedAssignmentIds.length === 0) {
+      return notify("Vui lòng chọn ít nhất 1 giáo viên để gửi email", "err")
+    }
     setANotifyingAll(true)
     try {
       const res = await fetch("/api/preschool-input-assessment-assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "NOTIFY_ALL", periodId: aPeriodId, batchId: aBatchId, grade: aGrades })
+        body: JSON.stringify({
+          action: "NOTIFY_ALL",
+          periodId: aPeriodId,
+          batchId: aBatchId,
+          grade: aGrades,
+          ...(Array.isArray(selectedAssignmentIds) && selectedAssignmentIds.length > 0
+            ? { assignmentIds: selectedAssignmentIds }
+            : {})
+        })
       })
       if (res.ok) {
         const result = await res.json()
@@ -592,6 +635,17 @@ export function PhanCongMamNonClient({
       } else { notify("Lỗi kết nối", "err") }
     } catch { notify("Lỗi gửi thông báo", "err") }
     finally { setANotifyingAll(false) }
+  }
+
+  const openSingleEmailConfirm = (assign: any) => {
+    if (!canUpdate || !assign) return
+    setEmailConfirmState({ open: true, mode: "SINGLE", targetAssignment: assign })
+  }
+
+  const openBulkEmailConfirm = () => {
+    if (!canUpdate) return
+    if (assignments.length === 0) return notify("Không có giáo viên nào được phân công để gửi thông báo", "err")
+    setEmailConfirmState({ open: true, mode: "BULK" })
   }
 
   const deleteAssignment = async (id: string, teacherName: string) => {
@@ -1308,7 +1362,7 @@ export function PhanCongMamNonClient({
 
           <button 
             type="button"
-            onClick={sendAllNotifications} 
+            onClick={openBulkEmailConfirm} 
             disabled={aNotifyingAll || assignments.length === 0 || !canUpdate || !aPeriodId}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl text-white bg-[#00736E] hover:bg-[#005854] active:scale-[0.99] transition-all shadow-2xs disabled:opacity-40 cursor-pointer"
           >
@@ -1413,9 +1467,9 @@ export function PhanCongMamNonClient({
                         <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
-                            onClick={() => sendTeacherNotification(assign.id, tName)}
+                            onClick={() => openSingleEmailConfirm(assign)}
                             disabled={isNotifying || !canUpdate}
-                            title="Gửi email thông báo phân công"
+                            title="Kiểm tra & gửi email thông báo phân công"
                             className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
                           >
                             {isNotifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
@@ -1439,6 +1493,78 @@ export function PhanCongMamNonClient({
           </div>
         )}
       </div>
+
+      {/* Modal Cảnh báo & Xác nhận Gửi Email Phân công Mầm non */}
+      {(() => {
+        const rawCampus =
+          currentUser?.primaryCampus?.campusName ||
+          currentUser?.primaryCampus?.campusCode ||
+          ""
+        const cleanCampus = rawCampus.replace(/^cơ\s*sở\s*/i, "").trim()
+        const senderLabel = cleanCampus
+          ? `Giáo vụ cơ sở ${cleanCampus}${currentUser?.fullName ? ` (${currentUser.fullName})` : ""}`
+          : `Giáo vụ cơ sở${currentUser?.fullName ? ` (${currentUser.fullName})` : ""}`
+        const subjectPrefix = cleanCampus ? `[SSM - ${cleanCampus}]` : "[SSM]"
+        return (
+      <EmailSendConfirmModal
+        open={emailConfirmState.open}
+        onClose={() => setEmailConfirmState({ open: false, mode: "BULK" })}
+        loading={aNotifyingAll || Boolean(aNotifyingId)}
+        mode={emailConfirmState.mode}
+        periodName={periods.find((p: any) => p.id === aPeriodId)?.name || "Kỳ khảo sát Mầm non"}
+        senderSummary={senderLabel}
+        subjectPreview={`${subjectPrefix} Phân công Khảo sát Năng lực Đầu vào Mầm non`}
+        ccHint={
+          currentUser?.email
+            ? `ktdbcl@skylineschool.edu.vn, Giáo vụ cơ sở & ${currentUser.email}`
+            : "ktdbcl@skylineschool.edu.vn & Giáo vụ cơ sở"
+        }
+        batchLabel={
+          emailConfirmState.mode === "SINGLE"
+            ? emailConfirmState.targetAssignment?.batch?.name || "Tất cả đợt"
+            : aBatchId && aBatchId !== "all"
+            ? periods
+                .find((p: any) => p.id === aPeriodId)
+                ?.batches?.find((b: any) => b.id === aBatchId)?.name || "Đợt đã chọn"
+            : "Tất cả các đợt (Toàn kỳ)"
+        }
+        isAllBatches={
+          emailConfirmState.mode === "BULK" && (!aBatchId || aBatchId === "all")
+        }
+        recipients={(() => {
+          const sourceList =
+            emailConfirmState.mode === "SINGLE"
+              ? emailConfirmState.targetAssignment
+                ? [emailConfirmState.targetAssignment]
+                : []
+              : assignments
+          return sourceList.map((assign: any): EmailConfirmRecipient => {
+            const t = teachers.find((teach) => teach.user?.id === assign.userId)
+            const tName = t?.teacherName || assign.user?.fullName || "Chưa rõ danh tính"
+            const tEmail = t?.email || assign.user?.email || ""
+            return {
+              key: assign.id,
+              teacherName: tName,
+              teacherEmail: tEmail,
+              batchName: assign.batch?.name || "Tất cả đợt",
+              scopeLabel: assign.grade || "Mầm non",
+            }
+          })
+        })()}
+        onConfirm={async (selectedKeys) => {
+          if (emailConfirmState.mode === "SINGLE" && emailConfirmState.targetAssignment) {
+            const assign = emailConfirmState.targetAssignment
+            const t = teachers.find((teach) => teach.user?.id === assign.userId)
+            const tName = t?.teacherName || assign.user?.fullName || ""
+            await sendTeacherNotification(assign.id, tName)
+          } else {
+            await sendAllNotifications(selectedKeys)
+          }
+          setEmailConfirmState({ open: false, mode: "BULK" })
+        }}
+      />
+        )
+      })()}
     </div>
   )
 }

@@ -1,23 +1,12 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { auth } from "@/lib/auth"
-import { getStudentSession } from "@/lib/student-session"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
-import { createClient } from "@libsql/client/web"
+import {
+  resolveAdvisoryCaller,
+  verifyStudentRelationship
+} from "@/lib/advisory/rbac-guard"
 
 export const dynamic = "force-dynamic"
-
-let rawUrl = (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || "").trim()
-if (!rawUrl || (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://") && !rawUrl.startsWith("libsql://"))) {
-  rawUrl = "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
-}
-const TURSO_URL = rawUrl.replace(/^libsql:\/\//, 'https://')
-const TURSO_TOKEN = (process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw").trim()
-
-const libsqlClient = createClient({
-  url: TURSO_URL,
-  authToken: TURSO_TOKEN,
-})
 
 function jsonResponse(data: any, status = 200) {
   const res = NextResponse.json(data, { status })
@@ -51,9 +40,9 @@ async function ensureUnlockTableExists() {
     "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );`
   try {
-    await libsqlClient.execute(ddl)
+    await prisma.$executeRawUnsafe(ddl)
   } catch (e) {
-    console.error("DDL StudentGoalUnlock error:", e)
+    // Table already exists or mock environment
   }
 }
 
@@ -78,18 +67,22 @@ function calculateSprintProgress(startDate: Date | string, endDate: Date | strin
 
 export async function GET(req: Request) {
   try {
-    const session = await auth()
-    const studentSess = await getStudentSession()
-    if (!session && !studentSess) {
+    const caller = await resolveAdvisoryCaller()
+    if (!caller.authenticated) {
       return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
     const { searchParams } = new URL(req.url)
-    const targetStudentId = searchParams.get("studentId") || studentSess?.studentId
+    const targetStudentId = searchParams.get("studentId") || caller.studentId
     let academicYearId = searchParams.get("academicYearId") || ""
 
     if (!targetStudentId) {
       return jsonResponse({ error: "Thiếu studentId" }, 400)
+    }
+
+    const rel = await verifyStudentRelationship(caller, targetStudentId)
+    if (!rel.allowed) {
+      return jsonResponse({ error: rel.reason || "Bạn không có quyền xem dữ liệu mở khóa mục tiêu của học sinh này" }, 403)
     }
 
     if (!academicYearId) {
@@ -101,7 +94,7 @@ export async function GET(req: Request) {
 
     const unlocks = await prisma.studentGoalUnlock.findMany({
       where: {
-        studentId: targetStudentId,
+        studentId: { in: rel.allStudentIds.length > 0 ? rel.allStudentIds : [targetStudentId] },
         ...(academicYearId ? { academicYearId } : {})
       },
       include: {
@@ -132,16 +125,15 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await auth()
-    const studentSess = await getStudentSession()
-    if (!session && !studentSess) {
+    const caller = await resolveAdvisoryCaller()
+    if (!caller.authenticated) {
       return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
     await ensureUnlockTableExists()
 
     const body = await req.json()
-    const studentId = body.studentId || studentSess?.studentId
+    const studentId = body.studentId || caller.studentId
     let academicYearId = body.academicYearId || ""
     const {
       goalId,
@@ -158,6 +150,11 @@ export async function POST(req: Request) {
 
     if (!studentId) {
       return jsonResponse({ error: "Thiếu studentId" }, 400)
+    }
+
+    const rel = await verifyStudentRelationship(caller, studentId)
+    if (!rel.allowed) {
+      return jsonResponse({ error: rel.reason || "Bạn không có quyền khởi tạo đợt mở khóa mục tiêu cho học sinh này" }, 403)
     }
 
     if (!goalId || !currentState || !selectedKey || !sevenDayAction?.trim()) {
@@ -235,9 +232,8 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
-    const session = await auth()
-    const studentSess = await getStudentSession()
-    if (!session && !studentSess) {
+    const caller = await resolveAdvisoryCaller()
+    if (!caller.authenticated) {
       return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
@@ -246,6 +242,19 @@ export async function PUT(req: Request) {
 
     if (!id) {
       return jsonResponse({ error: "Thiếu ID đợt mở khóa" }, 400)
+    }
+
+    const existingUnlock = await prisma.studentGoalUnlock.findUnique({
+      where: { id },
+      select: { id: true, studentId: true }
+    })
+    if (!existingUnlock) {
+      return jsonResponse({ error: "Không tìm thấy đợt mở khóa mục tiêu" }, 404)
+    }
+
+    const rel = await verifyStudentRelationship(caller, existingUnlock.studentId)
+    if (!rel.allowed) {
+      return jsonResponse({ error: rel.reason || "Bạn không có quyền cập nhật đợt mở khóa mục tiêu của học sinh này" }, 403)
     }
 
     const updateData: any = {}
@@ -258,6 +267,9 @@ export async function PUT(req: Request) {
     }
 
     if (teacherSupportNotes !== undefined) {
+      if (caller.actorRole !== "TEACHER" && caller.actorRole !== "ADMIN") {
+        return jsonResponse({ error: "Chỉ Giáo viên hoặc Quản trị viên mới được cập nhật ghi chú hỗ trợ" }, 403)
+      }
       updateData.teacherSupportNotes = teacherSupportNotes
     }
 

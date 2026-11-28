@@ -22,7 +22,7 @@ export default async function AdminActivityResultPage() {
   const userRole = (user?.role || "").toUpperCase().trim()
   const ALLOWED_ROLES = [
     "ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", 
-    "KT_DBCL", "KTDBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU", 
+    "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU", 
     "BGH", "QLCM", "TTCM", "TEACHER", 
     "CTHS", "CONG_TAC_HOC_SINH", "BAN_CTHS"
   ]

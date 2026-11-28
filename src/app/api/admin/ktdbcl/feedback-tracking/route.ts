@@ -2,11 +2,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { isGradeMatching } from "@/app/admin/ktdbcl/diem-nhan-xet/grade-utils"
+import { requireStaffSession } from "@/lib/security-guard"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   try {
+    const ctx = await requireStaffSession()
+    if (!ctx) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+    }
     const { searchParams } = new URL(request.url)
     const academicYearId = searchParams.get("academicYearId") || ""
     const evaluationPeriod = searchParams.get("evaluationPeriod") || "KSĐN" // "ALL", "KSĐN", "GK1", etc.
@@ -57,7 +62,11 @@ export async function GET(request: Request) {
     if (targetYearId) {
       classWhere.academicYearId = targetYearId
     }
-    if (campusId && campusId !== "ALL") {
+    if (ctx.isGDCS && ctx.allowedCampusIds.length > 0) {
+      classWhere.campusId = campusId && campusId !== "ALL" && ctx.allowedCampusIds.includes(campusId)
+        ? campusId
+        : { in: ctx.allowedCampusIds }
+    } else if (campusId && campusId !== "ALL") {
       classWhere.campusId = campusId
     }
 

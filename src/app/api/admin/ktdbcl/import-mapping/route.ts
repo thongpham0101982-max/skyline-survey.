@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
-const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
+const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
 
 async function checkAuth() {
   const session = await auth()
@@ -122,7 +122,6 @@ export async function GET(req: NextRequest) {
 
     const [mappings, students] = await Promise.all([
       prisma.studentCodeMapping.findMany({
-        where: { academicYearId },
         orderBy: { createdAt: "desc" }
       }),
       prisma.student.findMany({
@@ -134,10 +133,36 @@ export async function GET(req: NextRequest) {
       })
     ])
 
-    const studentMap = new Map<string, any>(students.map(s => [s.studentCode.toUpperCase(), s]))
+    const studentMap = new Map<string, any>()
+    for (const s of students) {
+      const codeUpper = String(s.studentCode || "").trim().toUpperCase()
+      if (!codeUpper) continue
+      studentMap.set(codeUpper, s)
+      const stripped = codeUpper.replace(/^0+/, "")
+      if (stripped && !studentMap.has(stripped)) {
+        studentMap.set(stripped, s)
+      }
+    }
 
-    const joinedMappings = mappings.map(m => {
-      const student = studentMap.get(m.databaseCode.toUpperCase())
+    // Gom theo từng học sinh (ưu tiên bản ghi của academicYearId hiện tại, kế thừa bản ghi năm trước nếu học sinh đang học ở academicYearId hiện tại)
+    const chosenMappingsByCode = new Map<string, any>()
+    for (const m of mappings) {
+      const rawDb = String(m.databaseCode || "").trim().toUpperCase()
+      const matchedStudent = studentMap.get(rawDb)
+      const canonicalDb = matchedStudent ? String(matchedStudent.studentCode).trim().toUpperCase() : rawDb
+      if (m.academicYearId !== academicYearId && !matchedStudent) continue
+
+      const existing = chosenMappingsByCode.get(canonicalDb)
+      if (!existing || (existing.academicYearId !== academicYearId && m.academicYearId === academicYearId)) {
+        chosenMappingsByCode.set(canonicalDb, {
+          ...m,
+          databaseCode: matchedStudent ? matchedStudent.studentCode : m.databaseCode,
+        })
+      }
+    }
+
+    const joinedMappings = Array.from(chosenMappingsByCode.values()).map(m => {
+      const student = studentMap.get(String(m.databaseCode || "").trim().toUpperCase())
       return {
         id: m.id,
         databaseCode: m.databaseCode,

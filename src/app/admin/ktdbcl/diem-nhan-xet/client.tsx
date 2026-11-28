@@ -46,6 +46,8 @@ import {
 import { BulkExportModal } from "./bulk-export-modal"
 import { TermGradesTab } from "./term-grades-tab"
 import { VnEduImportModal } from "./VnEduImportModal"
+import { GradebookLockModal } from "./GradebookLockModal"
+import { ParentGradeVisibilityModal, ParentGradeVisibilityPanel } from "./ParentGradeVisibilityModal"
 import { updateStudentVnEduCodeAction } from "@/app/admin/classes/[id]/actions"
 import { VnEduConfigMatrixPanel } from "./VnEduConfigMatrixPanel"
 import { VnEduPrimaryGradebook } from "@/components/grading/VnEduPrimaryGradebook"
@@ -104,6 +106,7 @@ interface Props {
   activeYearId: string
   classes: any[]
   subjects: any[]
+  teachers?: any[]
   campuses?: any[]
   isSubjectScoped?: boolean
 }
@@ -131,13 +134,23 @@ export function DiemNhanXetAdminClient(props: Props) {
   )
 }
 
-function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, subjects, campuses = [], isSubjectScoped = false }: Props) {
+function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, subjects, teachers = [], campuses = [], isSubjectScoped = false }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const [localClasses, setLocalClasses] = useState<any[]>(classes)
+  useEffect(() => {
+    setLocalClasses(classes)
+  }, [classes])
+  const [isAssignTeacherModalOpen, setIsAssignTeacherModalOpen] = useState(false)
+  const [assignHomeroomTeacherId, setAssignHomeroomTeacherId] = useState("")
+  const [assignSubjectTeacherMap, setAssignSubjectTeacherMap] = useState<Record<string, string>>({})
+  const [assignTeacherSearch, setAssignTeacherSearch] = useState("")
+  const [savingAssignment, setSavingAssignment] = useState(false)
+
   // Common filters
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
-  const [activeTab, setActiveTab] = useState<"config" | "grades" | "term-grades">("config")
+  const [activeTab, setActiveTab] = useState<"config" | "grades" | "term-grades" | "parent-visibility">("config")
 
   // --- TAB 1: Config Form states ---
   const [localSubjects, setLocalSubjects] = useState<any[]>(subjects)
@@ -998,6 +1011,35 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
     setActiveTab("grades")
   }
 
+  const buildInternalColumnsJson = (
+    names: string[],
+    types: string[],
+    maxScores: number[]
+  ) =>
+    names.map((label, i) => ({
+      key: `col${i}`,
+      label: label || `Cột ${i + 1}`,
+      group: "TX",
+      attempt: i + 1,
+      dataType: "NUMBER",
+      scaleCode: types[i] || "SCORE_10",
+      maxScore: maxScores[i] || 10,
+      allowedCodes: null,
+      required: false,
+      inputMode: "INPUT",
+      order: i + 1,
+      aliases: [label || `Cột ${i + 1}`, `Cột ${i + 1}`],
+    }))
+
+  const adaptCompositeNameForPeriod = (baseName: string, targetPeriod: string) => {
+    const trimmed = String(baseName || "").trim()
+    if (!trimmed) return "Điểm thành phần"
+    if (/^(KT\s*)(GK1|CK1|GK2|CK2)$/i.test(trimmed)) {
+      return trimmed.replace(/(GK1|CK1|GK2|CK2)$/i, targetPeriod)
+    }
+    return trimmed
+  }
+
   const handleSaveConfig = async () => {
     try {
       setSavingConfig(true)
@@ -1025,6 +1067,8 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           ? [configSubjectId]
           : []
 
+      const columnsJson = buildInternalColumnsJson(columnNames, finalColumnTypes, finalMaxScores)
+
       const payload: Record<string, any> = {
         academicYearId: selectedYearId,
         grade: configGrade,
@@ -1034,6 +1078,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
         columnNames,
         columnTypes: finalColumnTypes,
         columnMaxScores: finalMaxScores,
+        columnsJson,
         hasCompositeColumn: hasComposite,
         compositeColumnName,
         hasRemarkColumn: hasRemark,
@@ -1058,10 +1103,51 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
       })
       const data = await res.json()
       if (data.success) {
+        let totalRecalculated = Number(data.recalculatedCount || 0)
+        // Đồng bộ tự động sang "1. Sổ điểm theo vnEdu" (VNEDU) đối với các môn Bộ GD&ĐT (như Tiếng Anh Khối 4, 5...) ở các kỳ học kỳ (GK1, CK1, GK2, CK2)
+        const isMainPeriod = ["GK1", "CK1", "GK2", "CK2"].includes(String(configPeriod || "").toUpperCase().trim())
+        if (isMainPeriod && targetSubjIds.length > 0) {
+          const moetSubjIds = targetSubjIds.filter(id => {
+            const sObj = localSubjects.find(s => s.id === id)
+            return sObj && getSubjectCurriculumGroup(sObj) === "MOET"
+          })
+          if (moetSubjIds.length > 0) {
+            const vnEduSyncPayload: Record<string, any> = {
+              ...payload,
+              program: "ALL",
+              configType: "VNEDU",
+              hasRatingColumn: false,
+              confirmationStatus: "CONFIRMED",
+              changeNote: `Đồng bộ tự động từ 2. Đánh giá nội bộ Sky-Line (${configGrade} • ${configPeriod})`,
+            }
+            delete vnEduSyncPayload.subjectId
+            delete vnEduSyncPayload.batchSubjectIds
+            if (moetSubjIds.length > 1) {
+              vnEduSyncPayload.batchSubjectIds = moetSubjIds
+            } else {
+              vnEduSyncPayload.subjectId = moetSubjIds[0]
+            }
+            const syncRes = await fetch("/api/admin/ktdbcl/grade-configs", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(vnEduSyncPayload),
+            }).catch(() => null)
+            if (syncRes) {
+              const syncData = await syncRes.json().catch(() => null)
+              if (syncData?.recalculatedCount) {
+                totalRecalculated += Number(syncData.recalculatedCount)
+              }
+            }
+          }
+        }
+
+        const recalcSuffix = totalRecalculated > 0
+          ? `\nĐã tự động tính lại điểm tổng hợp cho ${totalRecalculated} lượt điểm học sinh hiện có.`
+          : ""
         alert(
-          targetSubjIds.length > 1
+          (targetSubjIds.length > 1
             ? `Đã lưu cấu hình Đánh giá nội bộ Sky-Line cho ${targetSubjIds.length} môn (${configGrade} • ${configPeriod})!`
-            : "Đã lưu cấu hình cột điểm và công thức Đánh giá nội bộ Sky-Line thành công!"
+            : "Đã lưu cấu hình cột điểm và công thức Đánh giá nội bộ Sky-Line thành công!") + recalcSuffix
         )
         fetchConfigs()
       } else {
@@ -1098,8 +1184,15 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           ? [configSubjectId]
           : []
 
+      const columnsJson = buildInternalColumnsJson(columnNames, finalColumnTypes, finalMaxScores)
+      const moetSubjIds = targetSubjIds.filter(id => {
+        const sObj = localSubjects.find(s => s.id === id)
+        return sObj && getSubjectCurriculumGroup(sObj) === "MOET"
+      })
+
       const periodsToSave = ["GK1", "CK1", "GK2", "CK2"]
       for (const pCode of periodsToSave) {
+        const periodCompositeName = adaptCompositeNameForPeriod(compositeColumnName, pCode)
         const payload: Record<string, any> = {
           academicYearId: selectedYearId,
           grade: configGrade,
@@ -1109,8 +1202,9 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           columnNames,
           columnTypes: finalColumnTypes,
           columnMaxScores: finalMaxScores,
+          columnsJson,
           hasCompositeColumn: hasComposite,
-          compositeColumnName,
+          compositeColumnName: periodCompositeName,
           hasRemarkColumn: hasRemark,
           formula: formulaType,
           formulaCustom,
@@ -1129,6 +1223,30 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         })
+
+        // Đồng bộ tự động sang "1. Sổ điểm theo vnEdu" (VNEDU) cho các môn Bộ GD&ĐT (như Tiếng Anh Khối 4, 5...)
+        if (moetSubjIds.length > 0) {
+          const vnEduSyncPayload: Record<string, any> = {
+            ...payload,
+            program: "ALL",
+            configType: "VNEDU",
+            hasRatingColumn: false,
+            confirmationStatus: "CONFIRMED",
+            changeNote: `Đồng bộ tự động 4 kỳ từ 2. Đánh giá nội bộ Sky-Line (${configGrade} • ${pCode})`,
+          }
+          delete vnEduSyncPayload.subjectId
+          delete vnEduSyncPayload.batchSubjectIds
+          if (moetSubjIds.length > 1) {
+            vnEduSyncPayload.batchSubjectIds = moetSubjIds
+          } else {
+            vnEduSyncPayload.subjectId = moetSubjIds[0]
+          }
+          await fetch("/api/admin/ktdbcl/grade-configs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(vnEduSyncPayload),
+          }).catch(() => {})
+        }
       }
       alert(
         `Đã lưu & áp dụng cấu hình Sổ điểm riêng đồng loạt cho cả 4 kỳ (GK1, CK1, GK2, CK2) — ${configGrade}!`
@@ -1473,6 +1591,31 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
     entries: {}
   })
 
+  // Lock / Unlock state for Sổ điểm
+  const [isSheetLocked, setIsSheetLocked] = useState(false)
+  const [isPeriodLocked, setIsPeriodLocked] = useState(false)
+  const [sheetLockInfo, setSheetLockInfo] = useState<any>(null)
+  const [togglingLock, setTogglingLock] = useState(false)
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false)
+  const [isParentVisibilityModalOpen, setIsParentVisibilityModalOpen] = useState(false)
+  const [parentLockedPeriods, setParentLockedPeriods] = useState<string[]>(["GK1", "GK2"])
+
+  useEffect(() => {
+    if (!selectedYearId) return
+    let active = true
+    fetch(`/api/admin/ktdbcl/parent-grade-visibility?academicYearId=${encodeURIComponent(selectedYearId)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (active && data?.success && Array.isArray(data.lockedPeriods)) {
+          setParentLockedPeriods(data.lockedPeriods)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [selectedYearId])
+
   const fetchGradeSheet = async () => {
     if (!selectedClassId || !selectedSubjectId) return
     try {
@@ -1504,6 +1647,9 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           students: data.students || [],
           entries: entryDict
         })
+        setIsSheetLocked(Boolean(data.isLocked))
+        setIsPeriodLocked(Boolean(data.isPeriodLocked))
+        setSheetLockInfo(data.lockInfo || null)
         if (data.assignedTeacher) {
           setAssignedTeacher(data.assignedTeacher)
         }
@@ -1512,6 +1658,54 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
       console.error("Lỗi tải bảng điểm:", err)
     } finally {
       setLoadingSheet(false)
+    }
+  }
+
+  const handleToggleCurrentSheetLock = async () => {
+    if (!selectedYearId || !selectedClassId || !selectedSubjectId || !selectedPeriod) {
+      alert("Vui lòng chọn đầy đủ Lớp, Môn học và Kỳ khảo sát trước khi khóa/mở điểm.")
+      return
+    }
+    const nextLocked = !isSheetLocked
+    const clsName = classes.find(c => c.id === selectedClassId)?.className || ""
+    const subName = subjects.find(s => s.id === selectedSubjectId)?.subjectName || ""
+    const periodName = EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod
+    const actionLabel = nextLocked ? "Khóa điểm" : "Mở điểm"
+
+    if (
+      !window.confirm(
+        `Xác nhận ${actionLabel} lớp "${clsName}" - môn "${subName}" (${periodName})?`
+      )
+    ) {
+      return
+    }
+
+    try {
+      setTogglingLock(true)
+      const res = await fetch("/api/admin/ktdbcl/gradebook-lock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          academicYearId: selectedYearId,
+          evaluationPeriod: selectedPeriod,
+          classId: selectedClassId,
+          subjectId: selectedSubjectId,
+          isLocked: nextLocked,
+          lockReason: nextLocked
+            ? `Khóa điểm lớp ${clsName} - ${subName} (${selectedPeriod})`
+            : `Mở điểm lớp ${clsName} - ${subName} (${selectedPeriod})`,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        await fetchGradeSheet()
+      } else {
+        alert("Lỗi: " + (data.error || "Không thể cập nhật trạng thái khóa điểm"))
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + (err?.message || "Không thể cập nhật trạng thái khóa điểm"))
+    } finally {
+      setTogglingLock(false)
     }
   }
 
@@ -1860,6 +2054,246 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
     XLSX.writeFile(workbook, fileName)
   }
 
+  // Tải File Mẫu Excel chuẩn vnEdu (có sẵn danh sách học sinh của lớp & đúng cấu trúc cột theo Thông tư 27 / Thông tư 22 / Nội bộ)
+  const handleDownloadTemplateExcel = (multiSubjectForClass = false) => {
+    const currentClass = localClasses.find(c => c.id === selectedClassId) || classes.find(c => c.id === selectedClassId)
+    const currentSubject = localSubjects.find(s => s.id === selectedSubjectId) || subjects.find(s => s.id === selectedSubjectId)
+    const isPrimary = isPrimaryGrade(currentClass?.grade || currentClass?.className || selectedGradeFilter)
+    const workbook = XLSX.utils.book_new()
+
+    const targetSubjects = multiSubjectForClass
+      ? (availableSubjectsForTab2.length > 0 ? availableSubjectsForTab2 : localSubjects.slice(0, 12))
+      : currentSubject
+      ? [currentSubject]
+      : []
+
+    if (targetSubjects.length === 0) {
+      alert("Vui lòng chọn môn học trước khi tải file mẫu!")
+      return
+    }
+
+    targetSubjects.forEach((subj) => {
+      let headers: string[] = []
+      let buildRow: (st: any, idx: number) => any[]
+
+      if (isPrimary && effectiveGradebookSourceMode === "VNEDU") {
+        const meta = getPrimaryPeriodMeta(selectedPeriod)
+        const hasKt = shouldPrimarySubjectHaveKtColumn(
+          subj?.subjectName || subj?.subjectCode,
+          currentClass?.grade || currentClass?.className,
+          selectedPeriod
+        )
+        headers = ["STT", "Mã HS", "Mã vnEdu", "Họ và tên đệm", "Tên", "Ngày sinh", meta.remarkColumnLabel]
+        if (hasKt) headers.push(meta.ktColumnLabel)
+        headers.push(meta.xlColumnLabel)
+
+        buildRow = (st, idx) => {
+          const cleanName = String(st.studentName || "").trim().replace(/\s+/g, " ")
+          const lastSpace = cleanName.lastIndexOf(" ")
+          const lastName = lastSpace === -1 ? "" : cleanName.slice(0, lastSpace)
+          const firstName = lastSpace === -1 ? cleanName : cleanName.slice(lastSpace + 1)
+          const row: any[] = [
+            idx + 1,
+            st.studentCode || "",
+            st.vnEduCode || st.studentCode || "",
+            lastName,
+            firstName,
+            formatDob(st.dateOfBirth),
+            ""
+          ]
+          if (hasKt) row.push("")
+          row.push("")
+          return row
+        }
+      } else if (!isPrimary && effectiveGradebookSourceMode === "VNEDU") {
+        if (selectedPeriod === "CN") {
+          headers = [
+            "STT",
+            "Mã HS",
+            "Mã vnEdu",
+            "Họ và tên đệm",
+            "Tên",
+            "Ngày sinh",
+            "TBHK 1",
+            "TBHK 2",
+            "TB Cả năm",
+            "Điểm thi lại",
+            "Ghi chú",
+            "Nhận xét"
+          ]
+          buildRow = (st, idx) => {
+            const cleanName = String(st.studentName || "").trim().replace(/\s+/g, " ")
+            const lastSpace = cleanName.lastIndexOf(" ")
+            const lastName = lastSpace === -1 ? "" : cleanName.slice(0, lastSpace)
+            const firstName = lastSpace === -1 ? cleanName : cleanName.slice(lastSpace + 1)
+            return [
+              idx + 1,
+              st.studentCode || "",
+              st.vnEduCode || st.studentCode || "",
+              lastName,
+              firstName,
+              formatDob(st.dateOfBirth),
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ]
+          }
+        } else {
+          headers = [
+            "STT",
+            "Mã HS",
+            "Mã vnEdu",
+            "Họ và tên đệm",
+            "Tên",
+            "Ngày sinh",
+            "TX1",
+            "TX2",
+            "TX3",
+            "TX4",
+            "ĐĐGgk",
+            "ĐĐGck",
+            "ĐTBmhk",
+            "Nhận xét"
+          ]
+          buildRow = (st, idx) => {
+            const cleanName = String(st.studentName || "").trim().replace(/\s+/g, " ")
+            const lastSpace = cleanName.lastIndexOf(" ")
+            const lastName = lastSpace === -1 ? "" : cleanName.slice(0, lastSpace)
+            const firstName = lastSpace === -1 ? cleanName : cleanName.slice(lastSpace + 1)
+            return [
+              idx + 1,
+              st.studentCode || "",
+              st.vnEduCode || st.studentCode || "",
+              lastName,
+              firstName,
+              formatDob(st.dateOfBirth),
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ]
+          }
+        }
+      } else {
+        const compColTitle = gradeSheetData.config?.compositeColumnName || "Điểm thành phần"
+        headers = ["STT", "Mã HS", "Mã vnEdu", "Họ tên", "Môn học", ...activeColNames]
+        if (gradeSheetData.config?.hasCompositeColumn !== false) headers.push(compColTitle)
+        if (gradeSheetData.config?.hasRemarkColumn !== false) headers.push("Nhận xét")
+
+        buildRow = (st, idx) => {
+          const row: any[] = [
+            idx + 1,
+            st.studentCode || "",
+            st.vnEduCode || st.studentCode || "",
+            st.studentName || "",
+            subj?.subjectName || ""
+          ]
+          activeColNames.forEach(() => row.push(""))
+          if (gradeSheetData.config?.hasCompositeColumn !== false) row.push("")
+          if (gradeSheetData.config?.hasRemarkColumn !== false) row.push("")
+          return row
+        }
+      }
+
+      const rows = gradeSheetData.students.map((st, idx) => buildRow(st, idx))
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+      const safeSheetName = String(subj?.subjectName || subj?.subjectCode || "MonHoc")
+        .replace(/[/\\?*[\]:]/g, "_")
+        .slice(0, 31)
+      XLSX.utils.book_append_sheet(workbook, ws, safeSheetName)
+    })
+
+    const fileName = multiSubjectForClass
+      ? `Mau_Import_vnEdu_DaMon_${currentClass?.className || "Lop"}_${selectedPeriod}.xlsx`
+      : `Mau_Import_vnEdu_${currentClass?.className || "Lop"}_${currentSubject?.subjectCode || "Mon"}_${selectedPeriod}.xlsx`
+    XLSX.writeFile(workbook, fileName)
+  }
+
+  // Mở modal Phân công giảng dạy (GVCN & GVBM) cho lớp đang chọn
+  const handleOpenAssignTeacherModal = () => {
+    const currentClass = localClasses.find(c => c.id === selectedClassId) || classes.find(c => c.id === selectedClassId)
+    if (!currentClass) return
+    setAssignHomeroomTeacherId(currentClass.homeroomTeacherId || "")
+    const map: Record<string, string> = {}
+    if (Array.isArray(currentClass.teachingAssignments)) {
+      currentClass.teachingAssignments.forEach((ta: any) => {
+        if (ta.subjectId && ta.teacherId) {
+          map[ta.subjectId] = ta.teacherId
+        }
+      })
+    }
+    setAssignSubjectTeacherMap(map)
+    setAssignTeacherSearch("")
+    setIsAssignTeacherModalOpen(true)
+  }
+
+  const handleSaveClassAssignments = async () => {
+    if (!selectedClassId) return
+    try {
+      setSavingAssignment(true)
+      const assignmentsPayload = Object.entries(assignSubjectTeacherMap).map(([subId, tId]) => ({
+        subjectId: subId,
+        teacherId: tId || ""
+      }))
+      const res = await fetch("/api/admin/ktdbcl/term-grades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "assignTeacher",
+          classId: selectedClassId,
+          academicYearId: selectedYearId,
+          homeroomTeacherId: assignHomeroomTeacherId || null,
+          assignments: assignmentsPayload
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        const updatedAssignments = assignmentsPayload
+          .filter(a => Boolean(a.teacherId))
+          .map((a, idx) => {
+            const tObj = teachers.find((t: any) => t.id === a.teacherId)
+            return {
+              id: `local_ta_${idx}`,
+              subjectId: a.subjectId,
+              teacherId: a.teacherId,
+              teacher: tObj ? { id: tObj.id, teacherName: tObj.teacherName, teacherCode: tObj.teacherCode } : null
+            }
+          })
+        setLocalClasses(prev =>
+          prev.map(c =>
+            c.id === selectedClassId
+              ? {
+                  ...c,
+                  homeroomTeacherId: assignHomeroomTeacherId || null,
+                  teachingAssignments: updatedAssignments
+                }
+              : c
+          )
+        )
+        const currentSubjTeacherId = assignSubjectTeacherMap[selectedSubjectId]
+        const currentSubjTeacher = teachers.find((t: any) => t.id === currentSubjTeacherId)
+        if (currentSubjTeacher) {
+          setAssignedTeacher(currentSubjTeacher.teacherName)
+        }
+        setIsAssignTeacherModalOpen(false)
+        fetchGradeSheet()
+      } else {
+        alert("Lỗi: " + (data.error || "Không thể lưu phân công giảng dạy"))
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message)
+    } finally {
+      setSavingAssignment(false)
+    }
+  }
+
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -2101,16 +2535,39 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
               <Award className="w-4 h-4" />
               3. Điểm tổng kết (Tiểu học, THCS & THPT)
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("parent-visibility")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "parent-visibility"
+                  ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
+                  : "text-white/80 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Lock className="w-4 h-4" />
+              <span>4. Khóa điểm xem PHHS</span>
+              {parentLockedPeriods.length > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold tabular-nums ${
+                  activeTab === "parent-visibility"
+                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                    : "bg-amber-400/25 border border-amber-300/40 text-amber-100"
+                }`}>
+                  {parentLockedPeriods.length}/5
+                </span>
+              )}
+            </button>
           </div>
 
-          <Link
-            href="/admin/ktdbcl/phan-tich-thkq"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/20 text-white transition-all backdrop-blur-sm shadow-sm hover:scale-105 group"
-          >
-            <BarChart3 className="w-4 h-4 text-teal-300 group-hover:scale-110 transition-transform" />
-            <span>Phân tích THKQ & Tiến độ</span>
-            <ChevronRight className="w-3.5 h-3.5 text-white/70 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/ktdbcl/phan-tich-thkq"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/20 text-white transition-all backdrop-blur-sm shadow-sm hover:scale-105 group"
+            >
+              <BarChart3 className="w-4 h-4 text-teal-300 group-hover:scale-110 transition-transform" />
+              <span>Phân tích THKQ & Tiến độ</span>
+              <ChevronRight className="w-3.5 h-3.5 text-white/70 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -3594,7 +4051,15 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => setFormulaCustom(prev => (prev ? `${prev} + ` : "") + `[col${idx}]`)}
+                            onClick={() =>
+                              setFormulaCustom(prev => {
+                                const trimmed = prev.trim()
+                                if (!trimmed || /[\(\+\-\*\/]$/.test(trimmed)) {
+                                  return `${trimmed ? `${trimmed} ` : ""}[col${idx}]`
+                                }
+                                return `${trimmed} + [col${idx}]`
+                              })
+                            }
                             className="px-2 py-1 bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 rounded-md text-[11px] font-bold transition-all"
                           >
                             + [{name || `Cột ${idx + 1}`}]
@@ -3921,6 +4386,26 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
 
                   <button
                     type="button"
+                    onClick={() => handleDownloadTemplateExcel(false)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F0FDFA] text-[#003B3A] border border-teal-300 hover:bg-teal-100 rounded-xl text-xs font-semibold transition-all"
+                    title="Tải file Excel mẫu chuẩn vnEdu có sẵn danh sách học sinh lớp này để nhập điểm offline"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[#008B85]" />
+                    Tải File Mẫu vnEdu
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenAssignTeacherModal}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-[#003B3A] border border-[#E2E8F0] hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all"
+                    title="Phân công Giáo viên Chủ nhiệm (GVCN) và Giáo viên Bộ môn (GVBM) cho lớp đang chọn"
+                  >
+                    <Users className="w-3.5 h-3.5 text-[#008B85]" />
+                    Phân công GV ({assignedTeacher && assignedTeacher !== "Chưa phân công" ? assignedTeacher : "Gán GV"})
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setIsCommentModalOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 rounded-xl text-xs font-bold transition-all shadow-sm"
                     title="Tự động điền nhận xét sư phạm theo mức điểm"
@@ -3974,12 +4459,37 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                   <button
                     type="button"
                     onClick={handleSaveGradeSheet}
-                    disabled={savingEntries}
-                    title={`Lưu sổ điểm ${savePeriodMeta.full}`}
+                    disabled={savingEntries || isSheetLocked}
+                    title={isSheetLocked ? "Sổ điểm đang bị khóa — vui lòng Mở điểm trước khi lưu" : `Lưu sổ điểm ${savePeriodMeta.full}`}
                     className="flex items-center gap-1.5 px-4 py-1.5 bg-[#003B3A] hover:bg-[#002B2A] text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
                   >
                     {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-[#5EEAD4]" />}
                     {savingEntries ? "Đang lưu..." : `Lưu điểm ${savePeriodMeta.short}`}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleToggleCurrentSheetLock}
+                    disabled={togglingLock || !selectedClassId || !selectedSubjectId}
+                    title={isSheetLocked ? "Mở khóa sổ điểm lớp và môn đang xem" : "Khóa sổ điểm lớp và môn đang xem"}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all disabled:opacity-50 ${
+                      isSheetLocked
+                        ? "bg-emerald-50 text-[#059669] border-emerald-200 hover:bg-emerald-100"
+                        : "bg-rose-50 text-[#E11D48] border-rose-200 hover:bg-rose-100"
+                    }`}
+                  >
+                    {isSheetLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                    {togglingLock ? "Đang xử lý..." : isSheetLocked ? "Mở điểm" : "Khóa điểm"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsLockModalOpen(true)}
+                    title="Quản lý khóa/mở điểm toàn kỳ hoặc hàng loạt nhiều lớp, môn học"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-[#E2E8F0] rounded-xl text-xs font-semibold transition-all"
+                  >
+                    <Sliders className="w-3.5 h-3.5 text-[#003B3A]" />
+                    Quản lý khóa
                   </button>
                 </div>
               </div>
@@ -4240,6 +4750,41 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
               </div>
             </div>
 
+            {/* THANH TRẠNG THÁI KHÓA SỔ ĐIỂM */}
+            {isSheetLocked && (
+              <div className="bg-rose-50/90 border border-rose-200 border-l-4 border-l-[#E11D48] rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <Lock className="w-4 h-4 text-[#E11D48] mt-0.5 shrink-0" />
+                  <div className="space-y-0.5">
+                    <div className="font-semibold text-[#E11D48]">
+                      {sheetLockInfo?.classId === "ALL" && sheetLockInfo?.subjectId === "ALL"
+                        ? `Sổ điểm đang bị khóa theo chế độ Khóa toàn kỳ (${selectedPeriod})`
+                        : `Sổ điểm lớp ${currentClass?.className || ""} - môn ${currentSubject?.subjectName || ""} (${selectedPeriod}) đang bị khóa`}
+                    </div>
+                    <div className="text-slate-600 text-[11px]">
+                      {sheetLockInfo?.lockedBy ? `Khóa bởi ${sheetLockInfo.lockedBy}` : "Đã khóa bởi Quản trị viên"}
+                      {sheetLockInfo?.lockedAt
+                        ? ` • ${new Date(sheetLockInfo.lockedAt).toLocaleString("vi-VN")}`
+                        : ""}
+                      {sheetLockInfo?.lockReason ? ` • Lý do: ${sheetLockInfo.lockReason}` : ""}
+                      {" — Giáo viên và quản trị viên hiện ở chế độ chỉ xem cho đến khi mở điểm."}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={togglingLock}
+                    onClick={handleToggleCurrentSheetLock}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#059669] hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                  >
+                    <Unlock className="w-3.5 h-3.5" />
+                    {togglingLock ? "Đang mở..." : "Mở điểm ngay"}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {effectiveGradebookSourceMode === "VNEDU" &&
             isPrimaryGrade(currentClass?.grade || currentClass?.className || selectedGradeFilter) &&
             gradeSheetData.config?.configType !== "INTERNAL" &&
@@ -4264,6 +4809,9 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                   onChangePeriod={(nextP) => setSelectedPeriod(nextP)}
                   teacherName={assignedTeacher || "Chưa phân công"}
                   roleLabel="Quản trị viên (Bạn có quyền nhập điểm)"
+                  isLocked={isSheetLocked}
+                  onToggleLock={handleToggleCurrentSheetLock}
+                  togglingLock={togglingLock}
                   config={gradeSheetData.config}
                   students={gradeSheetData.students}
                   entries={gradeSheetData.entries}
@@ -4306,6 +4854,9 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                   onChangePeriod={(nextP) => setSelectedPeriod(nextP)}
                   teacherName={assignedTeacher || "Chưa phân công"}
                   roleLabel="Bạn có quyền Admin"
+                  isLocked={isSheetLocked}
+                  onToggleLock={handleToggleCurrentSheetLock}
+                  togglingLock={togglingLock}
                   config={gradeSheetData.config}
                   students={gradeSheetData.students}
                   entries={gradeSheetData.entries}
@@ -4553,12 +5104,13 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                                   )}
                                   <input
                                     type="text"
+                                    disabled={isSheetLocked}
                                     data-row={sIdx}
                                     data-col={cIdx}
                                     value={val}
                                     onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
                                     onKeyDown={(e) => handleScoreKeyDown(e, sIdx, cIdx)}
-                                    className={`w-14 text-center border rounded-lg py-1 text-xs font-black outline-none transition-all ${
+                                    className={`w-14 text-center border rounded-lg py-1 text-xs font-black outline-none transition-all disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed ${
                                       isOver
                                         ? "border-rose-500 bg-rose-100 text-rose-700 ring-2 ring-rose-300 font-black"
                                         : isLow
@@ -4568,7 +5120,7 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                                         : "border-slate-200 text-slate-800 focus:ring-2 focus:ring-[#005B58] focus:border-[#005B58]"
                                     }`}
                                     placeholder="-"
-                                    title={isOver ? `Vượt quá tối đa ${colMax}đ` : `Tối đa ${colMax}đ`}
+                                    title={isSheetLocked ? "Sổ điểm đã khóa" : isOver ? `Vượt quá tối đa ${colMax}đ` : `Tối đa ${colMax}đ`}
                                   />
                                 </td>
                               )
@@ -4594,10 +5146,11 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                               <td className="py-1.5 px-2 text-center border-r border-slate-200">
                                 <input
                                   type="text"
+                                  disabled={isSheetLocked}
                                   value={entry.ratingValue ?? ""}
                                   onChange={(e) => handleRatingChange(st.id, e.target.value)}
                                   placeholder="Đ / T / H..."
-                                  className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-bold text-[#003B3A] focus:ring-2 focus:ring-[#005B58] outline-none"
+                                  className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-bold text-[#003B3A] focus:ring-2 focus:ring-[#005B58] outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                                 />
                               </td>
                             )}
@@ -4607,9 +5160,10 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
                               <td className="py-1.5 px-3">
                                 <input
                                   type="text"
+                                  disabled={isSheetLocked}
                                   value={entry.remark ?? ""}
                                   onChange={(e) => handleRemarkChange(st.id, e.target.value)}
-                                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none"
+                                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                                   placeholder="Nhập nhận xét..."
                                 />
                               </td>
@@ -4749,8 +5303,9 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
       {activeTab === "term-grades" && (
         <TermGradesTab
           campuses={campuses}
-          classes={classes}
-          subjects={subjects}
+          classes={localClasses}
+          subjects={localSubjects}
+          teachers={teachers}
           academicYears={academicYears}
           activeYearId={selectedYearId}
           isSubjectScoped={isSubjectScoped}
@@ -4758,6 +5313,186 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
           onExternalSemesterChange={setTermTabSemester}
         />
       )}
+
+      {/* MODAL: PHÂN CÔNG GIẢNG DẠY (GVCN & GVBM) TRỰC TIẾP TRONG SỔ ĐIỂM */}
+      {isAssignTeacherModalOpen && (() => {
+        const currentClass = localClasses.find(c => c.id === selectedClassId) || classes.find(c => c.id === selectedClassId)
+        const subjectsToAssign = availableSubjectsForTab2.length > 0
+          ? Array.from(new Map([...availableSubjectsForTab2, ...localSubjects.filter(s => getSubjectCurriculumGroup(s) === "MOET")].map(s => [s.id, s])).values())
+          : localSubjects.filter(s => getSubjectCurriculumGroup(s) !== "KSDV")
+        const filteredSubjsForAssign = subjectsToAssign.filter(s => {
+          if (!assignTeacherSearch.trim()) return true
+          const kw = assignTeacherSearch.toLowerCase().trim()
+          return (
+            String(s.subjectName || "").toLowerCase().includes(kw) ||
+            String(s.subjectCode || "").toLowerCase().includes(kw)
+          )
+        })
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+              <div className="bg-[#003B3A] text-white px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-[#5EEAD4]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold">
+                      Phân công Giảng dạy &amp; Quản lý Sổ điểm — Lớp {currentClass?.className || ""}
+                    </h3>
+                    <p className="text-xs text-teal-100">
+                      Gán Giáo viên Chủ nhiệm (GVCN) và Giáo viên Bộ môn (GVBM) có quyền nhập điểm, nhận xét và đánh giá xếp loại
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAssignTeacherModalOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-teal-100 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-5 overflow-y-auto flex-1 space-y-4 text-xs">
+                {/* 1. Giáo viên Chủ nhiệm */}
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="font-bold text-[#003B3A] text-xs">1. Giáo viên Chủ nhiệm (GVCN)</div>
+                    <div className="text-[11px] text-slate-500">
+                      GVCN phụ trách tổng hợp kết quả học tập, rèn luyện, năng lực &amp; phẩm chất của lớp {currentClass?.className || ""}
+                    </div>
+                  </div>
+                  <select
+                    value={assignHomeroomTeacherId}
+                    onChange={(e) => setAssignHomeroomTeacherId(e.target.value)}
+                    className="min-w-[240px] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-[#003B3A] bg-white outline-none focus:border-[#008B85]"
+                  >
+                    <option value="">-- Chưa phân công GVCN --</option>
+                    {teachers.map((t: any) => (
+                      <option key={t.id} value={t.id}>
+                        {t.teacherName} ({t.teacherCode})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 2. Giáo viên Bộ môn */}
+                <div className="space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="font-bold text-[#003B3A] text-xs">
+                      2. Phân công Giáo viên Bộ môn (GVBM) theo từng môn học ({Object.values(assignSubjectTeacherMap).filter(Boolean).length} môn đã gán)
+                    </div>
+                    <div className="relative w-56">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
+                      <input
+                        type="text"
+                        value={assignTeacherSearch}
+                        onChange={(e) => setAssignTeacherSearch(e.target.value)}
+                        placeholder="Tìm môn học..."
+                        className="w-full border border-[#E2E8F0] rounded-xl pl-8 pr-3 py-1.5 text-xs bg-[#F8FAFC] outline-none focus:border-[#008B85]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden max-h-[360px] overflow-y-auto">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead className="bg-[#003B3A] text-white sticky top-0 z-10">
+                        <tr className="text-[11px] font-semibold">
+                          <th className="py-2.5 px-3">Môn học</th>
+                          <th className="py-2.5 px-3 text-teal-100">Mã môn</th>
+                          <th className="py-2.5 px-3 text-[#5EEAD4]">Giáo viên Bộ môn phụ trách</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
+                        {filteredSubjsForAssign.map((subj) => {
+                          const assignedTid = assignSubjectTeacherMap[subj.id] || ""
+                          const isCurrentSubj = subj.id === selectedSubjectId
+                          return (
+                            <tr
+                              key={subj.id}
+                              className={`transition-colors align-middle ${
+                                isCurrentSubj ? "bg-[#F0FDFA]/80" : "hover:bg-[#F8FAFC]"
+                              }`}
+                            >
+                              <td className="py-2.5 px-3 font-semibold text-slate-900">
+                                <div className="flex items-center gap-1.5">
+                                  <span>{subj.subjectName}</span>
+                                  {isCurrentSubj && (
+                                    <span className="px-1.5 py-0.2 rounded bg-[#003B3A] text-white text-[9.5px] font-semibold">
+                                      Đang xem
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
+                                {subj.subjectCode}
+                              </td>
+                              <td className="py-2 px-3">
+                                <select
+                                  value={assignedTid}
+                                  onChange={(e) =>
+                                    setAssignSubjectTeacherMap(prev => ({
+                                      ...prev,
+                                      [subj.id]: e.target.value
+                                    }))
+                                  }
+                                  className={`w-full border rounded-xl px-2.5 py-1.5 text-xs font-medium outline-none ${
+                                    assignedTid
+                                      ? "bg-[#F0FDFA] border-[#008B85] text-[#003B3A] font-semibold"
+                                      : "bg-white border-[#E2E8F0] text-slate-500"
+                                  }`}
+                                >
+                                  <option value="">-- Chưa phân công --</option>
+                                  {teachers.map((t: any) => (
+                                    <option key={t.id} value={t.id}>
+                                      {t.teacherName} ({t.teacherCode})
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-3.5 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadTemplateExcel(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-teal-300 bg-[#F0FDFA] text-[#003B3A] text-xs font-semibold hover:bg-teal-100"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#008B85]" />
+                  Tải File Mẫu Excel tất cả môn của lớp
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAssignTeacherModalOpen(false)}
+                    className="px-4 py-2 rounded-xl border border-[#E2E8F0] bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savingAssignment}
+                    onClick={handleSaveClassAssignments}
+                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#002b2a] text-white text-xs font-semibold shadow-xs disabled:opacity-50"
+                  >
+                    {savingAssignment ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-[#5EEAD4]" />}
+                    Lưu Phân công Giảng dạy
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     
       {/* MODAL: GÁN MÔN THEO KỲ KHẢO SÁT & THIẾT LẬP CẤU HÌNH HÀNG LOẠT */}
       {isBatchAssignOpen && (
@@ -5078,6 +5813,43 @@ function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, sub
         saving={savingEntries}
         onClose={() => setIsSavePeriodModalOpen(false)}
         onConfirm={(val) => executeSaveGradeSheet(val)}
+      />
+
+      <GradebookLockModal
+        open={isLockModalOpen}
+        onClose={() => setIsLockModalOpen(false)}
+        academicYearId={selectedYearId}
+        academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || ""}
+        evaluationPeriod={selectedPeriod}
+        evaluationPeriodLabel={EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod}
+        campuses={campuses}
+        classes={classes}
+        subjects={subjects}
+        initialCampusId={selectedCampusId}
+        initialGrade={selectedGradeFilter}
+        initialClassId={selectedClassId}
+        initialSubjectId={selectedSubjectId}
+        onLockChanged={() => {
+          fetchGradeSheet()
+        }}
+      />
+
+      {/* TAB 4: PARENT GRADE VISIBILITY (KHÓA ĐIỂM XEM PHHS) */}
+      {activeTab === "parent-visibility" && (
+        <ParentGradeVisibilityPanel
+          embedded
+          academicYearId={selectedYearId}
+          academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || ""}
+          onChanged={(locked) => setParentLockedPeriods(locked)}
+        />
+      )}
+
+      <ParentGradeVisibilityModal
+        open={isParentVisibilityModalOpen}
+        onClose={() => setIsParentVisibilityModalOpen(false)}
+        academicYearId={selectedYearId}
+        academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || ""}
+        onChanged={(locked) => setParentLockedPeriods(locked)}
       />
 
     </div>

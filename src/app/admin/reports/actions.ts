@@ -1,9 +1,11 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { requireStaffSession, requireAdminOrLeadershipSession, writeSecurityAuditLog } from "@/lib/security-guard"
 
 export async function getSurveyPeriodTrackingAction(periodId: string) {
-  if (!periodId) return null
+  const ctx = await requireStaffSession()
+  if (!ctx || !periodId) return null
 
   const period = await prisma.surveyPeriod.findUnique({
     where: { id: periodId }
@@ -79,6 +81,8 @@ export async function getSurveyPeriodTrackingAction(periodId: string) {
 }
 
 export async function sendClassReminderAction(classId: string, surveyPeriodId: string) {
+  const ctx = await requireStaffSession()
+  if (!ctx) return { success: false, error: "Unauthorized" }
   const pendingForms = await prisma.surveyForm.findMany({
     where: { classId, surveyPeriodId, status: { notIn: ["COMPLETED", "SUBMITTED"] } },
     include: {
@@ -134,6 +138,8 @@ export async function sendClassReminderAction(classId: string, surveyPeriodId: s
 
 export async function resetSurveyFormAction(formId: string) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await prisma.surveyResponse.deleteMany({
       where: { formId }
     })
@@ -160,6 +166,8 @@ export async function resetSurveyFormAction(formId: string) {
 
 export async function getFormResponsesAction(formId: string) {
   try {
+    const ctx = await requireStaffSession()
+    if (!ctx) return { responses: [], form: null }
     const responses = await prisma.surveyResponse.findMany({
       where: { formId },
       include: {
@@ -181,6 +189,8 @@ export async function getFormResponsesAction(formId: string) {
 
 export async function deleteMultipleFormResponsesAction(formIds: string[]) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await prisma.surveyResponse.deleteMany({ where: { formId: { in: formIds } } })
     await prisma.surveyForm.updateMany({
       where: { id: { in: formIds } },
@@ -200,6 +210,8 @@ export async function deleteMultipleFormResponsesAction(formIds: string[]) {
 }
 export async function deleteSurveyFormAction(formId: string) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     // Delete all responses first (cascade)
     await prisma.surveyResponse.deleteMany({ where: { formId } })
     // Delete the form itself
@@ -213,6 +225,8 @@ export async function deleteSurveyFormAction(formId: string) {
 }
 export async function deleteSurveyFormsByClassAction(classId: string) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     // Find all forms for the class
     const forms = await prisma.surveyForm.findMany({ where: { classId }, select: { id: true } })
     const formIds = forms.map(f => f.id)
@@ -348,6 +362,8 @@ export async function addStudentsToSurveyAction(studentIds: string[], periodId: 
 // Fully delete multiple survey forms (and their responses)
 export async function deleteMultipleSurveyFormsAction(formIds: string[]) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await prisma.surveyResponse.deleteMany({ where: { formId: { in: formIds } } })
     await prisma.surveyForm.deleteMany({ where: { id: { in: formIds } } })
     revalidatePath('/admin/reports')
@@ -360,8 +376,14 @@ export async function deleteMultipleSurveyFormsAction(formIds: string[]) {
 
 export async function exportReportExcelAction(periodId: string, campusId?: string, level?: string) {
   try {
+    const ctx = await requireStaffSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     const where: any = { surveyPeriodId: periodId }
-    if (campusId) where.campusId = campusId
+    if (ctx.isGDCS && ctx.allowedCampusIds.length > 0) {
+      where.campusId = campusId && ctx.allowedCampusIds.includes(campusId) ? campusId : { in: ctx.allowedCampusIds }
+    } else if (campusId) {
+      where.campusId = campusId
+    }
     
     // Level is on Class, so we need to filter classes first if level is provided
     if (level) {

@@ -53,7 +53,8 @@ export const K12_EDUCATION_SYSTEMS: {
   { code: "HNS", name: "Hệ Hội nhập S", group: "HNS" },
   { code: "HNG", name: "Hệ Hội nhập Global", group: "INTL" },
   { code: "HNC", name: "Hệ Hội nhập Compass", group: "INTL" },
-  { code: "SB", name: "Hệ Song bằng", group: "INTL" }
+  { code: "SB", name: "Hệ Song bằng", group: "INTL" },
+  { code: "CHUYEN_HE_S_I", name: "Chuyển hệ từ Hệ S sang Hệ I", group: "INTL" }
 ]
 
 /**
@@ -119,6 +120,23 @@ export function resolveStudentK12SystemCode(student?: RegulationStudentInput | n
   const sysField1 = String(student?.surveyFormType || "").trim()
   const sysField2 = String(student?.surveySystem || "").trim()
   const combinedUpper = `${sysField1} ${sysField2}`.toUpperCase()
+
+  if (
+    combinedUpper.includes("CHUYEN_HE_S_I") ||
+    combinedUpper.includes("CHUYỂN HỆ") ||
+    combinedUpper.includes("CHUYEN HE")
+  ) {
+    return "CHUYEN_HE_S_I"
+  }
+
+  const transferSignals = `${student?.admissionCriteria || ""} ${student?.targetType || ""} ${student?.period?.name || ""} ${student?.batch?.name || ""}`.toLowerCase()
+  if (
+    transferSignals.includes("chuyển hệ") ||
+    transferSignals.includes("chuyen he") ||
+    transferSignals.includes("chuyen_he")
+  ) {
+    return "CHUYEN_HE_S_I"
+  }
 
   if (combinedUpper.includes("HNC") || combinedUpper.includes("COMPASS")) return "HNC"
   if (combinedUpper.includes("HNG") || combinedUpper.includes("GLOBAL")) return "HNG"
@@ -192,6 +210,9 @@ export function isIntlSystemCode(code?: string | null): boolean {
     c === "HNC" ||
     c === "HE_I" ||
     c === "INTL" ||
+    c === "CHUYEN_HE_S_I" ||
+    c.includes("CHUYEN_HE") ||
+    c.includes("CHUYỂN HỆ") ||
     c.includes("GLOBAL") ||
     c.includes("COMPASS") ||
     c.includes("SONG BẰNG") ||
@@ -1082,11 +1103,36 @@ export const SKYLINE_2026_INTL_RULES: AdmissionRegulationRule[] = [
   })
 ]
 
-export const CURRENT_REGULATION_SCHEMA_VERSION = 4
+export const SKYLINE_2026_TRANSFER_RULES: AdmissionRegulationRule[] = [
+  createStandardRule({
+    id: "transfer-s-to-i-k1-k12",
+    name: "Học sinh nội bộ Chuyển hệ từ Hệ S sang Hệ I • Khối 1–12",
+    grades: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+    systems: ["CHUYEN_HE_S_I"],
+    intakeTimings: ["DAU_NAM", "HK1", "HK2", "THEO_DOT", "CA_NAM"],
+    exemptionMode: "ALWAYS_TEST",
+    scoreBasisType: "KHONG_XET_DIEM",
+    scoreThreshold: 0,
+    transcriptBasis: "Học sinh nội bộ Sky-Line đang học Hệ S đăng ký chuyển sang Hệ I (HNG / SB / HNC).",
+    minAcademicRatings: ["Hoàn thành xuất sắc", "Hoàn thành tốt", "Hoàn thành", "Xuất sắc", "Giỏi", "Tốt", "Khá", "Đạt"],
+    minConductRatings: ["Tốt", "Khá", "Đạt"],
+    mandatorySubjects: ["EPT", "ESL (vấn đáp)"],
+    conditionalSubjects: [],
+    orientationSubjects: [],
+    onRequestSubjects: ["Tâm lý"],
+    directAdmissionSubjects: ["EPT", "ESL (vấn đáp)"],
+    intlCertKeywords: "Cambridge, Starters, Movers, Flyers, KET, PET, IELTS, TOEFL",
+    regulationNote:
+      "Học sinh nội bộ chuyển hệ từ Hệ S sang Hệ I: Khảo sát bắt buộc EPT trên hệ thống LMS và Vấn đáp ESL (miễn khảo sát lại Toán, Tiếng Việt/Ngữ văn).",
+    isActive: true
+  })
+]
+
+export const CURRENT_REGULATION_SCHEMA_VERSION = 5
 
 export const DEFAULT_ADMISSION_REGULATIONS: AdmissionRegulationConfig = {
   schemaVersion: CURRENT_REGULATION_SCHEMA_VERSION,
-  documentTitle: "Quy chế Tuyển sinh Phổ thông Sky-Line 2026 (Hệ Hội nhập S & Hệ Global, Compass, Song bằng)",
+  documentTitle: "Quy chế Tuyển sinh Phổ thông Sky-Line 2026 (Hệ Hội nhập S, Hệ Global/Compass/Song bằng & Chuyển hệ S → I)",
   effectiveYear: "2026-2027",
   generalNotes:
     "1. Quy chế Tuyển sinh Hệ Hội nhập S (HNS) — Khảo sát Tiếng Anh (vấn đáp) xuyên suốt Khối 1–12:\n" +
@@ -1101,10 +1147,12 @@ export const DEFAULT_ADMISSION_REGULATIONS: AdmissionRegulationConfig = {
     "   - Lớp 2–5 & Lớp 6 (Đầu năm / HK1): Khảo sát Tiếng Việt (nếu điểm KTĐK < 8,0), EPT trên LMS và Vấn đáp ESL.\n" +
     "   - Lớp 6 (HK2), Lớp 7–10, Lớp 11 (Đầu năm / HK1): Khảo sát Ngữ văn (nếu điểm TBM < 6,5), EPT trên LMS và Vấn đáp ESL.\n" +
     "   - Lớp 11 (HK2) & Lớp 12: Yêu cầu học lực Khá trở lên; khảo sát Ngữ văn, EPT trên LMS và Vấn đáp ESL (không miễn theo điểm).\n\n" +
-    "3. Phỏng vấn định hướng & Tâm lý:\n" +
+    "3. Quy chế Học sinh nội bộ Chuyển hệ từ Hệ S sang Hệ I (CHUYEN_HE_S_I):\n" +
+    "   - Áp dụng Khối 1–12: Khảo sát bắt buộc EPT trên hệ thống LMS và Vấn đáp ESL (miễn khảo sát lại Toán, Tiếng Việt/Ngữ văn).\n\n" +
+    "4. Phỏng vấn định hướng & Tâm lý:\n" +
     "   - Phân công thực hiện phỏng vấn định hướng đầu vào cho học sinh theo lưu đồ.\n" +
     "   - Phỏng vấn tâm lý: Thực hiện khi có đề nghị của giáo viên phỏng vấn định hướng.",
-  rules: [...SKYLINE_2026_HNS_RULES, ...SKYLINE_2026_INTL_RULES]
+  rules: [...SKYLINE_2026_HNS_RULES, ...SKYLINE_2026_INTL_RULES, ...SKYLINE_2026_TRANSFER_RULES]
 }
 
 const LEGACY_V1_RULE_IDS = new Set(["rule-k1", "rule-k2-k5", "rule-k6-k9", "rule-k10-k12"])
@@ -1242,11 +1290,18 @@ export function parseAdmissionRegulationConfig(configsOrJson?: unknown): Admissi
         return DEFAULT_ADMISSION_REGULATIONS
       }
 
+      const hasTransferRule = sanitizedRules.some(r =>
+        (r.systems || []).some(s => String(s).toUpperCase() === "CHUYEN_HE_S_I")
+      )
+      const finalRules = hasTransferRule
+        ? sanitizedRules
+        : [...sanitizedRules, ...SKYLINE_2026_TRANSFER_RULES]
+
       return {
         ...DEFAULT_ADMISSION_REGULATIONS,
         ...rawObj,
         schemaVersion: Math.max(ver, CURRENT_REGULATION_SCHEMA_VERSION),
-        rules: sanitizedRules
+        rules: finalRules
       }
     }
   } catch {
@@ -1297,11 +1352,14 @@ export function findMatchingRegulationRule(
     })
     .map(r => sanitizeRegulationRule(r))
 
+  const isTransferSystem = sysUpper === "CHUYEN_HE_S_I"
   const matchesSystem = (r: AdmissionRegulationRule) => {
     if (!r.systems || r.systems.length === 0) return false
     const rSys = r.systems.map(s => s.toUpperCase())
+    if (isTransferSystem) return rSys.includes("CHUYEN_HE_S_I")
+    if (rSys.includes("CHUYEN_HE_S_I") && rSys.length === 1) return false
     if (rSys.includes(sysUpper)) return true
-    if (isIntlSystem && rSys.some(s => isIntlSystemCode(s))) {
+    if (isIntlSystem && rSys.some(s => isIntlSystemCode(s) && s !== "CHUYEN_HE_S_I")) {
       return true
     }
     return false
@@ -1332,8 +1390,12 @@ export function findMatchingRegulationRule(
   )
   if (wildcardTimingMatch) return wildcardTimingMatch
 
-  // 3. Fallback về bộ quy chế chuẩn 2026 theo đúng nhóm Hệ (tách biệt tuyệt đối Hệ I và Hệ S)
-  const fallbackPool = isIntlSystem ? SKYLINE_2026_INTL_RULES : SKYLINE_2026_HNS_RULES
+  // 3. Fallback về bộ quy chế chuẩn 2026 theo đúng nhóm Hệ (tách biệt tuyệt đối Chuyển hệ S → I, Hệ I và Hệ S)
+  const fallbackPool = isTransferSystem
+    ? SKYLINE_2026_TRANSFER_RULES
+    : isIntlSystem
+    ? SKYLINE_2026_INTL_RULES
+    : SKYLINE_2026_HNS_RULES
   return (
     fallbackPool.find(r => r.grades.includes(gradeStr) && matchesExactTiming(r)) ||
     fallbackPool.find(r => r.grades.includes(gradeStr) && matchesWildcardTiming(r)) ||

@@ -491,7 +491,7 @@ export function EntranceOperationsDashboardClient({
     try {
       const wb = XLSX.utils.book_new();
 
-      // Sheet 1: Tổng hợp Tiến độ theo Đợt & 8 Công đoạn
+      // Sheet 1: Tổng hợp Tiến độ theo Đợt & 7 Công đoạn
       const stageSheetRows = stageChartData.map((s: any) => ({
         "Công đoạn": s.shortName,
         "Tên đầy đủ": s.name,
@@ -1446,7 +1446,7 @@ export function EntranceOperationsDashboardClient({
           </div>
         </div>
 
-        {/* ─── TAB 1: BẢNG TIẾN ĐỘ HỌC SINH (MA TRẬN 8 CÔNG ĐOẠN) ─── */}
+        {/* ─── TAB 1: BẢNG TIẾN ĐỘ HỌC SINH (MA TRẬN 7 CÔNG ĐOẠN) ─── */}
         {activeTab === "students" && (
           <div className="p-4 space-y-4">
             {/* Thanh thao tác hàng loạt khi chọn Học sinh */}
@@ -1923,7 +1923,7 @@ export function EntranceOperationsDashboardClient({
                             <div className="flex items-center justify-center gap-1">
                               <button
                                 onClick={() => setDetailStudent(stu)}
-                                title="Xem chi tiết 8 công đoạn & lịch sử xác nhận"
+                                title="Xem chi tiết 7 công đoạn & lịch sử xác nhận"
                                 className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-[#00736E] text-[10.5px] font-bold transition-colors cursor-pointer"
                               >
                                 Chi tiết
@@ -2107,75 +2107,102 @@ export function EntranceOperationsDashboardClient({
                               Bàn giao TV: {b.stageSummaries.find((s) => s.stageNumber === 7)?.completedCount || 0}/{b.totalStudents}
                             </div>
                           </td>
-                          <td className="p-3 text-center space-y-1.5">
-                            {canUserConfirmStage(
-                              currentUser.role,
-                              3,
-                              currentUser.isSuperAdmin
-                            ) && (
-                              <button
-                                onClick={() =>
-                                  openActionModal({
-                                    title: `Xác nhận hoàn thành phân công & Công bố GV - ${b.batchName}`,
-                                    targetScope: "BATCH",
-                                    action: "CONFIRM",
-                                    stageNumber: 3,
+                          <td className="p-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {canUserConfirmStage(
+                                currentUser.role,
+                                3,
+                                currentUser.isSuperAdmin
+                              ) ? (
+                                <button
+                                  onClick={() =>
+                                    openActionModal({
+                                      title: `Xác nhận hoàn thành phân công & Công bố GV - ${b.batchName}`,
+                                      targetScope: "BATCH",
+                                      action: "CONFIRM",
+                                      stageNumber: 3,
+                                      periodId: b.periodId,
+                                      batchId: b.id,
+                                      isPreschool: b.isPreschool,
+                                      studentSummary: `Đợt ${b.batchName} (${b.totalStudents} HS)`,
+                                    })
+                                  }
+                                  className="px-2.5 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#005B58] text-white text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap"
+                                >
+                                  {stg3?.confirmedAt
+                                    ? "✓ Đã XN phân công"
+                                    : "Xác nhận phân công"}
+                                </button>
+                              ) : (
+                                <Link
+                                  href={resolveEntranceStageHref({
+                                    stageNumber: 6,
+                                    isPreschool: b.isPreschool,
+                                    userRole: currentUser.role,
+                                    isSuperAdmin: currentUser.isSuperAdmin,
                                     periodId: b.periodId,
                                     batchId: b.id,
-                                    isPreschool: b.isPreschool,
-                                    studentSummary: `Đợt ${b.batchName} (${b.totalStudents} HS)`,
-                                  })
-                                }
-                                className="w-full px-2.5 py-1.5 rounded-xl bg-[#00A19A] hover:bg-[#008f89] text-white text-[10.5px] font-bold transition-all cursor-pointer"
-                              >
-                                {stg3?.confirmedAt
-                                  ? "✓ Đã XN Phân công (Cập nhật)"
-                                  : "Xác nhận Phân công (B3)"}
-                              </button>
-                            )}
-                            <div className="flex items-center justify-center gap-1 flex-wrap">
-                              <Link
-                                href={resolveEntranceStageHref({
-                                  stageNumber: 3,
-                                  isPreschool: b.isPreschool,
-                                  userRole: currentUser.role,
-                                  isSuperAdmin: currentUser.isSuperAdmin,
-                                  periodId: b.periodId,
-                                  batchId: b.id,
-                                  campusCode: b.campusCode,
-                                })}
-                                className="px-2 py-1 rounded-lg border border-[#E2E8F0] text-slate-600 hover:bg-[#F8FAFC] hover:text-[#003B3A] text-[10.5px] font-semibold"
-                              >
-                                Phân công
-                              </Link>
-                              <Link
-                                href={resolveEntranceStageHref({
-                                  stageNumber: 6,
-                                  isPreschool: b.isPreschool,
-                                  userRole: currentUser.role,
-                                  isSuperAdmin: currentUser.isSuperAdmin,
-                                  periodId: b.periodId,
-                                  batchId: b.id,
-                                  campusCode: b.campusCode,
-                                })}
-                                className="px-2 py-1 rounded-lg border border-[#E2E8F0] text-slate-600 hover:bg-[#F8FAFC] hover:text-[#003B3A] text-[10.5px] font-semibold"
-                              >
-                                Xét duyệt
-                              </Link>
-                              <Link
-                                href={resolveEntranceStageHref({
-                                  stageNumber: 7,
-                                  isPreschool: b.isPreschool,
-                                  userRole: currentUser.role,
-                                  isSuperAdmin: currentUser.isSuperAdmin,
-                                  periodId: b.periodId,
-                                  batchId: b.id,
-                                  campusCode: b.campusCode,
-                                })}
-                                className="px-2 py-1 rounded-lg border border-[#E2E8F0] text-[#00736E] hover:bg-[#F0FDFA] text-[10.5px] font-semibold"
-                              >
-                                Văn bản
-                              </Link>
+                                    campusCode: b.campusCode,
+                                  })}
+                                  className="px-2.5 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#005B58] text-white text-[11px] font-semibold whitespace-nowrap"
+                                >
+                                  Xét duyệt kết quả
+                                </Link>
+                              )}
+
+                              <details className="relative inline-block text-left">
+                                <summary
+                                  aria-label={`Thao tác đợt khảo sát ${b.batchName}`}
+                                  className="list-none h-7 w-7 rounded-lg border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-slate-600 flex items-center justify-center font-bold cursor-pointer select-none"
+                                  title="Đi tới bước xử lý"
+                                >
+                                  ⋯
+                                </summary>
+                                <div className="absolute right-0 mt-1 w-44 bg-white border border-[#E2E8F0] rounded-xl shadow-lg py-1 z-30 text-left">
+                                  <Link
+                                    href={resolveEntranceStageHref({
+                                      stageNumber: 3,
+                                      isPreschool: b.isPreschool,
+                                      userRole: currentUser.role,
+                                      isSuperAdmin: currentUser.isSuperAdmin,
+                                      periodId: b.periodId,
+                                      batchId: b.id,
+                                      campusCode: b.campusCode,
+                                    })}
+                                    className="block px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC]"
+                                  >
+                                    Phân công giáo viên (B3)
+                                  </Link>
+                                  <Link
+                                    href={resolveEntranceStageHref({
+                                      stageNumber: 6,
+                                      isPreschool: b.isPreschool,
+                                      userRole: currentUser.role,
+                                      isSuperAdmin: currentUser.isSuperAdmin,
+                                      periodId: b.periodId,
+                                      batchId: b.id,
+                                      campusCode: b.campusCode,
+                                    })}
+                                    className="block px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-[#F8FAFC]"
+                                  >
+                                    Xét duyệt kết quả (B6)
+                                  </Link>
+                                  <Link
+                                    href={resolveEntranceStageHref({
+                                      stageNumber: 7,
+                                      isPreschool: b.isPreschool,
+                                      userRole: currentUser.role,
+                                      isSuperAdmin: currentUser.isSuperAdmin,
+                                      periodId: b.periodId,
+                                      batchId: b.id,
+                                      campusCode: b.campusCode,
+                                    })}
+                                    className="block px-3 py-1.5 text-xs font-medium text-[#00736E] hover:bg-[#F0FDFA]"
+                                  >
+                                    Xuất văn bản &amp; bàn giao (B7)
+                                  </Link>
+                                </div>
+                              </details>
                             </div>
                           </td>
                         </tr>
@@ -2583,7 +2610,7 @@ export function EntranceOperationsDashboardClient({
         )}
       </div>
 
-      {/* ─── MODAL CHI TIẾT 8 CÔNG ĐOẠN CỦA 1 HỌC SINH ─── */}
+      {/* ─── MODAL CHI TIẾT 7 CÔNG ĐOẠN CỦA 1 HỌC SINH ─── */}
       {detailStudent && (
         <div
           className="fixed inset-0 z-[400] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"

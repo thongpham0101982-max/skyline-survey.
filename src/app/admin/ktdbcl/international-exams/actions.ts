@@ -311,14 +311,16 @@ export async function getIntlExamsWorkspaceData(filters: IntlExamFilterInput = {
     return true;
   });
 
-  const grades = Array.from(
-    new Set<string>([
-      ...classesMatchingYearAndCampus
-        .map((c) => inferGradeFromClassName(c.className, c.grade))
-        .filter((g) => Boolean(g) && /^\d+$/.test(g)),
-      ...resultsMatchingYearAndCampus.map((r: any) => String(r.gradeSnapshot || '')).filter(Boolean),
-    ])
-  ).sort((a: string, b: string) => Number(a) - Number(b));
+  const gradesSource =
+    resultsMatchingYearAndCampus.length > 0
+      ? resultsMatchingYearAndCampus.map((r: any) => String(r.gradeSnapshot || '')).filter(Boolean)
+      : classesMatchingYearAndCampus
+          .map((c) => inferGradeFromClassName(c.className, c.grade))
+          .filter((g) => Boolean(g) && /^\d+$/.test(g));
+
+  const grades = Array.from(new Set<string>(gradesSource)).sort(
+    (a: string, b: string) => Number(a) - Number(b)
+  );
 
   const classesMatchingGrade = classesMatchingYearAndCampus.filter((c) => {
     if (filters.grade && filters.grade !== 'ALL') {
@@ -327,21 +329,32 @@ export async function getIntlExamsWorkspaceData(filters: IntlExamFilterInput = {
     return true;
   });
 
+  const resultClassesMatchingGrade = resultsMatchingYearAndCampus
+    .filter(
+      (r: any) =>
+        !filters.grade || filters.grade === 'ALL' || String(r.gradeSnapshot || '') === filters.grade
+    )
+    .map((r: any) => String(r.classNameSnapshot || ''))
+    .filter(Boolean);
+
   const classes = Array.from(
-    new Set<string>([
-      ...classesMatchingGrade.map((c) => c.className).filter(Boolean),
-      ...resultsMatchingYearAndCampus
-        .filter((r: any) => !filters.grade || filters.grade === 'ALL' || String(r.gradeSnapshot || '') === filters.grade)
-        .map((r: any) => String(r.classNameSnapshot || ''))
-        .filter(Boolean),
-    ])
+    new Set<string>(
+      resultClassesMatchingGrade.length > 0
+        ? resultClassesMatchingGrade
+        : classesMatchingGrade.map((c) => c.className).filter(Boolean)
+    )
   ).sort();
 
+  const resultEduSystems = resultsMatchingYearAndCampus
+    .map((r: any) => String(r.eduSystemSnapshot || ''))
+    .filter(Boolean);
+
   const eduSystems = Array.from(
-    new Set<string>([
-      ...classesMatchingYearAndCampus.map((c) => String(c.educationSystem || '')).filter(Boolean),
-      ...resultsMatchingYearAndCampus.map((r: any) => String(r.eduSystemSnapshot || '')).filter(Boolean),
-    ])
+    new Set<string>(
+      resultEduSystems.length > 0
+        ? resultEduSystems
+        : classesMatchingYearAndCampus.map((c) => String(c.educationSystem || '')).filter(Boolean)
+    )
   ).sort();
 
   // ==========================================================================
@@ -444,116 +457,69 @@ export async function getIntlExamsWorkspaceData(filters: IntlExamFilterInput = {
     }));
 
   // ==========================================================================
-  // 8. SSM STUDENT ROSTER FOR SELECTION, ENTRY, EDIT & DELETE
+  // 8. STUDENT ROSTER OF ENTERED EXAM RESULTS (ONLY STUDENTS WITH RESULTS)
   // ==========================================================================
   const serializedResults = results.map((r) => serializeExamResult(r));
-  const resultsByStudentId = new Map<string, any[]>();
-  const resultsByStudentCode = new Map<string, any[]>();
+  const studentRosterMap = new Map<string, any>();
 
   for (const sr of serializedResults) {
-    if (sr.studentId) {
-      if (!resultsByStudentId.has(sr.studentId)) resultsByStudentId.set(sr.studentId, []);
-      resultsByStudentId.get(sr.studentId)!.push(sr);
-    }
-    if (sr.studentCodeSnapshot) {
-      if (!resultsByStudentCode.has(sr.studentCodeSnapshot)) {
-        resultsByStudentCode.set(sr.studentCodeSnapshot, []);
+    const s = sr.studentId ? ssmStudentMap.get(sr.studentId) : null;
+    const key = s?.studentCode || sr.studentCodeSnapshot || sr.studentId || sr.id;
+
+    if (!studentRosterMap.has(key)) {
+      const cName = s?.class?.className || sr.classNameSnapshot || '';
+      const cCode =
+        s?.class?.campus?.campusCode || s?.campus?.campusCode || sr.campusCodeSnapshot || '';
+      const cFull = s?.class?.campus?.campusName || s?.campus?.campusName || cCode;
+      const gVal = inferGradeFromClassName(cName, s?.class?.grade || sr.gradeSnapshot || '');
+      const edSys =
+        s?.class?.educationSystem ||
+        sr.eduSystemSnapshot ||
+        inferEduSystemFromClassName(cName) ||
+        'Hội nhập';
+      const ayName =
+        s?.academicYear?.name ||
+        s?.class?.academicYear?.name ||
+        sr.academicYearText ||
+        '2026-2027';
+
+      studentRosterMap.set(key, {
+        id: s?.id || sr.studentId || sr.id,
+        studentCode: s?.studentCode || sr.studentCodeSnapshot || '',
+        studentName: s?.studentName || sr.studentNameSnapshot || '',
+        dateOfBirth: s?.dateOfBirth
+          ? s.dateOfBirth.toISOString()
+          : sr.studentDobSnapshot || null,
+        gender: s?.gender || null,
+        classId: s?.classId || null,
+        className: cName,
+        grade: gVal,
+        campusId: s?.campusId || sr.campusIdSnapshot || null,
+        campusCode: cCode,
+        campusName: cFull,
+        eduSystem: edSys,
+        academicYearName: ayName,
+        examResults: [sr],
+      });
+    } else {
+      const existingEntry = studentRosterMap.get(key)!;
+      if (!existingEntry.examResults.some((er: any) => er.id === sr.id)) {
+        existingEntry.examResults.push(sr);
       }
-      resultsByStudentCode.get(sr.studentCodeSnapshot)!.push(sr);
     }
   }
 
-  // Filter SSM students according to global filters
-  const filteredSsmStudentsRaw = enrichedSsmStudents.filter((s) => {
-    const ayName = s.academicYear?.name || s.class?.academicYear?.name || '';
-    const cCode = s.class?.campus?.campusCode || s.campus?.campusCode || '';
-    const cName = s.class?.className || '';
-    const gVal = inferGradeFromClassName(cName, s.class?.grade || '');
-    const edSys = s.class?.educationSystem || inferEduSystemFromClassName(cName) || '';
-
-    if (filters.academicYear && filters.academicYear !== 'ALL' && ayName !== filters.academicYear) {
-      return false;
-    }
-    if (filters.campusCode && filters.campusCode !== 'ALL' && cCode !== filters.campusCode) {
-      return false;
-    }
-    if (filters.grade && filters.grade !== 'ALL' && gVal !== filters.grade) {
-      return false;
-    }
-    if (filters.className && filters.className !== 'ALL' && cName !== filters.className) {
-      return false;
-    }
-    if (filters.eduSystem && filters.eduSystem !== 'ALL' && edSys !== filters.eduSystem) {
-      return false;
-    }
-    if (searchNorm) {
-      const nameNorm = stripVietnameseAccents(s.studentName || '');
-      const codeNorm = (s.studentCode || '').toUpperCase();
-      if (!nameNorm.includes(searchNorm) && !codeNorm.includes(searchNorm)) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  // Deduplicate by studentCode when academicYear is 'ALL', preferring latest academic year (2026-2027)
-  const dedupedStudentsMap = new Map<string, (typeof enrichedSsmStudents)[number]>();
-  const sortedForDedup = [...filteredSsmStudentsRaw].sort((a, b) => {
-    const ayA = a.academicYear?.name || a.class?.academicYear?.name || '';
-    const ayB = b.academicYear?.name || b.class?.academicYear?.name || '';
-    return ayB.localeCompare(ayA);
-  });
-  for (const s of sortedForDedup) {
-    const key = s.studentCode || s.id;
-    if (!dedupedStudentsMap.has(key)) {
-      dedupedStudentsMap.set(key, s);
-    }
-  }
-
-  const uniqueFilteredSsmStudents = Array.from(dedupedStudentsMap.values()).sort((a, b) => {
-    const clsA = a.class?.className || '';
-    const clsB = b.class?.className || '';
+  const ssmStudentRoster = Array.from(studentRosterMap.values()).sort((a, b) => {
+    const clsA = a.className || '';
+    const clsB = b.className || '';
     if (clsA !== clsB) return clsA.localeCompare(clsB);
     return (a.studentName || '').localeCompare(b.studentName || '', 'vi');
-  });
-
-  const ssmStudentRoster = uniqueFilteredSsmStudents.map((s) => {
-    const cName = s.class?.className || '';
-    const cCode = s.class?.campus?.campusCode || s.campus?.campusCode || '';
-    const cFull = s.class?.campus?.campusName || s.campus?.campusName || cCode;
-    const gVal = inferGradeFromClassName(cName, s.class?.grade || '');
-    const edSys = s.class?.educationSystem || inferEduSystemFromClassName(cName) || 'Hội nhập';
-    const ayName = s.academicYear?.name || s.class?.academicYear?.name || '2026-2027';
-
-    const byId = resultsByStudentId.get(s.id) || [];
-    const byCode = s.studentCode ? resultsByStudentCode.get(s.studentCode) || [] : [];
-    const mergedResultsMap = new Map<string, any>();
-    for (const r of [...byId, ...byCode]) {
-      mergedResultsMap.set(r.id, r);
-    }
-
-    return {
-      id: s.id,
-      studentCode: s.studentCode,
-      studentName: s.studentName,
-      dateOfBirth: s.dateOfBirth ? s.dateOfBirth.toISOString() : null,
-      gender: s.gender || null,
-      classId: s.classId,
-      className: cName,
-      grade: gVal,
-      campusId: s.campusId,
-      campusCode: cCode,
-      campusName: cFull,
-      eduSystem: edSys,
-      academicYearName: ayName,
-      examResults: Array.from(mergedResultsMap.values()),
-    };
   });
 
   return {
     denominators: {
       ...denominators,
-      totalSsmStudentsCount: uniqueFilteredSsmStudents.length,
+      totalSsmStudentsCount: ssmStudentRoster.length,
     },
     ssmStudentRoster,
     filterOptions: {
@@ -1895,14 +1861,15 @@ export async function saveIntlExamResultAction(input: SaveExamResultInput) {
     }
   }
 
-  await logActivity({
-    action: input.id ? 'UPDATE' : 'CREATE',
-    module: 'INTL_EXAMS',
-    description: `${input.id ? 'Cập nhật' : 'Thêm mới'} kết quả kỳ thi ${input.examType} cho học sinh ${input.studentName} (${academicYearText})`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    input.id ? 'UPDATE' : 'CREATE',
+    'IntlExamResult',
+    savedResult.id,
+    null,
+    `${input.id ? 'Cập nhật' : 'Thêm mới'} kết quả kỳ thi ${input.examType} cho học sinh ${input.studentName} (${academicYearText})`
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   revalidatePath('/teacher/ho-so-hoc-sinh');
@@ -1921,14 +1888,15 @@ export async function deleteIntlExamResultAction(id: string) {
     await recomputeIeltsLongitudinalFlags();
   }
 
-  await logActivity({
-    action: 'DELETE',
-    module: 'INTL_EXAMS',
-    description: `Xóa kết quả kỳ thi ${existing.examType} của học sinh ${existing.studentNameSnapshot}`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'DELETE',
+    'IntlExamResult',
+    id,
+    `Xóa kết quả kỳ thi ${existing.examType} của học sinh ${existing.studentNameSnapshot}`,
+    null
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return { success: true };
@@ -1996,14 +1964,15 @@ export async function reconcileResultStudentAction(params: {
 
   await recomputeIeltsLongitudinalFlags();
 
-  await logActivity({
-    action: 'UPDATE',
-    module: 'INTL_EXAMS',
-    description: `Đối soát liên kết ${linkedCount} kết quả thi quốc tế của "${targetResult.studentNameSnapshot}" với Mã HS ${student.studentCode}`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'UPDATE',
+    'IntlExamResult',
+    targetResult.id,
+    null,
+    `Đối soát liên kết ${linkedCount} kết quả thi quốc tế của "${targetResult.studentNameSnapshot}" với Mã HS ${student.studentCode}`
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return { success: true, linkedCount };
@@ -2047,14 +2016,15 @@ export async function resetAllIntlExamsDataAction() {
   await prisma.intlImportBatch.deleteMany({});
   await prisma.intlExamSession.deleteMany({});
 
-  await logActivity({
-    action: 'DELETE',
-    module: 'INTL_EXAMS',
-    description: 'Làm mới hoàn toàn toàn bộ dữ liệu kết quả thi quốc tế & chứng chỉ',
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'DELETE',
+    'IntlExamResult',
+    'ALL',
+    'Làm mới hoàn toàn toàn bộ dữ liệu kết quả thi quốc tế & chứng chỉ',
+    null
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return { success: true };
@@ -2185,14 +2155,15 @@ export async function updateRuleSetTargetsAction(params: {
     });
   }
 
-  await logActivity({
-    action: 'UPDATE',
-    module: 'INTL_EXAMS',
-    description: `Cập nhật ngưỡng mục tiêu nội bộ Sky-Line cho quy chuẩn ${rs.versionCode}`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'UPDATE',
+    'IntlExamRuleSet',
+    rs.id,
+    null,
+    `Cập nhật ngưỡng mục tiêu nội bộ Sky-Line cho quy chuẩn ${rs.versionCode}`
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return { success: true };
@@ -2217,14 +2188,15 @@ export async function uploadAndPreviewExcelAction(formData: FormData) {
     autoCommit,
   });
 
-  await logActivity({
-    action: 'IMPORT',
-    module: 'INTL_EXAMS',
-    description: `${autoCommit ? 'Import & Lưu' : 'Xem trước Import'} file Excel "${file.name}" (${summary.validRows} hợp lệ, ${summary.warningRows} cảnh báo, ${summary.matchedStudents} khớp Mã HS)`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'IMPORT',
+    'IntlImportBatch',
+    summary.batchId,
+    null,
+    `${autoCommit ? 'Import & Lưu' : 'Xem trước Import'} file Excel "${file.name}" (${summary.validRows} hợp lệ, ${summary.warningRows} cảnh báo, ${summary.matchedStudents} khớp Mã HS)`
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return summary;
@@ -2234,14 +2206,15 @@ export async function commitStagedBatchAction(batchId: string) {
   const session = await getAdminSession();
   const res = await commitStagedImportBatch(batchId, session?.userId || 'ADMIN');
 
-  await logActivity({
-    action: 'IMPORT',
-    module: 'INTL_EXAMS',
-    description: `Xác nhận ghi nhận chính thức ${res.committedCount} kết quả thi quốc tế từ lô staging ${batchId}`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'IMPORT',
+    'IntlImportBatch',
+    batchId,
+    null,
+    `Xác nhận ghi nhận chính thức ${res.committedCount} kết quả thi quốc tế từ lô staging ${batchId}`
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return res;
@@ -2263,7 +2236,7 @@ export async function getStudentIntlExamsPassportAction(studentId: string, stude
     },
     include: {
       skillResults: {
-        orderBy: { displayOrder: 'asc' },
+        orderBy: { sortOrder: 'asc' },
       },
       certificate: true,
       session: true,
@@ -2315,14 +2288,15 @@ export async function sendIntlExamNotificationsAction(input: SendIntlExamNotific
   const session = await getAdminSession();
   const res = await dispatchIntlExamNotifications(input);
 
-  await logActivity({
-    action: 'CREATE',
-    module: 'INTL_EXAMS',
-    description: `Gửi thông báo chứng chỉ quốc tế (${input.scenario}) cho ${res.studentsProcessed} học sinh (GVCN: ${res.gvcnNotificationsSent}, PHHS: ${res.parentNotificationsSent}, Cổng HS: ${res.studentPortalHighlightsCreated})`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'CREATE',
+    'Notification',
+    input.scenario,
+    null,
+    `Gửi thông báo chứng chỉ quốc tế (${input.scenario}) cho ${res.studentsProcessed} học sinh (GVCN: ${res.gvcnNotificationsSent}, PHHS: ${res.parentNotificationsSent}, Cổng HS: ${res.studentPortalHighlightsCreated})`
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   revalidatePath('/teacher/ho-so-hoc-sinh');
@@ -2386,14 +2360,15 @@ export async function updateSsmStudentForIntlWorkspaceAction(params: {
     },
   });
 
-  await logActivity({
-    action: 'UPDATE',
-    module: 'INTL_EXAMS',
-    description: `Cập nhật thông tin học sinh SSM: ${updated.studentName} (${updated.studentCode})`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'UPDATE',
+    'Student',
+    updated.id,
+    null,
+    `Cập nhật thông tin học sinh SSM: ${updated.studentName} (${updated.studentCode})`
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return { success: true };
@@ -2401,36 +2376,26 @@ export async function updateSsmStudentForIntlWorkspaceAction(params: {
 
 export async function deleteSsmStudentOrResultsForIntlWorkspaceAction(params: {
   studentId: string;
-  mode: 'RESULTS_ONLY' | 'HIDE_STUDENT';
+  mode?: 'RESULTS_ONLY' | 'HIDE_STUDENT';
 }) {
   const session = await getAdminSession();
   const st = await prisma.student.findUnique({ where: { id: params.studentId } });
-  if (!st) throw new Error('Không tìm thấy học sinh.');
 
   await prisma.intlExamResult.deleteMany({
     where: { studentId: params.studentId },
   });
 
-  if (params.mode === 'HIDE_STUDENT') {
-    await prisma.student.update({
-      where: { id: params.studentId },
-      data: { status: 'INACTIVE' },
-    });
-  }
-
   await recomputeIeltsLongitudinalFlags();
 
-  await logActivity({
-    action: 'DELETE',
-    module: 'INTL_EXAMS',
-    description:
-      params.mode === 'HIDE_STUDENT'
-        ? `Xóa/ẩn học sinh ${st.studentName} (${st.studentCode}) khỏi danh sách khảo thí quốc tế`
-        : `Xóa toàn bộ kết quả khảo thí quốc tế của học sinh ${st.studentName} (${st.studentCode})`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'DELETE',
+    'IntlExamResult',
+    params.studentId,
+    `Xóa toàn bộ kết quả khảo thí quốc tế của học sinh ${st?.studentName || params.studentId}${st?.studentCode ? ` (${st.studentCode})` : ''}`,
+    null
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return { success: true };
@@ -2438,7 +2403,7 @@ export async function deleteSsmStudentOrResultsForIntlWorkspaceAction(params: {
 
 export async function bulkDeleteIntlExamStudentsOrResultsAction(params: {
   studentIds: string[];
-  mode: 'RESULTS_ONLY' | 'HIDE_STUDENT';
+  mode?: 'RESULTS_ONLY' | 'HIDE_STUDENT';
 }) {
   const session = await getAdminSession();
   if (!params.studentIds || params.studentIds.length === 0) {
@@ -2449,23 +2414,17 @@ export async function bulkDeleteIntlExamStudentsOrResultsAction(params: {
     where: { studentId: { in: params.studentIds } },
   });
 
-  if (params.mode === 'HIDE_STUDENT') {
-    await prisma.student.updateMany({
-      where: { id: { in: params.studentIds } },
-      data: { status: 'INACTIVE' },
-    });
-  }
-
   await recomputeIeltsLongitudinalFlags();
 
-  await logActivity({
-    action: 'DELETE',
-    module: 'INTL_EXAMS',
-    description: `Xóa hàng loạt (${params.mode}) đối với ${params.studentIds.length} học sinh đã chọn`,
-    userId: session?.userId,
-    userEmail: session?.email,
-    userRole: session?.role,
-  });
+  await logActivity(
+    session?.userId || 'SYSTEM',
+    session?.username || 'SYSTEM',
+    'DELETE',
+    'IntlExamResult',
+    params.studentIds.join(','),
+    `Xóa kết quả khảo thí quốc tế của ${params.studentIds.length} học sinh đã chọn`,
+    null
+  );
 
   revalidatePath('/admin/ktdbcl/international-exams');
   return { success: true, count: params.studentIds.length };

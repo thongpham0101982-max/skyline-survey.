@@ -13,6 +13,7 @@ import {
   buildSecondaryTt22VnEduDefaultConfig,
   calculateTt22SemesterAverage,
   extractGradeNumber,
+  findExactPeriodInternalOverrideConfig,
   getPrimaryEnglishVnEduPreset,
   isEnglishSubjectName,
   isPrimaryGrade,
@@ -389,7 +390,7 @@ export async function POST(req: NextRequest) {
         }, { status: 403 })
       }
 
-      // Resolve VNEDU config strictly
+      // Resolve VNEDU config strictly, preferring newer exact-scope INTERNAL config if configured in "2. Đánh giá nội bộ Sky-Line"
       const gradeLabel = targetClass.grade || targetClass.className
       let activeConfig = resolveGradeConfigForScope(configs, {
         academicYearId,
@@ -399,6 +400,20 @@ export async function POST(req: NextRequest) {
         evaluationPeriod: evalPeriod,
         configType: "VNEDU",
       })
+      const exactInternalOverride = findExactPeriodInternalOverrideConfig(configs, {
+        academicYearId,
+        program: targetClass.educationSystem || "ALL",
+        grade: gradeLabel,
+        subjectId: confirmedSubject.id,
+        evaluationPeriod: evalPeriod,
+      })
+      if (exactInternalOverride) {
+        const vnTime = activeConfig?.updatedAt ? new Date(activeConfig.updatedAt).getTime() : 0
+        const intTime = exactInternalOverride.updatedAt ? new Date(exactInternalOverride.updatedAt).getTime() : 0
+        if (!activeConfig || intTime > vnTime) {
+          activeConfig = exactInternalOverride
+        }
+      }
 
       // Check Primary English Grade 1 & 2 unconfirmed rule
       if (!activeConfig && isEnglishSubjectName(confirmedSubject.subjectName)) {

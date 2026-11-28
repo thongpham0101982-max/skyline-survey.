@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/session";
+import { prisma } from "@/lib/db";
 import {
   assignOrToggleStageByTeacher,
   getTeacherJourneyDashboard,
@@ -8,11 +9,70 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const ADMIN_ALLOWED_ROLES = new Set([
+  "ADMIN",
+  "ADMINISTRATOR",
+  "SUPER_ADMIN",
+  "SUPERADMIN",
+  "DIRECTOR",
+  "PRINCIPAL",
+  "VICE_PRINCIPAL",
+  "KT_DBCL",
+  "KTDBCL",
+  "KHAO_THI"
+]);
+
+async function assertSpecialSubjectTeacherOrAdmin(session: Awaited<ReturnType<typeof getAdminSession>>) {
+  const upperRole = String(session.role || "").toUpperCase().trim();
+  const isAdmin =
+    Boolean(session.isSuperAdmin) ||
+    Boolean(session.isFullAccess) ||
+    ADMIN_ALLOWED_ROLES.has(upperRole);
+
+  if (isAdmin) {
+    return { allowed: true as const, teacherId: session.teacherId || null, isAdmin: true };
+  }
+
+  let teacherId = session.teacherId || null;
+  if (!teacherId && session.userId) {
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: session.userId },
+      select: { id: true }
+    });
+    teacherId = teacher?.id || null;
+  }
+
+  if (!teacherId) {
+    return { allowed: false as const, teacherId: null, isAdmin: false };
+  }
+
+  const activeSpecialCount = await prisma.specialTeachingAssignment.count({
+    where: {
+      teacherId,
+      status: "ACTIVE"
+    }
+  });
+
+  return {
+    allowed: activeSpecialCount > 0,
+    teacherId,
+    isAdmin: false
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getAdminSession();
-    if (!session?.user) {
+    if (!session?.userId) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+    }
+
+    const access = await assertSpecialSubjectTeacherOrAdmin(session);
+    if (!access.allowed) {
+      return NextResponse.json(
+        { error: "Tính năng Hành trình Sky-Line chỉ dành cho GVBM được phân công dạy học các môn đặc thù." },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(req.url);
@@ -20,9 +80,9 @@ export async function GET(req: NextRequest) {
     const academicYearId = searchParams.get("academicYearId") || undefined;
 
     const data = await getTeacherJourneyDashboard({
-      userId: session.user.id,
-      role: session.user.role,
-      teacherId: (session.user as any).teacherId || null,
+      userId: session.userId,
+      role: access.isAdmin ? "ADMIN" : session.role,
+      teacherId: access.teacherId,
       classId,
       academicYearId
     });
@@ -40,17 +100,25 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getAdminSession();
-    if (!session?.user) {
+    if (!session?.userId) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+    }
+
+    const access = await assertSpecialSubjectTeacherOrAdmin(session);
+    if (!access.allowed) {
+      return NextResponse.json(
+        { error: "Tính năng Hành trình Sky-Line chỉ dành cho GVBM được phân công dạy học các môn đặc thù." },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
     const action = String(body?.action || "").toUpperCase();
 
     const sessionUser = {
-      id: session.user.id,
-      role: session.user.role,
-      teacherId: (session.user as any).teacherId || null
+      id: session.userId,
+      role: access.isAdmin ? "ADMIN" : session.role,
+      teacherId: access.teacherId
     };
 
     if (action === "TOGGLE_STAGE") {

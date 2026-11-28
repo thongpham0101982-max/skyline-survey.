@@ -32,11 +32,86 @@ if (fs.existsSync(envPath)) {
 }
 
 const BACKUP_DIR = path.join(__dirname, '..', 'data-backups');
-const MAX_BACKUPS_RETENTION = 12; // Giữ lại 12 bản sao lưu chuẩn gần nhất (~3 tháng)
+const RETENTION_POLICY = 'CURRENT_MONTH_ONLY'; // Chỉ giữ lại các bản sao lưu trong tháng hiện tại, tự động xóa các tháng trước
 const PID_LOCK_FILE = path.join(BACKUP_DIR, '.backup_running.pid');
 const LAST_DATE_LOCK_FILE = path.join(BACKUP_DIR, '.last_backup_date');
 const PHOTO_VAULT_GZ = path.join(BACKUP_DIR, 'student_photos_vault.db.gz');
 const PHOTO_VAULT_META = path.join(BACKUP_DIR, 'student_photos_vault_meta.json');
+
+/**
+ * Trả về khóa tháng theo giờ địa phương dạng YYYY-MM
+ */
+function getMonthKey(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${mm}`;
+}
+
+/**
+ * Trích xuất khóa tháng YYYY-MM từ metadata hoặc tên tệp sao lưu
+ */
+function extractBackupMonthKey(itemOrFilename, fallbackDate) {
+  if (itemOrFilename && typeof itemOrFilename === 'object') {
+    const createdAt = itemOrFilename.content?.createdAt || itemOrFilename.createdAt;
+    if (createdAt) {
+      const fromCreated = getMonthKey(createdAt);
+      if (fromCreated) return fromCreated;
+    }
+    const nameCandidate =
+      itemOrFilename.metaFile ||
+      itemOrFilename.content?.gzFilename ||
+      itemOrFilename.content?.filename ||
+      itemOrFilename.id ||
+      '';
+    const match = String(nameCandidate).match(/(\d{4})-(\d{2})-\d{2}/);
+    if (match) return `${match[1]}-${match[2]}`;
+  } else if (typeof itemOrFilename === 'string') {
+    const match = itemOrFilename.match(/(\d{4})-(\d{2})-\d{2}/);
+    if (match) return `${match[1]}-${match[2]}`;
+  }
+  return fallbackDate ? getMonthKey(fallbackDate) : null;
+}
+
+/**
+ * Chính sách lưu trữ: Chỉ giữ lại các bản sao lưu thuộc Tháng hiện tại, xóa các tháng trước.
+ * Bảo vệ an toàn đầu tháng: nếu Tháng hiện tại chưa có bản sao lưu nào, giữ lại 1 bản gần nhất
+ * để tránh rơi vào trạng thái 0 bản sao lưu trước kỳ backup đầu tiên của tháng mới.
+ */
+function selectBackupsToExpireByCurrentMonth(metaItems, referenceDate = new Date()) {
+  const sorted = [...metaItems].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const currentMonthKey = getMonthKey(referenceDate);
+
+  const currentMonthItems = [];
+  const otherMonthItems = [];
+
+  for (const item of sorted) {
+    const itemMonthKey = extractBackupMonthKey(item, item.createdAt);
+    if (!itemMonthKey || itemMonthKey === currentMonthKey) {
+      currentMonthItems.push(item);
+    } else {
+      otherMonthItems.push(item);
+    }
+  }
+
+  if (currentMonthItems.length > 0) {
+    return {
+      currentMonthKey,
+      kept: currentMonthItems,
+      expired: otherMonthItems
+    };
+  }
+
+  // Đầu tháng mới chưa có bản sao lưu nào -> giữ 1 bản gần nhất làm dự phòng an toàn
+  return {
+    currentMonthKey,
+    kept: sorted.slice(0, 1),
+    expired: sorted.slice(1)
+  };
+}
 
 function getTursoClient() {
   const rawUrl = (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.DATABASE_URL || '').trim();
@@ -363,22 +438,27 @@ async function syncStudentPhotoVault(snapshotDbPath) {
 }
 
 /**
- * Dọn dẹp tệp trùng lặp, tệp .db thô dư thừa, tệp .tmp rác và áp dụng Retention thông minh
+ * Dọn dẹp tệp trùng lặp, tệp .db thô dư thừa, tệp .tmp rác và tự động xóa bản sao lưu các tháng trước
  */
 async function cleanupDuplicateAndOrphanFiles(options = {}) {
   const verifyMissing = options.verifyMissing !== false;
+  const targetDir = options.backupDir || BACKUP_DIR;
+  const referenceDate = options.referenceDate ? new Date(options.referenceDate) : new Date();
+  const pidLockFile = path.join(targetDir, '.backup_running.pid');
+
   let freedBytes = 0;
   let removedFilesCount = 0;
   let verifiedCount = 0;
+  let expiredMonthBackupsCount = 0;
 
-  if (!fs.existsSync(BACKUP_DIR)) {
-    return { freedBytes, removedFilesCount, verifiedCount };
+  if (!fs.existsSync(targetDir)) {
+    return { freedBytes, removedFilesCount, verifiedCount, expiredMonthBackupsCount };
   }
 
   // 1. Kiểm tra và dọn PID lock bị treo (nếu không có tiến trình thực sự chạy)
-  if (fs.existsSync(PID_LOCK_FILE)) {
+  if (fs.existsSync(pidLockFile)) {
     try {
-      const lockData = JSON.parse(fs.readFileSync(PID_LOCK_FILE, 'utf8'));
+      const lockData = JSON.parse(fs.readFileSync(pidLockFile, 'utf8'));
       let alive = false;
       if (lockData.pid) {
         try {
@@ -389,24 +469,24 @@ async function cleanupDuplicateAndOrphanFiles(options = {}) {
         }
       }
       if (!alive) {
-        fs.unlinkSync(PID_LOCK_FILE);
+        fs.unlinkSync(pidLockFile);
         removedFilesCount++;
       }
     } catch {
-      try { fs.unlinkSync(PID_LOCK_FILE); } catch {}
+      try { fs.unlinkSync(pidLockFile); } catch {}
     }
   }
 
-  const allFiles = fs.readdirSync(BACKUP_DIR);
+  const allFiles = fs.readdirSync(targetDir);
 
   // 2. Xóa các tệp tạm (.tmp_*) cũ hơn 30 phút hoặc không có tiến trình chạy
   for (const f of allFiles) {
     if (f.startsWith('.tmp_')) {
-      const fullPath = path.join(BACKUP_DIR, f);
+      const fullPath = path.join(targetDir, f);
       try {
         const stat = fs.statSync(fullPath);
         const ageMin = (Date.now() - stat.mtimeMs) / 60000;
-        if (ageMin > 30 || !fs.existsSync(PID_LOCK_FILE)) {
+        if (ageMin > 30 || !fs.existsSync(pidLockFile)) {
           freedBytes += stat.size;
           fs.unlinkSync(fullPath);
           removedFilesCount++;
@@ -417,11 +497,11 @@ async function cleanupDuplicateAndOrphanFiles(options = {}) {
   }
 
   // 3. Xóa các tệp .db thô đã có bản nén .db.gz tương ứng (Giải phóng ~751MB/tệp)
-  for (const f of fs.readdirSync(BACKUP_DIR)) {
+  for (const f of fs.readdirSync(targetDir)) {
     if (f.startsWith('skyline_backup_') && f.endsWith('.db')) {
       const gzEquivalent = `${f}.gz`;
-      const dbFullPath = path.join(BACKUP_DIR, f);
-      const gzFullPath = path.join(BACKUP_DIR, gzEquivalent);
+      const dbFullPath = path.join(targetDir, f);
+      const gzFullPath = path.join(targetDir, gzEquivalent);
 
       if (fs.existsSync(gzFullPath) && fs.statSync(gzFullPath).size > 1024) {
         try {
@@ -437,10 +517,10 @@ async function cleanupDuplicateAndOrphanFiles(options = {}) {
 
   // 4. Đọc toàn bộ danh sách _meta.json và loại bỏ các bản chạy trùng trong cùng 1 ngày (cùng chế độ SCHEDULED/WINDOWS_SCHEDULER)
   const metaItems = fs
-    .readdirSync(BACKUP_DIR)
+    .readdirSync(targetDir)
     .filter((f) => f.startsWith('skyline_backup_') && f.endsWith('_meta.json'))
     .map((f) => {
-      const fullPath = path.join(BACKUP_DIR, f);
+      const fullPath = path.join(targetDir, f);
       try {
         const content = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
         return {
@@ -469,66 +549,83 @@ async function cleanupDuplicateAndOrphanFiles(options = {}) {
     }
   }
 
+  const removeBackupMetaAndFiles = (item, logPrefix) => {
+    const dbFile = item.content.filename;
+    const gzFile = item.content.gzFilename;
+    if (dbFile && fs.existsSync(path.join(targetDir, dbFile))) {
+      try {
+        freedBytes += fs.statSync(path.join(targetDir, dbFile)).size;
+        fs.unlinkSync(path.join(targetDir, dbFile));
+        removedFilesCount++;
+      } catch {}
+    }
+    if (gzFile && fs.existsSync(path.join(targetDir, gzFile))) {
+      try {
+        freedBytes += fs.statSync(path.join(targetDir, gzFile)).size;
+        fs.unlinkSync(path.join(targetDir, gzFile));
+        removedFilesCount++;
+      } catch {}
+    }
+    if (item.metaFile && fs.existsSync(path.join(targetDir, item.metaFile))) {
+      try {
+        freedBytes += fs.statSync(path.join(targetDir, item.metaFile)).size;
+        fs.unlinkSync(path.join(targetDir, item.metaFile));
+        removedFilesCount++;
+      } catch {}
+    }
+    console.log(`${logPrefix}: ${item.content.id || item.metaFile}`);
+  };
+
   for (const dup of duplicateItemsToDelete) {
-    const dbFile = dup.content.filename;
-    const gzFile = dup.content.gzFilename;
-    if (dbFile && fs.existsSync(path.join(BACKUP_DIR, dbFile))) {
-      try {
-        freedBytes += fs.statSync(path.join(BACKUP_DIR, dbFile)).size;
-        fs.unlinkSync(path.join(BACKUP_DIR, dbFile));
-        removedFilesCount++;
-      } catch {}
-    }
-    if (gzFile && fs.existsSync(path.join(BACKUP_DIR, gzFile))) {
-      try {
-        freedBytes += fs.statSync(path.join(BACKUP_DIR, gzFile)).size;
-        fs.unlinkSync(path.join(BACKUP_DIR, gzFile));
-        removedFilesCount++;
-      } catch {}
-    }
-    if (dup.metaFile && fs.existsSync(path.join(BACKUP_DIR, dup.metaFile))) {
-      try {
-        fs.unlinkSync(path.join(BACKUP_DIR, dup.metaFile));
-        removedFilesCount++;
-      } catch {}
-    }
-    console.log(`[Cleanup] Đã dọn bản sao lưu trùng lặp trong ngày: ${dup.content.id}`);
+    removeBackupMetaAndFiles(dup, '[Cleanup] Đã dọn bản sao lưu trùng lặp trong ngày');
   }
 
-  // 5. Áp dụng chính sách Retention (giữ tối đa MAX_BACKUPS_RETENTION bản chuẩn)
+  // 5. Áp dụng chính sách Retention: Chỉ giữ lại bản sao lưu của Tháng hiện tại, tự động xóa các tháng trước
   const remainingMetas = metaItems.filter((item) => !duplicateItemsToDelete.includes(item));
-  if (remainingMetas.length > MAX_BACKUPS_RETENTION) {
-    const toExpire = remainingMetas.slice(MAX_BACKUPS_RETENTION);
-    for (const item of toExpire) {
-      const dbFile = item.content.filename;
-      const gzFile = item.content.gzFilename;
-      if (dbFile && fs.existsSync(path.join(BACKUP_DIR, dbFile))) {
-        try {
-          freedBytes += fs.statSync(path.join(BACKUP_DIR, dbFile)).size;
-          fs.unlinkSync(path.join(BACKUP_DIR, dbFile));
-          removedFilesCount++;
-        } catch {}
+  const { currentMonthKey, kept: activeMetas, expired: expiredMonthMetas } =
+    selectBackupsToExpireByCurrentMonth(remainingMetas, referenceDate);
+
+  for (const item of expiredMonthMetas) {
+    removeBackupMetaAndFiles(
+      item,
+      `[Retention] Đã xóa bản sao lưu tháng trước (chỉ giữ tháng ${currentMonthKey})`
+    );
+    expiredMonthBackupsCount++;
+  }
+
+  // 5b. Dọn thêm các tệp skyline_backup_* mồ côi (không có _meta.json) thuộc các tháng trước
+  const keptFileNames = new Set();
+  for (const item of activeMetas) {
+    if (item.content.filename) keptFileNames.add(item.content.filename);
+    if (item.content.gzFilename) keptFileNames.add(item.content.gzFilename);
+    if (item.metaFile) keptFileNames.add(item.metaFile);
+  }
+  if (activeMetas.length > 0) {
+    for (const f of fs.readdirSync(targetDir)) {
+      if (
+        f.startsWith('skyline_backup_') &&
+        (f.endsWith('.db.gz') || f.endsWith('.db')) &&
+        !keptFileNames.has(f)
+      ) {
+        const fileMonthKey = extractBackupMonthKey(f);
+        if (fileMonthKey && currentMonthKey && fileMonthKey !== currentMonthKey) {
+          const fullPath = path.join(targetDir, f);
+          try {
+            const stat = fs.statSync(fullPath);
+            freedBytes += stat.size;
+            fs.unlinkSync(fullPath);
+            removedFilesCount++;
+            console.log(
+              `[Retention] Đã xóa tệp sao lưu mồ côi tháng trước (${fileMonthKey}): ${f} (${formatBytes(stat.size)})`
+            );
+          } catch {}
+        }
       }
-      if (gzFile && fs.existsSync(path.join(BACKUP_DIR, gzFile))) {
-        try {
-          freedBytes += fs.statSync(path.join(BACKUP_DIR, gzFile)).size;
-          fs.unlinkSync(path.join(BACKUP_DIR, gzFile));
-          removedFilesCount++;
-        } catch {}
-      }
-      if (item.metaFile && fs.existsSync(path.join(BACKUP_DIR, item.metaFile))) {
-        try {
-          fs.unlinkSync(path.join(BACKUP_DIR, item.metaFile));
-          removedFilesCount++;
-        } catch {}
-      }
-      console.log(`[Retention] Đã xoá bản sao lưu quá hạn: ${item.metaFile}`);
     }
   }
 
-  // 6. Tự động xác minh SHA-256 cho các bản chưa có mã băm
-  if (verifyMissing) {
-    const activeMetas = remainingMetas.slice(0, MAX_BACKUPS_RETENTION);
+  // 6. Tự động xác minh SHA-256 cho các bản còn hiệu lực chưa có mã băm
+  if (verifyMissing && targetDir === BACKUP_DIR) {
     for (const item of activeMetas) {
       if (!item.content.sha256) {
         try {
@@ -542,7 +639,7 @@ async function cleanupDuplicateAndOrphanFiles(options = {}) {
     }
   }
 
-  return { freedBytes, removedFilesCount, verifiedCount };
+  return { freedBytes, removedFilesCount, verifiedCount, expiredMonthBackupsCount };
 }
 
 /**
@@ -1041,8 +1138,12 @@ if (require.main === module) {
 }
 
 module.exports = {
+  RETENTION_POLICY,
   runBackup,
   getFormattedTimestamp,
+  getMonthKey,
+  extractBackupMonthKey,
+  selectBackupsToExpireByCurrentMonth,
   formatBytes,
   computeFileSha256,
   compressFile,

@@ -158,23 +158,17 @@ export default async function TeacherManagerPage() {
   })
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Quản lý Giáo viên</h1>
-        <p className="text-slate-500 mt-2 text-sm">Thêm, chỉnh sửa thông tin giáo viên và phân công Tổ chuyên môn.</p>
-      </div>
-      <TeacherManagerClient
-        initialTeachers={teachers}
-        years={years}
-        defaultYearId={defaultYearId}
-        classes={classes}
-        departments={departments}
-        subjects={subjects}
-        campuses={campuses}
-        isCampusLocked={!session.isFullAccess && session.allowedCampusIds.length === 1}
-        defaultCampusId={!session.isFullAccess ? session.allowedCampusIds[0] : null}
-        roles={roles}
-      />
-    </div>
+    <TeacherManagerClient
+      initialTeachers={teachers}
+      years={years}
+      defaultYearId={defaultYearId}
+      classes={classes}
+      departments={departments}
+      subjects={subjects}
+      campuses={campuses}
+      isCampusLocked={!session.isFullAccess && session.allowedCampusIds.length === 1}
+      defaultCampusId={!session.isFullAccess ? session.allowedCampusIds[0] : null}
+      roles={roles}
+    />
   )
 }

@@ -36,7 +36,10 @@ export async function GET(req: Request) {
       // For teachers: filter to only targets relevant to this teacher
       // For admin/GDCS/KTDBCL: return all targets
       const callerTeacher = (!isGDCS && !isKTDBCL)
-        ? await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+        ? await prisma.teacher.findUnique({
+            where: { userId: session.user.id },
+            include: { departmentRel: true }
+          })
         : null
 
       const [
@@ -409,25 +412,37 @@ export async function GET(req: Request) {
         let effectiveSourceType = t.sourceType
 
         if (effectiveSupportType === "ACADEMIC") {
+          const isAdmissionTarget =
+            effectiveSourceType === "ADMISSION" ||
+            Boolean(t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"))
           const reasonParts = effectiveReason
             .split(/[,;]/)
             .map((s: string) => s.trim())
             .filter(Boolean)
 
-          const academicReasonParts = reasonParts.filter((p: string) => !isNonAcademicSubject(p))
-          const hasPsychReason = reasonParts.some((p: string) => /tâm lý|tam ly|tâm lí|psychology/i.test(p))
-          const hasCareerReason = reasonParts.some((p: string) => /hướng nghiệp|huong nghiep/i.test(p))
+          const isPsychPart = (p: string) => /tâm lý|tam ly|tâm lí|psychology/i.test(p)
+          const isCareerPart = (p: string) => /hướng nghiệp|huong nghiep/i.test(p)
 
-          if (academicReasonParts.length === 0) {
+          // Always exclude Tâm lý from ACADEMIC; only exclude Hướng nghiệp on ADMISSION (CKĐV) targets.
+          // BSTD targets proactively created by Career Guidance teachers (sourceType: GVBM/TEACHER) MUST be preserved.
+          const keptReasonParts = reasonParts.filter((p: string) => {
+            if (isPsychPart(p)) return false
+            if (isAdmissionTarget && isCareerPart(p)) return false
+            return true
+          })
+          const hasPsychReason = reasonParts.some(isPsychPart)
+          const hasCareerReason = reasonParts.some(isCareerPart)
+
+          if (keptReasonParts.length === 0) {
             if (hasPsychReason) {
               effectiveSupportType = "PSYCHOLOGICAL"
               if (effectiveSourceType === "TEACHER") effectiveSourceType = "TAM_LY"
-            } else if (hasCareerReason) {
-              // Exclude "Hướng nghiệp" from Hỗ trợ Học tập Khảo sát đầu vào / Văn hóa
+            } else if (isAdmissionTarget && hasCareerReason) {
+              // Exclude "Hướng nghiệp" only from Entrance Commitment (CKĐV / ADMISSION)
               continue
             }
           } else {
-            effectiveReason = academicReasonParts.join(", ")
+            effectiveReason = keptReasonParts.join(", ")
           }
         }
 
@@ -516,6 +531,21 @@ export async function GET(req: Request) {
       // 4. Filter for callerTeacher if request is from a Teacher
       let finalTargets = normalizedDbTargets
       if (callerTeacher) {
+        const deptName = (callerTeacher.departmentRel?.name || "").toLowerCase()
+        const deptCode = (callerTeacher.departmentRel?.code || "").toUpperCase()
+        const teachesPsych = allTeachingAssignments.some(
+          (ta) =>
+            ta.teacherId === callerTeacher.id &&
+            ((ta.subject?.subjectName || "").toLowerCase().includes("tâm lý") ||
+              (ta.subject?.subjectName || "").toLowerCase().includes("tam ly"))
+        )
+        const callerIsPsychCounselor =
+          deptCode.includes("TLHN") ||
+          deptName.includes("tâm lý") ||
+          deptName.includes("tlhn") ||
+          deptName.includes("tham vấn") ||
+          teachesPsych
+
         const myHomeroomClassIds = new Set(
           allClasses
             .filter(c =>
@@ -527,6 +557,15 @@ export async function GET(req: Request) {
         )
 
         finalTargets = normalizedDbTargets.filter((t: any) => {
+          const isCareerIntensive =
+            t.supportType === "CAREER_INTENSIVE" ||
+            t.sourceType === "HUONG_NGHIEP" ||
+            (t.sourceType !== "ADMISSION" &&
+              (t.reason || "").trim().toLowerCase().includes("hướng nghiệp"))
+
+          // Sổ theo dõi Hướng nghiệp chuyên sâu chỉ dành cho GV Tâm lý / Tổ TLHN
+          if (isCareerIntensive && !callerIsPsychCounselor) return false
+
           if (t.createdById === callerTeacher.id) return true
           if (t.assignments?.some((a: any) => a.teacherId === callerTeacher.id || a.teacher?.id === callerTeacher.id)) return true
           if (t.student?.classId && myHomeroomClassIds.has(t.student.classId)) return true
@@ -1626,7 +1665,7 @@ export async function POST(req: Request) {
                 <tr>
                   <td align="center" style="padding-bottom: 8px;">
                     <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE • BAN ĐÀO TẠO & KHẢO THÍ
+                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span> • BAN ĐÀO TẠO & KHẢO THÍ
                     </span>
                   </td>
                 </tr>
@@ -1821,8 +1860,50 @@ export async function POST(req: Request) {
       }
 
       const teacher = await prisma.teacher.findUnique({
-        where: { userId: session.user.id }
+        where: { userId: session.user.id },
+        include: { departmentRel: true }
       })
+
+      // Enforce Psychology-Counselor-only access for Career Intensive Tracking
+      const isCareerTargetReq =
+        supportType === "CAREER_INTENSIVE" ||
+        sourceType === "HUONG_NGHIEP" ||
+        (sourceType !== "ADMISSION" &&
+          String(reason || "").trim().toLowerCase().includes("hướng nghiệp"))
+
+      if (isCareerTargetReq && teacher) {
+        const userRole = (session.user as any)?.role || ""
+        const isElevated = ["ADMIN", "KT_DBCL", "KTDBCL", "GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)
+        if (!isElevated) {
+          const dName = (teacher.departmentRel?.name || "").toLowerCase()
+          const dCode = (teacher.departmentRel?.code || "").toUpperCase()
+          const hasPsychAssign = await prisma.teachingAssignment.findFirst({
+            where: {
+              teacherId: teacher.id,
+              subject: {
+                OR: [
+                  { subjectCode: "TLY" },
+                  { subjectName: { contains: "Tâm lý" } },
+                  { subjectName: { contains: "tâm lý" } }
+                ]
+              }
+            },
+            select: { id: true }
+          })
+          const isPsych =
+            dCode.includes("TLHN") ||
+            dName.includes("tâm lý") ||
+            dName.includes("tlhn") ||
+            dName.includes("tham vấn") ||
+            Boolean(hasPsychAssign)
+          if (!isPsych) {
+            return NextResponse.json(
+              { error: "Sổ theo dõi Hướng nghiệp chuyên sâu chỉ dành cho Giáo viên Tâm lý / Tổ TLHN." },
+              { status: 403 }
+            )
+          }
+        }
+      }
 
       if (id) {
         const updated = await prisma.learningSupportTarget.update({
@@ -2294,7 +2375,7 @@ export async function POST(req: Request) {
                           <tr>
                             <td align="center" style="padding-bottom: 8px;">
                               <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                                🏫 HỆ THỐNG GIÁO DỤC SKY-LINE • BAN ĐÀO TẠO & KHẢO THÍ
+                                <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span> • BAN ĐÀO TẠO & KHẢO THÍ
                               </span>
                             </td>
                           </tr>
@@ -2546,7 +2627,7 @@ export async function POST(req: Request) {
                                 <tr>
                                   <td align="center" style="padding-bottom: 8px;">
                                     <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE • TÂM LÝ HỌC ĐƯỜNG
+                                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span> • TÂM LÝ HỌC ĐƯỜNG
                                     </span>
                                   </td>
                                 </tr>
@@ -2854,7 +2935,7 @@ export async function POST(req: Request) {
                 <tr>
                   <td align="center" style="padding-bottom: 8px;">
                     <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE • BAN ĐÀO TẠO & KHẢO THÍ
+                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span> • BAN ĐÀO TẠO & KHẢO THÍ
                     </span>
                   </td>
                 </tr>

@@ -1,4 +1,10 @@
 import { buildDefaultPeriodTimes } from "./scopeResolver"
+import {
+  buildLearnedScheduleMemory,
+  computeTeacherMultiCampusPriority,
+  scoreCandidateWithMemory,
+  type CampusMetaForMemory,
+} from "./learnedScheduleMemory"
 import type { QuotaReconcileItem } from "./types"
 import {
   doWeekTypesOverlap,
@@ -41,6 +47,13 @@ export interface AutoScheduleInput {
   }>
   quotaItems: QuotaReconcileItem[]
   existingSlots: SlotRecord[]
+  baselineSlots?: SlotRecord[]
+  campuses?: CampusMetaForMemory[]
+  teacherAssignmentsMeta?: Array<{
+    teacherId: string
+    campusId: string
+    level?: string | null
+  }>
   rooms?: RoomInput[]
   busySlots?: BusySlotInput[]
   travelRules?: TravelRuleInput[]
@@ -65,6 +78,7 @@ interface PlacementUnit {
   coTeacherName: string | null
   weekType: WeekTypeCode
   blockSize: 1 | 2
+  isHardBlockRule?: boolean
 }
 
 interface CandidateCell {
@@ -206,6 +220,14 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
   const unitsToPlace: PlacementUnit[] = []
   let requiredUnitCount = 0
 
+  const learnedMemory = buildLearnedScheduleMemory({
+    dragDropSlots: input.existingSlots,
+    baselineSlots: input.baselineSlots,
+    externalSlots: input.externalActiveSlots,
+    campuses: input.campuses,
+    teacherAssignmentsMeta: input.teacherAssignmentsMeta,
+  })
+
   const blockRuleBySubId = new Map<string, { minConsecutive: number }>()
   for (const br of input.config.blockRules || []) {
     if (br.subjectId && br.minConsecutive >= 2) {
@@ -228,9 +250,14 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
     let rem = Math.round(periodsToPlace * 100) / 100
     if (rem <= 0) return
     const blockRule = blockRuleBySubId.get(q.subjectId)
+    const normCode = String(q.subjectCode || "").trim().toUpperCase()
+    const learnedHabit = learnedMemory.subjectHabits.get(normCode)
+    const preferSoftDouble = Boolean(!blockRule && learnedHabit?.preferDoubleBlock)
+
+    let blockIdx = 0
     if (blockRule && rem >= 2) {
       unitsToPlace.push({
-        unitId: `${q.classId}::${q.subjectId}::${unitSuffix}::BLOCK`,
+        unitId: `${q.classId}::${q.subjectId}::${unitSuffix}::BLOCK_${blockIdx++}`,
         classId: q.classId,
         className: q.className,
         grade: cls.grade,
@@ -246,6 +273,31 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
         coTeacherName,
         weekType: "ALL",
         blockSize: 2,
+        isHardBlockRule: true,
+      })
+      requiredUnitCount += 2
+      rem = Math.round((rem - 2) * 100) / 100
+    }
+
+    while ((blockRule || preferSoftDouble) && rem >= 2) {
+      unitsToPlace.push({
+        unitId: `${q.classId}::${q.subjectId}::${unitSuffix}::SOFT_BLOCK_${blockIdx++}`,
+        classId: q.classId,
+        className: q.className,
+        grade: cls.grade,
+        level: cls.level,
+        subjectId: q.subjectId,
+        subjectCode: q.subjectCode,
+        subjectName: q.subjectName,
+        teacherId,
+        teacherCode,
+        teacherName,
+        coTeacherId,
+        coTeacherCode,
+        coTeacherName,
+        weekType: "ALL",
+        blockSize: 2,
+        isHardBlockRule: false,
       })
       requiredUnitCount += 2
       rem = Math.round((rem - 2) * 100) / 100
@@ -633,9 +685,34 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
       }
     }
 
-    // Score candidates: prefer morning for core subjects, spread across days
+    // Score candidates using LearnedScheduleMemory (Baseline anchor + Multi-campus clustering + Clean 1-2/3-4 pairs + Subject session habit)
     const preferMorning = input.config.limitsAndPriorities?.preferMorningForCoreSubjects !== false
+    const scoreByKey = new Map<CandidateCell, number>()
+    for (const c of candidates) {
+      scoreByKey.set(
+        c,
+        scoreCandidateWithMemory({
+          memory: learnedMemory,
+          campusId: input.campusId,
+          classId: unit.classId,
+          subjectId: unit.subjectId,
+          subjectCode: unit.subjectCode,
+          teacherId: unit.teacherId,
+          coTeacherId: unit.coTeacherId,
+          blockSize: unit.blockSize,
+          weekType: unit.weekType,
+          dayOfWeek: c.dayOfWeek,
+          session: c.session,
+          periodNumber: c.periodNumber,
+          currentSlots,
+          externalSlots: input.externalActiveSlots,
+          preferMorningDefault: preferMorning,
+        })
+      )
+    }
     candidates.sort((a, b) => {
+      const diff = (scoreByKey.get(b) || 0) - (scoreByKey.get(a) || 0)
+      if (diff !== 0) return diff
       if (preferMorning && a.session !== b.session) {
         return a.session === "MORNING" ? -1 : 1
       }
@@ -655,13 +732,16 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
     return { candidates, dominantFailureReason: dominant }
   }
 
-  // Sort units: blockSize=2 first, then teachers with heavier total load (degree heuristic)
+  // Sort units: Multi-campus / distant-campus teachers & blockSize=2 first, then teachers with heavier total load
   const teacherLoadCount = new Map<string, number>()
   for (const u of unitsToPlace) {
     teacherLoadCount.set(u.teacherId, (teacherLoadCount.get(u.teacherId) || 0) + u.blockSize)
   }
 
   const remainingUnits = [...unitsToPlace].sort((a, b) => {
+    const mcA = computeTeacherMultiCampusPriority(learnedMemory, a.teacherId)
+    const mcB = computeTeacherMultiCampusPriority(learnedMemory, b.teacherId)
+    if (mcA !== mcB) return mcB - mcA
     if (a.blockSize !== b.blockSize) return b.blockSize - a.blockSize
     return (teacherLoadCount.get(b.teacherId) || 0) - (teacherLoadCount.get(a.teacherId) || 0)
   })
@@ -676,7 +756,7 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
       break
     }
 
-    // Pick unit with fewest legal candidates (MRV)
+    // Pick unit with fewest legal candidates (MRV), breaking ties in favor of multi-campus teachers
     let bestIdx = 0
     let bestEval = listCandidatesForUnit(remainingUnits[0], placedSlots)
 
@@ -692,18 +772,38 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
 
     const [unit] = remainingUnits.splice(bestIdx, 1)
 
-    // Smart half-week pairing: if `unit` is a 0.5 period/week activity, try pairing it as `altSubject` + `altTeacher`
-    // onto an existing single half-week (`ODD` / `EVEN`) slot of the same class before consuming a brand-new cell.
+    // Graceful fallback: if a soft learned double-block has 0 contiguous pairs left, split into 2 single-period units
+    if (unit.blockSize === 2 && !unit.isHardBlockRule && bestEval.candidates.length === 0) {
+      remainingUnits.unshift(
+        { ...unit, unitId: `${unit.unitId}_S1`, blockSize: 1 },
+        { ...unit, unitId: `${unit.unitId}_S2`, blockSize: 1 }
+      )
+      continue
+    }
+
+    // Smart half-week pairing: prefer learned alternating partners (e.g. TOA/NVA <-> GDCD, TOA <-> NVA, CLB <-> GCX)
     if (unit.blockSize === 1 && unit.weekType !== "ALL") {
-      const pairableSlot = placedSlots.find((s) => {
-        if (s.classId !== unit.classId) return false
-        const sWt = String(s.weekType || "ALL").toUpperCase()
-        if (sWt !== "ODD" && sWt !== "EVEN") return false
-        if (s.altSubjectId || s.altSubjectName) return false
-        if (s.subjectId === unit.subjectId) return false
-        return true
-      })
-      if (pairableSlot) {
+      const normUnitCode = String(unit.subjectCode || "").trim().toUpperCase()
+      const preferredPartners = learnedMemory.learnedAlternatingPartners.get(normUnitCode)
+      const candidateHalfSlots = placedSlots
+        .filter((s) => {
+          if (s.classId !== unit.classId) return false
+          const sWt = String(s.weekType || "ALL").toUpperCase()
+          if (sWt !== "ODD" && sWt !== "EVEN") return false
+          if (s.altSubjectId || s.altSubjectName) return false
+          if (s.subjectId === unit.subjectId) return false
+          return true
+        })
+        .sort((a, b) => {
+          const aCode = String(a.subjectCode || "").trim().toUpperCase()
+          const bCode = String(b.subjectCode || "").trim().toUpperCase()
+          const aPref = preferredPartners?.has(aCode) ? 1 : 0
+          const bPref = preferredPartners?.has(bCode) ? 1 : 0
+          return bPref - aPref
+        })
+
+      let pairedOk = false
+      for (const pairableSlot of candidateHalfSlots) {
         const oppositeWt: WeekTypeCode =
           String(pairableSlot.weekType).toUpperCase() === "ODD" ? "EVEN" : "ODD"
         const pairFeasible = checkSingleCellFeasibility(
@@ -725,9 +825,11 @@ export function runAutoScheduler(input: AutoScheduleInput): AutoScheduleResult {
             pairableSlot.altRoomName = pairFeasible.room.roomName
           }
           placedUnitPeriods += 1
-          continue
+          pairedOk = true
+          break
         }
       }
+      if (pairedOk) continue
     }
 
     if (bestEval.candidates.length > 0) {

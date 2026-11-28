@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
+import { checkRateLimit } from "@/lib/security-guard"
 import fs from "fs"
 import path from "path"
 
@@ -8,6 +9,18 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   try {
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "127.0.0.1"
+    const rate = checkRateLimit(`student-photo-lookup:${clientIp}`, 30, 15 * 60 * 1000)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "Quá nhiều yêu cầu tra cứu. Vui lòng thử lại sau ít phút." },
+        { status: 429 }
+      )
+    }
+
     const { searchParams } = new URL(req.url)
     const studentCode = searchParams.get("studentCode")?.trim()
     const dateOfBirth = searchParams.get("dateOfBirth")?.trim()
@@ -77,11 +90,11 @@ export async function GET(req: Request) {
         const inputDateStr = `${inputDate.getFullYear()}-${String(inputDate.getMonth() + 1).padStart(2, '0')}-${String(inputDate.getDate()).padStart(2, '0')}`
         
         if (dateOfBirth !== dbDateStr && dateOfBirth !== inputDateStr) {
-          return NextResponse.json({ error: "Ngày sinh không chính xác." }, { studentId: student.id, status: 400 })
+          return NextResponse.json({ error: "Ngày sinh không chính xác." }, { status: 400 })
         }
       }
     } else if (student.dateOfBirth) {
-      return NextResponse.json({ error: "Vui lòng cung cấp ngày sinh để xác thực." }, { studentId: student.id, status: 400 })
+      return NextResponse.json({ error: "Vui lòng cung cấp ngày sinh để xác thực." }, { status: 400 })
     }
 
     // 4. Check if student already has a photo in DB or local

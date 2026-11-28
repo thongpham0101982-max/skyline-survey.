@@ -41,6 +41,8 @@ import {
 } from "@/lib/grading/tt22EvaluationEngine"
 import {
   evaluateStudentTT27,
+  inferPrimarySubjectLevelFromScore,
+  inferPrimaryCompetenciesAndQualitiesFromSubjects,
   PrimarySubjectGrade,
   PrimaryCompetencies,
   PrimaryQualities
@@ -63,6 +65,7 @@ export interface TermGradesTabProps {
   campuses?: any[]
   classes?: any[]
   subjects?: any[]
+  teachers?: any[]
   academicYears?: any[]
   activeYearId: string
   initialClassId?: string
@@ -140,6 +143,7 @@ export function TermGradesTab({
   campuses = [],
   classes = [],
   subjects = [],
+  teachers: initialTeachers = [],
   academicYears = [],
   activeYearId,
   initialClassId,
@@ -206,6 +210,11 @@ export function TermGradesTab({
   const [saving, setSaving] = useState<boolean>(false)
   const [students, setStudents] = useState<StudentRow[]>([])
   const [classInfo, setClassInfo] = useState<any>(null)
+  const [availableTeachers, setAvailableTeachers] = useState<any[]>(initialTeachers)
+  const [showAssignTeacherModal, setShowAssignTeacherModal] = useState<boolean>(false)
+  const [assignHomeroomId, setAssignHomeroomId] = useState<string>("")
+  const [assignSubjectMap, setAssignSubjectMap] = useState<Record<string, string>>({})
+  const [savingAssignment, setSavingAssignment] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   // Multi-sheet Import Modal state
@@ -386,6 +395,9 @@ export function TermGradesTab({
       if (data.success) {
         setStudents(data.students || [])
         setClassInfo(data.classInfo || null)
+        if (Array.isArray(data.teachers) && data.teachers.length > 0) {
+          setAvailableTeachers(data.teachers)
+        }
       } else {
         setToastMessage({ type: "error", text: data.error || "Không thể tải điểm tổng kết" })
       }
@@ -848,22 +860,42 @@ export function TermGradesTab({
     let calculatedCount = 0
 
     if (selectedLevel === "TIEU_HOC") {
-      // Tính theo Thông tư 27
+      // Tính theo Thông tư 27/2020/TT-BGDĐT (Tự động suy luận mức đạt môn từ điểm KTĐK & suy luận NL-PC nếu còn trống)
       setStudents(prev => prev.map(st => {
         const subjectGrades: Record<string, PrimarySubjectGrade> = {}
+        const updatedScores = { ...st.scores }
+
         scoredSubjects.forEach(sub => {
           const sc = st.scores[sub.id]
           const isMien = sc?.evaluationGrade === "Miễn"
+          let effLevel = (sc?.evaluationGrade as any) || ""
+          if (!effLevel && sc?.score !== null && sc?.score !== undefined) {
+            effLevel = inferPrimarySubjectLevelFromScore(sc.score)
+            if (effLevel) {
+              updatedScores[sub.id] = {
+                ...sc,
+                evaluationGrade: effLevel
+              }
+            }
+          }
           subjectGrades[sub.id] = {
-            level: (sc?.evaluationGrade as any) || "",
-            score: isMien ? "Miễn" : (sc?.score ?? null)
+            level: effLevel,
+            score: isMien ? "Miễn" : (sc?.score ?? null),
+            subjectName: sub.subjectName,
+            subjectCode: sub.subjectCode
           }
         })
 
+        const { competencies: autoComp, qualities: autoQual } = inferPrimaryCompetenciesAndQualitiesFromSubjects(
+          subjectGrades,
+          st.summary.competencies,
+          st.summary.qualities
+        )
+
         const evalRes = evaluateStudentTT27({
           subjects: subjectGrades,
-          competencies: (st.summary.competencies as any) || {},
-          qualities: (st.summary.qualities as any) || {},
+          competencies: autoComp,
+          qualities: autoQual,
           semester: selectedSemester
         })
 
@@ -871,8 +903,11 @@ export function TermGradesTab({
 
         return {
           ...st,
+          scores: updatedScores,
           summary: {
             ...st.summary,
+            competencies: autoComp,
+            qualities: autoQual,
             academicRating: evalRes.academicRating,
             reward: evalRes.rewardEndOfYear ? (evalRes.rewardTitle || "Học sinh Xuất sắc") : "",
             promoted: evalRes.promoted,
@@ -883,10 +918,10 @@ export function TermGradesTab({
 
       setToastMessage({
         type: "success",
-        text: `Đã tính toán xếp loại tổng kết Tiểu học cho ${calculatedCount} học sinh theo TT 27/2020/TT-BGDĐT!`
+        text: `Đã tự động điền mức đạt, NL-PC và xếp loại tổng kết Tiểu học cho ${calculatedCount} học sinh theo TT 27/2020/TT-BGDĐT!`
       })
     } else {
-      // Tính theo Thông tư 22 (THCS / THPT)
+      // Tính theo Thông tư 22/2021/TT-BGDĐT (THCS / THPT)
       setStudents(prev => prev.map(st => {
         const scoreItems: Record<string, SubjectScoreItem> = {}
 
@@ -917,7 +952,8 @@ export function TermGradesTab({
         const evalRes = evaluateStudentTT22({
           scores: scoreItems,
           conductRating: st.summary.conductRating || "Tốt",
-          semester: selectedSemester
+          semester: selectedSemester,
+          absencesTotal: st.summary.absencesTotal ?? ((st.summary.absencesPermitted || 0) + (st.summary.absencesUnpermitted || 0))
         })
 
         calculatedCount++
@@ -928,7 +964,7 @@ export function TermGradesTab({
             ...st.summary,
             academicRating: evalRes.academicRating,
             conductRating: evalRes.conductRating,
-            reward: evalRes.reward || st.summary.reward,
+            reward: evalRes.reward !== undefined ? evalRes.reward : st.summary.reward,
             notes: evalRes.notes || st.summary.notes,
             promoted: evalRes.promoted ?? st.summary.promoted
           }
@@ -937,9 +973,153 @@ export function TermGradesTab({
 
       setToastMessage({
         type: "success",
-        text: `Đã tính toán thành công kết quả tổng kết cho ${calculatedCount} học sinh theo TT 22/2021/TT-BGDĐT!`
+        text: `Đã tính toán thành công kết quả học tập, danh hiệu & xét lên lớp cho ${calculatedCount} học sinh theo TT 22/2021/TT-BGDĐT!`
       })
     }
+  }
+
+  // Mở modal Phân công GVCN & GVBM ngay trong Bảng điểm tổng kết
+  const handleOpenAssignModal = () => {
+    setAssignHomeroomId(classInfo?.homeroomTeacherId || "")
+    const map: Record<string, string> = {}
+    if (Array.isArray(classInfo?.teachingAssignments)) {
+      classInfo.teachingAssignments.forEach((ta: any) => {
+        if (ta.subjectId && ta.teacherId) {
+          map[ta.subjectId] = ta.teacherId
+        }
+      })
+    }
+    setAssignSubjectMap(map)
+    setShowAssignTeacherModal(true)
+  }
+
+  const handleSaveClassAssignments = async () => {
+    if (!selectedClassId) return
+    setSavingAssignment(true)
+    try {
+      const assignmentsPayload = Object.entries(assignSubjectMap).map(([subId, tId]) => ({
+        subjectId: subId,
+        teacherId: tId || ""
+      }))
+      const res = await fetch("/api/admin/ktdbcl/term-grades", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "assignTeacher",
+          classId: selectedClassId,
+          academicYearId: selectedYearId,
+          homeroomTeacherId: assignHomeroomId || null,
+          assignments: assignmentsPayload
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setToastMessage({ type: "success", text: "Đã lưu phân công GVCN & GVBM cho lớp thành công!" })
+        setShowAssignTeacherModal(false)
+        loadTermGrades()
+      } else {
+        setToastMessage({ type: "error", text: data.error || "Không thể lưu phân công" })
+      }
+    } catch (err: any) {
+      setToastMessage({ type: "error", text: "Lỗi kết nối khi lưu phân công" })
+    } finally {
+      setSavingAssignment(false)
+    }
+  }
+
+  // Tải File Mẫu Excel chuẩn vnEdu cho Điểm tổng kết & Xếp loại
+  const handleDownloadTemplateExcel = () => {
+    if (students.length === 0) {
+      setToastMessage({ type: "error", text: "Không có danh sách học sinh để tạo file mẫu" })
+      return
+    }
+    const className = classInfo?.className || "Lop"
+    const wb = XLSX.utils.book_new()
+
+    if (selectedLevel === "TIEU_HOC") {
+      const isHk1 = selectedSemester === "HK1"
+      const headerRow = [
+        "STT",
+        "Mã học sinh",
+        "Họ và đệm",
+        "Tên",
+        "Ngày sinh",
+        "Nữ",
+        ...scoredSubjects.flatMap(s => (s.hasScore ? [`${s.subjectName} (Mức)`, `${s.subjectName} (Điểm)`] : [`${s.subjectName} (Mức)`])),
+        ...GENERAL_COMPETENCIES.map(c => `NL: ${c.label}`),
+        ...SPECIFIC_COMPETENCIES.map(c => `NL: ${c.label}`),
+        ...KEY_QUALITIES.map(q => `PC: ${q.label}`),
+        ...(isHk1
+          ? ["Ghi chú"]
+          : [
+              "Đánh giá KQGD",
+              "Khen thưởng cuối năm",
+              "Khen thưởng đột xuất",
+              "Khen thưởng khác",
+              "Lên lớp",
+              "Ghi chú"
+            ])
+      ]
+      const rows = students.map((st, idx) => {
+        const isNu = (st.gender || "").toLowerCase().includes("nữ") || (st.gender || "").toLowerCase().includes("female")
+        const { lastName, firstName } = splitStudentName(st.studentName)
+        const emptySubjectCols = scoredSubjects.flatMap(s => (s.hasScore ? ["", ""] : [""]))
+        const emptyNlPc = [
+          ...GENERAL_COMPETENCIES.map(() => "T"),
+          ...SPECIFIC_COMPETENCIES.map(() => "T"),
+          ...KEY_QUALITIES.map(() => "T")
+        ]
+        return [
+          idx + 1,
+          st.studentCode,
+          lastName,
+          firstName,
+          st.dob || "",
+          isNu ? "✓" : "",
+          ...emptySubjectCols,
+          ...emptyNlPc,
+          ...(isHk1 ? [""] : ["", "", "", "", "✓", ""])
+        ]
+      })
+      const ws = XLSX.utils.aoa_to_sheet([headerRow, ...rows])
+      XLSX.utils.book_append_sheet(wb, ws, className.replace(/[/\\?*[\]]/g, "_").slice(0, 31))
+      XLSX.writeFile(wb, `Mau_Import_TongKet_TT27_${className}_${selectedSemester}.xlsx`)
+    } else {
+      const headerRow = [
+        "STT",
+        "Mã học sinh",
+        "Họ và tên",
+        "Ngày sinh",
+        ...scoredSubjects.map(s => s.subjectName),
+        ...assessmentSubjects.map(s => s.subjectName),
+        "Kết quả học tập",
+        "Kết quả rèn luyện",
+        "Nghỉ P",
+        "Nghỉ K",
+        "Tổng nghỉ",
+        "Danh hiệu thi đua",
+        "Ghi chú"
+      ]
+      const rows = students.map((st, idx) => [
+        idx + 1,
+        st.studentCode,
+        st.studentName,
+        st.dob || "",
+        ...scoredSubjects.map(() => ""),
+        ...assessmentSubjects.map(() => "Đ"),
+        "",
+        "Tốt",
+        0,
+        0,
+        0,
+        "",
+        ""
+      ])
+      const ws = XLSX.utils.aoa_to_sheet([headerRow, ...rows])
+      XLSX.utils.book_append_sheet(wb, ws, className.replace(/[/\\?*[\]]/g, "_").slice(0, 31))
+      XLSX.writeFile(wb, `Mau_Import_TongKet_TT22_${className}_${selectedSemester}.xlsx`)
+    }
+    setToastMessage({ type: "success", text: `Đã tải file mẫu Excel chuẩn vnEdu cho lớp ${className}!` })
   }
 
   // Save changes to API
@@ -1073,9 +1253,72 @@ export function TermGradesTab({
 
       const ws = XLSX.utils.aoa_to_sheet([headerRow1, ...dataRows])
       XLSX.utils.book_append_sheet(wb, ws, className.replace(/[/\\?*[\]]/g, "_").slice(0, 31))
-      XLSX.writeFile(wb, `Diem_Tong_Ket_Tieu_Hoc_${className}_${selectedSemester}.xlsx`)
+
+      // Sheet 2: Thống kê Tỷ lệ Xếp loại Giáo dục Tiểu học theo TT27
+      const totalSt = students.length || 1
+      const ratingTiers = ["Hoàn thành xuất sắc", "Hoàn thành tốt", "Hoàn thành", "Chưa hoàn thành"]
+      const statRows: any[][] = [
+        [`BÁO CÁO THỐNG KÊ XẾP LOẠI GIÁO DỤC TIỂU HỌC (THÔNG TƯ 27/2020/TT-BGDĐT) — LỚP ${className} (${selectedSemester})`],
+        [`Giáo viên chủ nhiệm: ${classInfo?.homeroomTeacherName || "---"} • Sĩ số: ${students.length} học sinh`],
+        [],
+        ["I. THỐNG KÊ KẾT QUẢ GIÁO DỤC TỔNG HỢP", "Số lượng (HS)", "Tỷ lệ (%)"],
+        ...ratingTiers.map(tier => {
+          const cnt = students.filter(s => s.summary.academicRating === tier).length
+          return [tier, cnt, `${((cnt / totalSt) * 100).toFixed(1)}%`]
+        }),
+        ["Khen thưởng cuối năm", students.filter(s => Boolean(s.summary.reward)).length, `${((students.filter(s => Boolean(s.summary.reward)).length / totalSt) * 100).toFixed(1)}%`],
+        ["Được lên lớp", students.filter(s => s.summary.promoted !== false).length, `${((students.filter(s => s.summary.promoted !== false).length / totalSt) * 100).toFixed(1)}%`],
+        [],
+        ["II. THỐNG KÊ MỨC ĐẠT TỪNG MÔN HỌC & HĐGD", "Mã môn", "Hoàn thành tốt (T)", "Hoàn thành (H)", "Chưa hoàn thành (C)", "Điểm TB KTĐK"],
+        ...scoredSubjects.map(sub => {
+          let cntT = 0
+          let cntH = 0
+          let cntC = 0
+          let sumSc = 0
+          let cntSc = 0
+          students.forEach(st => {
+            const sc = st.scores[sub.id]
+            if (sc?.evaluationGrade === "T") cntT++
+            else if (sc?.evaluationGrade === "H") cntH++
+            else if (sc?.evaluationGrade === "C") cntC++
+            if (sc?.score !== null && sc?.score !== undefined && !isNaN(Number(sc.score))) {
+              cntSc++
+              sumSc += Number(sc.score)
+            }
+          })
+          return [
+            sub.subjectName,
+            sub.subjectCode,
+            `${cntT} (${((cntT / totalSt) * 100).toFixed(0)}%)`,
+            `${cntH} (${((cntH / totalSt) * 100).toFixed(0)}%)`,
+            `${cntC} (${((cntC / totalSt) * 100).toFixed(0)}%)`,
+            cntSc > 0 ? (sumSc / cntSc).toFixed(1) : "-"
+          ]
+        })
+      ]
+      const wsStats = XLSX.utils.aoa_to_sheet(statRows)
+      XLSX.utils.book_append_sheet(wb, wsStats, "02_ThongKe_TT27")
+
+      // Sheet 3: Danh sách Khen thưởng & Lên lớp
+      const awardRows: any[][] = [
+        ["STT", "Mã học sinh", "Họ và tên", "Ngày sinh", "Đánh giá KQGD", "Danh hiệu khen thưởng", "Trạng thái lên lớp", "Ghi chú"],
+        ...students.map((st, idx) => [
+          idx + 1,
+          st.studentCode,
+          st.studentName,
+          st.dob || "",
+          st.summary.academicRating || "",
+          st.summary.reward || st.summary.otherReward || "",
+          st.summary.promoted !== false ? "Được lên lớp" : "Rèn luyện thêm trong hè",
+          st.summary.notes || ""
+        ])
+      ]
+      const wsAwards = XLSX.utils.aoa_to_sheet(awardRows)
+      XLSX.utils.book_append_sheet(wb, wsAwards, "03_KhenThuong_LenLop")
+
+      XLSX.writeFile(wb, `BaoCao_TongKet_TT27_${className}_${selectedSemester}.xlsx`)
     } else {
-      // Export THCS / THPT format
+      // Export THCS / THPT format (Thông tư 22/2021/TT-BGDĐT)
       const row1 = [
         "STT",
         "Mã học sinh",
@@ -1123,7 +1366,85 @@ export function TermGradesTab({
 
       const ws = XLSX.utils.aoa_to_sheet([row1, ...dataRows])
       XLSX.utils.book_append_sheet(wb, ws, className.replace(/[/\\?*[\]]/g, "_").slice(0, 31))
-      XLSX.writeFile(wb, `BGD_Diem_Tong_Ket_${className}_${selectedSemester}.xlsx`)
+
+      // Sheet 2: Thống kê Tỷ lệ Xếp loại Học tập & Rèn luyện theo TT22
+      const totalSt = students.length || 1
+      const tt22Tiers = ["Tốt", "Khá", "Đạt", "Chưa đạt"]
+      const statRows: any[][] = [
+        [`BÁO CÁO THỐNG KÊ XẾP LOẠI HỌC TẬP & RÈN LUYỆN (THÔNG TƯ 22/2021/TT-BGDĐT) — LỚP ${className} (${selectedSemester})`],
+        [`Giáo viên chủ nhiệm: ${classInfo?.homeroomTeacherName || "---"} • Sĩ số: ${students.length} học sinh`],
+        [],
+        ["I. THỐNG KÊ KẾT QUẢ HỌC TẬP & RÈN LUYỆN", "KQ Học tập (HS)", "Tỷ lệ KQHT (%)", "KQ Rèn luyện (HS)", "Tỷ lệ KQRL (%)"],
+        ...tt22Tiers.map(tier => {
+          const cntAcad = students.filter(s => s.summary.academicRating === tier).length
+          const cntCond = students.filter(s => (s.summary.conductRating || "Tốt") === tier).length
+          return [
+            tier,
+            cntAcad,
+            `${((cntAcad / totalSt) * 100).toFixed(1)}%`,
+            cntCond,
+            `${((cntCond / totalSt) * 100).toFixed(1)}%`
+          ]
+        }),
+        [],
+        ["II. THỐNG KÊ DANH HIỆU THI ĐUA & LÊN LỚP", "Số lượng (HS)", "Tỷ lệ (%)"],
+        ["Danh hiệu Học sinh Xuất sắc", students.filter(s => s.summary.reward === "Học sinh Xuất sắc").length, `${((students.filter(s => s.summary.reward === "Học sinh Xuất sắc").length / totalSt) * 100).toFixed(1)}%`],
+        ["Danh hiệu Học sinh Giỏi", students.filter(s => s.summary.reward === "Học sinh Giỏi").length, `${((students.filter(s => s.summary.reward === "Học sinh Giỏi").length / totalSt) * 100).toFixed(1)}%`],
+        ["Được lên lớp", students.filter(s => s.summary.promoted !== false).length, `${((students.filter(s => s.summary.promoted !== false).length / totalSt) * 100).toFixed(1)}%`],
+        [],
+        ["III. THỐNG KÊ PHỔ ĐIỂM TỪNG MÔN TÍNH ĐIỂM", "Mã môn", ">= 8.0 (Giỏi)", "6.5 - 7.9 (Khá)", "5.0 - 6.4 (Đạt)", "< 5.0 (Chưa đạt)", "Điểm TB môn"],
+        ...scoredSubjects.map(sub => {
+          let g8 = 0
+          let g65 = 0
+          let g5 = 0
+          let u5 = 0
+          let sum = 0
+          let cnt = 0
+          students.forEach(st => {
+            const sc = st.scores[sub.id]?.score
+            if (sc !== null && sc !== undefined && !isNaN(Number(sc))) {
+              const n = Number(sc)
+              cnt++
+              sum += n
+              if (n >= 8.0) g8++
+              else if (n >= 6.5) g65++
+              else if (n >= 5.0) g5++
+              else u5++
+            }
+          })
+          return [
+            sub.subjectName,
+            sub.subjectCode,
+            g8,
+            g65,
+            g5,
+            u5,
+            cnt > 0 ? (sum / cnt).toFixed(1) : "-"
+          ]
+        })
+      ]
+      const wsStats = XLSX.utils.aoa_to_sheet(statRows)
+      XLSX.utils.book_append_sheet(wb, wsStats, "02_ThongKe_TT22")
+
+      // Sheet 3: Danh sách Khen thưởng & Lên lớp
+      const awardRows: any[][] = [
+        ["STT", "Mã học sinh", "Họ và tên", "Ngày sinh", "Kết quả học tập", "Kết quả rèn luyện", "Tổng buổi nghỉ", "Danh hiệu thi đua", "Ghi chú / Xét lên lớp"],
+        ...students.map((st, idx) => [
+          idx + 1,
+          st.studentCode,
+          st.studentName,
+          st.dob || "",
+          st.summary.academicRating || "",
+          st.summary.conductRating || "Tốt",
+          st.summary.absencesTotal ?? 0,
+          st.summary.reward || "",
+          st.summary.notes || (st.summary.promoted !== false ? "Được lên lớp" : "Rèn luyện thêm trong hè")
+        ])
+      ]
+      const wsAwards = XLSX.utils.aoa_to_sheet(awardRows)
+      XLSX.utils.book_append_sheet(wb, wsAwards, "03_KhenThuong_LenLop")
+
+      XLSX.writeFile(wb, `BaoCao_TongKet_TT22_${className}_${selectedSemester}.xlsx`)
     }
 
     setToastMessage({ type: "success", text: `Đã xuất file Excel lớp ${className} thành công!` })
@@ -1218,7 +1539,29 @@ export function TermGradesTab({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={loadTermGrades}
+              disabled={loading || !selectedClassId}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#F0FDFA] hover:bg-teal-100 text-[#003B3A] border border-teal-300 rounded-lg text-xs font-semibold shadow-xs transition disabled:opacity-50"
+              title="Đồng bộ tự động điểm học kỳ / cuối kỳ từ Sổ điểm chi tiết các môn (CK1, CK2, CN)"
+            >
+              <RefreshCw className={`w-4 h-4 text-[#008B85] ${loading ? "animate-spin" : ""}`} />
+              <span>Đồng bộ điểm từ Sổ điểm môn</span>
+            </button>
+
+            {!isHomeroomView && (
+              <button
+                onClick={handleOpenAssignModal}
+                disabled={!selectedClassId}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-[#003B3A] border border-[#E2E8F0] rounded-lg text-xs font-semibold shadow-xs transition disabled:opacity-50"
+                title="Phân công Giáo viên Chủ nhiệm (GVCN) và Giáo viên Bộ môn (GVBM) cho lớp đang chọn"
+              >
+                <UserCheck className="w-4 h-4 text-[#008B85]" />
+                <span>Phân công GV ({classInfo?.homeroomTeacherName || "Gán GVCN"})</span>
+              </button>
+            )}
+
             {isPrimary && (
               <button
                 onClick={() => setShowNlPcBatchModal(true)}
@@ -1234,20 +1577,30 @@ export function TermGradesTab({
             <button
               onClick={handleAutoCalculate}
               disabled={loading || students.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
-              title={isPrimary ? "Tính tổng kết theo Thông tư 27" : "Tính tổng kết theo Thông tư 22"}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#003B3A] hover:bg-[#002b2a] text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
+              title={isPrimary ? "Tự động đánh giá xếp loại Tiểu học theo Thông tư 27" : "Tự động đánh giá xếp loại THCS/THPT theo Thông tư 22"}
             >
-              <Sparkles className="w-4 h-4" />
-              <span>{isPrimary ? "Tính tổng kết (TT27)" : "Tính tổng kết (TT22)"}</span>
+              <Sparkles className="w-4 h-4 text-[#5EEAD4]" />
+              <span>{isPrimary ? "Tự động xếp loại (TT27)" : "Tự động xếp loại (TT22)"}</span>
             </button>
 
             <button
               onClick={handleSaveGrades}
               disabled={saving || loading || students.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#059669] hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition disabled:opacity-50"
             >
               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               <span>Lưu bảng điểm {selectedSemester === "CN" ? "Cả năm" : selectedSemester}</span>
+            </button>
+
+            <button
+              onClick={handleDownloadTemplateExcel}
+              disabled={students.length === 0}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#F0FDFA] hover:bg-teal-100 text-[#003B3A] border border-teal-300 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+              title="Tải file Excel mẫu chuẩn vnEdu có sẵn danh sách học sinh lớp này"
+            >
+              <Download className="w-4 h-4 text-[#008B85]" />
+              <span>Tải File Mẫu</span>
             </button>
 
             <button
@@ -1255,12 +1608,12 @@ export function TermGradesTab({
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition"
             >
               <Upload className="w-4 h-4 text-slate-600" />
-              <span>Nhập Excel nhiều sheet</span>
+              <span>Import Excel</span>
             </button>
 
             <button
               onClick={() => setShowSubjectConfigModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 rounded-lg text-xs font-semibold shadow-xs transition"
+              className="flex items-center gap-1.5 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-xs font-semibold shadow-xs transition"
               title="Cấu hình môn học: Thêm môn (Điểm, Nhận xét), Bỏ chọn môn cho ba bậc học"
             >
               <Sliders className="w-4 h-4 text-teal-800" />
@@ -1270,10 +1623,11 @@ export function TermGradesTab({
             <button
               onClick={handleExportExcel}
               disabled={students.length === 0}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#008B85] hover:bg-[#00736E] text-white rounded-lg text-xs font-semibold transition disabled:opacity-50"
+              title="Xuất file Báo cáo Xếp loại, Thống kê tỷ lệ % & Danh sách khen thưởng (Đa Sheet)"
             >
-              <Download className="w-4 h-4 text-slate-600" />
-              <span>Xuất Excel</span>
+              <Download className="w-4 h-4 text-teal-100" />
+              <span>Xuất Báo cáo Excel (3 Sheet)</span>
             </button>
           </div>
         </div>
@@ -3030,6 +3384,143 @@ export function TermGradesTab({
                     <span>Bắt đầu nạp dữ liệu</span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Modal Phân công Giáo viên Chủ nhiệm (GVCN) & Giáo viên Bộ môn (GVBM) */}
+      {showAssignTeacherModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#E2E8F0] w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-[#003B3A] text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+                  <UserCheck className="w-5 h-5 text-[#5EEAD4]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">
+                    Phân công Giảng dạy &amp; Chủ nhiệm — Lớp {classInfo?.className || ""}
+                  </h3>
+                  <p className="text-xs text-teal-100">
+                    Gán GVCN và GVBM dạy các môn của lớp để phân quyền nhập điểm, nhận xét và đánh giá xếp loại
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAssignTeacherModal(false)}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-teal-100 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto flex-1 space-y-4 text-xs">
+              <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="font-bold text-[#003B3A] text-xs">1. Giáo viên Chủ nhiệm (GVCN)</div>
+                  <div className="text-[11px] text-slate-500">
+                    Phụ trách đánh giá tổng kết, năng lực, phẩm chất, rèn luyện và xét lên lớp cho lớp {classInfo?.className || ""}
+                  </div>
+                </div>
+                <select
+                  value={assignHomeroomId}
+                  onChange={e => setAssignHomeroomId(e.target.value)}
+                  className="min-w-[240px] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-[#003B3A] bg-white outline-none focus:border-[#008B85]"
+                >
+                  <option value="">-- Chưa phân công GVCN --</option>
+                  {availableTeachers.map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.teacherName} ({t.teacherCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="font-bold text-[#003B3A] text-xs">
+                  2. Phân công Giáo viên Bộ môn (GVBM) theo danh mục môn học của lớp
+                </div>
+                <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden max-h-[360px] overflow-y-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead className="bg-[#003B3A] text-white sticky top-0 z-10">
+                      <tr className="text-[11px] font-semibold">
+                        <th className="py-2.5 px-3">Môn học</th>
+                        <th className="py-2.5 px-3 text-teal-100">Hình thức đánh giá</th>
+                        <th className="py-2.5 px-3 text-[#5EEAD4]">Giáo viên Bộ môn phụ trách</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E2E8F0] bg-white tabular-nums">
+                      {[...scoredSubjects, ...assessmentSubjects]
+                        .filter(s => !String(s.id).startsWith("virt-") && !String(s.id).startsWith("custom-"))
+                        .map(sub => {
+                          const assignedTid = assignSubjectMap[sub.id] || ""
+                          return (
+                            <tr key={sub.id} className="hover:bg-[#F8FAFC] align-middle">
+                              <td className="py-2.5 px-3 font-semibold text-slate-900">
+                                {sub.subjectName} <span className="text-[11px] font-mono text-slate-400">({sub.subjectCode})</span>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10.5px] font-semibold ${
+                                    sub.hasScore
+                                      ? "bg-teal-50 text-[#00736E]"
+                                      : "bg-emerald-50 text-[#059669]"
+                                  }`}
+                                >
+                                  {sub.hasScore ? "Điểm số & Nhận xét" : "Nhận xét"}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3">
+                                <select
+                                  value={assignedTid}
+                                  onChange={e =>
+                                    setAssignSubjectMap(prev => ({
+                                      ...prev,
+                                      [sub.id]: e.target.value
+                                    }))
+                                  }
+                                  className={`w-full border rounded-xl px-2.5 py-1.5 text-xs font-medium outline-none ${
+                                    assignedTid
+                                      ? "bg-[#F0FDFA] border-[#008B85] text-[#003B3A] font-semibold"
+                                      : "bg-white border-[#E2E8F0] text-slate-500"
+                                  }`}
+                                >
+                                  <option value="">-- Chưa phân công --</option>
+                                  {availableTeachers.map((t: any) => (
+                                    <option key={t.id} value={t.id}>
+                                      {t.teacherName} ({t.teacherCode})
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-3.5 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAssignTeacherModal(false)}
+                className="px-4 py-2 rounded-xl border border-[#E2E8F0] bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                disabled={savingAssignment}
+                onClick={handleSaveClassAssignments}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#002b2a] text-white text-xs font-semibold shadow-xs disabled:opacity-50"
+              >
+                {savingAssignment ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-[#5EEAD4]" />}
+                Lưu Phân công Giảng dạy
               </button>
             </div>
           </div>

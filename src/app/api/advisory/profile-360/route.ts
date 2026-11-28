@@ -21,6 +21,11 @@ import {
   getPoliciesByStudentIds,
   computeWorkflowProgress
 } from "@/lib/advisory/triparty-sync"
+import {
+  getLockedParentGradePeriods,
+  getParentGradeVisibilityMap,
+  isParentGradePeriodLocked,
+} from "@/lib/grading/parent-grade-visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -1004,8 +1009,23 @@ export async function GET(req: Request) {
       }
     })
 
+    // Nếu người xem là PHHS: lọc sạch điểm kiểm tra định kỳ thuộc các kỳ đang bị khóa (mặc định GK1 & GK2)
+    let parentLockedGradePeriods: string[] = []
+    if (caller.actorRole === "PARENT") {
+      const targetYearId =
+        academicYearId || student.academicYearId || student.class?.academicYearId || null
+      const visibilityMap = await getParentGradeVisibilityMap(prisma, targetYearId)
+      parentLockedGradePeriods = getLockedParentGradePeriods(visibilityMap)
+      if (Array.isArray(student.subjectGradeEntries)) {
+        student.subjectGradeEntries = student.subjectGradeEntries.filter(
+          (ge: any) => !isParentGradePeriodLocked(visibilityMap, ge?.evaluationPeriod)
+        )
+      }
+    }
+
     return NextResponse.json({
       student,
+      parentLockedGradePeriods,
       homeroomTeacherName: resolvedHomeroomTeacherName,
       homeroomTeacher: resolvedHomeroomTeacherInfo,
       currentStatusColor,

@@ -27,8 +27,18 @@ export async function GET(request: Request) {
     const academicYearId = searchParams.get("academicYearId") || ""
     const campusId = searchParams.get("campusId") || ""
     const evaluationPeriod = searchParams.get("evaluationPeriod") || "KSDN"
+    const gradesParam = searchParams.get("grades") || ""
     const gradeFilter = searchParams.get("grade") || "ALL"
     const subjectIdsParam = searchParams.get("subjectIds") || ""
+
+    const selectedGrades = gradesParam
+      ? gradesParam
+          .split(",")
+          .map(g => g.trim())
+          .filter(g => g && g !== "ALL")
+      : gradeFilter && gradeFilter !== "ALL"
+      ? [gradeFilter.trim()]
+      : []
 
     // 1. Identify Academic Year
     let targetYearId = academicYearId
@@ -53,37 +63,42 @@ export async function GET(request: Request) {
       })
     }
 
-    // 3. Build Evaluation Period Variants
+    // 3. Build Evaluation Period Variants (bao gồm HK1/HK2 cho THCS/THPT vnEdu TT22 có cột ĐĐGgk / ĐĐGck)
     let periodVariants = [evaluationPeriod]
     if (evaluationPeriod === "KSĐN" || evaluationPeriod === "KSDN") {
       periodVariants = ["KSĐN", "KSDN"]
     } else if (evaluationPeriod === "GK1" || evaluationPeriod === "GIUA_KY_1") {
-      periodVariants = ["GK1", "GIUA_KY_1"]
+      periodVariants = ["GK1", "GIUA_KY_1", "HK1"]
     } else if (evaluationPeriod === "CK1" || evaluationPeriod === "CUOI_KY_1") {
-      periodVariants = ["CK1", "CUOI_KY_1"]
+      periodVariants = ["CK1", "CUOI_KY_1", "HK1"]
     } else if (evaluationPeriod === "GK2" || evaluationPeriod === "GIUA_KY_2") {
-      periodVariants = ["GK2", "GIUA_KY_2"]
+      periodVariants = ["GK2", "GIUA_KY_2", "HK2"]
     } else if (evaluationPeriod === "CK2" || evaluationPeriod === "CUOI_KY_2") {
-      periodVariants = ["CK2", "CUOI_KY_2"]
+      periodVariants = ["CK2", "CUOI_KY_2", "HK2"]
     }
 
-    // 4. Fetch Classes for Campus
+    // 4. Fetch Classes for Campus & Selected Grades (supports multi-select)
     const classWhere: any = {
       status: "ACTIVE"
     }
     if (targetYearId) classWhere.academicYearId = targetYearId
     if (campusId && campusId !== "ALL") classWhere.campusId = campusId
-    if (gradeFilter && gradeFilter !== "ALL") {
-      const cleanGrade = gradeFilter.replace("Khối ", "").trim()
-      classWhere.OR = [
-        { grade: gradeFilter },
-        { grade: cleanGrade },
-        { className: { startsWith: cleanGrade + "." } },
-        { className: { startsWith: cleanGrade + "/" } }
-      ]
+    if (selectedGrades.length > 0) {
+      const gradeOrClauses: any[] = []
+      selectedGrades.forEach(g => {
+        const cleanGrade = g.replace(/^Khối\s*/i, "").replace(/^Khoi\s*/i, "").trim()
+        gradeOrClauses.push(
+          { grade: g },
+          { grade: cleanGrade },
+          { grade: `Khối ${cleanGrade}` },
+          { className: { startsWith: cleanGrade + "." } },
+          { className: { startsWith: cleanGrade + "/" } }
+        )
+      })
+      classWhere.OR = gradeOrClauses
     }
 
-    const classes = await prisma.class.findMany({
+    const rawClasses = await prisma.class.findMany({
       where: classWhere,
       orderBy: [
         { grade: "asc" },
@@ -99,6 +114,26 @@ export async function GET(request: Request) {
         homeroomTeacherId: true
       }
     })
+
+    // Exact grade filter safeguard (prevents e.g. "1" matching "10"/"11"/"12")
+    const extractGradeNum = (val?: string | null) => {
+      const m = String(val || "").trim().match(/^(\d+)/)
+      if (m) return m[1]
+      const digits = String(val || "").replace(/\D/g, "")
+      return digits || ""
+    }
+    const classes = selectedGrades.length === 0
+      ? rawClasses
+      : rawClasses.filter(cls => {
+          const clsNum = extractGradeNum(cls.className) || extractGradeNum(cls.grade)
+          const clsNorm = String(cls.grade || "").toLowerCase().replace(/khối|khoi|lớp|lop|\s/g, "")
+          return selectedGrades.some(g => {
+            const gNum = extractGradeNum(g)
+            if (gNum && clsNum) return gNum === clsNum
+            const gNorm = g.toLowerCase().replace(/khối|khoi|lớp|lop|\s/g, "")
+            return clsNorm === gNorm
+          })
+        })
 
     const classIds = classes.map(c => c.id)
 
@@ -215,8 +250,10 @@ export async function GET(request: Request) {
         subjectId: true,
         classId: true,
         evaluationPeriod: true,
+        configType: true,
         componentScores: true,
         compositeScore: true,
+        ratingValue: true,
         remark: true
       }
     })

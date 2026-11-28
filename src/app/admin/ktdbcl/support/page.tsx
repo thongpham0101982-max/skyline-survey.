@@ -11,7 +11,7 @@ export default async function SupportAdminPage() {
 
   const userRole = (session.user as any)?.role || ""
   const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)
-  const isKTDBCL = ["ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole)
+  const isKTDBCL = ["ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL"].includes(userRole)
 
   // Fetch initial foundational data in parallel with safe fallbacks
   let academicYears: any[] = []

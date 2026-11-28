@@ -14,7 +14,7 @@ async function checkAdminOrBdhcmPermission(session: any) {
   const upper = userRole.toUpperCase().trim();
   const ALLOWED = [
     'ADMIN', 'ADMINISTRATOR', 'SUPER_ADMIN', 
-    'KT_DBCL', 'KTDBCL', 'GDCS', 'BGH', 'QLCM', 'TTCM', 
+    'KT_DBCL', 'KHAO_THI', 'ĐBCL', 'DBCL', 'KTDBCL', 'GDCS', 'BGH', 'QLCM', 'TTCM', 
     'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'
   ];
   if (ALLOWED.some(r => upper.includes(r))) return true;

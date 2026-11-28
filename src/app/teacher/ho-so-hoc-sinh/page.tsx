@@ -3237,10 +3237,8 @@ return (
                                     }
                                   })
                                   const isGrade1 = (() => { const m = String(survey.className || survey.grade || "").match(/\d+/); return m ? parseInt(m[0]) === 1 : false })()
-                                  const writtenDisplay = isGrade1 ? "Không áp dụng" : (writtenVal !== null && writtenVal !== undefined ? `${writtenVal}/70` : "—")
-                                  const oralDisplay = oralVal !== null && oralVal !== undefined ? `${oralVal}/30` : "—"
-                                  const wNum = parseFloat(writtenVal), oNum = parseFloat(oralVal)
-                                  const totalEnglish = !isGrade1 && (!isNaN(wNum) || !isNaN(oNum)) ? `${(isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum)}/100` : (isGrade1 && !isNaN(oNum) ? `${oralVal}/30 (Quy đổi thang 10: ${(Math.round((oNum / 3) * 10) / 10)}đ)` : null)
+                                  const writtenDisplay = isGrade1 ? "Không áp dụng" : (writtenVal !== null && writtenVal !== undefined ? `${writtenVal}/10` : "—")
+                                  const oralDisplay = oralVal !== null && oralVal !== undefined ? `${oralVal}/10` : "—"
                                   let psychLabel = ""; let psychClass = "bg-slate-50 border-slate-200 text-slate-700"
                                   if (psychVal !== null && psychVal !== undefined) {
                                     const pn = parseFloat(psychVal)
@@ -3268,20 +3266,14 @@ return (
                                         <div className="bg-sky-50/30 border border-sky-100 p-3.5 rounded-xl text-center">
                                           <div className="text-[10px] text-sky-655 font-bold uppercase tracking-wider">Anh viết</div>
                                           <div className="text-2xl font-extrabold text-slate-850 mt-1">{writtenDisplay}</div>
-                                          <div className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Không thi (K1)" : "Thang 70"}</div>
+                                          <div className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Không thi (K1)" : "Thang 10"}</div>
                                         </div>
                                         <div className="bg-sky-50/20 border border-sky-100/60 p-3.5 rounded-xl text-center">
                                           <div className="text-[10px] text-sky-655 font-bold uppercase tracking-wider">Anh nói</div>
                                           <div className="text-2xl font-extrabold text-slate-850 mt-1">{oralDisplay}</div>
-                                          <div className="text-[9px] text-slate-400 font-bold">Thang 30</div>
+                                          <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
                                         </div>
                                       </div>
-                                      {totalEnglish !== null && (
-                                        <div className="bg-gradient-to-r from-teal-600 to-sky-50 p-3 rounded-xl border border-teal-200 text-center">
-                                          <span className="text-xs text-teal-800 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh: </span>
-                                          <span className="text-sm font-extrabold text-teal-800">{totalEnglish}</span>
-                                        </div>
-                                      )}
                                       {oralComment && (
                                         <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
                                           <div className="text-[10px] font-black text-sky-700 uppercase tracking-wider mb-1">Nhận xét Tiếng Anh Nói</div>

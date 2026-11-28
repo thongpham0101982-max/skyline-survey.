@@ -667,7 +667,7 @@ export async function POST(req) {
                 <tr>
                   <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
                     <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
-                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     </div>
                     <h1 style="margin: 0; color: #FFFFFF; font-size: 20px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
                       KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO
@@ -1668,7 +1668,7 @@ export async function POST(req) {
                 <tr>
                   <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
                     <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
-                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     </div>
                     <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.3;">
                       THƯ CHÚC MỪNG NHẬP HỌC
@@ -2008,7 +2008,7 @@ export async function POST(req) {
                   <tr>
                     <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
                       <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
-                        🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                        <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                       </div>
                       <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.3;">
                         THƯ CHÚC MỪNG NHẬP HỌC
@@ -2268,18 +2268,41 @@ export async function PUT(req) {
 
     if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 });
 
+    const isAdmissionResultChanged =
+      data.admissionResult !== undefined &&
+      String(data.admissionResult || "").trim() !== String(student.admissionResult || "").trim();
+
     const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
-    if (isBatchLocked) {
-      return NextResponse.json({ error: "Đợt khảo sát này ĐÃ BỊ KHÓA! Mọi tính năng nhập, chỉnh sửa, xét duyệt đều bị vô hiệu hóa." }, { status: 403 });
+    // Cho phép cập nhật thông tin hồ sơ trẻ (kể cả sau khi nhập học hoặc đợt đã khóa);
+    // chỉ khóa việc thay đổi kết quả phê duyệt khi đợt đã bị khóa.
+    if (isBatchLocked && isAdmissionResultChanged) {
+      return NextResponse.json({ error: "Đợt khảo sát này ĐÃ BỊ KHÓA! Không thể thay đổi kết quả xét duyệt." }, { status: 403 });
     }
     
+    let nextStudentCode: string | undefined;
+    if (data.studentCode !== undefined && String(data.studentCode).trim()) {
+      const normalizedCode = String(data.studentCode).trim().toUpperCase();
+      if (normalizedCode !== String(student.studentCode || "").trim().toUpperCase()) {
+        const dup = await (prisma as any).preschoolInputAssessmentStudent.findFirst({
+          where: { studentCode: normalizedCode, id: { not: id } },
+          select: { id: true }
+        });
+        if (dup) {
+          return NextResponse.json({ error: `Mã HS khảo sát "${normalizedCode}" đã tồn tại trên hồ sơ khác.` }, { status: 400 });
+        }
+        nextStudentCode = normalizedCode;
+      }
+    }
+
     const result = await (prisma as any).preschoolInputAssessmentStudent.update({
       where: { id },
       data: {
+         ...(nextStudentCode ? { studentCode: nextStudentCode } : {}),
          fullName: data.fullName,
          dateOfBirth: parseSmartDate(data.dateOfBirth),
          gender: data.gender || null,
          grade: data.grade || null,
+         ...(data.periodId ? { periodId: data.periodId } : {}),
          admissionCriteria: null,
          admissionCampus: data.admissionCampus || null,
          ...(data.registeredCampus !== undefined && { registeredCampus: data.registeredCampus || null }),
@@ -2289,7 +2312,7 @@ export async function PUT(req) {
          ...(data.appointmentAt !== undefined && { appointmentAt: data.appointmentAt ? new Date(data.appointmentAt) : null }),
          signatureName: data.signatureName || null,
          batchId: data.batchId || null,
-         ...(data.admissionResult !== undefined && { admissionResult: data.admissionResult }),
+         ...(isAdmissionResultChanged && { admissionResult: data.admissionResult }),
          ...(data.directorNote !== undefined && { directorNote: data.directorNote }),
          ...(data.isAbsent !== undefined && { isAbsent: data.isAbsent }),
          cityName: data.cityName || null,
@@ -2301,18 +2324,34 @@ export async function PUT(req) {
       }
     });
 
-    // Auto-sync Student.studentType if admissionResult is updated
-    if (data.admissionResult !== undefined) {
+    // Auto-sync profile fields (fullName, dateOfBirth, gender) and Student.studentType to enrolled Student record(s)
+    let syncedEnrolledStudentCount = 0;
+    const isEnrolledStudent =
+      result.enrollmentStatus === "COMPLETED" ||
+      result.enrollmentStatus === "ENROLLED" ||
+      Boolean(result.enrollmentClassId) ||
+      Boolean(result.enrollmentCode);
+    const hasProfileSyncFields =
+      data.fullName !== undefined || data.dateOfBirth !== undefined || data.gender !== undefined;
+
+    if (isAdmissionResultChanged || (isEnrolledStudent && hasProfileSyncFields)) {
       try {
-        const candidateCodes = [result.enrollmentCode, result.studentCode].map((c: any) => (c || "").trim().toUpperCase()).filter(Boolean);
+        const candidateCodes = [result.enrollmentCode, result.studentCode]
+          .map((c: any) => (c || "").trim().toUpperCase())
+          .filter(Boolean);
+        const nameCandidates = Array.from(
+          new Set([student.fullName?.trim(), result.fullName?.trim()].filter(Boolean))
+        );
         const matchingStudents = await prisma.student.findMany({
           where: {
             OR: [
-              { studentCode: { in: candidateCodes } },
-              result.enrollmentClassId && result.fullName ? {
-                classId: result.enrollmentClassId,
-                studentName: result.fullName.trim()
-              } : undefined
+              candidateCodes.length > 0 ? { studentCode: { in: candidateCodes } } : undefined,
+              result.enrollmentClassId && nameCandidates.length > 0
+                ? {
+                    classId: result.enrollmentClassId,
+                    studentName: { in: nameCandidates }
+                  }
+                : undefined
             ].filter(Boolean) as any
           }
         });
@@ -2321,30 +2360,44 @@ export async function PUT(req) {
         const isGiaoLuu = resLower.includes("giao lưu") || resLower.includes("giao luu");
 
         for (const ms of matchingStudents) {
-          if (isGiaoLuu && ms.studentType !== "GIAO_LUU") {
+          const studentUpdateData: any = {};
+
+          if (isEnrolledStudent && hasProfileSyncFields) {
+            if (data.fullName !== undefined && result.fullName?.trim()) {
+              studentUpdateData.studentName = result.fullName.trim();
+            }
+            if (data.dateOfBirth !== undefined) {
+              studentUpdateData.dateOfBirth = result.dateOfBirth || null;
+            }
+            if (data.gender !== undefined) {
+              studentUpdateData.gender = result.gender || null;
+            }
+          }
+
+          if (isAdmissionResultChanged) {
+            if (isGiaoLuu && ms.studentType !== "GIAO_LUU") {
+              studentUpdateData.studentType = "GIAO_LUU";
+              studentUpdateData.studentTypeNote = "Học giao lưu theo kết quả khảo sát đầu vào";
+            } else if (!isGiaoLuu && ms.studentType === "GIAO_LUU" && (ms.studentTypeNote || "").includes("khảo sát")) {
+              studentUpdateData.studentType = "CHINH_KHOA";
+              studentUpdateData.studentTypeNote = null;
+            }
+          }
+
+          if (Object.keys(studentUpdateData).length > 0) {
             await prisma.student.update({
               where: { id: ms.id },
-              data: {
-                studentType: "GIAO_LUU",
-                studentTypeNote: "Học giao lưu theo kết quả khảo sát đầu vào"
-              }
+              data: studentUpdateData
             });
-          } else if (!isGiaoLuu && ms.studentType === "GIAO_LUU" && (ms.studentTypeNote || "").includes("khảo sát")) {
-            await prisma.student.update({
-              where: { id: ms.id },
-              data: {
-                studentType: "CHINH_KHOA",
-                studentTypeNote: null
-              }
-            });
+            syncedEnrolledStudentCount++;
           }
         }
       } catch (syncErr) {
-        console.error("Auto sync Student.studentType error:", syncErr);
+        console.error("Auto sync enrolled preschool Student error:", syncErr);
       }
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, syncedEnrolledStudentCount });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }

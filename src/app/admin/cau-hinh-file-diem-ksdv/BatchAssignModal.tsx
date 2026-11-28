@@ -474,8 +474,8 @@ export function BatchAssignModal({
                 Áp dụng đồng nhất cấu trúc cột điểm đang chỉnh sửa trên biểu mẫu hiện tại
               </option>
               <option value="EPT">Mẫu EPT chuẩn hóa 4 kỹ năng (Listening, Reading, Writing, Speaking — 100đ)</option>
-              <option value="TAV_70">Mẫu Tiếng Anh viết chuẩn Sky-Line (Thang 70đ theo cấp học)</option>
-              <option value="TAVD_30">Mẫu Tiếng Anh vấn đáp chuẩn Sky-Line (Thang 30đ)</option>
+              <option value="TAV_10">Mẫu Tiếng Anh viết chuẩn Sky-Line (Thang 10đ theo cấp học)</option>
+              <option value="TAVD_10">Mẫu Tiếng Anh vấn đáp chuẩn Sky-Line (Thang 10đ)</option>
               <option value="TOA">Mẫu Toán học (Thang 10đ)</option>
               <option value="TVI">Mẫu Tiếng Việt / Ngữ văn (Thang 10đ)</option>
               <option value="TLY">Mẫu Đánh giá Tâm lý (6 tiêu chí — 80đ)</option>

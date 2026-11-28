@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import * as XLSX from "xlsx"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 // Helper to parse date from DD/MM/YYYY or MM/DD/YYYY
 function parseDateString(dateStr) {
@@ -33,6 +34,8 @@ function parseDateString(dateStr) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const formData = await req.formData()
     const file = formData.get("file") as File
     if (!file) return NextResponse.json({ error: "No file" }, { status: 400 })

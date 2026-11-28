@@ -188,7 +188,14 @@ export default async function AdminClassDetailPage({ params }: any) {
     }),
     prisma.studentCodeMapping.findMany({
       where: {
-        databaseCode: { in: studentCodes }
+        databaseCode: {
+          in: Array.from(
+            new Set([
+              ...studentCodes,
+              ...studentCodes.map(c => c.replace(/^0+/, "")).filter(Boolean),
+            ])
+          ),
+        },
       },
       orderBy: { updatedAt: "desc" }
     })
@@ -201,7 +208,10 @@ export default async function AdminClassDetailPage({ params }: any) {
   const syncToCurrentYear: { databaseCode: string; markFileCode: string }[] = [];
 
   for (const sCode of studentCodes) {
-    const studentMaps = codeMappings.filter(m => m.databaseCode === sCode);
+    const strippedCode = sCode.replace(/^0+/, "");
+    const studentMaps = codeMappings.filter(
+      m => m.databaseCode === sCode || (strippedCode && m.databaseCode === strippedCode)
+    );
     if (studentMaps.length > 0) {
       const currentYearMap = studentMaps.find(m => m.academicYearId === classInfo.academicYearId);
       if (currentYearMap) {

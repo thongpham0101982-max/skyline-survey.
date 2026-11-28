@@ -4,12 +4,21 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine"
+import { formatStandardBatchName, extractMeaningfulBatchNote } from "@/lib/batchNaming"
+import {
+  requireStaffSession,
+  requireAdminOrLeadershipSession,
+  requireEntranceOperationsSession,
+  getSafeAppBaseUrl,
+  writeSecurityAuditLog
+} from "@/lib/security-guard"
 
 export async function GET(req) {
-  const session = await auth();
-  const user = session?.user as any;
-  const isGDCS = user?.role === 'GDCS';
-  const allowedCampusIds = user?.campusIds || [];
+  const ctx = await requireStaffSession();
+  if (!ctx) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { isGDCS, allowedCampusIds } = ctx;
   try {
     const { searchParams } = new URL(req.url);
     const academicYearId = searchParams.get("academicYearId");
@@ -57,6 +66,15 @@ export async function GET(req) {
         batches: {
           include: {
             assignedUser: { select: { id: true, fullName: true } },
+            students: {
+              select: {
+                id: true,
+                fullName: true,
+                grade: true,
+                surveyFormType: true,
+                surveySystem: true
+              }
+            },
             _count: {
               select: { students: true }
             }
@@ -76,6 +94,10 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    const ctx = await requireEntranceOperationsSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const body = await req.json();
     const { action, data } = body;
     
@@ -119,6 +141,10 @@ export async function POST(req) {
 
 export async function PUT(req) {
   try {
+    const ctx = await requireEntranceOperationsSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const body = await req.json();
     const { action, id, data } = body;
     
@@ -223,6 +249,70 @@ export async function PUT(req) {
       }
       return NextResponse.json({ success: true, count: result.count });
     }
+    else if (action === "NORMALIZE_BATCH_NAMES") {
+      const targetYearId = data?.academicYearId || undefined;
+      const targetPeriodId = data?.periodId || undefined;
+      const onlyActive = Boolean(data?.onlyActive);
+
+      const whereBatch: any = {};
+      if (targetPeriodId) {
+        whereBatch.periodId = targetPeriodId;
+      } else if (targetYearId) {
+        whereBatch.period = { academicYearId: targetYearId };
+      }
+      if (onlyActive) {
+        whereBatch.status = "ACTIVE";
+      }
+
+      const [batchesToCheck, allCampuses] = await Promise.all([
+        (prisma as any).inputAssessmentBatch.findMany({
+          where: whereBatch,
+          include: {
+            period: { select: { id: true, name: true, code: true } },
+            students: {
+              select: { fullName: true, grade: true, surveyFormType: true }
+            }
+          }
+        }),
+        (prisma as any).campus.findMany({
+          select: { id: true, campusCode: true, campusName: true }
+        })
+      ]);
+
+      const campusMap = new Map<string, any>();
+      (allCampuses || []).forEach((c: any) => campusMap.set(c.id, c));
+
+      let updatedCount = 0;
+      for (const b of batchesToCheck || []) {
+        const campus = b.campusId ? campusMap.get(b.campusId) : null;
+        let note = extractMeaningfulBatchNote(b.name);
+        // Nếu đợt KSL có đúng 1 HS và chưa có ghi chú riêng, giữ gọn gàng hoặc gắn tên HS nếu phù hợp
+        const newName = formatStandardBatchName({
+          campusCode: campus?.campusCode,
+          campusName: campus?.campusName,
+          periodName: b.period?.name,
+          periodCode: b.period?.code,
+          batchNumber: b.batchNumber,
+          startDate: b.startDate,
+          endDate: b.endDate,
+          note
+        });
+
+        if (newName && newName !== b.name) {
+          await (prisma as any).inputAssessmentBatch.update({
+            where: { id: b.id },
+            data: { name: newName }
+          });
+          updatedCount++;
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        updatedCount,
+        totalChecked: (batchesToCheck || []).length
+      });
+    }
     else if (action === "SEND_ASSIGNMENT_EMAIL" || action === "HANDOVER_TO_GIAO_VU") {
       const targetBatchId = id || data?.batchId || body?.batchId || null;
       const targetPeriodId = data?.periodId || body?.periodId || null;
@@ -259,11 +349,8 @@ export async function PUT(req) {
         return NextResponse.json({ error: "Không tìm thấy đợt hoặc kỳ khảo sát để bàn giao" }, { status: 404 });
       }
 
-      const host = req.headers.get("host") || "skyline-survey.vercel.app";
-      const protocol = host.includes("localhost") ? "http" : "https";
-      const appUrl = `${protocol}://${host}`;
-      const session = await auth().catch(() => null);
-      const actorUser = (session?.user as any) || null;
+      const appUrl = getSafeAppBaseUrl(req);
+      const actorUser = ctx.user || null;
 
       const notifyRes = await notifyBatchAssignment(batch, appUrl, {
         period,
@@ -284,6 +371,10 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const type = searchParams.get("type"); // 'period' or 'batch'
@@ -292,8 +383,22 @@ export async function DELETE(req) {
     
     if (type === 'period') {
        await (prisma as any).inputAssessmentPeriod.delete({ where: { id } });
+       await writeSecurityAuditLog({
+         userId: ctx.userId,
+         userEmail: ctx.userEmail,
+         action: "DELETE_INPUT_ASSESSMENT_PERIOD",
+         targetTable: "InputAssessmentPeriod",
+         targetId: String(id)
+       });
     } else if (type === 'batch') {
        await (prisma as any).inputAssessmentBatch.delete({ where: { id } });
+       await writeSecurityAuditLog({
+         userId: ctx.userId,
+         userEmail: ctx.userEmail,
+         action: "DELETE_INPUT_ASSESSMENT_BATCH",
+         targetTable: "InputAssessmentBatch",
+         targetId: String(id)
+       });
     }
     
     return NextResponse.json({ success: true });
@@ -467,7 +572,13 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
       .map(([k, count]) => `${k}: ${count} HS`)
       .join(" • ") || "Chưa có học sinh";
 
-    const assignUrlPath = `/admin/phan-cong-khao-sat?tab=k12${resolvedPeriodId ? `&periodId=${resolvedPeriodId}` : ""}${resolvedBatchId ? `&batchId=${resolvedBatchId}` : ""}`;
+    const isTransferHandover =
+      String(surveyContent || "").toLowerCase().includes("chuyển hệ") ||
+      String(surveyContent || "").toLowerCase().includes("chuyen he") ||
+      String(surveyContent || "").toLowerCase().includes("chuyenhe") ||
+      String(batch?.name || "").toLowerCase().includes("chuyển hệ") ||
+      String(batch?.name || "").toLowerCase().includes("chuyen_he");
+    const assignUrlPath = `/admin/phan-cong-khao-sat?tab=${isTransferHandover ? "transfer" : "k12"}${resolvedPeriodId ? `&periodId=${resolvedPeriodId}` : ""}${resolvedBatchId ? `&batchId=${resolvedBatchId}` : ""}`;
     const assignFullUrl = `${loginUrl}${assignUrlPath}`;
 
     const senderName = options?.actorUser?.fullName || options?.actorUser?.name || "Bộ phận Tuyển sinh / KT&ĐBCL";
@@ -550,7 +661,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
             id: options?.actorUser?.id || "system_handover",
             fullName: senderName,
             role: options?.actorUser?.role || "GIAO_VU",
-            isSuperAdmin: true,
+            isSuperAdmin: ["ADMIN", "SUPER_ADMIN", "KT_DBCL"].includes(String(options?.actorUser?.role || "").toUpperCase()),
           },
         });
       } catch (wfErr) {
@@ -618,7 +729,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
                       <tr>
                         <td align="center" style="padding-bottom: 8px;">
                           <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                            🏫 HỆ PHỔ THÔNG • HỆ THỐNG GIÁO DỤC SKY-LINE
+                            <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ PHỔ THÔNG • HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                           </span>
                         </td>
                       </tr>

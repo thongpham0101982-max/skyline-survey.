@@ -33,7 +33,7 @@ export default function ParentPortalError({
         <button
           type="button"
           onClick={() => reset()}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow w-full sm:w-auto cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003B3A] hover:bg-[#00A19A] text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow w-full sm:w-auto cursor-pointer"
         >
           <RefreshCcw className="w-4 h-4" />
           <span>Thử tải lại</span>

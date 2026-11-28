@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 1. Phân quyền truy cập
-    const isAdmin = ["ADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "GDCS"].includes(userRole);
+    const isAdmin = ["ADMIN", "SUPER_ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL", "GDCS"].includes(userRole);
     const isParent = userRole === "PARENT";
     const isStudent = userRole === "STUDENT" || userRole === "HOC_SINH";
 

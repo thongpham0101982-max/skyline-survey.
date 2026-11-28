@@ -5,6 +5,10 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { getParentChildren } from "@/lib/parentData"
+import {
+  getLockedParentGradePeriods,
+  getParentGradeVisibilityMap,
+} from "@/lib/grading/parent-grade-visibility"
 import ParentGradesClient, { ChildRecord, AcademicYearRecord } from "./client"
 
 export default async function ParentGradesPage() {
@@ -22,12 +26,20 @@ export default async function ParentGradesPage() {
     console.error("Error fetching default academic year:", e)
   }
 
-  const children = (userId ? await getParentChildren(userId, defaultYear?.id) : []) as ChildRecord[]
+  const [children, visibilityMap] = await Promise.all([
+    userId ? (getParentChildren(userId, defaultYear?.id) as Promise<ChildRecord[]>) : Promise.resolve([]),
+    getParentGradeVisibilityMap(prisma, defaultYear?.id || null).catch(() => null),
+  ])
+
+  const initialLockedPeriods = visibilityMap
+    ? getLockedParentGradePeriods(visibilityMap)
+    : ["GK1", "GK2"]
 
   return (
     <ParentGradesClient 
       initialChildren={children} 
-      defaultYear={defaultYear} 
+      defaultYear={defaultYear}
+      initialLockedPeriods={initialLockedPeriods}
     />
   )
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { getAdminSession } from "@/lib/session"
 import { saveUserSubjectAssignments } from "@/lib/gradebook/subjectPermissions"
+import { writeSecurityAuditLog } from "@/lib/security-guard"
 import { z } from "zod"
 
 const CreateUserSchema = z.object({
@@ -81,6 +82,15 @@ export async function createUser(data: any) {
     if (createdUserId && Array.isArray(data.subjectIds)) {
       await saveUserSubjectAssignments(createdUserId, data.subjectIds);
     }
+
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "CREATE_USER",
+      targetTable: "User",
+      targetId: createdUserId,
+      newValues: { employeeCode: data.employeeCode, fullName: data.fullName, roleCode: data.roleCode }
+    });
 
     revalidatePath("/admin/users");
     revalidatePath("/admin/teachers");
@@ -161,6 +171,15 @@ export async function updateUser(id: string, data: any) {
       await saveUserSubjectAssignments(id, data.subjectIds);
     }
 
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "UPDATE_USER",
+      targetTable: "User",
+      targetId: id,
+      newValues: { employeeCode: data.employeeCode, fullName: data.fullName, roleCode: data.roleCode }
+    });
+
     revalidatePath("/admin/users");
     revalidatePath("/admin/teachers");
     return { success: true };
@@ -178,6 +197,13 @@ export async function deleteUser(id: string) {
   }
   try {
     await prisma.user.delete({ where: { id } });
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "DELETE_USER",
+      targetTable: "User",
+      targetId: id
+    });
     revalidatePath("/admin/users");
     return { success: true };
   } catch (e: any) {
@@ -198,6 +224,14 @@ export async function deleteUsers(ids: string[]) {
       data: { assignedToUserId: null }
     });
     await prisma.user.deleteMany({ where: { id: { in: ids } } });
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "BULK_DELETE_USERS",
+      targetTable: "User",
+      targetId: ids.slice(0, 5).join(","),
+      newValues: { deletedCount: ids.length }
+    });
     revalidatePath("/admin/users");
     return { success: true };
   } catch (e: any) {
@@ -249,6 +283,15 @@ export async function changeUserRoles(userIds: string[], targetRoleCode: string)
       }
     }
 
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "CHANGE_USER_ROLES",
+      targetTable: "User",
+      targetId: userIds.slice(0, 5).join(","),
+      newValues: { targetRoleCode, count: userIds.length }
+    });
+
     revalidatePath("/admin/users");
     revalidatePath("/admin/teachers");
     return { success: true };
@@ -275,6 +318,14 @@ export async function toggleUserStatus(id: string, newStatus: "ACTIVE" | "LOCKED
     await prisma.teacher.updateMany({
       where: { userId: id },
       data: { status: newStatus }
+    });
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "TOGGLE_USER_STATUS",
+      targetTable: "User",
+      targetId: id,
+      newValues: { newStatus }
     });
 
     revalidatePath("/admin/users");

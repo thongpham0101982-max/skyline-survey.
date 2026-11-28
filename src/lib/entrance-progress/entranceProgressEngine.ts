@@ -3269,7 +3269,7 @@ export async function executeEntranceWorkflowAction(params: {
       const effectiveAdmissionResult =
         admissionResult !== undefined && admissionResult !== null
           ? admissionResult
-          : rawStResult || (stageNumber === 7 && deliveryStatus === "SENT" ? "Đạt" : null);
+          : rawStResult;
 
       const hasScores = isPreschool
         ? Boolean(st.devAssessmentResult || st.devProfessionalComment || st.probationaryResult) ||
@@ -3289,9 +3289,7 @@ export async function executeEntranceWorkflowAction(params: {
         isPreschool && (st.gdcsApprovalStatus === "APPROVED" || st.bghApprovalStatus === "APPROVED");
 
       const currentStage6Status: EntranceStageStatus =
-        isOfficiallyApprovedConclusion(effectiveAdmissionResult) ||
-        isPreschoolApproved ||
-        (stageNumber === 7 && deliveryStatus === "SENT")
+        isOfficiallyApprovedConclusion(effectiveAdmissionResult) || isPreschoolApproved
           ? "COMPLETED"
           : "IN_PROGRESS";
 

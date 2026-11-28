@@ -37,6 +37,68 @@ function matchesPreschoolGrade(stGradeOrAgeGroup, taGrade) {
     return allowedTAs.some(allowed => allowed === cleanTa || allowed.includes(cleanTa) || cleanTa.includes(allowed));
 }
 
+function isPsychologySubjectMeta(subject: any): boolean {
+    const name = String(subject?.name || "").toLowerCase().normalize("NFC");
+    const code = String(subject?.code || "").toLowerCase().trim();
+    return name.includes("tâm lý") || code === "tly" || code.includes("tly") || code.includes("psych");
+}
+
+function isStudentAssignedForK12Psychology(params: {
+    student: any;
+    pvdhRecord?: any;
+    psychSubjectId?: string | null;
+    currentUserId?: string | null;
+    currentTeacherId?: string | null;
+    isAdmin?: boolean;
+}): boolean {
+    const { student, pvdhRecord, psychSubjectId, currentUserId, currentTeacherId, isAdmin } = params;
+    const rawGrade = String(student?.grade || "").toLowerCase().replace(/^khối\s*/i, "").trim();
+    const gradeNum = parseInt(rawGrade.replace(/\D/g, ""), 10);
+
+    // Khối 1: Tâm lý là môn khảo sát chuẩn theo quy chế đối với HS thuộc đợt/khối đã phân công
+    if (gradeNum === 1) return true;
+
+    // Khối 2–12: Chỉ hiển thị học sinh khi thực sự có đề nghị / phân công khảo sát Tâm lý
+    const ori = student?.orientationRecord;
+    const refStatus = String(ori?.psychologyReferralStatus || "").trim().toUpperCase();
+    const hasReferralStatus = Boolean(refStatus && refStatus !== "NONE");
+    const assignedPsychTeacherId = String(ori?.psychologyTeacherId || "").trim();
+
+    let hasPvdhPsychRequest = false;
+    let pvdhAssignedTeacherId = "";
+    if (pvdhRecord?.teacherSummaryJson) {
+        try {
+            const parsed = typeof pvdhRecord.teacherSummaryJson === "string"
+                ? JSON.parse(pvdhRecord.teacherSummaryJson)
+                : pvdhRecord.teacherSummaryJson;
+            if (parsed?.psychInterviewRequested) hasPvdhPsychRequest = true;
+            if (parsed?.psychAssignedTeacherId) pvdhAssignedTeacherId = String(parsed.psychAssignedTeacherId).trim();
+        } catch {}
+    }
+
+    const hasSavedPsychScore =
+        (student?.psychologyScore !== null && student?.psychologyScore !== undefined) ||
+        Boolean(ori?.psychologyData) ||
+        (Array.isArray(student?.scores) && student.scores.some((sc: any) =>
+            (!psychSubjectId || sc.subjectId === psychSubjectId) &&
+            sc.scores && String(sc.scores).trim() !== "" && String(sc.scores).trim() !== "[]"
+        ));
+
+    const isReferredOrAssigned = hasReferralStatus || Boolean(assignedPsychTeacherId) || hasPvdhPsychRequest || hasSavedPsychScore;
+    if (!isReferredOrAssigned) return false;
+
+    // Nếu đã phân công đích danh 1 GV Tâm lý cho học sinh này -> chỉ GV đó (hoặc Admin) mới thấy
+    if (!isAdmin && (assignedPsychTeacherId || pvdhAssignedTeacherId)) {
+        const myIds = [currentUserId, currentTeacherId].filter(Boolean).map(String);
+        const matchesAssigned =
+            (assignedPsychTeacherId && myIds.includes(assignedPsychTeacherId)) ||
+            (pvdhAssignedTeacherId && myIds.includes(pvdhAssignedTeacherId));
+        if (!matchesAssigned) return false;
+    }
+
+    return true;
+}
+
 
 export async function GET(req: any) {
   const session = await auth()
@@ -163,16 +225,18 @@ export async function GET(req: any) {
             for (const p of periods) {
                 for (const ta of teachingAssignments) {
                     const studentClassId = ta.classId;
-                    const subName = (ta.subject?.subjectName || ta.subject?.name || "").toLowerCase();
+                    const subName = (ta.subject?.subjectName || ta.subject?.name || "").toLowerCase().trim();
+                    // Không tự động tổng hợp phân công môn Tâm lý từ danh sách cam kết học tập
+                    if (!subName || subName.includes("tâm lý")) continue;
 
                     const hasCommitments = targetStudents.some(ts => {
                         if (ts.student?.classId !== studentClassId) return false;
-                        const reason = (ts.reason || "").toLowerCase();
-                        return reason.includes(subName) || subName.includes(reason);
+                        const reason = (ts.reason || "").toLowerCase().trim();
+                        return reason.length > 0 && (reason.includes(subName) || subName.includes(reason));
                     }) || commitmentStudents.some(cs => {
                         if (cs.student?.classId !== studentClassId) return false;
-                        const content = (cs.content || "").toLowerCase();
-                        return content.includes(subName) || subName.includes(content);
+                        const content = (cs.content || "").toLowerCase().trim();
+                        return content.length > 0 && (content.includes(subName) || subName.includes(content));
                     });
 
                     if (hasCommitments) {
@@ -277,10 +341,48 @@ export async function GET(req: any) {
 
         // Query counts for general K12 students
         const generalPeriodIds = Array.from(new Set(combinedAssignments.map(a => a.periodId).filter(Boolean)));
+        const hasAnyPsychAssignment = combinedAssignments.some(a => isPsychologySubjectMeta(a.subject));
         const generalStudents = generalPeriodIds.length > 0 ? await prisma.inputAssessmentStudent.findMany({
             where: { periodId: { in: generalPeriodIds } },
-            select: { id: true, periodId: true, batchId: true, grade: true, surveyFormType: true }
+            select: {
+                id: true,
+                periodId: true,
+                batchId: true,
+                grade: true,
+                surveyFormType: true,
+                psychologyScore: true,
+                batch: { select: { status: true } },
+                orientationRecord: {
+                    select: {
+                        psychologyReferralStatus: true,
+                        psychologyTeacherId: true,
+                        psychologyData: true,
+                    }
+                },
+                ...(hasAnyPsychAssignment ? {
+                    scores: {
+                        select: { subjectId: true, scores: true }
+                    }
+                } : {})
+            }
         }) : [];
+
+        const pvdhSummaryByStudentId = new Map<string, any>();
+        if (hasAnyPsychAssignment && generalStudents.length > 0) {
+            try {
+                await ensurePvdhSchema();
+                const pvdhRecs = await getPvdhDb().pvdhAssessmentRecord.findMany({
+                    where: {
+                        studentId: { in: generalStudents.map(s => s.id) },
+                        isLatestAttempt: true,
+                    },
+                    select: { studentId: true, teacherSummaryJson: true }
+                });
+                for (const r of pvdhRecs) {
+                    pvdhSummaryByStudentId.set(r.studentId, r);
+                }
+            } catch {}
+        }
 
         const sysList = await prisma.educationSystem.findMany();
         const eduSystemsMap = {};
@@ -295,10 +397,23 @@ export async function GET(req: any) {
             const aGradeNum = aGrade.replace("khối", "").trim();
             const aSys = (a.educationSystem || "").toLowerCase().trim();
             const aSysNames = eduSystemsMap[aSys] || new Set();
+            const isPsychAssign = isPsychologySubjectMeta(a.subject);
 
             const strictMatches = generalStudents.filter(st => {
+                if ((st as any).batch?.status === "COMPLETED") return false;
                 if (st.periodId !== a.periodId) return false;
                 if (a.batchId && st.batchId !== a.batchId) return false;
+
+                if (isPsychAssign && !isStudentAssignedForK12Psychology({
+                    student: st,
+                    pvdhRecord: pvdhSummaryByStudentId.get(st.id),
+                    psychSubjectId: a.subjectId,
+                    currentUserId: session.user.id,
+                    currentTeacherId: currentTeacherForAss?.id || null,
+                    isAdmin
+                })) {
+                    return false;
+                }
 
                 const stGrade = (st.grade || "").toLowerCase().trim();
                 const stGradeNum = stGrade.replace("khối", "").trim();
@@ -324,14 +439,14 @@ export async function GET(req: any) {
                 return gradeMatch && sysMatch;
             });
 
-            // Nếu phân công gắn trực tiếp vào 1 Đợt khảo sát cụ thể (a.batchId) mà khối mặc định bị lệch so với HS trong đợt đó, tự động nhận diện HS trong đợt
+            // Nếu phân công gắn trực tiếp vào 1 Đợt khảo sát cụ thể (a.batchId) mà khối mặc định bị lệch so với HS trong đợt đó, tự động nhận diện HS trong đợt (KHÔNG áp dụng cho môn Tâm lý để tránh hiển thị HS chưa được phân công)
             let finalCount = strictMatches.length;
             let resolvedGrade = a.grade;
             let resolvedSys = a.educationSystem;
 
-            if (finalCount === 0 && a.batchId) {
+            if (!isPsychAssign && finalCount === 0 && a.batchId) {
                 const batchStudents = generalStudents.filter(
-                    st => st.periodId === a.periodId && st.batchId === a.batchId
+                    st => (st as any).batch?.status !== "COMPLETED" && st.periodId === a.periodId && st.batchId === a.batchId
                 );
                 if (batchStudents.length > 0) {
                     finalCount = batchStudents.length;
@@ -350,6 +465,12 @@ export async function GET(req: any) {
                 educationSystem: resolvedSys,
                 studentCount: finalCount
             };
+        }).filter(a => {
+            // Môn Tâm lý chỉ hiển thị trong tag Phỏng vấn định hướng khi thực sự có học sinh được phân công
+            if (!isAdmin && isPsychologySubjectMeta(a.subject) && (a.studentCount || 0) === 0) {
+                return false;
+            }
+            return true;
         });
 
         // Filter by academicYear in-memory (relation filter may not work on preschool model)
@@ -1607,13 +1728,22 @@ export async function GET(req: any) {
         const isAdmin = ["ADMIN", "SUPERADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN", "GIAO_VU", "GIAO_VU_CS"].includes(userRole);
 
         // Luon load teacherAssignments de kiem tra quyen va loc dung khoi/he
-        const teacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
-            where: {
-                ...(isAdmin ? {} : { userId: session.user.id }),
-                periodId: periodId || undefined,
-                subjectId: subjectId || undefined
-            }
-        });
+        const [teacherAssignments, selectedSubjectMeta] = await Promise.all([
+            prisma.inputAssessmentTeacherAssignment.findMany({
+                where: {
+                    ...(isAdmin ? {} : { userId: session.user.id }),
+                    periodId: periodId || undefined,
+                    subjectId: subjectId || undefined
+                }
+            }),
+            subjectId
+                ? prisma.assessmentSubject.findUnique({
+                      where: { id: subjectId },
+                      select: { id: true, code: true, name: true }
+                  })
+                : Promise.resolve(null)
+        ]);
+        const isPsychSubject = isPsychologySubjectMeta(selectedSubjectMeta);
         
         const sysList = await prisma.educationSystem.findMany();
         const eduSystemsMap: Record<string, Set<string>> = {};
@@ -1637,6 +1767,7 @@ export async function GET(req: any) {
                         updatedAt: true,
                         interviewerName: true,
                         psychologyReferralStatus: true,
+                        psychologyTeacherId: true,
                         psychologyTeacherName: true,
                         psychologyData: true
                     }
@@ -1658,7 +1789,7 @@ export async function GET(req: any) {
                 const stSys = (st.surveyFormType || "").toLowerCase().trim();
                 
                 const matchesAssignment = teacherAssignments.some(ta => {
-                    if (ta.batchId && st.batchId && ta.batchId !== st.batchId) return false;
+                    if (ta.batchId && st.batchId !== ta.batchId) return false;
                     const taGrade = (ta.grade || "").toLowerCase().trim();
                     const taSys = (ta.educationSystem || "").toLowerCase().trim();
                     
@@ -1687,8 +1818,8 @@ export async function GET(req: any) {
                         }
                     }
 
-                    // Fallback cho phân công gắn trực tiếp vào 1 Đợt cụ thể (ta.batchId) nếu đợt đó không có học sinh nào khớp khối mặc định
-                    if ((!gradeMatch || !sysMatch) && ta.batchId && st.batchId === ta.batchId) {
+                    // Fallback cho phân công gắn trực tiếp vào 1 Đợt cụ thể (ta.batchId) nếu đợt đó không có học sinh nào khớp khối mặc định (KHÔNG áp dụng cho Tâm lý)
+                    if (!isPsychSubject && (!gradeMatch || !sysMatch) && ta.batchId && st.batchId === ta.batchId) {
                         const batchHasStrictMatch = students.some(otherSt => {
                             if (otherSt.batchId !== ta.batchId) return false;
                             const oG = (otherSt.grade || "").toLowerCase().replace("khối", "").trim();
@@ -1704,8 +1835,8 @@ export async function GET(req: any) {
                 });
                 
                 if (!matchesAssignment && !isAdmin) return false;
-            } else if (!grade && !systemCode && !isAdmin) {
-                // Neu khong co assignment nao va khong phai Admin/QA, GV khong nen thay hoc sinh nao
+            } else if (!isAdmin) {
+                // Nếu không có phân công nào và không phải Admin/QA, GV không được thấy học sinh nào
                 return false;
             }
             // Loc theo khoi cu the (neu GV chon tu bo loc Khoi tren UI)
@@ -1718,12 +1849,12 @@ export async function GET(req: any) {
                 if (stGrade) {
                     const matchGrade = stGrade === qGrade || stGradeNum === qGradeNum;
                     if (!matchGrade) {
-                        // Nếu đang lọc theo 1 đợt cụ thể mà đợt đó không có học sinh nào thuộc qGrade (do lệch khối khi gán đợt), vẫn hiển thị HS của đợt đó
+                        // Nếu đang lọc theo 1 đợt cụ thể mà đợt đó không có học sinh nào thuộc qGrade (do lệch khối khi gán đợt), vẫn hiển thị HS của đợt đó (trừ môn Tâm lý)
                         const anyStudentInBatchMatchesGrade = batchId && students.some(otherSt => {
                             const oG = (otherSt.grade || "").toLowerCase().replace("khối", "").trim();
                             return oG === qGradeNum;
                         });
-                        if (!batchId || anyStudentInBatchMatchesGrade) return false;
+                        if (isPsychSubject || !batchId || anyStudentInBatchMatchesGrade) return false;
                     }
                 }
             }
@@ -1751,7 +1882,7 @@ export async function GET(req: any) {
         });
 
         const eligibleStudentCodes = new Set();
-        if (currentTeacherForStud) {
+        if (currentTeacherForStud && !isPsychSubject) {
             const teachingAssignments = await prisma.teachingAssignment.findMany({
                 where: {
                     teacherId: currentTeacherForStud.id,
@@ -1916,6 +2047,20 @@ export async function GET(req: any) {
             }
         } catch (tciErr) {
             console.warn("Could not enrich TCI/PVDH records in getStudents:", tciErr);
+        }
+
+        // Đối với môn Tâm lý K-12: Khối 2–12 chỉ hiển thị học sinh thực sự được phân công / đề nghị khảo sát Tâm lý
+        if (isPsychSubject) {
+            finalFilteredStudents = finalFilteredStudents.filter((s: any) =>
+                isStudentAssignedForK12Psychology({
+                    student: s,
+                    pvdhRecord: s.pvdhRecord || null,
+                    psychSubjectId: subjectId,
+                    currentUserId: session.user.id,
+                    currentTeacherId: currentTeacherForStud?.id || null,
+                    isAdmin
+                })
+            );
         }
 
         return NextResponse.json(finalFilteredStudents);

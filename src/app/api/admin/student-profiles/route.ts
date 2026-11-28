@@ -19,7 +19,7 @@ import {
   resolveAchievementLevelLabel,
 } from "@/lib/achievementFormatters"
 
-const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
+const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
 
 async function checkAuth() {
   const session = await auth()

@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS "pvdh_assessment_records" (
   "obsSupportNeeds" TEXT,
   "teacherSectionStatus" TEXT NOT NULL DEFAULT 'DRAFT',
   "parentResponsesJson" TEXT NOT NULL DEFAULT '{}',
+  "teacherSummaryJson" TEXT NOT NULL DEFAULT '{}',
   "planStrengthsPriority" TEXT,
   "planGoalsActionsText" TEXT,
   "followUpActionsJson" TEXT NOT NULL DEFAULT '[]',

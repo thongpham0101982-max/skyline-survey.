@@ -19,6 +19,7 @@ export function TeacherOverviewSummaryCards({
   selectedStudentId,
   selectedStudentName,
   nextBestAction,
+  compactStrip = false,
   onNavigateTab,
 }: {
   classId: string;
@@ -26,6 +27,7 @@ export function TeacherOverviewSummaryCards({
   semester: string;
   selectedStudentId?: string;
   selectedStudentName?: string;
+  compactStrip?: boolean;
   nextBestAction?: {
     stepCode?: string;
     stepTitle?: string;
@@ -55,35 +57,47 @@ export function TeacherOverviewSummaryCards({
     if (!classId) return;
     setLoading(true);
     try {
+      const yearParam = schoolYear || '';
       const qs = new URLSearchParams({
         classId,
-        schoolYear: schoolYear || '2025-2026',
+        academicYearId: yearParam,
+        schoolYear: yearParam || '2025-2026',
         semester: semester || 'HK1',
       });
+      const yearQs = yearParam ? `&academicYearId=${encodeURIComponent(yearParam)}&schoolYear=${encodeURIComponent(yearParam)}` : '';
       const [matrixRes, fbRes, taskRes, consultRes] = await Promise.all([
         fetch(`/api/advisory/progress-matrix?${qs.toString()}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/advisory/student-feedback?classId=${encodeURIComponent(classId)}&schoolYear=${encodeURIComponent(schoolYear || '2025-2026')}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/advisory/gvbm-tasks?classId=${encodeURIComponent(classId)}&schoolYear=${encodeURIComponent(schoolYear || '2025-2026')}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/advisory/consultations?classId=${encodeURIComponent(classId)}&schoolYear=${encodeURIComponent(schoolYear || '2025-2026')}`).then(r => r.json()).catch(() => null),
+        fetch(`/api/advisory/student-feedback?classId=${encodeURIComponent(classId)}${yearQs}`).then(r => r.json()).catch(() => null),
+        fetch(`/api/advisory/gvbm-tasks?classId=${encodeURIComponent(classId)}${yearQs}`).then(r => r.json()).catch(() => null),
+        fetch(`/api/advisory/consultations?classId=${encodeURIComponent(classId)}${yearQs}`).then(r => r.json()).catch(() => null),
       ]);
 
-      const rows = matrixRes?.rows || [];
-      const goalsAttention = rows.reduce((acc: number, r: any) => acc + (r.goals?.overdueOrAttentionCount || 0), 0);
+      const rows = Array.isArray(matrixRes?.rows) ? matrixRes.rows : [];
+      const goalsAttention = rows.reduce((acc: number, r: any) => {
+        if (typeof r.goals?.overdueOrAttentionCount === 'number') {
+          return acc + r.goals.overdueOrAttentionCount;
+        }
+        return acc + (r.isOverdue || r.goalsSummary?.total === 0 || r.progressOutcome === 'NO_PROGRESS' ? 1 : 0);
+      }, 0);
 
-      const fbSummary = fbRes?.summary || {};
-      const unprocessedFb = Number(fbSummary.unprocessed || 0) + Number(fbSummary.needsAttention || 0);
+      const fbStats = fbRes?.stats || fbRes?.summary || {};
+      const unprocessedFb = Number(fbStats.pending ?? fbStats.unprocessed ?? 0);
 
       const tasks = Array.isArray(taskRes?.tasks) ? taskRes.tasks : [];
       const pendingAccept = tasks.filter((t: any) => t.status === 'ASSIGNED').length;
       const pendingConfirm = tasks.filter((t: any) => t.status === 'RESPONDED' || t.status === 'SUPPLEMENT_REQUESTED').length;
       const overdueT = tasks.filter((t: any) => t.isOverdue).length;
 
-      const logs = Array.isArray(consultRes?.logs) ? consultRes.logs : [];
+      const logs = Array.isArray(consultRes)
+        ? consultRes
+        : Array.isArray(consultRes?.logs)
+          ? consultRes.logs
+          : [];
       const todayStr = new Date().toISOString().slice(0, 10);
       const upcomingC = logs.filter((l: any) => {
-        const d = (l.sessionDate || '').slice(0, 10);
-        const f = (l.nextFollowUpDate || '').slice(0, 10);
-        return (d >= todayStr) || (f && f >= todayStr);
+        const d = String(l.sessionDate || l.meetingDate || '').slice(0, 10);
+        const f = String(l.nextFollowUpDate || l.deadline || '').slice(0, 10);
+        return (d && d >= todayStr) || (f && f >= todayStr);
       }).length;
 
       setCounts({
@@ -165,6 +179,64 @@ export function TeacherOverviewSummaryCards({
       onClick: () => onNavigateTab('companion_support'),
     },
   ];
+
+  if (compactStrip) {
+    const stripItems = [
+      {
+        key: 'consultations',
+        label: 'Lịch tư vấn sắp tới',
+        value: counts.upcomingConsultations,
+        activeTone: 'text-[#008B85] bg-teal-50 border-teal-200',
+        onClick: () => onNavigateTab('consultation_logs'),
+      },
+      {
+        key: 'feedback',
+        label: 'Phản hồi HS chờ xử lý',
+        value: counts.unprocessedFeedback,
+        activeTone: 'text-amber-800 bg-amber-50 border-amber-200',
+        onClick: () => onNavigateTab('student_feedback'),
+      },
+      {
+        key: 'companion_accept',
+        label: 'GVBM/TLHN chờ nhận',
+        value: counts.pendingCompanionAccept,
+        activeTone: 'text-[#008B85] bg-teal-50 border-teal-200',
+        onClick: () => onNavigateTab('companion_support'),
+      },
+      {
+        key: 'support_confirm',
+        label: 'Kết quả hỗ trợ chờ duyệt',
+        value: counts.pendingSupportConfirm,
+        activeTone: 'text-emerald-800 bg-emerald-50 border-emerald-200',
+        onClick: () => onNavigateTab('companion_support'),
+      },
+    ];
+
+    return (
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 tabular-nums">
+        <span className="text-xs font-semibold text-slate-600">
+          Tác vụ phối hợp cần lưu ý:
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {stripItems.map(item => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={item.onClick}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+                item.value > 0
+                  ? item.activeTone
+                  : 'bg-[#F8FAFC] text-slate-600 border-[#E2E8F0] hover:bg-slate-100'
+              }`}
+            >
+              <span>{item.label}</span>
+              <span className="font-bold">{loading ? '…' : item.value}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -327,18 +399,25 @@ export function GoalPlanExtendedPanel({
     if (!studentId && !studentCode) return;
     setLoading(true);
     try {
+      const yearParam = schoolYear || '';
       const qs = new URLSearchParams({
         studentId: studentId || studentCode,
-        schoolYear: schoolYear || '2025-2026',
+        ...(yearParam ? { academicYearId: yearParam, schoolYear: yearParam } : {}),
       });
+      const yearQs = yearParam ? `&academicYearId=${encodeURIComponent(yearParam)}&schoolYear=${encodeURIComponent(yearParam)}` : '';
       const [metaRes, taskRes, consultRes] = await Promise.all([
         fetch(`/api/advisory/goal-meta?${qs.toString()}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/advisory/gvbm-tasks?studentId=${encodeURIComponent(studentCode || studentId)}&schoolYear=${encodeURIComponent(schoolYear || '2025-2026')}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/advisory/consultations?studentId=${encodeURIComponent(studentId)}&schoolYear=${encodeURIComponent(schoolYear || '2025-2026')}`).then(r => r.json()).catch(() => null),
+        fetch(`/api/advisory/gvbm-tasks?studentId=${encodeURIComponent(studentId || studentCode)}${yearQs}`).then(r => r.json()).catch(() => null),
+        fetch(`/api/advisory/consultations?studentId=${encodeURIComponent(studentId)}${yearQs}`).then(r => r.json()).catch(() => null),
       ]);
       if (metaRes?.metaMap) setMetaMap(metaRes.metaMap);
       if (Array.isArray(taskRes?.tasks)) setTasks(taskRes.tasks);
-      if (Array.isArray(consultRes?.logs)) setConsultations(consultRes.logs);
+      const parsedLogs = Array.isArray(consultRes)
+        ? consultRes
+        : Array.isArray(consultRes?.logs)
+          ? consultRes.logs
+          : [];
+      setConsultations(parsedLogs);
     } finally {
       setLoading(false);
     }
@@ -942,15 +1021,24 @@ export function StudentFeedbackWorkspace({
     try {
       const qs = new URLSearchParams({
         classId,
-        schoolYear: schoolYear || '2025-2026',
+        ...(schoolYear ? { academicYearId: schoolYear, schoolYear } : {}),
       });
       if (onlySelectedStudent && selectedStudentId) {
         qs.set('studentId', selectedStudentId);
       }
       const res = await fetch(`/api/advisory/student-feedback?${qs.toString()}`);
       const data = await res.json();
-      if (Array.isArray(data?.feedbacks)) setFeedbacks(data.feedbacks);
-      if (data?.summary) setSummary(data.summary);
+      const rawItems = Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(data?.feedbacks)
+          ? data.feedbacks
+          : [];
+      setFeedbacks(rawItems);
+      const rawStats = data?.stats || data?.summary || {};
+      setSummary({
+        ...rawStats,
+        unprocessed: rawStats.pending ?? rawStats.unprocessed ?? 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -965,7 +1053,10 @@ export function StudentFeedbackWorkspace({
       if (filterMode === 'POST_CONSULTATION') return item.feedbackType === 'POST_CONSULTATION';
       if (filterMode === 'GOAL_SELF_ASSESSMENT') return item.feedbackType === 'GOAL_SELF_ASSESSMENT';
       if (filterMode === 'NEEDS_ATTENTION') return Boolean(item.needsAttention);
-      if (filterMode === 'UNPROCESSED') return item.advisorStatus !== 'CONFIRMED';
+      if (filterMode === 'UNPROCESSED') {
+        const status = item.advisorProcessStatus || item.advisorStatus || 'PENDING';
+        return status !== 'PROCESSED' && status !== 'CONFIRMED';
+      }
       return true;
     });
   }, [feedbacks, filterMode]);
@@ -980,10 +1071,10 @@ export function StudentFeedbackWorkspace({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: activeItem.id,
-          advisorActionType: actionType,
-          advisorReply: replyText,
-          advisorActionNote: actionNote,
-          advisorStatus: 'CONFIRMED',
+          studentId: activeItem.studentId,
+          advisorResolutionAction: actionType,
+          advisorReplyText: [replyText, actionNote].filter(Boolean).join(' — '),
+          advisorProcessStatus: 'PROCESSED',
         }),
       });
       if (res.ok) {
@@ -1120,11 +1211,11 @@ export function StudentFeedbackWorkspace({
                     <td className="py-3.5 px-4 align-top max-w-md space-y-1">
                       {item.feedbackType === 'POST_CONSULTATION' ? (
                         <>
-                          <div><span className="font-semibold text-slate-700">Cảm nhận:</span> {item.feelingAfter || '—'}</div>
+                          <div><span className="font-semibold text-slate-700">Cảm nhận:</span> {item.postConsultFeeling || item.feelingAfter || '—'}</div>
                           <div className="flex flex-wrap gap-3 text-[11px] text-slate-600">
-                            <span>Được lắng nghe: <strong>{item.listenedScore || 5}/5</strong></span>
-                            <span>Hiểu việc cần làm: <strong>{item.understoodNextStep || 'Rõ ràng'}</strong></span>
-                            <span>Phù hợp: <strong>{item.goalSuitability || 'Phù hợp'}</strong></span>
+                            <span>Được lắng nghe: <strong>{item.listenedAndRespectedScore ?? item.listenedScore ?? 5}/5</strong></span>
+                            <span>Hiểu việc cần làm: <strong>{typeof item.understoodNextSteps === 'boolean' ? (item.understoodNextSteps ? 'Rõ ràng' : 'Cần làm rõ') : (item.understoodNextStep || 'Rõ ràng')}</strong></span>
+                            <span>Phù hợp: <strong>{item.goalAndActionSuitability || item.goalSuitability || 'Phù hợp'}</strong></span>
                           </div>
                           {item.supportRequestText && (
                             <div className="text-amber-800 bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
@@ -1137,9 +1228,9 @@ export function StudentFeedbackWorkspace({
                         </>
                       ) : (
                         <>
-                          <div><span className="font-semibold text-slate-700">Việc đã thực hiện:</span> {item.actionsTaken || '—'}</div>
-                          {item.resultsAndEvidence && (
-                            <div><span className="font-semibold text-slate-700">Kết quả & Minh chứng:</span> {item.resultsAndEvidence}</div>
+                          <div><span className="font-semibold text-slate-700">Việc đã thực hiện:</span> {item.actionsTakenText || item.actionsTaken || '—'}</div>
+                          {(item.resultsAndEvidenceText || item.resultsAndEvidence) && (
+                            <div><span className="font-semibold text-slate-700">Kết quả & Minh chứng:</span> {item.resultsAndEvidenceText || item.resultsAndEvidence}</div>
                           )}
                           {item.difficultiesText && (
                             <div className="text-amber-800"><span className="font-semibold">Khó khăn:</span> {item.difficultiesText}</div>
@@ -1149,18 +1240,18 @@ export function StudentFeedbackWorkspace({
                               <strong>Hỗ trợ cần thêm:</strong> {item.supportNeededText}
                             </div>
                           )}
-                          {item.adjustmentProposal && (
-                            <div><span className="font-semibold text-slate-700">Đề xuất điều chỉnh:</span> {item.adjustmentProposal}</div>
+                          {(item.adjustmentProposalText || item.adjustmentProposal) && (
+                            <div><span className="font-semibold text-slate-700">Đề xuất điều chỉnh:</span> {item.adjustmentProposalText || item.adjustmentProposal}</div>
                           )}
                         </>
                       )}
 
-                      {item.advisorReply && (
+                      {(item.advisorReplyText || item.advisorReply) && (
                         <div className="mt-2 p-2.5 rounded-lg bg-teal-50/70 border border-teal-200 text-slate-800">
-                          <div className="font-bold text-[#003B3A]">Phản hồi & Xử lý của GVCN ({item.advisorName || 'GVCN'}):</div>
-                          <div className="mt-0.5">{item.advisorReply}</div>
-                          {item.advisorActionNote && (
-                            <div className="text-[11px] text-slate-600 mt-0.5">Cách xử lý: {item.advisorActionNote}</div>
+                          <div className="font-bold text-[#003B3A]">Phản hồi & Xử lý của GVCN ({item.processedByName || item.advisorName || 'GVCN'}):</div>
+                          <div className="mt-0.5">{item.advisorReplyText || item.advisorReply}</div>
+                          {(item.advisorResolutionAction || item.advisorActionNote) && (
+                            <div className="text-[11px] text-slate-600 mt-0.5">Cách xử lý: {item.advisorResolutionAction || item.advisorActionNote}</div>
                           )}
                         </div>
                       )}
@@ -1182,11 +1273,11 @@ export function StudentFeedbackWorkspace({
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] text-slate-500 w-24">3. GVCN xử lý:</span>
                         <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
-                          item.advisorStatus === 'CONFIRMED'
+                          item.advisorProcessStatus === 'PROCESSED' || item.advisorStatus === 'CONFIRMED'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-amber-50 text-amber-800 border-amber-200'
                         }`}>
-                          {item.advisorStatus === 'CONFIRMED' ? 'Đã xử lý' : 'Chờ xử lý'}
+                          {item.advisorProcessStatus === 'PROCESSED' || item.advisorStatus === 'CONFIRMED' ? 'Đã xử lý' : 'Chờ xử lý'}
                         </span>
                       </div>
                     </td>
@@ -1398,19 +1489,26 @@ export function CompanionSupportWorkspace({
   const loadWorkspaceData = useCallback(async () => {
     setLoading(true);
     try {
+      const yearParam = schoolYear || '';
       const qs = new URLSearchParams({
         classId: classId || '',
-        schoolYear: schoolYear || '2025-2026',
+        ...(yearParam ? { academicYearId: yearParam, schoolYear: yearParam } : {}),
         includeClassTeachers: '1',
       });
+      const yearQs = yearParam ? `&academicYearId=${encodeURIComponent(yearParam)}&schoolYear=${encodeURIComponent(yearParam)}` : '';
       const [taskRes, myTaskRes, orientRes] = await Promise.all([
         fetch(`/api/advisory/gvbm-tasks?${qs.toString()}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/advisory/gvbm-tasks?assignedToMe=1&schoolYear=${encodeURIComponent(schoolYear || '2025-2026')}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/advisory/orientation-tracking?classId=${encodeURIComponent(classId || '')}&studentId=${encodeURIComponent(selectedStudentId || selectedStudentCode || '')}&gradeLevel=${encodeURIComponent(gradeLevel || '12')}&schoolYear=${encodeURIComponent(schoolYear || '2025-2026')}`).then(r => r.json()).catch(() => null),
+        fetch(`/api/advisory/gvbm-tasks?assignedToMe=1${yearQs}`).then(r => r.json()).catch(() => null),
+        fetch(`/api/advisory/orientation-tracking?classId=${encodeURIComponent(classId || '')}&studentId=${encodeURIComponent(selectedStudentId || selectedStudentCode || '')}&gradeLevel=${encodeURIComponent(gradeLevel || '12')}${yearQs}`).then(r => r.json()).catch(() => null),
       ]);
 
       if (Array.isArray(taskRes?.tasks)) setTasks(taskRes.tasks);
-      if (Array.isArray(taskRes?.classTeachers)) setClassTeachers(taskRes.classTeachers);
+      const parsedClassTeachers = Array.isArray(taskRes?.classSubjectTeachers)
+        ? taskRes.classSubjectTeachers
+        : Array.isArray(taskRes?.classTeachers)
+          ? taskRes.classTeachers
+          : [];
+      setClassTeachers(parsedClassTeachers);
       if (Array.isArray(myTaskRes?.tasks)) setMyTasks(myTaskRes.tasks);
       if (orientRes) {
         setOrientationData(orientRes);

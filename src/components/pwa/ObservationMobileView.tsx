@@ -31,7 +31,7 @@ import {
   ShieldCheck,
   Filter
 } from "lucide-react"
-import { PwaBottomNav } from "@/components/pwa/PwaBottomNav"
+
 
 export interface ObservationSlotItem {
   id: string
@@ -550,7 +550,7 @@ export function ObservationMobileView({
   }, [activeTab, mySlots, availableSlots, needsEvalSlots])
 
   return (
-    <div className="min-h-screen bg-[#F6F8F7] pb-24 font-sans text-slate-800">
+    <div className="pwa-observation-view min-h-dvh bg-[#F8FAFC] pb-24 font-sans text-slate-800 tabular-nums">
       {/* 1. TOP APP BAR */}
       <div className="bg-[#003B3A] text-white px-4 pt-4 pb-4 sticky top-0 z-30 shadow-md">
         <div className="flex items-center justify-between">
@@ -563,9 +563,9 @@ export function ObservationMobileView({
             </Link>
             <div>
               <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
-                <span>Dự Giờ & Thao Giảng</span>
+                <span>Dự giờ & Thao giảng</span>
               </h1>
-              <p className="text-[11px] text-[#5EEAD4] font-medium">SSM Mobile Workspace</p>
+              <p className="text-[11px] text-[#5EEAD4] font-medium">Không gian dự giờ di động</p>
             </div>
           </div>
 
@@ -631,8 +631,8 @@ export function ObservationMobileView({
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-black tracking-wide uppercase text-teal-200">
-                    Tác Vụ Điều Hành Chuyên Môn
+                  <h3 className="text-xs font-bold text-[#5EEAD4]">
+                    Tác vụ điều hành chuyên môn
                   </h3>
                   <p className="text-[10px] text-teal-100/80 font-medium">
                     {managerTitle}
@@ -670,19 +670,19 @@ export function ObservationMobileView({
               <button
                 type="button"
                 onClick={onOpenAssigned}
-                className="flex flex-col items-start justify-between p-3 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-600 hover:from-teal-600 hover:to-emerald-600 active:scale-[0.98] text-white shadow-md shadow-purple-600/20 border border-teal-300/30 transition-all text-left cursor-pointer group"
+                className="flex flex-col items-start justify-between p-3 rounded-xl bg-[#00736E] hover:bg-[#005854] active:scale-[0.98] text-white shadow-xs border border-teal-400/30 transition-all text-left cursor-pointer group"
               >
                 <div className="flex items-center justify-between w-full mb-1.5">
-                  <div className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center text-teal-700 group-hover:scale-110 transition-transform">
-                    <UserCheck className="w-4 h-4 text-teal-700" />
+                  <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-[#CCFBF1] group-hover:scale-105 transition-transform">
+                    <UserCheck className="w-4 h-4 text-[#CCFBF1]" />
                   </div>
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-black/25 text-teal-700">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/15 text-[#CCFBF1]">
                     Phân công
                   </span>
                 </div>
                 <div>
-                  <span className="text-xs font-black block leading-tight">Chỉ định dự giờ</span>
-                  <span className="text-[10px] text-teal-700/80 font-medium block mt-0.5">Chỉ định GV được dự</span>
+                  <span className="text-xs font-bold block leading-tight text-white">Chỉ định dự giờ</span>
+                  <span className="text-[10px] text-teal-100/90 font-medium block mt-0.5">Chỉ định GV được dự</span>
                 </div>
               </button>
             </div>
@@ -1382,7 +1382,7 @@ export function ObservationMobileView({
             className={`h-12 px-4 rounded-2xl flex items-center gap-2 shadow-xl border font-black text-xs transition-all cursor-pointer ${
               showQuickActionMenu
                 ? "bg-slate-900 text-white border-slate-700 shadow-slate-900/30 scale-95"
-                : "bg-gradient-to-r from-amber-500 to-[#00A19A] text-white border-white/20 shadow-teal-900/30 hover:scale-105 active:scale-95"
+                : "bg-[#003B3A] text-white border-[#00A19A]/40 shadow-teal-950/25 active:scale-95"
             }`}
             title="Mở menu quản lý nhanh"
           >
@@ -1393,7 +1393,7 @@ export function ObservationMobileView({
               </>
             ) : (
               <>
-                <Zap className="w-4 h-4 fill-amber-300 text-amber-300 animate-pulse" />
+                <Zap className="w-4 h-4 text-[#5EEAD4]" />
                 <span>Tác vụ QL</span>
               </>
             )}
@@ -1402,7 +1402,7 @@ export function ObservationMobileView({
       )}
 
       {/* 5. BOTTOM NAVIGATION */}
-      <PwaBottomNav role={currentTeacher?.user?.role || "TEACHER"} />
+      {/* Bottom navigation is rendered once by TeacherLayout */}
     </div>
   )
 }

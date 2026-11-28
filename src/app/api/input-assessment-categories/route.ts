@@ -4,6 +4,7 @@ import { ensureTciSchema } from "@/lib/tci/schema-init";
 import { TCI_SUBJECT_CODE, TCI_SUBJECT_NAME, TCI_ASSESSMENT_TYPE } from "@/lib/tci/constants";
 import { ensurePvdhSchema } from "@/lib/pvdh/schema-init";
 import { classifyAssessmentContentCategory } from "@/lib/pvdh/constants";
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard";
 
 const modelMap: any = {
   grade: "assessmentGrade",
@@ -85,6 +86,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { type, data } = await req.json();
     if (!type || !modelMap[type]) return NextResponse.json({ error: "Invalid type" }, { status: 400 });
 
@@ -116,6 +119,8 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { type, id, data } = await req.json();
     if (!type || !modelMap[type]) return NextResponse.json({ error: "Invalid type" }, { status: 400 });
 
@@ -130,6 +135,8 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { searchParams } = new URL(req.url);
     const type = searchParams.get("type");
     const id = searchParams.get("id");

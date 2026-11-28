@@ -12,7 +12,7 @@ import {
   Filter, ClipboardCheck, ClipboardList, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
   Phone, Printer, Lock, Zap, CheckSquare, Square, Eye,
-  HeartHandshake, Brain, Compass, ExternalLink, ShieldCheck, Send
+  HeartHandshake, Brain, Compass, ExternalLink, ShieldCheck, Send, Monitor, Smartphone
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
@@ -39,6 +39,11 @@ import {
   parseSavedEmailRoutingConfig,
   type EmailRoutingConfigData
 } from "./EmailRoutingConfigModal"
+import { CompletenessCheckModal } from "./CompletenessCheckModal"
+import {
+  checkStudentAssessmentCompleteness,
+  type StudentCompletenessResult
+} from "@/lib/entranceCompleteness"
 import {
   isSuperAdminRole,
   isKtdbclEntranceRole,
@@ -1327,7 +1332,64 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [inlineApprovalLoadingId, setInlineApprovalLoadingId] = useState<string | null>(null);
   const [reportCampusFilter, setReportCampusFilter] = useState("all");
   const [reportGradeFilter, setReportGradeFilter] = useState("all");
+  const currentMonthYearKey = useMemo(() => {
+    const now = new Date();
+    return `${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+  }, []);
+  const getBatchMonthYearKey = useCallback((b: any): string => {
+    const raw = String(b?.endDate || b?.startDate || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return `${raw.slice(5, 7)}/${raw.slice(0, 4)}`;
+    }
+    return "";
+  }, []);
+  const getStudentMonthYearKey = useCallback((s: any, batchMap?: Map<string, any>): string => {
+    const bObj = s?.batch || (s?.batchId && batchMap ? batchMap.get(s.batchId) : null);
+    const fromBatch = getBatchMonthYearKey(bObj);
+    if (fromBatch) return fromBatch;
+    const rawCreated = String(s?.createdAt || "").slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rawCreated)) {
+      return `${rawCreated.slice(5, 7)}/${rawCreated.slice(0, 4)}`;
+    }
+    return "";
+  }, [getBatchMonthYearKey]);
+
   const [reportApprovalStatusFilter, setReportApprovalStatusFilter] = useState("all");
+  const [isCompletenessModalOpen, setIsCompletenessModalOpen] = useState(false);
+  const [isBatchResultPreviewOpen, setIsBatchResultPreviewOpen] = useState(false);
+  const [previewBatchId, setPreviewBatchId] = useState<string>("");
+  const [previewSingleStudent, setPreviewSingleStudent] = useState<any | null>(null);
+  const [emailPreviewViewport, setEmailPreviewViewport] = useState<"desktop" | "mobile">("desktop");
+  const [batchResultPreviewLoading, setBatchResultPreviewLoading] = useState(false);
+  const [batchResultPreviewData, setBatchResultPreviewData] = useState<{
+    subject: string;
+    html: string;
+    toRecipients: string[];
+    ccRecipients: string[];
+    batchName: string;
+    campusName: string;
+    studentCount: number;
+    pendingCount: number;
+  } | null>(null);
+  const [gdcsReminderPreviewOpen, setGdcsReminderPreviewOpen] = useState(false);
+  const [gdcsReminderPreviewLoading, setGdcsReminderPreviewLoading] = useState(false);
+  const [gdcsReminderSending, setGdcsReminderSending] = useState(false);
+  const [gdcsReminderPreviewData, setGdcsReminderPreviewData] = useState<{
+    studentId: string;
+    studentName: string;
+    gdcsEmail: string;
+    subject: string;
+    to: string;
+    cc: string[];
+    html: string;
+    campusName: string;
+  } | null>(null);
+  const [reportSortMode, setReportSortMode] = useState<"priority_latest" | "latest_batch" | "name_asc">("priority_latest");
+  const [showAllRecentBatches, setShowAllRecentBatches] = useState(false);
+  const [reportMonthFilter, setReportMonthFilter] = useState<string>(() => {
+    const now = new Date();
+    return `${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+  });
   const [reportStudentSearchQuery, setReportStudentSearchQuery] = useState("");
   const [reportCurrentPage, setReportCurrentPage] = useState(1);
   const [reportPageSize, setReportPageSize] = useState(15);
@@ -1368,12 +1430,12 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [dossierActiveTab, setDossierActiveTab] = useState<"scores" | "orientation" | "all">("scores");
   const [orientationSubTab, setOrientationSubTab] = useState<PvdhSectionCode | "FULL_FORM">("FULL_FORM");
 
-  // Trạng thái GĐCS xác nhận phương án làm việc hồ sơ Tâm lý (1. Trao đổi trực tiếp PHHS, 2. Hẹn lịch làm việc / Hội chẩn chuyên môn, 3. Ủy quyền Giáo viên đồng hành)
+  // Trạng thái GĐCS xác nhận phương án làm việc hồ sơ Tâm lý (1. GĐCS Gặp trực tiếp PHHS, 2. Ủy quyền cho NTCM/GV phụ trách, 3. Đặt lịch hẹn với PHHS)
   const [psychDirectiveType, setPsychDirectiveType] = useState<"DIRECT_PARENT_MEETING" | "SCHEDULE_MEETING" | "DELEGATE_TEACHER">("DIRECT_PARENT_MEETING");
   const [psychMeetingTime, setPsychMeetingTime] = useState("");
   const [psychMeetingLocation, setPsychMeetingLocation] = useState("Phòng Giám đốc Cơ sở");
   const [psychParentContent, setPsychParentContent] = useState("");
-  const [psychParticipants, setPsychParticipants] = useState("GĐCS, Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý, GVCN");
+  const [psychParticipants, setPsychParticipants] = useState("GĐCS, Tổ Tư vấn cơ sở, Tổ Giáo vụ cơ sở, GV phỏng vấn định hướng, GV Tâm lý");
   const [psychAgenda, setPsychAgenda] = useState("");
   const [psychDelegatedTeacherId, setPsychDelegatedTeacherId] = useState("");
   const [psychDelegatedTeacherName, setPsychDelegatedTeacherName] = useState("");
@@ -1382,8 +1444,9 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [psychDelegationNote, setPsychDelegationNote] = useState("");
   const [psychGeneralNote, setPsychGeneralNote] = useState("");
   const [savingPsychDirective, setSavingPsychDirective] = useState(false);
-  const [psychOneTouchMode, setPsychOneTouchMode] = useState(true);
-  const [showPsychCustomDetails, setShowPsychCustomDetails] = useState(false);
+  const [psychOneTouchMode, setPsychOneTouchMode] = useState(false);
+  const [showPsychCustomDetails, setShowPsychCustomDetails] = useState(true);
+  const [assignedSurveyTeachers, setAssignedSurveyTeachers] = useState<any[]>([]);
   const [mobileDossierPane, setMobileDossierPane] = useState<"evidence" | "decision">("evidence");
   const [showAuditHistoryDrawer, setShowAuditHistoryDrawer] = useState(false);
 
@@ -1433,10 +1496,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       } else {
         setPsychDirectiveType("DIRECT_PARENT_MEETING");
       }
-      setPsychMeetingTime(resp?.details?.meetingTime || "");
+      setPsychMeetingTime(resp?.details?.meetingTimeRaw || resp?.details?.meetingTime || "");
       setPsychMeetingLocation(resp?.details?.meetingLocation || "Phòng Giám đốc Cơ sở");
       setPsychParentContent(resp?.details?.parentMeetingContent || "");
-      setPsychParticipants(resp?.details?.meetingParticipants || "GĐCS, Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý, GVCN");
+      setPsychParticipants(resp?.details?.meetingParticipants || "GĐCS, Tổ Tư vấn cơ sở, Tổ Giáo vụ cơ sở, GV phỏng vấn định hướng, GV Tâm lý");
       setPsychAgenda(resp?.details?.meetingAgenda || "");
       setPsychDelegatedTeacherId(resp?.details?.delegatedTeacherId || "");
       setPsychDelegatedTeacherName(resp?.details?.delegatedTeacherName || "");
@@ -1454,41 +1517,39 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     if (!studentObj?.id) return;
     const chosenType = overrideType || psychDirectiveType;
     const csShort = resolvedStudentCampusObj?.campusCode || "CS1";
-    const defaultTeacher = (teachers || [])[0] as any;
+    const defaultSurveyTeacher = (assignedSurveyTeachers || [])[0] || (teachers || [])[0] as any;
 
     const resolvedLocation =
       chosenType === "SCHEDULE_MEETING"
-        ? psychMeetingLocation && psychMeetingLocation !== "Phòng Giám đốc Cơ sở"
-          ? psychMeetingLocation
-          : "Văn phòng Chuyên môn Cơ sở"
+        ? psychMeetingLocation || "Phòng Tiếp phụ huynh / Phòng Giám đốc Cơ sở"
         : psychMeetingLocation || "Phòng Giám đốc Cơ sở";
 
     const resolvedParentContent =
       psychParentContent ||
-      "Trao đổi trực tiếp với PHHS về kết quả sàng lọc tâm lý, thống nhất lộ trình đồng hành và cam kết phối hợp giữa Gia đình & Nhà trường.";
+      "GĐCS gặp trực tiếp PHHS trao đổi về kết quả sàng lọc tâm lý, thống nhất lộ trình đồng hành và cam kết phối hợp giữa Gia đình & Nhà trường.";
 
     const resolvedParticipants =
-      psychParticipants || `GĐCS, Tổ Giáo vụ ${csShort}, Tổ Tư vấn ${csShort}, GV Tâm lý, GVCN`;
+      psychParticipants || `GĐCS, Tổ Tư vấn ${csShort}, Tổ Giáo vụ ${csShort}, GV phỏng vấn định hướng, GV Tâm lý`;
 
     const resolvedAgenda =
       psychAgenda ||
-      `Hội chẩn chuyên môn thống nhất phương án hỗ trợ tâm lý, lộ trình tiếp nhận và xếp lớp phù hợp cho học sinh ${studentObj.fullName || ""}.`;
+      `Đặt lịch hẹn làm việc với PHHS học sinh ${studentObj.fullName || ""} để trao đổi kết quả sàng lọc tâm lý và thống nhất phương án hỗ trợ.`;
 
-    const resolvedTeacherId = psychDelegatedTeacherId || defaultTeacher?.id || defaultTeacher?.userId || "";
-    const resolvedTeacherName = psychDelegatedTeacherName || defaultTeacher?.teacherName || "Giáo viên đồng hành";
-    const resolvedTeacherEmail = psychDelegatedTeacherEmail || defaultTeacher?.email || "";
+    const resolvedTeacherId = psychDelegatedTeacherId || defaultSurveyTeacher?.teacherId || defaultSurveyTeacher?.id || defaultSurveyTeacher?.userId || "";
+    const resolvedTeacherName = psychDelegatedTeacherName || defaultSurveyTeacher?.teacherName || "NTCM / Giáo viên phụ trách";
+    const resolvedTeacherEmail = psychDelegatedTeacherEmail || defaultSurveyTeacher?.email || "";
     const resolvedDuration = psychDelegationDuration || "4 tuần đầu năm học";
     const resolvedDelegationNote =
       psychDelegationNote ||
-      `Theo dõi sát biểu hiện tâm lý - hành vi, làm việc với PHHS, hỗ trợ học sinh thích nghi và báo cáo định kỳ cho GĐCS & Tổ Giáo vụ (${csShort}).`;
+      `Trao đổi với PHHS, theo dõi sát biểu hiện tâm lý - hành vi, hỗ trợ học sinh thích nghi và báo cáo định kỳ cho GĐCS & Tổ Giáo vụ (${csShort}).`;
 
     const resolvedGeneralNote =
       psychGeneralNote ||
       (chosenType === "DIRECT_PARENT_MEETING"
-        ? `Đề nghị Tổ Tư vấn cơ sở (${csShort}) liên hệ mời PHHS; Tổ Giáo vụ cơ sở chuẩn bị hồ sơ làm việc.`
+        ? `GĐCS gặp trực tiếp PHHS. Đề nghị Tổ Tư vấn cơ sở (${csShort}) liên hệ mời PHHS; Tổ Giáo vụ cơ sở chuẩn bị hồ sơ làm việc.`
         : chosenType === "SCHEDULE_MEETING"
-        ? `Đề nghị Tổ Giáo vụ cơ sở (${csShort}) sắp xếp lịch hội chẩn; Tổ Tư vấn cơ sở tổng hợp thông tin gia đình.`
-        : `Ủy quyền Giáo viên đồng hành sát sao cùng học sinh; Tổ Giáo vụ và Tổ Tư vấn cơ sở (${csShort}) phối hợp hỗ trợ.`);
+        ? `Đặt lịch hẹn với PHHS. Đề nghị Tổ Tư vấn cơ sở (${csShort}) xác nhận lịch hẹn với gia đình; Tổ Giáo vụ cơ sở chuẩn bị phòng và hồ sơ.`
+        : `Ủy quyền ${resolvedTeacherName} phụ trách trao đổi PHHS & đồng hành cùng học sinh; Tổ Giáo vụ và Tổ Tư vấn cơ sở (${csShort}) phối hợp hỗ trợ.`);
 
     setPsychDirectiveType(chosenType);
     setPsychMeetingLocation(resolvedLocation);
@@ -1567,14 +1628,18 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         }
         if (legRes?.success) {
           setOrientationData(legRes.data || null);
+          setAssignedSurveyTeachers(Array.isArray(legRes.assignedSurveyTeachers) ? legRes.assignedSurveyTeachers : []);
           setOrientationAssignedTeacher(
             pvdhRes?.record?.studentInterviewerName ||
             legRes.assignedOrientation?.assignedTeacherName ||
             legRes.data?.interviewerName ||
             ""
           );
-        } else if (pvdhRes?.record?.studentInterviewerName) {
-          setOrientationAssignedTeacher(pvdhRes.record.studentInterviewerName);
+        } else {
+          setAssignedSurveyTeachers([]);
+          if (pvdhRes?.record?.studentInterviewerName) {
+            setOrientationAssignedTeacher(pvdhRes.record.studentInterviewerName);
+          }
         }
       })
       .finally(() => {
@@ -1657,11 +1722,24 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     return reportSelPeriod?.batches || [];
   }, [reportSelPeriod, periods, reportPeriodId]);
 
-  // Danh sách Đợt hiển thị trong bộ lọc (Lọc chặt chẽ theo Cơ sở đã chọn)
+  const reportBatchLookup = useMemo(() => {
+    const map = new Map<string, any>();
+    (rawReportBatches || []).forEach((b: any) => {
+      if (b?.id) map.set(b.id, b);
+    });
+    return map;
+  }, [rawReportBatches]);
+
+  // Danh sách Đợt hiển thị trong bộ lọc (Lọc chặt chẽ theo Tháng & Cơ sở đã chọn)
   const reportBatches = useMemo(() => {
-    if (reportCampusFilter === "all") return rawReportBatches;
-    return rawReportBatches.filter(b => isBatchMatchingCampus(b, reportCampusFilter));
-  }, [rawReportBatches, reportCampusFilter, isBatchMatchingCampus]);
+    return rawReportBatches.filter(b => {
+      if (reportCampusFilter !== "all" && !isBatchMatchingCampus(b, reportCampusFilter)) return false;
+      if (reportMonthFilter && reportMonthFilter !== "all") {
+        if (getBatchMonthYearKey(b) !== reportMonthFilter) return false;
+      }
+      return true;
+    });
+  }, [rawReportBatches, reportCampusFilter, reportMonthFilter, isBatchMatchingCampus, getBatchMonthYearKey]);
 
   // Tự động chuyển Đợt về 'all' nếu đợt hiện tại không thuộc Cơ sở mới chọn (tránh lỗi 0 học sinh)
   useEffect(() => {
@@ -1962,8 +2040,16 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       if (reportPeriodId && reportPeriodId !== "all") {
         if (s.periodId !== reportPeriodId && s.period?.id !== reportPeriodId) return false;
       }
+      if (reportMonthFilter && reportMonthFilter !== "all") {
+        const stMonth = getStudentMonthYearKey(s, reportBatchLookup);
+        if (stMonth !== reportMonthFilter) return false;
+      }
       if (reportBatchId && reportBatchId !== "all") {
-        if (s.batchId !== reportBatchId) return false;
+        if (reportBatchId === "none") {
+          if (s.batchId) return false;
+        } else if (s.batchId !== reportBatchId) {
+          return false;
+        }
       }
       if (reportCampusFilter && reportCampusFilter !== "all") {
         const resolvedCampusId = resolveStudentCampusId(s);
@@ -1983,7 +2069,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     const absent = baseList.filter(s => s.isAbsent).length;
 
     return { total, pending, passed, committed, failed, absent };
-  }, [reportStudents, reportPeriodId, reportBatchId, reportCampusFilter, resolveStudentCampusId]);
+  }, [reportStudents, reportPeriodId, reportMonthFilter, reportBatchId, reportCampusFilter, resolveStudentCampusId, getStudentMonthYearKey, reportBatchLookup]);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
@@ -2001,7 +2087,17 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [isSavingScore, setIsSavingScore] = useState(false);
   const [isDeleteScoreConfirmOpen, setIsDeleteScoreConfirmOpen] = useState(false);
 
+  // Chỉ tài khoản Admin mới được phép mở chế độ chỉnh sửa / bổ sung / xóa điểm trên màn hình Xét duyệt
+  const canAdminEditScores = useMemo(() => {
+    const role = String(currentUser?.role || "").toUpperCase();
+    return role === "ADMIN" || role === "SUPER_ADMIN" || role === "SUPERADMIN" || Boolean(currentUser?.isSuperAdmin);
+  }, [currentUser]);
+
   const handleOpenEditScore = (sc: any) => {
+    if (!canAdminEditScores) {
+      notify("Chế độ chỉnh sửa điểm đã khóa (chỉ tài khoản Admin mới có quyền chỉnh sửa).", "err");
+      return;
+    }
     if (!sc || sc.id === "tong_diem_tieng_anh") return;
     const subj = sc.subject || (Array.isArray(subjectsList) ? subjectsList.find((s: any) => s.id === sc.subjectId) : null) || {};
     setEditingScoreRecord(sc);
@@ -2065,6 +2161,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   };
 
   const handleOpenAddScore = () => {
+    if (!canAdminEditScores) {
+      notify("Chế độ bổ sung điểm đã khóa (chỉ tài khoản Admin mới có quyền chỉnh sửa).", "err");
+      return;
+    }
     if (!selectedReportStudent) return;
     const existingSubjIds = (selectedReportStudent.scores || []).map((sc: any) => sc.subjectId || sc.subject?.id);
     const available = (subjectsList || []).filter((s: any) => s.status !== "INACTIVE" && !existingSubjIds.includes(s.id));
@@ -2144,7 +2244,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           subjectId: editingSubjectObj.id,
           scores: finalScoresPayload,
           comments: finalCommentsPayload,
-          teacherName: finalTeacher
+          teacherName: finalTeacher,
+          adminDossierEdit: true
         })
       });
 
@@ -3001,7 +3102,9 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
       const campusObj = campuses.find(c => c.id === targetCampusId);
       const campusName = campusObj?.campusName || activeBatch?.name?.split("|")[1]?.trim() || "Cơ sở";
-      const gdcsEmail = (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs]) 
+      const routedGdcs = campusObj?.campusCode ? emailRoutingConfig?.campusEmails?.[campusObj.campusCode]?.gdcs : "";
+      const gdcsEmail = (routedGdcs && routedGdcs.split(/[,;]/)[0].trim())
+        || (campusObj?.campusCode && EMAIL_MAP.gdcs[campusObj.campusCode as keyof typeof EMAIL_MAP.gdcs])
         || EMAIL_MAP.gdcs.CS1;
 
       const isOpenDay = reportSelPeriod?.name?.toLowerCase().includes("open day");
@@ -3057,6 +3160,41 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatchId === "none" ? "Khảo sát lẻ (không thuộc đợt)" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
       const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
 
+      const pdfAttachments: { filename: string; content: string }[] = [];
+      if (attachLetters) {
+        const eligibleForPdf = emailStudents.filter(
+          (s: any) => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết"
+        );
+        if (eligibleForPdf.length > 0) {
+          try {
+            const html2pdf = await getHtml2Pdf();
+            for (let i = 0; i < eligibleForPdf.length; i++) {
+              const s = eligibleForPdf[i];
+              const config = getStudentCampusConfig(s, false, false);
+              if (!config) continue;
+              setEmailSendingStatus(`Đang tạo PDF Thư chúc mừng (${i + 1}/${eligibleForPdf.length}): ${s.fullName}`);
+              const docHtml = buildLetterHtml(s, config, false);
+              const filename = `Thu_Chuc_Mung_${String(s.fullName || "HocSinh").replace(/\s+/g, "_")}.pdf`;
+              const opt = {
+                margin: 0,
+                filename,
+                image: { type: "jpeg", quality: 0.96 },
+                html2canvas: { scale: 1.6, useCORS: true, logging: false, letterRendering: true },
+                jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+                pagebreak: { mode: ["avoid-all", "css"] }
+              };
+              const dataUri = await generatePdfBase64(html2pdf, docHtml, opt);
+              const base64Content = String(dataUri || "").includes(",") ? String(dataUri).split(",")[1] : String(dataUri || "");
+              if (base64Content) {
+                pdfAttachments.push({ filename, content: base64Content });
+              }
+            }
+          } catch (pdfErr) {
+            console.warn("Quick email PDF attachment generation warning:", pdfErr);
+          }
+        }
+      }
+
       setEmailSendingStatus("Đang truyền tải & gửi Email...");
 
       const enrichedStudents = emailStudents.map((s: any) => ({
@@ -3076,8 +3214,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           batchName: activeBatchName,
           students: enrichedStudents,
           baseUrl: typeof window !== "undefined" ? window.location.origin : "",
-          attachLetters: false,
-          pdfAttachments: []
+          attachLetters: Boolean(attachLetters && pdfAttachments.length > 0),
+          pdfAttachments
         })
       });
       const data = await res.json();
@@ -3187,7 +3325,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     try {
       const stuCampusObj = resolveCampusObjForStudent(student);
       const stuGdcsName = resolveGdcsNameForCampus(stuCampusObj);
-      const isGdcsCurrentUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase());
+      const isGdcsCurrentUser = ["GDCS", "GĐ_CS", "GD_CS", "GĐCS", "BGH", "BGH_CS", "HIEU_TRUONG"].includes((currentUser?.role || "").toUpperCase());
       const approverName = stuGdcsName || (isGdcsCurrentUser ? currentUser?.fullName : "") || "Giám đốc Cơ sở";
       const finalCampus = stuCampusObj?.campusName || (campuses.find(c => c.id === reportCampusFilter)?.campusName) || student.admissionCampus || "";
 
@@ -3285,7 +3423,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       const firstSelectedStu = selectedStuObjects[0];
       const batchCampusObj = (firstSelectedStu ? resolveCampusObjForStudent(firstSelectedStu) : null) || campuses.find(c => c.id === reportCampusFilter) || null;
       const batchGdcsName = resolveGdcsNameForCampus(batchCampusObj);
-      const isGdcsCurrentUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase());
+      const isGdcsCurrentUser = ["GDCS", "GĐ_CS", "GD_CS", "GĐCS", "BGH", "BGH_CS", "HIEU_TRUONG"].includes((currentUser?.role || "").toUpperCase());
       const approverName = batchGdcsName || (isGdcsCurrentUser ? currentUser?.fullName : "") || "Giám đốc Cơ sở";
       const finalCampus = batchCampusObj?.campusName || "";
       const batchNote = `Phê duyệt hàng loạt: ${resultType} bởi ${approverName} vào lúc ${new Date().toLocaleString("vi-VN")}`;
@@ -3558,7 +3696,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     setSaveReportLoading(true);
     try {
       const userRole = (currentUser?.role || "").toUpperCase();
-      const isGDCSUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
+      const isGDCSUser = ["GDCS", "GĐ_CS", "GD_CS", "GĐCS", "BGH", "BGH_CS", "HIEU_TRUONG"].includes(userRole);
       
       let finalCampus = reportForm.admissionCampus;
       let finalSignature = reportForm.signatureName;
@@ -3686,42 +3824,132 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     setSaveReportLoading(false);
   };
 
-  const handleSendBatchApprovalResultEmail = async () => {
-    if (filteredReportStudents.length === 0) {
-      return notify("Không có học sinh nào trong đợt khảo sát hiện tại để gửi thông báo!", "err");
+  const loadBatchResultEmailPreview = async (targetBatchId: string, singleStudent?: any | null) => {
+    setPreviewBatchId(targetBatchId);
+    setPreviewSingleStudent(singleStudent || null);
+
+    const activeBatchObj = rawReportBatches.find(b => b.id === targetBatchId);
+    const targetStudents = singleStudent
+      ? [singleStudent]
+      : (targetBatchId && targetBatchId !== "all" && targetBatchId !== "none"
+          ? (reportStudents || []).filter(s => s.batchId === targetBatchId)
+          : []);
+
+    if (targetStudents.length === 0) {
+      setBatchResultPreviewData(null);
+      return;
     }
-    const pendingCount = filteredReportStudents.filter(s => !s.admissionResult && !s.isAbsent).length;
-    if (pendingCount > 0) {
-      if (!window.confirm(`Đợt này hiện còn ${pendingCount} học sinh chưa xét duyệt kết quả. Thầy/Cô có muốn tiếp tục gửi thông báo kết quả cho ${filteredReportStudents.length} học sinh hiện tại đến GĐCS, Tư vấn Cơ sở, Giáo vụ Cơ sở và Ban KT&ĐBCL không?`)) {
-        return;
-      }
-    }
-    setSendingBatchResultEmail(true);
+    const batchDisplayName = activeBatchObj?.name || singleStudent?.batch?.name || "Đợt khảo sát";
+    const pendingCount = targetStudents.filter(s => !s.admissionResult && !s.isAbsent).length;
+
+    setBatchResultPreviewLoading(true);
     try {
-      const activeBatchObj = rawReportBatches.find(b => b.id === reportBatchId);
       const curCampusObj = campuses.find(c => c.id === reportCampusFilter);
       const userRole = (currentUser?.role || "").toUpperCase();
-      const isGdcs = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+      const isGdcs = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "HIEU_TRUONG"].includes(userRole);
 
       const res = await fetch("/api/admin/send-approval-result-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          periodId: reportPeriodId,
+          periodId: singleStudent?.periodId || reportPeriodId,
           periodName: reportSelPeriod?.name,
-          batchId: reportBatchId,
-          batchName: activeBatchObj?.name || (reportBatchId === "all" ? "Tất cả các đợt" : "Đợt khảo sát"),
-          campusId: reportCampusFilter !== "all" ? reportCampusFilter : undefined,
-          campusName: curCampusObj?.campusName || (reportCampusFilter !== "all" ? reportCampusFilter : "Toàn hệ thống Sky-Line"),
-          approverName: currentUser?.fullName || "Giám đốc Cơ sở",
+          batchId: targetBatchId || singleStudent?.batchId || undefined,
+          batchName: batchDisplayName,
+          campusId: singleStudent?.campusId || (reportCampusFilter !== "all" ? reportCampusFilter : undefined),
+          campusName: singleStudent?.admissionCampus || curCampusObj?.campusName || (reportCampusFilter !== "all" ? reportCampusFilter : "Toàn hệ thống Sky-Line"),
+          approverName: singleStudent?.signatureName || currentUser?.fullName || "Giám đốc Cơ sở",
           approverRole: isGdcs ? "Giám đốc Cơ sở" : "Hội đồng Tuyển sinh",
           emailConfig: emailRoutingConfig,
-          students: filteredReportStudents
+          students: targetStudents,
+          previewOnly: true
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.preview) {
+        setBatchResultPreviewData({
+          ...data.preview,
+          pendingCount
+        });
+      } else {
+        setBatchResultPreviewData(null);
+        notify(data.error || "Không thể tạo bản xem trước email", "err");
+      }
+    } catch (err: any) {
+      setBatchResultPreviewData(null);
+      notify("Lỗi khi tải xem trước email: " + (err.message || err), "err");
+    } finally {
+      setBatchResultPreviewLoading(false);
+    }
+  };
+
+  const handlePreviewApprovalResultForStudent = async (student: any) => {
+    if (!student) return;
+    setEmailPreviewViewport("desktop");
+    setIsBatchResultPreviewOpen(true);
+    await loadBatchResultEmailPreview(student.batchId || "", student);
+  };
+
+  const handleSendBatchApprovalResultEmail = async () => {
+    // Mở hộp thoại xem trước email kết quả theo đợt (nếu chưa chọn đợt ở ngoài thì tự chọn đợt đầu tiên có HS hoặc cho chọn ngay trong hộp thoại)
+    setEmailPreviewViewport("desktop");
+    setPreviewSingleStudent(null);
+    let targetId = reportBatchId && reportBatchId !== "all" && reportBatchId !== "none" ? reportBatchId : "";
+    if (!targetId) {
+      const firstBatchWithStudents = reportBatches.find(b => (reportStudents || []).some(s => s.batchId === b.id));
+      targetId = firstBatchWithStudents?.id || "";
+    }
+    setIsBatchResultPreviewOpen(true);
+    if (targetId) {
+      await loadBatchResultEmailPreview(targetId, null);
+    } else {
+      setPreviewBatchId("");
+      setBatchResultPreviewData(null);
+    }
+  };
+
+  const handleConfirmSendBatchResultEmail = async () => {
+    const activeBatchObj = rawReportBatches.find(b => b.id === previewBatchId);
+    const targetStudents = previewSingleStudent
+      ? [previewSingleStudent]
+      : (previewBatchId && previewBatchId !== "all" && previewBatchId !== "none"
+          ? (reportStudents || []).filter(s => s.batchId === previewBatchId)
+          : []);
+
+    if (targetStudents.length === 0) {
+      return notify("Vui lòng chọn một Đợt khảo sát cụ thể có học sinh để gửi thông báo kết quả!", "err");
+    }
+    const batchDisplayName = activeBatchObj?.name || previewSingleStudent?.batch?.name || "Đợt khảo sát";
+    setSendingBatchResultEmail(true);
+    try {
+      const curCampusObj = campuses.find(c => c.id === reportCampusFilter);
+      const userRole = (currentUser?.role || "").toUpperCase();
+      const isGdcs = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "HIEU_TRUONG"].includes(userRole);
+
+      const res = await fetch("/api/admin/send-approval-result-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodId: previewSingleStudent?.periodId || reportPeriodId,
+          periodName: reportSelPeriod?.name,
+          batchId: previewBatchId || previewSingleStudent?.batchId || undefined,
+          batchName: batchDisplayName,
+          campusId: previewSingleStudent?.campusId || (reportCampusFilter !== "all" ? reportCampusFilter : undefined),
+          campusName: previewSingleStudent?.admissionCampus || curCampusObj?.campusName || (reportCampusFilter !== "all" ? reportCampusFilter : "Toàn hệ thống Sky-Line"),
+          approverName: previewSingleStudent?.signatureName || currentUser?.fullName || "Giám đốc Cơ sở",
+          approverRole: isGdcs ? "Giám đốc Cơ sở" : "Hội đồng Tuyển sinh",
+          emailConfig: emailRoutingConfig,
+          students: targetStudents
         })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        notify(`Đã gửi email thông báo kết quả xét duyệt (${filteredReportStudents.length} học sinh) đến GĐCS, Tư vấn Cơ sở, Giáo vụ Cơ sở & Ban KT&ĐBCL thành công!`, "ok");
+        const scopeLabel = previewSingleStudent
+          ? `học sinh "${previewSingleStudent.fullName}"`
+          : `đợt "${batchDisplayName}" (${targetStudents.length} học sinh)`;
+        notify(`Đã gửi email thông báo kết quả ${scopeLabel} đến GĐCS, Tư vấn Cơ sở, Giáo vụ Cơ sở & Ban KT&ĐBCL thành công!`, "ok");
+        setIsBatchResultPreviewOpen(false);
+        setPreviewSingleStudent(null);
       } else {
         notify(data.error || "Không thể gửi email thông báo", "err");
       }
@@ -3771,8 +3999,14 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) csCode = "CS5";
       }
 
-      const gdcsEmail = (csCode && EMAIL_MAP.gdcs[csCode as keyof typeof EMAIL_MAP.gdcs]) 
+      const routedGdcsEmail = csCode ? emailRoutingConfig?.campusEmails?.[csCode]?.gdcs : "";
+      const gdcsEmail = (routedGdcsEmail && routedGdcsEmail.split(/[,;]/)[0].trim())
+        || (csCode && EMAIL_MAP.gdcs[csCode as keyof typeof EMAIL_MAP.gdcs])
         || EMAIL_MAP.gdcs.CS1;
+
+      setGdcsReminderPreviewOpen(true);
+      setGdcsReminderPreviewLoading(true);
+      setGdcsReminderPreviewData(null);
 
       const res = await fetch("/api/input-assessment-students", {
         method: "POST",
@@ -3781,21 +4015,72 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           action: "SEND_APPROVAL_REQUEST",
           data: {
             studentId: student.id,
-            gdcsEmail: gdcsEmail
+            gdcsEmail: gdcsEmail,
+            previewOnly: true
           }
         })
       });
 
       const result = await res.json();
-      if (res.ok && result.success) {
-        notify(`Đã gửi yêu cầu phê duyệt thành công đến email GĐCS: ${gdcsEmail}!`);
+      if (res.ok && result.success && result.preview) {
+        setGdcsReminderPreviewData({
+          studentId: student.id,
+          studentName: result.preview.studentName || student.fullName,
+          gdcsEmail,
+          subject: result.preview.subject,
+          to: result.preview.to || gdcsEmail,
+          cc: Array.isArray(result.preview.cc) ? result.preview.cc : [],
+          html: result.preview.html,
+          campusName: result.preview.campusName || ""
+        });
       } else {
-        notify(result.error || "Gửi yêu cầu phê duyệt thất bại", "err");
+        setGdcsReminderPreviewOpen(false);
+        notify(result.error || "Không thể dựng bản xem trước email nhắc GĐCS", "err");
       }
     } catch (err) {
-      notify("Có lỗi xảy ra khi gửi yêu cầu phê duyệt", "err");
+      setGdcsReminderPreviewOpen(false);
+      notify("Có lỗi xảy ra khi tải xem trước email nhắc GĐCS", "err");
     } finally {
+      setGdcsReminderPreviewLoading(false);
       setSendingApprovalId("");
+    }
+  };
+
+  const handleConfirmSendGdcsReminderEmail = async () => {
+    if (!gdcsReminderPreviewData) return;
+    setGdcsReminderSending(true);
+    try {
+      const { studentId, gdcsEmail } = gdcsReminderPreviewData;
+      const res = await fetch("/api/input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_APPROVAL_REQUEST",
+          data: {
+            studentId,
+            gdcsEmail
+          }
+        })
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        const sentAtIso = result.gdcsEmailSentAt || new Date().toISOString();
+        setReportStudents((prev: any[]) =>
+          prev.map((st: any) =>
+            st.id === studentId
+              ? { ...st, gdcsEmailSentAt: sentAtIso, gdcsEmailRecipient: gdcsEmail }
+              : st
+          )
+        );
+        notify(`Đã gửi email nhắc xét duyệt thành công đến GĐCS: ${gdcsEmail}!`, "ok");
+        setGdcsReminderPreviewOpen(false);
+      } else {
+        notify(result.error || "Gửi email nhắc GĐCS thất bại", "err");
+      }
+    } catch (err) {
+      notify("Có lỗi xảy ra khi gửi email nhắc GĐCS", "err");
+    } finally {
+      setGdcsReminderSending(false);
     }
   };
 
@@ -3824,8 +4109,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) csCode = "CS5";
       }
 
-      // Default to CS1 if not resolved, or look up in EMAIL_MAP.gdcs
-      const gdcsEmail = (csCode && EMAIL_MAP.gdcs[csCode as keyof typeof EMAIL_MAP.gdcs]) 
+      // Default to configured GDCS email for campus, fallback to EMAIL_MAP.gdcs
+      const routedGdcsEmail = csCode ? emailRoutingConfig?.campusEmails?.[csCode]?.gdcs : "";
+      const gdcsEmail = (routedGdcsEmail && routedGdcsEmail.split(/[,;]/)[0].trim())
+        || (csCode && EMAIL_MAP.gdcs[csCode as keyof typeof EMAIL_MAP.gdcs])
         || EMAIL_MAP.gdcs.CS1;
 
       const res = await fetch("/api/input-assessment-students", {
@@ -3842,6 +4129,14 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
       const result = await res.json();
       if (res.ok && result.success) {
+        const sentAtIso = result.gdcsEmailSentAt || new Date().toISOString();
+        setReportStudents((prev: any[]) =>
+          prev.map((st: any) =>
+            st.id === selectedReportStudent.id
+              ? { ...st, gdcsEmailSentAt: sentAtIso, gdcsEmailRecipient: gdcsEmail }
+              : st
+          )
+        );
         notify(`Đã gửi yêu cầu phê duyệt thành công đến email GĐCS: ${gdcsEmail}!`);
       } else {
         notify(result.error || "Gửi yêu cầu phê duyệt thất bại", "err");
@@ -4000,6 +4295,16 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
 
 
+  // Tính toán trạng thái đủ/thiếu môn khảo sát theo Quy chế tuyển sinh cho từng HS
+  const completenessMap = useMemo(() => {
+    const map = new Map<string, StudentCompletenessResult>();
+    if (!Array.isArray(reportStudents)) return map;
+    for (const st of reportStudents) {
+      map.set(st.id, checkStudentAssessmentCompleteness(st));
+    }
+    return map;
+  }, [reportStudents]);
+
   const filteredReportStudents = useMemo(() => {
     if (!Array.isArray(reportStudents)) return [];
     
@@ -4025,6 +4330,11 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         } else if (s.batchId !== reportBatchId) {
           return false;
         }
+      } else if (reportMonthFilter && reportMonthFilter !== "all") {
+        // Khi không chọn đợt cụ thể, lọc theo Tháng khảo sát (mặc định Tháng hiện tại)
+        const bObj = s.batch || (reportBatches || []).find((b: any) => b.id === s.batchId);
+        const stMonth = getBatchMonthYearKey(bObj) || getStudentMonthYearKey(s);
+        if (stMonth !== reportMonthFilter) return false;
       }
 
       // 3. OpenDay GDCS campus check
@@ -4054,6 +4364,14 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           if (!s.isAbsent) return false;
         } else if (reportApprovalStatusFilter === "Chưa duyệt") {
           if (s.admissionResult || s.isAbsent) return false;
+        } else if (reportApprovalStatusFilter === "Đủ điểm chờ duyệt") {
+          if (s.admissionResult || s.isAbsent) return false;
+          const comp = completenessMap.get(s.id);
+          if (comp?.status !== "READY") return false;
+        } else if (reportApprovalStatusFilter === "Thiếu điểm") {
+          if (s.admissionResult || s.isAbsent) return false;
+          const comp = completenessMap.get(s.id);
+          if (!comp || comp.status === "READY") return false;
         } else if (reportApprovalStatusFilter === "Đạt - Giao lưu") {
           if (s.isAbsent) return false;
           const res = String(s.admissionResult || "").toLowerCase();
@@ -4096,9 +4414,76 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     currentUser, 
     reportCampusFilter, 
     reportGradeFilter,
-    resolveStudentCampusId, 
-    reportApprovalStatusFilter, 
-    reportStudentSearchQuery
+    resolveStudentCampusId,
+    reportApprovalStatusFilter,
+    reportStudentSearchQuery,
+    completenessMap,
+    reportMonthFilter,
+    reportBatches,
+    getBatchMonthYearKey,
+    getStudentMonthYearKey
+  ]);
+
+  // Danh sách các Tháng khảo sát có trong kỳ hiện tại (tự động trích từ Ngày KS)
+  const availableReportMonths = useMemo(() => {
+    const set = new Set<string>([currentMonthYearKey]);
+    (rawReportBatches || []).forEach((b: any) => {
+      const mk = getBatchMonthYearKey(b);
+      if (mk) set.add(mk);
+    });
+    (reportStudents || []).forEach((s: any) => {
+      const mk = getStudentMonthYearKey(s, reportBatchLookup);
+      if (mk) set.add(mk);
+    });
+    return Array.from(set).sort((a, b) => {
+      const [ma, ya] = a.split("/").map(Number);
+      const [mb, yb] = b.split("/").map(Number);
+      return yb * 12 + mb - (ya * 12 + ma);
+    });
+  }, [rawReportBatches, reportStudents, currentMonthYearKey, getBatchMonthYearKey, getStudentMonthYearKey, reportBatchLookup]);
+
+  // Thống kê đủ / thiếu nội dung khảo sát cho các HS chờ duyệt trong phạm vi hiện tại
+  const completenessSummaryStats = useMemo(() => {
+    let readyPending = 0;
+    let missingPending = 0;
+    for (const s of reportStudents || []) {
+      if (s.isAbsent || s.admissionResult) continue;
+      if (reportPeriodId && reportPeriodId !== "all" && s.periodId && s.periodId !== reportPeriodId) continue;
+      if (reportMonthFilter && reportMonthFilter !== "all") {
+        const stMonth = getStudentMonthYearKey(s, reportBatchLookup);
+        if (stMonth !== reportMonthFilter) continue;
+      }
+      if (reportBatchId && reportBatchId !== "all") {
+        if (reportBatchId === "none") {
+          if (s.batchId) continue;
+        } else if (s.batchId !== reportBatchId) {
+          continue;
+        }
+      }
+      if (reportCampusFilter && reportCampusFilter !== "all") {
+        const stuCampusId = resolveStudentCampusId(s);
+        if (stuCampusId && stuCampusId !== reportCampusFilter) continue;
+      }
+      if (reportGradeFilter && reportGradeFilter !== "all") {
+        const g = String(s.grade || "").replace(/\D/g, "");
+        if (g !== String(reportGradeFilter)) continue;
+      }
+      const comp = completenessMap.get(s.id);
+      if (comp?.status === "READY") readyPending++;
+      else missingPending++;
+    }
+    return { readyPending, missingPending };
+  }, [
+    reportStudents,
+    reportPeriodId,
+    reportMonthFilter,
+    reportBatchId,
+    reportCampusFilter,
+    reportGradeFilter,
+    resolveStudentCampusId,
+    completenessMap,
+    getStudentMonthYearKey,
+    reportBatchLookup
   ]);
 
   // Danh sách Khối có trong phạm vi hiện tại (phục vụ bộ lọc Khối có đếm số lượng)
@@ -4122,7 +4507,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   // Helper tóm tắt nhanh điểm các môn khảo sát của 1 học sinh ngay trên dòng bảng xét duyệt
   const getStudentSurveyPills = useCallback((student: any) => {
-    const pills: { key: string; label: string; value: string; tone: "emerald" | "teal" | "amber" | "rose" | "slate" }[] = [];
+    const pills: { key: string; label: string; value: string; tone: "emerald" | "teal" | "amber" | "rose" | "slate"; nonScoring?: boolean }[] = [];
     const rawScores = Array.isArray(student?.scores) ? student.scores : [];
     const gradeNum = parseInt(String(student?.grade || "0").replace(/\D/g, ""), 10) || 1;
 
@@ -4213,6 +4598,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       if (shortLabel.length > 16) shortLabel = shortLabel.slice(0, 15) + "…";
 
       let valDisplay = String(firstVal);
+      let isOralEnglishNonScoring = false;
       if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
         const oralMax = gradeNum === 2 ? 10 : gradeNum >= 7 ? 20 : 30;
         const writMax = gradeNum >= 7 ? 80 : 70;
@@ -4221,6 +4607,9 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           const num = parseFloat(valDisplay);
           const denom = !isNaN(num) && num <= 10 && gradeNum <= 5 ? 10 : !isNaN(num) && num > oralMax ? 100 : oralMax;
           valDisplay = `${valDisplay}/${denom}`;
+          if (!sCode.includes("esl") && !sNameLower.includes("esl")) {
+            isOralEnglishNonScoring = true;
+          }
         } else if (sNameLower.includes("viết") || sCode.includes("vt") || sCode.includes("writing")) {
           shortLabel = "TA viết";
           const num = parseFloat(valDisplay);
@@ -4233,7 +4622,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         key: sc.id || `sub-${idx}`,
         label: shortLabel,
         value: valDisplay,
-        tone: "teal"
+        tone: isOralEnglishNonScoring ? "amber" : "teal",
+        nonScoring: isOralEnglishNonScoring
       });
     });
 
@@ -4288,11 +4678,166 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     };
   }, [selectedReportStudent, filteredReportStudents]);
 
-  const reportTotalPages = Math.ceil(filteredReportStudents.length / reportPageSize);
+  // Tổng hợp các Đợt khảo sát mới nhất & đang cần xét duyệt trong phạm vi hiện tại
+  const recentBatchesOverview = useMemo(() => {
+    const batchLookup = new Map<string, any>();
+    (reportBatches || []).forEach((b: any) => batchLookup.set(b.id, b));
+
+    const groups = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        batchNumber: number;
+        sortTime: number;
+        dateLabel: string;
+        monthKey: string;
+        total: number;
+        pending: number;
+        readyPending: number;
+        approved: number;
+      }
+    >();
+
+    // Khởi tạo từ danh sách đợt đang có trong kỳ/cơ sở
+    (reportBatches || []).forEach((b: any) => {
+      const dateRaw = b.endDate || b.startDate;
+      const ts = dateRaw ? new Date(dateRaw).getTime() : 0;
+      const dateLabel = dateRaw ? new Date(dateRaw).toLocaleDateString("vi-VN") : "";
+      groups.set(b.id, {
+        id: b.id,
+        name: b.name || `Đợt #${b.batchNumber || ""}`,
+        batchNumber: Number(b.batchNumber) || 0,
+        sortTime: isNaN(ts) ? 0 : ts,
+        dateLabel,
+        monthKey: getBatchMonthYearKey(b),
+        total: 0,
+        pending: 0,
+        readyPending: 0,
+        approved: 0,
+      });
+    });
+
+    (reportStudents || []).forEach((s: any) => {
+      if (reportPeriodId && reportPeriodId !== "all" && s.periodId && s.periodId !== reportPeriodId) return;
+      if (reportCampusFilter && reportCampusFilter !== "all") {
+        const stuCampusId = resolveStudentCampusId(s);
+        if (stuCampusId && stuCampusId !== reportCampusFilter) return;
+      }
+      const bId = s.batchId || "none";
+      if (!groups.has(bId)) {
+        const bObj = s.batch || batchLookup.get(bId);
+        const dateRaw = bObj?.endDate || bObj?.startDate || s.createdAt;
+        const ts = dateRaw ? new Date(dateRaw).getTime() : 0;
+        groups.set(bId, {
+          id: bId,
+          name: bId === "none" ? "Khảo sát lẻ (chưa gắn đợt)" : (bObj?.name || "Đợt khảo sát"),
+          batchNumber: Number(bObj?.batchNumber) || 0,
+          sortTime: isNaN(ts) ? 0 : ts,
+          dateLabel: dateRaw ? new Date(dateRaw).toLocaleDateString("vi-VN") : "",
+          monthKey: getBatchMonthYearKey(bObj) || getStudentMonthYearKey(s, batchLookup),
+          total: 0,
+          pending: 0,
+          readyPending: 0,
+          approved: 0,
+        });
+      }
+      const g = groups.get(bId)!;
+      g.total++;
+      if (s.isAbsent) return;
+      if (s.admissionResult) {
+        g.approved++;
+      } else {
+        g.pending++;
+        const comp = completenessMap.get(s.id);
+        if (comp?.status === "READY") g.readyPending++;
+      }
+    });
+
+    const list = Array.from(groups.values()).filter((g) => {
+      if (g.total <= 0) return false;
+      if (reportMonthFilter && reportMonthFilter !== "all") {
+        return g.monthKey === reportMonthFilter;
+      }
+      return true;
+    });
+    // Xác định đợt mới nhất theo thời gian & số đợt
+    let newestId = "";
+    let newestScore = -1;
+    list.forEach((g) => {
+      if (g.id === "none") return;
+      const sc = g.sortTime * 1000 + g.batchNumber;
+      if (sc > newestScore) {
+        newestScore = sc;
+        newestId = g.id;
+      }
+    });
+
+    // Sắp xếp: Đợt có HS chờ duyệt lên trước -> trong mỗi nhóm xếp đợt mới nhất lên đầu
+    list.sort((a, b) => {
+      const aHasPending = a.pending > 0 ? 1 : 0;
+      const bHasPending = b.pending > 0 ? 1 : 0;
+      if (aHasPending !== bHasPending) return bHasPending - aHasPending;
+      if (a.readyPending !== b.readyPending) return b.readyPending - a.readyPending;
+      if (b.sortTime !== a.sortTime) return b.sortTime - a.sortTime;
+      return b.batchNumber - a.batchNumber;
+    });
+
+    return list.map((g) => ({ ...g, isLatest: g.id === newestId }));
+  }, [reportBatches, reportStudents, reportPeriodId, reportCampusFilter, resolveStudentCampusId, completenessMap, reportMonthFilter, getBatchMonthYearKey, getStudentMonthYearKey]);
+
+  const sortedReportStudents = useMemo(() => {
+    const batchTimeMap = new Map<string, number>();
+    (reportBatches || []).forEach((b: any) => {
+      const ts = b.startDate ? new Date(b.startDate).getTime() : 0;
+      batchTimeMap.set(b.id, (isNaN(ts) ? 0 : ts) + (Number(b.batchNumber) || 0));
+    });
+    const getBatchRecency = (s: any) => {
+      if (s.batchId && batchTimeMap.has(s.batchId)) return batchTimeMap.get(s.batchId)!;
+      if (s.batch?.startDate) {
+        const ts = new Date(s.batch.startDate).getTime();
+        if (!isNaN(ts)) return ts + (Number(s.batch?.batchNumber) || 0);
+      }
+      return s.createdAt ? new Date(s.createdAt).getTime() : 0;
+    };
+
+    const arr = [...filteredReportStudents];
+    if (reportSortMode === "name_asc") {
+      arr.sort((a, b) => String(a.fullName || "").localeCompare(String(b.fullName || ""), "vi"));
+      return arr;
+    }
+    if (reportSortMode === "latest_batch") {
+      arr.sort((a, b) => {
+        const diff = getBatchRecency(b) - getBatchRecency(a);
+        if (diff !== 0) return diff;
+        return String(a.fullName || "").localeCompare(String(b.fullName || ""), "vi");
+      });
+      return arr;
+    }
+    // Default: "priority_latest" — Chờ duyệt (Đủ điểm trước) -> Đợt mới nhất -> Đã duyệt mới nhất
+    arr.sort((a, b) => {
+      const getPriorityRank = (s: any) => {
+        if (s.isAbsent) return 4;
+        if (!s.admissionResult) {
+          const comp = completenessMap.get(s.id);
+          return comp?.status === "READY" ? 0 : 1;
+        }
+        return 2;
+      };
+      const rankDiff = getPriorityRank(a) - getPriorityRank(b);
+      if (rankDiff !== 0) return rankDiff;
+      const recencyDiff = getBatchRecency(b) - getBatchRecency(a);
+      if (recencyDiff !== 0) return recencyDiff;
+      return String(a.fullName || "").localeCompare(String(b.fullName || ""), "vi");
+    });
+    return arr;
+  }, [filteredReportStudents, reportBatches, reportSortMode, completenessMap]);
+
+  const reportTotalPages = Math.ceil(sortedReportStudents.length / reportPageSize);
   const paginatedReportStudents = useMemo(() => {
     const startIndex = (reportCurrentPage - 1) * reportPageSize;
-    return filteredReportStudents.slice(startIndex, startIndex + reportPageSize);
-  }, [filteredReportStudents, reportCurrentPage, reportPageSize]);
+    return sortedReportStudents.slice(startIndex, startIndex + reportPageSize);
+  }, [sortedReportStudents, reportCurrentPage, reportPageSize]);
 
   const renderReportPaginationControl = () => {
     if (filteredReportStudents.length === 0) return null;
@@ -5070,14 +5615,14 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     if (!currentUser) return false;
     const userRole = (currentUser.role || "").toUpperCase();
     
-    // Lock check for GĐCS/GVBM
+    // Lock check for GĐCS/BGH
     const isStudentBatchLocked = selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED";
-    if (isStudentBatchLocked && ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
+    if (isStudentBatchLocked && ["GDCS", "GĐ_CS", "GD_CS", "GĐCS", "BGH", "BGH_CS", "HIEU_TRUONG"].includes(userRole)) {
       return false;
     }
 
-    if (userRole === "ADMIN" || userRole === "KT_DBCL") return true;
-    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
+    if (userRole === "ADMIN" || userRole === "SUPER_ADMIN" || userRole === "KT_DBCL") return true;
+    if (["GDCS", "GĐ_CS", "GD_CS", "GĐCS", "BGH", "BGH_CS", "HIEU_TRUONG"].includes(userRole)) {
       const isOpenDay = reportSelPeriod?.name?.toLowerCase().includes("open day");
       if (isOpenDay) {
         const studentCampusId = selectedReportStudent?.registeredCampus;
@@ -5150,19 +5695,31 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         ? (isValidGdcsSignature ? savedSig : (autoCampusDirectorName || savedSig))
         : autoCampusDirectorName;
 
+      const sanitizedCleanNote = String(cleanNote || "").replace(/^(?:\s*<br\s*\/?>\s*)+/gi, "").trim();
       const defaultCleanNote =
-        cleanNote && cleanNote !== "Đạt"
-          ? cleanNote
+        sanitizedCleanNote && sanitizedCleanNote !== "Đạt"
+          ? sanitizedCleanNote
           : presetResult === "Đạt"
           ? "Đạt tiêu chuẩn tiếp nhận của nhà trường"
-          : cleanNote;
+          : sanitizedCleanNote;
+
+      // Loại bỏ Tiếng Anh (vấn đáp) (không xét kết quả) và Năng lực tư duy khỏi danh sách môn cam kết
+      const filteredCommSubs = (commSubs || []).filter((subName: string) => {
+        const lower = String(subName || "").toLowerCase().normalize("NFC");
+        if (lower.includes("năng lực tư duy")) return false;
+        if (lower.includes("định hướng")) return false;
+        if (lower.includes("tiếng anh") && !lower.includes("esl") && (lower.includes("vấn đáp") || lower.includes("nói"))) {
+          return false;
+        }
+        return true;
+      });
 
       setReportForm({
         admissionResult: presetResult,
         admissionCampus: selectedReportStudent.admissionCampus || resolvedStudentCampusObj?.campusName || "",
         signatureName: defaultApproverSignature || "",
         directorNote: defaultCleanNote,
-        committedSubjects: commSubs
+        committedSubjects: filteredCommSubs
       });
     }
   }, [selectedReportStudent, autoCampusDirectorName, resolvedStudentCampusObj, campuses, gdcsUsers, resolveGdcsNameForCampus]);
@@ -5971,43 +6528,102 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
     const list: { name: string; isSurveySubject?: boolean }[] = [];
     const seen = new Set<string>();
 
-    const add = (name?: string | null, isSurveySubject = false) => {
+    const canonicalizeSubjectName = (raw: string): string => {
+      const clean = String(raw || "").trim();
+      const lower = clean.toLowerCase().normalize("NFC");
+      if (lower === "toán" || lower === "toán học") return "Toán học";
+      if (lower === "ngữ văn" || lower === "văn") return "Ngữ Văn";
+      if (lower === "tiếng việt") return "Tiếng Việt";
+      if (lower === "tiếng anh (viết)" || lower === "tiếng anh viết" || lower === "ta viết") return "Tiếng Anh (viết)";
+      return clean;
+    };
+
+    const isExcludedFromCommitment = (rawName: string, rawCode = ""): boolean => {
+      const lower = String(rawName || "").toLowerCase().normalize("NFC");
+      const code = String(rawCode || "").toLowerCase();
+      // Bỏ Năng lực tư duy, Phiếu định hướng, và Tiếng Anh (vấn đáp) (không xét kết quả)
+      if (lower.includes("năng lực tư duy") || code.includes("nltd")) return true;
+      if (lower.includes("định hướng") || code.includes("pdh") || code.includes("orientation")) return true;
+      if (
+        (lower.includes("tiếng anh") || code === "tavd" || code.includes("english_speaking")) &&
+        !lower.includes("esl") &&
+        !code.includes("esl") &&
+        (lower.includes("vấn đáp") || lower.includes("nói") || code.includes("vd") || code.includes("speaking") || code.includes("oral"))
+      ) {
+        return true;
+      }
+      return false;
+    };
+
+    const add = (name?: string | null, isSurveySubject = false, code = "", bypassExclusion = false) => {
       if (!name) return;
-      const clean = String(name).trim();
-      if (!clean) return;
-      const lower = clean.toLowerCase();
+      const raw = String(name).trim();
+      if (!raw) return;
+      if (!bypassExclusion && isExcludedFromCommitment(raw, code)) return;
+      const clean = canonicalizeSubjectName(raw);
+      const lower = clean.toLowerCase().normalize("NFC");
       if (seen.has(lower)) return;
       seen.add(lower);
       list.push({ name: clean, isSurveySubject });
     };
 
-    // 1. Các môn khảo sát thực tế của học sinh (từ kết quả chấm thi)
+    // 1. Các môn khảo sát thực tế đã chấm điểm của học sinh (đã loại trừ NLTD, Định hướng, TA vấn đáp)
     if (selectedReportStudent?.scores && Array.isArray(selectedReportStudent.scores)) {
       selectedReportStudent.scores.forEach((sc: any) => {
         const sName = sc.subject?.name || sc.subjectName || sc.name || sc.subject?.code;
-        if (sName) add(sName, true);
+        const sCode = sc.subject?.code || "";
+        if (sName) add(sName, true, sCode);
       });
     }
 
-    // 2. Các môn trong cấu hình danh mục khảo sát của hệ thống
-    const sysSubs = subjectsList && subjectsList.length > 0 ? subjectsList : initialSubjects;
-    if (Array.isArray(sysSubs)) {
-      sysSubs.forEach((sub: any) => {
-        if (sub?.name) add(sub.name, false);
-      });
+    // 2. Đúng các môn Khảo sát chuẩn theo Hệ & Khối lớp của học sinh (Quy chế Sky-Line)
+    const gradeNum = parseInt(String(selectedReportStudent?.grade || "0").replace(/\D/g, ""), 10) || 1;
+    const sysRaw = `${selectedReportStudent?.surveyFormType || ""} ${selectedReportStudent?.surveySystem || ""}`.toUpperCase();
+    const periodNameRaw = String(selectedReportStudent?.period?.name || "").toLowerCase();
+    const batchNameRaw = String(selectedReportStudent?.batch?.name || "").toLowerCase();
+    const isTransfer =
+      !!selectedReportStudent?.isChuyenHe ||
+      periodNameRaw.includes("chuyển hệ") ||
+      batchNameRaw.includes("chuyen_he") ||
+      batchNameRaw.includes("chuyển hệ");
+    const isSystemI =
+      sysRaw.includes("HNG") ||
+      sysRaw.includes("SB") ||
+      sysRaw.includes("SONG BẰNG") ||
+      sysRaw.includes("HỆ I") ||
+      sysRaw.includes("QUỐC TẾ");
+
+    let systemDefaultSubjects: string[] = [];
+    if (isTransfer) {
+      systemDefaultSubjects = ["EPT", "ESL (vấn đáp)"];
+    } else if (isSystemI) {
+      if (gradeNum === 1) {
+        systemDefaultSubjects = ["Bộ chuẩn phát triển trẻ em 5-6 tuổi", "ESL (vấn đáp)", "Tâm lý"];
+      } else if (gradeNum <= 5) {
+        systemDefaultSubjects = ["Toán học", "Tiếng Việt", "EPT", "ESL (vấn đáp)"];
+      } else {
+        systemDefaultSubjects = ["Toán học", "Ngữ Văn", "EPT", "ESL (vấn đáp)"];
+      }
+    } else {
+      // Hệ S (HNS / CLC / Tiêu chuẩn)
+      if (gradeNum === 1) {
+        systemDefaultSubjects = ["Bộ chuẩn phát triển trẻ em 5-6 tuổi", "Tâm lý"];
+      } else if (gradeNum <= 5) {
+        systemDefaultSubjects = ["Toán học", "Tiếng Việt", "Tiếng Anh (viết)"];
+      } else {
+        systemDefaultSubjects = ["Toán học", "Ngữ Văn", "Tiếng Anh (viết)"];
+      }
     }
+    systemDefaultSubjects.forEach(c => add(c, false));
 
-    // 3. Các môn phổ thông cơ bản
-    ["Toán", "Tiếng Việt", "Tiếng Anh", "Ngữ Văn", "Tâm lý"].forEach(c => add(c, false));
+    // 3. Các môn đang được lưu/chọn trong form (vẫn loại trừ Tiếng Anh vấn đáp & NLTD)
+    (reportForm.committedSubjects || []).forEach((s: string) => add(s, false, "", false));
 
-    // 4. Các môn đang được lưu/chọn trong form
-    (reportForm.committedSubjects || []).forEach((s: string) => add(s, false));
-
-    // 5. Môn do người dùng tự gõ thêm
-    customCommitmentSubjects.forEach(s => add(s, false));
+    // 4. Môn do người dùng tự gõ thêm
+    customCommitmentSubjects.forEach(s => add(s, false, "", true));
 
     return list;
-  }, [selectedReportStudent, subjectsList, initialSubjects, reportForm.committedSubjects, customCommitmentSubjects]);
+  }, [selectedReportStudent, reportForm.committedSubjects, customCommitmentSubjects]);
 
   const handleAddCustomCommitmentSubject = () => {
     const val = newCustomSubjectInput.trim();
@@ -7683,51 +8299,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
       {/* ===== OTHER TABS PLACEHOLDERS ===== */}
       {tab === "reports" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          {/* LATEST BATCH NOTIFICATION - SKY-LINE BRAND TEAL LEDGER BANNER */}
-          {latestBatchInfo && !alertDismissed && (
-            <div className="no-print mb-3 flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#F0FDFA] border border-[#CCFBF1] text-slate-800 text-xs">
-              <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#003B3A] text-white font-semibold text-[11px] whitespace-nowrap">
-                  <Calendar className="w-3.5 h-3.5 text-[#00A19A]" /> Đợt khảo sát mới nhất
-                </span>
-                <span className="font-bold text-[#003B3A] truncate tabular-nums">{latestBatchInfo.name}</span>
-                <span className="text-slate-600 text-xs hidden sm:inline">
-                  thuộc kỳ <strong className="text-[#00736E] font-semibold">{latestBatchInfo.periodName}</strong>
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => {
-                    setReportPeriodId(latestBatchInfo.periodId);
-                    setReportBatchId(latestBatchInfo.id);
-                    setReportsSubTab("results");
-                  }}
-                  className="px-3 py-1 bg-[#008B85] hover:bg-[#00736E] text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  Chuyển đến đợt này
-                </button>
-                <button
-                  onClick={() => setAlertDismissed(true)}
-                  className="p-1 text-slate-400 hover:text-[#003B3A] rounded-md hover:bg-[#CCFBF1]/60 transition-colors cursor-pointer"
-                  title="Ẩn thông báo"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* UNIFIED APPROVAL CONTROL & FILTER BAR */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_2px_rgba(15,23,42,0.03)] p-4 space-y-3.5 mb-3 text-left">
-            {/* Row 1: Subtabs + Approval Progress Meter + Quick Queue & Email Actions */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-3.5 space-y-2.5 text-left">
+            {/* Row 1: Subtabs + Approval Progress Meter + Quick Queue & Batch-Bound Email Actions */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
+              <div className="flex items-center gap-2 flex-wrap">
                 {/* Subtab Switcher */}
-                <div className="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200/80">
+                <div className="bg-slate-100 p-0.5 rounded-xl flex gap-1 border border-slate-200/80">
                   <button
                     onClick={() => setReportsSubTab("results")}
-                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       reportsSubTab === "results"
                         ? "bg-[#003B3A] text-white shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
@@ -7735,7 +8317,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   >
                     <ClipboardCheck className={`w-3.5 h-3.5 ${reportsSubTab === "results" ? "text-[#5EEAD4]" : "text-[#008B85]"}`} />
                     <span>Bàn làm việc xét duyệt</span>
-                    <span className={`px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums ${
+                    <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold tabular-nums ${
                       reportsSubTab === "results"
                         ? "bg-white/15 text-white"
                         : "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]"
@@ -7745,7 +8327,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   </button>
                   <button
                     onClick={() => setReportsSubTab("stats")}
-                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       reportsSubTab === "stats"
                         ? "bg-[#003B3A] text-white shadow-2xs"
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
@@ -7762,10 +8344,10 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   const eligibleTotal = Math.max(1, batchSummaryStats.total - (batchSummaryStats.absent || 0));
                   const pct = Math.min(100, Math.round((approvedCount / eligibleTotal) * 100));
                   return (
-                    <div className="hidden xl:flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs tabular-nums">
-                      <span className="text-slate-500 font-medium">Tiến độ duyệt:</span>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs tabular-nums">
+                      <span className="text-slate-500 font-medium">Tiến độ:</span>
                       <strong className="text-slate-900 font-bold">{approvedCount}/{eligibleTotal}</strong>
-                      <div className="w-20 h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
+                      <div className="w-16 h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
                         <div className="h-full bg-[#008B85] rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
                       </div>
                       <span className="text-[#00736E] font-bold">{pct}%</span>
@@ -7774,8 +8356,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 })()}
               </div>
 
-              {/* Right: Quick Start Approval Queue + Email Actions */}
-              <div className="flex items-center gap-2 flex-wrap self-end lg:self-auto">
+              {/* Right: Quick Start Approval Queue + Batch-Bound Email Actions */}
+              <div className="flex items-center gap-1.5 flex-wrap self-end lg:self-auto">
                 {batchSummaryStats.pending > 0 && (
                   <button
                     onClick={() => {
@@ -7789,11 +8371,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         setReportApprovalStatusFilter("Chưa duyệt");
                       }
                     }}
-                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#005854] text-white font-semibold text-xs transition-colors cursor-pointer tabular-nums shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005854] text-white font-semibold text-xs transition-colors cursor-pointer tabular-nums shadow-2xs"
                     title="Mở ngay hồ sơ học sinh đang chờ duyệt đầu tiên để bắt đầu xét duyệt liên tiếp"
                   >
                     <ClipboardList className="w-3.5 h-3.5 text-[#5EEAD4]" />
-                    <span>Duyệt ngay ({batchSummaryStats.pending} chờ duyệt)</span>
+                    <span>Duyệt ngay ({batchSummaryStats.pending})</span>
                   </button>
                 )}
 
@@ -7801,173 +8383,204 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                   <button
                     onClick={handleSendBatchApprovalEmail}
                     disabled={sendingBatchEmail}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#003B3A] bg-[#F0FDFA] border border-[#99F6E4] hover:bg-[#CCFBF1]/70 transition-colors disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#003B3A] bg-[#F0FDFA] border border-[#99F6E4] hover:bg-[#CCFBF1]/70 transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {sendingBatchEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5 text-[#00736E]" />}
                     <span>Đề nghị GĐCS xét duyệt đợt</span>
                   </button>
                 )}
 
-                {reportsSubTab === "results" && (
-                  <div className="inline-flex items-center gap-1.5 flex-wrap">
-                    <button
-                      onClick={handleSendBatchApprovalResultEmail}
-                      disabled={sendingBatchResultEmail || filteredReportStudents.length === 0}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#003B3A] bg-white border border-slate-200 hover:border-[#008B85] hover:bg-[#F0FDFA] transition-colors disabled:opacity-50 cursor-pointer"
-                      title="Gửi email bảng kết quả xét duyệt đến Giám đốc Cơ sở, Tư vấn Cơ sở, Giáo vụ Cơ sở & Ban KT&ĐBCL"
-                    >
-                      {sendingBatchResultEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5 text-[#00736E]" />}
-                      <span>Gửi thông báo kết quả qua email</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEmailRoutingModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 hover:border-[#008B85] hover:text-[#003B3A] hover:bg-[#F0FDFA]/80 transition-colors cursor-pointer"
-                      title="Thiết lập cấu hình gửi email: Bật/tắt tự động gửi, chọn nhóm người nhận (To/CC) và danh sách email theo từng cơ sở"
-                    >
-                      <Settings className="w-3.5 h-3.5 text-[#008B85]" />
-                      <span>Cấu hình gửi email</span>
-                    </button>
-                  </div>
-                )}
+                {reportsSubTab === "results" && (() => {
+                  const hasSpecificBatch = !!reportBatchId && reportBatchId !== "all" && reportBatchId !== "none";
+                  const selectedBatchObj = hasSpecificBatch ? rawReportBatches.find(b => b.id === reportBatchId) : null;
+                  const batchStudentCount = hasSpecificBatch
+                    ? filteredReportStudents.filter(s => s.batchId === reportBatchId).length
+                    : 0;
+                  return (
+                    <div className="inline-flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setIsCompletenessModalOpen(true)}
+                        disabled={reportStudents.length === 0}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#003B3A] bg-[#F0FDFA] border border-[#99F6E4] hover:bg-[#CCFBF1]/80 transition-colors disabled:opacity-50 cursor-pointer tabular-nums"
+                        title="Kiểm tra đủ các môn khảo sát theo quy chế, gửi email nhắc GV hoàn thành điểm thiếu và gửi mail trình GĐCS cho học sinh đã đủ điểm"
+                      >
+                        <ClipboardCheck className="w-3.5 h-3.5 text-[#00736E]" />
+                        <span>Check đủ điểm</span>
+                        {(completenessSummaryStats.readyPending > 0 || completenessSummaryStats.missingPending > 0) && (
+                          <span className="px-1.5 py-0 rounded bg-white text-[#003B3A] border border-[#99F6E4] text-[10px] font-bold">
+                            {completenessSummaryStats.readyPending} đủ / {completenessSummaryStats.missingPending} thiếu
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSendBatchApprovalResultEmail}
+                        disabled={sendingBatchResultEmail || (hasSpecificBatch && batchStudentCount === 0)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer tabular-nums ${
+                          hasSpecificBatch
+                            ? "text-[#003B3A] bg-[#F0FDFA] border-[#008B85] hover:bg-[#CCFBF1]/70"
+                            : "text-slate-500 bg-white border-slate-200 hover:border-[#008B85] hover:text-[#003B3A]"
+                        } disabled:opacity-50`}
+                        title={
+                          hasSpecificBatch
+                            ? `Xem trước & gửi email thông báo kết quả đợt "${selectedBatchObj?.name || "Đợt đang chọn"}" (${batchStudentCount} HS) đến GĐCS, Tư vấn, Giáo vụ & Ban KT&ĐBCL`
+                            : "Mở hộp thoại xem trước & gửi email thông báo kết quả theo đợt khảo sát"
+                        }
+                      >
+                        {sendingBatchResultEmail ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Eye className={`w-3.5 h-3.5 ${hasSpecificBatch ? "text-[#00736E]" : "text-slate-500"}`} />
+                        )}
+                        <span>
+                          {hasSpecificBatch
+                            ? `Xem trước & gửi email KQ (${batchStudentCount} HS)`
+                            : "Xem trước & gửi email KQ"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEmailRoutingModalOpen(true)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 hover:border-[#008B85] hover:text-[#003B3A] hover:bg-[#F0FDFA]/80 transition-colors cursor-pointer"
+                        title="Thiết lập cấu hình gửi email: Bật/tắt tự động gửi, chọn nhóm người nhận (To/CC) và danh sách email theo từng cơ sở"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-[#008B85]" />
+                        <span className="hidden sm:inline">Cấu hình email</span>
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
-            {/* Row 2: 5-Column Filter Bar (Kỳ, Cơ sở, Đợt, Khối lớp, Tìm kiếm) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5">
+            {/* Row 2: Unified 6-Column Filter Bar (Kỳ khảo sát → Tháng → Đợt khảo sát → Cơ sở → Khối → Tìm kiếm) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
               {/* 1. Kỳ khảo sát */}
-              <div className="relative lg:col-span-3">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Calendar className="w-3.5 h-3.5 text-[#008B85]" />
-                </div>
-                <select
-                  value={reportPeriodId}
-                  onChange={e => {
-                    setReportPeriodId(e.target.value);
-                    setReportStudentId("");
-                  }}
-                  aria-label="Kỳ khảo sát"
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 transition-all cursor-pointer appearance-none"
-                >
-                  {periods.length > 0 && <option value="all">Tất cả kỳ khảo sát</option>}
-                  {visiblePeriods.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                  {periods.length === 0 && <option value="">Chưa có kỳ khảo sát</option>}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </div>
-              </div>
+              <select
+                value={reportPeriodId}
+                onChange={e => {
+                  setReportPeriodId(e.target.value);
+                  setReportBatchId("all");
+                  setReportStudentId("");
+                }}
+                aria-label="Kỳ khảo sát"
+                className="px-2.5 py-1.5 rounded-lg text-xs border border-slate-200 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+              >
+                {periods.length > 0 && <option value="all">Tất cả Kỳ khảo sát</option>}
+                {visiblePeriods.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+                {periods.length === 0 && <option value="">Chưa có kỳ khảo sát</option>}
+              </select>
 
-              {/* 2. Cơ sở */}
-              <div className="relative lg:col-span-2">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Building className="w-3.5 h-3.5 text-[#008B85]" />
-                </div>
-                <select
-                  value={reportCampusFilter}
-                  onChange={e => {
-                    setReportCampusFilter(e.target.value);
-                    setReportStudentId("");
-                  }}
-                  aria-label="Cơ sở tuyển sinh"
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 transition-all cursor-pointer appearance-none"
-                >
-                  <option value="all">Tất cả cơ sở</option>
-                  {campuses.map(c => (
-                    <option key={c.id} value={c.id}>{c.campusName}</option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </div>
-              </div>
+              {/* 2. Tháng (mặc định Tháng hiện tại) */}
+              <select
+                value={reportMonthFilter}
+                onChange={e => {
+                  setReportMonthFilter(e.target.value);
+                  setReportBatchId("all");
+                  setReportStudentId("");
+                }}
+                aria-label="Tháng khảo sát"
+                className="px-2.5 py-1.5 rounded-lg text-xs border border-slate-200 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium tabular-nums"
+              >
+                <option value="all">Tất cả Tháng</option>
+                {availableReportMonths.map(mk => (
+                  <option key={mk} value={mk}>
+                    Tháng {mk}{mk === currentMonthYearKey ? " (Hiện tại)" : ""}
+                  </option>
+                ))}
+              </select>
 
-              {/* 3. Đợt khảo sát */}
-              <div className="relative lg:col-span-3">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Layers className="w-3.5 h-3.5 text-[#008B85]" />
-                </div>
-                <select
-                  value={reportBatchId}
-                  onChange={e => {
-                    setReportBatchId(e.target.value);
-                    setReportStudentId("");
-                  }}
-                  aria-label="Đợt khảo sát"
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 transition-all cursor-pointer appearance-none"
-                >
-                  <option value="all">Tất cả các đợt</option>
-                  {(() => {
-                    const noBatchCount = (reportStudents || []).filter(s => !s.batchId).length;
-                    const pendingNoBatch = (reportStudents || []).filter(s => !s.batchId && !s.admissionResult && !s.isAbsent).length;
-                    const suffixNoBatch = noBatchCount > 0 ? ` (${noBatchCount} HS${pendingNoBatch > 0 ? ` · ${pendingNoBatch} chờ duyệt` : ''})` : '';
-                    return (
-                      <option value="none">Khảo sát lẻ{suffixNoBatch}</option>
-                    );
-                  })()}
-                  {reportBatches.map(b => {
-                    const countInBatch = (reportStudents || []).filter(s => s.batchId === b.id).length;
-                    const pendingInBatch = (reportStudents || []).filter(s => s.batchId === b.id && !s.admissionResult && !s.isAbsent).length;
-                    const suffix = countInBatch > 0 ? ` (${countInBatch} HS${pendingInBatch > 0 ? ` · ${pendingInBatch} chờ duyệt` : ''})` : '';
-                    return (
-                      <option key={b.id} value={b.id}>{b.name}{suffix}</option>
-                    );
-                  })}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </div>
-              </div>
+              {/* 3. Đợt khảo sát (đồng bộ theo Kỳ, Tháng & Cơ sở) */}
+              <select
+                value={reportBatchId}
+                onChange={e => {
+                  setReportBatchId(e.target.value);
+                  setReportStudentId("");
+                }}
+                aria-label="Đợt khảo sát"
+                className="px-2.5 py-1.5 rounded-lg text-xs border border-slate-200 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+              >
+                <option value="all">Tất cả Đợt khảo sát</option>
+                {(() => {
+                  const noBatchCount = (reportStudents || []).filter(s => {
+                    if (s.batchId) return false;
+                    if (reportMonthFilter && reportMonthFilter !== "all") {
+                      if (getStudentMonthYearKey(s, reportBatchLookup) !== reportMonthFilter) return false;
+                    }
+                    return true;
+                  }).length;
+                  return (
+                    <option value="none">
+                      Khảo sát lẻ{noBatchCount > 0 ? ` (${noBatchCount} HS)` : ""}
+                    </option>
+                  );
+                })()}
+                {reportBatches.map(b => {
+                  const countInBatch = (reportStudents || []).filter(s => s.batchId === b.id).length;
+                  const pendingInBatch = (reportStudents || []).filter(s => s.batchId === b.id && !s.admissionResult && !s.isAbsent).length;
+                  const suffix = countInBatch > 0 ? ` (${countInBatch} HS${pendingInBatch > 0 ? ` · ${pendingInBatch} chờ` : ""})` : "";
+                  return (
+                    <option key={b.id} value={b.id}>{b.name}{suffix}</option>
+                  );
+                })}
+              </select>
 
-              {/* 4. Khối lớp */}
-              <div className="relative lg:col-span-2">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <GraduationCap className="w-3.5 h-3.5 text-[#008B85]" />
-                </div>
-                <select
-                  value={reportGradeFilter}
-                  onChange={e => {
-                    setReportGradeFilter(e.target.value);
-                    setReportStudentId("");
-                  }}
-                  aria-label="Khối lớp"
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 transition-all cursor-pointer appearance-none"
-                >
-                  <option value="all">Tất cả khối lớp</option>
-                  {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map(g => {
-                    const cnt = reportAvailableGradeCounts[g] || 0;
-                    return (
-                      <option key={g} value={g}>
-                        Khối {g}{cnt > 0 ? ` (${cnt} HS)` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </div>
-              </div>
+              {/* 4. Cơ sở */}
+              <select
+                value={reportCampusFilter}
+                onChange={e => {
+                  setReportCampusFilter(e.target.value);
+                  setReportStudentId("");
+                }}
+                aria-label="Cơ sở tuyển sinh"
+                className="px-2.5 py-1.5 rounded-lg text-xs border border-slate-200 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+              >
+                <option value="all">Tất cả Cơ sở</option>
+                {campuses.map(c => (
+                  <option key={c.id} value={c.id}>{c.campusName}</option>
+                ))}
+              </select>
 
-              {/* 5. Tìm kiếm Học sinh */}
-              <div className="relative sm:col-span-2 lg:col-span-2">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Search className="w-3.5 h-3.5" />
-                </div>
+              {/* 5. Khối lớp */}
+              <select
+                value={reportGradeFilter}
+                onChange={e => {
+                  setReportGradeFilter(e.target.value);
+                  setReportStudentId("");
+                }}
+                aria-label="Khối lớp"
+                className="px-2.5 py-1.5 rounded-lg text-xs border border-slate-200 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium"
+              >
+                <option value="all">Tất cả Khối</option>
+                {["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"].map(g => {
+                  const cnt = reportAvailableGradeCounts[g] || 0;
+                  return (
+                    <option key={g} value={g}>
+                      Khối {g}{cnt > 0 ? ` (${cnt})` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+
+              {/* 6. Tìm kiếm Học sinh */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={reportStudentSearchQuery}
                   onChange={e => {
                     setReportStudentSearchQuery(e.target.value);
                   }}
-                  placeholder="Tìm mã, tên, trường cũ..."
-                  className="w-full bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#008B85] focus:bg-white focus:ring-3 focus:ring-[#00A19A]/15 placeholder:text-slate-400 transition-all"
+                  placeholder="Tên hoặc mã HS..."
+                  className="w-full pl-8 pr-7 py-1.5 rounded-lg text-xs border border-slate-200 bg-white focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none transition-all text-slate-700"
                 />
                 {reportStudentSearchQuery && (
                   <button
                     onClick={() => setReportStudentSearchQuery("")}
-                    className="absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
                     title="Xóa từ khóa tìm kiếm"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -8640,82 +9253,113 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
               )}
 
               {/* DATA CARD WITH INTEGRATED STATUS TABS */}
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03)] overflow-hidden text-left mb-6">
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-xs overflow-hidden text-left mb-6">
                 {/* CARD HEADER: STATUS SEGMENTED TABS + SUMMARY */}
-                <div className="px-4 py-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="px-3.5 py-2.5 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-col md:flex-row md:items-center justify-between gap-2">
                   {/* Status Segmented Control */}
-                  <div className="flex items-center gap-1.5 flex-wrap tabular-nums">
-                    <span className="text-xs font-semibold text-slate-500 mr-1 hidden sm:inline">Trạng thái:</span>
+                  <div className="flex items-center gap-1 flex-wrap tabular-nums">
                     <button
                       onClick={() => setReportApprovalStatusFilter("all")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
                         reportApprovalStatusFilter === "all"
                           ? "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
                           : "bg-white text-slate-700 hover:text-[#003B3A] hover:border-[#008B85]/60 border-[#E2E8F0]"
                       }`}
                     >
                       <span>Tất cả</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"}`}>
+                      <span className={`px-1 py-0 rounded text-[10px] font-bold ${reportApprovalStatusFilter === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"}`}>
                         {batchSummaryStats.total}
                       </span>
                     </button>
 
                     <button
                       onClick={() => setReportApprovalStatusFilter("Chưa duyệt")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
                         reportApprovalStatusFilter === "Chưa duyệt"
                           ? "bg-[#D97706] text-white border-[#D97706] shadow-2xs"
                           : "bg-white text-slate-700 hover:text-[#003B3A] hover:border-[#D97706]/60 border-[#E2E8F0]"
                       }`}
                     >
-                      <span className={`w-2 h-2 rounded-full ${reportApprovalStatusFilter === "Chưa duyệt" ? "bg-white" : "bg-[#D97706]"}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${reportApprovalStatusFilter === "Chưa duyệt" ? "bg-white" : "bg-[#D97706]"}`} />
                       <span>Chờ duyệt</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Chưa duyệt" ? "bg-white/20 text-white" : "bg-amber-50 text-[#D97706]"}`}>
+                      <span className={`px-1 py-0 rounded text-[10px] font-bold ${reportApprovalStatusFilter === "Chưa duyệt" ? "bg-white/20 text-white" : "bg-amber-50 text-[#D97706]"}`}>
                         {batchSummaryStats.pending}
                       </span>
                     </button>
 
                     <button
+                      onClick={() => setReportApprovalStatusFilter("Đủ điểm chờ duyệt")}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
+                        reportApprovalStatusFilter === "Đủ điểm chờ duyệt"
+                          ? "bg-[#00736E] text-white border-[#00736E] shadow-2xs"
+                          : "bg-white text-slate-700 hover:text-[#003B3A] hover:border-[#008B85]/60 border-[#E2E8F0]"
+                      }`}
+                      title="Lọc các học sinh đã có đủ kết quả các môn khảo sát bắt buộc nhưng chưa phê duyệt"
+                    >
+                      <CheckCircle2 className={`w-3 h-3 ${reportApprovalStatusFilter === "Đủ điểm chờ duyệt" ? "text-[#5EEAD4]" : "text-[#059669]"}`} />
+                      <span>Đủ điểm chờ duyệt</span>
+                      <span className={`px-1 py-0 rounded text-[10px] font-bold ${reportApprovalStatusFilter === "Đủ điểm chờ duyệt" ? "bg-white/20 text-white" : "bg-[#F0FDFA] text-[#00736E]"}`}>
+                        {completenessSummaryStats.readyPending}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setReportApprovalStatusFilter("Thiếu điểm")}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
+                        reportApprovalStatusFilter === "Thiếu điểm"
+                          ? "bg-[#E11D48] text-white border-[#E11D48] shadow-2xs"
+                          : "bg-white text-slate-700 hover:text-[#003B3A] hover:border-rose-300 border-[#E2E8F0]"
+                      }`}
+                      title="Lọc các học sinh còn thiếu điểm các môn khảo sát bắt buộc để nhắc giáo viên"
+                    >
+                      <AlertCircle className={`w-3 h-3 ${reportApprovalStatusFilter === "Thiếu điểm" ? "text-white" : "text-[#E11D48]"}`} />
+                      <span>Thiếu điểm</span>
+                      <span className={`px-1 py-0 rounded text-[10px] font-bold ${reportApprovalStatusFilter === "Thiếu điểm" ? "bg-white/20 text-white" : "bg-rose-50 text-[#E11D48]"}`}>
+                        {completenessSummaryStats.missingPending}
+                      </span>
+                    </button>
+
+                    <button
                       onClick={() => setReportApprovalStatusFilter("Đạt")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
                         reportApprovalStatusFilter === "Đạt"
                           ? "bg-[#059669] text-white border-[#059669] shadow-2xs"
                           : "bg-white text-slate-700 hover:text-[#003B3A] hover:border-[#059669]/60 border-[#E2E8F0]"
                       }`}
                     >
-                      <span className={`w-2 h-2 rounded-full ${reportApprovalStatusFilter === "Đạt" ? "bg-white" : "bg-[#059669]"}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${reportApprovalStatusFilter === "Đạt" ? "bg-white" : "bg-[#059669]"}`} />
                       <span>Đạt chuẩn</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Đạt" ? "bg-white/20 text-white" : "bg-emerald-50 text-[#059669]"}`}>
+                      <span className={`px-1 py-0 rounded text-[10px] font-bold ${reportApprovalStatusFilter === "Đạt" ? "bg-white/20 text-white" : "bg-emerald-50 text-[#059669]"}`}>
                         {batchSummaryStats.passed}
                       </span>
                     </button>
 
                     <button
                       onClick={() => setReportApprovalStatusFilter("Đạt cam kết")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
                         reportApprovalStatusFilter === "Đạt cam kết"
                           ? "bg-[#D97706] text-white border-[#D97706] shadow-2xs"
                           : "bg-white text-slate-700 hover:text-[#003B3A] hover:border-[#D97706]/60 border-[#E2E8F0]"
                       }`}
                     >
-                      <span className={`w-2 h-2 rounded-full ${reportApprovalStatusFilter === "Đạt cam kết" ? "bg-white" : "bg-[#D97706]"}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${reportApprovalStatusFilter === "Đạt cam kết" ? "bg-white" : "bg-[#D97706]"}`} />
                       <span>Đạt cam kết</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Đạt cam kết" ? "bg-white/20 text-white" : "bg-amber-50 text-[#D97706]"}`}>
+                      <span className={`px-1 py-0 rounded text-[10px] font-bold ${reportApprovalStatusFilter === "Đạt cam kết" ? "bg-white/20 text-white" : "bg-amber-50 text-[#D97706]"}`}>
                         {batchSummaryStats.committed}
                       </span>
                     </button>
 
                     <button
                       onClick={() => setReportApprovalStatusFilter("Không đạt")}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
                         reportApprovalStatusFilter === "Không đạt"
                           ? "bg-[#E11D48] text-white border-[#E11D48] shadow-2xs"
                           : "bg-white text-slate-700 hover:text-[#003B3A] hover:border-[#E11D48]/60 border-[#E2E8F0]"
                       }`}
                     >
-                      <span className={`w-2 h-2 rounded-full ${reportApprovalStatusFilter === "Không đạt" ? "bg-white" : "bg-[#E11D48]"}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${reportApprovalStatusFilter === "Không đạt" ? "bg-white" : "bg-[#E11D48]"}`} />
                       <span>Không đạt</span>
-                      <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Không đạt" ? "bg-white/20 text-white" : "bg-rose-50 text-[#E11D48]"}`}>
+                      <span className={`px-1 py-0 rounded text-[10px] font-bold ${reportApprovalStatusFilter === "Không đạt" ? "bg-white/20 text-white" : "bg-rose-50 text-[#E11D48]"}`}>
                         {batchSummaryStats.failed}
                       </span>
                     </button>
@@ -8723,14 +9367,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                     {batchSummaryStats.absent > 0 && (
                       <button
                         onClick={() => setReportApprovalStatusFilter("Vắng khảo sát")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer border ${
                           reportApprovalStatusFilter === "Vắng khảo sát"
                             ? "bg-slate-700 text-white border-slate-700 shadow-2xs"
                             : "bg-white text-slate-600 hover:bg-slate-100 border-[#E2E8F0]"
                         }`}
                       >
-                        <span>Vắng khảo sát</span>
-                        <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${reportApprovalStatusFilter === "Vắng khảo sát" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"}`}>
+                        <span>Vắng</span>
+                        <span className={`px-1 py-0 rounded text-[10px] font-bold ${reportApprovalStatusFilter === "Vắng khảo sát" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"}`}>
                           {batchSummaryStats.absent}
                         </span>
                       </button>
@@ -8743,28 +9387,191 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           setReportApprovalStatusFilter("all");
                           setReportStudentSearchQuery("");
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-500 hover:text-[#003B3A] hover:bg-slate-200/60 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-[#003B3A] hover:bg-slate-200/60 transition-colors cursor-pointer"
                       >
                         <X className="w-3 h-3" />
-                        <span>Xóa lọc phụ</span>
+                        <span>Xóa lọc</span>
                       </button>
                     )}
                   </div>
 
-                  {/* Scope & Counter badge */}
-                  <div className="flex items-center gap-2 text-xs font-medium text-slate-500 self-end md:self-auto shrink-0 tabular-nums">
+                  {/* Scope, Sort & Counter badge */}
+                  <div className="flex items-center gap-2.5 text-xs font-medium text-slate-500 self-end md:self-auto shrink-0 tabular-nums flex-wrap">
+                    <select
+                      value={reportSortMode}
+                      onChange={e => setReportSortMode(e.target.value as any)}
+                      aria-label="Sắp xếp danh sách xét duyệt"
+                      className="bg-white border border-[#E2E8F0] hover:border-[#008B85] rounded-xl px-2.5 py-1 text-[11px] font-semibold text-[#003B3A] outline-none cursor-pointer"
+                    >
+                      <option value="priority_latest">Ưu tiên: Chờ duyệt &amp; Đợt mới nhất</option>
+                      <option value="latest_batch">Sắp xếp: Đợt mới nhất trước</option>
+                      <option value="name_asc">Sắp xếp: Tên A → Z</option>
+                    </select>
                     <span className="hidden xl:inline text-slate-400">
                       {reportCampusFilter === "all" ? "5 cơ sở" : (campuses.find(c => c.id === reportCampusFilter)?.campusCode || campuses.find(c => c.id === reportCampusFilter)?.campusName || "Cơ sở")}
                       {" · "}
                     </span>
                     <span>
-                      Danh sách <strong className="text-[#003B3A] font-bold">{filteredReportStudents.length}</strong> học sinh
+                      Danh sách <strong className="text-[#003B3A] font-bold">{sortedReportStudents.length}</strong> học sinh
                     </span>
                   </div>
                 </div>
 
-                {/* EVIDENCE-FIRST APPROVAL LEDGER TABLE */}
-                <div className="overflow-x-auto">
+                {/* MOBILE APPROVAL CARD LIST (< md) */}
+                <div className="md:hidden divide-y divide-[#E2E8F0] bg-white tabular-nums">
+                  {paginatedReportStudents.length === 0 ? (
+                    <div className="py-10 px-4 text-center text-xs font-medium text-slate-400">
+                      Không có học sinh nào phù hợp với bộ lọc hiện tại.
+                    </div>
+                  ) : (
+                    paginatedReportStudents.map((s) => {
+                      const isChecked = selectedStudentIds.includes(s.id);
+                      const isPending = !s.admissionResult && !s.isAbsent;
+                      const isPassedStandard = s.admissionResult === "Đạt" || (s.admissionResult?.includes("Đạt") && !s.admissionResult?.includes("Không") && !s.admissionResult?.includes("cam kết"));
+                      const isCommitted = s.admissionResult?.includes("cam kết");
+                      const isProbation = s.admissionResult === "Học thử";
+                      const campusObj = resolveCampusObjForStudent(s);
+                      const shortCampus =
+                        campusObj?.campusCode ||
+                        campusObj?.campusName?.replace("Cơ sở ", "CS") ||
+                        (s.admissionCampus && !/^(cm|cl)[a-z0-9]{15,}$/i.test(String(s.admissionCampus)) ? s.admissionCampus : "—");
+                      const mk = getStudentMonthYearKey(s, reportBatchLookup);
+                      const surveyPills = getStudentSurveyPills(s);
+                      const comp = completenessMap.get(s.id);
+                      const approvedViaEmail = !s.gdcsEmailSentAt && /duyệt qua email|phê duyệt qua email/i.test(String(s.directorNote || ""));
+
+                      return (
+                        <div key={s.id} className={`p-3.5 space-y-2.5 ${isChecked ? "bg-[#F0FDFA]/70" : "bg-white"}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2.5 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleSelectStudent(s.id)}
+                                className="mt-1 w-4 h-4 rounded text-[#008B85] focus:ring-[#00A19A] cursor-pointer shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setReportStudentId(s.id)}
+                                  className="font-bold text-slate-900 text-sm text-left hover:text-[#00736E] leading-snug"
+                                >
+                                  {s.fullName}
+                                </button>
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px]">
+                                  <span className="font-mono font-semibold text-[#003B3A] bg-[#F8FAFC] px-1.5 py-0.5 rounded border border-[#E2E8F0]">
+                                    {s.studentCode || "—"}
+                                  </span>
+                                  {mk && (
+                                    <span className="px-1.5 py-0.5 rounded font-semibold bg-[#F8FAFC] text-[#003B3A] border border-[#E2E8F0]">
+                                      {mk}
+                                    </span>
+                                  )}
+                                  <span className="px-1.5 py-0.5 rounded font-semibold bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0]">
+                                    Khối {s.grade || "—"}
+                                  </span>
+                                  <span className="font-semibold text-slate-600">{s.surveyFormType || s.surveySystem || "—"}</span>
+                                  <span className="px-1.5 py-0.5 rounded font-bold bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
+                                    {shortCampus}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <span className={`shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-bold border ${
+                              s.isAbsent
+                                ? "bg-slate-100 text-slate-600 border-slate-200"
+                                : isPending
+                                ? "bg-amber-50 text-[#D97706] border-amber-200"
+                                : isPassedStandard
+                                ? "bg-emerald-50 text-[#059669] border-emerald-200"
+                                : isCommitted || isProbation
+                                ? "bg-amber-50 text-[#D97706] border-amber-200"
+                                : "bg-rose-50 text-[#E11D48] border-rose-200"
+                            }`}>
+                              {s.isAbsent ? "Vắng KS" : isPending ? "Chờ duyệt" : s.admissionResult}
+                            </span>
+                          </div>
+
+                          {/* Scores */}
+                          <div className="flex flex-wrap items-center gap-1.5 pl-6">
+                            {surveyPills.length > 0 ? (
+                              surveyPills.slice(0, 4).map((p) => (
+                                <span
+                                  key={p.key}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border ${
+                                    p.nonScoring
+                                      ? "bg-amber-50 text-amber-900 border-amber-300"
+                                      : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0]"
+                                  }`}
+                                >
+                                  <span className={p.nonScoring ? "text-amber-700 font-medium" : "text-slate-500 font-medium"}>{p.label}:</span>
+                                  <strong className={p.nonScoring ? "font-bold text-amber-950" : "font-bold text-[#003B3A]"}>{p.value}</strong>
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-[11px] text-slate-400 italic">Chưa ghi nhận điểm</span>
+                            )}
+                          </div>
+
+                          {/* Progress + GDCS Mail Status */}
+                          <div className="flex flex-wrap items-center justify-between gap-2 pl-6 pt-1 border-t border-slate-100 text-[11px]">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {comp && comp.requiredCount > 0 && (
+                                comp.status === "READY" ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold bg-emerald-50 text-[#059669] border border-emerald-200">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Đủ {comp.completedCount}/{comp.requiredCount} môn
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold bg-amber-50 text-[#D97706] border border-amber-200">
+                                    <AlertCircle className="w-3 h-3" />
+                                    Thiếu {comp.completedCount}/{comp.requiredCount} môn
+                                  </span>
+                                )
+                              )}
+                              {(s.gdcsEmailSentAt || approvedViaEmail) ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#99F6E4]">
+                                  <Mail className="w-3 h-3" />
+                                  Đã gửi GĐCS
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md font-medium bg-slate-50 text-slate-400 border border-slate-200">
+                                  Chưa gửi GĐCS
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 pl-6 pt-1">
+                            {!s.admissionResult && !s.isAbsent && (
+                              <button
+                                type="button"
+                                onClick={() => handleSendGdcsApprovalRequestForStudent(s)}
+                                disabled={sendingApprovalId === s.id}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:border-[#008B85] hover:text-[#003B3A] cursor-pointer"
+                              >
+                                {sendingApprovalId === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5 text-[#008B85]" />}
+                                <span>Nhắc GĐCS</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setReportStudentId(s.id)}
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-[#003B3A] hover:bg-[#005854] text-white cursor-pointer"
+                            >
+                              <ClipboardCheck className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                              <span>Xét duyệt</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* EVIDENCE-FIRST APPROVAL LEDGER TABLE (md+) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left table-auto border-collapse tabular-nums">
                     <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
                       <tr className="text-[11px] font-semibold whitespace-nowrap">
@@ -8779,12 +9586,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         </th>
                         <th className="py-3 px-3 text-teal-100 font-semibold">Mã HS</th>
                         <th className="py-3 px-3.5 min-w-[170px] font-semibold">Học sinh</th>
+                        <th className="py-3 px-2.5 text-center text-teal-100 font-semibold">Tháng</th>
                         <th className="py-3 px-2.5 text-center text-teal-100 font-semibold">Ngày sinh</th>
                         <th className="py-3 px-2.5 text-center text-teal-100 font-semibold">Giới tính</th>
                         <th className="py-3 px-2.5 text-center text-teal-100 font-semibold">Khối</th>
                         <th className="py-3 px-2.5 text-center text-teal-100 font-semibold">Hệ</th>
                         <th className="py-3 px-2.5 text-center text-teal-100 font-semibold">Cơ sở</th>
-                        <th className="py-3 px-3.5 min-w-[220px] font-semibold">Kết quả khảo sát</th>
+                        <th className="py-3 px-3.5 min-w-[200px] font-semibold">Kết quả khảo sát</th>
+                        <th className="py-3 px-3 min-w-[155px] text-teal-100 font-semibold">Tiến độ</th>
+                        <th className="py-3 px-2.5 text-center text-teal-100 font-semibold">Gửi mail GĐCS</th>
                         <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">KQ đã xét duyệt</th>
                         <th className="py-3 px-3.5 text-right font-semibold">Thao tác</th>
                       </tr>
@@ -8849,11 +9659,34 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               >
                                 <span className="group-hover:underline text-[13px]">{s.fullName}</span>
                               </button>
-                              {!s.batchId && (
+                              {s.batchId ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setReportBatchId(s.batchId)}
+                                  title={`Lọc theo đợt: ${s.batch?.name || rawReportBatches.find((b: any) => b.id === s.batchId)?.name || "Đợt khảo sát"}`}
+                                  className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] font-medium bg-[#F8FAFC] hover:bg-[#F0FDFA] text-slate-500 hover:text-[#00736E] border border-[#E2E8F0] hover:border-[#99F6E4] max-w-[210px] truncate cursor-pointer transition-colors"
+                                >
+                                  {s.batch?.name || rawReportBatches.find((b: any) => b.id === s.batchId)?.name || "Đợt khảo sát"}
+                                </button>
+                              ) : (
                                 <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[10px] font-medium bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
                                   Khảo sát lẻ
                                 </span>
                               )}
+                            </td>
+
+                            {/* 3b. Tháng */}
+                            <td className="py-3 px-2.5 text-center whitespace-nowrap tabular-nums">
+                              {(() => {
+                                const mk = getStudentMonthYearKey(s, reportBatchLookup);
+                                return mk ? (
+                                  <span className="px-2 py-0.5 rounded-md font-semibold text-xs bg-[#F8FAFC] text-[#003B3A] border border-[#E2E8F0]">
+                                    {mk}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                );
+                              })()}
                             </td>
 
                             {/* 4. Ngày sinh */}
@@ -8897,10 +9730,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                   {surveyPills.slice(0, 4).map(p => (
                                     <span
                                       key={p.key}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] group-hover:border-[#008B85]/60 transition-colors"
+                                      title={p.nonScoring ? "Tiếng Anh (vấn đáp) — Môn không xét kết quả Đạt/Không đạt (chỉ tham khảo xếp lớp)" : undefined}
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border transition-colors ${
+                                        p.nonScoring
+                                          ? "bg-amber-50 text-amber-900 border-amber-300 group-hover:border-amber-400"
+                                          : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0] group-hover:border-[#008B85]/60"
+                                      }`}
                                     >
-                                      <span className="text-slate-500 font-medium">{p.label}:</span>
-                                      <strong className="font-bold text-[#003B3A]">{p.value}</strong>
+                                      <span className={p.nonScoring ? "text-amber-700 font-medium" : "text-slate-500 font-medium"}>{p.label}:</span>
+                                      <strong className={p.nonScoring ? "font-bold text-amber-950" : "font-bold text-[#003B3A]"}>{p.value}</strong>
                                     </span>
                                   ))}
                                   {surveyPills.length > 4 && (
@@ -8912,6 +9750,81 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               ) : (
                                 <span className="text-[11px] text-slate-400 italic">Chưa ghi nhận điểm</span>
                               )}
+                            </td>
+
+                            {/* 9b. Tiến độ đủ/thiếu các môn khảo sát */}
+                            <td className="py-3 px-3 tabular-nums">
+                              {(() => {
+                                if (s.isAbsent) {
+                                  return <span className="text-[11px] text-slate-400">Vắng KS</span>;
+                                }
+                                const comp = completenessMap.get(s.id);
+                                if (!comp || comp.requiredCount === 0) {
+                                  return <span className="text-[11px] text-slate-400">—</span>;
+                                }
+                                if (comp.status === "READY") {
+                                  return (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-[#059669] border border-emerald-200 whitespace-nowrap">
+                                      <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                      Đủ {comp.completedCount}/{comp.requiredCount} môn
+                                    </span>
+                                  );
+                                }
+                                const fullMissing = comp.missingSubjects.join(", ");
+                                return (
+                                  <div className="flex flex-col items-start gap-0.5">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-[#D97706] border border-amber-200 whitespace-nowrap">
+                                      <AlertCircle className="w-3 h-3 shrink-0" />
+                                      Thiếu {comp.completedCount}/{comp.requiredCount} môn
+                                    </span>
+                                    {comp.missingSubjects.length > 0 && (
+                                      <span
+                                        className="text-[10px] text-slate-500 leading-snug max-w-[200px] line-clamp-2"
+                                        title={`Còn thiếu: ${fullMissing}`}
+                                      >
+                                        Thiếu: {fullMissing}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                            </td>
+
+                            {/* 9c. Trạng thái Đã gửi mail cho GĐCS */}
+                            <td className="py-3 px-2.5 text-center whitespace-nowrap tabular-nums">
+                              {(() => {
+                                const approvedViaEmail =
+                                  !s.gdcsEmailSentAt &&
+                                  /duyệt qua email|phê duyệt qua email/i.test(String(s.directorNote || ""));
+                                if (s.gdcsEmailSentAt || approvedViaEmail) {
+                                  return (
+                                    <div
+                                      className="inline-flex flex-col items-center gap-0.5"
+                                      title={
+                                        s.gdcsEmailSentAt
+                                          ? `Đã gửi mail cho GĐCS${s.gdcsEmailRecipient ? ` (${s.gdcsEmailRecipient})` : ""} lúc ${new Date(s.gdcsEmailSentAt).toLocaleString("vi-VN")}`
+                                          : "Đã gửi mail & GĐCS đã phê duyệt qua Email"
+                                      }
+                                    >
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-[#99F6E4]">
+                                        <Mail className="w-3 h-3 shrink-0" />
+                                        Đã gửi GĐCS
+                                      </span>
+                                      {s.gdcsEmailSentAt && (
+                                        <span className="text-[10px] text-slate-400">
+                                          {new Date(s.gdcsEmailSentAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}{" "}
+                                          {new Date(s.gdcsEmailSentAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-50 text-slate-400 border border-slate-200">
+                                    Chưa gửi
+                                  </span>
+                                );
+                              })()}
                             </td>
 
                             {/* 10. KQ đã xét duyệt (Semantic Outcome Colors: Emerald #059669 / Amber #D97706 / Rose #E11D48) */}
@@ -8961,11 +9874,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             {/* 11. Thao tác: Xét duyệt */}
                             <td className="py-3 px-3.5 text-right whitespace-nowrap">
                               <div className="inline-flex items-center justify-end gap-1.5">
-                                {!s.admissionResult && (
+                                {!s.admissionResult ? (
                                   <button
                                     onClick={() => handleSendGdcsApprovalRequestForStudent(s)}
                                     disabled={sendingApprovalId === s.id}
-                                    title="Gửi email nhắc Giám đốc Cơ sở xét duyệt hồ sơ này"
+                                    title="Xem trước & gửi email nhắc Giám đốc Cơ sở xét duyệt hồ sơ này"
                                     className="p-1.5 rounded-lg border border-transparent hover:border-[#E2E8F0] hover:bg-[#F8FAFC] text-slate-500 hover:text-[#00736E] disabled:opacity-50 inline-flex items-center justify-center cursor-pointer transition-colors"
                                   >
                                     {sendingApprovalId === s.id ? (
@@ -8973,6 +9886,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     ) : (
                                       <Mail className="w-3.5 h-3.5" />
                                     )}
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handlePreviewApprovalResultForStudent(s)}
+                                    title="Xem trước & gửi email Thông báo kết quả xét duyệt cho học sinh này"
+                                    className="p-1.5 rounded-lg border border-transparent hover:border-[#99F6E4] hover:bg-[#F0FDFA] text-[#00736E] hover:text-[#003B3A] inline-flex items-center justify-center cursor-pointer transition-colors"
+                                  >
+                                    <Mail className="w-3.5 h-3.5" />
                                   </button>
                                 )}
                                 <button
@@ -8993,7 +9914,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       })}
                       {filteredReportStudents.length === 0 && (
                         <tr>
-                          <td colSpan={11} className="py-12 text-center text-xs font-medium text-slate-400">
+                          <td colSpan={14} className="py-12 text-center text-xs font-medium text-slate-400">
                             Không tìm thấy hồ sơ học sinh nào khớp với bộ lọc hiện tại
                           </td>
                         </tr>
@@ -9601,15 +10522,24 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                         p.tone === "emerald"
                                           ? "bg-emerald-50/80 text-emerald-800 border-emerald-200 hover:border-emerald-400"
                                           : p.tone === "amber"
-                                          ? "bg-amber-50/80 text-amber-900 border-amber-200 hover:border-amber-400"
+                                          ? "bg-amber-50 text-amber-900 border-amber-300 hover:border-amber-400"
                                           : p.tone === "rose"
                                           ? "bg-rose-50/80 text-rose-800 border-rose-200 hover:border-rose-400"
                                           : "bg-[#F0FDFA] text-[#003B3A] border-[#CCFBF1] hover:border-[#008B85]"
                                       }`}
-                                      title="Chạm để xem chi tiết phiếu chấm môn này"
+                                      title={
+                                        p.nonScoring
+                                          ? "Môn Tiếng Anh (vấn đáp) không xét kết quả Đạt/Không đạt (chỉ tham khảo xếp lớp)"
+                                          : "Chạm để xem chi tiết phiếu chấm môn này"
+                                      }
                                     >
                                       <span className="opacity-80">{p.label}:</span>
                                       <strong className="font-bold">{p.value}</strong>
+                                      {p.nonScoring && (
+                                        <span className="ml-0.5 px-1 py-0 rounded text-[9px] font-bold bg-amber-200/70 text-amber-950">
+                                          Không xét KQ
+                                        </span>
+                                      )}
                                     </button>
                                   ))
                                 ) : (
@@ -9689,7 +10619,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               </div>
 
                               <div className="flex items-center gap-1.5">
-                                {(dossierActiveTab === "scores" || dossierActiveTab === "all") && (
+                                {canAdminEditScores && (dossierActiveTab === "scores" || dossierActiveTab === "all") && (
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -9697,7 +10627,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                       handleOpenAddScore();
                                     }}
                                     className="px-2.5 py-1.5 bg-[#F0FDFA] hover:bg-[#CCFBF1]/70 text-[#003B3A] border border-[#99F6E4] rounded-lg font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer"
-                                    title="Nhập bổ sung điểm môn khảo sát cho học sinh này"
+                                    title="Nhập bổ sung điểm môn khảo sát cho học sinh này (chỉ Admin)"
                                   >
                                     <Plus className="w-3.5 h-3.5 text-[#00736E]" />
                                     <span>Bổ sung điểm</span>
@@ -9731,14 +10661,16 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     <p className="font-bold text-slate-800 text-xs">Chưa ghi nhận điểm bài khảo sát</p>
                                     <p className="text-xs text-slate-500 mt-0.5">Học sinh chưa có điểm chấm bộ môn hoặc thuộc diện xét tuyển thẳng / phỏng vấn định hướng.</p>
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={handleOpenAddScore}
-                                    className="mt-1 px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-                                  >
-                                    <Plus className="w-3.5 h-3.5 text-[#5EEAD4]" />
-                                    <span>Nhập điểm môn khảo sát</span>
-                                  </button>
+                                  {canAdminEditScores && (
+                                    <button
+                                      type="button"
+                                      onClick={handleOpenAddScore}
+                                      className="mt-1 px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <Plus className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                      <span>Nhập điểm môn khảo sát</span>
+                                    </button>
+                                  )}
                                 </div>
                               ) : (
                                 (() => {
@@ -9871,6 +10803,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                 const sNameNormalized = sName.toLowerCase().normalize("NFC");
                                                 const isOrientation = sCode.includes("pdh") || sCode.includes("orientation") || sNameNormalized.includes("định hướng");
                                                 const isTciRow = sCode.includes("tci") || sCode.includes("cpt") || sNameNormalized.includes("chuẩn phát triển") || sNameNormalized.includes("bộ chuẩn phát triển");
+                                                const isOralEnglishNonScoring =
+                                                  (sNameNormalized.includes("tiếng anh") || sCode === "tavd" || sCode.includes("english_speaking")) &&
+                                                  !sCode.includes("esl") &&
+                                                  !sNameNormalized.includes("esl") &&
+                                                  (sNameNormalized.includes("vấn đáp") || sNameNormalized.includes("nói") || sCode.includes("vd") || sCode.includes("speaking") || sCode.includes("oral"));
                                                 let val = "—";
                                                 let rawScore = "";
                                                 let badgeColor = "bg-slate-100 text-slate-700 border-slate-200";
@@ -10047,13 +10984,28 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                     key={sc.id}
                                                     onClick={() => setActiveSubjectId(sc.id)}
                                                     className={`cursor-pointer transition-colors align-top ${
-                                                      isActive
+                                                      isOralEnglishNonScoring
+                                                        ? isActive
+                                                          ? "bg-amber-50 border-l-4 border-l-amber-500"
+                                                          : "bg-amber-50/55 hover:bg-amber-50 border-l-4 border-l-amber-400"
+                                                        : isActive
                                                         ? "bg-[#F0FDFA]/80 border-l-4 border-l-[#008B85]"
                                                         : "hover:bg-slate-50/80 border-l-4 border-l-transparent"
                                                     }`}
                                                   >
                                                     <td className="py-2.5 px-3.5">
-                                                      <div className="font-bold text-slate-900">{sName}</div>
+                                                      <div className="flex flex-wrap items-center gap-1.5">
+                                                        <span className={`font-bold ${isOralEnglishNonScoring ? "text-amber-950" : "text-slate-900"}`}>{sName}</span>
+                                                        {isOralEnglishNonScoring && (
+                                                          <span
+                                                            className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-[#B45309] border border-amber-300"
+                                                            title="Môn Tiếng Anh (vấn đáp) không dùng để xét Đạt/Không đạt — chỉ tham khảo xếp lớp"
+                                                          >
+                                                            <AlertCircle className="w-2.5 h-2.5 shrink-0" />
+                                                            Không xét KQ
+                                                          </span>
+                                                        )}
+                                                      </div>
                                                       {sc.teacherName && (
                                                         <div className="text-[11px] text-slate-500 mt-0.5">
                                                           GV: {sc.teacherName}
@@ -10062,7 +11014,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                     </td>
                                                     <td className="py-2.5 px-3 text-center">
                                                       <div className="inline-flex flex-col items-center gap-1">
-                                                        <span className={`px-2.5 py-0.5 rounded-lg border text-xs font-bold inline-block ${badgeColor}`}>
+                                                        <span className={`px-2.5 py-0.5 rounded-lg border text-xs font-bold inline-block ${
+                                                          isOralEnglishNonScoring
+                                                            ? "bg-amber-100/80 text-amber-950 border-amber-300"
+                                                            : badgeColor
+                                                        }`}>
                                                           {sCode.includes("tly") && rawScore ? `${val} (${rawScore}đ)` : val}
                                                         </span>
                                                         {isTciRow && tciMetaObj && (
@@ -10116,7 +11072,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                             <span>PDF</span>
                                                           </a>
                                                         </div>
-                                                      ) : (
+                                                      ) : canAdminEditScores ? (
                                                         <button
                                                           type="button"
                                                           onClick={() => handleOpenEditScore(sc)}
@@ -10129,6 +11085,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                           <Pencil className="w-3 h-3 text-[#008B85]" />
                                                           <span>{val === "—" || (typeof val === "string" && val.startsWith("—/")) ? "Nhập điểm" : "Sửa điểm"}</span>
                                                         </button>
+                                                      ) : (
+                                                        <span
+                                                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium bg-slate-50 text-slate-400 border border-slate-200"
+                                                          title="Chế độ chỉnh sửa điểm đã khóa (chỉ tài khoản Admin)"
+                                                        >
+                                                          <Lock className="w-3 h-3" />
+                                                          Đã khóa
+                                                        </span>
                                                       )}
                                                     </td>
                                                   </tr>
@@ -10185,6 +11149,11 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                           const isOrientation = subName.includes("định hướng") || subCode.includes("pdh") || subCode.includes("orientation");
                                           const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
                                           const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
+                                          const isOralEnglishNonScoring =
+                                            (subNameNormalized.includes("tiếng anh") || subCode === "tavd" || subCode.includes("english_speaking")) &&
+                                            !subCode.includes("esl") &&
+                                            !subNameNormalized.includes("esl") &&
+                                            (subNameNormalized.includes("vấn đáp") || subNameNormalized.includes("nói") || subCode.includes("vd") || subCode.includes("speaking") || subCode.includes("oral"));
                                           const _nltdScoreArr = (() => { try { if (sc.scores) { const _p = JSON.parse(sc.scores); return Array.isArray(_p) ? _p : [_p]; } } catch {} return []; })();
                                           const isThinkingSkills = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && isGrade1 && _nltdScoreArr.length >= 5;
 
@@ -10199,13 +11168,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                           if (isOrientation) return null;
 
                                           return (
-                                            <div key={sc.id} className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] relative overflow-hidden tabular-nums">
-                                              <div className="absolute top-0 left-0 w-1.5 h-full bg-[#003B3A]" />
+                                            <div key={sc.id} className={`bg-white rounded-2xl border p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)] relative overflow-hidden tabular-nums ${isOralEnglishNonScoring ? "border-amber-300" : "border-slate-200/90"}`}>
+                                              <div className={`absolute top-0 left-0 w-1.5 h-full ${isOralEnglishNonScoring ? "bg-amber-500" : "bg-[#003B3A]"}`} />
                                               <div className="pl-2 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3.5">
                                                 <div>
-                                                  <div className="flex items-center gap-2">
-                                                    <h4 className="font-bold text-slate-900 text-sm">{subject.name}</h4>
+                                                  <div className="flex flex-wrap items-center gap-2">
+                                                    <h4 className={`font-bold text-sm ${isOralEnglishNonScoring ? "text-amber-950" : "text-slate-900"}`}>{subject.name}</h4>
                                                     {subject.code && <span className="font-mono text-[11px] text-slate-400">{subject.code}</span>}
+                                                    {isOralEnglishNonScoring && (
+                                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-[#B45309] border border-amber-300">
+                                                        <AlertCircle className="w-3 h-3 shrink-0" />
+                                                        Môn không xét kết quả
+                                                      </span>
+                                                    )}
                                                   </div>
                                                   <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
                                                     <span>Giáo viên chấm: <strong className="text-slate-700 font-semibold">{sc.teacherName || "Chưa xác định"}</strong></span>
@@ -10219,14 +11194,24 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                 </div>
 
                                                 {!isChildDev ? (
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => handleOpenEditScore(sc)}
-                                                    className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
-                                                  >
-                                                    <Pencil className="w-3.5 h-3.5 text-[#008B85]" />
-                                                    <span>Chỉnh sửa điểm &amp; nhận xét</span>
-                                                  </button>
+                                                  canAdminEditScores ? (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleOpenEditScore(sc)}
+                                                      className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                                                    >
+                                                      <Pencil className="w-3.5 h-3.5 text-[#008B85]" />
+                                                      <span>Chỉnh sửa điểm &amp; nhận xét</span>
+                                                    </button>
+                                                  ) : (
+                                                    <span
+                                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-400 border border-slate-200 font-medium text-[11px] rounded-lg shrink-0"
+                                                      title="Chế độ chỉnh sửa điểm đã khóa (chỉ tài khoản Admin)"
+                                                    >
+                                                      <Lock className="w-3 h-3" />
+                                                      <span>Đã khóa sửa điểm (chỉ Admin)</span>
+                                                    </span>
+                                                  )
                                                 ) : (
                                                   <div className="flex items-center gap-2 shrink-0">
                                                     <a
@@ -10252,6 +11237,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               </div>
 
                                               <div className="pl-2">
+                                                {isOralEnglishNonScoring && (
+                                                  <div className="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[#92400E] text-xs flex items-center gap-2">
+                                                    <AlertCircle className="w-4 h-4 text-[#D97706] shrink-0" />
+                                                    <span>
+                                                      <strong>Lưu ý GĐCS:</strong> Môn <strong>Tiếng Anh (vấn đáp)</strong> không tính vào điều kiện xét Đạt/Không đạt đầu vào — chỉ tham khảo năng lực giao tiếp &amp; xếp lớp.
+                                                    </span>
+                                                  </div>
+                                                )}
                                                 {isPsych ? (
                                                   <div className="space-y-3">
                                                     {(() => {
@@ -10359,18 +11352,18 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                       const workPlanOptions = [
                                                         {
                                                           code: "DIRECT_PARENT_MEETING" as const,
-                                                          label: "1. Trao đổi trực tiếp PHHS",
-                                                          desc: "GĐCS trực tiếp làm việc & thống nhất cam kết đồng hành với PHHS"
-                                                        },
-                                                        {
-                                                          code: "SCHEDULE_MEETING" as const,
-                                                          label: "2. Hẹn lịch làm việc / Hội chẩn chuyên môn",
-                                                          desc: "Tổ chức họp hội chẩn giữa GĐCS, Tổ Giáo vụ, Tổ Tư vấn & GV Tâm lý"
+                                                          label: "1. GĐCS Gặp trực tiếp PHHS",
+                                                          desc: "GĐCS trực tiếp gặp gỡ & thống nhất cam kết đồng hành với PHHS"
                                                         },
                                                         {
                                                           code: "DELEGATE_TEACHER" as const,
-                                                          label: "3. Ủy quyền Giáo viên đồng hành",
-                                                          desc: "Chỉ định giáo viên đồng hành hỗ trợ học sinh & làm việc với PHHS"
+                                                          label: "2. Ủy quyền cho NTCM / GV phụ trách",
+                                                          desc: "Chọn từ danh sách GV khảo sát (GV phỏng vấn định hướng, GV Tâm lý theo phân công)"
+                                                        },
+                                                        {
+                                                          code: "SCHEDULE_MEETING" as const,
+                                                          label: "3. Đặt lịch hẹn với PHHS",
+                                                          desc: "Chọn thời gian & địa điểm cụ thể để đặt lịch hẹn làm việc với PHHS"
                                                         }
                                                       ];
 
@@ -10453,35 +11446,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                             </div>
                                                           )}
 
-                                                          {/* BIỂU MẪU TRỰC QUAN 1 CHẠM DÀNH CHO GĐCS CHỌN / CẬP NHẬT 1 TRONG 3 PHƯƠNG ÁN & THÔNG BÁO GIÁO VỤ, TƯ VẤN CƠ SỞ */}
+                                                          {/* BIỂU MẪU CHỈ ĐẠO DÀNH CHO GĐCS CHỌN 1 TRONG 3 PHƯƠNG ÁN & GỬI EMAIL TƯ VẤN, GIÁO VỤ, KHẢO THÍ & GV PHỤ TRÁCH */}
                                                           {canApprove && (
                                                             <div className="p-3.5 bg-white rounded-xl border border-slate-200/90 space-y-3">
                                                               <div className="flex flex-wrap items-center justify-between gap-2">
                                                                 <div>
                                                                   <div className="font-bold text-[#003B3A] text-xs">
-                                                                    GĐCS chọn 1 chạm phương án làm việc (Thông báo Tổ Giáo vụ &amp; Tổ Tư vấn {csCode}):
+                                                                    GĐCS chọn phương án chỉ đạo (Cập nhật Hồ sơ định hướng &amp; Gửi Email Tư vấn, Giáo vụ, Khảo thí, GV phụ trách):
                                                                   </div>
                                                                   <p className="text-[11px] text-slate-500">
-                                                                    Chạm vào thẻ phương án để tự động áp dụng nội dung chuẩn và gửi thông báo ngay
+                                                                    Chọn phương án, điền thời gian hẹn PHHS hoặc chọn GV khảo sát được ủy quyền rồi bấm xác nhận
                                                                   </p>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                  <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F0FDFA] border border-[#99F6E4] text-[11px] font-bold text-[#003B3A] cursor-pointer">
-                                                                    <input
-                                                                      type="checkbox"
-                                                                      checked={psychOneTouchMode}
-                                                                      onChange={(e) => setPsychOneTouchMode(e.target.checked)}
-                                                                      className="rounded border-teal-400 text-[#003B3A] focus:ring-[#00A19A]"
-                                                                    />
-                                                                    <span>Chạm là xác nhận ngay</span>
-                                                                  </label>
-                                                                  <button
-                                                                    type="button"
-                                                                    onClick={() => setShowPsychCustomDetails(!showPsychCustomDetails)}
-                                                                    className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#008B85] text-[11px] font-semibold text-slate-700 cursor-pointer"
-                                                                  >
-                                                                    {showPsychCustomDetails ? "Ẩn tùy chỉnh" : "Tùy chỉnh chi tiết"}
-                                                                  </button>
                                                                 </div>
                                                               </div>
 
@@ -10490,15 +11465,19 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                                   const isSelectedOpt = psychDirectiveType === opt.code;
                                                                   const isConfirmedOpt = gdcsResp?.responseType === opt.code;
                                                                   const isProposedOpt = reportedInfo?.proposedAction === opt.code;
-                                                                  const CardIcon = idx === 0 ? Phone : idx === 1 ? Calendar : UserCheck;
+                                                                  const CardIcon = idx === 0 ? Phone : idx === 1 ? UserCheck : Calendar;
                                                                   return (
                                                                     <div
                                                                       key={opt.code}
                                                                       onClick={() => {
                                                                         if (savingPsychDirective) return;
                                                                         setPsychDirectiveType(opt.code);
-                                                                        if (psychOneTouchMode) {
-                                                                          handleConfirmPsychWorkPlan(selectedReportStudent, opt.code);
+                                                                        setShowPsychCustomDetails(true);
+                                                                        if (opt.code === "DELEGATE_TEACHER" && !psychDelegatedTeacherId && assignedSurveyTeachers.length > 0) {
+                                                                          const firstT = assignedSurveyTeachers[0];
+                                                                          setPsychDelegatedTeacherId(firstT.teacherId || "");
+                                                                          setPsychDelegatedTeacherName(firstT.teacherName || "");
+                                                                          setPsychDelegatedTeacherEmail(firstT.email || "");
                                                                         }
                                                                       }}
                                                                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
@@ -10539,119 +11518,125 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                                         isSelectedOpt ? "border-white/15" : "border-slate-200/70"
                                                                       }`}>
                                                                         <span className={`text-[10px] truncate ${isSelectedOpt ? "text-teal-200" : "text-slate-400"}`}>
-                                                                          {idx === 0 ? "Tư vấn mời PHHS" : idx === 1 ? "Giáo vụ xếp lịch họp" : "Giao GV đồng hành"}
+                                                                          {idx === 0 ? "Tư vấn mời PHHS" : idx === 1 ? "Hiện DS GV khảo sát" : "Chọn thời gian hẹn PHHS"}
                                                                         </span>
-                                                                        <button
-                                                                          type="button"
-                                                                          disabled={savingPsychDirective}
-                                                                          onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleConfirmPsychWorkPlan(selectedReportStudent, opt.code);
-                                                                          }}
-                                                                          className={`px-2 py-1 rounded-lg text-[10.5px] font-bold shrink-0 cursor-pointer transition-all ${
-                                                                            isSelectedOpt
-                                                                              ? "bg-[#00A19A] hover:bg-[#008B85] text-white"
-                                                                              : "bg-white hover:bg-[#003B3A] text-[#003B3A] hover:text-white border border-slate-200"
-                                                                          }`}
-                                                                        >
-                                                                          {savingPsychDirective && isSelectedOpt ? "Đang lưu..." : "Chọn & Xác nhận"}
-                                                                        </button>
+                                                                        <span className={`text-[10px] font-bold ${isSelectedOpt ? "text-[#5EEAD4]" : "text-[#00736E]"}`}>
+                                                                          {isSelectedOpt ? "Đang chọn" : "Chọn"}
+                                                                        </span>
                                                                       </div>
                                                                     </div>
                                                                   );
                                                                 })}
                                                               </div>
 
-                                                              {/* KHỐI TÙY CHỈNH CHI TIẾT (CHỈ MỞ KHI BẤM TÙY CHỈNH HOẶC CHỌN ỦY QUYỀN GV) */}
-                                                              {(showPsychCustomDetails || psychDirectiveType === "DELEGATE_TEACHER") && (
-                                                                <div className="space-y-2.5 pt-2 border-t border-slate-100 animate-in fade-in duration-150">
-                                                                  {psychDirectiveType === "DIRECT_PARENT_MEETING" && (
-                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                                                      <div>
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thời gian hẹn gặp PHHS:</label>
-                                                                        <input
-                                                                          type="datetime-local"
-                                                                          value={psychMeetingTime}
-                                                                          onChange={(e) => setPsychMeetingTime(e.target.value)}
-                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs tabular-nums"
-                                                                        />
-                                                                      </div>
-                                                                      <div>
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Địa điểm làm việc:</label>
-                                                                        <input
-                                                                          type="text"
-                                                                          value={psychMeetingLocation}
-                                                                          onChange={(e) => setPsychMeetingLocation(e.target.value)}
-                                                                          placeholder="Phòng Giám đốc Cơ sở..."
-                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
-                                                                        />
-                                                                      </div>
-                                                                      <div className="sm:col-span-2">
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nội dung trao đổi trực tiếp PHHS:</label>
-                                                                        <input
-                                                                          type="text"
-                                                                          value={psychParentContent}
-                                                                          onChange={(e) => setPsychParentContent(e.target.value)}
-                                                                          placeholder="Thống nhất lộ trình đồng hành tâm lý & cam kết phối hợp giữa Gia đình và Nhà trường..."
-                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
-                                                                        />
-                                                                      </div>
+                                                              {/* KHỐI CHI TIẾT THEO PHƯƠNG ÁN ĐANG CHỌN (LUÔN HIỂN THỊ ĐỂ GĐCS CHỌN GV KHẢO SÁT / CHỌN THỜI GIAN HẸN PHHS) */}
+                                                              <div className="space-y-2.5 pt-2.5 border-t border-slate-100 animate-in fade-in duration-150">
+                                                                {psychDirectiveType === "DIRECT_PARENT_MEETING" && (
+                                                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                                    <div>
+                                                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thời gian GĐCS gặp PHHS (tùy chọn):</label>
+                                                                      <input
+                                                                        type="datetime-local"
+                                                                        value={psychMeetingTime}
+                                                                        onChange={(e) => setPsychMeetingTime(e.target.value)}
+                                                                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs tabular-nums"
+                                                                      />
                                                                     </div>
-                                                                  )}
-
-                                                                  {psychDirectiveType === "SCHEDULE_MEETING" && (
-                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                                                      <div>
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thời gian họp / hội chẩn:</label>
-                                                                        <input
-                                                                          type="datetime-local"
-                                                                          value={psychMeetingTime}
-                                                                          onChange={(e) => setPsychMeetingTime(e.target.value)}
-                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs tabular-nums"
-                                                                        />
-                                                                      </div>
-                                                                      <div>
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Địa điểm tổ chức:</label>
-                                                                        <input
-                                                                          type="text"
-                                                                          value={psychMeetingLocation}
-                                                                          onChange={(e) => setPsychMeetingLocation(e.target.value)}
-                                                                          placeholder="Văn phòng Chuyên môn Cơ sở..."
-                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
-                                                                        />
-                                                                      </div>
-                                                                      <div>
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thành phần tham dự:</label>
-                                                                        <input
-                                                                          type="text"
-                                                                          value={psychParticipants}
-                                                                          onChange={(e) => setPsychParticipants(e.target.value)}
-                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
-                                                                        />
-                                                                      </div>
-                                                                      <div>
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nội dung hội chẩn chuyên môn:</label>
-                                                                        <input
-                                                                          type="text"
-                                                                          value={psychAgenda}
-                                                                          onChange={(e) => setPsychAgenda(e.target.value)}
-                                                                          placeholder="Thống nhất phương án hỗ trợ tâm lý và xếp lớp phù hợp..."
-                                                                          className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
-                                                                        />
-                                                                      </div>
+                                                                    <div>
+                                                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Địa điểm gặp PHHS:</label>
+                                                                      <input
+                                                                        type="text"
+                                                                        value={psychMeetingLocation}
+                                                                        onChange={(e) => setPsychMeetingLocation(e.target.value)}
+                                                                        placeholder="Phòng Giám đốc Cơ sở..."
+                                                                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                      />
                                                                     </div>
-                                                                  )}
+                                                                    <div className="sm:col-span-2">
+                                                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nội dung trao đổi trực tiếp với PHHS:</label>
+                                                                      <input
+                                                                        type="text"
+                                                                        value={psychParentContent}
+                                                                        onChange={(e) => setPsychParentContent(e.target.value)}
+                                                                        placeholder="Thống nhất lộ trình đồng hành tâm lý & cam kết phối hợp giữa Gia đình và Nhà trường..."
+                                                                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                      />
+                                                                    </div>
+                                                                  </div>
+                                                                )}
 
-                                                                  {psychDirectiveType === "DELEGATE_TEACHER" && (
+                                                                {psychDirectiveType === "DELEGATE_TEACHER" && (
+                                                                  <div className="space-y-2.5">
+                                                                    {/* DANH SÁCH GV KHẢO SÁT HỌC SINH (GV PHỎNG VẤN ĐỊNH HƯỚNG, GV TÂM LÝ THEO PHÂN CÔNG) */}
+                                                                    <div className="p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2">
+                                                                      <div className="flex items-center justify-between gap-2">
+                                                                        <span className="text-[11px] font-bold text-[#003B3A]">
+                                                                          Danh sách GV khảo sát học sinh (GV phỏng vấn định hướng, GV Tâm lý theo phân công):
+                                                                        </span>
+                                                                        <span className="text-[10.5px] font-semibold text-[#00736E] tabular-nums">
+                                                                          {assignedSurveyTeachers.length} GV khảo sát
+                                                                        </span>
+                                                                      </div>
+                                                                      {assignedSurveyTeachers.length > 0 ? (
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
+                                                                          {assignedSurveyTeachers.map((st: any, idx: number) => {
+                                                                            const isPicked =
+                                                                              (psychDelegatedTeacherId && psychDelegatedTeacherId === st.teacherId) ||
+                                                                              (psychDelegatedTeacherName && psychDelegatedTeacherName === st.teacherName);
+                                                                            const badgeCls =
+                                                                              st.roleCategory === "ORIENTATION"
+                                                                                ? "bg-[#F0FDFA] text-[#00736E] border-[#99F6E4]"
+                                                                                : st.roleCategory === "PSYCHOLOGY"
+                                                                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                                                                : "bg-slate-100 text-slate-700 border-slate-200";
+                                                                            return (
+                                                                              <button
+                                                                                key={st.teacherId || idx}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                  setPsychDelegatedTeacherId(st.teacherId || "");
+                                                                                  setPsychDelegatedTeacherName(st.teacherName || "");
+                                                                                  setPsychDelegatedTeacherEmail(st.email || "");
+                                                                                }}
+                                                                                className={`p-2 rounded-lg border text-left transition-all cursor-pointer flex items-start justify-between gap-2 ${
+                                                                                  isPicked
+                                                                                    ? "bg-[#F0FDFA] border-[#008B85] ring-2 ring-[#00A19A]/25"
+                                                                                    : "bg-white border-slate-200 hover:border-[#008B85]"
+                                                                                }`}
+                                                                              >
+                                                                                <div className="min-w-0 space-y-0.5">
+                                                                                  <div className="font-bold text-xs text-[#003B3A] truncate">
+                                                                                    {st.teacherName}
+                                                                                  </div>
+                                                                                  <span className={`inline-block px-1.5 py-0.5 rounded border text-[10px] font-semibold ${badgeCls}`}>
+                                                                                    {st.roleBadge || st.subjectLabel || "GV khảo sát"}
+                                                                                  </span>
+                                                                                  <div className="text-[10px] text-slate-500 truncate">
+                                                                                    {st.email || "Tự động tra cứu email khi gửi"}
+                                                                                  </div>
+                                                                                </div>
+                                                                                {isPicked && <Check className="w-4 h-4 text-[#008B85] shrink-0 mt-0.5" />}
+                                                                              </button>
+                                                                            );
+                                                                          })}
+                                                                        </div>
+                                                                      ) : (
+                                                                        <div className="text-[11px] text-slate-500 italic">
+                                                                          Chưa ghi nhận GV phỏng vấn định hướng / GV Tâm lý trong đợt khảo sát này. Vui lòng chọn NTCM / GV phụ trách ở danh sách bên dưới.
+                                                                        </div>
+                                                                      )}
+                                                                    </div>
+
                                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                                                       <div>
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Giáo viên đồng hành (1 chạm):</label>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Hoặc chọn NTCM / GV khác:</label>
                                                                         <select
                                                                           value={psychDelegatedTeacherId}
                                                                           onChange={(e) => {
                                                                             const tId = e.target.value;
                                                                             setPsychDelegatedTeacherId(tId);
-                                                                            const foundT = (teachers || []).find((t: any) => t.id === tId || t.userId === tId);
+                                                                            const foundSurvey = assignedSurveyTeachers.find((t: any) => t.teacherId === tId);
+                                                                            const foundT = foundSurvey || (teachers || []).find((t: any) => t.id === tId || t.userId === tId);
                                                                             if (foundT) {
                                                                               setPsychDelegatedTeacherName(foundT.teacherName || "");
                                                                               setPsychDelegatedTeacherEmail((foundT as any).email || "");
@@ -10659,16 +11644,27 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                                           }}
                                                                           className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white"
                                                                         >
-                                                                          <option value="">-- Chọn giáo viên --</option>
-                                                                          {(teachers || []).map((t: any) => (
-                                                                            <option key={t.id || t.userId} value={t.id || t.userId}>
-                                                                              {t.teacherName} {(t as any).email ? `(${(t as any).email})` : ""}
-                                                                            </option>
-                                                                          ))}
+                                                                          <option value="">-- Chọn NTCM / GV phụ trách --</option>
+                                                                          {assignedSurveyTeachers.length > 0 && (
+                                                                            <optgroup label="GV khảo sát học sinh (PV định hướng / Tâm lý)">
+                                                                              {assignedSurveyTeachers.map((st: any, idx: number) => (
+                                                                                <option key={`sv-${st.teacherId || idx}`} value={st.teacherId || ""}>
+                                                                                  {st.teacherName} — {st.roleBadge || st.subjectLabel}
+                                                                                </option>
+                                                                              ))}
+                                                                            </optgroup>
+                                                                          )}
+                                                                          <optgroup label="Danh sách NTCM / GV cơ sở">
+                                                                            {(teachers || []).map((t: any) => (
+                                                                              <option key={t.id || t.userId} value={t.id || t.userId}>
+                                                                                {t.teacherName} {(t as any).email ? `(${(t as any).email})` : ""}
+                                                                              </option>
+                                                                            ))}
+                                                                          </optgroup>
                                                                         </select>
                                                                       </div>
                                                                       <div>
-                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email Giáo viên:</label>
+                                                                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email GV được ủy quyền:</label>
                                                                         <input
                                                                           type="email"
                                                                           value={psychDelegatedTeacherEmail}
@@ -10692,44 +11688,92 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                                                           type="text"
                                                                           value={psychDelegationNote}
                                                                           onChange={(e) => setPsychDelegationNote(e.target.value)}
-                                                                          placeholder="Theo dõi hành vi, trao đổi PHHS, hỗ trợ học sinh thích nghi và báo cáo định kỳ..."
+                                                                          placeholder="Trao đổi với PHHS, theo dõi hành vi, hỗ trợ học sinh thích nghi và báo cáo định kỳ..."
                                                                           className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
                                                                         />
                                                                       </div>
                                                                     </div>
-                                                                  )}
+                                                                  </div>
+                                                                )}
 
-                                                                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5">
-                                                                    <div className="flex-1">
-                                                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Ý kiến xác nhận / chỉ đạo chung của GĐCS:</label>
+                                                                {psychDirectiveType === "SCHEDULE_MEETING" && (
+                                                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                                    <div>
+                                                                      <label className="block text-[11px] font-semibold text-[#003B3A] mb-1">
+                                                                        Chọn thời gian đặt lịch hẹn với PHHS <span className="text-rose-500">*</span>:
+                                                                      </label>
+                                                                      <input
+                                                                        type="datetime-local"
+                                                                        value={psychMeetingTime}
+                                                                        onChange={(e) => setPsychMeetingTime(e.target.value)}
+                                                                        className="w-full px-2.5 py-1.5 rounded-lg border border-[#00A19A] bg-[#F0FDFA]/40 text-xs font-semibold tabular-nums"
+                                                                      />
+                                                                    </div>
+                                                                    <div>
+                                                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Địa điểm hẹn PHHS:</label>
                                                                       <input
                                                                         type="text"
-                                                                        value={psychGeneralNote}
-                                                                        onChange={(e) => setPsychGeneralNote(e.target.value)}
-                                                                        placeholder="Nhập ý kiến chỉ đạo của GĐCS để Tổ Giáo vụ, Tổ Tư vấn cơ sở và GV Tâm lý phối hợp..."
+                                                                        value={psychMeetingLocation}
+                                                                        onChange={(e) => setPsychMeetingLocation(e.target.value)}
+                                                                        placeholder="Phòng Tiếp phụ huynh / Phòng Giám đốc Cơ sở..."
                                                                         className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
                                                                       />
                                                                     </div>
-                                                                    <button
-                                                                      type="button"
-                                                                      disabled={savingPsychDirective}
-                                                                      onClick={() => handleConfirmPsychWorkPlan(selectedReportStudent)}
-                                                                      className="px-3.5 py-2 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
-                                                                    >
-                                                                      {savingPsychDirective ? (
-                                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                                      ) : (
-                                                                        <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
-                                                                      )}
-                                                                      <span>
-                                                                        {gdcsResp
-                                                                          ? "Lưu cập nhật & Thông báo Giáo vụ, Tư vấn"
-                                                                          : "GĐCS xác nhận & Thông báo Giáo vụ, Tư vấn"}
-                                                                      </span>
-                                                                    </button>
+                                                                    <div>
+                                                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Thành phần tham dự:</label>
+                                                                      <input
+                                                                        type="text"
+                                                                        value={psychParticipants}
+                                                                        onChange={(e) => setPsychParticipants(e.target.value)}
+                                                                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                      />
+                                                                    </div>
+                                                                    <div>
+                                                                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nội dung hẹn làm việc với PHHS:</label>
+                                                                      <input
+                                                                        type="text"
+                                                                        value={psychAgenda}
+                                                                        onChange={(e) => setPsychAgenda(e.target.value)}
+                                                                        placeholder="Trao đổi kết quả sàng lọc tâm lý và thống nhất phương án hỗ trợ học sinh..."
+                                                                        className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                      />
+                                                                    </div>
                                                                   </div>
+                                                                )}
+
+                                                                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 pt-1">
+                                                                  <div className="flex-1">
+                                                                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Ý kiến chỉ đạo chung của GĐCS:</label>
+                                                                    <input
+                                                                      type="text"
+                                                                      value={psychGeneralNote}
+                                                                      onChange={(e) => setPsychGeneralNote(e.target.value)}
+                                                                      placeholder="Nhập ý kiến chỉ đạo của GĐCS để Tư vấn cơ sở, Giáo vụ cơ sở, Ban Khảo thí và GV phối hợp..."
+                                                                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
+                                                                    />
+                                                                  </div>
+                                                                  <button
+                                                                    type="button"
+                                                                    disabled={savingPsychDirective}
+                                                                    onClick={() => handleConfirmPsychWorkPlan(selectedReportStudent)}
+                                                                    className="px-4 py-2 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
+                                                                  >
+                                                                    {savingPsychDirective ? (
+                                                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                    ) : (
+                                                                      <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                                                    )}
+                                                                    <span>
+                                                                      {gdcsResp
+                                                                        ? "Lưu cập nhật & Gửi Email điều phối"
+                                                                        : "Xác nhận chỉ đạo & Gửi Email"}
+                                                                    </span>
+                                                                  </button>
                                                                 </div>
-                                                              )}
+                                                                <div className="text-[10.5px] text-slate-500">
+                                                                  Email sẽ tự động gửi đến: <strong>Tư vấn cơ sở ({csCode})</strong>, <strong>Giáo vụ cơ sở ({csCode})</strong>, <strong>Ban Khảo thí</strong>, <strong>GV phỏng vấn định hướng</strong> và <strong>GV Tâm lý / NTCM được ủy quyền</strong>, đồng thời cập nhật trạng thái vào <strong>Hồ sơ định hướng (mục Tâm lý)</strong>.
+                                                                </div>
+                                                              </div>
                                                             </div>
                                                           )}
                                                         </div>
@@ -11730,62 +12774,6 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                               })()}
                             </div>
 
-                            {/* CARD 1.5: 1-TOUCH GĐCS WORK PLAN BAR (PHƯƠNG ÁN LÀM VIỆC LIÊN QUAN — ĐỒNG BỘ GIÁO VỤ & TƯ VẤN CS) */}
-                            {(() => {
-                              const rawPsych = orientationData?.psychologyData;
-                              const pObj = rawPsych ? (typeof rawPsych === "string" ? JSON.parse(rawPsych) : rawPsych) : null;
-                              const gdcsResp = pObj?.gdcsResponse;
-                              const reqInfo = pObj?.reportedToGdcs || pObj?.gdcsDirectiveRequest;
-                              const csShort = resolvedStudentCampusObj?.campusCode || "CS1";
-                              return (
-                                <div className="bg-white rounded-xl border border-slate-200/90 p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-2">
-                                  <div className="flex items-center justify-between gap-1.5">
-                                    <span className="text-[11px] font-bold text-[#003B3A] flex items-center gap-1">
-                                      <ShieldCheck className="w-3.5 h-3.5 text-[#008B85]" />
-                                      <span>Phương án làm việc GĐCS (Báo Giáo vụ &amp; Tư vấn {csShort})</span>
-                                    </span>
-                                    {gdcsResp ? (
-                                      <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-[#059669] border border-emerald-200 text-[10px] font-bold">
-                                        ✓ Đã xác nhận
-                                      </span>
-                                    ) : reqInfo ? (
-                                      <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
-                                        Đề xuất từ GV
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-1.5">
-                                    {[
-                                      { code: "DIRECT_PARENT_MEETING" as const, short: "1. Trao đổi PHHS" },
-                                      { code: "SCHEDULE_MEETING" as const, short: "2. Hội chẩn CM" },
-                                      { code: "DELEGATE_TEACHER" as const, short: "3. Ủy quyền GV" }
-                                    ].map((wp) => {
-                                      const isConfirmedWp = gdcsResp?.responseType === wp.code;
-                                      const isSelectedWp = psychDirectiveType === wp.code;
-                                      return (
-                                        <button
-                                          key={wp.code}
-                                          type="button"
-                                          disabled={!canApprove || savingPsychDirective}
-                                          onClick={() => handleConfirmPsychWorkPlan(selectedReportStudent, wp.code)}
-                                          className={`py-1.5 px-2 rounded-lg border text-[10.5px] font-bold transition-all cursor-pointer text-center truncate ${
-                                            isConfirmedWp
-                                              ? "bg-[#003B3A] border-[#003B3A] text-white shadow-2xs"
-                                              : isSelectedWp
-                                              ? "bg-[#F0FDFA] border-[#008B85] text-[#003B3A]"
-                                              : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-white hover:border-[#008B85]"
-                                          }`}
-                                          title="Chạm 1 chạm để GĐCS xác nhận phương án này và thông báo ngay cho Tổ Giáo vụ & Tổ Tư vấn cơ sở"
-                                        >
-                                          {isConfirmedWp ? `✓ ${wp.short}` : wp.short}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              );
-                            })()}
-
                             {/* CARD 2: APPROVER, NOTES & COMPACT AUTO-EMAIL / AUDIT TRAIL */}
                             <div className="bg-white rounded-xl border border-slate-200/90 p-3 shadow-[0_1px_2px_rgba(15,23,42,0.03)] space-y-2.5">
                               <div className="flex items-center justify-between gap-2">
@@ -11807,7 +12795,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
                               {/* Approver Identity / Selector (Default: Responsible Campus Director GĐCS) */}
                               {(() => {
-                                const isGdcsCurrentUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase());
+                                const isGdcsCurrentUser = ["GDCS", "GĐ_CS", "GD_CS", "GĐCS", "BGH", "BGH_CS", "HIEU_TRUONG"].includes((currentUser?.role || "").toUpperCase());
                                 const currentSignerValue = reportForm.signatureName || autoCampusDirectorName || "";
                                 const campusShortLabel = resolvedStudentCampusObj?.campusCode || campusName;
 
@@ -11991,40 +12979,56 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             </div>
                           </div>
 
-                          {/* Elevated Sticky Console Footer Actions */}
+                          {/* Elevated Sticky Console Footer Actions (Single Primary CTA per Role/Status) */}
                           <div className="px-3.5 py-2.5 bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(15,23,42,0.05)] space-y-1.5 shrink-0">
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleSaveReportResult(false)}
-                                disabled={saveReportLoading || !canApprove}
-                                className="flex-1 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs py-2.5 px-3.5 rounded-xl shadow-sm disabled:opacity-50 transition-all flex justify-center items-center gap-1.5 cursor-pointer active:scale-[0.99]"
-                              >
-                                {saveReportLoading ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Check className="w-4 h-4 text-[#5EEAD4] stroke-[2.5]" />
-                                )}
-                                <span className="truncate">
-                                  {reportForm.admissionResult
-                                    ? `Lưu quyết định: ${reportForm.admissionResult === "Đạt" ? "Đạt chuẩn" : reportForm.admissionResult}`
-                                    : "Lưu quyết định xét duyệt"}
-                                </span>
-                              </button>
-
-                              {canApprove && (dossierNav.nextPendingId || dossierNav.nextId) && (
+                            {canApprove ? (
+                              <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => handleSaveReportResult(true)}
-                                  disabled={saveReportLoading || !canApprove}
-                                  className="bg-[#008B85] hover:bg-[#00736E] text-white font-bold text-xs py-2.5 px-3.5 rounded-xl shadow-sm disabled:opacity-50 transition-all flex justify-center items-center gap-1 cursor-pointer shrink-0 active:scale-[0.99]"
-                                  title="Lưu quyết định hiện tại và tự động mở hồ sơ tiếp theo"
+                                  onClick={() => handleSaveReportResult(false)}
+                                  disabled={saveReportLoading}
+                                  className="flex-1 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs py-2.5 px-3.5 rounded-xl shadow-sm disabled:opacity-50 transition-all flex justify-center items-center gap-1.5 cursor-pointer active:scale-[0.99]"
                                 >
-                                  <span>Lưu &amp; Tiếp</span>
-                                  <ArrowRight className="w-3.5 h-3.5" />
+                                  {saveReportLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Check className="w-4 h-4 text-[#5EEAD4] stroke-[2.5]" />
+                                  )}
+                                  <span className="truncate">
+                                    {reportForm.admissionResult
+                                      ? `Duyệt kết quả: ${reportForm.admissionResult === "Đạt" ? "Đạt chuẩn" : reportForm.admissionResult}`
+                                      : "Duyệt kết quả khảo sát"}
+                                  </span>
                                 </button>
-                              )}
-                            </div>
+
+                                {(dossierNav.nextPendingId || dossierNav.nextId) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSaveReportResult(true)}
+                                    disabled={saveReportLoading}
+                                    className="bg-white hover:bg-[#F0FDFA] text-[#003B3A] border border-[#CBD5E1] font-semibold text-xs py-2.5 px-3 rounded-xl disabled:opacity-50 transition-all flex justify-center items-center gap-1 cursor-pointer shrink-0 active:scale-[0.99]"
+                                    title="Lưu quyết định hiện tại và tự động mở hồ sơ tiếp theo"
+                                  >
+                                    <span>Lưu &amp; tiếp</span>
+                                    <ArrowRight className="w-3.5 h-3.5 text-[#008B85]" />
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSendGdcsApprovalRequestForStudent(selectedReportStudent)}
+                                disabled={sendingApproval}
+                                className="w-full bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs py-2.5 px-3.5 rounded-xl shadow-sm disabled:opacity-50 transition-all flex justify-center items-center gap-1.5 cursor-pointer"
+                              >
+                                {sendingApproval ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                )}
+                                <span>Gửi duyệt kết quả tới GĐCS</span>
+                              </button>
+                            )}
 
                             {(selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" ||
                               reportForm.admissionResult === "Không đạt - Kiểm tra lại") && (
@@ -12745,6 +13749,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 <option value="Tư thục">Tư thục</option>
                                 <option value="Song ngữ">Song ngữ</option>
                                 <option value="Quốc tế">Quốc tế</option>
+                                <option value="Homeschooling">Homeschooling</option>
                               </select>
                             </div>
                           </div>
@@ -14410,6 +15415,41 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
         />
       )}
 
+      {/* MODAL CHECK ĐỦ NỘI DUNG KHẢO SÁT, NHẮC GV & TRÌNH GĐCS */}
+      <CompletenessCheckModal
+        open={isCompletenessModalOpen}
+        onClose={() => setIsCompletenessModalOpen(false)}
+        students={filteredReportStudents}
+        completenessMap={completenessMap}
+        periodId={reportPeriodId}
+        periodName={reportSelPeriod?.name || "Kỳ khảo sát"}
+        batchId={reportBatchId}
+        batchName={
+          reportBatchId === "all"
+            ? "Tất cả các đợt"
+            : reportBatchId === "none"
+            ? "Khảo sát lẻ"
+            : reportBatches.find((b) => b.id === reportBatchId)?.name || "Đợt khảo sát"
+        }
+        campuses={campuses}
+        emailRoutingConfig={emailRoutingConfig}
+        defaultGdcsEmailMap={EMAIL_MAP.gdcs}
+        resolveStudentCampusCode={(stu) => {
+          const cObj = resolveCampusObjForStudent(stu);
+          return cObj?.campusCode || "CS1";
+        }}
+        onOpenStudent={(stuId) => setReportStudentId(stuId)}
+        onNotify={(msg, type) => notify(msg, type || "ok")}
+        onGdcsSubmitted={(studentIds, sentAtIso) => {
+          const idSet = new Set(studentIds);
+          setReportStudents((prev: any[]) =>
+            prev.map((st: any) =>
+              idSet.has(String(st.id)) ? { ...st, gdcsEmailSentAt: sentAtIso } : st
+            )
+          );
+        }}
+      />
+
       {/* MODAL THIẾT LẬP CẤU HÌNH ĐỊNH TUYẾN EMAIL XÉT DUYỆT */}
       <EmailRoutingConfigModal
         isOpen={isEmailRoutingModalOpen}
@@ -14425,6 +15465,384 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
         gdcsUsers={gdcsUsers}
         giaoVuCSUsers={giaoVuCSUsers}
       />
+
+      {/* MODAL XEM TRƯỚC & GỬI EMAIL KẾT QUẢ THEO ĐỢT KHẢO SÁT */}
+      {isBatchResultPreviewOpen && (
+        <div
+          className="fixed inset-0 z-[190] flex items-center justify-center bg-slate-900/55 backdrop-blur-[2px] p-3 sm:p-5"
+          onClick={() => !sendingBatchResultEmail && setIsBatchResultPreviewOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-[#003B3A] text-white px-5 py-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
+                  <Mail className="w-4 h-4 text-[#5EEAD4]" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold leading-tight truncate">
+                    {previewSingleStudent
+                      ? `Xem trước Email Thông báo Kết quả — ${previewSingleStudent.fullName}`
+                      : "Xem trước & Gửi Email Thông báo Kết quả theo Đợt"}
+                  </h3>
+                  <p className="text-[11px] text-teal-100/80 mt-0.5 truncate">
+                    Kiểm tra giao diện Desktop/Mobile, người nhận (To/CC) và danh sách học sinh trước khi gửi chính thức
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="inline-flex items-center bg-white/10 border border-white/15 rounded-lg p-0.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setEmailPreviewViewport("desktop")}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                      emailPreviewViewport === "desktop"
+                        ? "bg-white text-[#003B3A]"
+                        : "text-teal-100 hover:text-white"
+                    }`}
+                    title="Xem giao diện máy tính (Desktop / Outlook)"
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Desktop</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailPreviewViewport("mobile")}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                      emailPreviewViewport === "mobile"
+                        ? "bg-white text-[#003B3A]"
+                        : "text-teal-100 hover:text-white"
+                    }`}
+                    title="Xem giao diện điện thoại (Mobile responsive)"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Mobile</span>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  disabled={sendingBatchResultEmail}
+                  onClick={() => {
+                    setIsBatchResultPreviewOpen(false);
+                    setPreviewSingleStudent(null);
+                  }}
+                  className="p-1.5 rounded-lg text-teal-100 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Đóng"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Batch Selector + Recipients Strip */}
+            <div className="px-5 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] space-y-2.5 text-xs">
+              <div className="flex flex-wrap items-center gap-2.5">
+                {previewSingleStudent ? (
+                  <>
+                    <span className="font-bold text-[#003B3A] whitespace-nowrap">Phạm vi xem trước:</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-[#F0FDFA] text-[#003B3A] border border-[#99F6E4] font-semibold">
+                      1 học sinh: {previewSingleStudent.fullName} ({previewSingleStudent.studentCode || "—"})
+                    </span>
+                    {previewBatchId && (
+                      <button
+                        type="button"
+                        onClick={() => loadBatchResultEmailPreview(previewBatchId, null)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#00736E] bg-white border border-[#99F6E4] hover:bg-[#F0FDFA] transition-colors cursor-pointer"
+                      >
+                        Chuyển sang xem cả đợt
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <label className="font-bold text-[#003B3A] whitespace-nowrap">Đợt khảo sát:</label>
+                    <select
+                      value={previewBatchId}
+                      onChange={(e) => loadBatchResultEmailPreview(e.target.value, null)}
+                      className="flex-1 min-w-[260px] px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-800 focus:border-[#008B85] focus:ring-2 focus:ring-[#00A19A]/20 outline-none cursor-pointer"
+                    >
+                      <option value="">— Chọn 1 Đợt khảo sát cụ thể —</option>
+                      {reportBatches.map((b) => {
+                        const cnt = (reportStudents || []).filter((s) => s.batchId === b.id).length;
+                        const pend = (reportStudents || []).filter((s) => s.batchId === b.id && !s.admissionResult && !s.isAbsent).length;
+                        if (cnt === 0) return null;
+                        return (
+                          <option key={b.id} value={b.id}>
+                            {b.name} ({cnt} HS{pend > 0 ? ` · ${pend} chờ duyệt` : " · Đã duyệt đủ"})
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </>
+                )}
+                {batchResultPreviewData && (
+                  <span className="px-2.5 py-1 rounded-lg bg-[#F0FDFA] text-[#00736E] border border-[#99F6E4] font-bold tabular-nums whitespace-nowrap">
+                    {batchResultPreviewData.studentCount} học sinh
+                  </span>
+                )}
+              </div>
+
+              {batchResultPreviewData && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/70">
+                  <div className="space-y-1">
+                    <div className="text-[11px] text-slate-500">
+                      <strong className="text-slate-700">Tiêu đề:</strong> {batchResultPreviewData.subject}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 text-[11px]">
+                      <strong className="text-slate-700 mr-1">Gửi đến (To):</strong>
+                      {batchResultPreviewData.toRecipients.length > 0 ? (
+                        batchResultPreviewData.toRecipients.map((em) => (
+                          <span key={em} className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 font-medium">
+                            {em}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-rose-600 italic">Chưa có người nhận</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-start gap-1 text-[11px]">
+                    <strong className="text-slate-700 mr-1">Đồng gửi (CC):</strong>
+                    {batchResultPreviewData.ccRecipients.length > 0 ? (
+                      batchResultPreviewData.ccRecipients.map((em) => (
+                        <span key={em} className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
+                          {em}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-slate-400 italic">Không có CC</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {batchResultPreviewData && batchResultPreviewData.pendingCount > 0 && (
+                <div className="px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-[#92400E] text-[11px] flex items-center gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                  <span>
+                    Lưu ý: Đợt này hiện còn <strong>{batchResultPreviewData.pendingCount}/{batchResultPreviewData.studentCount}</strong> học sinh chưa xét duyệt kết quả. Bạn vẫn có thể kiểm tra bản xem trước bên dưới và quyết định gửi hoặc chờ duyệt đủ.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Live Email Preview Iframe */}
+            <div className="flex-1 bg-slate-100/80 p-3 sm:p-4 overflow-hidden flex flex-col min-h-[380px]">
+              {batchResultPreviewLoading ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#008B85]" />
+                  <span>Đang dựng bản xem trước giao diện email thật...</span>
+                </div>
+              ) : batchResultPreviewData?.html ? (
+                <div className="flex-1 flex justify-center overflow-auto">
+                  <iframe
+                    title="Xem trước email thông báo kết quả xét duyệt"
+                    srcDoc={batchResultPreviewData.html}
+                    sandbox="allow-same-origin"
+                    className={`h-full min-h-[420px] bg-white rounded-xl border border-slate-200 shadow-xs transition-all duration-200 ${
+                      emailPreviewViewport === "mobile" ? "w-[390px] max-w-full border-2 border-slate-300 shadow-md" : "w-full"
+                    }`}
+                  />
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
+                  <Mail className="w-8 h-8 text-slate-300" />
+                  <span>Vui lòng chọn 1 Đợt khảo sát có học sinh ở phía trên để xem trước nội dung email.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-5 py-3 bg-white border-t border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] text-slate-500">
+                Giao diện xem trước khớp 100% với email gửi qua SMTP đến hộp thư người nhận.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={sendingBatchResultEmail}
+                  onClick={() => setIsBatchResultPreviewOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="button"
+                  disabled={sendingBatchResultEmail || batchResultPreviewLoading || !batchResultPreviewData}
+                  onClick={handleConfirmSendBatchResultEmail}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#003B3A] hover:bg-[#005854] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  {sendingBatchResultEmail ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                  )}
+                  <span>
+                    {sendingBatchResultEmail
+                      ? "Đang gửi email..."
+                      : `Xác nhận & Gửi Email (${batchResultPreviewData?.studentCount || 0} HS)`}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XEM TRƯỚC & GỬI EMAIL NHẮC GĐCS XÉT DUYỆT HỒ SƠ */}
+      {gdcsReminderPreviewOpen && (
+        <div
+          className="fixed inset-0 z-[195] flex items-center justify-center bg-slate-900/55 backdrop-blur-[2px] p-3 sm:p-5"
+          onClick={() => !gdcsReminderSending && setGdcsReminderPreviewOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-[#003B3A] text-white px-5 py-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
+                  <Mail className="w-4 h-4 text-[#5EEAD4]" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold leading-tight truncate">
+                    Xem trước Email nhắc GĐCS xét duyệt{gdcsReminderPreviewData?.studentName ? ` — ${gdcsReminderPreviewData.studentName}` : ""}
+                  </h3>
+                  <p className="text-[11px] text-teal-100/80 mt-0.5 truncate">
+                    Kiểm tra nội dung bảng điểm, nút duyệt nhanh và người nhận trước khi gửi đến Giám đốc Cơ sở
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="inline-flex items-center bg-white/10 border border-white/15 rounded-lg p-0.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setEmailPreviewViewport("desktop")}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                      emailPreviewViewport === "desktop"
+                        ? "bg-white text-[#003B3A]"
+                        : "text-teal-100 hover:text-white"
+                    }`}
+                    title="Xem giao diện máy tính (Desktop)"
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Desktop</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailPreviewViewport("mobile")}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                      emailPreviewViewport === "mobile"
+                        ? "bg-white text-[#003B3A]"
+                        : "text-teal-100 hover:text-white"
+                    }`}
+                    title="Xem giao diện điện thoại (Mobile)"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Mobile</span>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  disabled={gdcsReminderSending}
+                  onClick={() => setGdcsReminderPreviewOpen(false)}
+                  className="p-1.5 rounded-lg text-teal-100 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Đóng"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Metadata Strip */}
+            {gdcsReminderPreviewData && (
+              <div className="px-5 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] space-y-1.5 text-xs">
+                <div className="text-[11px] text-slate-600">
+                  <strong className="text-[#003B3A]">Tiêu đề:</strong> {gdcsReminderPreviewData.subject}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <strong className="text-slate-700">Gửi đến GĐCS (To):</strong>
+                    <span className="px-2 py-0.5 rounded bg-[#F0FDFA] border border-[#99F6E4] text-[#00736E] font-semibold">
+                      {gdcsReminderPreviewData.to}
+                    </span>
+                  </div>
+                  {gdcsReminderPreviewData.cc.length > 0 && (
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <strong className="text-slate-700">Đồng gửi (CC):</strong>
+                      {gdcsReminderPreviewData.cc.map((em) => (
+                        <span key={em} className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
+                          {em}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Live Email Preview Iframe */}
+            <div className="flex-1 bg-slate-100/80 p-3 sm:p-4 overflow-hidden flex flex-col min-h-[420px]">
+              {gdcsReminderPreviewLoading ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#008B85]" />
+                  <span>Đang dựng bản xem trước email nhắc GĐCS...</span>
+                </div>
+              ) : gdcsReminderPreviewData?.html ? (
+                <div className="flex-1 flex justify-center overflow-auto">
+                  <iframe
+                    title="Xem trước email nhắc GĐCS xét duyệt"
+                    srcDoc={gdcsReminderPreviewData.html}
+                    sandbox="allow-same-origin"
+                    className={`h-full min-h-[420px] bg-white rounded-xl border border-slate-200 shadow-xs transition-all duration-200 ${
+                      emailPreviewViewport === "mobile" ? "w-[390px] max-w-full border-2 border-slate-300 shadow-md" : "w-full"
+                    }`}
+                  />
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
+                  <Mail className="w-8 h-8 text-slate-300" />
+                  <span>Không có dữ liệu xem trước email.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3 bg-white border-t border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] text-slate-500">
+                Email gửi đi sẽ có đầy đủ nút duyệt trực tiếp 1 chạm (Đạt chuẩn / Đạt cam kết chọn môn / Không đạt) cho GĐCS.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={gdcsReminderSending}
+                  onClick={() => setGdcsReminderPreviewOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="button"
+                  disabled={gdcsReminderSending || gdcsReminderPreviewLoading || !gdcsReminderPreviewData}
+                  onClick={handleConfirmSendGdcsReminderEmail}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#003B3A] hover:bg-[#005854] transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                >
+                  {gdcsReminderSending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                  )}
+                  <span>{gdcsReminderSending ? "Đang gửi..." : "Xác nhận & Gửi Email cho GĐCS"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
   </div>
   )
 }

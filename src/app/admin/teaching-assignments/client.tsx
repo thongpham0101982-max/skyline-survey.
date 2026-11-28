@@ -223,8 +223,9 @@ export function TeachingClient({
     if (hk1) semesters.push(1)
     if (hk2) semesters.push(2)
 
+    const cleanNewPeriods = newWeeklyPeriods.trim().replace(/,/g, ".")
     const parsedPeriods =
-      newWeeklyPeriods.trim() === "" ? null : Math.max(0, Number(newWeeklyPeriods))
+      cleanNewPeriods === "" ? null : Math.max(0, Number(cleanNewPeriods))
 
     const res = await saveAssignment({
       teacherId: selectedTeacherId,
@@ -262,7 +263,8 @@ export function TeachingClient({
   }
 
   const handleInlinePeriodUpdate = async (assignmentId: string, rawVal: string) => {
-    const parsed = rawVal.trim() === "" ? null : Math.max(0, Number(rawVal))
+    const cleanVal = rawVal.trim().replace(/,/g, ".")
+    const parsed = cleanVal === "" ? null : Math.max(0, Number(cleanVal))
     if (parsed !== null && Number.isNaN(parsed)) return
     const res = await updateAssignmentWeeklyPeriods(assignmentId, parsed)
     if (!res.success) {
@@ -589,13 +591,15 @@ export function TeachingClient({
                   </label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      step="0.5"
-                      min={0}
-                      max={20}
+                      type="text"
+                      inputMode="decimal"
                       value={newWeeklyPeriods}
-                      onChange={e => setNewWeeklyPeriods(e.target.value)}
-                      placeholder="Để trống = lấy trọn định mức khối (VD nhập 4 cho ESL)"
+                      onChange={e => {
+                        const raw = e.target.value
+                        if (raw !== "" && !/^[0-9]*[.,]?[0-9]*$/.test(raw)) return
+                        setNewWeeklyPeriods(raw)
+                      }}
+                      placeholder="Để trống = lấy trọn định mức khối (VD: 4, 4.5, 0,5)"
                       className="w-full px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-xs font-semibold text-[#003B3A] focus:border-[#00A19A] outline-none"
                     />
                   </div>
@@ -787,20 +791,24 @@ export function TeachingClient({
 
                       <div className="flex items-center gap-1.5 shrink-0">
                         <input
-                          type="number"
-                          step="0.5"
-                          min={0}
-                          max={20}
+                          type="text"
+                          inputMode="decimal"
                           defaultValue={a.weeklyPeriods ?? ""}
                           placeholder="ĐM"
-                          title="Số tiết/tuần riêng cho giáo viên này (nhập rồi nhấn ra ngoài để lưu)"
+                          title="Số tiết/tuần riêng cho giáo viên này (hỗ trợ 4.5, 0,5 — nhập rồi nhấn ra ngoài để lưu)"
                           onBlur={e => {
                             const curStr =
                               a.weeklyPeriods !== null && a.weeklyPeriods !== undefined
                                 ? String(a.weeklyPeriods)
                                 : ""
-                            if (e.target.value.trim() !== curStr) {
+                            const nextNorm = e.target.value.trim().replace(/,/g, ".")
+                            if (nextNorm !== curStr) {
                               void handleInlinePeriodUpdate(a.id, e.target.value)
+                            }
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === "Enter") {
+                              ;(e.target as HTMLInputElement).blur()
                             }
                           }}
                           className="w-14 text-right px-1.5 py-1 rounded-lg border border-[#E2E8F0] text-xs font-semibold text-[#003B3A] focus:border-[#00A19A] outline-none"

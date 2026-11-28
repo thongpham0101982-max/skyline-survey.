@@ -4,7 +4,6 @@ import { PrismaLibSQL } from '@prisma/adapter-libsql'
 import path from 'path'
 
 const DEFAULT_TURSO_URL = "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
-const DEFAULT_TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw"
 
 function cleanEnv(val?: string | null): string {
   if (!val) return ""
@@ -29,7 +28,7 @@ if (!rawToken && TURSO_URL.includes("authToken=")) {
     rawToken = parsed.searchParams.get("authToken") || ""
   } catch {}
 }
-const TURSO_TOKEN = rawToken || DEFAULT_TURSO_TOKEN
+const TURSO_TOKEN = rawToken
 
 // 2. Local Configuration
 const defaultLocalDbPath = path.resolve(process.cwd(), 'local.db').replace(/\\/g, '/')
@@ -327,9 +326,13 @@ function createSmartPrisma(): PrismaClient {
 }
 
 const createPrismaClient = createSmartPrisma
-const prisma = createPrismaClient()
+const prisma = globalThis.prismaGlobal ?? createPrismaClient()
 
 export { prisma }
 export default prisma
 
-globalThis.prismaGlobal = prisma
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prismaGlobal = prisma
+} else {
+  globalThis.prismaGlobal = prisma
+}

@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { requireStaffSession, requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 export async function GET() {
   try {
+    const ctx = await requireStaffSession()
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     const periods = await (prisma as any).inputAssessmentPeriod.findMany({
       orderBy: { createdAt: "desc" }
     })
@@ -15,6 +20,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
     const body = await request.json()
     const { code, name, academicYearId, campusId, assignedUserId, startDate, endDate, description, status } = body
 

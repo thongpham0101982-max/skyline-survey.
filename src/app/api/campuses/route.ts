@@ -1,14 +1,29 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { isManagementRole } from "@/lib/rbac-utils";
 
 export async function GET() {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Unauthorized: Vui lòng đăng nhập" },
+        { status: 401 }
+      );
+    }
+
+    const role = String((session.user as any)?.role || "");
+    const includeManagerPii = isManagementRole(role);
+
     const rawCampuses = await prisma.campus.findMany({
-      include: {
-        manager: {
-          select: { id: true, fullName: true, email: true }
-        }
-      },
+      include: includeManagerPii
+        ? {
+            manager: {
+              select: { id: true, fullName: true, email: true }
+            }
+          }
+        : undefined,
       orderBy: { campusName: 'asc' }
     });
 

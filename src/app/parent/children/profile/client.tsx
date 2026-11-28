@@ -165,6 +165,15 @@ export default function ParentStudentProfilePage({
   const termSummaries = profile?.termSummaries || rawStudent?.termSummaries || []
   const termScores = profile?.termScores || rawStudent?.termScores || []
   const subjectGradeEntries = profile?.subjectGradeEntries || rawStudent?.subjectGradeEntries || []
+  const parentLockedPeriods = useMemo(
+    () =>
+      new Set<string>(
+        Array.isArray(profile?.parentLockedGradePeriods)
+          ? profile.parentLockedGradePeriods
+          : ["GK1", "GK2"]
+      ),
+    [profile?.parentLockedGradePeriods]
+  )
   const entranceSurvey = profile?.entranceSurvey || profile?.inputAssessment || null
   const achievements = profile?.achievements || []
   const goals = profile?.goals || rawStudent?.goals || []
@@ -1217,50 +1226,87 @@ export default function ParentStudentProfilePage({
                                           <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-center text-xs text-slate-400 italic">
                                             Chưa có dữ liệu bài kiểm tra định kỳ MOET.
                                           </div>
-                                        ) : (
-                                          <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
-                                            <table className="w-full text-left text-xs border-collapse">
-                                              <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
-                                                <tr className="text-[11px] font-semibold whitespace-nowrap">
-                                                  <th className="py-2 px-3 text-center w-8 font-semibold">STT</th>
-                                                  <th className="py-2 px-3 font-semibold">Môn học</th>
-                                                  <th className="py-2 px-2 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">
-                                                    KSĐN
-                                                  </th>
-                                                  <th className="py-2 px-2 text-center font-semibold">Giữa kỳ 1</th>
-                                                  <th className="py-2 px-2 text-center font-semibold">Cuối kỳ 1</th>
-                                                  <th className="py-2 px-2 text-center font-semibold">Giữa kỳ 2</th>
-                                                  <th className="py-2 px-2 text-center font-semibold">Cuối kỳ 2</th>
-                                                </tr>
-                                              </thead>
-                                              <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700">
-                                                {gradeData.moetPeriodicRows.map((r, idx) => (
-                                                  <tr key={idx} className="hover:bg-slate-50/80">
-                                                    <td className="py-2 px-3 text-center font-mono text-slate-400">
-                                                      {idx + 1}
-                                                    </td>
-                                                    <td className="py-2 px-3 font-bold text-slate-900">{r.name}</td>
-                                                    <td className="py-2 px-2 text-center font-black text-[#00A19A] bg-teal-50/20">
-                                                      {r.ksdn || "—"}
-                                                    </td>
-                                                    <td className="py-2 px-2 text-center font-black text-slate-800">
-                                                      {r.gk1 || "—"}
-                                                    </td>
-                                                    <td className="py-2 px-2 text-center font-black text-slate-800">
-                                                      {r.ck1 || "—"}
-                                                    </td>
-                                                    <td className="py-2 px-2 text-center font-black text-slate-800">
-                                                      {r.gk2 || "—"}
-                                                    </td>
-                                                    <td className="py-2 px-2 text-center font-black text-slate-800">
-                                                      {r.ck2 || "—"}
-                                                    </td>
+                                        ) : !parentLockedPeriods.has("KSĐN") ||
+                                          !parentLockedPeriods.has("GK1") ||
+                                          !parentLockedPeriods.has("CK1") ||
+                                          !parentLockedPeriods.has("GK2") ||
+                                          !parentLockedPeriods.has("CK2") ? (
+                                            <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
+                                              <table className="w-full text-left text-xs border-collapse">
+                                                <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
+                                                  <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                                    <th className="py-2 px-3 text-center w-8 font-semibold">STT</th>
+                                                    <th className="py-2 px-3 font-semibold">Môn học</th>
+                                                    {!parentLockedPeriods.has("KSĐN") && (
+                                                      <th className="py-2 px-2 text-center bg-[#003B3A] text-[#5EEAD4] font-semibold">
+                                                        KSĐN
+                                                      </th>
+                                                    )}
+                                                    {!parentLockedPeriods.has("GK1") && (
+                                                      <th className="py-2 px-2 text-center font-semibold">
+                                                        Giữa kỳ 1
+                                                      </th>
+                                                    )}
+                                                    {!parentLockedPeriods.has("CK1") && (
+                                                      <th className="py-2 px-2 text-center font-semibold">
+                                                        Cuối kỳ 1
+                                                      </th>
+                                                    )}
+                                                    {!parentLockedPeriods.has("GK2") && (
+                                                      <th className="py-2 px-2 text-center font-semibold">
+                                                        Giữa kỳ 2
+                                                      </th>
+                                                    )}
+                                                    {!parentLockedPeriods.has("CK2") && (
+                                                      <th className="py-2 px-2 text-center font-semibold">
+                                                        Cuối kỳ 2
+                                                      </th>
+                                                    )}
                                                   </tr>
-                                                ))}
-                                              </tbody>
-                                            </table>
-                                          </div>
-                                        )}
+                                                </thead>
+                                                <tbody className="divide-y divide-[#E2E8F0] font-semibold text-slate-700 tabular-nums">
+                                                  {gradeData.moetPeriodicRows.map((r, idx) => (
+                                                    <tr key={idx} className="hover:bg-slate-50/80">
+                                                      <td className="py-2 px-3 text-center font-mono text-slate-400">
+                                                        {idx + 1}
+                                                      </td>
+                                                      <td className="py-2 px-3 font-bold text-slate-900">{r.name}</td>
+                                                      {!parentLockedPeriods.has("KSĐN") && (
+                                                        <td className="py-2 px-2 text-center font-black text-[#00A19A] bg-teal-50/20">
+                                                          {r.ksdn || "—"}
+                                                        </td>
+                                                      )}
+                                                      {!parentLockedPeriods.has("GK1") && (
+                                                        <td className="py-2 px-2 text-center font-black text-slate-800">
+                                                          {r.gk1 || "—"}
+                                                        </td>
+                                                      )}
+                                                      {!parentLockedPeriods.has("CK1") && (
+                                                        <td className="py-2 px-2 text-center font-black text-slate-800">
+                                                          {r.ck1 || "—"}
+                                                        </td>
+                                                      )}
+                                                      {!parentLockedPeriods.has("GK2") && (
+                                                        <td className="py-2 px-2 text-center font-black text-slate-800">
+                                                          {r.gk2 || "—"}
+                                                        </td>
+                                                      )}
+                                                      {!parentLockedPeriods.has("CK2") && (
+                                                        <td className="py-2 px-2 text-center font-black text-slate-800">
+                                                          {r.ck2 || "—"}
+                                                        </td>
+                                                      )}
+                                                    </tr>
+                                                  ))}
+                                                </tbody>
+                                              </table>
+                                            </div>
+                                          ) : (
+                                            <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+                                              <Lock className="w-4 h-4 shrink-0" />
+                                              <span>Hiện tại nhà trường đang tạm khóa hiển thị điểm các kỳ đánh giá trên cổng Phụ huynh.</span>
+                                            </div>
+                                          )}
                                       </div>
                                     )}
 
@@ -1815,32 +1861,83 @@ export default function ParentStudentProfilePage({
                       </p>
                     ) : (
                       <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-xs">
-                          <thead className="bg-[#003B3A] border-b border-[#003B3A]">
-                            <tr className="text-[11px] font-semibold whitespace-nowrap">
-                              <th className="py-3 px-4 w-10 text-center text-white font-semibold">STT</th>
-                              <th className="py-3 px-4 text-white font-semibold">Môn học</th>
-                              <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">KSĐN</th>
-                              <th className="py-3 px-3 text-center text-teal-100 font-semibold">Giữa kỳ 1</th>
-                              <th className="py-3 px-3 text-center text-teal-100 font-semibold">Cuối kỳ 1</th>
-                              <th className="py-3 px-3 text-center text-teal-100 font-semibold">Giữa kỳ 2</th>
-                              <th className="py-3 px-3 text-center text-teal-100 font-semibold">Cuối kỳ 2</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums font-semibold">
-                            {gradeData.moetPeriodicRows.map((r, idx) => (
-                              <tr key={idx} className="transition-colors align-middle hover:bg-[#F8FAFC]">
-                                <td className="py-3 px-3 text-center text-slate-400 align-middle">{idx + 1}</td>
-                                <td className="py-3 px-3 font-bold text-slate-800 align-middle">{r.name}</td>
-                                <td className="py-3 px-3 text-center font-black text-[#00A19A] align-middle">{r.ksdn || "—"}</td>
-                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.gk1 || "—"}</td>
-                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.ck1 || "—"}</td>
-                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.gk2 || "—"}</td>
-                                <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">{r.ck2 || "—"}</td>
+                        {!parentLockedPeriods.has("KSĐN") ||
+                        !parentLockedPeriods.has("GK1") ||
+                        !parentLockedPeriods.has("CK1") ||
+                        !parentLockedPeriods.has("GK2") ||
+                        !parentLockedPeriods.has("CK2") ? (
+                          <table className="w-full text-left border-collapse text-xs">
+                            <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                                <th className="py-3 px-4 w-10 text-center text-white font-semibold">STT</th>
+                                <th className="py-3 px-4 text-white font-semibold">Môn học</th>
+                                {!parentLockedPeriods.has("KSĐN") && (
+                                  <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">
+                                    KSĐN
+                                  </th>
+                                )}
+                                {!parentLockedPeriods.has("GK1") && (
+                                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">
+                                    Giữa kỳ 1
+                                  </th>
+                                )}
+                                {!parentLockedPeriods.has("CK1") && (
+                                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">
+                                    Cuối kỳ 1
+                                  </th>
+                                )}
+                                {!parentLockedPeriods.has("GK2") && (
+                                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">
+                                    Giữa kỳ 2
+                                  </th>
+                                )}
+                                {!parentLockedPeriods.has("CK2") && (
+                                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">
+                                    Cuối kỳ 2
+                                  </th>
+                                )}
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums font-semibold">
+                              {gradeData.moetPeriodicRows.map((r, idx) => (
+                                <tr key={idx} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                                  <td className="py-3 px-3 text-center text-slate-400 align-middle">{idx + 1}</td>
+                                  <td className="py-3 px-3 font-bold text-slate-800 align-middle">{r.name}</td>
+                                  {!parentLockedPeriods.has("KSĐN") && (
+                                    <td className="py-3 px-3 text-center font-black text-[#00A19A] align-middle">
+                                      {r.ksdn || "—"}
+                                    </td>
+                                  )}
+                                  {!parentLockedPeriods.has("GK1") && (
+                                    <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">
+                                      {r.gk1 || "—"}
+                                    </td>
+                                  )}
+                                  {!parentLockedPeriods.has("CK1") && (
+                                    <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">
+                                      {r.ck1 || "—"}
+                                    </td>
+                                  )}
+                                  {!parentLockedPeriods.has("GK2") && (
+                                    <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">
+                                      {r.gk2 || "—"}
+                                    </td>
+                                  )}
+                                  {!parentLockedPeriods.has("CK2") && (
+                                    <td className="py-3 px-3 text-center font-black text-slate-800 align-middle">
+                                      {r.ck2 || "—"}
+                                    </td>
+                                  )}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <div className="p-6 text-center text-xs text-amber-800 bg-amber-50/70 flex items-center justify-center gap-2">
+                            <Lock className="w-4 h-4 shrink-0" />
+                            <span>Hiện tại nhà trường đang tạm khóa hiển thị điểm các kỳ đánh giá trên cổng Phụ huynh.</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

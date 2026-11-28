@@ -1122,22 +1122,22 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     }
 
     return (
-        <div className="p-3 md:p-6 max-w-[1440px] mx-auto space-y-5 md:space-y-6">
+        <div className="p-0 sm:p-2 md:p-6 max-w-[1440px] mx-auto space-y-4 md:space-y-6">
             
             {/* 1. Header Banner & Context */}
-            <div className="relative overflow-hidden bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00A19A] rounded-2xl md:rounded-[2rem] p-6 text-white shadow-xl shadow-teal-950/10">
+            <div className="relative overflow-hidden bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#008B85] rounded-2xl md:rounded-[2rem] p-4 sm:p-5 md:p-6 text-white shadow-sm">
                 <div className="absolute right-0 top-0 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
                 <div className="absolute left-1/3 bottom-0 w-60 h-60 bg-[#99F6E4]/15 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
                 
                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div className="flex items-start sm:items-center gap-4">
-                        <div className="w-13 h-13 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-teal-100 flex items-center justify-center shadow-inner shrink-0 mt-1 sm:mt-0">
+                        <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-teal-100 items-center justify-center shadow-inner shrink-0">
                             <GraduationCap className="w-7 h-7 text-white" />
                         </div>
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="text-[10px] font-black tracking-widest text-[#99F6E4] uppercase bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
-                                    {isOrientationSubject ? "CỔNG PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH" : "KHẢO SÁT ĐẦU VÀO • NHẬP KẾT QUẢ THEO PHÂN CÔNG"}
+                                <span className="text-[11px] font-semibold text-[#CCFBF1] bg-white/12 px-2 py-0.5 rounded-md border border-white/15">
+                                    {isOrientationSubject ? "Phỏng vấn định hướng học sinh" : "Khảo sát đầu vào · Nhập kết quả"}
                                 </span>
                                 {academicYear && !/^(cm|cl)[a-z0-9]{15,}$/i.test(String(academicYear).trim()) && (
                                     <span className="text-[10px] font-bold text-teal-100/80 bg-teal-900/40 px-2 py-0.5 rounded-md">
@@ -1174,7 +1174,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                     {/* Progress Card in Hero */}
                     {students.length > 0 && (
-                        <div className="bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-md shadow-inner flex flex-col gap-2 min-w-[280px] sm:min-w-[320px]">
+                        <div className="bg-white/10 border border-white/20 rounded-2xl p-3.5 md:p-4 backdrop-blur-md shadow-inner flex flex-col gap-2 w-full lg:w-auto lg:min-w-[300px] tabular-nums">
                             <div className="flex items-center justify-between text-xs font-bold text-teal-100">
                                 <span>Tiến độ đợt khảo sát:</span>
                                 <span className="text-sm font-black text-white">{completionPercentage}%</span>
@@ -1215,7 +1215,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     ? "BM.KTĐBCL.31–42"
                                     : "Phiếu điểm môn";
                     const key = `${subjId}__${subjName}`;
-                    const stCount = Array.isArray(a?.students) ? a.students.length : 0;
+                    const stCount = Number(a?.studentCount ?? (Array.isArray(a?.students) ? a.students.length : 0));
                     const isActive =
                         currentAssignment &&
                         (String(currentAssignment.subjectId || "") === subjId && String(currentAssignment.subject?.name || "") === subjName);

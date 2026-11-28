@@ -126,7 +126,25 @@ export default async function TeacherSupportPage() {
 
   const initialAssignedClasses = Array.from(classMap.values())
 
-  // Subjects already loaded in Promise.all above
+  // Determine whether this teacher is a Psychology / Career Counselor (Tổ TLHN or assigned Tâm lý)
+  const deptName = (teacher.departmentRel?.name || "").toLowerCase()
+  const deptCode = (teacher.departmentRel?.code || "").toUpperCase()
+  const teachesPsychSubject = teachingAssignments.some((ta: any) => {
+    const subCode = (ta.subject?.subjectCode || "").toUpperCase()
+    const subName = (ta.subject?.subjectName || "").toLowerCase()
+    return (
+      subCode === "TLY" ||
+      subName.includes("tâm lý") ||
+      subName.includes("tam ly") ||
+      subName.includes("psychology")
+    )
+  })
+  const isPsychCounselor =
+    deptCode.includes("TLHN") ||
+    deptName.includes("tâm lý") ||
+    deptName.includes("tlhn") ||
+    deptName.includes("tham vấn") ||
+    teachesPsychSubject
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
@@ -136,6 +154,7 @@ export default async function TeacherSupportPage() {
         homeroomClasses={homeroomClasses}
         initialAssignedClasses={initialAssignedClasses}
         subjects={subjects}
+        isPsychCounselor={isPsychCounselor}
       />
     </div>
   )

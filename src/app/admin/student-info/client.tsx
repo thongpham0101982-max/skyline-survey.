@@ -1743,14 +1743,14 @@ export function StudentInfoClient({
   // Auto generate code helper
   const handleAutoGenerateCode = async () => {
     try {
-      const endpoint = activeTab === "general" 
+      const endpoint = activeTab !== "preschool" 
         ? "/api/input-assessment-students?get_max_code=true" 
         : "/api/preschool-input-assessment-students?get_max_code=true";
       const r = await fetch(endpoint);
       if (r.ok) {
         const res = await r.json();
         if (res.nextCode) {
-          if (activeTab === "general") {
+          if (activeTab !== "preschool") {
             setFormState(prev => ({ ...prev, studentCode: res.nextCode }));
           } else {
             const code = "MN" + res.nextCode.replace(/^\D+/, "");
@@ -1768,19 +1768,20 @@ export function StudentInfoClient({
   const openCreateModal = () => {
     setFormMode("create");
     setEditingId(null);
-    const defaultPeriodId = activeTab === "general" 
-      ? (generalPeriods[0]?.id || "") 
-      : (preschoolPeriods[0]?.id || "");
-    const defaultBatchId = activeTab === "general"
-      ? (generalPeriods[0]?.batches?.[0]?.id || "")
-      : (preschoolPeriods[0]?.batches?.[0]?.id || "");
+    const defaultPeriods = activeTab === "preschool"
+      ? preschoolPeriods
+      : activeTab === "transfer" && activePeriodsList.length > 0
+      ? activePeriodsList
+      : generalPeriods;
+    const defaultPeriodId = defaultPeriods[0]?.id || "";
+    const defaultBatchId = defaultPeriods[0]?.batches?.[0]?.id || "";
 
     setFormState({
       studentCode: "",
       fullName: "",
       dateOfBirth: "",
       gender: "Nam",
-      grade: activeTab === "general" ? (grades[0] || "1") : "12 đến 18 tháng",
+      grade: activeTab !== "preschool" ? (grades[0] || "1") : "12 đến 18 tháng",
       className: "",
       periodId: defaultPeriodId,
       batchId: defaultBatchId,
@@ -1868,12 +1869,25 @@ export function StudentInfoClient({
       oldSchoolName: student.oldSchoolName || "",
       oldSchoolType: student.oldSchoolType || ""
     });
+    const resolvedLoc: "Nội tỉnh" | "Ngoại tỉnh" | "Nước ngoài" =
+      student.targetType?.includes("Nước ngoài") || (student.countryName && !student.countryName.toLowerCase().includes("việt nam"))
+        ? "Nước ngoài"
+        : student.targetType?.includes("Ngoại tỉnh") || (student.cityName && !student.cityName.toLowerCase().includes("đà nẵng"))
+        ? "Ngoại tỉnh"
+        : "Nội tỉnh";
+
+    setSelectedLocationType(resolvedLoc);
+    setSelectedProvince(student.cityName || "Thành phố Đà Nẵng");
+    setSelectedCountry(student.countryName || "Việt Nam");
+    setSchoolNameInput(student.oldSchoolName || "");
+    setSchoolTypeInput(student.oldSchoolType || "");
     setTransferCampusId("");
     setTransferClassId("");
     setTransferStudents([]);
     setSelectedStudentIds([]);
     setTargetSystem(student.surveyFormType || "");
     setStudentSearchQuery("");
+    setFormSubTab("admin");
     setIsFormOpen(true);
   };
 
@@ -1942,7 +1956,7 @@ export function StudentInfoClient({
       countryName: selectedLocationType === "Nước ngoài" ? selectedCountry : (formState.countryName || "Việt Nam"),
     };
 
-    const endpoint = activeTab === "general" 
+    const endpoint = activeTab !== "preschool" 
       ? "/api/input-assessment-students" 
       : "/api/preschool-input-assessment-students";
     
@@ -1958,7 +1972,14 @@ export function StudentInfoClient({
         body: JSON.stringify(bodyData)
       });
       if (res.ok) {
-        showNotification(formMode === "edit" ? "Cập nhật học sinh thành công!" : "Thêm mới học sinh thành công!");
+        const savedData = await res.json().catch(() => null);
+        showNotification(
+          formMode === "edit"
+            ? (savedData?.syncedEnrolledStudentCount > 0
+                ? "Đã cập nhật hồ sơ và đồng bộ sang thông tin Học sinh đã nhập học!"
+                : "Cập nhật học sinh thành công!")
+            : "Thêm mới học sinh thành công!"
+        );
         setIsFormOpen(false);
         setTimeout(() => window.location.reload(), 1000);
       } else {
@@ -1972,7 +1993,7 @@ export function StudentInfoClient({
 
   // Handle Update Absent Status
   const handleUpdateAbsent = async (student: any, isAbsent: boolean) => {
-    const endpoint = activeTab === "general" 
+    const endpoint = activeTab !== "preschool" 
       ? "/api/input-assessment-students" 
       : "/api/preschool-input-assessment-students";
       
@@ -2006,7 +2027,7 @@ export function StudentInfoClient({
     e.stopPropagation();
     if (!confirm(`Bạn có chắc muốn xóa học sinh ${student.fullName} (${student.studentCode}) khỏi hệ thống?`)) return;
 
-    const endpoint = activeTab === "general" 
+    const endpoint = activeTab !== "preschool" 
       ? `/api/input-assessment-students?id=${student.id}` 
       : `/api/preschool-input-assessment-students?id=${student.id}`;
 
@@ -2024,17 +2045,30 @@ export function StudentInfoClient({
   };
 
   const handleConfirmEnrollment = async (student: any, isPreschool = false) => {
+    const isTransfer = !isPreschool && (activeTab === "transfer" || isTransferStudent(student));
     const isAssigned = student.enrollmentStatus === "COMPLETED" || student.enrollmentStatus === "ENROLLED" || !!student.enrollmentClass || !!student.enrollmentClassId;
     if (isAssigned) {
-      showNotification("Học sinh này đã được sắp lớp, không thể thực hiện xác nhận nhập học!", "err");
+      showNotification(
+        isTransfer
+          ? "Học sinh này đã được chuyển lớp, không thể tạo yêu cầu chuyển lớp!"
+          : "Học sinh này đã được sắp lớp, không thể thực hiện xác nhận nhập học!",
+        "err"
+      );
       return;
     }
-    if (!confirm(`Xác nhận nhập học cho học sinh ${student.fullName} (Mã KS: ${student.studentCode})?\nHành động này sẽ gửi một phiếu yêu cầu đến Tổ Giáo vụ để tiến hành xếp lớp.`)) return;
+    const confirmMsg = isTransfer
+      ? `Tạo yêu cầu chuyển lớp học cho học sinh ${student.fullName} (Mã HS: ${student.studentCode})?\nHành động này sẽ gửi một phiếu yêu cầu chuyển lớp đến Tổ Giáo vụ để tiến hành chuyển lớp.`
+      : `Xác nhận nhập học cho học sinh ${student.fullName} (Mã KS: ${student.studentCode})?\nHành động này sẽ gửi một phiếu yêu cầu đến Tổ Giáo vụ để tiến hành xếp lớp.`;
+    if (!confirm(confirmMsg)) return;
 
     try {
       const res = await confirmEnrollmentAction(student.id, isPreschool);
       if (res.success) {
-        showNotification("Đã gửi yêu cầu nhập học đến Tổ Giáo vụ!");
+        showNotification(
+          isTransfer
+            ? "Đã gửi yêu cầu chuyển lớp học đến Tổ Giáo vụ!"
+            : "Đã gửi yêu cầu nhập học đến Tổ Giáo vụ!"
+        );
         setTimeout(() => window.location.reload(), 1000);
       } else {
         showNotification("Lỗi: " + (res.error || "Không thể thực hiện"), "err");
@@ -2045,17 +2079,30 @@ export function StudentInfoClient({
   };
 
   const handleRevertEnrollment = async (student: any, isPreschool = false) => {
+    const isTransfer = !isPreschool && (activeTab === "transfer" || isTransferStudent(student));
     const isAssigned = student.enrollmentStatus === "COMPLETED" || student.enrollmentStatus === "ENROLLED" || !!student.enrollmentClass || !!student.enrollmentClassId;
     if (isAssigned) {
-      showNotification("Học sinh này đã được sắp lớp, không thể hoàn lại!", "err");
+      showNotification(
+        isTransfer
+          ? "Học sinh này đã được chuyển lớp, không thể hoàn lại!"
+          : "Học sinh này đã được sắp lớp, không thể hoàn lại!",
+        "err"
+      );
       return;
     }
-    if (!confirm(`Xác nhận HOÀN TRẢ (Hủy yêu cầu nhập học) cho học sinh ${student.fullName} (Mã KS: ${student.studentCode})?\nHành động này sẽ rút lại yêu cầu nhập học hiện tại.`)) return;
+    const revertConfirmMsg = isTransfer
+      ? `Xác nhận HOÀN TRẢ (Hủy yêu cầu chuyển lớp) cho học sinh ${student.fullName} (Mã HS: ${student.studentCode})?\nHành động này sẽ rút lại yêu cầu chuyển lớp học hiện tại.`
+      : `Xác nhận HOÀN TRẢ (Hủy yêu cầu nhập học) cho học sinh ${student.fullName} (Mã KS: ${student.studentCode})?\nHành động này sẽ rút lại yêu cầu nhập học hiện tại.`;
+    if (!confirm(revertConfirmMsg)) return;
 
     try {
       const res = await revertEnrollmentAction(student.id, isPreschool);
       if (res.success) {
-        showNotification("Đã hoàn trả yêu cầu nhập học!");
+        showNotification(
+          isTransfer
+            ? "Đã hoàn trả yêu cầu chuyển lớp học!"
+            : "Đã hoàn trả yêu cầu nhập học!"
+        );
         setTimeout(() => window.location.reload(), 1000);
       } else {
         showNotification("Lỗi: " + (res.error || "Không thể thực hiện"), "err");
@@ -2169,7 +2216,7 @@ export function StudentInfoClient({
         "STT": idx + 1,
         "Mã học sinh": s.studentCode || "",
         "Họ và tên": s.fullName || "",
-        "Khối": s.grade ? (activeTab === "general" ? `Khối ${s.grade}` : s.grade) : "",
+        "Khối": s.grade ? (activeTab !== "preschool" ? `Khối ${s.grade}` : s.grade) : "",
         "Giới tính": s.gender || "",
         "Ngày sinh": formatDate(s.dateOfBirth),
         "Cơ sở": campusTitle,
@@ -2192,7 +2239,7 @@ export function StudentInfoClient({
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "DS_Khao_Sat_Lai");
-    XLSX.writeFile(workbook, `Danh_Sach_Khao_Sat_Lai_${activeTab === "general" ? "Pho_Thong" : "Mam_Non"}_${new Date().toISOString().split("T")[0]}.xlsx`);
+    XLSX.writeFile(workbook, `Danh_Sach_Khao_Sat_Lai_${activeTab === "preschool" ? "Mam_Non" : activeTab === "transfer" ? "Chuyen_He" : "Pho_Thong"}_${new Date().toISOString().split("T")[0]}.xlsx`);
     showNotification("Đã xuất danh sách Khảo sát lại thành công!");
   };
 
@@ -2215,7 +2262,7 @@ export function StudentInfoClient({
     if (selectedIds.length === 0) return;
     if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} học sinh đã chọn khỏi hệ thống?`)) return;
 
-    const endpoint = activeTab === "general"
+    const endpoint = activeTab !== "preschool"
       ? `/api/input-assessment-students?ids=${selectedIds.join(",")}`
       : `/api/preschool-input-assessment-students?ids=${selectedIds.join(",")}`;
 
@@ -2253,7 +2300,7 @@ export function StudentInfoClient({
     if (filteredStudents.length === 0) return showNotification("Không có dữ liệu trong bộ lọc để xuất", "err");
 
     const dataToExport = filteredStudents.map((s, index) => {
-      if (activeTab === "general") {
+      if (activeTab !== "preschool") {
         return {
           "STT": index + 1,
           "Kỳ khảo sát": s.period?.name || "",
@@ -2301,8 +2348,8 @@ export function StudentInfoClient({
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, activeTab === "general" ? "Phổ thông" : "Mầm non");
-    XLSX.writeFile(workbook, `Danh_Sach_HS_Khao_Sat_${activeTab === "general" ? "Pho_Thong" : "Mam_Non"}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, activeTab === "preschool" ? "Mầm non" : activeTab === "transfer" ? "Chuyển hệ" : "Phổ thông");
+    XLSX.writeFile(workbook, `Danh_Sach_HS_Khao_Sat_${activeTab === "preschool" ? "Mam_Non" : activeTab === "transfer" ? "Chuyen_He" : "Pho_Thong"}.xlsx`);
     showNotification("Đã xuất file Excel thành công!");
   };
 
@@ -2350,7 +2397,7 @@ export function StudentInfoClient({
   // Download template for Excel import matching KSNL 100%
   const handleDownloadTemplate = () => {
     let ws;
-    if (activeTab === "general") {
+    if (activeTab !== "preschool") {
       ws = XLSX.utils.json_to_sheet([
         { 
           "Mã học sinh": "", 
@@ -2395,7 +2442,7 @@ export function StudentInfoClient({
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, ws, "DS_HocSinh");
-    XLSX.writeFile(workbook, activeTab === "general" ? "Mau_Import_HS_KhaoSat.xlsx" : "Form_Mau_Them_Be_Mam_Non.xlsx");
+    XLSX.writeFile(workbook, activeTab !== "preschool" ? "Mau_Import_HS_KhaoSat.xlsx" : "Form_Mau_Them_Be_Mam_Non.xlsx");
     showNotification("Đã tải file Excel mẫu!");
   };
 
@@ -2457,7 +2504,7 @@ export function StudentInfoClient({
           gender = "Nam";
         }
 
-        if (activeTab === "general") {
+        if (activeTab !== "preschool") {
           const studentCode = String(row["Mã học sinh"] || row["Mã HS KS"] || findVal(row, ["mã hs", "ma hs", "mã"]) || "").trim();
           const fullName = String(row["Họ và tên"] || row["Họ và Tên"] || row["Họ và Tên *"] || findVal(row, ["họ tên", "tên", "fullname"]) || "").trim();
           const grade = String(row["Khối"] || findVal(row, ["khối", "grade"]) || "").trim();
@@ -2562,18 +2609,18 @@ export function StudentInfoClient({
       });
 
       // Filter rows: General K-12 only requires full name (API will auto generate code), Preschool requires both
-      const validRows = activeTab === "general"
+      const validRows = activeTab !== "preschool"
         ? mapped.filter(r => r.fullName)
         : mapped.filter(r => r.fullName && r.studentCode);
         
       if (validRows.length === 0) {
-        const errorMsg = activeTab === "general" 
+        const errorMsg = activeTab !== "preschool" 
           ? "Không có dòng dữ liệu hợp lệ (Cần có Họ và tên)" 
           : "Không có dòng dữ liệu hợp lệ (Cần có Mã học sinh và Họ & tên)";
         throw new Error(errorMsg);
       }
 
-      const endpoint = activeTab === "general"
+      const endpoint = activeTab !== "preschool"
         ? "/api/input-assessment-students"
         : "/api/preschool-input-assessment-students";
 
@@ -2863,7 +2910,7 @@ export function StudentInfoClient({
             }`}
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>3. Kết quả & Nhập học</span>
+            <span>{activeTab === "transfer" ? "3. Kết quả & Chuyển lớp" : "3. Kết quả & Nhập học"}</span>
           </button>
         </div>
 
@@ -3087,7 +3134,7 @@ export function StudentInfoClient({
               <p className="text-xs font-semibold text-slate-500">Đạt / Cam kết / Học thử</p>
               <p className="text-2xl font-black text-[#059669] mt-0.5">{statistics.passed}</p>
               <p className="text-[11px] font-medium text-slate-500 mt-0.5">
-                Đủ điều kiện nhập học
+                {activeTab === "transfer" ? "Đủ điều kiện chuyển hệ" : "Đủ điều kiện nhập học"}
               </p>
             </div>
             <div className="p-2.5 rounded-xl bg-emerald-50 text-[#059669] border border-emerald-200/70">
@@ -3123,16 +3170,18 @@ export function StudentInfoClient({
 
           <div className="p-4 flex items-center justify-between gap-3 col-span-2 sm:col-span-1">
             <div>
-              <p className="text-xs font-semibold text-slate-500">Đã nhập học / Chờ xếp lớp</p>
+              <p className="text-xs font-semibold text-slate-500">
+                {activeTab === "transfer" ? "Đã chuyển lớp / Chờ chuyển lớp" : "Đã nhập học / Chờ xếp lớp"}
+              </p>
               <p className="text-2xl font-black text-[#00736E] mt-0.5">
                 {statistics.enrolled} / {statistics.requestedEnrollment}
               </p>
               <p className="text-[11px] font-medium text-slate-500 mt-0.5">
-                Đã phân lớp chính thức
+                {activeTab === "transfer" ? "Đã chuyển sang lớp mới" : "Đã phân lớp chính thức"}
               </p>
             </div>
             <div className="p-2.5 rounded-xl bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]">
-              <UserCheck className="w-5 h-5" />
+              {activeTab === "transfer" ? <ArrowRightLeft className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
             </div>
           </div>
         </div>
@@ -3210,6 +3259,8 @@ export function StudentInfoClient({
                 ? "Bộ lọc Kết quả khảo sát theo đợt"
                 : subTab === "info"
                 ? "Bộ lọc Danh sách khảo sát lại"
+                : activeTab === "transfer"
+                ? "Bộ lọc Kết quả & Chuyển lớp"
                 : "Bộ lọc Kết quả & Nhập học"}
             </span>
           </div>
@@ -3289,8 +3340,16 @@ export function StudentInfoClient({
             <div className="flex flex-wrap items-center gap-1 tabular-nums">
               {[
                 { id: "all", label: "Tất cả hồ sơ", count: statistics.total },
-                { id: "enrolled", label: "Đã nhập học / Chờ xếp lớp", count: statistics.requestedEnrollment },
-                { id: "not_enrolled", label: "Chưa nhập học", count: Math.max(0, statistics.total - statistics.requestedEnrollment) },
+                {
+                  id: "enrolled",
+                  label: activeTab === "transfer" ? "Đã chuyển lớp / Chờ chuyển lớp" : "Đã nhập học / Chờ xếp lớp",
+                  count: statistics.requestedEnrollment,
+                },
+                {
+                  id: "not_enrolled",
+                  label: activeTab === "transfer" ? "Chưa chuyển lớp" : "Chưa nhập học",
+                  count: Math.max(0, statistics.total - statistics.requestedEnrollment),
+                },
               ].map((pill) => {
                 const isActive = selectedEnrollmentFilter === pill.id;
                 return (
@@ -3795,6 +3854,14 @@ export function StudentInfoClient({
                         {/* 11. Thao tác */}
                         <td className="py-3 px-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="inline-flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(s)}
+                              className="p-1.5 text-slate-500 hover:text-[#00736E] hover:bg-[#F0FDFA] border border-[#E2E8F0] rounded-lg transition-all cursor-pointer"
+                              title="Chỉnh sửa thông tin học sinh"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
                             {activeTab !== "preschool" && (
                               <>
                                 <button
@@ -4180,7 +4247,9 @@ export function StudentInfoClient({
                   <th className="py-3 px-3.5 min-w-[210px] font-semibold">Kết quả khảo sát</th>
                   <th className="py-3 px-3 text-center text-[#5EEAD4] font-semibold">KQ đã xét duyệt</th>
                   <th className="py-3 px-2 text-center text-teal-100 font-semibold">Vắng</th>
-                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">Nhập học & Lớp</th>
+                  <th className="py-3 px-3 text-center text-teal-100 font-semibold">
+                    {activeTab === "transfer" ? "Chuyển lớp" : "Nhập học & Lớp"}
+                  </th>
                   {selectedPeriod?.toLowerCase().includes("open day") && (
                     <>
                       <th className="py-3 px-2.5 text-center text-teal-100 font-semibold">Đăng ký CS</th>
@@ -4239,6 +4308,7 @@ export function StudentInfoClient({
                     const commSubjectsSummary = extractCommittedSubjectsSummary(s.directorNote);
                     const batchLabel = s.batch?.name ? cleanBatchName(s.batch.name) : "Khảo sát lẻ";
                     const isPreschool = activeTab === "preschool";
+                    const isTransferRow = !isPreschool && (activeTab === "transfer" || isTransferStudent(s));
 
                     return (
                       <tr
@@ -4441,7 +4511,7 @@ export function StudentInfoClient({
                           />
                         </td>
 
-                        {/* 12. Nhập học & Lớp */}
+                        {/* 12. Nhập học & Lớp / Chuyển lớp */}
                         <td className="py-3 px-3 text-center whitespace-nowrap">
                           {isEnrolled ? (
                             <div className="inline-flex flex-col items-center justify-center gap-0.5">
@@ -4452,9 +4522,17 @@ export function StudentInfoClient({
                                     : "bg-emerald-50 text-[#059669] border-emerald-200"
                                 }`}
                               >
-                                <CheckCircle2 className="w-3 h-3" />
+                                {isTransferRow ? (
+                                  <ArrowRightLeft className="w-3 h-3" />
+                                ) : (
+                                  <CheckCircle2 className="w-3 h-3" />
+                                )}
                                 {s.enrollmentStatus === "PENDING" && !s.enrollmentClass && !s.enrollmentClassId
-                                  ? "Chờ xếp lớp"
+                                  ? isTransferRow
+                                    ? "Chờ chuyển lớp"
+                                    : "Chờ xếp lớp"
+                                  : isTransferRow
+                                  ? "Đã chuyển lớp"
                                   : "Đã nhập học"}
                               </span>
                               {(s.enrollmentClass?.className || s.enrollmentClassId) && (
@@ -4464,7 +4542,9 @@ export function StudentInfoClient({
                               )}
                             </div>
                           ) : (
-                            <span className="text-[11px] text-slate-400">Chưa nhập học</span>
+                            <span className="text-[11px] text-slate-400">
+                              {isTransferRow ? "Chưa chuyển lớp" : "Chưa nhập học"}
+                            </span>
                           )}
                         </td>
 
@@ -4483,6 +4563,14 @@ export function StudentInfoClient({
                         {/* 13. Thao tác */}
                         <td className="py-3 px-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="inline-flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(s)}
+                              className="p-1.5 text-slate-500 hover:text-[#00736E] hover:bg-[#F0FDFA] border border-[#E2E8F0] rounded-lg transition-all cursor-pointer"
+                              title={isEnrolled ? "Cập nhật thông tin học sinh (tự động đồng bộ sau khi nhập học)" : "Chỉnh sửa thông tin học sinh"}
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
                             <button
                               type="button"
                               onClick={() => handleConfirmEnrollment(s, isPreschool)}
@@ -4511,16 +4599,24 @@ export function StudentInfoClient({
                                 s.enrollmentStatus === "ENROLLED" ||
                                 s.enrollmentClass ||
                                 s.enrollmentClassId
-                                  ? "Đã sắp lớp" +
+                                  ? (isTransferRow ? "Đã chuyển lớp" : "Đã sắp lớp") +
                                     (s.enrollmentClass?.className || s.enrollmentClassId
                                       ? " (" + (s.enrollmentClass?.className || s.enrollmentClassId) + ")"
                                       : "")
                                   : s.enrollmentStatus === "PENDING"
-                                  ? "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
+                                  ? isTransferRow
+                                    ? "Đã gửi yêu cầu chuyển lớp (Chờ chuyển lớp)"
+                                    : "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
+                                  : isTransferRow
+                                  ? "Tạo yêu cầu chuyển lớp học"
                                   : "Xác nhận nhập học"
                               }
                             >
-                              <UserCheck className="w-3.5 h-3.5" />
+                              {isTransferRow ? (
+                                <ArrowRightLeft className="w-3.5 h-3.5" />
+                              ) : (
+                                <UserCheck className="w-3.5 h-3.5" />
+                              )}
                             </button>
                             <button
                               type="button"
@@ -4546,9 +4642,15 @@ export function StudentInfoClient({
                                 s.enrollmentStatus === "ENROLLED" ||
                                 s.enrollmentClass ||
                                 s.enrollmentClassId
-                                  ? "Đã sắp lớp - Không thể hoàn lại"
+                                  ? isTransferRow
+                                    ? "Đã chuyển lớp - Không thể hoàn lại"
+                                    : "Đã sắp lớp - Không thể hoàn lại"
                                   : s.enrollmentStatus
-                                  ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
+                                  ? isTransferRow
+                                    ? "Hoàn trả (Hủy yêu cầu chuyển lớp)"
+                                    : "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
+                                  : isTransferRow
+                                  ? "Chưa có yêu cầu chuyển lớp để hoàn trả"
                                   : "Chưa có thông tin nhập học để hoàn trả"
                               }
                             >
@@ -4680,7 +4782,7 @@ export function StudentInfoClient({
               <div>
                 <h3 className="text-lg font-black text-[#004C97] flex items-center gap-2">
                   <span className="w-1.5 h-6 bg-[#00B5E2] inline-block rounded animate-pulse"></span>
-                  {formMode === "create" ? (activeTab === "general" ? "Thêm mới học sinh" : "Thêm trẻ mới") : "Chỉnh sửa thông tin học sinh"}
+                  {formMode === "create" ? (activeTab !== "preschool" ? "Thêm mới học sinh" : "Thêm trẻ mới") : "Chỉnh sửa thông tin học sinh"}
                 </h3>
                 <p className="text-xs text-[#64748B] font-semibold mt-1">
                   Mã học sinh: <span className="text-[#004C97] font-bold">{formState.studentCode || "(Sẽ tự động sinh nếu trống)"}</span>
@@ -4747,6 +4849,36 @@ export function StudentInfoClient({
 
             <form onSubmit={handleSaveStudent} className="flex-1 overflow-hidden flex flex-col bg-[#F8FAFC]">
               <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar text-left">
+                {formMode === "edit" && (() => {
+                  const editingRec = currentDataset.find((item: any) => item.id === editingId);
+                  const isEditingEnrolled =
+                    editingRec &&
+                    (editingRec.enrollmentStatus === "COMPLETED" ||
+                      editingRec.enrollmentStatus === "ENROLLED" ||
+                      Boolean(editingRec.enrollmentClass) ||
+                      Boolean(editingRec.enrollmentClassId) ||
+                      Boolean(editingRec.enrollmentCode));
+                  if (!isEditingEnrolled) return null;
+                  return (
+                    <div className="flex flex-wrap items-center gap-2 bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-[#059669] rounded-xl px-4 py-2.5 text-xs text-[#003B3A] tabular-nums">
+                      <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0" />
+                      <span>
+                        <strong className="font-bold">Học sinh đã nhập học</strong>
+                        {(editingRec.enrollmentClass?.className || editingRec.enrollmentCode) && (
+                          <span className="text-slate-600">
+                            {" ("}
+                            {[
+                              editingRec.enrollmentClass?.className ? `Lớp ${editingRec.enrollmentClass.className}` : null,
+                              editingRec.enrollmentCode ? `Mã HS: ${editingRec.enrollmentCode}` : null,
+                            ].filter(Boolean).join(" · ")}
+                            {")"}
+                          </span>
+                        )}
+                        {" — Thay đổi về Họ tên, Ngày sinh, Giới tính sẽ tự động đồng bộ sang hồ sơ Học sinh chính khóa."}
+                      </span>
+                    </div>
+                  );
+                })()}
                 
                 {isChuyenHe ? (
                   // Redesigned form layout for transfer system
@@ -4770,7 +4902,7 @@ export function StudentInfoClient({
                             className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-bold rounded-xl outline-none focus:border-[#00B5E2] cursor-pointer"
                           >
                             <option value="">-- Chọn Kỳ khảo sát --</option>
-                            {activeTab === "general" ? (
+                            {activeTab !== "preschool" ? (
                               generalPeriods.map((p) => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
                               ))
@@ -5067,7 +5199,6 @@ export function StudentInfoClient({
                             <input
                               required
                               type="text"
-                              disabled={formMode === "edit"}
                               value={formState.studentCode}
                               onChange={(e) => {
                                 setFormState({ ...formState, studentCode: e.target.value.toUpperCase().replace(/\s/g, "") });
@@ -5170,7 +5301,7 @@ export function StudentInfoClient({
                               className={`h-10.5 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.grade ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
                             >
                               <option value="">-- Chọn khối --</option>
-                              {activeTab === "general" ? (
+                              {activeTab !== "preschool" ? (
                                 grades.map(g => (
                                   <option key={g} value={g}>Khối {g}</option>
                                 ))
@@ -5239,7 +5370,7 @@ export function StudentInfoClient({
                             className={`h-10.5 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-bold rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.periodId ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
                           >
                             <option value="">-- Chọn Kỳ khảo sát --</option>
-                            {activeTab === "general" ? (
+                            {activeTab !== "preschool" ? (
                               generalPeriods.map((p) => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
                               ))
@@ -5280,7 +5411,7 @@ export function StudentInfoClient({
                             className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                           >
                             <option value="">-- Chọn Hệ khảo sát --</option>
-                            {activeTab === "general" ? (
+                            {activeTab !== "preschool" ? (
                               currentEduSystems.map(es => (
                                 <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
                               ))
@@ -5292,7 +5423,7 @@ export function StudentInfoClient({
                           </select>
                         </div>
 
-                        {activeTab === "general" && (
+                        {activeTab !== "preschool" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Diện Khảo sát</label>
@@ -5351,7 +5482,7 @@ export function StudentInfoClient({
                           </select>
                         </div>
 
-                        {activeTab === "general" && (
+                        {activeTab !== "preschool" && (
                           <div className="space-y-4">
                             <div>
                               <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả Rèn luyện</label>
@@ -5393,7 +5524,7 @@ export function StudentInfoClient({
                         )}
                       </div>
 
-                      {activeTab === "general" && (
+                      {activeTab !== "preschool" && (
                         <div>
                           <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Học bạ tiểu học / THCS</label>
                           <textarea
@@ -5559,6 +5690,7 @@ export function StudentInfoClient({
                                 <option value="Tư thục">Tư thục</option>
                                 <option value="Song ngữ">Song ngữ</option>
                                 <option value="Quốc tế">Quốc tế</option>
+                                <option value="Homeschooling">Homeschooling</option>
                               </select>
                             </div>
                           </div>
@@ -5637,7 +5769,7 @@ export function StudentInfoClient({
                             onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
                             className="h-10.5 w-full px-3 bg-white border border-[#D9E2EC] text-[#004C97] text-sm font-bold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                           >
-                            {activeTab === "general" ? (
+                            {activeTab !== "preschool" ? (
                               <Fragment>
                                 <option value="">Chưa duyệt / Khác</option>
                                 <option value="Đạt">Đạt</option>
@@ -5716,7 +5848,7 @@ export function StudentInfoClient({
               <div>
                 <h3 className="text-lg font-black text-slate-800">Nhập học sinh từ Excel</h3>
                 <p className="text-xs text-slate-400 font-bold uppercase mt-0.5 tracking-wider">
-                  Phân hệ {activeTab === "general" ? "Phổ thông K-12" : "Mầm non"}
+                  Phân hệ {activeTab === "preschool" ? "Mầm non" : activeTab === "transfer" ? "Chuyển hệ K-12" : "Phổ thông K-12"}
                 </p>
               </div>
               <button
@@ -5846,7 +5978,7 @@ export function StudentInfoClient({
                 <div>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-white/15 border border-white/15 text-teal-100">
-                      {activeTab === "general" ? "Phổ thông K-12" : "Mầm non"}
+                      {activeTab === "preschool" ? "Mầm non" : activeTab === "transfer" ? "Chuyển hệ K-12" : "Phổ thông K-12"}
                     </span>
                     {selectedStudent.grade && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#00A19A]/30 border border-[#5EEAD4]/30 text-white">
@@ -5869,13 +6001,28 @@ export function StudentInfoClient({
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsDetailsOpen(false)}
-                aria-label="Đóng cửa sổ chi tiết"
-                className="absolute top-4 right-4 sm:relative sm:top-auto sm:right-auto w-8 h-8 rounded-xl bg-white/10 hover:bg-red-500/25 text-white flex items-center justify-center transition-all cursor-pointer border border-white/10"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = selectedStudent;
+                    setIsDetailsOpen(false);
+                    openEditModal(target);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold transition-colors cursor-pointer border border-white/20"
+                  title="Chỉnh sửa thông tin học sinh"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Chỉnh sửa</span>
+                </button>
+                <button
+                  onClick={() => setIsDetailsOpen(false)}
+                  aria-label="Đóng cửa sổ chi tiết"
+                  className="w-8 h-8 rounded-xl bg-white/10 hover:bg-red-500/25 text-white flex items-center justify-center transition-all cursor-pointer border border-white/10"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Sub-Tab Switcher */}
@@ -5889,7 +6036,7 @@ export function StudentInfoClient({
                 }`}
               >
                 <Award className="w-3.5 h-3.5" />
-                {activeTab === "general" ? "Kết quả đánh giá" : "Đánh giá phát triển"}
+                {activeTab !== "preschool" ? "Kết quả đánh giá" : "Đánh giá phát triển"}
               </button>
               <button
                 onClick={() => setDetailsSubTab("admin")}
@@ -5910,8 +6057,8 @@ export function StudentInfoClient({
                     : "border-transparent text-slate-500 hover:text-slate-800"
                 }`}
               >
-                {activeTab === "general" ? <FileText className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
-                {activeTab === "general" ? "Hồ sơ & Học bạ" : "Học thử & Quyết định"}
+                {activeTab !== "preschool" ? <FileText className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
+                {activeTab !== "preschool" ? "Hồ sơ & Học bạ" : "Học thử & Quyết định"}
               </button>
             </div>
 
@@ -5925,7 +6072,7 @@ export function StudentInfoClient({
                   return uniqueParts.join(" | ");
                 };
 
-                return activeTab === "general" ? (
+                return activeTab !== "preschool" ? (
                   <div className="space-y-4">
                     {detailsSubTab === "results" && (
                       <div className="space-y-5 animate-in fade-in duration-200 tabular-nums">
@@ -7024,7 +7171,7 @@ export function StudentInfoClient({
                   className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-medium text-slate-700"
                 >
                   <option value="">-- Chọn Kỳ khảo sát mới --</option>
-                  {(activeTab === "general" ? generalPeriods : preschoolPeriods).map((p) => (
+                  {(activeTab !== "preschool" ? generalPeriods : preschoolPeriods).map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -7040,7 +7187,7 @@ export function StudentInfoClient({
                     className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-medium text-slate-700"
                   >
                     <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
-                    {((activeTab === "general" ? generalPeriods : preschoolPeriods).find(p => p.id === retestPeriodId)?.batches || [])
+                    {((activeTab !== "preschool" ? generalPeriods : preschoolPeriods).find(p => p.id === retestPeriodId)?.batches || [])
                       .filter((b: any) => b.id !== retestStudent.batchId && b.status === "ACTIVE")
                       .map((b: any) => (
                         <option key={b.id} value={b.id}>{b.name}</option>
@@ -7116,7 +7263,7 @@ export function StudentInfoClient({
                   className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-medium text-slate-700"
                 >
                   <option value="">-- Chọn Kỳ khảo sát mới --</option>
-                  {(activeTab === "general" ? generalPeriods : preschoolPeriods).map((p) => (
+                  {(activeTab !== "preschool" ? generalPeriods : preschoolPeriods).map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -7134,7 +7281,7 @@ export function StudentInfoClient({
                     className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-medium text-slate-700"
                   >
                     <option value="">-- Chọn Đợt khảo sát mới --</option>
-                    {((activeTab === "general" ? generalPeriods : preschoolPeriods).find(p => p.id === batchRetestPeriodId)?.batches || [])
+                    {((activeTab !== "preschool" ? generalPeriods : preschoolPeriods).find(p => p.id === batchRetestPeriodId)?.batches || [])
                       .filter((b: any) => b.status === "ACTIVE")
                       .map((b: any) => (
                         <option key={b.id} value={b.id}>{b.name}</option>

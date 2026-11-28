@@ -7,6 +7,7 @@ class InactiveUserError extends CredentialsSignin {
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./db"
 import bcrypt from "bcryptjs"
+import { checkRateLimit } from "./security-guard"
 
 async function getClientIp() {
   try {
@@ -44,6 +45,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const rawIdentifier = (credentials.email as string || '').trim()
         const password = credentials.password as string
+        const clientIp = await getClientIp()
+        const rateCheck = checkRateLimit(`login:${clientIp}:${rawIdentifier.toLowerCase()}`, 10, 15 * 60 * 1000)
+        if (!rateCheck.allowed) {
+          await prisma.auditLog.create({
+            data: {
+              userId: "N/A",
+              userEmail: rawIdentifier,
+              action: "LOGIN_RATE_LIMITED",
+              targetTable: "User",
+              targetId: "N/A",
+              newValues: "Tạm khóa đăng nhập do vượt quá giới hạn thử mật khẩu (10 lần / 15 phút)",
+              ipAddress: clientIp
+            }
+          }).catch(() => {})
+          return null
+        }
+
         let user: any = null
 
         // 1. Direct Email / Account Lookup in User table

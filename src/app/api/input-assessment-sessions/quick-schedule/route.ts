@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { formatStandardBatchName } from "@/lib/batchNaming"
 
 export async function POST(req: Request) {
   try {
@@ -118,21 +119,22 @@ export async function POST(req: Request) {
         .filter((n: number) => !isNaN(n) && n > 0)
       const nextBatchNumber = nums.length > 0 ? Math.max(...nums) + 1 : 1
 
-      const pNameNorm = (periodObj.name || "").toLowerCase().normalize("NFC")
-      const periodCode =
-        pNameNorm.includes("khảo sát lẻ") || pNameNorm.includes("khao sat le")
-          ? "KSL"
-          : periodObj.code || "KSL"
-
-      const gradeSysSuffix =
-        studentGrade || studentEduSystem
-          ? `_${studentGrade || ""}${studentEduSystem || ""}`
-          : ""
+      const gradeTag = studentGrade ? `K${studentGrade}` : ""
+      const sysTag = studentEduSystem ? `-${studentEduSystem}` : ""
+      const suffix = gradeTag || sysTag ? ` - ${gradeTag}${sysTag}` : ""
       const labelPart = studentDisplayName
-        ? `${studentDisplayName}${gradeSysSuffix}`
-        : customSessionName || notes || "Khảo sát lẻ"
+        ? `${studentDisplayName}${suffix}`
+        : customSessionName || notes || ""
 
-      const scientificBatchName = `${effectiveCampusCode} _ ${periodCode} _ Đợt ${nextBatchNumber} _ KSĐV _ ${labelPart} _ ${dateFullFormatted}`
+      const scientificBatchName = formatStandardBatchName({
+        campusCode: effectiveCampusCode,
+        periodName: periodObj.name,
+        periodCode: periodObj.code,
+        batchNumber: nextBatchNumber,
+        startDate: dateObj,
+        endDate: dateObj,
+        note: labelPart
+      })
 
       createdBatch = await (prisma as any).inputAssessmentBatch.create({
         data: {

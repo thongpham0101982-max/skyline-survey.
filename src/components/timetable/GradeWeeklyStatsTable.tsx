@@ -31,6 +31,7 @@ interface GradeWeeklyStatsTableProps {
     grade: string
     weeklyQuota: number
   }) => Promise<void> | void
+  onApplyQd82Standard?: () => Promise<void> | void
 }
 
 export function GradeWeeklyStatsTable({
@@ -47,6 +48,7 @@ export function GradeWeeklyStatsTable({
   onSelectClass,
   onSelectStudyProgram,
   onUpdateQuota,
+  onApplyQd82Standard,
 }: GradeWeeklyStatsTableProps) {
   const availableGrades = useMemo(
     () =>
@@ -68,6 +70,7 @@ export function GradeWeeklyStatsTable({
   )
   const [onlyOverFilter, setOnlyOverFilter] = useState<boolean>(false)
   const [savingCellKey, setSavingCellKey] = useState<string | null>(null)
+  const [applyingStandard, setApplyingStandard] = useState<boolean>(false)
 
   useEffect(() => {
     if (selectedStudyProgram) {
@@ -192,7 +195,9 @@ export function GradeWeeklyStatsTable({
     rawNext: string
   ) => {
     if (!onUpdateQuota) return
-    const parsed = Number(rawNext)
+    const cleanNext = String(rawNext || "").trim().replace(/,/g, ".")
+    if (!cleanNext) return
+    const parsed = Number(cleanNext)
     if (Number.isNaN(parsed) || parsed < 0 || Math.abs(parsed - currentQuota) < 0.001) {
       return
     }
@@ -269,6 +274,25 @@ export function GradeWeeklyStatsTable({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {onApplyQd82Standard && (
+            <button
+              type="button"
+              disabled={applyingStandard}
+              onClick={async () => {
+                setApplyingStandard(true)
+                try {
+                  await onApplyQd82Standard()
+                } finally {
+                  setApplyingStandard(false)
+                }
+              }}
+              title="Đồng bộ toàn bộ định mức Hệ S & Hệ I (K1–K12) chuẩn 40 tiết/tuần theo Quyết định số 82/2026/QĐ-SKL ngày 12/06/2026"
+              className="px-3 py-1.5 rounded-xl bg-[#F0FDFA] hover:bg-teal-100/80 text-[#003B3A] border border-[#00A19A]/40 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-60"
+            >
+              {applyingStandard ? "Đang áp chuẩn QĐ 82..." : "Áp chuẩn QĐ 82/2026 (40 tiết)"}
+            </button>
+          )}
+
           {/* Segmented Mode Control */}
           <div className="inline-flex items-center rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] p-0.5">
             <button
@@ -629,6 +653,14 @@ export function GradeWeeklyStatsTable({
                               Luân phiên
                             </span>
                           )}
+                          {row.isElectiveSubject && (
+                            <span
+                              title="Môn học lựa chọn cấp THPT (3 môn × 2 tiết = 6 tiết/tuần theo QĐ 82/2026)"
+                              className="px-1.5 py-0.2 rounded bg-amber-50 text-[#D97706] border border-amber-200 text-[10px] font-semibold"
+                            >
+                              Môn lựa chọn (*)
+                            </span>
+                          )}
                           {row.isDualGvvnGvnn && (
                             <span className="px-1.5 py-0.2 rounded bg-[#F0FDFA] text-[#003B3A] border border-teal-200 text-[10px] font-semibold">
                               GVVN + GVNN
@@ -647,10 +679,8 @@ export function GradeWeeklyStatsTable({
                           {onUpdateQuota ? (
                             <input
                               key={`${singleReport.grade}_Hệ S_${row.subjectId}_${row.quotaHeS}`}
-                              type="number"
-                              step="0.5"
-                              min={0}
-                              max={20}
+                              type="text"
+                              inputMode="decimal"
                               defaultValue={row.quotaHeS}
                               onBlur={(e) =>
                                 handleCommitQuota(
@@ -706,10 +736,8 @@ export function GradeWeeklyStatsTable({
                           {onUpdateQuota ? (
                             <input
                               key={`${singleReport.grade}_Hệ I_${row.subjectId}_${row.quotaHeI}`}
-                              type="number"
-                              step="0.5"
-                              min={0}
-                              max={20}
+                              type="text"
+                              inputMode="decimal"
                               defaultValue={row.quotaHeI}
                               onBlur={(e) =>
                                 handleCommitQuota(

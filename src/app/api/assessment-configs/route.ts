@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { requireAdminOrLeadershipSession, writeSecurityAuditLog } from "@/lib/security-guard"
 
 export async function GET(req: any) {
   try {
@@ -22,6 +23,8 @@ export async function GET(req: any) {
 
 export async function POST(req: any) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { categoryType, code, name, academicYearId, upsert } = await req.json();
     if (!categoryType || !code || !name) return NextResponse.json({ error: "Thieu thong tin" }, { status: 400 });
 
@@ -56,12 +59,22 @@ export async function POST(req: any) {
 
 export async function PUT(req: any) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { id, name, code } = await req.json();
     if (!id) return NextResponse.json({ error: "Thieu ID" }, { status: 400 });
     const data: any = {};
     if (name) data.name = name;
     if (code) data.code = code;
     const result = await (prisma as any).assessmentConfig.update({ where: { id }, data });
+    await writeSecurityAuditLog({
+      userId: ctx.userId,
+      userEmail: ctx.userEmail,
+      action: "UPDATE_ASSESSMENT_CONFIG",
+      targetTable: "AssessmentConfig",
+      targetId: String(id),
+      newValues: data
+    });
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -70,10 +83,19 @@ export async function PUT(req: any) {
 
 export async function DELETE(req: any) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Thieu ID" }, { status: 400 });
     await (prisma as any).assessmentConfig.delete({ where: { id } });
+    await writeSecurityAuditLog({
+      userId: ctx.userId,
+      userEmail: ctx.userEmail,
+      action: "DELETE_ASSESSMENT_CONFIG",
+      targetTable: "AssessmentConfig",
+      targetId: String(id)
+    });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

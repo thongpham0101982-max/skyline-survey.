@@ -65,26 +65,16 @@ export function ThkqClassStatsTable({ classStats, onSelectClass }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 mb-6 border-l-4 border-l-[#003B3A]">
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[#003B3A] flex items-center justify-center text-white shadow-md shadow-[#003B3A]/20">
-            <Layers className="h-5 w-5 text-[#00A19A]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-800 tracking-tight">
-                Bảng Thống kê ĐTB Môn Lớp, ĐTB Khối & Độ Lệch Chuẩn
-              </h3>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-[#00736E] border border-teal-200">
-                Phân tích Phổ điểm & Độ Đồng đều (σ)
-              </span>
-            </div>
-            <p className="text-xs text-slate-500">
-              Đối sánh ĐTB môn của từng Lớp so với Cơ sở, Khối và kiểm tra Độ lệch chuẩn (σ) mức độ đồng đều theo chuẩn Data Science
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F1F5F9]">
+        <div className="border-l-4 border-[#003B3A] pl-3">
+          <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+            Bảng thống kê điểm trung bình môn theo lớp, khối &amp; độ lệch chuẩn (σ)
+          </h3>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Đối sánh ĐTB môn của từng lớp so với cơ sở, khối và đánh giá mức độ đồng đều năng lực học sinh.
+          </p>
         </div>
 
         {/* Ô tìm kiếm nhanh */}
@@ -94,7 +84,7 @@ export function ThkqClassStatsTable({ classStats, onSelectClass }: Props) {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="Tìm tên lớp, GV, cơ sở, môn học..."
-            className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 py-1.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A]"
+            className="w-full text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] pl-8 pr-3 py-1.5 text-slate-800 focus:outline-none focus:border-[#008B85]"
           />
           <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
         </div>
@@ -103,16 +93,16 @@ export function ThkqClassStatsTable({ classStats, onSelectClass }: Props) {
       {/* Bảng dữ liệu */}
       <div className="overflow-x-auto rounded-xl border border-slate-200 mt-4 max-h-[550px]">
         <table className="w-full text-left border-collapse text-xs">
-          <thead className="bg-[#003B3A] sticky top-0 z-20 backdrop-blur-xs text-white border-b border-[#003B3A]">
-            <tr className="divide-x text-[11px] font-semibold">
-              <th className="py-2.5 px-3 font-bold text-teal-100">Lớp</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Khối</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Cơ sở</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">Môn học</th>
-              <th className="py-2.5 px-3 font-bold text-teal-100">GVCN</th>
+          <thead className="bg-[#003B3A] sticky top-0 z-20 text-white border-b border-[#003B3A]">
+            <tr className="text-[11px] font-semibold whitespace-nowrap">
+              <th className="py-3 px-3 text-white">Lớp</th>
+              <th className="py-3 px-3 text-teal-100">Khối</th>
+              <th className="py-3 px-3 text-teal-100">Cơ sở</th>
+              <th className="py-3 px-3 text-teal-100">Môn học</th>
+              <th className="py-3 px-3 text-teal-100">GVCN</th>
               <th
                 onClick={() => handleSort("studentCount")}
-                className="py-2.5 px-3 font-bold text-center text-slate-700 cursor-pointer hover:bg-slate-200"
+                className="py-3 px-3 text-center text-teal-100 cursor-pointer hover:bg-[#004E4C]"
               >
                 <div className="flex items-center justify-center gap-1">
                   Sĩ số <ArrowUpDown className="h-3 w-3" />
@@ -120,23 +110,23 @@ export function ThkqClassStatsTable({ classStats, onSelectClass }: Props) {
               </th>
               <th
                 onClick={() => handleSort("avgScore")}
-                className="py-2.5 px-3 font-bold text-center text-slate-800 bg-slate-200/50 cursor-pointer hover:bg-slate-200"
+                className="py-3 px-3 text-center text-[#5EEAD4] cursor-pointer hover:bg-[#004E4C]"
               >
                 <div className="flex items-center justify-center gap-1">
-                  ĐTB Lớp (μ) <ArrowUpDown className="h-3 w-3" />
+                  ĐTB lớp (μ) <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
               <th
                 onClick={() => handleSort("gradeAvgScore")}
-                className="py-2.5 px-3 font-bold text-center text-slate-700 cursor-pointer hover:bg-slate-200"
+                className="py-3 px-3 text-center text-teal-100 cursor-pointer hover:bg-[#004E4C]"
               >
                 <div className="flex items-center justify-center gap-1">
-                  ĐTB Khối <ArrowUpDown className="h-3 w-3" />
+                  ĐTB khối <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
               <th
                 onClick={() => handleSort("stdDev")}
-                className="py-2.5 px-3 font-bold text-center text-[#003B3A] bg-teal-50/50 cursor-pointer hover:bg-teal-100/60"
+                className="py-3 px-3 text-center text-[#5EEAD4] cursor-pointer hover:bg-[#004E4C]"
                 title="Độ lệch chuẩn mẫu (σ) đo lường độ phân tán năng lực học sinh trong lớp"
               >
                 <div className="flex items-center justify-center gap-1">
@@ -145,25 +135,25 @@ export function ThkqClassStatsTable({ classStats, onSelectClass }: Props) {
               </th>
               <th
                 onClick={() => handleSort("deltaCampus")}
-                className="py-2.5 px-3 font-bold text-center text-slate-700 cursor-pointer hover:bg-slate-200"
+                className="py-3 px-3 text-center text-teal-100 cursor-pointer hover:bg-[#004E4C]"
                 title="Độ lệch giữa ĐTB môn của Lớp so với ĐTB môn Cơ sở"
               >
                 <div className="flex items-center justify-center gap-1">
-                  Lệch Cơ sở (Δ) <ArrowUpDown className="h-3 w-3" />
+                  Lệch cơ sở (Δ) <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
               <th
                 onClick={() => handleSort("deltaGrade")}
-                className="py-2.5 px-3 font-bold text-center text-slate-700 cursor-pointer hover:bg-slate-200"
+                className="py-3 px-3 text-center text-teal-100 cursor-pointer hover:bg-[#004E4C]"
                 title="Độ lệch giữa ĐTB môn của Lớp so với ĐTB môn Khối"
               >
                 <div className="flex items-center justify-center gap-1">
-                  Lệch Khối (Δ) <ArrowUpDown className="h-3 w-3" />
+                  Lệch khối (Δ) <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
               <th
                 onClick={() => handleSort("below5Count")}
-                className="py-2.5 px-3 font-bold text-center text-rose-700 bg-rose-50/70 cursor-pointer hover:bg-rose-100"
+                className="py-3 px-3 text-center text-[#5EEAD4] cursor-pointer hover:bg-[#004E4C]"
               >
                 <div className="flex items-center justify-center gap-1">
                   Dưới 5.0 <ArrowUpDown className="h-3 w-3" />
@@ -171,22 +161,22 @@ export function ThkqClassStatsTable({ classStats, onSelectClass }: Props) {
               </th>
               <th
                 onClick={() => handleSort("belowSkylineCount")}
-                className="py-2.5 px-3 font-bold text-center text-amber-700 bg-amber-50/70 cursor-pointer hover:bg-amber-100"
+                className="py-3 px-3 text-center text-teal-100 cursor-pointer hover:bg-[#004E4C]"
               >
                 <div className="flex items-center justify-center gap-1">
-                  &lt; Chuẩn SL <ArrowUpDown className="h-3 w-3" />
+                  Dưới chuẩn SL <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
               <th
                 onClick={() => handleSort("perfect10Count")}
-                className="py-2.5 px-3 font-bold text-center text-emerald-700 bg-emerald-50/70 cursor-pointer hover:bg-emerald-100"
+                className="py-3 px-3 text-center text-[#5EEAD4] cursor-pointer hover:bg-[#004E4C]"
               >
                 <div className="flex items-center justify-center gap-1">
                   Điểm 10 <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
-              <th className="py-2.5 px-3 font-bold text-center">
-                Đánh giá & Khuyến nghị Sư phạm
+              <th className="py-3 px-3 text-center text-white">
+                Đánh giá & Khuyến nghị sư phạm
               </th>
             </tr>
           </thead>

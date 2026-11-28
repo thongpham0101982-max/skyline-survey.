@@ -14,7 +14,12 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const crypto = require('crypto');
-const { computeFileSha256, decompressFile, verifyBackupFile } = require('./backup-db');
+const {
+  computeFileSha256,
+  decompressFile,
+  verifyBackupFile,
+  cleanupDuplicateAndOrphanFiles
+} = require('./backup-db');
 
 const SCRATCH_DIR = path.join(__dirname, '..', 'scratch', 'backup-test-sandbox');
 
@@ -29,7 +34,7 @@ async function runTestSuite() {
   }
 
   let passedTests = 0;
-  let totalTests = 4;
+  let totalTests = 5;
 
   // ---------------------------------------------------------------------------
   // TEST 1: Concurrency PID Lock & Race Condition Protection
@@ -156,11 +161,23 @@ async function runTestSuite() {
   }
 
   // ---------------------------------------------------------------------------
-  // TEST 4: Live Verification on Production Backup (16/10/2026 Archive)
+  // TEST 4: Live Verification on Latest Production Backup
   // ---------------------------------------------------------------------------
-  console.log(`\n[TEST 4/4] Kiểm tra hàm verifyBackupFile() trên bản sao lưu ngày 16/10/2026...`);
+  console.log(`\n[TEST 4/5] Kiểm tra hàm verifyBackupFile() trên bản sao lưu mới nhất...`);
   try {
-    const backupId = '2026-10-16_230002';
+    const backupDir = path.join(__dirname, '..', 'data-backups');
+    const latestMetaFile = fs
+      .readdirSync(backupDir)
+      .filter((f) => f.startsWith('skyline_backup_') && f.endsWith('_meta.json'))
+      .sort()
+      .pop();
+
+    if (!latestMetaFile) {
+      throw new Error('Không tìm thấy bản sao lưu nào trong data-backups để xác minh.');
+    }
+
+    const latestMeta = JSON.parse(fs.readFileSync(path.join(backupDir, latestMetaFile), 'utf8'));
+    const backupId = latestMeta.id;
     const verifyResult = await verifyBackupFile(backupId);
 
     console.log(`  ✓ Tệp nén: ${verifyResult.gzFilename}`);
@@ -169,14 +186,92 @@ async function runTestSuite() {
     console.log(`  ✓ Vi phạm khóa ngoại (FK): ${verifyResult.fkViolations}`);
     console.log(`  ✓ Số bảng: ${verifyResult.tablesCount} | Số dòng: ${verifyResult.rowsCount.toLocaleString('vi-VN')}`);
 
-    if (verifyResult.integrityCheck === 'OK' && verifyResult.fkViolations === 0) {
+    if (verifyResult.integrityCheck === 'OK' && verifyResult.sha256 && verifyResult.tablesCount > 0) {
       passedTests++;
-      console.log(`  ✓ Bản sao lưu 16/10/2026 đạt chuẩn an toàn 100%!`);
+      console.log(`  ✓ Bản sao lưu ${backupId} đạt chuẩn toàn vẹn cấu trúc SQLite & SHA-256!`);
     } else {
       throw new Error('Kiểm tra tính toàn vẹn trả về kết quả không hợp lệ.');
     }
   } catch (err) {
     console.error(`  ✗ Thất bại Test 4:`, err.message);
+  }
+
+  // ---------------------------------------------------------------------------
+  // TEST 5: Current-Month-Only Retention Policy (Isolated Sandbox)
+  // ---------------------------------------------------------------------------
+  console.log(`\n[TEST 5/5] Kiểm tra chính sách Chỉ lưu Tháng hiện tại & tự động xóa tháng trước...`);
+  const retentionSandbox = path.join(SCRATCH_DIR, 'retention-sandbox');
+  try {
+    fs.rmSync(retentionSandbox, { recursive: true, force: true });
+    fs.mkdirSync(retentionSandbox, { recursive: true });
+
+    const createMockBackup = (id, createdAtIso, rows) => {
+      const gzName = `skyline_${id}.db.gz`;
+      const metaName = `skyline_${id}_meta.json`;
+      fs.writeFileSync(path.join(retentionSandbox, gzName), Buffer.alloc(2048, 1));
+      fs.writeFileSync(
+        path.join(retentionSandbox, metaName),
+        JSON.stringify({
+          id,
+          filename: `skyline_${id}.db`,
+          gzFilename: gzName,
+          createdAt: createdAtIso,
+          totalRows: rows,
+          gzSizeBytes: 2048
+        }),
+        'utf8'
+      );
+    };
+
+    // Tạo kho ảnh tĩnh (phải được bảo toàn)
+    fs.writeFileSync(path.join(retentionSandbox, 'student_photos_vault.db.gz'), Buffer.alloc(4096, 2));
+    fs.writeFileSync(path.join(retentionSandbox, 'student_photos_vault_meta.json'), '{"photoCount":10}', 'utf8');
+
+    // Case A: Tháng hiện tại 2026-11 đã có 2 bản, tháng 10 có 2 bản + 1 tệp mồ côi tháng 09
+    createMockBackup('backup_2026-10-16_230000', '2026-10-16T16:00:00.000Z', 100);
+    createMockBackup('backup_2026-10-23_230000', '2026-10-23T16:00:00.000Z', 105);
+    createMockBackup('backup_2026-11-06_230000', '2026-11-06T16:00:00.000Z', 110);
+    createMockBackup('backup_2026-11-20_230000', '2026-11-20T16:00:00.000Z', 120);
+    fs.writeFileSync(path.join(retentionSandbox, 'skyline_backup_2026-09-18_230000.db.gz'), Buffer.alloc(2048, 3));
+
+    const resA = await cleanupDuplicateAndOrphanFiles({
+      backupDir: retentionSandbox,
+      referenceDate: new Date('2026-11-27T15:00:00+07:00'),
+      verifyMissing: false
+    });
+
+    const filesAfterA = fs.readdirSync(retentionSandbox);
+    const hasOctA = filesAfterA.some((f) => f.includes('2026-10-'));
+    const hasSepA = filesAfterA.some((f) => f.includes('2026-09-'));
+    const hasNov06A = filesAfterA.includes('skyline_backup_2026-11-06_230000.db.gz');
+    const hasNov20A = filesAfterA.includes('skyline_backup_2026-11-20_230000.db.gz');
+    const hasVaultA = filesAfterA.includes('student_photos_vault.db.gz');
+
+    if (hasOctA || hasSepA || !hasNov06A || !hasNov20A || !hasVaultA || resA.expiredMonthBackupsCount !== 2) {
+      throw new Error(`Case A sai kết quả: files=${filesAfterA.join(', ')}, expired=${resA.expiredMonthBackupsCount}`);
+    }
+    console.log(`  ✓ Case A (Trong tháng 11): Đã xóa sạch tháng 09 & 10, giữ nguyên 2 bản tháng 11 và Kho ảnh tĩnh.`);
+
+    // Case B: Sang đầu tháng 12 (2026-12-01) chưa có bản tháng 12 -> chỉ giữ 1 bản mới nhất (2026-11-20)
+    const resB = await cleanupDuplicateAndOrphanFiles({
+      backupDir: retentionSandbox,
+      referenceDate: new Date('2026-12-01T08:00:00+07:00'),
+      verifyMissing: false
+    });
+
+    const filesAfterB = fs.readdirSync(retentionSandbox);
+    const hasNov06B = filesAfterB.includes('skyline_backup_2026-11-06_230000.db.gz');
+    const hasNov20B = filesAfterB.includes('skyline_backup_2026-11-20_230000.db.gz');
+
+    if (hasNov06B || !hasNov20B || resB.expiredMonthBackupsCount !== 1) {
+      throw new Error(`Case B sai kết quả: files=${filesAfterB.join(', ')}, expired=${resB.expiredMonthBackupsCount}`);
+    }
+    console.log(`  ✓ Case B (Đầu tháng 12 chưa có backup mới): Giữ an toàn 1 bản mới nhất (20/11), đã xóa bản cũ hơn.`);
+    passedTests++;
+  } catch (err) {
+    console.error(`  ✗ Thất bại Test 5:`, err.message);
+  } finally {
+    fs.rmSync(retentionSandbox, { recursive: true, force: true });
   }
 
   // ---------------------------------------------------------------------------

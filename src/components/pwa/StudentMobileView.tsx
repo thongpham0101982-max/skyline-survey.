@@ -379,7 +379,7 @@ export function StudentMobileView() {
         </div>
       )}
 
-      <PwaBottomNav role="TEACHER" />
+      {/* Bottom navigation is rendered once by TeacherLayout */}
     </div>
   )
 }

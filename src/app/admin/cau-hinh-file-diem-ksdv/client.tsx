@@ -409,12 +409,12 @@ function CauHinhFileDiemKsdvClientInner({
 
     let presetKey = subCode
     if (subCode === "TAv") {
-      if (numG >= 10) presetKey = "TAv_70_THPT"
-      else if (numG >= 6) presetKey = "TAv_70_THCS"
-      else if (numG === 1) presetKey = "TAv_70_KHOI_1"
-      else presetKey = "TAv_70_TIEU_HOC"
+      if (numG >= 10) presetKey = "TAv_10_THPT"
+      else if (numG >= 6) presetKey = "TAv_10_THCS"
+      else if (numG === 1) presetKey = "TAv_10_KHOI_1"
+      else presetKey = "TAv_10_TIEU_HOC"
     } else if (subCode === "TAvd") {
-      presetKey = "TAvd_30"
+      presetKey = "TAvd_10"
     } else if (subCode === "TCI" || subCode === "CHILD_DEV_16") {
       presetKey = "CHILD_DEV_16"
     }
@@ -997,7 +997,7 @@ function CauHinhFileDiemKsdvClientInner({
           {
             id: "PVDH_ORIENTATION" as const,
             label: "Mẫu định hướng HS và PHHS",
-            badge: "PVDH-01..05",
+            badge: "BM.KTĐBCL.31–42",
             icon: HeartHandshake
           },
           {
@@ -1157,7 +1157,7 @@ function CauHinhFileDiemKsdvClientInner({
                     Khối 1 — Mốc {selectedPeriodId === "HK1" ? "Học kỳ 1" : "Học kỳ 2"}: Mở đầy đủ Toán, Tiếng Việt & Tiếng Anh (viết)
                   </h4>
                   <p className="text-xs text-emerald-900/80">
-                    Học sinh chuyển đến ở HK1/HK2 được khảo sát bổ sung Toán (10đ), Tiếng Việt (10đ) và Tiếng Anh viết (70đ).
+                    Học sinh chuyển đến ở HK1/HK2 được khảo sát bổ sung Toán (10đ), Tiếng Việt (10đ) và Tiếng Anh viết (10đ).
                   </p>
                 </div>
               </div>
@@ -1165,7 +1165,7 @@ function CauHinhFileDiemKsdvClientInner({
                 {[
                   { code: "TOA", label: "Mẫu Toán (10đ)" },
                   { code: "TVI", label: "Mẫu Tiếng Việt (10đ)" },
-                  { code: "TAv", label: "Mẫu Tiếng Anh viết (70đ)" }
+                  { code: "TAv", label: "Mẫu Tiếng Anh viết (10đ)" }
                 ].map(btn => (
                   <button
                     key={btn.code}
@@ -1193,14 +1193,14 @@ function CauHinhFileDiemKsdvClientInner({
         <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs font-bold text-[#003B3A]">
             <GraduationCap className="w-4 h-4 text-[#008B85]" />
-            <span>Mẫu Tiếng Anh (viết) chuẩn theo cấp học:</span>
+            <span>Mẫu Tiếng Anh (viết) chuẩn thang 10đ theo cấp học (không tính điểm tổng Tiếng Anh):</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {[
-              { key: "TAv_70_TIEU_HOC", label: "Tiểu học (K2–K5): Thang 70đ", pass: "35.0" },
-              { key: "TAv_70_THCS", label: "THCS (K6–K9): Thang 70đ", pass: "35.0" },
-              { key: "TAv_70_THPT", label: "THPT (K10–K12): Thang 70đ", pass: "35.0" },
-              { key: "TAv_10", label: "Thang 10đ quy đổi", pass: "5.0" }
+              { key: "TAv_10_TIEU_HOC", label: "Tiểu học (K2–K5): Thang 10đ", pass: "5.0" },
+              { key: "TAv_10_THCS", label: "THCS (K6–K9): Thang 10đ", pass: "5.0" },
+              { key: "TAv_10_THPT", label: "THPT (K10–K12): Thang 10đ", pass: "5.0" },
+              { key: "TAv_10", label: "Mẫu chuẩn Thang 10đ", pass: "5.0" }
             ].map(item => (
               <button
                 key={item.key}
@@ -1266,8 +1266,8 @@ function CauHinhFileDiemKsdvClientInner({
 
       {/* BANNER PHIẾU ĐỊNH HƯỚNG ĐẦU VÀO (CHUẨN SKY-LINE DEEP PINE — ĐỊNH TÍNH THUẦN TÚY) */}
       {classifyAssessmentContentCategory(currentSubject || {}) === "ORIENTATION_INTERVIEW" && (() => {
-        const mappedPvdhCode = getDefaultPvdhCodeForGrade(selectedGrade) || "PVDH-04"
-        const mappedSeed = PVDH_SEED_TEMPLATES.find(t => t.code === mappedPvdhCode) || PVDH_SEED_TEMPLATES[3]
+        const mappedPvdhCode = getDefaultPvdhCodeForGrade(selectedGrade) || "BM.KTĐBCL.36"
+        const mappedSeed = PVDH_SEED_TEMPLATES.find(t => t.code === mappedPvdhCode) || PVDH_SEED_TEMPLATES[0]
         return (
           <div className="rounded-2xl bg-[#003B3A] text-white p-5 border border-[#003B3A] shadow-xs">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
@@ -1278,14 +1278,16 @@ function CauHinhFileDiemKsdvClientInner({
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="px-2 py-0.5 rounded-md bg-white/10 text-[#5EEAD4] text-[11px] font-semibold border border-white/15">
-                      {mappedSeed.code} • Mẫu đề xuất phục vụ triển khai ({selectedGrade})
+                      {mappedSeed.code} • {selectedGrade}
                     </span>
                     <h3 className="text-sm font-bold text-white">
                       {mappedSeed.name}
                     </h3>
                   </div>
                   <p className="text-xs text-teal-100/90 leading-relaxed max-w-3xl">
-                    Nội dung phỏng vấn định hướng là ghi nhận định tính thuần túy (6 nhóm trao đổi HS, 4 trường ghi nhận giáo viên, 5 nhóm trao đổi PHHS và thống nhất định hướng hỗ trợ) — không quy đổi thành cột điểm số, không xếp loại đạt/trượt và không tự quyết định tiếp nhận.
+                    {mappedSeed.exportLayout.layoutVariant === "BM_KTDBCL_ABCD"
+                      ? `Biểu mẫu ${mappedSeed.code} của Ban Khảo thí & Đảm bảo chất lượng (Thông tin chung, A. Phỏng vấn HS [A01–A06], B. Trao đổi PH [B01–B05], C. Phân hóa riêng theo khối [C01–C05], D. Tổng hợp và định hướng của GV [D01–D04, Trạng thái phiếu & Đề nghị phỏng vấn tâm lí]) — không tự quy đổi thành điểm xét tuyển.`
+                      : "Nội dung phỏng vấn định hướng là ghi nhận định tính thuần túy (6 nhóm trao đổi HS, 4 trường ghi nhận giáo viên, 5 nhóm trao đổi PHHS và thống nhất định hướng hỗ trợ) — không quy đổi thành cột điểm số, không xếp loại đạt/trượt và không tự quyết định tiếp nhận."}
                   </p>
                 </div>
               </div>
@@ -1298,14 +1300,6 @@ function CauHinhFileDiemKsdvClientInner({
                 >
                   Cấu hình mẫu {mappedSeed.code}
                 </button>
-                <Link
-                  href="/admin/input-assessments?tab=categories&sub=orientation"
-                  target="_blank"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white border border-white/15 rounded-xl text-xs font-semibold transition-colors"
-                >
-                  <span>Danh mục nội dung</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
               </div>
             </div>
           </div>
@@ -1328,11 +1322,8 @@ function CauHinhFileDiemKsdvClientInner({
         {classifyAssessmentContentCategory(currentSubject || {}) === "ORIENTATION_INTERVIEW" ? (
           <div className="lg:col-span-7 bg-white rounded-2xl p-5 md:p-6 border border-[#E2E8F0] shadow-xs space-y-4">
             {(() => {
-              const mappedPvdhCode = getDefaultPvdhCodeForGrade(selectedGrade) || "PVDH-04"
-              const mappedSeed = PVDH_SEED_TEMPLATES.find(t => t.code === mappedPvdhCode) || PVDH_SEED_TEMPLATES[3]
-              const hsFields = mappedSeed.fields.filter(f => f.sectionCode === "II_STUDENT")
-              const gvFields = mappedSeed.fields.filter(f => f.sectionCode === "III_TEACHER")
-              const phFields = mappedSeed.fields.filter(f => f.sectionCode === "IV_PARENT")
+              const mappedPvdhCode = getDefaultPvdhCodeForGrade(selectedGrade) || "BM.KTĐBCL.36"
+              const mappedSeed = PVDH_SEED_TEMPLATES.find(t => t.code === mappedPvdhCode) || PVDH_SEED_TEMPLATES[0]
               return (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#F1F5F9]">
@@ -1341,10 +1332,10 @@ function CauHinhFileDiemKsdvClientInner({
                         Loại nội dung: Phỏng vấn định hướng (Không tính điểm số)
                       </span>
                       <h2 className="text-base font-bold text-[#003B3A]">
-                        Cấu trúc mẫu đề xuất {mappedSeed.code} — {selectedGrade}
+                        Cấu trúc biểu mẫu {mappedSeed.code} — {selectedGrade}
                       </h2>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Quản lý phiên bản, câu hỏi gợi mở và phạm vi áp dụng tại tab{" "}
+                        Quản lý phiên bản, câu hỏi và phạm vi áp dụng tại tab{" "}
                         <strong className="text-[#00736E]">Mẫu định hướng HS và PHHS</strong>.
                       </p>
                     </div>
@@ -1368,31 +1359,28 @@ function CauHinhFileDiemKsdvClientInner({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
-                        <tr className="hover:bg-[#F8FAFC] align-middle">
-                          <td className="py-3 px-3 font-semibold text-[#003B3A]">I. Thông tin chung</td>
-                          <td className="py-3 px-3 text-slate-600">Tự động liên kết hồ sơ HS, đợt khảo sát, thông tin liên hệ PHHS & phân công phỏng vấn</td>
-                          <td className="py-3 px-3 text-center font-bold text-[#00736E]">Tự động</td>
-                        </tr>
-                        <tr className="hover:bg-[#F8FAFC] align-middle">
-                          <td className="py-3 px-3 font-semibold text-[#003B3A]">II. Trao đổi với học sinh</td>
-                          <td className="py-3 px-3 text-slate-600">{hsFields.map(f => f.label).join(" • ")}</td>
-                          <td className="py-3 px-3 text-center font-bold text-[#00736E]">{hsFields.length} nhóm</td>
-                        </tr>
-                        <tr className="hover:bg-[#F8FAFC] align-middle">
-                          <td className="py-3 px-3 font-semibold text-[#003B3A]">III. Ghi nhận của giáo viên</td>
-                          <td className="py-3 px-3 text-slate-600">{gvFields.map(f => f.label).join(" • ")}</td>
-                          <td className="py-3 px-3 text-center font-bold text-[#00736E]">{gvFields.length} trường</td>
-                        </tr>
-                        <tr className="hover:bg-[#F8FAFC] align-middle">
-                          <td className="py-3 px-3 font-semibold text-[#003B3A]">IV. Trao đổi với PHHS</td>
-                          <td className="py-3 px-3 text-slate-600">{phFields.map(f => f.label).join(" • ")}</td>
-                          <td className="py-3 px-3 text-center font-bold text-[#00736E]">{phFields.length} nhóm</td>
-                        </tr>
-                        <tr className="hover:bg-[#F8FAFC] align-middle">
-                          <td className="py-3 px-3 font-semibold text-[#003B3A]">V. Thống nhất định hướng & hỗ trợ</td>
-                          <td className="py-3 px-3 text-slate-600">Điểm mạnh/nhu cầu ưu tiên, mục tiêu & hành động, nội dung cần tìm hiểu thêm và bàn giao GVCN</td>
-                          <td className="py-3 px-3 text-center font-bold text-[#00736E]">6 mục</td>
-                        </tr>
+                        {mappedSeed.sections.map((sec) => {
+                          const secFields = mappedSeed.fields.filter(
+                            (f) => f.sectionCode === sec.sectionCode
+                          )
+                          const secTitle =
+                            sec.romanNumeral && !sec.title.startsWith(`${sec.romanNumeral}.`)
+                              ? `${sec.romanNumeral}. ${sec.title}`
+                              : sec.title
+                          return (
+                            <tr key={sec.sectionCode} className="hover:bg-[#F8FAFC] align-middle">
+                              <td className="py-3 px-3 font-semibold text-[#003B3A] whitespace-nowrap">
+                                {secTitle}
+                              </td>
+                              <td className="py-3 px-3 text-slate-600">
+                                {secFields.map((f) => f.label).join(" • ")}
+                              </td>
+                              <td className="py-3 px-3 text-center font-bold text-[#00736E] whitespace-nowrap">
+                                {secFields.length} mục
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>

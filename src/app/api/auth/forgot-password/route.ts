@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mail'
 import crypto from 'crypto'
+import { checkRateLimit, getClientIpFromRequest, getSafeAppBaseUrl, maskEmail } from '@/lib/security-guard'
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,6 +12,15 @@ export async function POST(req: NextRequest) {
 
     if (!raw) {
       return NextResponse.json({ error: 'Vui lòng nhập Email hoặc Mã tài khoản.' }, { status: 400 })
+    }
+
+    const clientIp = getClientIpFromRequest(req)
+    const rateCheck = checkRateLimit(`forgot-pwd:${clientIp}:${raw.toLowerCase()}`, 5, 15 * 60 * 1000)
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Quá nhiều yêu cầu khôi phục mật khẩu. Vui lòng thử lại sau 15 phút.' },
+        { status: 429 }
+      )
     }
 
     let userEmail: string | null = null
@@ -104,9 +114,8 @@ export async function POST(req: NextRequest) {
       ).catch(() => {})
     }
 
-    const reqHost = req.headers.get('host') || 'skyline-survey.vercel.app'
-    const protocol = reqHost.includes('localhost') ? 'http' : 'https'
-    const resetLink = `${protocol}://${reqHost}/reset-password?token=${resetToken}`
+    const baseUrl = getSafeAppBaseUrl(req)
+    const resetLink = `${baseUrl}/reset-password?token=${resetToken}`
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -129,7 +138,7 @@ export async function POST(req: NextRequest) {
                       <tr>
                         <td align="center" style="padding-bottom: 8px;">
                           <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                            🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                            <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                           </span>
                         </td>
                       </tr>
@@ -234,9 +243,10 @@ export async function POST(req: NextRequest) {
       }, { status: 500 })
     }
 
+    const maskedEmail = maskEmail(userEmail)
     return NextResponse.json({
       ok: true,
-      message: `Đã gửi liên kết khôi phục mật khẩu đến email: ${userEmail}. Vui lòng kiểm tra hộp thư.`
+      message: `Đã gửi liên kết khôi phục mật khẩu đến email: ${maskedEmail}. Vui lòng kiểm tra hộp thư.`
     })
 
   } catch (e: any) {

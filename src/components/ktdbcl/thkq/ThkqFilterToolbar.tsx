@@ -3,16 +3,9 @@
 
 import React, { useMemo } from "react"
 import {
-  Calendar,
-  Layers,
-  GraduationCap,
-  BookOpen,
-  Building2,
-  Filter,
   RefreshCw,
   Download,
   Search,
-  SlidersHorizontal
 } from "lucide-react"
 
 interface Props {
@@ -47,33 +40,34 @@ interface Props {
   loading: boolean
   onRefresh: () => void
   onExportExcel: () => void
+  hideScoreRangeFilter?: boolean
 }
 
 const EVALUATION_PERIODS = [
-  { value: "ALL", label: "Tất cả kỳ khảo sát" },
-  { value: "KSĐN", label: "Khảo sát đầu năm (KSĐN)" },
+  { value: "ALL", label: "[Tất cả kỳ kiểm tra]" },
   { value: "GK1", label: "Giữa kỳ 1 (GK1)" },
   { value: "CK1", label: "Cuối kỳ 1 (CK1)" },
   { value: "HK1", label: "Học kỳ 1 (HK1)" },
   { value: "GK2", label: "Giữa kỳ 2 (GK2)" },
   { value: "CK2", label: "Cuối kỳ 2 (CK2)" },
   { value: "HK2", label: "Học kỳ 2 (HK2)" },
-  { value: "CN", label: "Cả năm (CN)" }
+  { value: "KSĐN", label: "Khảo sát đầu năm (KSĐN)" },
+  { value: "CN", label: "Cả năm (CN)" },
 ]
 
 const LEVELS = [
-  { value: "ALL", label: "Tất cả Bậc học" },
-  { value: "TIEU_HOC", label: "Tiểu học (K1 - K5)" },
-  { value: "THCS", label: "THCS (K6 - K9)" },
-  { value: "THPT", label: "THPT (K10 - K12)" }
+  { value: "ALL", label: "[Tất cả cấp học]" },
+  { value: "TIEU_HOC", label: "Tiểu học (Khối 1–5)" },
+  { value: "THCS", label: "THCS (Khối 6–9)" },
+  { value: "THPT", label: "THPT (Khối 10–12)" },
 ]
 
 const SCORE_RANGES = [
-  { value: "ALL", label: "Tất cả khoảng điểm" },
-  { value: "UNDER_5", label: "Dưới 5.0 (Dưới trung bình)" },
-  { value: "UNDER_BENCHMARK", label: "Dưới điểm chuẩn Sky-Line" },
-  { value: "8_TO_10", label: "Từ 8.0 đến 10.0 (Khá - Giỏi)" },
-  { value: "PERFECT_10", label: "Điểm 10 tuyệt đối" }
+  { value: "ALL", label: "[Tất cả ngưỡng điểm]" },
+  { value: "UNDER_5", label: "Dưới 5.0 (Dưới chuẩn Bộ)" },
+  { value: "UNDER_BENCHMARK", label: "Dưới chuẩn nội bộ Sky-Line" },
+  { value: "8_TO_10", label: "Từ 8.0 đến 10.0 (Khá – Giỏi)" },
+  { value: "PERFECT_10", label: "Điểm 10 tuyệt đối" },
 ]
 
 export function ThkqFilterToolbar({
@@ -99,11 +93,12 @@ export function ThkqFilterToolbar({
   availableSubjects,
   loading,
   onRefresh,
-  onExportExcel
+  onExportExcel,
+  hideScoreRangeFilter = false,
 }: Props) {
-  const displaySubjects = availableSubjects && availableSubjects.length > 0 ? availableSubjects : subjects
+  const displaySubjects =
+    availableSubjects && availableSubjects.length > 0 ? availableSubjects : subjects
 
-  // Lọc danh sách khối dựa trên Bậc học đã chọn
   const availableGrades = useMemo(() => {
     if (selectedLevel === "TIEU_HOC") return ["K1", "K2", "K3", "K4", "K5"]
     if (selectedLevel === "THCS") return ["K6", "K7", "K8", "K9"]
@@ -117,77 +112,38 @@ export function ThkqFilterToolbar({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 mb-6 transition-all">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
-            <SlidersHorizontal className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-slate-800 tracking-tight">
-              Bộ lọc Phân tích Tổng hợp Kết quả (THKQ)
-            </h2>
-            <p className="text-xs text-slate-500">
-              Đối chuẩn chất lượng các môn học, theo dõi học sinh cam kết & tâm lý học đường
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={onRefresh}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition disabled:opacity-50"
-            title="Tải lại số liệu"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-sky-600" : ""}`} />
-            Làm mới
-          </button>
-
-          <button
-            onClick={onExportExcel}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20 transition active:scale-95"
-            title="Xuất báo cáo Excel đầy đủ"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Xuất Excel
-          </button>
-        </div>
-      </div>
-
-      {/* Grid các bộ lọc chính */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-4">
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Năm học */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-sky-500" />
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
             Năm học
           </label>
           <select
             value={selectedYearId}
-            onChange={e => setSelectedYearId(e.target.value)}
-            className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
+            onChange={(e) => setSelectedYearId(e.target.value)}
+            className="w-full text-xs font-medium rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-slate-900 focus:outline-none focus:border-[#008B85]"
           >
-            {academicYears.map(y => (
+            {academicYears.map((y) => (
               <option key={y.id} value={y.id}>
-                {y.name || y.yearCode || "Năm học"} {y.status === "ACTIVE" ? "★ (Hiện hành)" : ""}
+                {y.name || y.yearCode || "Năm học"}{" "}
+                {y.status === "ACTIVE" ? "(Mặc định SSM)" : ""}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Kỳ khảo sát / Học kỳ */}
+        {/* Kỳ kiểm tra */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Layers className="h-3.5 w-3.5 text-teal-700" />
-            Kỳ khảo sát / Học kỳ
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Kỳ kiểm tra / Học kỳ
           </label>
           <select
             value={selectedPeriod}
-            onChange={e => setSelectedPeriod(e.target.value)}
-            className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+            className="w-full text-xs font-medium rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-slate-900 focus:outline-none focus:border-[#008B85]"
           >
-            {EVALUATION_PERIODS.map(p => (
+            {EVALUATION_PERIODS.map((p) => (
               <option key={p.value} value={p.value}>
                 {p.label}
               </option>
@@ -195,21 +151,20 @@ export function ThkqFilterToolbar({
           </select>
         </div>
 
-        {/* Bậc học */}
+        {/* Cấp học */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <GraduationCap className="h-3.5 w-3.5 text-teal-700" />
-            Bậc học
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Cấp học
           </label>
           <select
             value={selectedLevel}
-            onChange={e => {
+            onChange={(e) => {
               setSelectedLevel(e.target.value)
-              setSelectedGrade("ALL") // Reset khối khi đổi bậc
+              setSelectedGrade("ALL")
             }}
-            className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
+            className="w-full text-xs font-medium rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-slate-900 focus:outline-none focus:border-[#008B85]"
           >
-            {LEVELS.map(lvl => (
+            {LEVELS.map((lvl) => (
               <option key={lvl.value} value={lvl.value}>
                 {lvl.label}
               </option>
@@ -217,19 +172,18 @@ export function ThkqFilterToolbar({
           </select>
         </div>
 
-        {/* Khối */}
+        {/* Khối học */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Filter className="h-3.5 w-3.5 text-emerald-500" />
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
             Khối học
           </label>
           <select
             value={selectedGrade}
-            onChange={e => setSelectedGrade(e.target.value)}
-            className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
+            onChange={(e) => setSelectedGrade(e.target.value)}
+            className="w-full text-xs font-medium rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-slate-900 focus:outline-none focus:border-[#008B85]"
           >
-            <option value="ALL">Tất cả Khối</option>
-            {availableGrades.map(g => (
+            <option value="ALL">[Tất cả khối]</option>
+            {availableGrades.map((g) => (
               <option key={g} value={g}>
                 {formatGradeDisplay(g)}
               </option>
@@ -239,26 +193,23 @@ export function ThkqFilterToolbar({
 
         {/* Môn học */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5 text-amber-500" />
-              Môn học:
-            </span>
-            <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+          <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+            <span>Môn học</span>
+            <span className="text-[11px] font-medium text-[#00736E] tabular-nums">
               {displaySubjects.length} môn
             </span>
           </label>
           <select
             value={selectedSubjectId}
-            onChange={e => setSelectedSubjectId(e.target.value)}
-            className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
+            onChange={(e) => setSelectedSubjectId(e.target.value)}
+            className="w-full text-xs font-medium rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-slate-900 focus:outline-none focus:border-[#008B85]"
           >
             <option value="ALL">
-              {selectedPeriod === "ALL" ? "Tất cả các môn học" : `Tất cả môn theo kỳ (${displaySubjects.length} môn)`}
+              [Tất cả môn theo kỳ ({displaySubjects.length} môn)]
             </option>
-            {displaySubjects.map(s => (
+            {displaySubjects.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.subjectName || s.name} {s.subjectCode || s.code ? `(${s.subjectCode || s.code})` : ""}
+                {s.subjectName}
               </option>
             ))}
           </select>
@@ -266,58 +217,78 @@ export function ThkqFilterToolbar({
 
         {/* Cơ sở */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Building2 className="h-3.5 w-3.5 text-rose-500" />
-            Cơ sở / Hệ thống
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Cơ sở đào tạo
           </label>
           <select
             value={selectedCampusId}
-            onChange={e => setSelectedCampusId(e.target.value)}
-            className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
+            onChange={(e) => setSelectedCampusId(e.target.value)}
+            className="w-full text-xs font-medium rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-slate-900 focus:outline-none focus:border-[#008B85]"
           >
-            <option value="ALL">Toàn Hệ Thống Sky-Line</option>
-            {campuses.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.campusName || c.campusCode}
+            <option value="ALL">[Toàn hệ thống Sky-Line]</option>
+            {campuses.map((cp) => (
+              <option key={cp.id} value={cp.id}>
+                {cp.campusName}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Khoảng điểm */}
-        <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-teal-500" />
-            Khoảng điểm
-          </label>
-          <select
-            value={selectedScoreRange}
-            onChange={e => setSelectedScoreRange(e.target.value)}
-            className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
-          >
-            {SCORE_RANGES.map(r => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Khoảng điểm hoặc Tìm kiếm */}
+        {!hideScoreRangeFilter && (
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Ngưỡng điểm lọc nhanh
+            </label>
+            <select
+              value={selectedScoreRange}
+              onChange={(e) => setSelectedScoreRange(e.target.value)}
+              className="w-full text-xs font-medium rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-slate-900 focus:outline-none focus:border-[#008B85]"
+            >
+              {SCORE_RANGES.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        {/* Tìm kiếm học sinh */}
-        <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Search className="h-3.5 w-3.5 text-slate-500" />
-            Tìm theo Tên / Mã HS / Lớp
+        {/* Tìm kiếm & Hành động */}
+        <div className={hideScoreRangeFilter ? "lg:col-span-2" : ""}>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Tìm theo tên / mã học sinh / lớp
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={searchKeyword}
-              onChange={e => setSearchKeyword(e.target.value)}
-              placeholder="Nhập tên học sinh, mã HS..."
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/60 pl-8 pr-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
-            />
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="Nhập tên, mã HS hoặc lớp..."
+                className="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-slate-900 focus:outline-none focus:border-[#008B85]"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-[#003B3A] hover:bg-[#004E4C] text-white transition cursor-pointer shrink-0 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              Xem
+            </button>
+
+            <button
+              type="button"
+              onClick={onExportExcel}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#059669] hover:bg-emerald-700 text-white transition cursor-pointer shrink-0"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Xuất Excel
+            </button>
           </div>
         </div>
       </div>

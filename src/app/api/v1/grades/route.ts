@@ -216,11 +216,12 @@ export async function POST(request: Request) {
   // 4. Idempotency Check
   const existing = await prisma.subjectGradeEntry.findUnique({
     where: {
-      studentId_subjectId_evaluationPeriod_academicYearId: {
+      studentId_subjectId_evaluationPeriod_academicYearId_configType: {
         studentId,
         subjectId,
         evaluationPeriod,
         academicYearId,
+        configType: "INTERNAL",
       },
     },
   })

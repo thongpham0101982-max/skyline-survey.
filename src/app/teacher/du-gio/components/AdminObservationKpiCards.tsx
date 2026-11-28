@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { ClipboardCheck, Calendar, Users, Award, Clock, CheckCircle2, AlertCircle, TrendingUp, Sparkles } from "lucide-react"
+import { Calendar, Award, Clock, CheckCircle2 } from "lucide-react"
 
 interface AdminObservationKpiCardsProps {
   slots: any[]
@@ -13,25 +13,16 @@ interface AdminObservationKpiCardsProps {
 export function AdminObservationKpiCards({
   slots = [],
   isPreschool = false,
-  selectedMonth = "all",
-  academicYearName = ""
 }: AdminObservationKpiCardsProps) {
   const safeSlots = Array.isArray(slots) ? slots : []
   const totalSlots = safeSlots.length
 
-  // Calculate registrations & evaluations
   let totalRegistrations = 0
   let evaluatedCount = 0
   let pendingEvaluationCount = 0
   let totalScoreSum = 0
   let scoredCount = 0
-
-  const ratingCounts: Record<string, number> = {
-    Good: 0, // Giỏi / Tốt
-    Fair: 0, // Khá
-    Average: 0, // Trung bình / Đạt
-    Poor: 0 // Chưa đạt / Không đạt / Không xếp loại
-  }
+  let goodCount = 0
 
   safeSlots.forEach((s: any) => {
     const regs = s?.registrations || []
@@ -48,14 +39,14 @@ export function AdminObservationKpiCards({
         }
 
         const rating = (ev.overallRating || "").toLowerCase()
-        if (rating.includes("giỏi") || rating.includes("tốt") || rating.includes("strong practice") || rating.includes("proficient") || rating.includes("effective practice") || rating.includes("effective")) {
-          ratingCounts.Good++
-        } else if (rating.includes("khá") || rating.includes("developing")) {
-          ratingCounts.Fair++
-        } else if (rating.includes("trung bình") || rating.includes("đạt")) {
-          ratingCounts.Average++
-        } else {
-          ratingCounts.Poor++
+        if (
+          rating.includes("giỏi") ||
+          rating.includes("tốt") ||
+          rating.includes("strong practice") ||
+          rating.includes("proficient") ||
+          rating.includes("effective")
+        ) {
+          goodCount++
         }
       } else {
         pendingEvaluationCount++
@@ -68,84 +59,87 @@ export function AdminObservationKpiCards({
   const completionRate = totalRegistrations > 0 ? Math.round((evaluatedCount / totalRegistrations) * 100) : 0
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* KPI 1: Tổng số tiết / Hoạt động mở */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
-        <div className="space-y-1">
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-            {isPreschool ? "Tổng hoạt động mở" : "Tổng số tiết dạy mở"}
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-[#003B3A]">{totalSlots}</span>
-            <span className="text-xs font-bold text-slate-400">tiết</span>
-          </div>
-          <p className="text-[10px] text-teal-700 font-bold">
-            {totalRegistrations} lượt giáo viên đăng ký dự
-          </p>
-        </div>
-        <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#1E8B87] flex items-center justify-center border border-teal-100 shadow-2xs shrink-0">
-          <Calendar className="w-6 h-6" />
-        </div>
-      </div>
-
-      {/* KPI 2: Đã hoàn thành đánh giá */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
-        <div className="space-y-1">
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-            Đã hoàn thành đánh giá
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-emerald-700">{evaluatedCount}</span>
-            <span className="text-xs font-bold text-emerald-600">/ {totalRegistrations}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${completionRate}%` }} />
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-2xs overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#E2E8F0] tabular-nums">
+        {/* KPI 1 */}
+        <div className="p-4 flex items-center justify-between gap-3">
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-medium text-slate-500">
+              {isPreschool ? "Tổng hoạt động mở" : "Tổng số tiết dạy mở"}
+            </p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-[#003B3A]">{totalSlots.toLocaleString("vi-VN")}</span>
+              <span className="text-xs text-slate-400">tiết</span>
             </div>
-            <span className="text-[10px] font-black text-emerald-800">{completionRate}% tỷ lệ nộp</span>
+            <p className="text-[11px] text-[#00736E] font-medium">
+              {totalRegistrations.toLocaleString("vi-VN")} lượt giáo viên đăng ký dự
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#00736E] flex items-center justify-center border border-teal-100 shrink-0">
+            <Calendar className="w-5 h-5" />
           </div>
         </div>
-        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100 shadow-2xs shrink-0">
-          <CheckCircle2 className="w-6 h-6" />
-        </div>
-      </div>
 
-      {/* KPI 3: Điểm đánh giá trung bình */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
-        <div className="space-y-1">
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-            Điểm đánh giá TB
-          </p>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-2xl sm:text-3xl font-black text-amber-900">{avgScore}</span>
-            <span className="text-xs font-bold text-slate-400">/ {maxScale}đ</span>
+        {/* KPI 2 */}
+        <div className="p-4 flex items-center justify-between gap-3">
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-medium text-slate-500">Đã hoàn thành đánh giá</p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-[#059669]">{evaluatedCount.toLocaleString("vi-VN")}</span>
+              <span className="text-xs font-medium text-slate-400">/ {totalRegistrations.toLocaleString("vi-VN")}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-[#059669] rounded-full" style={{ width: `${completionRate}%` }} />
+              </div>
+              <span className="text-[11px] font-semibold text-[#059669]">{completionRate}% tỷ lệ nộp</span>
+            </div>
           </div>
-          <p className="text-[10px] text-amber-700 font-bold flex items-center gap-1">
-            <Award className="w-3.5 h-3.5 text-amber-500" />
-            <span>{ratingCounts.Good} tiết Tốt / Giỏi</span>
-          </p>
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#059669] flex items-center justify-center border border-emerald-100 shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
         </div>
-        <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-800 flex items-center justify-center border border-amber-200 shadow-2xs shrink-0">
-          <Award className="w-6 h-6" />
-        </div>
-      </div>
 
-      {/* KPI 4: Chờ đánh giá / Quá hạn */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between hover:shadow-md transition-shadow">
-        <div className="space-y-1">
-          <p className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-            Tiết chưa nộp phiếu
-          </p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-rose-700">{pendingEvaluationCount}</span>
-            <span className="text-xs font-bold text-slate-400">tiết</span>
+        {/* KPI 3 */}
+        <div className="p-4 flex items-center justify-between gap-3">
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-medium text-slate-500">Điểm đánh giá trung bình</p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-[#003B3A]">{avgScore}</span>
+              <span className="text-xs text-slate-400">/ {maxScale}đ</span>
+            </div>
+            <p className="text-[11px] text-[#D97706] font-medium">
+              {goodCount.toLocaleString("vi-VN")} phiếu xếp loại Tốt / Giỏi
+            </p>
           </div>
-          <p className="text-[10px] text-rose-700 font-bold">
-            {pendingEvaluationCount > 0 ? "⚠️ Cần nhắc nhở GV nộp điểm" : "✨ Tất cả đã hoàn tất"}
-          </p>
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#D97706] flex items-center justify-center border border-amber-100 shrink-0">
+            <Award className="w-5 h-5" />
+          </div>
         </div>
-        <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center border border-rose-100 shadow-2xs shrink-0">
-          <Clock className="w-6 h-6" />
+
+        {/* KPI 4 */}
+        <div className="p-4 flex items-center justify-between gap-3">
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-medium text-slate-500">Phiếu chưa nộp điểm</p>
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-2xl font-bold ${pendingEvaluationCount > 0 ? "text-[#E11D48]" : "text-[#059669]"}`}>
+                {pendingEvaluationCount.toLocaleString("vi-VN")}
+              </span>
+              <span className="text-xs text-slate-400">phiếu</span>
+            </div>
+            <p className={`text-[11px] font-medium ${pendingEvaluationCount > 0 ? "text-[#E11D48]" : "text-[#059669]"}`}>
+              {pendingEvaluationCount > 0 ? "Cần nhắc nhở GV nộp phiếu" : "Tất cả đã hoàn tất"}
+            </p>
+          </div>
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${
+              pendingEvaluationCount > 0
+                ? "bg-rose-50 text-[#E11D48] border-rose-100"
+                : "bg-emerald-50 text-[#059669] border-emerald-100"
+            }`}
+          >
+            <Clock className="w-5 h-5" />
+          </div>
         </div>
       </div>
     </div>

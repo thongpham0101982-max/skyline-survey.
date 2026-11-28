@@ -283,7 +283,7 @@ export function renderPreschoolApprovalEmailHtml(params: {
                 <tr>
                   <td align="center">
                     <div style="display: inline-block; padding: 5px 16px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">
-                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     </div>
                     ${archiveBadgeHtml}
                     <h1 style="margin: 0; color: #FFFFFF; font-size: 21px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.35;">

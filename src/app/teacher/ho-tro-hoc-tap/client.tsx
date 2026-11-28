@@ -135,6 +135,7 @@ import toast from "react-hot-toast"
 import { UrgentEmailModal } from "./components/UrgentEmailModal"
 import { FeedbackGvcnPhhsModal } from "./components/FeedbackGvcnPhhsModal"
 import { PsychologicalEvaluationLogTab } from "./components/PsychologicalEvaluationLogTab"
+import { CareerIntensiveTrackingTab, isCareerIntensiveTarget } from "./components/CareerIntensiveTrackingTab"
 import { MONTH_WEEKS_CONFIG } from "./academic-calendar"
 import { ExportTrackingBookModal } from "./components/ExportTrackingBookModal"
 import { TeacherProgressPdfModal } from "@/app/admin/ktdbcl/support/TeacherProgressPdfModal"
@@ -146,6 +147,7 @@ interface Props {
   homeroomClasses: any[]
   initialAssignedClasses?: any[]
   subjects: any[]
+  isPsychCounselor?: boolean
 }
 
 const parseScoreNumber = (val: any): number | null => {
@@ -415,6 +417,9 @@ const getSubjectBadgeStyle = (subjectName: string) => {
   if (sub.includes("tâm lý")) {
     return "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/80";
   }
+  if (sub.includes("hướng nghiệp") || sub.includes("huong nghiep")) {
+    return "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/80";
+  }
   return "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200/70";
 };
 
@@ -423,7 +428,8 @@ export function TeacherSupportClient({
   academicYears,
   homeroomClasses,
   initialAssignedClasses = [],
-  subjects
+  subjects,
+  isPsychCounselor = false
 }: Props) {
   const router = useRouter()
 
@@ -431,7 +437,7 @@ export function TeacherSupportClient({
   const [selectedYearId, setSelectedYearId] = useState(
     academicYears[0]?.id || ""
   )
-  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history" | "summary" | "psychology">("commitments")
+  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history" | "summary" | "psychology" | "career">("commitments")
   const [psychologicalStudents, setPsychologicalStudents] = useState<any[]>([])
   const [loadingPsychological, setLoadingPsychological] = useState(false)
   const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
@@ -604,7 +610,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         setClassStudents(data)
       }
       
-      // Auto-populate default subject (exclude Tâm lý / Hướng nghiệp from Academic subjects)
+      // Auto-populate default subject (exclude Tâm lý; keep Hướng nghiệp so career teachers can propose BSTD)
       const selectedClassObj = currentClasses.find(c => c.id === classId)
       const classSubjects = selectedClassObj?.subjects || []
       if (classSubjects.length > 0) {
@@ -612,12 +618,15 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           .map((s: any) => s.subjectName || s.name || "")
           .filter((sName: string) => {
             const lower = (sName || "").toLowerCase()
-            return !lower.includes("tâm lý") && !lower.includes("tam ly") && !lower.includes("psychology") &&
-                   !lower.includes("hướng nghiệp") && !lower.includes("huong nghiep")
+            return !lower.includes("tâm lý") && !lower.includes("tam ly") && !lower.includes("psychology")
           })
         setSelectedSubjects(defaultSubs.length > 0 ? [defaultSubs[0]] : [])
-        // Pre-fetch commitment candidates for this class based on teacher's subjects
-        fetchCommitmentCandidates(classId, defaultSubs)
+        // Pre-fetch commitment candidates for this class based on teacher's academic subjects (excluding Hướng nghiệp)
+        const commitmentSubs = defaultSubs.filter((sName: string) => {
+          const lower = (sName || "").toLowerCase()
+          return !lower.includes("hướng nghiệp") && !lower.includes("huong nghiep")
+        })
+        fetchCommitmentCandidates(classId, commitmentSubs)
       } else {
         setSelectedSubjects([])
         fetchCommitmentCandidates(classId, [])
@@ -1561,16 +1570,20 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     return groups;
   }, [availableCommitmentSubjects, filteredFlattenedCommitments, subjectFilter]);
 
-  // 6. Filtered Targets for Tab 2
-  const filteredTargets = useMemo(() => {
+  // 6a. Base Teacher Targets (consistent source of truth for KPI cards, subject pills, and Tab 2)
+  const baseTeacherTargets = useMemo(() => {
     const seenKeys = new Set<string>();
     return targets.filter(t => {
+      const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+      // Sổ theo dõi Hướng nghiệp chuyên sâu chỉ dành cho GV Tâm lý / Tổ TLHN
+      if (isCareerIntensiveTarget(t) && !isPsychCounselor) return false;
       if (t.supportType === "ACADEMIC") {
-        const rLower = (t.reason || "").toLowerCase();
-        if (rLower === "tâm lý" || rLower === "hướng nghiệp") return false;
+        const rLower = (t.reason || "").trim().toLowerCase();
+        if (rLower === "tâm lý") return false;
+        // Only exclude Hướng nghiệp from Entrance Commitments (ADMISSION); keep BSTD career targets for Psych Counselors
+        if (isCommitmentTarget && (rLower === "hướng nghiệp" || rLower === "huong nghiep")) return false;
       }
 
-      const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
       const isCreatedByMe = t.createdById === teacher?.id;
       const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher?.id || a.teacher?.id === teacher?.id);
       const isHomeroomStudent = homeroomClasses.some(c => c.id === t.student?.classId || c.students?.some((s: any) => s.id === t.studentId));
@@ -1581,13 +1594,26 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       if (!isCKDV && !isBSTD) return false;
 
       const targetCategory = isCommitmentTarget ? "CKDV" : "BSTD";
-      const dedupeKey = `${t.studentId}_${t.supportType}_${targetCategory}`;
+      const reasonKey = (t.reason || "").trim().toLowerCase();
+      const dedupeKey = `${t.studentId}_${t.supportType}_${targetCategory}_${reasonKey}`;
       if (seenKeys.has(dedupeKey)) return false;
       seenKeys.add(dedupeKey);
 
       if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false;
       if (roleFilter === "ASSIGNED" && isHomeroomStudent && !isAssignedToMe && !isCreatedByMe) return false;
 
+      return true;
+    });
+  }, [targets, teacher?.id, homeroomClasses, roleFilter, isPsychCounselor]);
+
+  const careerIntensiveTargets = useMemo(() => {
+    if (!isPsychCounselor) return [];
+    return baseTeacherTargets.filter(isCareerIntensiveTarget);
+  }, [baseTeacherTargets, isPsychCounselor]);
+
+  // 6b. Filtered Targets for Tab 2
+  const filteredTargets = useMemo(() => {
+    return baseTeacherTargets.filter(t => {
       if (classFilter !== "ALL") {
         const studentClassId = t.student?.classId || t.student?.class?.id;
         const studentClassName = t.student?.class?.className || t.student?.className;
@@ -1601,7 +1627,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       }
 
       if (monthFilter !== "ALL") {
-        const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter);
+        const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter || (e.periodName && e.periodName.includes(monthFilter)));
         if (!hasEvalInMonth) return false;
       }
 
@@ -1622,18 +1648,21 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
       const name = t.student?.studentName || t.student?.fullName || "";
       const code = t.student?.studentCode || t.student?.code || "";
+      const reasonText = t.reason || "";
+      const q = searchQuery.toLowerCase();
       const matchesSearch = searchQuery === "" || 
-        name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        code.toLowerCase().includes(searchQuery.toLowerCase());
+        name.toLowerCase().includes(q) ||
+        code.toLowerCase().includes(q) ||
+        reasonText.toLowerCase().includes(q);
 
       return matchesSearch;
     });
-  }, [targets, teacher?.id, homeroomClasses, assignedClasses, roleFilter, classFilter, subjectFilter, monthFilter, levelFilter, searchQuery]);
+  }, [baseTeacherTargets, classFilter, subjectFilter, monthFilter, levelFilter, searchQuery]);
 
-  // 7. Extract Available Subjects for Tab 2
+  // 7. Extract Available Subjects for Tab 2 (strictly from baseTeacherTargets)
   const availableAssignedSubjects = useMemo(() => {
     const map = new Map<string, number>();
-    targets.forEach((t: any) => {
+    baseTeacherTargets.forEach((t: any) => {
       const rawSubjects = (t.reason || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý")).split(",");
       rawSubjects.forEach((sub: string) => {
         const clean = sub.trim();
@@ -1643,7 +1672,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       });
     });
     return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
-  }, [targets]);
+  }, [baseTeacherTargets]);
 
   // 8. Dynamic Subjects for Current Active Tab
   const currentTabAvailableSubjects = useMemo(() => {
@@ -2022,11 +2051,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
       {/* Statistical Dashboard Cards */}
       {activeSubTab === "assigned" && (() => {
-        const teacherTargets = targets.filter(t => {
-          const isHR = homeroomClasses.some(c => c.students?.some((s: any) => s.id === t.studentId));
-          const isAS = t.assignments?.some((a: any) => a.teacherId === teacher?.id);
-          return isHR || isAS;
-        });
+        const teacherTargets = baseTeacherTargets;
 
         const activeTargetsCount = teacherTargets.filter(t => t.terminationStatus !== "TERMINATED" && t.terminationStatus !== "PENDING_TERMINATION").length;
         const pendingTermCount = teacherTargets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length;
@@ -2089,8 +2114,8 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         );
       })()}
 
-      {/* 3 Main Sub-Tabs / Feature Tags with vibrant colors, distinct highlights & live badges */}
-      <div className="bg-slate-100/90 p-1.5 sm:p-2 rounded-3xl border border-slate-200/90 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+      {/* Main Sub-Tabs / Feature Tags */}
+      <div className={`bg-slate-100/90 p-1.5 sm:p-2 rounded-3xl border border-slate-200/90 shadow-xs grid grid-cols-1 sm:grid-cols-2 ${isPsychCounselor ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-2.5`}>
         {/* Tab 1: HS Cam kết Học tập/Tâm lý */}
         <button
           type="button"
@@ -2258,10 +2283,54 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           </span>
         </button>
 
+        {/* Tab 5: Hướng nghiệp chuyên sâu (Chỉ dành cho GV Tâm lý / Tổ TLHN) */}
+        {isPsychCounselor && (
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("career")}
+            className={`relative flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
+              activeSubTab === "career"
+                ? "bg-[#003B3A] text-white shadow-lg shadow-[#003B3A]/25 scale-[1.01] ring-2 ring-amber-400/50"
+                : "bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/70 hover:border-amber-300 shadow-2xs hover:shadow-xs"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${
+                activeSubTab === "career"
+                  ? "bg-white/15 text-[#5EEAD4]"
+                  : "bg-amber-50 text-amber-700"
+              }`}>
+                <Compass className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-xs font-black tracking-tight ${
+                    activeSubTab === "career" ? "text-white" : "text-slate-900"
+                  }`}>
+                    5. Hướng nghiệp chuyên sâu
+                  </span>
+                </div>
+                <p className={`text-[10px] font-medium leading-none mt-1 ${
+                  activeSubTab === "career" ? "text-teal-100" : "text-slate-500"
+                }`}>
+                  Theo dõi ca hướng nghiệp đặc thù (GV Tâm lý)
+                </p>
+              </div>
+            </div>
+            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black shrink-0 tabular-nums ${
+              activeSubTab === "career"
+                ? "bg-white text-[#003B3A] shadow-sm"
+                : "bg-amber-50 text-amber-800 border border-amber-200"
+            }`}>
+              {careerIntensiveTargets.length}
+            </span>
+          </button>
+        )}
+
       </div>
 
       {/* Action panel & Multi-Dimension Filter Toolbar */}
-      {activeSubTab !== "psychology" && (
+      {activeSubTab !== "psychology" && activeSubTab !== "career" && (
       <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
           {/* Action buttons on the left */}
@@ -2497,6 +2566,18 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         <div className="flex justify-center py-20">
           <RefreshCw className="h-8 w-8 text-teal-800 animate-spin" />
         </div>
+      ) : activeSubTab === "career" && isPsychCounselor ? (
+        <CareerIntensiveTrackingTab
+          targets={baseTeacherTargets}
+          assignedClasses={assignedClasses}
+          academicYearId={selectedYearId}
+          academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
+          teacher={teacher}
+          onRefresh={() => {
+            fetchTeacherData()
+          }}
+          onOpenStudentProfile={handleOpenProfile}
+        />
       ) : activeSubTab === "psychology" ? (
         <PsychologicalEvaluationLogTab
           students={psychologicalTargetsList}
@@ -2563,33 +2644,160 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               </button>
             </div>
           </div>
-          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+          {viewMode === "GROUPED" ? (
+            groupedTargetsBySubject.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-10 text-center text-slate-400 text-xs">
+                Không tìm thấy học sinh nào thuộc danh sách bồi dưỡng của bạn
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {groupedTargetsBySubject.map((group) => (
+                  <div key={group.subject} className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                    <div className="px-4 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getSubjectBadgeStyle(group.subject)}`}>
+                          {group.subject}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-600 tabular-nums">
+                          {group.targets.length} học sinh
+                        </span>
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-[#E2E8F0]">
+                        <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                          <tr className="text-[11px] font-semibold whitespace-nowrap">
+                            <th className="py-3 px-3 w-10 text-white">
+                              <input
+                                type="checkbox"
+                                checked={group.targets.length > 0 && group.targets.every((t: any) => selectedEvalTargetIds.includes(t.id))}
+                                onChange={e => {
+                                  const groupIds = group.targets.map((t: any) => t.id);
+                                  if (e.target.checked) {
+                                    setSelectedEvalTargetIds(Array.from(new Set([...selectedEvalTargetIds, ...groupIds])));
+                                  } else {
+                                    setSelectedEvalTargetIds(selectedEvalTargetIds.filter(id => !groupIds.includes(id)));
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-teal-800 focus:ring-teal-500"
+                              />
+                            </th>
+                            <th className="py-3 px-3 text-left text-teal-100">TT</th>
+                            <th className="py-3 px-3 text-left text-teal-100">Mã HS</th>
+                            <th className="py-3 px-3 text-left text-white">Họ và tên</th>
+                            <th className="py-3 px-3 text-left text-teal-100">Lớp</th>
+                            <th className="py-3 px-3 text-left text-teal-100">Ngày nhập học</th>
+                            <th className="py-3 px-3 text-left text-teal-100">Đối tượng</th>
+                            <th className="py-3 px-3 text-left text-teal-100">Môn theo dõi</th>
+                            <th className="py-3 px-3 text-left text-[#5EEAD4]">Mức hiện tại</th>
+                            <th className="py-3 px-3 text-center text-white">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                          {group.targets.map((t: any, index: number) => {
+                            const isTerminated = t.terminationStatus === "TERMINATED";
+                            const evals = t.evaluations || [];
+                            const sortedEvals = [...evals].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                            const latestEval = sortedEvals[0];
+                            const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ";
+                            const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+                            const enrollmentDateFormatted = t.student?.enrollmentDate
+                              ? new Date(t.student.enrollmentDate).toLocaleDateString("vi-VN")
+                              : (t.createdAt ? new Date(t.createdAt).toLocaleDateString("vi-VN") : "N/A");
+                            const subjectLabel = Array.from(new Set((t.reason || "").split(",").map((s: any) => s.trim()).filter(Boolean))).join(", ") || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý");
+
+                            return (
+                              <tr key={t.id} className={`transition-colors align-middle ${selectedEvalTargetIds.includes(t.id) ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]" : "hover:bg-[#F8FAFC]"}`}>
+                                <td className="py-3 px-3 whitespace-nowrap align-middle">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedEvalTargetIds.includes(t.id)}
+                                    onChange={e => {
+                                      if (e.target.checked) setSelectedEvalTargetIds([...selectedEvalTargetIds, t.id]);
+                                      else setSelectedEvalTargetIds(selectedEvalTargetIds.filter(id => id !== t.id));
+                                    }}
+                                    className="rounded border-slate-300 text-teal-800 focus:ring-teal-500"
+                                  />
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap text-slate-500 font-medium align-middle">{index + 1}</td>
+                                <td className="py-3 px-3 whitespace-nowrap text-slate-600 font-semibold align-middle">{t.student?.studentCode || t.student?.code || "N/A"}</td>
+                                <td className="py-3 px-3 whitespace-nowrap align-middle">
+                                  <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-[#003B3A] hover:underline text-left transition-all cursor-pointer">{t.student?.studentName || t.student?.fullName}</button>
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap text-slate-600 font-bold align-middle">
+                                  {t.student?.class?.className || t.student?.className}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap text-slate-600 font-semibold align-middle">
+                                  {enrollmentDateFormatted}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap align-middle">
+                                  {isCommitmentTarget ? (
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300" title="Cam kết đầu vào">
+                                      CKĐV
+                                    </span>
+                                  ) : (
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200" title="Bổ sung theo dõi">
+                                      BSTD
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap align-middle">
+                                  <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${getSubjectBadgeStyle(subjectLabel)}`}>
+                                    {subjectLabel}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap text-slate-800 font-bold align-middle">
+                                  {isTerminated ? t.outcome : currentLevel}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap text-center align-middle">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEvaluationModal(t)}
+                                    className="bg-gradient-to-r from-[#003B3A] to-[#009085] hover:from-[#002a29] hover:to-[#007a70] text-white font-bold py-1.5 px-4 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer transform active:scale-95"
+                                  >
+                                    <Edit3 className="h-3.5 w-3.5 text-[#48BFE3]" />
+                                    <span>Nhận xét & Đánh giá</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[#E2E8F0]">
+              <thead className="bg-[#003B3A] border-b border-[#003B3A]">
                 <tr className="text-[11px] font-semibold whitespace-nowrap">
-                  <th className="px-4 py-3 w-10 font-semibold">
+                  <th className="py-3 px-3 w-10 text-white font-semibold">
                     <input type="checkbox" onChange={e => {
                       if (e.target.checked) {
                         const allIds = filteredTargets.map((t: any) => t.id);
                         setSelectedEvalTargetIds(allIds);
                       } else setSelectedEvalTargetIds([]);
-                    }} className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"/>
+                    }} className="rounded border-slate-300 text-teal-800 focus:ring-teal-500"/>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">TT</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">Mã HS</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">Họ và tên</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">Lớp</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">Ngày nhập học</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">Đối tượng</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">Môn Cam kết</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold">Mức hiện tại</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold">Hành động</th>
+                  <th className="py-3 px-3 text-left text-teal-100">TT</th>
+                  <th className="py-3 px-3 text-left text-teal-100">Mã HS</th>
+                  <th className="py-3 px-3 text-left text-white">Họ và tên</th>
+                  <th className="py-3 px-3 text-left text-teal-100">Lớp</th>
+                  <th className="py-3 px-3 text-left text-teal-100">Ngày nhập học</th>
+                  <th className="py-3 px-3 text-left text-teal-100">Đối tượng</th>
+                  <th className="py-3 px-3 text-left text-teal-100">Môn theo dõi</th>
+                  <th className="py-3 px-3 text-left text-[#5EEAD4]">Mức hiện tại</th>
+                  <th className="py-3 px-3 text-center text-white">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E2E8F0] text-sm">
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
                 {filteredTargets.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-10 text-slate-400">
+                    <td colSpan={10} className="text-center py-10 text-slate-400">
                       Không tìm thấy học sinh nào thuộc danh sách bồi dưỡng của bạn
                     </td>
                   </tr>
@@ -2613,10 +2821,11 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                     const enrollmentDateFormatted = t.student?.enrollmentDate
                       ? new Date(t.student.enrollmentDate).toLocaleDateString("vi-VN")
                       : (t.createdAt ? new Date(t.createdAt).toLocaleDateString("vi-VN") : "N/A");
+                    const subjectLabel = Array.from(new Set((t.reason || "").split(",").map((s: any) => s.trim()).filter(Boolean))).join(", ") || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý");
 
                     return (
-                      <tr key={t.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-4 whitespace-nowrap">
+                      <tr key={t.id} className={`transition-colors align-middle ${selectedEvalTargetIds.includes(t.id) ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]" : "hover:bg-[#F8FAFC]"}`}>
+                        <td className="py-3 px-3 whitespace-nowrap align-middle">
                           <input
                               type="checkbox" 
                               checked={selectedEvalTargetIds.includes(t.id)} 
@@ -2624,40 +2833,40 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 if (e.target.checked) setSelectedEvalTargetIds([...selectedEvalTargetIds, t.id]);
                                 else setSelectedEvalTargetIds(selectedEvalTargetIds.filter(id => id !== t.id));
                               }} 
-                              className="rounded border-slate-300 text-teal-800 focus:ring-indigo-500"
+                              className="rounded border-slate-300 text-teal-800 focus:ring-teal-500"
                             />
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-slate-500 font-medium">{index + 1}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-semibold">{t.student?.studentCode || t.student?.code || "N/A"}</td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-teal-800 hover:text-teal-800 hover:underline text-left transition-all cursor-pointer">{t.student?.studentName || t.student?.fullName}</button>
+                        <td className="py-3 px-3 whitespace-nowrap text-slate-500 font-medium align-middle">{index + 1}</td>
+                        <td className="py-3 px-3 whitespace-nowrap text-slate-600 font-semibold align-middle">{t.student?.studentCode || t.student?.code || "N/A"}</td>
+                        <td className="py-3 px-3 whitespace-nowrap align-middle">
+                          <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-[#003B3A] hover:underline text-left transition-all cursor-pointer">{t.student?.studentName || t.student?.fullName}</button>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-bold">
+                        <td className="py-3 px-3 whitespace-nowrap text-slate-600 font-bold align-middle">
                           {t.student?.class?.className || t.student?.className}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-semibold text-xs">
+                        <td className="py-3 px-3 whitespace-nowrap text-slate-600 font-semibold align-middle">
                           {enrollmentDateFormatted}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="py-3 px-3 whitespace-nowrap align-middle">
                           {isCommitmentTarget ? (
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300" title="Cam kết đầu vào">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300" title="Cam kết đầu vào">
                               CKĐV
                             </span>
                           ) : (
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-teal-50 text-teal-800 border border-teal-200" title="Bổ sung theo dõi">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200" title="Bổ sung theo dõi">
                               BSTD
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <span className="px-2 py-0.5 rounded text-xs font-bold border border-slate-200 bg-slate-50 text-slate-700">
-                            {Array.from(new Set((t.reason || "").split(",").map((s: any) => s.trim()).filter(Boolean))).join(", ") || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý")}
+                        <td className="py-3 px-3 whitespace-nowrap align-middle">
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${getSubjectBadgeStyle(subjectLabel)}`}>
+                            {subjectLabel}
                           </span>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-slate-800 font-bold">
+                        <td className="py-3 px-3 whitespace-nowrap text-slate-800 font-bold align-middle">
                           {isTerminated ? t.outcome : currentLevel}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-center space-x-2">
+                        <td className="py-3 px-3 whitespace-nowrap text-center space-x-2 align-middle">
                               <button
                                 type="button"
                                 onClick={() => handleOpenEvaluationModal(t)}
@@ -2673,7 +2882,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                 )}
               </tbody>
             </table>
+            </div>
           </div>
+          )}
         </div>
       ) : activeSubTab === "summary" ? (
         <div className="space-y-6">
@@ -5008,9 +5219,12 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       <div className="border border-slate-100 rounded-xl max-h-36 overflow-y-auto p-2 space-y-1 bg-slate-50/50">
                         {((): any => {
                           const selClassObj = assignedClasses.find(c => c.id === proposeClassId)
-                          const assignedSubs = (selClassObj?.subjects || []).filter(
-                            (sub: any) => !(sub.subjectName || sub.name || "").toLowerCase().includes("tâm lý")
-                          )
+                          const assignedSubs = (selClassObj?.subjects || []).filter((sub: any) => {
+                            const n = (sub.subjectName || sub.name || "").toLowerCase()
+                            if (n.includes("tâm lý")) return false
+                            if (!isPsychCounselor && (n.includes("hướng nghiệp") || n.includes("huong nghiep"))) return false
+                            return true
+                          })
 
                           if (assignedSubs.length === 0) {
                             return (
@@ -6363,20 +6577,13 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               </div>
                               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
                                 <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Tiếng Anh viết</span>
-                                <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.writtenEnglishScore != null ? entrance.writtenEnglishScore : "N/A"}</span>
+                                <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.writtenEnglishScore != null ? `${entrance.writtenEnglishScore}/10` : "N/A"}</span>
                               </div>
                               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
                                 <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Tiếng Anh nói</span>
-                                <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.oralEnglishScore != null ? entrance.oralEnglishScore : "N/A"}</span>
+                                <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.oralEnglishScore != null ? `${entrance.oralEnglishScore}/10` : "N/A"}</span>
                               </div>
                             </div>
-
-                            {entrance.totalEnglishScore != null && (
-                              <div className="bg-gradient-to-r from-teal-600 to-sky-50 p-3 rounded-xl border border-teal-200 text-center flex items-center justify-between px-5">
-                                <span className="text-xs text-teal-800 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh</span>
-                                <span className="text-base font-extrabold text-teal-800">{entrance.totalEnglishScore}/100</span>
-                              </div>
-                            )}
 
                             {/* Detail Subjects scores if any */}
                             {entrance.scores && entrance.scores.length > 0 && (

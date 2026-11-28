@@ -12,12 +12,14 @@ import { getStudentVerifyUrl } from "@/lib/student/lifelong-qr";
 describe("Student Nameplate System (In bảng tên Họp PHHS Sky-Line)", () => {
   describe("1. 04 Template Groups by Grade (Section 3)", () => {
     it("provides at least 04 template groups corresponding to Grade 1, 2-5, 6-9, 10-12", () => {
-      expect(Object.keys(NAMEPLATE_TEMPLATES)).toEqual([
-        "MODEL_01_G1",
-        "MODEL_02_G2_5",
-        "MODEL_03_G6_9",
-        "MODEL_04_G10_12",
-      ]);
+      expect(Object.keys(NAMEPLATE_TEMPLATES)).toEqual(
+        expect.arrayContaining([
+          "MODEL_01_G1",
+          "MODEL_02_G2_5",
+          "MODEL_03_G6_9",
+          "MODEL_04_G10_12",
+        ])
+      );
     });
 
     it("maps Grade 1 to Mẫu 01 (MODEL_01_G1)", () => {

@@ -72,6 +72,8 @@ model Teacher {
   position               String                    @default("GV")
   positions              String?
   dateOfBirth            DateTime?
+  joinDate               DateTime?
+  joinYear               Int?
   departmentId           String?
   mainSubjectId          String?
   mainSubjectRel         Subject?                  @relation("teacherMainSubject", fields: [mainSubjectId], references: [id])
@@ -104,6 +106,8 @@ model Teacher {
   ctqtDelegatedAssignments   CtqtTeachingAssignment[] @relation("CtqtDelegatedTeacher")
   specialAssignments         SpecialTeachingAssignment[]
   signatureProfile           TeacherSignatureProfile?
+  developmentPlans           TeacherDevelopmentPlan[]  @relation("DevelopmentTeacher")
+  mentoredDevelopmentPlans   TeacherDevelopmentPlan[]  @relation("DevelopmentMentor")
 
   @@index([campusId])
   @@index([departmentId])
@@ -1567,7 +1571,8 @@ model ObservationEvaluation {
   supplementalReviewNote  String?
   supplementalHistory     String?
 
-  registration ObservationRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  registration     ObservationRegistration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  developmentPlans TeacherDevelopmentPlan[]
 
   @@index([slotId])
   @@index([evaluatorId])
@@ -6966,6 +6971,93 @@ model StudentNameChangeRequest {
   @@index([studentId])
   @@index([status])
 }
+
+model TeacherDevelopmentPlan {
+  id                      String    @id @default(cuid())
+  teacherId               String
+  academicYearId          String?
+  campusId                String?
+  departmentId            String?
+
+  // Liên kết phiếu dự giờ gốc (nếu tạo từ phiếu dự giờ đã duyệt)
+  observationSlotId       String?
+  observationEvaluationId String?
+  sourceMonth             String?   // "YYYY-MM" chốt theo ngày dự thực tế
+  requestSource           String    @default("DIRECT") // OBSERVATION | TEACHER_PROPOSAL | DIRECT
+  batchGroupId            String?   // Dùng khi 1 hoạt động giao cho nhiều GV (mỗi GV theo dõi riêng)
+
+  // Nội dung bồi dưỡng
+  activityType            String?   // Hình thức bồi dưỡng
+  improvementNeeds        String
+  developmentActivity     String
+  mentorTeacherId         String?
+  mentorName              String?
+  dueDate                 DateTime?
+
+  // Theo dõi & Ghi nhận việc áp dụng sau bồi dưỡng
+  status                  String    @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | COMPLETED
+  postCoachingNotes       String?
+  applicationNotes        String?   // Nhận xét ngắn về nội dung GV đã áp dụng vào dạy học
+  nextSupportNeeds        String?   // Việc cần hỗ trợ tiếp
+  followUpSlotId          String?   // Liên kết phiếu dự giờ tiếp theo (nếu có)
+  followUpEvaluationId    String?
+  outcomeRating           String?
+  completedAt             DateTime?
+
+  createdById             String?
+  createdByName           String?
+  updatedById             String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  teacher               Teacher                @relation("DevelopmentTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  mentorTeacher         Teacher?               @relation("DevelopmentMentor", fields: [mentorTeacherId], references: [id], onDelete: SetNull)
+  observationEvaluation ObservationEvaluation? @relation(fields: [observationEvaluationId], references: [id], onDelete: SetNull)
+
+  @@index([teacherId])
+  @@index([academicYearId])
+  @@index([campusId])
+  @@index([departmentId])
+  @@index([observationEvaluationId])
+  @@index([observationSlotId])
+  @@index([status])
+  @@index([sourceMonth])
+}
+
+model TeacherRecognition {
+  id               String    @id @default(cuid())
+  teacherId        String
+  academicYearId   String
+  campusId         String?
+  departmentId     String?
+
+  // 4 nhóm nhập tay trực tiếp (NPS PHHS lấy tự động từ phân hệ Khảo sát NPS)
+  // DEPT_AWARD | SYSTEM_AWARD | STUDENT_COMPETITION | AI_TECH
+  groupType        String
+  title            String    // Danh hiệu / Kỳ thi / Nội dung đã áp dụng
+  issuingAuthority String?   // Cơ quan khen thưởng / Cấp thi / Mục đích áp dụng
+  awardScope       String?   // Cấp cơ sở / Cấp hệ thống / Phạm vi áp dụng
+  eventBatch       String?   // Đợt khen thưởng / Môn hoặc lĩnh vực
+  teacherRole      String?   // Vai trò của GV (VD: GV bồi dưỡng chính, GV đồng hướng dẫn)
+  participantCount Int?      // Số HS dự thi
+  resultSummary    String?   // Kết quả / Ghi nhận ngắn về kết quả
+  recordedDate     String?   // Thời điểm ghi nhận (DD/MM/YYYY hoặc YYYY-MM-DD hoặc text đợt)
+  dedupKey         String?   // Khóa chung khi nhiều GV cùng phụ trách 1 kết quả HS (chống đếm trùng)
+  notes            String?
+
+  createdById      String?
+  createdByName    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([teacherId])
+  @@index([academicYearId])
+  @@index([groupType])
+  @@index([campusId])
+  @@index([departmentId])
+}
+
+
 
 
 

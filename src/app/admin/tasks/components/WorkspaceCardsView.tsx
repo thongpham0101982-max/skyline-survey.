@@ -1,25 +1,21 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import Link from "next/link"
 import {
   Plus,
-  ExternalLink,
   Users,
   CheckCircle2,
   Clock,
   AlertTriangle,
   Sparkles,
-  Layers,
-  ShieldCheck,
   RefreshCw,
   ArrowUpRight,
   UserCheck,
-  FolderKanban,
-  FileCheck2,
-  Activity,
+  Eye,
+  FileSpreadsheet,
+  Sliders,
 } from "lucide-react"
-import { DEFAULT_WORKSPACE_CARDS } from "@/lib/qa-workspace/workflowEngine"
 import type { WorkspaceCardConfig } from "@/lib/qa-workspace/types"
 
 interface WorkspaceCardsViewProps {
@@ -39,116 +35,14 @@ interface WorkspaceCardsViewProps {
   syncingRecordId: string | null
 }
 
-function CardIllustration({
-  type,
-  accentColor,
-}: {
-  type: WorkspaceCardConfig["illustrationType"]
-  accentColor: string
-}) {
-  return (
-    <svg
-      viewBox="0 0 220 96"
-      className="w-44 h-24 select-none pointer-events-none drop-shadow-sm"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* Desk surface */}
-      <rect x="16" y="74" width="188" height="7" rx="3.5" fill={accentColor} fillOpacity="0.22" />
-      <rect x="34" y="81" width="6" height="12" rx="2" fill={accentColor} fillOpacity="0.18" />
-      <rect x="180" y="81" width="6" height="12" rx="2" fill={accentColor} fillOpacity="0.18" />
+function getTaskStatus(t: any): string {
+  return String(t?.qaMeta?.workflowStatus || t?.progress || "PENDING").toUpperCase()
+}
 
-      {/* Indoor plant on left */}
-      <rect x="24" y="58" width="14" height="16" rx="3" fill="#0D9488" fillOpacity="0.25" />
-      <path
-        d="M31 58C31 48 23 44 23 44C23 51 27 56 31 58Z"
-        fill="#0D9488"
-        fillOpacity="0.65"
-      />
-      <path
-        d="M31 58C31 46 39 42 39 42C39 50 35 55 31 58Z"
-        fill="#10B981"
-        fillOpacity="0.75"
-      />
-
-      {/* Computer monitor on desk */}
-      <rect
-        x="54"
-        y="26"
-        width="68"
-        height="40"
-        rx="6"
-        fill="#FFFFFF"
-        stroke={accentColor}
-        strokeWidth="2.2"
-      />
-      <rect x="60" y="32" width="36" height="5" rx="2.5" fill={accentColor} fillOpacity="0.3" />
-      <rect x="60" y="41" width="52" height="4" rx="2" fill="#CBD5E1" />
-      <rect x="60" y="48" width="44" height="4" rx="2" fill="#CBD5E1" />
-      {type === "ANALYTICS_SCREEN" ? (
-        <>
-          <rect x="62" y="54" width="8" height="7" rx="1.5" fill={accentColor} fillOpacity="0.7" />
-          <rect x="73" y="50" width="8" height="11" rx="1.5" fill={accentColor} />
-          <rect x="84" y="46" width="8" height="15" rx="1.5" fill="#10B981" />
-        </>
-      ) : (
-        <circle cx="108" cy="55" r="5" fill={accentColor} fillOpacity="0.8" />
-      )}
-      <rect x="82" y="66" width="12" height="8" fill={accentColor} fillOpacity="0.35" />
-      <rect x="74" y="72" width="28" height="3" rx="1.5" fill={accentColor} fillOpacity="0.45" />
-
-      {/* Character / Assistant avatar on right side of desk */}
-      <circle
-        cx="158"
-        cy="34"
-        r="12"
-        fill="#FFFFFF"
-        stroke={accentColor}
-        strokeWidth="2.2"
-      />
-      <circle cx="154" cy="33" r="1.5" fill="#1E293B" />
-      <circle cx="162" cy="33" r="1.5" fill="#1E293B" />
-      <path
-        d="M154 38C155.5 39.5 160.5 39.5 162 38"
-        stroke="#1E293B"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      {/* Shoulders / Suit */}
-      <path
-        d="M138 74C138 58 146 50 158 50C170 50 178 58 178 74"
-        fill={accentColor}
-        fillOpacity="0.82"
-      />
-      {/* Badge / AI Sparkle if AI_ASSISTANT */}
-      {type === "AI_ASSISTANT" && (
-        <g>
-          <circle cx="182" cy="22" r="9" fill="#00A19A" />
-          <path
-            d="M182 16L183.6 20.4L188 22L183.6 23.6L182 28L180.4 23.6L176 22L180.4 20.4L182 16Z"
-            fill="#FFFFFF"
-          />
-        </g>
-      )}
-      {type === "TEAM_HUB" && (
-        <g>
-          <circle
-            cx="182"
-            cy="38"
-            r="9"
-            fill="#FFFFFF"
-            stroke={accentColor}
-            strokeWidth="1.8"
-          />
-          <path
-            d="M170 74C170 63 175 56 182 56C189 56 194 63 194 74"
-            fill={accentColor}
-            fillOpacity="0.5"
-          />
-        </g>
-      )}
-    </svg>
-  )
+function isTaskOverdue(t: any): boolean {
+  const st = getTaskStatus(t)
+  if (st === "COMPLETED" || st === "CANCELLED") return false
+  return Boolean(t?.deadlineInfo?.isOverdue || t?.progress === "OVERDUE")
 }
 
 export function WorkspaceCardsView({
@@ -156,648 +50,527 @@ export function WorkspaceCardsView({
   taskGroups,
   allStaffUsers,
   sourceModules,
-  improvementActions,
   canManage,
   onAssignToCardGroup,
   onSelectGroupScope,
   onSelectMember,
   onOpenAssistant,
   onOpenGroupManager,
-  onOpenCapaModal,
   onSyncSourceRecord,
   syncingRecordId,
 }: WorkspaceCardsViewProps) {
-  const [selectedSourceModule, setSelectedSourceModule] = useState<string | null>(null)
+  const [memberGroupFilter, setMemberGroupFilter] = useState<string>("ALL")
+  const [showSourcePanel, setShowSourcePanel] = useState(false)
 
-  const userMap = new Map(allStaffUsers.map(u => [u.id, u]))
+  const userMap = useMemo(
+    () => new Map((allStaffUsers || []).map((u) => [u.id, u])),
+    [allStaffUsers]
+  )
 
-  // Match functional card to organizational TaskGroups & tasks
-  const getCardStats = (card: WorkspaceCardConfig) => {
-    const matchedGroups = taskGroups.filter(g => {
-      const nameLower = String(g.name || "").toLowerCase()
-      if (card.key === "KHAO_THI") return nameLower.includes("khảo thí")
-      if (card.key === "DBCL") return nameLower.includes("đbcl") || nameLower.includes("chất lượng")
-      if (card.key === "LMS_KSDV") return nameLower.includes("lms") || nameLower.includes("đầu vào")
-      if (card.key === "BAO_CAO_DU_LIEU") return nameLower.includes("báo cáo") || nameLower.includes("dữ liệu")
-      return false
-    })
-
-    const matchedGroupIds = new Set(matchedGroups.map(g => g.id))
-
-    const cardTasks = tasks.filter(t => {
-      const metaCardKey = t.qaMeta?.workspaceCardKey
-      if (metaCardKey && metaCardKey === card.key) return true
-      if (t.taskGroupId && matchedGroupIds.has(t.taskGroupId)) return true
-      const catLower = String(t.category || "").toLowerCase()
-      const titleLower = String(t.title || "").toLowerCase()
-      if (card.key === "KHAO_THI" && (catLower.includes("khảo thí") || catLower.includes("kiểm tra") || catLower.includes("kỳ thi"))) {
-        return true
-      }
-      if (card.key === "DBCL" && (catLower.includes("đbcl") || catLower.includes("kiểm định") || catLower.includes("chất lượng"))) {
-        return true
-      }
-      if (card.key === "LMS_KSDV" && (catLower.includes("lms") || catLower.includes("đầu vào") || titleLower.includes("lms"))) {
-        return true
-      }
-      if (card.key === "BAO_CAO_DU_LIEU" && (catLower.includes("báo cáo") || catLower.includes("dữ liệu") || catLower.includes("thống kê"))) {
-        return true
-      }
-      if (card.key === "CONG_VIEC_THANH_VIEN" && (catLower.includes("nhân sự") || catLower.includes("điều phối"))) {
-        return true
-      }
-      return false
-    })
-
-    const total = cardTasks.length
-    const inProgress = cardTasks.filter(
-      t => (t.qaMeta?.workflowStatus || t.progress) === "IN_PROGRESS"
-    ).length
-    const pendingReview = cardTasks.filter(
-      t => t.qaMeta?.workflowStatus === "PENDING_REVIEW"
-    ).length
-    const overdue = cardTasks.filter(t =>
-      Boolean(t.deadlineInfo?.isOverdue || t.progress === "OVERDUE")
-    ).length
-    const completed = cardTasks.filter(
-      t => (t.qaMeta?.workflowStatus || t.progress) === "COMPLETED"
-    ).length
-
-    return {
-      matchedGroups,
-      primaryGroupId: matchedGroups[0]?.id || null,
-      total,
-      inProgress,
-      pendingReview,
-      overdue,
-      completed,
+  // 1. Chỉ số tổng hợp toàn phạm vi (Unified Ledger Strip)
+  const summary = useMemo(() => {
+    const total = tasks.length
+    let completed = 0
+    let pendingReview = 0
+    let inProgress = 0
+    let overdue = 0
+    for (const t of tasks) {
+      const st = getTaskStatus(t)
+      if (st === "COMPLETED") completed++
+      else if (st === "PENDING_REVIEW") pendingReview++
+      else if (st === "IN_PROGRESS" || st === "NEEDS_REVISION" || st === "ASSIGNED") inProgress++
+      if (isTaskOverdue(t)) overdue++
     }
-  }
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0
+    return { total, completed, pendingReview, inProgress, overdue, rate }
+  }, [tasks])
+
+  // 2. Ma trận tiến độ theo từng Nhóm chuyên môn thực tế (không còn thẻ giả 0 nhiệm vụ)
+  const groupRows = useMemo(() => {
+    const rows = (taskGroups || []).map((g) => {
+      const gTasks = tasks.filter(
+        (t) => t.taskGroupId === g.id || t.taskGroup?.id === g.id || t.taskGroup?.name === g.name
+      )
+      const total = gTasks.length
+      const completed = gTasks.filter((t) => getTaskStatus(t) === "COMPLETED").length
+      const pendingReview = gTasks.filter((t) => getTaskStatus(t) === "PENDING_REVIEW").length
+      const inProgress = gTasks.filter((t) =>
+        ["IN_PROGRESS", "NEEDS_REVISION", "ASSIGNED", "PENDING"].includes(getTaskStatus(t))
+      ).length
+      const overdue = gTasks.filter((t) => isTaskOverdue(t)).length
+      const rate = total > 0 ? Math.round((completed / total) * 100) : 0
+      const leader = g.leaderUserId ? userMap.get(g.leaderUserId) : null
+      const memberCount = Array.isArray(g.members) ? g.members.length : 0
+
+      return {
+        id: g.id,
+        name: g.name,
+        code: g.code || "",
+        leaderName: leader?.fullName || g.leader?.fullName || "Chưa gán",
+        memberCount,
+        total,
+        inProgress,
+        pendingReview,
+        overdue,
+        completed,
+        rate,
+      }
+    })
+
+    // Các việc chưa gắn nhóm (nếu có)
+    const unassignedTasks = tasks.filter((t) => !t.taskGroupId && !t.taskGroup?.id)
+    if (unassignedTasks.length > 0) {
+      const completed = unassignedTasks.filter((t) => getTaskStatus(t) === "COMPLETED").length
+      const pendingReview = unassignedTasks.filter((t) => getTaskStatus(t) === "PENDING_REVIEW").length
+      const overdue = unassignedTasks.filter((t) => isTaskOverdue(t)).length
+      const inProgress = unassignedTasks.length - completed - pendingReview
+      rows.push({
+        id: "__UNASSIGNED__",
+        name: "Chưa phân nhóm",
+        code: "KHAC",
+        leaderName: "—",
+        memberCount: 0,
+        total: unassignedTasks.length,
+        inProgress: Math.max(0, inProgress),
+        pendingReview,
+        overdue,
+        completed,
+        rate: Math.round((completed / unassignedTasks.length) * 100),
+      })
+    }
+
+    return rows.sort((a, b) => b.overdue - a.overdue || b.total - a.total)
+  }, [taskGroups, tasks, userMap])
+
+  // 3. Ma trận tiến độ từng Cá nhân trong Ban
+  const memberRows = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        userId: string
+        fullName: string
+        email: string
+        groupNames: Set<string>
+        groupIds: Set<string>
+        total: number
+        inProgress: number
+        pendingReview: number
+        overdue: number
+        completed: number
+      }
+    >()
+
+    const ensureMember = (uid: string, fallbackName?: string) => {
+      if (!map.has(uid)) {
+        const u = userMap.get(uid)
+        map.set(uid, {
+          userId: uid,
+          fullName: u?.fullName || fallbackName || "Chuyên viên",
+          email: u?.email || "",
+          groupNames: new Set<string>(),
+          groupIds: new Set<string>(),
+          total: 0,
+          inProgress: 0,
+          pendingReview: 0,
+          overdue: 0,
+          completed: 0,
+        })
+      }
+      return map.get(uid)!
+    }
+
+    // Thêm thành viên từ các nhóm chuyên môn thực tế
+    for (const g of taskGroups || []) {
+      if (g.leaderUserId && userMap.has(g.leaderUserId)) {
+        const entry = ensureMember(g.leaderUserId)
+        entry.groupNames.add(g.name)
+        entry.groupIds.add(g.id)
+      }
+      for (const m of g.members || []) {
+        const uid = m.userId || m.id
+        if (uid) {
+          const entry = ensureMember(uid, m.user?.fullName || m.fullName)
+          entry.groupNames.add(g.name)
+          entry.groupIds.add(g.id)
+        }
+      }
+    }
+
+    // Cộng dồn thống kê đầu việc được gán cho từng cá nhân
+    for (const t of tasks) {
+      const uid = t.assignedToUserId || t.assignedToUser?.id
+      if (!uid) continue
+      const entry = ensureMember(uid, t.assignedToUser?.fullName)
+      if (t.taskGroup?.name) entry.groupNames.add(t.taskGroup.name)
+      if (t.taskGroupId) entry.groupIds.add(t.taskGroupId)
+
+      const st = getTaskStatus(t)
+      entry.total++
+      if (st === "COMPLETED") entry.completed++
+      else if (st === "PENDING_REVIEW") entry.pendingReview++
+      else entry.inProgress++
+      if (isTaskOverdue(t)) entry.overdue++
+    }
+
+    return Array.from(map.values())
+      .filter((row) => {
+        if (memberGroupFilter === "ALL") return true
+        return row.groupIds.has(memberGroupFilter)
+      })
+      .map((row) => ({
+        ...row,
+        groupsLabel: Array.from(row.groupNames).join(", ") || "Ban KT&ĐBCL",
+        rate: row.total > 0 ? Math.round((row.completed / row.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.overdue - a.overdue || b.total - a.total || a.fullName.localeCompare(b.fullName, "vi"))
+  }, [taskGroups, tasks, userMap, memberGroupFilter])
+
+  const sourceItemsCount = useMemo(
+    () => (sourceModules || []).reduce((acc, m) => acc + (m.items?.length || 0), 0),
+    [sourceModules]
+  )
 
   return (
-    <div className="space-y-8">
-      {/* PHẦN 1: LƯỚI 6 THẺ TRUY CẬP CHỨC NĂNG & ĐIỀU HÀNH (3 CỘT DESKTOP / 2 TABLET / 1 MOBILE) */}
-      <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-          <div>
-            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-teal-800" />
-              Không gian Công việc & Phân hệ Nghiệp vụ KT&ĐBCL
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Truy cập nhanh các mảng nghiệp vụ cốt lõi, theo dõi khối lượng trực tiếp và phát hành phiếu giao việc theo nhóm chuyên môn.
+    <div className="space-y-5">
+      {/* 1. UNIFIED LEDGER STRIP — Chỉ số tiến độ cốt lõi */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        <div className="grid grid-cols-2 sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-[#E2E8F0] tabular-nums">
+          <div className="p-4">
+            <div className="text-xs font-medium text-slate-500">Tổng đầu việc</div>
+            <div className="mt-1 text-2xl font-bold text-[#003B3A]">{summary.total}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">{taskGroups.length} nhóm chuyên môn</div>
+          </div>
+          <div className="p-4">
+            <div className="text-xs font-medium text-slate-500">Đã nghiệm thu</div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-[#059669]">{summary.completed}</span>
+              <span className="text-xs font-semibold text-[#059669]">({summary.rate}%)</span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1.5">
+              <div className="h-full bg-[#059669] rounded-full" style={{ width: `${summary.rate}%` }} />
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="text-xs font-medium text-slate-500">Đang thực hiện</div>
+            <div className="mt-1 text-2xl font-bold text-[#00736E]">{summary.inProgress}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Đang xử lý &amp; cập nhật</div>
+          </div>
+          <div className="p-4">
+            <div className="text-xs font-medium text-slate-500">Chờ duyệt nghiệm thu</div>
+            <div className="mt-1 text-2xl font-bold text-[#D97706]">{summary.pendingReview}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Cần xác nhận hoàn thành</div>
+          </div>
+          <div className="p-4 col-span-2 sm:col-span-1">
+            <div className="text-xs font-medium text-slate-500">Quá hạn xử lý</div>
+            <div className={`mt-1 text-2xl font-bold ${summary.overdue > 0 ? "text-[#E11D48]" : "text-slate-700"}`}>
+              {summary.overdue}
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              {summary.overdue > 0 ? "Cần đôn đốc ngay" : "Đúng tiến độ"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. BẢNG TIẾN ĐỘ CÔNG VIỆC THEO NHÓM CHUYÊN MÔN */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        <div className="px-4 py-3.5 border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2">
+          <div className="border-l-4 border-[#003B3A] pl-3">
+            <h2 className="text-sm font-bold text-[#003B3A]">Tiến độ công việc theo nhóm chuyên môn</h2>
+            <p className="text-xs text-slate-500">
+              Theo dõi trực tiếp khối lượng, tỷ lệ nghiệm thu và cảnh báo quá hạn của từng nhóm thuộc Ban KT&amp;ĐBCL.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200">
-              <Sparkles className="w-3.5 h-3.5" />6 Không gian chức năng chuẩn
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {DEFAULT_WORKSPACE_CARDS.map(card => {
-            const stats = getCardStats(card)
-            return (
-              <div
-                key={card.key}
-                className="group bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md hover:border-teal-200 transition-all duration-200 flex flex-col overflow-hidden"
-              >
-                {/* Đầu mỗi thẻ: nền màu chuyển nhẹ + minh họa bàn làm việc / máy tính / nhân vật trợ lý */}
-                <div
-                  className="px-5 pt-4 pb-2 flex items-center justify-between relative border-b border-slate-100"
-                  style={{
-                    background: `linear-gradient(135deg, ${card.gradientFrom} 0%, ${card.gradientTo} 100%)`,
-                  }}
-                >
-                  <div className="z-10 max-w-[52%]">
-                    <span
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-white/85 shadow-2xs"
-                      style={{ color: card.accentColor }}
-                    >
-                      {card.badgeText}
-                    </span>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-slate-900">
-                        {stats.total}
-                      </span>
-                      <span className="text-xs font-semibold text-slate-600">
-                        nhiệm vụ
-                      </span>
-                    </div>
-                  </div>
-                  <div className="z-10 transform group-hover:scale-105 transition-transform duration-200">
-                    <CardIllustration
-                      type={card.illustrationType}
-                      accentColor={card.accentColor}
-                    />
-                  </div>
-                </div>
-
-                {/* Thân thẻ: Tên nhóm, mô tả ngắn, thống kê trạng thái, lối truy cập nghiệp vụ & nút Giao việc cho nhóm */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-base font-extrabold text-slate-900 group-hover:text-teal-800 transition-colors">
-                        {card.title}
-                      </h3>
-                      {stats.overdue > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 shrink-0">
-                          <AlertTriangle className="w-3 h-3" />
-                          {stats.overdue} quá hạn
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1.5 leading-relaxed line-clamp-2">
-                      {card.shortDescription}
-                    </p>
-
-                    {/* Mini status pills */}
-                    <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3 border-t border-slate-100">
-                      <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 text-center">
-                        <div className="text-xs font-bold text-sky-700">{stats.inProgress}</div>
-                        <div className="text-[10px] text-slate-500 font-medium">Đang làm</div>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 text-center">
-                        <div className="text-xs font-bold text-teal-800">{stats.pendingReview}</div>
-                        <div className="text-[10px] text-slate-500 font-medium">Chờ duyệt</div>
-                      </div>
-                      <div className="bg-slate-50 rounded-lg px-2.5 py-1.5 text-center">
-                        <div className="text-xs font-bold text-emerald-700">{stats.completed}</div>
-                        <div className="text-[10px] text-slate-500 font-medium">Hoàn thành</div>
-                      </div>
-                    </div>
-
-                    {/* Các lối truy cập nghiệp vụ */}
-                    <div className="mt-3.5">
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                        Lối truy cập nghiệp vụ
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {card.quickLinks.map((ql, idx) =>
-                          (ql.href || "").startsWith("?") ? (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => {
-                                if (ql.href.includes("assistant=open")) {
-                                  onOpenAssistant()
-                                } else if (stats.primaryGroupId) {
-                                  onSelectGroupScope(stats.primaryGroupId)
-                                }
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-800 transition-colors"
-                            >
-                              <span>{ql.label}</span>
-                              <ArrowUpRight className="w-3 h-3 opacity-70" />
-                            </button>
-                          ) : (
-                            <Link
-                              key={idx}
-                              href={ql.href || "/admin/tasks"}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-800 transition-colors"
-                            >
-                              <span>{ql.label}</span>
-                              <ExternalLink className="w-3 h-3 opacity-70" />
-                            </Link>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Nút hành động chính màu tím thương hiệu SSM */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
-                    {card.key === "TRO_LY_DIEU_HANH" ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onOpenAssistant(
-                            "Giao nhóm Khảo thí rà soát ma trận khối 6 trước 16:00 thứ Sáu; phân công theo môn và nộp bảng tổng hợp điều chỉnh."
-                          )
-                        }
-                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-teal-500 hover:bg-teal-500 text-white shadow-xs transition-all cursor-pointer"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        Mở QA Assistant & Giao việc AI
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => onAssignToCardGroup(card, stats.primaryGroupId)}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-teal-500 hover:bg-teal-500 text-white shadow-xs transition-all cursor-pointer"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Giao việc cho nhóm
-                        </button>
-                        {stats.primaryGroupId && (
-                          <button
-                            type="button"
-                            onClick={() => onSelectGroupScope(stats.primaryGroupId!)}
-                            className="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-                            title="Lọc danh sách việc của nhóm này"
-                          >
-                            Xem việc
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* PHẦN 2: PHÂN BIỆT NHÓM NHÂN SỰ TỔ CHỨC (TASK GROUPS) & THÀNH VIÊN THỰC TẾ */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-              <Users className="w-4 h-4 text-teal-600" />
-              Nhóm Nhân sự Chuyên môn & Điều phối viên ({taskGroups.length} nhóm cấu hình thực tế)
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Phân biệt rõ với 6 thẻ chức năng phía trên: đây là các nhóm nhân sự thực tế trong Ban KT&ĐBCL. Chọn thành viên để xem hồ sơ công việc hoặc giao việc trực tiếp.
-            </p>
-          </div>
-          {canManage && (
             <button
               type="button"
-              onClick={onOpenGroupManager}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white transition-colors cursor-pointer shrink-0"
+              onClick={() => onOpenAssistant()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-teal-200 bg-[#F0FDFA] hover:bg-teal-100/70 text-[#003B3A] text-xs font-semibold cursor-pointer"
             >
-              <FolderKanban className="w-3.5 h-3.5" />
-              Quản lý Nhóm & Điều phối viên
+              <Sparkles className="w-3.5 h-3.5 text-[#008B85]" />
+              Trợ lý gợi ý việc từ SSM
             </button>
-          )}
-        </div>
-
-        {taskGroups.length === 0 ? (
-          <div className="text-center py-6 text-xs text-slate-500">
-            Chưa có nhóm nhân sự nào được cấu hình. Nhấn &ldquo;Quản lý Nhóm & Điều phối viên&rdquo; để khởi tạo.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {taskGroups.map(group => {
-              let memberIds: string[] = []
-              try {
-                memberIds = group.memberUserIds ? JSON.parse(group.memberUserIds) : []
-              } catch {
-                memberIds = []
-              }
-              const leader = group.leaderUserId ? userMap.get(group.leaderUserId) : null
-              const groupTasks = tasks.filter(t => t.taskGroupId === group.id)
-              const overdueCount = groupTasks.filter(t => t.deadlineInfo?.isOverdue).length
-
-              return (
-                <div
-                  key={group.id}
-                  className="rounded-xl border border-slate-200 p-4 hover:border-teal-400 transition-colors bg-slate-50/50 flex flex-col justify-between gap-3"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-900">{group.name}</h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          {group.description || `Bộ phận: ${group.department || "KT&ĐBCL"}`}
-                        </p>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                        {groupTasks.length} việc
-                      </span>
-                    </div>
-
-                    <div className="mt-3 flex items-center gap-2 text-xs">
-                      <UserCheck className="w-3.5 h-3.5 text-teal-800 shrink-0" />
-                      <span className="text-slate-500">Điều phối:</span>
-                      {leader ? (
-                        <button
-                          type="button"
-                          onClick={() => onSelectMember(leader.id)}
-                          className="font-bold text-teal-800 hover:underline cursor-pointer"
-                        >
-                          {leader.fullName}
-                        </button>
-                      ) : (
-                        <span className="text-amber-600 font-medium">Chưa chỉ định</span>
-                      )}
-                    </div>
-
-                    {/* Danh sách thành viên */}
-                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                      {memberIds.length === 0 ? (
-                        <span className="text-[11px] text-slate-400 italic">
-                          Chưa gán thành viên
-                        </span>
-                      ) : (
-                        memberIds.slice(0, 6).map(uid => {
-                          const u = userMap.get(uid)
-                          if (!u) return null
-                          return (
-                            <button
-                              key={uid}
-                              type="button"
-                              onClick={() => onSelectMember(uid)}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white border border-slate-200 text-slate-700 hover:border-teal-200 hover:text-teal-800 transition-colors cursor-pointer"
-                            >
-                              <span className="w-4 h-4 rounded-full bg-teal-50 text-teal-800 text-[9px] font-bold flex items-center justify-center">
-                                {String(u.fullName || "U")
-                                  .trim()
-                                  .split(" ")
-                                  .pop()
-                                  ?.slice(0, 1)}
-                              </span>
-                              {u.fullName}
-                            </button>
-                          )
-                        })
-                      )}
-                      {memberIds.length > 6 && (
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-200 text-slate-600">
-                          +{memberIds.length - 6}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-2.5 border-t border-slate-200/70 flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-slate-500">
-                      {overdueCount > 0 ? (
-                        <span className="text-rose-600 font-bold">
-                          {overdueCount} việc quá hạn
-                        </span>
-                      ) : (
-                        <span className="text-emerald-600 font-semibold">
-                          Đúng tiến độ
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => onSelectGroupScope(group.id)}
-                        className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer"
-                      >
-                        Lọc việc
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onAssignToCardGroup(DEFAULT_WORKSPACE_CARDS[0], group.id)
-                        }
-                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-500 hover:bg-teal-500 text-white cursor-pointer"
-                      >
-                        + Giao việc
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* PHẦN 3: LIÊN THÔNG 6 PHÂN HỆ NGHIỆP VỤ NGUỒN & HÀNH ĐỘNG CẢI TIẾN CHẤT LƯỢNG (CAPA) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Cột trái (7 cols): Liên thông 6 phân hệ nguồn */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-teal-800" />
-                Liên thông Dữ liệu Nghiệp vụ Nguồn (6 Phân hệ SSM)
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Mỗi nhiệm vụ liên thông có định danh <code className="text-[11px] bg-slate-100 px-1 rounded">externalSyncKey</code> chống tạo việc trùng lặp khi đồng bộ lại.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {sourceModules.map((mod: any, modIdx: number) => {
-              const modCode = mod.code || mod.moduleCode || `MOD_${modIdx}`
-              const modName = mod.name || mod.moduleName || modCode
-              const modHref = mod.moduleUrl || mod.routeUrl || "/admin/tasks"
-              const totalRecords = mod.recordCount ?? mod.totalRecords ?? 0
-              const items = mod.candidateItems || mod.recentItems || []
-              const noteText = mod.limitationNote || mod.description || mod.statusLabel || ""
-              const isSelected = selectedSourceModule === modCode
-
-              return (
-                <div
-                  key={modCode}
-                  className={`rounded-xl border p-3.5 transition-all tabular-nums ${
-                    isSelected
-                      ? "border-teal-200 bg-teal-50/30"
-                      : "border-slate-200 bg-slate-50/40 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs font-extrabold text-slate-900">
-                          {modName}
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                            mod.status === "CONNECTED"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : mod.status === "READ_ONLY_LINK"
-                              ? "bg-teal-50 text-[#00736E] border border-teal-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
-                          }`}
-                        >
-                          {mod.status === "CONNECTED"
-                            ? "Đã kết nối CSDL"
-                            : mod.status === "READ_ONLY_LINK"
-                            ? "Liên kết đọc"
-                            : "Giới hạn API"}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                        {noteText}
-                      </p>
-                    </div>
-                    <span className="text-sm font-black text-teal-800 shrink-0">
-                      {totalRecords}
-                    </span>
-                  </div>
-
-                  <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
-                    <Link
-                      href={modHref}
-                      className="text-teal-700 hover:underline font-semibold inline-flex items-center gap-1"
-                    >
-                      Mở phân hệ nguồn <ExternalLink className="w-3 h-3" />
-                    </Link>
-                    {items.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedSourceModule(
-                            isSelected ? null : modCode
-                          )
-                        }
-                        className="text-teal-800 font-bold hover:underline cursor-pointer"
-                      >
-                        {isSelected ? "Thu gọn" : `Xem ${items.length} hồ sơ`}
-                      </button>
-                    )}
-                  </div>
-
-                  {isSelected && items.length > 0 && (
-                    <div className="mt-2.5 space-y-1.5 pt-2 border-t border-teal-200/60">
-                      {items.map((item: any, itemIdx: number) => {
-                        const itemId = item.sourceRecordId || item.id || String(itemIdx)
-                        const itemSubtitle =
-                          item.subtitle ||
-                          [item.category, item.dueDate ? `Hạn: ${item.dueDate}` : null]
-                            .filter(Boolean)
-                            .join(" • ")
-                        return (
-                          <div
-                            key={itemId}
-                            className="flex items-center justify-between gap-2 bg-white p-2 rounded-lg border border-slate-200 text-xs"
-                          >
-                            <div className="min-w-0">
-                              <div className="font-semibold text-slate-800 truncate">
-                                {item.title}
-                              </div>
-                              <div className="text-[10px] text-slate-500">
-                                {itemSubtitle}
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              disabled={syncingRecordId === itemId || Boolean(item.alreadySynced)}
-                              onClick={() => onSyncSourceRecord(modCode, item)}
-                              className={`px-2.5 py-1 rounded-md text-[11px] font-bold shrink-0 inline-flex items-center gap-1 ${
-                                item.alreadySynced
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
-                                  : "bg-[#003B3A] hover:bg-[#005250] disabled:opacity-50 text-white cursor-pointer"
-                              }`}
-                            >
-                              <RefreshCw
-                                className={`w-3 h-3 ${
-                                  syncingRecordId === itemId ? "animate-spin" : ""
-                                }`}
-                              />
-                              {item.alreadySynced ? "Đã đồng bộ" : "Tạo/Đồng bộ việc"}
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Cột phải (5 cols): Quản lý Hành động Cải tiến Chất lượng (CAPA 5 bước) */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  Hành động Cải tiến Chất lượng (CAPA)
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Tách biệt rõ <strong>Hoàn thành hành động</strong> và <strong>Xác nhận hiệu quả sau cải tiến</strong>.
-                </p>
-              </div>
+            {canManage && (
               <button
                 type="button"
-                onClick={() => onOpenCapaModal()}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-500 hover:bg-teal-500 text-white shrink-0 cursor-pointer"
+                onClick={onOpenGroupManager}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-slate-700 text-xs font-semibold cursor-pointer"
               >
-                + Ghi nhận CAPA
+                <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                Cơ cấu nhóm
               </button>
-            </div>
-
-            {/* 5-step pipeline indicator */}
-            <div className="grid grid-cols-5 gap-1 mb-3 text-[10px] font-bold text-center">
-              <div className="bg-slate-100 text-slate-700 py-1 px-1 rounded">
-                1. Vấn đề
-              </div>
-              <div className="bg-amber-50 text-amber-800 py-1 px-1 rounded">
-                2. Nguyên nhân
-              </div>
-              <div className="bg-sky-50 text-sky-800 py-1 px-1 rounded">
-                3. Giao HĐ
-              </div>
-              <div className="bg-teal-50 text-teal-800 py-1 px-1 rounded">
-                4. KT Kết quả
-              </div>
-              <div className="bg-emerald-50 text-emerald-800 py-1 px-1 rounded">
-                5. XN Hiệu quả
-              </div>
-            </div>
-
-            {improvementActions.length === 0 ? (
-              <div className="text-center py-6 text-xs text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                Chưa có hồ sơ Hành động cải tiến chất lượng (CAPA) nào.
-              </div>
-            ) : (
-              <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                {improvementActions.slice(0, 6).map((act: any) => {
-                  const isEffective =
-                    act.status === "VERIFIED_EFFECTIVE" ||
-                    act.status === "CLOSED" ||
-                    Boolean(act.verifiedAt && act.postImprovementEffectiveness)
-                  const isActionDone =
-                    act.status === "COMPLETED" ||
-                    act.status === "PENDING_VERIFICATION" ||
-                    isEffective
-
-                  return (
-                    <div
-                      key={act.id}
-                      onClick={() => onOpenCapaModal(act)}
-                      className="p-3 rounded-xl border border-slate-200 hover:border-teal-200 bg-slate-50/60 cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-xs font-bold text-slate-900">
-                          [{act.issueCode}] {act.title}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                            isEffective
-                              ? "bg-emerald-100 text-emerald-800"
-                              : isActionDone
-                              ? "bg-teal-50 text-teal-800"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {isEffective
-                            ? "Đã XN Hiệu quả"
-                            : isActionDone
-                            ? "Hoàn thành HĐ (Chờ XN hiệu quả)"
-                            : act.status}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 mt-1 line-clamp-1">
-                        Nguyên nhân: {act.verifiedRootCause}
-                      </p>
-                      <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-500">
-                        <span>Phụ trách: {act.assigneeName || "Đã chỉ định"}</span>
-                        <span>
-                          Hạn: {new Date(act.dueDate).toLocaleDateString("vi-VN")}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
             )}
           </div>
         </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#003B3A] border-b border-[#003B3A] text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-3 px-3 text-white">Nhóm chuyên môn</th>
+                <th className="py-3 px-3 text-teal-100">Điều phối viên</th>
+                <th className="py-3 px-3 text-teal-100 text-center">Tổng việc</th>
+                <th className="py-3 px-3 text-teal-100 text-center">Đang làm</th>
+                <th className="py-3 px-3 text-teal-100 text-center">Chờ duyệt</th>
+                <th className="py-3 px-3 text-teal-100 text-center">Quá hạn</th>
+                <th className="py-3 px-3 text-[#5EEAD4]">Tỷ lệ nghiệm thu</th>
+                <th className="py-3 px-3 text-white text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+              {groupRows.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-500">
+                    Chưa có nhóm chuyên môn nào được cấu hình.
+                  </td>
+                </tr>
+              ) : (
+                groupRows.map((g) => (
+                  <tr key={g.id} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                    <td className="py-3 px-3 font-semibold text-[#003B3A]">
+                      <div>{g.name}</div>
+                      {g.memberCount > 0 && (
+                        <div className="text-[11px] font-normal text-slate-500">{g.memberCount} thành viên</div>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-slate-700">{g.leaderName}</td>
+                    <td className="py-3 px-3 text-center font-bold text-slate-800">{g.total}</td>
+                    <td className="py-3 px-3 text-center font-semibold text-[#00736E]">{g.inProgress}</td>
+                    <td className="py-3 px-3 text-center font-semibold text-[#D97706]">{g.pendingReview}</td>
+                    <td className="py-3 px-3 text-center">
+                      {g.overdue > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-[#E11D48] border border-rose-200 font-semibold">
+                          <AlertTriangle className="w-3 h-3" />
+                          {g.overdue}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">0</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2 min-w-[130px]">
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#00A19A] rounded-full transition-all"
+                            style={{ width: `${g.rate}%` }}
+                          />
+                        </div>
+                        <span className="font-semibold text-slate-700 w-10 text-right">{g.rate}%</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5">
+                        {g.id !== "__UNASSIGNED__" && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onAssignToCardGroup(
+                                {
+                                  key: "KHAO_THI",
+                                  title: g.name,
+                                  badge: g.code || "KT&ĐBCL",
+                                  description: "",
+                                  accentColor: "#003B3A",
+                                  surfaceBg: "#FFFFFF",
+                                  illustrationType: "TEAM_HUB",
+                                  quickLinks: [],
+                                },
+                                g.id
+                              )
+                            }
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#003B3A] hover:bg-[#005250] text-white text-[11px] font-semibold cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Giao việc
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => onSelectGroupScope(g.id === "__UNASSIGNED__" ? "ALL" : g.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#E2E8F0] bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold cursor-pointer"
+                        >
+                          <Eye className="w-3 h-3" />
+                          Xem việc
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* 3. BẢNG THEO DÕI TIẾN ĐỘ TỪNG CÁ NHÂN */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        <div className="px-4 py-3.5 border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2">
+          <div className="border-l-4 border-[#00A19A] pl-3">
+            <h2 className="text-sm font-bold text-[#003B3A]">Tiến độ công việc từng cá nhân</h2>
+            <p className="text-xs text-slate-500">
+              Kiểm soát tải công việc, đầu việc chờ duyệt và quá hạn của từng chuyên viên để phân bổ và hỗ trợ kịp thời.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={memberGroupFilter}
+              onChange={(e) => setMemberGroupFilter(e.target.value)}
+              className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-xs font-medium text-slate-700"
+            >
+              <option value="ALL">Tất cả nhóm ({memberRows.length} nhân sự)</option>
+              {(taskGroups || []).map((g) => (
+                <option key={g.id} value={g.id}>
+                  Nhóm: {g.name}
+                </option>
+              ))}
+            </select>
+            <Link
+              href="/admin/weekly-reports"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] text-[#003B3A] text-xs font-semibold"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[#008B85]" />
+              Báo cáo tuần &amp; tháng
+            </Link>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#003B3A] border-b border-[#003B3A] text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-3 px-3 text-white">Chuyên viên</th>
+                <th className="py-3 px-3 text-teal-100">Nhóm chuyên môn</th>
+                <th className="py-3 px-3 text-teal-100 text-center">Tổng việc</th>
+                <th className="py-3 px-3 text-teal-100 text-center">Đang làm</th>
+                <th className="py-3 px-3 text-teal-100 text-center">Chờ duyệt</th>
+                <th className="py-3 px-3 text-teal-100 text-center">Quá hạn</th>
+                <th className="py-3 px-3 text-[#5EEAD4]">Tiến độ nghiệm thu</th>
+                <th className="py-3 px-3 text-white text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+              {memberRows.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-500">
+                    Chưa có nhân sự nào được phân công đầu việc trong phạm vi lọc.
+                  </td>
+                </tr>
+              ) : (
+                memberRows.map((m) => (
+                  <tr key={m.userId} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                    <td className="py-3 px-3">
+                      <div className="font-semibold text-[#003B3A]">{m.fullName}</div>
+                      {m.email && <div className="text-[11px] text-slate-500">{m.email}</div>}
+                    </td>
+                    <td className="py-3 px-3 text-slate-600">{m.groupsLabel}</td>
+                    <td className="py-3 px-3 text-center font-bold text-slate-800">{m.total}</td>
+                    <td className="py-3 px-3 text-center font-semibold text-[#00736E]">{m.inProgress}</td>
+                    <td className="py-3 px-3 text-center font-semibold text-[#D97706]">{m.pendingReview}</td>
+                    <td className="py-3 px-3 text-center">
+                      {m.overdue > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-[#E11D48] border border-rose-200 font-semibold">
+                          {m.overdue}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">0</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2 min-w-[120px]">
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${
+                              m.overdue > 0 ? "bg-[#D97706]" : "bg-[#059669]"
+                            }`}
+                            style={{ width: `${m.rate}%` }}
+                          />
+                        </div>
+                        <span className="font-semibold text-slate-700 w-10 text-right">{m.rate}%</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => onSelectMember(m.userId)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#E2E8F0] bg-white hover:bg-[#F0FDFA] hover:border-[#00A19A] text-[#003B3A] text-[11px] font-semibold cursor-pointer"
+                      >
+                        <UserCheck className="w-3 h-3 text-[#008B85]" />
+                        Hồ sơ việc
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 4. LIÊN THÔNG DỮ LIỆU NGUỒN SSM (Thu gọn, chỉ mở khi cần đồng bộ đầu việc từ hệ thống) */}
+      {sourceItemsCount > 0 && (
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+          <div className="px-4 py-3 flex items-center justify-between gap-2 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#003B3A]">
+              <Clock className="w-4 h-4 text-[#008B85]" />
+              <span>Dữ liệu nghiệp vụ SSM cần theo dõi ({sourceItemsCount} mục đang mở)</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSourcePanel((v) => !v)}
+              className="text-xs font-semibold text-[#00736E] hover:underline cursor-pointer"
+            >
+              {showSourcePanel ? "Thu gọn" : "Mở danh sách đồng bộ"}
+            </button>
+          </div>
+          {showSourcePanel && (
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {(sourceModules || [])
+                .filter((m) => (m.items || []).length > 0)
+                .map((mod) => (
+                  <div
+                    key={mod.moduleCode}
+                    className="rounded-xl border border-[#E2E8F0] bg-white p-3.5 space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs font-bold text-[#003B3A]">{mod.moduleName}</div>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#F0FDFA] text-[#00736E] tabular-nums">
+                        {mod.items.length} mục
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {mod.items.slice(0, 6).map((item: any) => (
+                        <div
+                          key={item.id}
+                          className="p-2 rounded-lg bg-[#F8FAFC] border border-[#F1F5F9] flex items-center justify-between gap-2"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium text-slate-800 truncate">{item.title}</div>
+                            {item.subtitle && (
+                              <div className="text-[11px] text-slate-500 truncate">{item.subtitle}</div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            disabled={syncingRecordId === item.id}
+                            onClick={() => onSyncSourceRecord(mod.moduleCode, item)}
+                            className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#003B3A] text-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"
+                          >
+                            {syncingRecordId === item.id ? (
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <ArrowUpRight className="w-3 h-3" />
+                            )}
+                            Tạo việc
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

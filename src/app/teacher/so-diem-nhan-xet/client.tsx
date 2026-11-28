@@ -779,7 +779,7 @@ export function DiemNhanXetTeacherClient({
         }
         const wsName = wb.SheetNames[0]
         const ws = wb.Sheets[wsName]
-        const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
+        const data: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[][]
 
         if (!data || data.length < 2) {
           alert("File Excel không có dữ liệu hợp lệ")
@@ -788,16 +788,16 @@ export function DiemNhanXetTeacherClient({
 
         let headerRowIdx = 0
         for (let r = 0; r < Math.min(data.length, 15); r++) {
-          const rowStr = (data[r] || []).map(c => String(c || "").toLowerCase()).join(" | ")
+          const rowStr = Array.from(data[r] || [], c => String(c ?? "").toLowerCase()).join(" | ")
           if (rowStr.includes("mã hs") || rowStr.includes("mã học sinh") || rowStr.includes("mã vnedu") || (rowStr.includes("stt") && rowStr.includes("họ và tên"))) {
             headerRowIdx = r
             break
           }
         }
 
-        const headers = (data[headerRowIdx] || []).map(h => String(h || "").trim())
+        const headers = Array.from(data[headerRowIdx] || [], h => String(h ?? "").trim())
         const codeIdx = headers.findIndex(h => {
-          const l = h.toLowerCase()
+          const l = String(h ?? "").toLowerCase()
           return l.includes("mã hs") || l.includes("ma hs") || l.includes("mã học sinh") || l.includes("mã vnedu")
         })
         if (codeIdx === -1) {
@@ -808,19 +808,19 @@ export function DiemNhanXetTeacherClient({
 
         const studentMapByCode = new Map<string, string>()
         gradeSheetData.students.forEach(st => {
-          if (st.studentCode) studentMapByCode.set(st.studentCode.trim().toLowerCase(), st.id)
+          if (st.studentCode) studentMapByCode.set(String(st.studentCode).trim().toLowerCase(), st.id)
           if (st.vnEduCode) studentMapByCode.set(String(st.vnEduCode).trim().toLowerCase(), st.id)
         })
 
         const newEntries = { ...gradeSheetData.entries }
         let countImported = 0
-        const customCompTitle = (gradeSheetData.config?.compositeColumnName || "").trim().toLowerCase()
+        const customCompTitle = String(gradeSheetData.config?.compositeColumnName ?? "").trim().toLowerCase()
         const xlIdx = headers.findIndex(h => {
-          const l = h.toLowerCase()
+          const l = String(h ?? "").toLowerCase()
           return l.startsWith("xl") || l.includes("xếp loại") || l.includes("mức đạt")
         })
         const ktIdx = headers.findIndex(h => {
-          const l = h.toLowerCase()
+          const l = String(h ?? "").toLowerCase()
           return l.startsWith("kt ") || l === "kt" || l.includes("điểm kt")
         })
 
@@ -833,10 +833,11 @@ export function DiemNhanXetTeacherClient({
 
           const compScores: Record<string, string> = {}
           activeColNames.forEach((colName: string, cIdx: number) => {
-            const cleanColName = colName.trim().toLowerCase()
+            const cleanColName = String(colName ?? "").trim().toLowerCase()
             const hIdx = headers.findIndex(h => {
-              const cleanH = h.trim().toLowerCase().replace(/\s*\(tối đa.*?\)/i, "")
-              return cleanH === cleanColName || h.toLowerCase() === cleanColName
+              const strH = String(h ?? "")
+              const cleanH = strH.trim().toLowerCase().replace(/\s*\(tối đa.*?\)/i, "")
+              return cleanH === cleanColName || strH.toLowerCase() === cleanColName
             })
             if (hIdx !== -1 && row[hIdx] !== undefined && row[hIdx] !== null) {
               compScores[`col${cIdx}`] = String(row[hIdx])
@@ -848,7 +849,7 @@ export function DiemNhanXetTeacherClient({
           }
 
           const compScoreIdx = headers.findIndex(h => {
-            const lower = h.toLowerCase()
+            const lower = String(h ?? "").toLowerCase()
             return (customCompTitle && lower === customCompTitle) || lower.includes("thành phần") || lower.includes("tổng hợp") || lower.includes("tb môn")
           })
 
@@ -864,7 +865,10 @@ export function DiemNhanXetTeacherClient({
             ratingVal = normalizePrimaryXlInput(String(row[xlIdx]))
           }
 
-          const remIdx = headers.findIndex(h => h.toLowerCase().includes("nhận xét") || h.toLowerCase().includes("nhan xet"))
+          const remIdx = headers.findIndex(h => {
+            const l = String(h ?? "").toLowerCase()
+            return l.includes("nhận xét") || l.includes("nhan xet")
+          })
           let remVal = ""
           if (remIdx !== -1 && row[remIdx] !== undefined) {
             remVal = String(row[remIdx])

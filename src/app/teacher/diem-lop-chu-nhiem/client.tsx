@@ -52,6 +52,7 @@ import { StudentSurveyReportModal } from "./components/StudentSurveyReportModal"
 import { HomeroomFeedbackModal } from "./components/HomeroomFeedbackModal"
 import { ForwardToGvbmModal } from "./components/ForwardToGvbmModal"
 import { TermGradesTab } from "@/app/admin/ktdbcl/diem-nhan-xet/term-grades-tab"
+import { CtqtClassSubjectSummary } from "@/components/ctqt/CtqtClassSubjectSummary"
 
 const EVAL_PERIODS = [
   { code: "KSĐN", label: "Khảo sát đầu năm (KSĐN)", short: "KSĐN" },
@@ -86,7 +87,11 @@ export function HomeroomGradesClient({
   const [selectedClassId, setSelectedClassId] = useState<string>(homeroomClasses[0]?.id || "")
   const [selectedPeriod, setSelectedPeriod] = useState<string>("KSĐN")
   const [selectedScope, setSelectedScope] = useState<string>("campus") // "campus" | "all"
-  const [activeTab, setActiveTab] = useState<"matrix" | "term-grades" | "comparative" | "tracking" | "feedback">("matrix")
+  const [activeTab, setActiveTab] = useState<"matrix" | "term-grades" | "ctqt-summary" | "comparative" | "tracking" | "feedback">("matrix")
+  const [ctqtSemester, setCtqtSemester] = useState<number>(2)
+  const [ctqtData, setCtqtData] = useState<any>(null)
+  const [loadingCtqt, setLoadingCtqt] = useState<boolean>(false)
+  const [generatingCtqtPdf, setGeneratingCtqtPdf] = useState<boolean>(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [trackingFilter, setTrackingFilter] = useState<string>("ALL") // "ALL" | "BELOW_AVG" | "BELOW_BENCHMARK" | "ENTRANCE_COMMITMENT" | "LEARNING_COMMITMENT"
 
@@ -266,6 +271,92 @@ export function HomeroomGradesClient({
   const isCtqt = useMemo(() => {
     return isCtqtClass(currentClass?.className, currentClass?.educationSystem)
   }, [currentClass])
+
+  // Sync CTQT semester when user changes evaluation period
+  useEffect(() => {
+    if (["GK1", "CK1", "HK1", "KSĐN"].includes(selectedPeriod)) {
+      setCtqtSemester(1)
+    } else if (["GK2", "CK2", "HK2", "CN"].includes(selectedPeriod)) {
+      setCtqtSemester(2)
+    }
+  }, [selectedPeriod])
+
+  // Reset tab if switching away from a CTQT class
+  useEffect(() => {
+    if (!isCtqt && activeTab === "ctqt-summary") {
+      setActiveTab("matrix")
+    }
+  }, [isCtqt, activeTab])
+
+  // Fetch CTQT class subject summary when viewing CTQT tab
+  useEffect(() => {
+    if (activeTab !== "ctqt-summary" || !isCtqt || !selectedClassId || !selectedYearId) return
+    let cancelled = false
+    const loadCtqt = async () => {
+      setLoadingCtqt(true)
+      try {
+        const res = await fetch(
+          `/api/admin/ctqt/grades?classId=${selectedClassId}&academicYearId=${selectedYearId}&semester=${ctqtSemester}`
+        )
+        const json = await res.json()
+        if (!cancelled) {
+          if (json.success) {
+            setCtqtData(json.data)
+          } else {
+            toast.error(json.error || "Không thể tải kết quả môn học CTQT")
+            setCtqtData(null)
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error("Lỗi kết nối khi tải kết quả môn học CTQT")
+          setCtqtData(null)
+        }
+      } finally {
+        if (!cancelled) setLoadingCtqt(false)
+      }
+    }
+    loadCtqt()
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, isCtqt, selectedClassId, selectedYearId, ctqtSemester])
+
+  const handleExportCtqtPdf = async (studentId?: string) => {
+    if (!selectedClassId || !selectedYearId) return
+    setGeneratingCtqtPdf(true)
+    try {
+      const res = await fetch("/api/admin/ctqt/report-card", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          classId: selectedClassId,
+          academicYearId: selectedYearId,
+          semester: ctqtSemester,
+          ...(studentId ? { studentId } : {}),
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || "Không thể xuất Report Card PDF")
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      const safeName = (currentClass?.className || "Lop").replace(/[^\w.-]+/g, "_")
+      a.download = `ReportCard_CTQT_${safeName}_HK${ctqtSemester}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      toast.success("Xuất Report Card CTQT thành công!")
+    } catch (e: any) {
+      toast.error(e.message || "Lỗi xuất Report Card PDF")
+    } finally {
+      setGeneratingCtqtPdf(false)
+    }
+  }
 
   // Filtered student matrix by search
   const filteredStudents = useMemo(() => {
@@ -683,7 +774,7 @@ export function HomeroomGradesClient({
       </div>
 
       {/* KPI Cards */}
-      {activeTab !== "term-grades" && (
+      {activeTab !== "term-grades" && activeTab !== "ctqt-summary" && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Sỹ số lớp</div>
@@ -751,15 +842,19 @@ export function HomeroomGradesClient({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
         <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl flex-wrap">
           {isCtqt && (
-            <Link
-              href={`/teacher/so-diem-ctqt?tab=consolidated&classId=${selectedClassId}&academicYearId=${selectedYearId}`}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black transition-all bg-gradient-to-r from-amber-100 to-amber-50 text-amber-900 border border-amber-300 hover:brightness-95 shadow-2xs"
-              title="Mở Sổ điểm CTQT, đánh giá 6 năng lực cốt lõi và xuất Report Card song ngữ"
+            <button
+              type="button"
+              onClick={() => setActiveTab("ctqt-summary")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                activeTab === "ctqt-summary"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "bg-[#F0FDFA] text-[#003B3A] border border-teal-200 hover:bg-teal-50"
+              }`}
+              title="Xem tổng hợp kết quả các môn học Chương trình Quốc tế theo lớp"
             >
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              <span>Sổ Điểm CTQT (Song ngữ)</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-amber-700" />
-            </Link>
+              <Globe className={`w-4 h-4 ${activeTab === "ctqt-summary" ? "text-[#5EEAD4]" : "text-[#00736E]"}`} />
+              <span>Kết quả môn học CTQT</span>
+            </button>
           )}
 
           <button
@@ -883,7 +978,45 @@ export function HomeroomGradesClient({
       </div>
 
       {/* TAB CONTENT */}
-      {activeTab === "term-grades" ? (
+      {activeTab === "ctqt-summary" && isCtqt ? (
+        <div className="space-y-4">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3 tabular-nums">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600">Học kỳ CTQT:</span>
+                <select
+                  value={ctqtSemester}
+                  onChange={e => setCtqtSemester(Number(e.target.value))}
+                  className="text-xs font-semibold px-3 py-2 bg-[#F0FDFA] border border-[#008B85]/50 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
+                >
+                  <option value={1}>Học kỳ 1</option>
+                  <option value={2}>Học kỳ 2</option>
+                </select>
+              </div>
+              <span className="text-xs text-slate-500">
+                Lớp chủ nhiệm: <strong className="text-[#003B3A]">{currentClass?.className}</strong>
+              </span>
+            </div>
+
+            <Link
+              href={`/teacher/so-diem-ctqt?tab=consolidated&classId=${selectedClassId}&academicYearId=${selectedYearId}`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#F0FDFA] hover:bg-teal-100 text-[#003B3A] border border-teal-200 transition-colors"
+            >
+              <span>Đánh giá 6 Năng lực cốt lõi &amp; Sổ điểm chi tiết</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-[#00736E]" />
+            </Link>
+          </div>
+
+          <CtqtClassSubjectSummary
+            data={ctqtData}
+            loading={loadingCtqt}
+            semester={ctqtSemester}
+            mode="gvcn"
+            onExportPdf={studentId => handleExportCtqtPdf(studentId)}
+            generatingPdf={generatingCtqtPdf}
+          />
+        </div>
+      ) : activeTab === "term-grades" ? (
         <TermGradesTab
           campuses={campuses}
           classes={homeroomClasses}

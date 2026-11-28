@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import * as XLSX from "xlsx";
 import {
+  BM_SHEET_STATUS_OPTIONS,
   COMMON_PRIVACY_DISCLAIMER,
   DEFAULT_SIGNATURE_COLUMNS,
   FURTHER_INQUIRY_OPTIONS,
@@ -12,9 +13,28 @@ import {
   PvdhFollowUpActionItem,
   PvdhInterviewItemValue,
   PvdhSectionConfig,
+  PvdhTeacherSummaryD,
   formatFollowUpActionsToText,
+  isBmKtdbclTemplate,
 } from "./constants";
 import { sanitizeSpreadsheetCell } from "./validation";
+
+let cachedSkylineLogoDataUri: string | null = null;
+function getSkylineLogoDataUri(): string {
+  if (cachedSkylineLogoDataUri !== null) return cachedSkylineLogoDataUri;
+  try {
+    const logoPath = path.resolve(process.cwd(), "public", "logo.png");
+    if (fs.existsSync(logoPath)) {
+      const b64 = fs.readFileSync(logoPath).toString("base64");
+      cachedSkylineLogoDataUri = `data:image/png;base64,${b64}`;
+      return cachedSkylineLogoDataUri;
+    }
+  } catch {
+    // Fallback text brand if logo file is inaccessible
+  }
+  cachedSkylineLogoDataUri = "";
+  return cachedSkylineLogoDataUri;
+}
 
 export interface PvdhRenderPayload {
   recordId: string;
@@ -32,6 +52,7 @@ export interface PvdhRenderPayload {
   registeredCampus?: string | null;
   periodCode?: string | null;
   periodName?: string | null;
+  academicYearName?: string | null;
   interviewDate?: string | null;
   studentInterviewerName?: string | null;
   studentInterviewerTitle?: string | null;
@@ -49,6 +70,7 @@ export interface PvdhRenderPayload {
   obsParticipationLevel?: string | null;
   obsSupportNeeds?: string | null;
   parentResponses: Record<string, PvdhInterviewItemValue>;
+  teacherSummary?: PvdhTeacherSummaryD | null;
   planStrengthsPriority?: string | null;
   planGoalsActionsText?: string | null;
   followUpActions?: PvdhFollowUpActionItem[];
@@ -114,7 +136,13 @@ function formatViDateTime(val: Date | string | null | undefined): string {
 export function sanitizeSafeFileToken(raw: string | null | undefined, fallback: string): string {
   const cleaned = String(raw || "")
     .trim()
-    .replace(/[^a-zA-Z0-9_-]/g, "_");
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
   return cleaned || fallback;
 }
 
@@ -169,13 +197,539 @@ function renderInterviewGroupHtml(
   `;
 }
 
+function formatBmInterviewDate(val: Date | string | null | undefined): string {
+  if (!val) return "....../....../20......";
+  const s = String(val).trim();
+  if (!s) return "....../....../20......";
+  return formatViDate(val);
+}
+
+function resolveBmAcademicYearDisplay(payload: PvdhRenderPayload): string {
+  const explicit = String(payload.academicYearName || "").trim();
+  if (explicit) return explicit;
+  const fromPeriod = String(payload.periodName || "").match(/20\d{2}\s*[-–/]\s*20\d{2}/);
+  if (fromPeriod) return fromPeriod[0];
+  return "";
+}
+
+function renderBmItemLineHtml(
+  field: PvdhFieldConfig,
+  entry: PvdhInterviewItemValue | undefined
+): string {
+  const hasAnswer = Boolean(String(entry?.responseText || "").trim());
+  const isNotRecorded = Boolean(entry?.notRecorded);
+  const prompt = String(field.promptQuestion || "").trim();
+
+  let answerHtml = "";
+  if (isNotRecorded) {
+    const reason = String(entry?.notRecordedReason || "").trim();
+    answerHtml = `<div class="bm-answer bm-answer-filled"><em>Chưa ghi nhận${
+      reason ? ` — Lý do: ${escapeWithLineBreaks(reason)}` : ""
+    }</em></div>`;
+  } else if (hasAnswer) {
+    answerHtml = `<div class="bm-answer bm-answer-filled">${escapeWithLineBreaks(entry?.responseText)}</div>`;
+  } else {
+    answerHtml = `<div class="bm-answer bm-answer-dots"></div>`;
+  }
+
+  return `
+    <div class="bm-q-item">
+      <div class="bm-q-head">
+        <strong>${escapeHtml(field.label)}</strong>${prompt ? ` <span>${escapeHtml(prompt)}</span>` : ""}
+      </div>
+      ${answerHtml}
+    </div>
+  `;
+}
+
+function renderBmTeacherDItemHtml(label: string, value: string | null | undefined): string {
+  const text = String(value || "").trim();
+  return `
+    <div class="bm-q-item">
+      <div class="bm-q-head"><strong>${escapeHtml(label)}</strong></div>
+      ${
+        text
+          ? `<div class="bm-answer bm-answer-filled">${escapeWithLineBreaks(text)}</div>`
+          : `<div class="bm-answer bm-answer-dots"></div>`
+      }
+    </div>
+  `;
+}
+
 /**
- * Dựng HTML chuẩn A4 đa trang cho Phiếu phỏng vấn định hướng HS & PHHS (PVDH-01..05)
- * - Giữ đủ 5 phần I–V, câu hỏi gợi mở, ô ghi nhận, checkbox và 3 cột ký như nguồn
- * - Tự động co giãn số trang theo độ dài câu trả lời, tuyệt đối không cắt nội dung để ép 2 trang
- * - Hiển thị rõ nhãn "Bản nháp" khi phiếu chưa được xác nhận/khóa
+ * Dựng HTML chuẩn A4 bám sát 100% biểu mẫu chính thức BM.KTĐBCL.31 (Khối 1) & BM.KTĐBCL.32 (Khối 2)
+ * Tuyệt đối không chèn bất kỳ trường hoặc mục nào ngoài nội dung trên phiếu gốc.
+ */
+function buildBmKtdbclDocumentHtml(payload: PvdhRenderPayload): string {
+  const gradeClean = String(payload.grade || "1").replace(/^khối\s*/i, "").trim() || "1";
+  const layout = payload.exportLayout || ({} as PvdhExportLayoutConfig);
+  const parsedGradeInt = Number(gradeClean);
+  const formCodeBox =
+    layout.formCodeBox ||
+    (Number.isInteger(parsedGradeInt) && parsedGradeInt >= 1 && parsedGradeInt <= 12
+      ? `BM.KTĐBCL.${30 + parsedGradeInt}`
+      : "BM.KTĐBCL.31");
+  const headerSubtitle = layout.headerSubtitle || `(Dành cho khối ${gradeClean})`;
+  const ownerUnit = layout.ownerUnit || "Ban Khảo thí & Đảm bảo chất lượng";
+  const headerGuideLine =
+    layout.headerGuideLine ||
+    "Hướng dẫn: Hỏi mở, tôn trọng ý kiến HS/PHHS; ghi nhận nguồn thông tin, không tự quy đổi thành điểm xét tuyển.";
+  const footerText = layout.internalFooterText || "SSM Sky-Line | Phiếu lưu hành nội bộ";
+
+  const logoUri = getSkylineLogoDataUri();
+  const logoHtml = logoUri
+    ? `<img src="${logoUri}" alt="SKY-LINE" class="bm-logo-img" />`
+    : `<div class="bm-logo-fallback">SKY-LINE</div>`;
+
+  const renderHeaderBox = () => `
+    <table class="bm-header-table">
+      <tr>
+        <td rowspan="2" class="bm-header-logo">${logoHtml}</td>
+        <td class="bm-header-title-cell">
+          <div class="bm-header-title">PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ<br/>TRAO ĐỔI VỚI PHỤ HUYNH</div>
+          <div class="bm-header-sub">${escapeHtml(headerSubtitle)}</div>
+        </td>
+        <td rowspan="2" class="bm-header-code">${escapeHtml(formCodeBox)}</td>
+      </tr>
+      <tr>
+        <td class="bm-header-owner">Đơn vị sở hữu: ${escapeHtml(ownerUnit)}</td>
+      </tr>
+    </table>
+  `;
+
+  const secMap = new Map((payload.sections || []).map((s) => [s.sectionCode, s]));
+  const secA = secMap.get("II_STUDENT");
+  const secB = secMap.get("IV_PARENT");
+  const secC = secMap.get("C_PARENT_GRADE");
+  const secD = secMap.get("D_TEACHER_SUMMARY");
+
+  const fieldsA = (payload.fields || [])
+    .filter((f) => f.sectionCode === "II_STUDENT")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const fieldsB = (payload.fields || [])
+    .filter((f) => f.sectionCode === "IV_PARENT")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const fieldsC = (payload.fields || [])
+    .filter((f) => f.sectionCode === "C_PARENT_GRADE")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const fieldsDText = (payload.fields || [])
+    .filter((f) => f.sectionCode === "D_TEACHER_SUMMARY" && f.dataType === "TEXTAREA")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const summary = payload.teacherSummary || {
+    d01: "",
+    d02: "",
+    d03: "",
+    d04: "",
+    sheetStatus: "",
+    psychInterviewRequested: false,
+  };
+
+  const dValByKey: Record<string, string | null | undefined> = {
+    d01: summary.d01,
+    d02: summary.d02,
+    d03: summary.d03,
+    d04: summary.d04,
+  };
+
+  const academicYearVal = resolveBmAcademicYearDisplay(payload);
+  const executorName =
+    payload.confirmedByName || payload.studentInterviewerName || payload.parentInterviewerName || "";
+  const sigCol = layout.signatureColumns?.[0] || {
+    key: "TEACHER_EXECUTOR",
+    title: "Giáo viên thực hiện",
+    subtitle: "(Kí và ghi rõ họ tên)",
+  };
+
+  const statusOptionsHtml = BM_SHEET_STATUS_OPTIONS.map((opt) => {
+    const checked = summary.sheetStatus === opt.code;
+    return `<span class="bm-status-opt"><span class="bm-chk-square">${checked ? "☑" : "☐"}</span> ${escapeHtml(opt.label)}</span>`;
+  }).join("");
+
+  const renderInlineField = (label: string, val: string | null | undefined, flexGrow = 1) => {
+    const clean = String(val || "").trim();
+    return `
+      <span class="bm-info-seg" style="flex: ${flexGrow};">
+        <span class="bm-info-lbl">${escapeHtml(label)}</span>
+        <span class="bm-info-fill ${clean ? "has-val" : ""}">${clean ? escapeHtml(clean) : "&nbsp;"}</span>
+      </span>
+    `;
+  };
+
+  const interviewDateFormatted = formatBmInterviewDate(payload.interviewDate);
+  const hasRealDate = Boolean(String(payload.interviewDate || "").trim());
+
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<title>${escapeHtml(formCodeBox)} - ${escapeHtml(payload.studentName)}</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 11mm 14mm 11mm 14mm;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Times New Roman", "Cambria", "DejaVu Serif", Georgia, serif;
+    font-size: 10.5pt;
+    line-height: 1.38;
+    color: #111827;
+    background: #FFFFFF;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .bm-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 268mm;
+    justify-content: space-between;
+  }
+  .bm-page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+  .bm-header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+  }
+  .bm-header-table td {
+    border: 1px solid #374151;
+    padding: 5px 8px;
+    vertical-align: middle;
+  }
+  .bm-header-logo {
+    width: 21%;
+    text-align: center;
+  }
+  .bm-logo-img {
+    max-width: 108px;
+    max-height: 44px;
+    object-fit: contain;
+    display: inline-block;
+  }
+  .bm-logo-fallback {
+    font-family: Arial, sans-serif;
+    font-weight: 800;
+    font-size: 13pt;
+    color: #008B85;
+    letter-spacing: 0.04em;
+  }
+  .bm-header-title-cell {
+    width: 59%;
+    text-align: center;
+    padding: 6px 10px;
+  }
+  .bm-header-title {
+    font-size: 10.5pt;
+    font-weight: 700;
+    line-height: 1.28;
+    color: #111827;
+  }
+  .bm-header-sub {
+    font-size: 10pt;
+    font-weight: 700;
+    margin-top: 1px;
+  }
+  .bm-header-owner {
+    text-align: center;
+    font-size: 9.5pt;
+    padding: 3px 8px !important;
+  }
+  .bm-header-code {
+    width: 20%;
+    text-align: center;
+    font-size: 10pt;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+  .bm-top-divider {
+    border: 0;
+    border-top: 1px solid #374151;
+    margin: 6px 0 8px 0;
+  }
+  .bm-info-block {
+    margin: 4px 0 6px 0;
+  }
+  .bm-info-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+    font-size: 10.3pt;
+  }
+  .bm-info-seg {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+  }
+  .bm-info-lbl {
+    white-space: nowrap;
+    color: #111827;
+  }
+  .bm-info-fill {
+    flex: 1;
+    border-bottom: 1px dotted #4B5563;
+    min-height: 16px;
+    padding: 0 3px;
+    font-weight: 600;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bm-date-raw {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .bm-guide-italic {
+    font-style: italic;
+    font-size: 9.8pt;
+    color: #1F2937;
+    margin: 3px 0 6px 0;
+  }
+  .bm-sec-divider {
+    border: 0;
+    border-top: 1px solid #4B5563;
+    margin: 7px 0 6px 0;
+  }
+  .bm-sec-title {
+    font-size: 10.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 4px 0 3px 0;
+    color: #111827;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  .bm-sec-guide {
+    font-style: italic;
+    font-size: 9.8pt;
+    margin: 0 0 5px 0;
+    color: #1F2937;
+  }
+  .bm-q-item {
+    margin-bottom: 5px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .bm-q-head {
+    font-size: 10.2pt;
+    line-height: 1.32;
+    color: #111827;
+  }
+  .bm-answer {
+    margin-top: 2px;
+    font-size: 10pt;
+    color: #0F172A;
+  }
+  .bm-answer-dots {
+    height: 16px;
+    border-bottom: 1px dotted #4B5563;
+  }
+  .bm-answer-filled {
+    padding: 1px 2px 2px 2px;
+    border-bottom: 1px dotted #6B7280;
+    min-height: 17px;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+  .bm-status-line {
+    margin-top: 6px;
+    font-size: 10.2pt;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    page-break-inside: avoid;
+  }
+  .bm-status-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .bm-chk-square {
+    font-size: 11.5pt;
+    line-height: 1;
+  }
+  .bm-bottom-sign-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 8px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .bm-psych-box {
+    font-size: 10.3pt;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 2px;
+  }
+  .bm-psych-square {
+    font-size: 13pt;
+    font-weight: 400;
+    line-height: 1;
+  }
+  .bm-executor-col {
+    width: 46%;
+    text-align: center;
+  }
+  .bm-executor-title {
+    font-size: 10.3pt;
+    font-weight: 700;
+  }
+  .bm-executor-sub {
+    font-size: 9.6pt;
+    margin-top: 1px;
+  }
+  .bm-executor-space {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .bm-executor-space img {
+    max-height: 52px;
+    max-width: 150px;
+    object-fit: contain;
+  }
+  .bm-executor-name {
+    font-size: 10.2pt;
+    font-weight: 700;
+  }
+  .bm-executor-dots {
+    font-size: 10pt;
+    color: #374151;
+    letter-spacing: 1px;
+  }
+  .bm-internal-footer {
+    text-align: right;
+    font-style: italic;
+    font-size: 9.3pt;
+    color: #374151;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+  <!-- ==================== TRANG 1: THÔNG TIN CHUNG + MỤC A + MỤC B ==================== -->
+  <div class="bm-page">
+    <div>
+      ${renderHeaderBox()}
+
+      <div class="bm-info-block">
+        <div class="bm-info-row">
+          ${renderInlineField("Họ và tên HS:", payload.studentName, 62)}
+          ${renderInlineField("Hệ:", payload.programName, 38)}
+        </div>
+        <div class="bm-info-row">
+          ${renderInlineField("Cơ sở:", payload.registeredCampus, 26)}
+          ${renderInlineField("Năm học:", academicYearVal, 34)}
+          <span class="bm-info-seg" style="flex: 40;">
+            <span class="bm-info-lbl">Ngày phỏng vấn:</span>
+            ${
+              hasRealDate
+                ? `<span class="bm-info-fill has-val bm-date-raw">${escapeHtml(interviewDateFormatted)}</span>`
+                : `<span class="bm-date-raw">${escapeHtml(interviewDateFormatted)}</span>`
+            }
+          </span>
+        </div>
+        <div class="bm-info-row">
+          ${renderInlineField("Phụ huynh tham gia:", payload.parentFullName, 56)}
+          ${renderInlineField("Quan hệ với HS:", payload.parentRelationship, 44)}
+        </div>
+        <div class="bm-guide-italic">${escapeHtml(headerGuideLine)}</div>
+      </div>
+
+      <div class="bm-sec-title">${escapeHtml(secA?.title || "A. PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH")}</div>
+      ${secA?.guideline ? `<div class="bm-sec-guide">${escapeHtml(secA.guideline)}</div>` : ""}
+      ${fieldsA.map((f) => renderBmItemLineHtml(f, payload.studentResponses?.[f.fieldKey])).join("\n")}
+
+      <hr class="bm-sec-divider" />
+      <div class="bm-sec-title">${escapeHtml(secB?.title || "B. TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH")}</div>
+      ${fieldsB.map((f) => renderBmItemLineHtml(f, payload.parentResponses?.[f.fieldKey])).join("\n")}
+    </div>
+
+    <div class="bm-internal-footer">${escapeHtml(footerText)}</div>
+  </div>
+
+  <!-- ==================== TRANG 2: MỤC C + MỤC D + TRẠNG THÁI & CHỮ KÝ ==================== -->
+  <div class="bm-page bm-page-break">
+    <div>
+      ${renderHeaderBox()}
+      <hr class="bm-top-divider" />
+
+      <div class="bm-sec-title">${escapeHtml(
+        secC?.title || `C. CÂU HỎI PHÂN HÓA RIÊNG CHO KHỐI ${gradeClean} (PHỤ HUYNH)`
+      )}</div>
+      ${fieldsC.map((f) => renderBmItemLineHtml(f, payload.parentResponses?.[f.fieldKey])).join("\n")}
+
+      <div style="margin-top: 10px;"></div>
+      <div class="bm-sec-title">${escapeHtml(secD?.title || "D. TỔNG HỢP VÀ ĐỊNH HƯỚNG CỦA GIÁO VIÊN")}</div>
+      ${fieldsDText
+        .map((f) => renderBmTeacherDItemHtml(f.label, dValByKey[f.fieldKey]))
+        .join("\n")}
+
+      <div class="bm-status-line">
+        <span>Trạng thái phiếu:</span>
+        ${statusOptionsHtml}
+      </div>
+
+      <div class="bm-bottom-sign-row">
+        <div class="bm-psych-box">
+          <span>Đề nghị phỏng vấn (tâm lí)</span>
+          <span class="bm-psych-square">${summary.psychInterviewRequested ? "☑" : "☐"}</span>
+        </div>
+
+        <div class="bm-executor-col">
+          <div class="bm-executor-title">${escapeHtml(sigCol.title || "Giáo viên thực hiện")}</div>
+          <div class="bm-executor-sub">${escapeHtml(sigCol.subtitle || "(Kí và ghi rõ họ tên)")}</div>
+          <div class="bm-executor-space">
+            ${
+              payload.signatureImageBase64
+                ? `<img src="${escapeHtml(payload.signatureImageBase64)}" alt="Chữ ký giáo viên" />`
+                : ""
+            }
+          </div>
+          ${
+            executorName
+              ? `<div class="bm-executor-name">${escapeHtml(executorName)}</div>`
+              : `<div class="bm-executor-dots">....................................</div>`
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="bm-internal-footer">${escapeHtml(footerText)}</div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
+ * Dựng HTML chuẩn A4 đa trang cho Phiếu phỏng vấn định hướng HS & PHHS
+ * - Với Khối 1 & Khối 2 (BM.KTĐBCL.31 / BM.KTĐBCL.32): render đúng chuẩn A, B, C, D chính thức
+ * - Với Khối 3–12 (PVDH-03..05): giữ đủ 5 phần I–V
  */
 export function buildPvdhDocumentHtml(payload: PvdhRenderPayload): string {
+  if (
+    isBmKtdbclTemplate({
+      exportLayout: payload.exportLayout,
+      sections: payload.sections,
+      fields: payload.fields,
+      templateCode: payload.templateCode,
+    })
+  ) {
+    return buildBmKtdbclDocumentHtml(payload);
+  }
   const layout = payload.exportLayout || {
     paperSize: "A4",
     orientation: "PORTRAIT",
@@ -815,31 +1369,71 @@ function buildFallbackPvdhPdfBuffer(payload: PvdhRenderPayload, htmlContent: str
     "II. TRAO DOI VOI HOC SINH:",
   ];
 
-  for (let i = 1; i <= 6; i++) {
-    const item = payload.studentResponses?.[`hs_q${i}`];
-    const txt = item?.notRecorded
-      ? `[Chua ghi nhan: ${toAscii(item.notRecordedReason)}]`
-      : toAscii(item?.responseText || "(Chua nhap)").slice(0, 80);
-    lines.push(`  II.${i}: ${txt}`);
-  }
+  const isBm = isBmKtdbclTemplate({
+    exportLayout: payload.exportLayout,
+    sections: payload.sections,
+    fields: payload.fields,
+    templateCode: payload.templateCode,
+  });
 
-  lines.push("III. GHI NHAN CUA GIAO VIEN:");
-  lines.push(`  - Diem manh/so thich: ${toAscii(payload.obsStrengthsInterests || "-").slice(0, 75)}`);
-  lines.push(`  - Giao tiep & tham gia: ${toAscii(payload.obsCommunicationStyle || "-").slice(0, 75)}`);
-  lines.push("IV. TRAO DOI VOI PHHS:");
-  for (let i = 1; i <= 5; i++) {
-    const item = payload.parentResponses?.[`ph_q${i}`];
-    const txt = item?.notRecorded
-      ? `[Chua ghi nhan: ${toAscii(item.notRecordedReason)}]`
-      : toAscii(item?.responseText || "(Chua nhap)").slice(0, 80);
-    lines.push(`  IV.${i}: ${txt}`);
-  }
+  if (isBm) {
+    lines.push("A. PHONG VAN DINH HUONG HOC SINH:");
+    for (const f of (payload.fields || []).filter((x) => x.sectionCode === "II_STUDENT").slice(0, 6)) {
+      const item = payload.studentResponses?.[f.fieldKey];
+      const txt = item?.notRecorded
+        ? `[Chua ghi nhan: ${toAscii(item.notRecordedReason)}]`
+        : toAscii(item?.responseText || "(Chua nhap)").slice(0, 75);
+      lines.push(`  ${toAscii(f.fieldKey.toUpperCase())}: ${txt}`);
+    }
+    lines.push("B. TRAO DOI DINH HUONG VOI PHU HUYNH:");
+    for (const f of (payload.fields || []).filter((x) => x.sectionCode === "IV_PARENT").slice(0, 5)) {
+      const item = payload.parentResponses?.[f.fieldKey];
+      const txt = item?.notRecorded
+        ? `[Chua ghi nhan: ${toAscii(item.notRecordedReason)}]`
+        : toAscii(item?.responseText || "(Chua nhap)").slice(0, 75);
+      lines.push(`  ${toAscii(f.fieldKey.toUpperCase())}: ${txt}`);
+    }
+    lines.push("C. CAU HOI PHAN HOA RIENG:");
+    for (const f of (payload.fields || []).filter((x) => x.sectionCode === "C_PARENT_GRADE").slice(0, 5)) {
+      const item = payload.parentResponses?.[f.fieldKey];
+      const txt = item?.notRecorded
+        ? `[Chua ghi nhan: ${toAscii(item.notRecordedReason)}]`
+        : toAscii(item?.responseText || "(Chua nhap)").slice(0, 75);
+      lines.push(`  ${toAscii(f.fieldKey.toUpperCase())}: ${txt}`);
+    }
+    lines.push("D. TONG HOP VA DINH HUONG CUA GIAO VIEN:");
+    const sum = payload.teacherSummary || ({} as any);
+    lines.push(`  D01: ${toAscii(sum.d01 || "-").slice(0, 75)}`);
+    lines.push(`  D02: ${toAscii(sum.d02 || "-").slice(0, 75)}`);
+    lines.push(`  D03: ${toAscii(sum.d03 || "-").slice(0, 75)}`);
+    lines.push(`  D04: ${toAscii(sum.d04 || "-").slice(0, 75)}`);
+  } else {
+    for (let i = 1; i <= 6; i++) {
+      const item = payload.studentResponses?.[`hs_q${i}`];
+      const txt = item?.notRecorded
+        ? `[Chua ghi nhan: ${toAscii(item.notRecordedReason)}]`
+        : toAscii(item?.responseText || "(Chua nhap)").slice(0, 80);
+      lines.push(`  II.${i}: ${txt}`);
+    }
 
-  lines.push("V. THONG NHAT DINH HUONG VA HO TRO:");
-  lines.push(`  1. Diem manh & uu tien: ${toAscii(payload.planStrengthsPriority || "-").slice(0, 75)}`);
-  lines.push(`  2. Muc tieu & hanh dong: ${toAscii(payload.planGoalsActionsText || "-").slice(0, 75)}`);
-  lines.push(`  4. Tim hieu them: ${(payload.planFurtherTopics || []).join(", ")}`);
-  lines.push(`  5. Ban giao GVCN: ${toAscii(payload.planHandoverNotes || "-").slice(0, 75)}`);
+    lines.push("III. GHI NHAN CUA GIAO VIEN:");
+    lines.push(`  - Diem manh/so thich: ${toAscii(payload.obsStrengthsInterests || "-").slice(0, 75)}`);
+    lines.push(`  - Giao tiep & tham gia: ${toAscii(payload.obsCommunicationStyle || "-").slice(0, 75)}`);
+    lines.push("IV. TRAO DOI VOI PHHS:");
+    for (let i = 1; i <= 5; i++) {
+      const item = payload.parentResponses?.[`ph_q${i}`];
+      const txt = item?.notRecorded
+        ? `[Chua ghi nhan: ${toAscii(item.notRecordedReason)}]`
+        : toAscii(item?.responseText || "(Chua nhap)").slice(0, 80);
+      lines.push(`  IV.${i}: ${txt}`);
+    }
+
+    lines.push("V. THONG NHAT DINH HUONG VA HO TRO:");
+    lines.push(`  1. Diem manh & uu tien: ${toAscii(payload.planStrengthsPriority || "-").slice(0, 75)}`);
+    lines.push(`  2. Muc tieu & hanh dong: ${toAscii(payload.planGoalsActionsText || "-").slice(0, 75)}`);
+    lines.push(`  4. Tim hieu them: ${(payload.planFurtherTopics || []).join(", ")}`);
+    lines.push(`  5. Ban giao GVCN: ${toAscii(payload.planHandoverNotes || "-").slice(0, 75)}`);
+  }
 
   const textOps = lines
     .slice(0, 34)
@@ -897,25 +1491,28 @@ export async function generatePvdhPdfBuffer(payload: PvdhRenderPayload): Promise
 
   if (!isTestEnv) {
     try {
-      const puppeteer = await import("puppeteer");
-      const browser = await puppeteer.default.launch({
+      const puppeteerMod = await import("puppeteer");
+      const puppeteerLauncher = (puppeteerMod as any).default ?? puppeteerMod;
+      const browser = await puppeteerLauncher.launch({
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-        timeout: 10000,
+        timeout: 30000,
       });
       try {
         const page = await browser.newPage();
-        await page.setContent(htmlContent, { waitUntil: "load", timeout: 10000 });
+        await page.setContent(htmlContent, { waitUntil: "load", timeout: 30000 });
         const uint8 = await page.pdf({
           format: "A4",
           printBackground: true,
+          preferCSSPageSize: true,
           margin: { top: "11mm", right: "12mm", bottom: "13mm", left: "12mm" },
         });
         pdfBuffer = Buffer.from(uint8);
       } finally {
         await browser.close();
       }
-    } catch {
+    } catch (err) {
+      console.error("[PVDH PDF] Puppeteer render failed, falling back to plain PDF:", err);
       pdfBuffer = null;
     }
   }

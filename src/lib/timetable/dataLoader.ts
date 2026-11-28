@@ -8,6 +8,7 @@ import {
   getAllowedLevelOptionsForScope,
   getValidScopesAndCampuses,
   normalizeGradeCode,
+  parseSelectedCampusIds,
   resolveClassStudyProgram,
   sortClassesByGradeAndSystem,
   WORKING_DAYS_DEFAULT,
@@ -431,31 +432,33 @@ export async function loadScopedWorkspaceContext(
       : catalog.validScopes[0]?.code || "TRUNG_HOC"
 
   const allowedCampusesForScope = catalog.campusesByScope[selectedScopeGroup] || []
+  const allowedScopeCampusIds = allowedCampusesForScope.map((c) => c.id)
+  const campusByIdMap = new Map(allCampuses.map((c) => [c.id, c]))
+
+  const parsedCampusSel = parseSelectedCampusIds(filters.campusId, allowedCampusesForScope)
+  const selectedCampusIds = parsedCampusSel.selectedCampusIds
+  const selectedCampusSet = new Set(selectedCampusIds)
+  const selectedCampusFilter = parsedCampusSel.normalizedFilterValue
+
   const selectedCampusObj =
-    (filters.campusId && allowedCampusesForScope.find((c) => c.id === filters.campusId)) ||
+    allowedCampusesForScope.find((c) => c.id === selectedCampusIds[0]) ||
     allowedCampusesForScope[0] ||
     null
 
+  // Concrete anchor campus ID (used when creating configs/versions or single-campus fallbacks)
   const selectedCampusId = selectedCampusObj?.id || ""
 
-  // Strict campus access enforcement if client explicitly passed an unauthorized campusId
-  if (
-    filters.campusId &&
-    !authCtx.isFullAccess &&
-    !authCtx.allowedCampusIds.includes(filters.campusId)
-  ) {
-    // Already guarded by requireTimetablePermission when campusIds is passed, double-ensured here
-  }
+  const fullScopeAllCampusesClasses = sortClassesByGradeAndSystem(
+    allYearClasses.filter((c) => {
+      if (!allowedScopeCampusIds.includes(c.campusId)) return false
+      const cObj = campusByIdMap.get(c.campusId)
+      return doesClassBelongToScope(c, cObj, selectedScopeGroup, "ALL")
+    })
+  )
 
-  const campusAllScopeClasses = selectedCampusObj
-    ? sortClassesByGradeAndSystem(
-        allYearClasses.filter(
-          (c) =>
-            c.campusId === selectedCampusId &&
-            doesClassBelongToScope(c, selectedCampusObj, selectedScopeGroup, "ALL")
-        )
-      )
-    : []
+  const campusAllScopeClasses = fullScopeAllCampusesClasses.filter((c) =>
+    selectedCampusSet.has(c.campusId)
+  )
 
   const levelOptions = getAllowedLevelOptionsForScope(selectedScopeGroup, campusAllScopeClasses)
   const selectedLevelCode: LevelFilterCode =
@@ -464,13 +467,16 @@ export async function loadScopedWorkspaceContext(
       : levelOptions[0]?.code || "ALL"
 
   // Strict scope class filtering — ZERO fallback to out-of-scope classes!
-  const levelFilteredClasses = selectedCampusObj
-    ? sortClassesByGradeAndSystem(
-        campusAllScopeClasses.filter((c) =>
-          doesClassBelongToScope(c, selectedCampusObj, selectedScopeGroup, selectedLevelCode)
-        )
+  const levelFilteredClasses = sortClassesByGradeAndSystem(
+    campusAllScopeClasses.filter((c) =>
+      doesClassBelongToScope(
+        c,
+        campusByIdMap.get(c.campusId),
+        selectedScopeGroup,
+        selectedLevelCode
       )
-    : []
+    )
+  )
 
   const programCounts = new Map<"Hệ S" | "Hệ I", number>()
   for (const c of levelFilteredClasses) {
@@ -525,46 +531,60 @@ export async function loadScopedWorkspaceContext(
   const manageableScope: ManageableScopeGroup =
     selectedScopeGroup === "LIEN_CAP" ? "TRUNG_HOC" : selectedScopeGroup
 
-  const [versions, configRow, rawRooms, rawBusySlots, rawTravelRules] = selectedCampusId
-    ? await Promise.all([
-        selectedScopeGroup === "LIEN_CAP"
-          ? prisma.timetableVersion.findMany({
-              where: {
-                academicYearId: selectedYearId,
-                semester,
-                campusId: selectedCampusId,
+  const [versions, configRow, rawRooms, rawBusySlots, rawTravelRules] =
+    selectedCampusIds.length > 0
+      ? await Promise.all([
+          selectedScopeGroup === "LIEN_CAP"
+            ? prisma.timetableVersion.findMany({
+                where: {
+                  academicYearId: selectedYearId,
+                  semester,
+                  campusId: { in: selectedCampusIds },
+                },
+                orderBy: [{ revision: "desc" }, { updatedAt: "desc" }],
+              })
+            : prisma.timetableVersion.findMany({
+                where: {
+                  academicYearId: selectedYearId,
+                  semester,
+                  campusId: {
+                    in:
+                      allowedScopeCampusIds.length > 0
+                        ? allowedScopeCampusIds
+                        : selectedCampusIds,
+                  },
+                  scopeGroup: manageableScope,
+                },
+                orderBy: [{ revision: "desc" }, { updatedAt: "desc" }],
+              }),
+          prisma.timetableConfig.findFirst({
+            where: {
+              academicYearId: selectedYearId,
+              semester,
+              campusId: {
+                in:
+                  selectedCampusIds.length === 1
+                    ? [selectedCampusIds[0], ...allowedScopeCampusIds]
+                    : allowedScopeCampusIds.length > 0
+                    ? allowedScopeCampusIds
+                    : selectedCampusIds,
               },
-              orderBy: [{ updatedAt: "desc" }],
-            })
-          : prisma.timetableVersion.findMany({
-              where: {
-                academicYearId: selectedYearId,
-                semester,
-                campusId: selectedCampusId,
-                scopeGroup: manageableScope,
-              },
-              orderBy: [{ versionNumber: "desc" }, { updatedAt: "desc" }],
-            }),
-        prisma.timetableConfig.findFirst({
-          where: {
-            academicYearId: selectedYearId,
-            semester,
-            campusId: selectedCampusId,
-            scopeGroup: manageableScope,
-          },
-        }),
-        prisma.timetableRoom.findMany({
-          where: { campusId: selectedCampusId, status: "ACTIVE" },
-          orderBy: { roomCode: "asc" },
-        }),
-        prisma.timetableBusySlot.findMany({
-          where: { academicYearId: selectedYearId, semester, status: "ACTIVE" },
-        }),
-        prisma.timetableTravelRule.findMany({
-          where: { academicYearId: selectedYearId },
-        }),
-      ])
-    : [[], null, [], [], []]
+              scopeGroup: manageableScope,
+            },
+            orderBy: { updatedAt: "desc" },
+          }),
+          prisma.timetableRoom.findMany({
+            where: { campusId: { in: selectedCampusIds }, status: "ACTIVE" },
+            orderBy: { roomCode: "asc" },
+          }),
+          prisma.timetableBusySlot.findMany({
+            where: { academicYearId: selectedYearId, semester, status: "ACTIVE" },
+          }),
+          prisma.timetableTravelRule.findMany({
+            where: { academicYearId: selectedYearId },
+          }),
+        ])
+      : [[], null, [], [], []]
 
   const selectedVersion =
     (filters.versionId && versions.find((v) => v.id === filters.versionId)) ||
@@ -672,6 +692,7 @@ export async function loadScopedWorkspaceContext(
 
   return {
     allCampuses,
+    allowedCampuses: catalog.permittedCampuses,
     academicYears,
     activeYear,
     selectedYearId,
@@ -688,6 +709,9 @@ export async function loadScopedWorkspaceContext(
     manageableScope,
     selectedCampusObj,
     selectedCampusId,
+    selectedCampusIds,
+    selectedCampusFilter,
+    isAllCampusesSelected: parsedCampusSel.isAllSelected,
     levelOptions,
     selectedLevelCode,
     availableStudyPrograms,
@@ -695,6 +719,7 @@ export async function loadScopedWorkspaceContext(
     availableGrades,
     selectedGrade,
     selectedClassId,
+    fullScopeAllCampusesClasses,
     campusAllScopeClasses,
     inScopeClasses: gradeFilteredClasses,
     versions,

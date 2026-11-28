@@ -8,7 +8,7 @@ export const metadata = {
 }
 
 export default async function DiemNhanXetAdminPage() {
-  const [session, academicYears, campuses, rawSubjects] = await Promise.all([
+  const [session, academicYears, campuses, rawSubjects, teachers] = await Promise.all([
     auth().catch(() => null),
     prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }),
     prisma.campus.findMany({
@@ -25,7 +25,12 @@ export default async function DiemNhanXetAdminPage() {
         where: { status: "ACTIVE" },
         orderBy: { subjectName: "asc" }
       })
-    )
+    ),
+    prisma.teacher.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { teacherName: "asc" },
+      select: { id: true, teacherCode: true, teacherName: true }
+    }).catch(() => [])
   ])
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
 
@@ -67,6 +72,7 @@ export default async function DiemNhanXetAdminPage() {
       campuses={JSON.parse(JSON.stringify(campuses))}
       classes={JSON.parse(JSON.stringify(classes))}
       subjects={JSON.parse(JSON.stringify(subjects))}
+      teachers={JSON.parse(JSON.stringify(teachers))}
       isSubjectScoped={scope.isSubjectScoped}
     />
   )

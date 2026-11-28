@@ -33,6 +33,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const roleCode = (session?.user as any)?.role || "PARENT"
   const upperRole = (roleCode || "").toUpperCase().trim()
+  if (upperRole === "PARENT") {
+    redirect("/parent")
+  }
   let readableModules: string[] = []
   let taskCount = 0
   let isTTCM = false
@@ -54,6 +57,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           "KTDBCL_TK_DUYET_MO_SO",
           "KTDBCL_TK_PHAN_HOI",
           "KTDBCL_PHAN_TICH_THKQ",
+          "KTDBCL_GIAM_SAT_TIEN_DO",
+          "KTDBCL_GSTD_HS_THIEU_DIEM",
+          "KTDBCL_GSTD_TINH_HINH_NHAP",
           "KTDBCL_XUAT_BANG_DIEM",
         ].forEach((code) => {
           if (!readableModules.includes(code)) readableModules.push(code)

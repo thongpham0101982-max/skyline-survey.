@@ -937,43 +937,30 @@ export function TasksClient({
         </div>
       )}
 
-      {/* TOP HEADER BAR — QA WORKSPACE | KT&ĐBCL */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-teal-500 text-white flex items-center justify-center shadow-sm shrink-0">
-            <ClipboardList className="w-6 h-6" />
+      {/* TOP HEADER BAR — QA WORKSPACE | KT&ĐBCL (Academic Ledger) */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="border-l-4 border-[#003B3A] pl-3.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-base sm:text-lg font-bold text-[#003B3A]">
+              Điều hành &amp; giao việc — Ban KT&amp;ĐBCL
+            </h1>
+            <span className="text-xs px-2.5 py-0.5 bg-[#F0FDFA] text-[#00736E] border border-teal-200 rounded-lg font-semibold tabular-nums">
+              {stats.total} nhiệm vụ • Nghiệm thu {stats.completionRate}%
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                QA Workspace | KT&ĐBCL
-              </h1>
-              <span className="text-xs px-2.5 py-0.5 bg-teal-50 text-teal-800 rounded-full font-extrabold">
-                {stats.total} nhiệm vụ
-              </span>
-              <span className="text-xs px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-extrabold">
-                Nghiệm thu: {stats.completionRate}% (N={stats.total})
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Không gian điều hành công việc, kiểm soát chất lượng, minh chứng và cải tiến liên tục của Ban Khảo thí & Đảm bảo chất lượng
-            </p>
-          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Theo dõi tiến độ theo nhóm và cá nhân, điều phối đầu việc, và nhận gợi ý trực tiếp từ Trợ lý QA trên dữ liệu SSM.
+          </p>
         </div>
 
-        {/* 5 CHẾ ĐỘ LÀM VIỆC CHUẨN (Mục II.3) & CÁC NÚT HÀNH ĐỘNG CHÍNH (MÀU TÍM SSM) */}
+        {/* 4 CHẾ ĐỘ LÀM VIỆC TINH GỌN + CÁC HÀNH ĐỘNG CỐT LÕI */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="bg-slate-100 p-1 rounded-2xl flex items-center border border-slate-200 overflow-x-auto">
+          <div className="bg-[#F8FAFC] p-1 rounded-xl flex items-center border border-[#E2E8F0] overflow-x-auto">
             {[
               {
                 id: "workspace" as QaWorkspaceViewMode,
-                label: "Không gian công việc",
-                icon: LayoutGrid,
-              },
-              {
-                id: "command_room" as QaWorkspaceViewMode,
-                label: "Phòng điều hành",
-                icon: Monitor,
+                label: "Nhóm & cá nhân",
+                icon: Users,
               },
               {
                 id: "list" as QaWorkspaceViewMode,
@@ -998,10 +985,10 @@ export function TasksClient({
                   key={m.id}
                   type="button"
                   onClick={() => setViewMode(m.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                     active
-                      ? "bg-teal-500 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A]"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -1011,63 +998,23 @@ export function TasksClient({
             })}
           </div>
 
-          {/* Nút mở QA Assistant từ mọi chế độ xem (Mục VI) */}
           <button
             type="button"
             onClick={() => setShowAssistantPanel(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-teal-50 hover:bg-teal-50 text-teal-800 border border-teal-200 font-extrabold text-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F0FDFA] hover:bg-teal-100/80 text-[#003B3A] border border-teal-200 font-semibold text-xs transition-all cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-teal-800" />
-            QA Assistant
+            <Sparkles className="w-3.5 h-3.5 text-[#008B85]" />
+            Trợ lý QA
           </button>
 
-          {/* Liên thông nhanh sang Tổng quan tiến độ & KPI trong cùng QA Workspace */}
-          <Link
-            href="/admin/workhub"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white hover:bg-teal-50 text-[#003B3A] border border-slate-200 hover:border-teal-300 font-bold text-xs cursor-pointer transition-colors"
-          >
-            <BarChart3 className="w-4 h-4 text-[#00A19A]" />
-            Tổng quan &amp; KPI
-          </Link>
-
-          <Link
-            href="/admin/weekly-reports"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white hover:bg-teal-50 text-[#003B3A] border border-slate-200 hover:border-teal-300 font-bold text-xs cursor-pointer transition-colors"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-[#008B85]" />
-            Báo cáo tuần
-          </Link>
-
-          {/* Nút Báo cáo & dữ liệu đa chiều (Mục IX) */}
-          <button
-            type="button"
-            onClick={() => setShowAnalyticsModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs cursor-pointer"
-          >
-            <Layers className="w-4 h-4 text-teal-600" />
-            Phân tích tác vụ
-          </button>
-
-          {/* Nút Hướng dẫn Vận hành QA Workspace */}
-          <button
-            type="button"
-            onClick={() => setShowGuideModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200/90 font-extrabold text-xs cursor-pointer shadow-2xs hover:shadow-xs transition-all"
-            title="Sổ tay quy chuẩn vận hành và hướng dẫn phân hệ QA Workspace"
-          >
-            <HelpCircle className="w-4 h-4 text-[#00A19A]" />
-            Hướng dẫn
-          </button>
-
-          {/* Nút Nhắc việc thông minh & Việc định kỳ (Mục VII) */}
           {isAdmin && (
             <button
               type="button"
               onClick={() => setShowReminderModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs cursor-pointer"
-              title="Cấu hình nhắc việc & phát hành định kỳ"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] font-semibold text-xs cursor-pointer"
+              title="Nhắc việc thông minh"
             >
-              <Bell className="w-4 h-4 text-amber-500" />
+              <Bell className="w-3.5 h-3.5 text-[#D97706]" />
               Nhắc việc
             </button>
           )}
@@ -1079,18 +1026,17 @@ export function TasksClient({
                 setShowCategoryManager(true)
                 setCatTab("groups")
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0] font-semibold text-xs cursor-pointer"
             >
-              <Settings className="w-4 h-4 text-slate-500" />
-              Nhóm & Cấu hình
+              <Settings className="w-3.5 h-3.5 text-slate-500" />
+              Nhóm &amp; cấu hình
             </button>
           )}
 
-          {/* Nút hành động chính dùng màu tím thương hiệu SSM (#6D28D9 / bg-teal-500) */}
           <button
             type="button"
             onClick={() => handleOpenNewAssignment()}
-            className="inline-flex items-center gap-1.5 bg-teal-500 hover:bg-teal-500 text-white px-4 py-2 rounded-2xl transition-all shadow-xs font-extrabold text-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 bg-[#003B3A] hover:bg-[#005250] text-white px-3.5 py-2 rounded-xl transition-all shadow-xs font-semibold text-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Giao việc mới

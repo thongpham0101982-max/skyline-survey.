@@ -2,9 +2,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { checkRateLimit, getClientIpFromRequest } from '@/lib/security-guard'
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIpFromRequest(req)
+    const rateCheck = checkRateLimit(`reset-pwd:${clientIp}`, 8, 15 * 60 * 1000)
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Quá nhiều lần thử đặt lại mật khẩu. Vui lòng thử lại sau 15 phút.' },
+        { status: 429 }
+      )
+    }
+
     const { token, newPassword } = await req.json()
     const cleanToken = String(token || '').trim()
     const password = String(newPassword || '').trim()

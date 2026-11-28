@@ -8,9 +8,11 @@ import {
   PvdhExportLayoutConfig,
   PvdhFieldConfig,
   PvdhSectionConfig,
+  PvdhTeacherSummaryD,
   PvdhWorkflowStatus,
   formatFollowUpActionsToText,
   getDefaultPvdhCodeForGrade,
+  isBmKtdbclTemplate,
   normalizeK12GradeNumber,
 } from "./constants";
 import {
@@ -28,6 +30,7 @@ import {
   normalizeFurtherTopics,
   parseFollowUpActions,
   parseInterviewMap,
+  parseTeacherSummary,
   validateExportMappings,
   validatePvdhRecordData,
   validateSafeScoreFormula,
@@ -35,11 +38,16 @@ import {
 import {
   PvdhRenderPayload,
   buildPvdhDocumentHtml,
+  buildPvdhPdfFileName,
   buildPvdhSummaryExcelBuffer,
   generatePvdhPdfBuffer,
   readPrivatePvdhPdf,
   savePrivatePvdhPdf,
 } from "./pdf-service";
+import {
+  dispatchPvdhPsychReferralNotification,
+  resolvePsychReferralContext,
+} from "./psych-referral-mail";
 
 export class PvdhDomainError extends Error {
   statusCode: number;
@@ -108,7 +116,15 @@ export async function findInputStudentByStableKey(idOrCode: string) {
 
   const includeSpec = {
     period: {
-      select: { id: true, code: true, name: true, status: true, campusId: true, academicYearId: true },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        status: true,
+        campusId: true,
+        academicYearId: true,
+        academicYear: { select: { name: true } },
+      },
     },
     batch: {
       select: {
@@ -834,7 +850,10 @@ async function syncBackwardCompatibleOrientationSummary(params: {
     );
     const legacyStatus = isDone ? "COMPLETED" : "DRAFT";
 
+    const parsedSummary = parseTeacherSummary(record.teacherSummaryJson);
     const obsSummary = [
+      parsedSummary.d03 ? `Kỳ vọng HS & gia đình: ${parsedSummary.d03}` : "",
+      parsedSummary.d04 ? `Định hướng & bước tiếp theo: ${parsedSummary.d04}` : "",
       record.obsStrengthsInterests ? `Điểm mạnh/sở thích: ${record.obsStrengthsInterests}` : "",
       record.obsCommunicationStyle ? `Giao tiếp: ${record.obsCommunicationStyle}` : "",
       record.obsParticipationLevel ? `Tham gia: ${record.obsParticipationLevel}` : "",
@@ -851,12 +870,23 @@ async function syncBackwardCompatibleOrientationSummary(params: {
       interviewerName: record.studentInterviewerName || actor.userName,
       interviewDate: record.interviewDate ? new Date(record.interviewDate) : new Date(),
       status: legacyStatus,
-      studentStrengths: record.planStrengthsPriority || record.obsStrengthsInterests || null,
-      studentNeedsSupport: record.obsSupportNeeds || null,
+      studentStrengths: parsedSummary.d01 || record.planStrengthsPriority || record.obsStrengthsInterests || null,
+      studentNeedsSupport: parsedSummary.d02 || record.obsSupportNeeds || null,
       interviewerGeneralRemark: obsSummary || null,
       parentRepresentativeName: record.parentFullName || null,
       parentPhone: record.parentContactChannel || null,
-      cooperationCommitment: record.planGoalsActionsText || null,
+      cooperationCommitment: parsedSummary.d04 || record.planGoalsActionsText || null,
+      ...(parsedSummary.psychInterviewRequested
+        ? {
+            psychologyReferralStatus:
+              existing?.psychologyReferralStatus === "COMPLETED" ? "COMPLETED" : "REQUESTED",
+            psychologyReferralReason:
+              parsedSummary.psychReferralNote ||
+              parsedSummary.d02 ||
+              existing?.psychologyReferralReason ||
+              `Đề nghị phỏng vấn tâm lý từ phiếu ${record.templateCode}`,
+          }
+        : {}),
     };
 
     if (existing) {
@@ -988,8 +1018,8 @@ export async function getOrInitStudentPvdhWorkspace(params: {
         templateVersionNumber: pinnedVersion.versionNumber,
         templateVersionCode: pinnedVersion.versionCode,
         interviewDate: todayStr,
-        studentInterviewerUserId: params.actor.userId,
-        studentInterviewerName: params.actor.userName,
+        studentInterviewerUserId: null,
+        studentInterviewerName: null,
         studentInterviewerTitle: params.actor.teacherPosition || "Giáo viên phỏng vấn",
         studentInterviewDate: todayStr,
         parentFullName: legacyRecord?.parentRepresentativeName || null,
@@ -1060,6 +1090,8 @@ export async function getOrInitStudentPvdhWorkspace(params: {
     includeSensitiveInHandover: latestHandover ? Boolean(latestHandover.includeSensitiveNotes) : true,
   });
 
+  const psychReferralContext = await resolvePsychReferralContext(student).catch(() => null);
+
   return {
     student: {
       id: student.id,
@@ -1081,6 +1113,7 @@ export async function getOrInitStudentPvdhWorkspace(params: {
       periodId: student.periodId,
       periodCode: student.period?.code || "",
       periodName: student.period?.name || "",
+      academicYearName: (student.period as any)?.academicYear?.name || "",
       batchId: student.batchId,
       batchName: student.batch?.name || "",
       enrollmentStatus: student.enrollmentStatus,
@@ -1092,6 +1125,7 @@ export async function getOrInitStudentPvdhWorkspace(params: {
           ...sanitizedRecord,
           studentResponses: parseInterviewMap(sanitizedRecord.studentResponsesJson),
           parentResponses: parseInterviewMap(sanitizedRecord.parentResponsesJson),
+          teacherSummary: parseTeacherSummary(sanitizedRecord.teacherSummaryJson),
           followUpActions: parseFollowUpActions(sanitizedRecord.followUpActionsJson),
           planFurtherTopics: normalizeFurtherTopics(
             safeJsonParse(sanitizedRecord.planFurtherTopicsJson, [])
@@ -1123,6 +1157,7 @@ export async function getOrInitStudentPvdhWorkspace(params: {
     })),
     reviewHistory,
     handovers,
+    psychReferralContext,
   };
 }
 
@@ -1137,6 +1172,7 @@ export async function savePvdhRecord(params: {
   mode: "DRAFT" | "COMPLETE";
   completionScope?: PvdhValidationScope;
   payload: Record<string, any>;
+  baseUrl?: string;
 }) {
   await ensurePvdhSchema();
   const db = getPvdhDb();
@@ -1244,6 +1280,13 @@ export async function savePvdhRecord(params: {
     }
   }
 
+  const isBmLayout = isBmKtdbclTemplate({ fields, templateCode: existing.templateCode });
+  const prevTeacherSummary = parseTeacherSummary(existing.teacherSummaryJson);
+  const nextTeacherSummary: PvdhTeacherSummaryD =
+    rights.canEditOrientationPart && p.teacherSummary !== undefined
+      ? parseTeacherSummary({ ...prevTeacherSummary, ...(p.teacherSummary || {}) })
+      : prevTeacherSummary;
+
   const nextObsStrengths = rights.canEditStudentPart && p.obsStrengthsInterests !== undefined
     ? String(p.obsStrengthsInterests ?? "")
     : existing.obsStrengthsInterests;
@@ -1253,7 +1296,9 @@ export async function savePvdhRecord(params: {
   const nextObsPart = rights.canEditStudentPart && p.obsParticipationLevel !== undefined
     ? String(p.obsParticipationLevel ?? "")
     : existing.obsParticipationLevel;
-  const nextObsSupp = rights.canEditStudentPart && p.obsSupportNeeds !== undefined
+  const nextObsSupp = isBmLayout
+    ? nextTeacherSummary.d02 || existing.obsSupportNeeds
+    : rights.canEditStudentPart && p.obsSupportNeeds !== undefined
     ? String(p.obsSupportNeeds ?? "")
     : existing.obsSupportNeeds;
 
@@ -1272,20 +1317,25 @@ export async function savePvdhRecord(params: {
       ? parseFollowUpActions(p.followUpActions)
       : parseFollowUpActions(existing.followUpActionsJson);
 
-  const nextTopics =
-    rights.canEditOrientationPart && p.planFurtherTopics !== undefined
-      ? normalizeFurtherTopics(p.planFurtherTopics, p.newlyToggledTopic)
-      : normalizeFurtherTopics(safeJsonParse(existing.planFurtherTopicsJson, []));
+  const nextTopics = isBmLayout
+    ? nextTeacherSummary.psychInterviewRequested
+      ? (["TAM_LY_THEO_DE_NGHI"] as FurtherInquiryTopicCode[])
+      : ([] as FurtherInquiryTopicCode[])
+    : rights.canEditOrientationPart && p.planFurtherTopics !== undefined
+    ? normalizeFurtherTopics(p.planFurtherTopics, p.newlyToggledTopic)
+    : normalizeFurtherTopics(safeJsonParse(existing.planFurtherTopicsJson, []));
 
-  const nextPlanStrengths =
-    rights.canEditOrientationPart && p.planStrengthsPriority !== undefined
-      ? String(p.planStrengthsPriority ?? "")
-      : existing.planStrengthsPriority;
+  const nextPlanStrengths = isBmLayout
+    ? nextTeacherSummary.d01 || existing.planStrengthsPriority
+    : rights.canEditOrientationPart && p.planStrengthsPriority !== undefined
+    ? String(p.planStrengthsPriority ?? "")
+    : existing.planStrengthsPriority;
 
-  let nextPlanGoalsActions =
-    rights.canEditOrientationPart && p.planGoalsActionsText !== undefined
-      ? String(p.planGoalsActionsText ?? "")
-      : existing.planGoalsActionsText || "";
+  let nextPlanGoalsActions = isBmLayout
+    ? nextTeacherSummary.d04 || existing.planGoalsActionsText || ""
+    : rights.canEditOrientationPart && p.planGoalsActionsText !== undefined
+    ? String(p.planGoalsActionsText ?? "")
+    : existing.planGoalsActionsText || "";
 
   // Nếu người dùng chỉ nhập bảng hành động chi tiết mà để trống ô văn bản mục V.2 -> tự động điền để không bắt nhập lặp
   if (!nextPlanGoalsActions.trim() && nextActions.length > 0) {
@@ -1357,6 +1407,7 @@ export async function savePvdhRecord(params: {
       obsParticipationLevel: nextObsPart,
       obsSupportNeeds: nextObsSupp,
       parentResponses: nextParentMap,
+      teacherSummary: nextTeacherSummary,
       planStrengthsPriority: nextPlanStrengths,
       planGoalsActionsText: nextPlanGoalsActions,
       followUpActions: nextActions,
@@ -1392,6 +1443,7 @@ export async function savePvdhRecord(params: {
       obsParticipationLevel: nextObsPart,
       obsSupportNeeds: nextObsSupp,
       parentResponses: nextParentMap,
+      teacherSummary: nextTeacherSummary,
       planFurtherTopics: nextTopics,
     },
     fields,
@@ -1404,6 +1456,7 @@ export async function savePvdhRecord(params: {
       parentRelationship: nextParentRel,
       studentResponses: nextStudentMap,
       parentResponses: nextParentMap,
+      teacherSummary: nextTeacherSummary,
       planFurtherTopics: nextTopics,
     },
     fields,
@@ -1414,6 +1467,7 @@ export async function savePvdhRecord(params: {
     input: {
       studentResponses: nextStudentMap,
       parentResponses: nextParentMap,
+      teacherSummary: nextTeacherSummary,
       planStrengthsPriority: nextPlanStrengths,
       planGoalsActionsText: nextPlanGoalsActions,
       followUpActions: nextActions,
@@ -1469,31 +1523,45 @@ export async function savePvdhRecord(params: {
   }
 
   // Cho phép người điều phối gán người phỏng vấn HS / người trao đổi PHHS riêng biệt
+  const shouldClaimStudentInterviewer =
+    rights.canEditStudentPart &&
+    (!existing.studentInterviewerUserId ||
+      (!rights.canReviewLock && existing.studentSectionStatus !== "COMPLETED"));
+
   const nextStudentInterviewerUserId =
     rights.canReviewLock && p.studentInterviewerUserId !== undefined
       ? p.studentInterviewerUserId
-      : rights.canEditStudentPart
-      ? existing.studentInterviewerUserId || params.actor.userId
+      : shouldClaimStudentInterviewer
+      ? params.actor.userId
       : existing.studentInterviewerUserId;
 
   const nextStudentInterviewerName =
     rights.canReviewLock && p.studentInterviewerName !== undefined
       ? p.studentInterviewerName
-      : rights.canEditStudentPart && (!existing.studentInterviewerName || existing.studentInterviewerUserId === params.actor.userId)
+      : shouldClaimStudentInterviewer ||
+        (rights.canEditStudentPart &&
+          (!existing.studentInterviewerName || existing.studentInterviewerUserId === params.actor.userId))
       ? p.studentInterviewerName || params.actor.userName
       : existing.studentInterviewerName;
+
+  const shouldClaimParentInterviewer =
+    rights.canEditParentPart &&
+    (!existing.parentInterviewerUserId ||
+      (!rights.canReviewLock && existing.parentSectionStatus !== "COMPLETED"));
 
   const nextParentInterviewerUserId =
     rights.canReviewLock && p.parentInterviewerUserId !== undefined
       ? p.parentInterviewerUserId
-      : rights.canEditParentPart
-      ? existing.parentInterviewerUserId || params.actor.userId
+      : shouldClaimParentInterviewer
+      ? params.actor.userId
       : existing.parentInterviewerUserId;
 
   const nextParentInterviewerName =
     rights.canReviewLock && p.parentInterviewerName !== undefined
       ? p.parentInterviewerName
-      : rights.canEditParentPart && (!existing.parentInterviewerName || existing.parentInterviewerUserId === params.actor.userId)
+      : shouldClaimParentInterviewer ||
+        (rights.canEditParentPart &&
+          (!existing.parentInterviewerName || existing.parentInterviewerUserId === params.actor.userId))
       ? p.parentInterviewerName || params.actor.userName
       : existing.parentInterviewerName;
 
@@ -1535,6 +1603,7 @@ export async function savePvdhRecord(params: {
       obsSupportNeeds: nextObsSupp,
       teacherSectionStatus: nextTeacherStatus,
       parentResponsesJson: JSON.stringify(nextParentMap),
+      teacherSummaryJson: JSON.stringify(nextTeacherSummary),
 
       planStrengthsPriority: nextPlanStrengths,
       planGoalsActionsText: nextPlanGoalsActions,
@@ -1565,6 +1634,40 @@ export async function savePvdhRecord(params: {
     actor: params.actor,
   });
 
+  // Nếu người dùng bật "Đề nghị phỏng vấn (tâm lí)" và lưu phiếu khi chưa gửi Email trước đó -> tự động gửi Email điều phối
+  let autoEmailDispatch: any = null;
+  if (nextTeacherSummary.psychInterviewRequested && !prevTeacherSummary.psychEmailSentAt) {
+    autoEmailDispatch = await dispatchPvdhPsychReferralNotification({
+      student,
+      record: updated,
+      summary: nextTeacherSummary,
+      actor: params.actor,
+      selectedPsychTeacherId: nextTeacherSummary.psychAssignedTeacherId || null,
+      customNote: nextTeacherSummary.psychReferralNote || null,
+      baseUrl: params.baseUrl,
+    }).catch(() => null);
+
+    if (autoEmailDispatch?.sent) {
+      const stampedSummary: PvdhTeacherSummaryD = {
+        ...nextTeacherSummary,
+        psychEmailSentAt: autoEmailDispatch.sentAt,
+        psychEmailRecipients: autoEmailDispatch.recipients,
+        psychAssignedTeacherId:
+          autoEmailDispatch.assignedPsychTeacherId || nextTeacherSummary.psychAssignedTeacherId,
+        psychAssignedTeacherName:
+          autoEmailDispatch.assignedPsychTeacherNames?.[0] || nextTeacherSummary.psychAssignedTeacherName,
+        psychAssignedTeacherEmail:
+          autoEmailDispatch.psychTeacherEmails?.[0] || nextTeacherSummary.psychAssignedTeacherEmail,
+      };
+      await db.pvdhAssessmentRecord.update({
+        where: { id: updated.id },
+        data: {
+          teacherSummaryJson: JSON.stringify(stampedSummary),
+        },
+      });
+    }
+  }
+
   await writeSafeAudit({
     entityType: "RECORD",
     entityId: updated.id,
@@ -1581,14 +1684,135 @@ export async function savePvdhRecord(params: {
     metadata: {
       workflowStatus: updated.workflowStatus,
       lockVersion: updated.lockVersion,
+      psychEmailAutoSent: Boolean(autoEmailDispatch?.sent),
     },
   });
 
-  return getOrInitStudentPvdhWorkspace({
+  const ws = await getOrInitStudentPvdhWorkspace({
     actor: params.actor,
     studentId: student.id,
     attemptNumber: updated.attemptNumber,
   });
+  return autoEmailDispatch ? { ...ws, emailDispatch: autoEmailDispatch } : ws;
+}
+
+/**
+ * Xử lý trực tiếp khi Giáo viên bấm nút "Đề nghị phỏng vấn tâm lý":
+ * Lưu nháp hiện tại với psychInterviewRequested = true, đồng bộ phân công môn Tâm lý,
+ * tạo thông báo hệ thống và gửi Email đến Giáo vụ phụ trách cơ sở + GV tâm lý phân công.
+ */
+export async function requestPvdhPsychInterview(params: {
+  actor: PvdhActor;
+  studentId: string;
+  recordId?: string;
+  expectedLockVersion?: number;
+  payload?: Record<string, any>;
+  selectedPsychTeacherId?: string | null;
+  referralNote?: string | null;
+  baseUrl?: string;
+}) {
+  const incomingPayload = params.payload || {};
+  const incomingSummary = incomingPayload.teacherSummary || {};
+
+  const savedWs = await savePvdhRecord({
+    actor: params.actor,
+    studentId: params.studentId,
+    recordId: params.recordId,
+    expectedLockVersion: params.expectedLockVersion,
+    mode: "DRAFT",
+    payload: {
+      ...incomingPayload,
+      teacherSummary: {
+        ...incomingSummary,
+        psychInterviewRequested: true,
+        ...(params.referralNote !== undefined ? { psychReferralNote: params.referralNote || "" } : {}),
+        ...(params.selectedPsychTeacherId
+          ? { psychAssignedTeacherId: params.selectedPsychTeacherId }
+          : {}),
+      },
+    },
+    baseUrl: params.baseUrl,
+  });
+
+  // Nếu savePvdhRecord vừa tự gửi Email trong cùng lần gọi -> trả luôn kết quả để không gửi trùng 2 lần!
+  if ((savedWs as any).emailDispatch?.sent) {
+    return savedWs;
+  }
+
+  const db = getPvdhDb();
+  const student = await findInputStudentByStableKey(params.studentId);
+  if (!student) {
+    throw new PvdhDomainError("Không tìm thấy hồ sơ học sinh.", 404, "STUDENT_NOT_FOUND");
+  }
+  const latestRec = await db.pvdhAssessmentRecord.findFirst({
+    where: { studentId: student.id, isLatestAttempt: true },
+    orderBy: [{ attemptNumber: "desc" }],
+  });
+  if (!latestRec) {
+    throw new PvdhDomainError("Không tìm thấy phiếu định hướng.", 404, "RECORD_NOT_FOUND");
+  }
+
+  const curSummary = parseTeacherSummary(latestRec.teacherSummaryJson);
+  const emailDispatch = await dispatchPvdhPsychReferralNotification({
+    student,
+    record: latestRec,
+    summary: curSummary,
+    actor: params.actor,
+    selectedPsychTeacherId: params.selectedPsychTeacherId || curSummary.psychAssignedTeacherId || null,
+    customNote: params.referralNote ?? curSummary.psychReferralNote ?? null,
+    baseUrl: params.baseUrl,
+  });
+
+  if (emailDispatch.sent) {
+    const nextSummary: PvdhTeacherSummaryD = {
+      ...curSummary,
+      psychInterviewRequested: true,
+      psychReferralNote: params.referralNote ?? curSummary.psychReferralNote,
+      psychEmailSentAt: emailDispatch.sentAt,
+      psychEmailRecipients: emailDispatch.recipients,
+      psychAssignedTeacherId:
+        emailDispatch.assignedPsychTeacherId ||
+        params.selectedPsychTeacherId ||
+        curSummary.psychAssignedTeacherId,
+      psychAssignedTeacherName:
+        emailDispatch.assignedPsychTeacherNames?.[0] || curSummary.psychAssignedTeacherName,
+      psychAssignedTeacherEmail:
+        emailDispatch.psychTeacherEmails?.[0] || curSummary.psychAssignedTeacherEmail,
+    };
+    await db.pvdhAssessmentRecord.update({
+      where: { id: latestRec.id },
+      data: {
+        teacherSummaryJson: JSON.stringify(nextSummary),
+      },
+    });
+  }
+
+  await writeSafeAudit({
+    entityType: "RECORD",
+    entityId: latestRec.id,
+    studentId: student.id,
+    recordId: latestRec.id,
+    templateCode: latestRec.templateCode,
+    versionCode: latestRec.templateVersionCode,
+    action: "REQUEST_PSYCH_INTERVIEW",
+    actor: params.actor,
+    summary: `Gửi đề nghị phỏng vấn tâm lý cho hồ sơ ${student.studentCode}`,
+    metadata: {
+      emailSent: emailDispatch.sent,
+      recipientCount: emailDispatch.recipients.length,
+    },
+  });
+
+  const refreshed = await getOrInitStudentPvdhWorkspace({
+    actor: params.actor,
+    studentId: student.id,
+    attemptNumber: latestRec.attemptNumber,
+  });
+
+  return {
+    ...refreshed,
+    emailDispatch,
+  };
 }
 
 /**
@@ -1737,6 +1961,7 @@ async function buildRenderPayloadFromRecord(student: any, record: any, version: 
       "",
     periodCode: student.period?.code || record.periodId,
     periodName: student.period?.name || "",
+    academicYearName: (student.period as any)?.academicYear?.name || "",
     interviewDate: record.interviewDate || record.studentInterviewDate,
     studentInterviewerName: record.studentInterviewerName,
     studentInterviewerTitle: record.studentInterviewerTitle,
@@ -1754,6 +1979,7 @@ async function buildRenderPayloadFromRecord(student: any, record: any, version: 
     obsParticipationLevel: record.obsParticipationLevel,
     obsSupportNeeds: record.obsSupportNeeds,
     parentResponses: parseInterviewMap(record.parentResponsesJson),
+    teacherSummary: parseTeacherSummary(record.teacherSummaryJson),
     planStrengthsPriority: record.planStrengthsPriority,
     planGoalsActionsText: record.planGoalsActionsText,
     followUpActions: parseFollowUpActions(record.followUpActionsJson),
@@ -1890,6 +2116,7 @@ export async function executePvdhWorkflowTransition(params: {
         obsParticipationLevel: existing.obsParticipationLevel,
         obsSupportNeeds: existing.obsSupportNeeds,
         parentResponses: parseInterviewMap(existing.parentResponsesJson),
+        teacherSummary: parseTeacherSummary(existing.teacherSummaryJson),
         planStrengthsPriority: existing.planStrengthsPriority,
         planGoalsActionsText: existing.planGoalsActionsText,
         followUpActions: parseFollowUpActions(existing.followUpActionsJson),
@@ -2535,9 +2762,17 @@ export async function getPvdhDocumentOutput(params: {
     const pinnedSnapshot = safeJsonParse<PvdhRenderPayload>(record.confirmedSnapshotJson, null as any);
     if (pinnedSnapshot) {
       if (params.format === "html") {
+        const safeHtmlName = buildPvdhPdfFileName({
+          templateCode: record.templateCode,
+          studentCode: student.studentCode,
+          studentId: student.id,
+          periodCode: pinnedSnapshot.periodCode,
+          versionCode: record.templateVersionCode,
+          attemptNumber: record.attemptNumber,
+        }).replace(/\.pdf$/i, ".html");
         return {
           contentType: "text/html; charset=utf-8",
-          fileName: `${record.templateCode}_${student.studentCode}_${record.templateVersionCode}.html`,
+          fileName: safeHtmlName,
           buffer: Buffer.from(buildPvdhDocumentHtml(pinnedSnapshot), "utf-8"),
         };
       }
@@ -2589,6 +2824,7 @@ export async function getPvdhDocumentOutput(params: {
       isLocked: false,
       studentResponsesJson: "{}",
       parentResponsesJson: "{}",
+      teacherSummaryJson: "{}",
       planFurtherTopicsJson: "[]",
       followUpActionsJson: "[]",
     };
@@ -2596,9 +2832,17 @@ export async function getPvdhDocumentOutput(params: {
 
   const renderPayload = await buildRenderPayloadFromRecord(student, effectiveRec, ver);
   if (params.format === "html") {
+    const safeHtmlName = buildPvdhPdfFileName({
+      templateCode: renderPayload.templateCode,
+      studentCode: student.studentCode,
+      studentId: student.id,
+      periodCode: renderPayload.periodCode,
+      versionCode: renderPayload.templateVersionCode,
+      attemptNumber: renderPayload.attemptNumber,
+    }).replace(/\.pdf$/i, ".html");
     return {
       contentType: "text/html; charset=utf-8",
-      fileName: `${renderPayload.templateCode}_${student.studentCode}_${renderPayload.templateVersionCode}.html`,
+      fileName: safeHtmlName,
       buffer: Buffer.from(buildPvdhDocumentHtml(renderPayload), "utf-8"),
     };
   }
@@ -2924,7 +3168,7 @@ export async function listOrientationRecordsPaginated(params: {
       if (!hitName && !hitCode) continue;
     }
 
-    const expectedTplCode = rec?.templateCode || getDefaultPvdhCodeForGrade(st.grade) || "PVDH-01";
+    const expectedTplCode = rec?.templateCode || getDefaultPvdhCodeForGrade(st.grade) || "BM.KTĐBCL.31";
     authorizedRows.push({
       studentId: st.id,
       studentCode: st.studentCode,

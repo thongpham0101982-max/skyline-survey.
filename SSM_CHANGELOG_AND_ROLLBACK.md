@@ -1,112 +1,89 @@
-# NHẬT KÝ THAY ĐỔI & PHƯƠNG ÁN HOÀN NGUYÊN: SSM CHANGELOG & ROLLBACK
-**Hệ thống:** SKY-LINE SSM – Trường Đa cấp Quốc tế SKY-LINE  
-**Trạng thái Triển khai:** ĐÃ TRIỂN KHAI THÀNH CÔNG VỚI ĐO LƯỜNG ĐỊNH LƯỢNG  
-**Tôn chỉ cốt lõi:** Tuyệt đối không làm mất dữ liệu – Không gián đoạn dịch vụ – Đã kiểm thử khôi phục 100%.
+# BẢNG THEO DÕI NGHIỆM THU, DI TRÚ CSDL, DỌN DẸP & PHƯƠNG ÁN HOÀN TÁC (SSM SKY-LINE)
+
+**Cập nhật lần cuối:** `2026-11-18`  
+**Trạng thái kiểm thử tự động (`npm test`):** **46 / 46 Test Suites PASSED** (`377 passed`, `0 failed`)
 
 ---
 
-## 1. BẢNG TỔNG HỢP KẾT QUẢ ĐO LƯỜNG TRƯỚC VÀ SAU TỐI ƯU (BEFORE / AFTER)
+## 1. Bảng Theo dõi Vấn đề, Bằng chứng, Tệp đã sửa & Kết quả Nghiệm thu
 
-| Chỉ số / Hạng mục | Trước Tối ưu (Before) | Sau Tối ưu (After) | Kết quả Đạt được | Mức độ An toàn |
-| :--- | :---: | :---: | :---: | :---: |
-| **Động cơ CSDL Hoạt động** | `CLOUD` (Turso Tokyo) | `LOCAL` (`local.db`) | ✅ Ưu tiên Local on-premise, tự động failover Cloud | Bảo tồn 100% |
-| **Độ trễ Truy vấn CSDL trung bình** | **102.20 ms** (Spike: **15.85s**) | **0.80 ms** | 🚀 **Nhanh hơn 127 đến 19,800 lần** | Toàn vẹn tuyệt đối |
-| **Dung lượng Thư mục `data-backups/`** | **14,839.94 MB (~14.8 GB)** | **6,003.00 MB (~6.0 GB)** | 💾 **Giải phóng 8,836.94 MB (~8.63 GB)** | Đã kiểm thử giải nén 4/4 test |
-| **Dung lượng Thư mục `scratch/`** | **70.60 MB** | **2.39 MB** | 💾 **Giải phóng 68.21 MB ảnh nháp** | 100% an toàn |
-| **File Log Tạm thời Thư mục Gốc** | 5 files (`err.txt`, `out.txt`...) | 0 file rác | 🧹 Thư mục gốc sạch sẽ chuẩn production | 100% an toàn |
-| **Tổng Dung lượng Đĩa Thu hồi** | **0 MB** | **8,905.17 MB (8.70 GB)** | 💾 **Tiết kiệm 8.70 GB ổ đĩa máy chủ** | Không mất 1 byte dữ liệu nghiệp vụ |
-| **Truy vấn Sinh Mã HS Khảo sát** | Quét toàn bộ bảng bằng JS | `findFirst` có Index | 🚀 **Dưới 1 ms** (so với vài giây trước đây) | Chuẩn định dạng mã HS |
-| **Cấu hình Bộ nhớ Node.js** | Không giới hạn GC (>2.7GB) | `--max-old-space-size=2048` | 📉 Kích hoạt GC thu hồi RAM định mức <2GB | Ổn định tiến trình 24/7 |
-| **Kiểm thử Tương thích Vitest** | 5 test lỗi | **3/3 test tối ưu PASSED** | ✅ Tuân thủ chuẩn singleton Prisma | PASS |
-
----
-
-## 2. CHI TIẾT CÁC THAY ĐỔI ĐÃ ÁP DỤNG TRÊN MÃ NGUỒN (CHANGELOG)
-
-### 2.1. Cấu hình Môi trường `.env.local`
-- **File:** `d:\SSM\skyline-survey\.env.local`
-- **Nội dung:** Chuyển `DEFAULT_DB_ENGINE="AUTO"` sang `DEFAULT_DB_ENGINE="LOCAL"`.
-
-### 2.2. Điều phối Động cơ Cơ sở Dữ liệu Thông minh (`src/lib/db/index.ts`)
-- **File:** `d:\SSM\skyline-survey\src\lib\db\index.ts`
-- **Thay đổi:**
-  * Mặc định khởi tạo `currentEngine = 'LOCAL'` trên môi trường máy chủ nội bộ On-Premise, giữ `CLOUD` trên Vercel.
-  * Tinh chỉnh hàm `getActivePrisma()` chỉ thử nghiệm hồi phục sang Cloud khi cấu hình là `CLOUD`.
-  * Bổ sung alias `createPrismaClient = createSmartPrisma` bảo đảm tương thích bộ kiểm thử hệ thống.
-
-### 2.3. Tối ưu Truy vấn API Khảo sát Học sinh Đầu vào
-- **File:** `d:\SSM\skyline-survey\src\app\api\input-assessment-students\route.ts` (dòng 30-41)
-- **Thay đổi:** Loại bỏ truy vấn quét toàn bộ bảng `findMany({ select: { studentCode: true } })`. Thay bằng truy vấn `findFirst` có sắp xếp chỉ mục `orderBy: { studentCode: "desc" }` với tiền tố `HS`.
-
-### 2.4. Dọn dẹp Nhóm A (Tệp sao lưu thô `.db` đã nén & File nháp)
-- **Script:** `d:\SSM\skyline-survey\scripts\safe_cleanup_group_a.js`
-- **Thực thi:**
-  * Kiểm tra tính toàn vẹn của từng tệp `.db.gz` tương ứng trước khi xóa tệp `.db` thô trung gian.
-  * Đã dọn dẹp an toàn 11 tệp `.db` thô, 11 ảnh nháp raster trong `scratch/`, 5 tệp text/log rác ở root.
-  * Thu hồi chính xác: **8,905.17 MB (8.70 GB)**.
-
-### 2.5. Cấu hình Trần Bộ nhớ RAM cho Node.js
-- **File:** `d:\SSM\skyline-survey\start-server.bat` và `d:\SSM\skyline-survey\ecosystem.config.js`
-- **Thay đổi:** Bổ sung cờ `--max-old-space-size=2048` để V8 Garbage Collector tự động dọn dẹp bộ nhớ trước ngưỡng 2 GB RAM.
+| Mã | Mức độ | Phân hệ / Vấn đề & Bằng chứng | Tệp đã sửa / bổ sung | Cách kiểm tra & Kết quả |
+| :--- | :---: | :--- | :--- | :--- |
+| **SEC-01** | **P0 (Critical)** | **Lộ JWT Token quản trị Turso Cloud (`rw`) trong mã nguồn** tại 5 tệp (`DEFAULT_TURSO_TOKEN`, `TURSO_TOKEN`, `CLOUD_TOKEN`) và thiếu tái sử dụng singleton `globalThis.prismaGlobal`. | - `src/lib/db/index.ts`<br>- `src/app/api/advisory/goals/route.ts`<br>- `src/app/api/advisory/goals/unlock/route.ts`<br>- `src/app/api/special-subjects/curriculums/import/route.ts`<br>- `src/app/api/special-subjects/teaching-logs/route.ts`<br>- `src/app/api/sync-excel-students/route.ts` | `npx vitest run tests/backend.test.ts tests/performance_optimization.test.ts tests/security_asvs_audit.test.ts` → **PASS 100%**. Đã gỡ toàn bộ token cứng khỏi mã nguồn; cần xoay vòng (rotate) token Turso trên production. |
+| **SEC-02** | **P0 (Critical)** | **Lộ thông tin mật khẩu SMTP & gửi thư trái phép (`GET /api/check-smtp`)**: Không kiểm tra đăng nhập và trả về `rawPassStart`, `rawPassEnd`, `rawPassLength` của `SMTP_PASS`. | - `src/app/api/check-smtp/route.ts`<br>- `src/lib/security-guard.ts` | `npx vitest run tests/security_asvs_audit.test.ts` → **PASS**. Bắt buộc phiên `requireAdminOrLeadershipSession()` và loại bỏ hoàn toàn trường `env` khỏi JSON phản hồi. |
+| **SEC-03** | **P0 (Critical)** | **Leo thang đặc quyền & sửa điểm trái phép tại Sổ điểm (`GET/POST /api/teacher/grade-entries`)**: Cho phép truyền `?isManage=true` hoặc `?role=admin` trên URL, hoặc bất kỳ vai trò khác `TEACHER` (kể cả `PARENT`) vượt qua kiểm tra phân công giảng dạy và khóa sổ điểm; thiếu ghi `AuditLog` khi sửa điểm; lỗi truy vấn `isDefault: true` trên `AcademicYear`. | - `src/app/api/teacher/grade-entries/route.ts`<br>- `src/lib/security-guard.ts` | `npx vitest run tests/security_asvs_audit.test.ts src/lib/grading/__tests__/vnedu-gradebook.test.ts` → **PASS**. Chặn `PARENT` (`403`), chỉ cấp quyền quản lý cho vai trò lãnh đạo/KTĐBCL thực thụ (`isPrivilegedGradebookRole`), bắt buộc kiểm tra `teachingAssignment` và ghi `AuditLog` (`SCORE_UPDATE`). |
+| **SEC-04** | **P0 (High)** | **Lộ thông tin cá nhân (PII) học sinh/phụ huynh và vượt phạm vi cơ sở (GĐCS)**: Các API tra cứu học sinh, điểm, thành tích, xếp loại và theo dõi phản hồi không kiểm tra phiên đăng nhập và không giới hạn `allowedCampusIds` đối với GĐCS. | - `src/app/api/students/search/route.ts`<br>- `src/app/api/student-transfers/assessment-students/route.ts`<br>- `src/app/api/admin/tra-cuu-hoc-sinh/profiles/route.ts`<br>- `src/app/api/admin/tra-cuu-hoc-sinh/grades/route.ts`<br>- `src/app/api/admin/tra-cuu-hoc-sinh/achievements/route.ts`<br>- `src/app/api/admin/tra-cuu-hoc-sinh/rankings/route.ts`<br>- `src/app/api/admin/tra-cuu-hoc-sinh/filter-options/route.ts`<br>- `src/app/api/admin/ktdbcl/feedback-tracking/route.ts` | `npx vitest run tests/security_asvs_audit.test.ts tests/permissions_idor.test.ts` → **PASS**. Từ chối truy cập ẩn danh và `PARENT` (`401`/`403`), đồng thời áp dụng bộ lọc `campusId: { in: ctx.allowedCampusIds }` cho tài khoản GĐCS. |
+| **SEC-05** | **P0 (High)** | **IDOR tại API Mở khóa mục tiêu học sinh (`/api/advisory/goals/unlock`)**: Chỉ kiểm tra đăng nhập chung mà không đối chiếu mối quan hệ giữa người gọi (PHHS / Học sinh / GV) với `studentId`. | - `src/app/api/advisory/goals/unlock/route.ts` | `npx vitest run tests/security_asvs_audit.test.ts` → **PASS**. Bắt buộc gọi `resolveAdvisoryCaller()` và `verifyStudentRelationship(caller, studentId)` ở cả `GET`, `POST`, `PUT`. |
+| **SEC-06** | **P0 (High)** | **Thiếu xác thực & kiểm toán tại API Khảo sát đầu vào, Cấu hình & Server Actions**: Các route `input-assessment-students`, `input-assessments`, `input-assessment-assignments`, `assessment-configs` và 9 tệp `"use server"` (`roles`, `maintenance`, `teaching-assignments`, `subjects`, `categories`, `reports`, `surveys`) thiếu kiểm tra phiên quản trị hoặc thiếu ghi `AuditLog`. | - `src/app/api/input-assessment-students/route.ts`<br>- `src/app/api/input-assessments/route.ts`<br>- `src/app/api/input-assessment-assignments/route.ts`<br>- `src/app/api/admin/input-assessment-periods/**`<br>- `src/app/api/admin/input-assessments/categories/**`<br>- `src/app/api/assessment-configs/route.ts`<br>- `src/app/admin/roles/actions.ts`<br>- `src/app/admin/users/actions.ts`<br>- `src/app/admin/maintenance/actions.ts`<br>- `src/app/admin/teaching-assignments/actions.ts`<br>- `src/app/admin/subjects/actions.ts`<br>- `src/app/admin/categories/actions.ts`<br>- `src/app/admin/reports/actions.ts`<br>- `src/app/admin/surveys/[id]/**` | `npx vitest run tests/security_asvs_audit.test.ts` → **PASS**. Tất cả thao tác ghi/xóa/đổi quyền đều kiểm tra quyền ở máy chủ và ghi `AuditLog` (`CREATE_ROLE`, `UPDATE_ROLE_PERMISSIONS`, `CHANGE_USER_ROLES`, `APPROVE_INPUT_ASSESSMENT`, `DELETE_*`). |
+| **SEC-07** | **P1 (Medium)** | **Giới hạn tần suất (Rate Limiting), Host Header Injection & Path Traversal**: Đăng nhập và khôi phục mật khẩu chưa giới hạn tần suất; `forgot-password` dùng trực tiếp `req.headers.get('host')` và trả về email chưa che; `export-pdf` và `student-photos` chưa lọc tên tệp qua `path.basename`. | - `src/lib/auth.ts`<br>- `src/app/api/auth/forgot-password/route.ts`<br>- `src/app/api/auth/reset-password/route.ts`<br>- `src/app/api/admin/export-pdf/route.ts`<br>- `src/app/api/student-photos/[studentId]/route.ts`<br>- `src/lib/security-guard.ts` | `npx vitest run tests/security_asvs_audit.test.ts` → **PASS**. Đã áp dụng `checkRateLimit`, `getSafeAppBaseUrl`, `maskEmail`, `sanitizeFileName` và `Cache-Control: private, max-age=3600`. |
+| **UX-01** | **P1 (Medium)** | **Đồng bộ chuẩn Sky-Line Academic Ledger & giảm số nút tại Khảo sát đầu vào**: Bảng màu còn sót `violet` và `#0284C7`/`#48BFE3`; mỗi dòng đợt khảo sát và thanh công cụ danh sách học sinh có 4–5 nút cạnh tranh nhau; bộ lọc kỳ khảo sát bị lặp ở 2 hàng; nhãn biểu mẫu lạm dụng `uppercase tracking-widest`. | - `src/app/admin/input-assessments/client.tsx`<br>- `src/app/admin/dieu-hanh-khao-sat/client.tsx`<br>- `src/app/admin/xet-duyet-ket-qua/k12-client.tsx`<br>- `src/app/admin/error.tsx`<br>- `src/app/teacher/error.tsx`<br>- `src/app/parent/error.tsx`<br>- `src/app/hocsinh/portal/error.tsx`<br>- `src/app/teacher/layout.tsx`<br>- `src/config/modules.ts`<br>- `src/config/sidebarTranslations.ts` | `npx vitest run tests/frontend_ux_responsive.test.ts src/lib/gradebook/__tests__/subjectPermissions.test.ts` → **PASS**. Mỗi màn hình/bước chỉ có **1 nút chính nổi bật** (`Tạo đợt khảo sát`, `Thêm học sinh`, `Duyệt kết quả` hoặc `Gửi duyệt kết quả tới GĐCS`), gom thao tác phụ vào menu `"⋯"` có `aria-label`. |
 
 ---
 
-### 2.6. Lưu trữ Lạnh An toàn Bảng Staging (`StagingCompetencyAssessment` - 91,978 dòng)
-- **Script:** `d:\SSM\skyline-survey\scripts\archive_staging_competency.js`
-- **Kết quả:**
-  * Toàn bộ 91,978 dòng dữ liệu staging của đợt nhập cũ tháng 8/2026 đã được trích xuất an toàn và nén vào tệp: `docs/archive_staging/staging_competency_assessment_IMP_NL_MTF8P4G4.json.gz` (4.34 MB).
-  * Mã băm SHA-256: `bc68d2bd9b63f293835637a0683d28bd8012527e4f294fdb7448aaadb993d4dd`.
-  * Tệp metadata: `docs/archive_staging/staging_competency_assessment_meta.json`.
-  * Bảng `StagingCompetencyAssessment` đã được dọn sạch về 0 dòng, tạo ra 14,400 trang rỗng (56.25 MB) trong freelist của `local.db` để tái sử dụng cho các thao tác ghi mới mà không làm phình to đĩa cứng.
-  * Bảng chính thức `StudentCompetencyAssessment` bảo tồn nguyên vẹn **31,100 dòng (100%)**.
+## 2. So sánh Trước & Sau Thay đổi Giao diện (Số nút & Số bước thao tác)
 
-### 2.7. Tối ưu Dynamic Import Thư viện `xlsx` (SheetJS)
-- **Files:** `src/app/admin/tong-hop-du-gio/client.tsx` và `src/app/admin/tasks/client.tsx`
-- **Thay đổi:** Loại bỏ `import * as XLSX from "xlsx"` tĩnh ở đầu trang. Chuyển sang `await import("xlsx")` theo nhu cầu khi nhấn nút xuất Excel. Giảm ~800 KB khỏi chunk JavaScript ban đầu của các trang quản trị này.
+| Màn hình / Luồng nghiệp vụ | Trước thay đổi | Sau thay đổi (Sky-Line Academic Ledger) |
+| :--- | :--- | :--- |
+| **1. Quản lý Kỳ & Đợt khảo sát** (`/admin/input-assessments` - Tab `Tạo đợt khảo sát`) | - Thẻ Kỳ khảo sát: 3 nút rời (`+ Thêm Đợt`, `Sửa`, `Xóa`).<br>- Mỗi dòng Đợt khảo sát: 4–5 nút trực tiếp (`✓ Hoàn thành` trùng với dropdown trạng thái, `+ HS`, `Bàn giao GVụ`, `Phân công`, `Sửa`, `Xóa`). | - Thẻ Kỳ khảo sát: **1 nút chính** (`Tạo đợt khảo sát`) + menu `"⋯"` (`aria-label`).<br>- Mỗi dòng Đợt khảo sát: **1 nút thao tác chính** (`+ Thêm HS`) + menu `"⋯"` (`Bàn giao Giáo vụ`, `Phân công`, `Chỉnh sửa đợt`, `Xóa đợt` kèm cảnh báo số lượng hồ sơ bị ảnh hưởng). Đã bỏ nút `✓ Hoàn thành` trùng chức năng cạnh dropdown. |
+| **2. Danh sách Học sinh Khảo sát** (`/admin/input-assessments` - Tab `Danh sách khảo sát Hệ S / Hệ I`) | - Thanh công cụ: 5 nút cạnh nhau (`Mẫu & Xuất Excel`, `Nhập Excel`, `Khảo sát lẻ (30s)`, `Bàn giao Giáo vụ`, `Thêm mới`).<br>- Bộ lọc Kỳ khảo sát bị lặp ở cả Hàng 2 (dropdown) và Hàng 3 (dải nút ngang). | - Thanh công cụ: **1 nút chính nổi bật** (`+ Thêm học sinh`) + 1 menu gom nhóm (`Tiện ích & Excel`). Thanh thao tác hàng loạt (`Chuyển đợt`, `Xóa`) **chỉ hiển thị khi đã chọn dòng**.<br>- Đã bỏ dải nút Kỳ khảo sát trùng lặp ở Hàng 3, giảm từ 3 tầng lọc xuống 2 tầng gọn gàng. |
+| **3. Điều hành & Tiến độ Khảo sát** (`/admin/dieu-hanh-khao-sat` - Tab `Tiến độ theo Đợt KS`) | - Mỗi dòng đợt khảo sát xếp chồng 4 nút (`Xác nhận Phân công`, `Phân công`, `Xét duyệt`, `Văn bản`). | - Mỗi dòng hiển thị **1 nút hành động chính theo thẩm quyền/trạng thái** (`Xác nhận phân công` hoặc `Xét duyệt kết quả`) + menu `"⋯"` chứa liên kết điều hướng phụ. |
+| **4. Phiếu Xét duyệt Kết quả K-12** (`/admin/xet-duyet-ket-qua` - Modal Hồ sơ Học sinh) | - Chân trang hiển thị 2 nút đậm cạnh nhau; khi người dùng không có quyền duyệt (`!canApprove`), nút chính bị mờ (`disabled`) mà không có nút gửi duyệt thay thế ở vị trí chính. | - Khi `canApprove`: **1 nút chính nổi bật** (`Duyệt kết quả: ...`) + nút phụ viền mảnh (`Lưu & tiếp`).<br>- Khi `!canApprove`: Hiển thị **1 nút chính nổi bật** (`Gửi duyệt kết quả tới GĐCS`) đúng quy trình thực tế. |
 
 ---
 
-## 3. QUY TRÌNH HOÀN NGUYÊN CHI TIẾT (ROLLBACK PROCEDURES)
+## 3. Đối chiếu Số lượng Bản ghi & Toàn vẹn CƠ SỞ DỮ LIỆU (`scripts/audit_db_integrity_readonly.js`)
 
-### 3.1. Rollback Động cơ CSDL về Cloud (Thời gian: < 30 giây)
-Nếu muốn chuyển ngay về Cloud Turso vì bất kỳ lý do gì:
-1. Mở `d:\SSM\skyline-survey\.env.local`
-2. Đổi lại `DEFAULT_DB_ENGINE="CLOUD"`
-3. Lưu file. Hệ thống lập tức sử dụng Turso Cloud mà không làm gián đoạn máy chủ.
+Kết quả đối chiếu chỉ đọc (100% Read-Only) trên `local.db` trước và sau khi thực hiện các bản vá mã nguồn:
 
-### 3.2. Rollback Dữ liệu Staging từ Tệp Lưu trữ Lạnh
-Nếu cần khôi phục lại 91,978 dòng vào `StagingCompetencyAssessment`:
+| Bảng / Chỉ số Nghiệp vụ | Trước thay đổi | Sau thay đổi | Chênh lệch / Đánh giá |
+| :--- | :---: | :---: | :--- |
+| `AcademicYear` / `Campus` / `Class` | `2` / `5` / `232` | `2` / `5` / `232` | `0` (Bảo toàn 100%) |
+| `Student` (Học sinh toàn hệ thống) | `4,403` | `4,403` | `0` (Không trùng mã HS theo năm học, `0` bản ghi mồ côi) |
+| `Teacher` / `Parent` / `ParentStudentLink` | `310` / `1,677` / `1,697` | `310` / `1,677` / `1,697` | `0` (`0` liên kết phụ huynh mồ côi) |
+| `User` / `Role` / `Permission` | `1,989` / `18` / `1,588` | `1,989` / `18` / `1,588` | `0` (Bảo toàn 100%) |
+| `SubjectGradeEntry` (Điểm sổ điểm) | `6,457` (ĐTB: `8.94`) | `6,457` (ĐTB: `8.94`) | `0` (`6,197` bản ghi có điểm tổng hợp, `0` bản ghi mất liên kết) |
+| `StudentTermScore` / `StudentCompetencyAssessment` | `7,382` / `31,100` | `7,382` / `31,100` | `0` (Bảo toàn 100%) |
+| `InputAssessmentStudent` (K-12) / Đã duyệt | `528` (`421` đã duyệt) | `528` (`421` đã duyệt) | `0` (`0` bản ghi mất kỳ khảo sát) |
+| `PreschoolInputAssessmentStudent` (Mầm non) | `211` | `211` | `0` (Bảo toàn 100%) |
+
+---
+
+## 4. Danh sách Migration & Hướng dẫn Hoàn tác (`Rollback`)
+
+### Migration mới bổ sung:
+- **Thư mục:** `prisma/migrations/20261118_security_and_query_indexes/`
+  - `migration.sql`: Bổ sung 9 chỉ mục phức hợp (`CREATE INDEX IF NOT EXISTS`) cho `AuditLog`, `InputAssessmentStudent`, `SubjectGradeEntry`, `TeachingAssignment`, `ParentStudentLink`, `PasswordResetToken`.
+  - `rollback.sql`: Câu lệnh `DROP INDEX IF EXISTS` tương ứng để hoàn tác an toàn không ảnh hưởng dữ liệu.
+
+### Cách áp dụng & hoàn tác Migration:
 ```powershell
-node -e "
-const fs = require('fs');
-const zlib = require('zlib');
-const { createClient } = require('@libsql/client');
-const client = createClient({ url: 'file:local.db' });
-async function restore() {
-  const data = JSON.parse(zlib.gunzipSync(fs.readFileSync('docs/archive_staging/staging_competency_assessment_IMP_NL_MTF8P4G4.json.gz')).toString('utf8'));
-  console.log('Restoring', data.length, 'rows...');
-  // Nạp lại từng chunk vào bảng...
-}
-restore();
-"
-```
+# Kiểm tra trạng thái CSDL trước khi chạy (Read-Only):
+node scripts/audit_db_integrity_readonly.js
 
-### 3.3. Rollback Tệp CSDL từ Bản Sao lưu Gzip (Thời gian: < 1 phút)
-Mọi bản sao lưu `.db.gz` đều có thể giải nén tức thì thành tệp `.db` nguyên bản 100%:
-```powershell
-node -e "require('./scripts/backup-db.js').decompressFile('data-backups/skyline_backup_2026-10-16_230002.db.gz', 'local.db').then(() => console.log('Rollback CSDL hoàn tất!'))"
-```
-
-### 3.4. Rollback Mã nguồn qua Git
-```powershell
-git checkout src/app/api/input-assessment-students/route.ts
-git checkout src/lib/db/index.ts
-git checkout src/app/admin/tong-hop-du-gio/client.tsx
-git checkout src/app/admin/tasks/client.tsx
+# Hoàn tác chỉ mục nếu cần (Rollback):
+# Thực thi các câu lệnh DROP INDEX IF EXISTS trong:
+# prisma/migrations/20261118_security_and_query_indexes/rollback.sql
 ```
 
 ---
 
-## 4. CÁC HẠNG MỤC DÀI HẠN CHO WAVE TIẾP THEO
-1. **Kiến trúc Ảnh Hồ sơ Học sinh (`StudentPhoto` 692 MB):** Nghiên cứu chuyển từ Base64 SQLite sang lưu trữ file tĩnh có bảo mật (`public/uploads/students/`) để đưa `local.db` từ 802 MB xuống dưới 120 MB.
-2. **Tiếp tục mở rộng Dynamic Import `xlsx`:** Áp dụng cho các client component còn lại khi có đợt cập nhật định kỳ.
+## 5. Báo cáo Kiểm kê Dọn dẹp Chế độ Chỉ Liệt kê (`scripts/cleanup_inventory_dryrun.js`)
+
+| Nhóm dữ liệu / Tệp phát sinh | Chủ sở hữu | Số lượng tệp | Dung lượng | Chính sách lưu trữ & Đề xuất |
+| :--- | :--- | :---: | :---: | :--- |
+| `NEXT_BUILD_CACHE` (`.next/`) | Next.js Build System | `24,223` | **19,055.50 MB (~19.05 GB)** | Cache biên dịch có thể tái tạo 100%. Đề xuất xóa định kỳ khi dừng dev server (`Remove-Item -Recurse -Force .next`). |
+| `TSBUILDINFO_AND_LOGS` (`*.tsbuildinfo`, `*.log`) | TypeScript / Node Runtime | `5` | **0.79 MB** | Tái tạo tự động khi build/typecheck; an toàn để dọn. |
+| `EXPIRED_PDF_EXPORTS` (`public/exports/pdf`) | Export PDF Service | `0` | **0.00 MB** | Lưu tạm 24 giờ phục vụ tải xuống. |
+| `REDUNDANT_DB_BACKUPS_TMP` (`data-backups/.tmp_*`) | Backup Service | `0` | **0.00 MB** | Đã sạch; giữ nguyên các bản `.db.gz` và `_meta.json` theo chu kỳ 30 ngày. |
+| `PROTECTED_STUDENT_PHOTOS` (`public/uploads/students`) | Student Profile Portal | `1,075` | **1,210.16 MB** | **BẢO TOÀN VĨNH VIỄN** (`safeToClean: false`) — Tuyệt đối không xóa. |
+
+---
+
+## 6. Các mục cần Phê duyệt riêng trước khi áp dụng lên Production
+
+1. **Xoay vòng (Rotate) `TURSO_AUTH_TOKEN` và `SYNC_API_SECRET` trên Production (Vercel / Turso Cloud)**:
+   - Do JWT token Turso cũ từng xuất hiện dưới dạng fallback trong lịch sử Git, Quản trị viên hệ thống cần tạo token mới trên Turso CLI/Dashboard (`turso db tokens create skyline-survey`), cập nhật vào biến môi trường `TURSO_AUTH_TOKEN` trên Vercel, sau đó thu hồi (`invalidate`) token cũ.
+2. **Cấu hình `CRON_SECRET` và `NEXTAUTH_SECRET` trên môi trường Production**:
+   - Đảm bảo biến môi trường `CRON_SECRET`, `NEXTAUTH_SECRET` (hoặc `AUTH_SECRET`) và `SYNC_API_SECRET` đã được khai báo đầy đủ trên Vercel trước khi triển khai.
+3. **Dọn dẹp thư mục `.next` (~19.05 GB) trên máy chủ phát triển**:
+   - Chạy `node scripts/cleanup_inventory_dryrun.js` để xem trước và chỉ xóa `.next` khi không có tiến trình `next dev` / `next build` đang chạy.

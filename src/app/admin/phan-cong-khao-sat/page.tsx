@@ -131,6 +131,62 @@ export default async function PhanCongKhaoSatPage() {
     rolePermissions = roleCode ? await getRolePermissions(roleCode) : [];
   } catch {}
 
+  // Resolve full campus scope & primary campus from the logged-in Teacher/User account
+  const sessionCampusIds: string[] = Array.isArray((session?.user as any)?.campusIds)
+    ? (session.user as any).campusIds
+    : [];
+  let mergedCampusIds = [...sessionCampusIds];
+  let primaryCampus: { id: string; campusCode: string; campusName: string } | null = null;
+  let resolvedUserName = session?.user?.name || "";
+  let resolvedUserEmail = session?.user?.email || "";
+
+  try {
+    const userId = (session?.user as any)?.id;
+    if (userId && pAny.user) {
+      const dbUser = await pAny.user.findUnique({
+        where: { id: userId },
+        select: {
+          fullName: true,
+          email: true,
+          teacher: {
+            select: {
+              teacherName: true,
+              email: true,
+              campusId: true,
+              campus: { select: { id: true, campusCode: true, campusName: true } },
+            },
+          },
+          campusAssignments: {
+            select: {
+              campusId: true,
+              campus: { select: { id: true, campusCode: true, campusName: true } },
+            },
+          },
+          managedCampuses: {
+            select: { id: true, campusCode: true, campusName: true },
+          },
+        },
+      }).catch(() => null);
+
+      if (dbUser) {
+        resolvedUserName = dbUser.teacher?.teacherName || dbUser.fullName || resolvedUserName;
+        resolvedUserEmail = dbUser.teacher?.email || dbUser.email || resolvedUserEmail;
+        const extraIds = [
+          dbUser.teacher?.campusId,
+          ...(dbUser.managedCampuses || []).map((c: any) => c.id),
+          ...(dbUser.campusAssignments || []).map((ca: any) => ca.campusId),
+        ].filter(Boolean);
+        mergedCampusIds = Array.from(new Set([...mergedCampusIds, ...extraIds]));
+        primaryCampus =
+          dbUser.teacher?.campus ||
+          dbUser.managedCampuses?.[0] ||
+          dbUser.campusAssignments?.[0]?.campus ||
+          campuses.find((c: any) => mergedCampusIds.includes(c.id)) ||
+          null;
+      }
+    }
+  } catch {}
+
   return (
     <div className="p-3 sm:p-4 lg:p-5 space-y-4">
       <EntranceWorkflowStepper activeStep="assign" />
@@ -149,8 +205,14 @@ export default async function PhanCongKhaoSatPage() {
         currentUser={session?.user ? {
           id: (session.user as any).id,
           role: (session.user as any).role,
-          campusIds: (session.user as any).campusIds || [],
-          fullName: session.user.name || ""
+          campusIds: mergedCampusIds,
+          fullName: resolvedUserName,
+          email: resolvedUserEmail,
+          primaryCampus: primaryCampus ? {
+            id: primaryCampus.id,
+            campusCode: primaryCampus.campusCode,
+            campusName: primaryCampus.campusName,
+          } : null,
         } : null}
         rolePermissions={safeJson(rolePermissions)}
       />

@@ -196,12 +196,19 @@ export default function TeacherSkylineJourneyPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-bold">
-          {error}
+        <div className="p-5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>{error}</div>
+          <Link
+            href="/teacher"
+            className="px-4 py-2 rounded-xl bg-white border border-rose-200 text-rose-700 hover:bg-rose-100 text-xs font-bold shrink-0 text-center"
+          >
+            ← Quay lại Không gian Giáo viên
+          </Link>
         </div>
       )}
 
       {/* Class Selector & Summary Bar */}
+      {!error && (
       <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <label className="text-xs font-extrabold uppercase text-slate-600">
@@ -263,9 +270,10 @@ export default function TeacherSkylineJourneyPage() {
           </button>
         </div>
       </div>
+      )}
 
       {/* TAB 1: STAGE SELECTION, PREVIEW, UNLOCK & STATUS COUNTS */}
-      {activeTab === "STAGES" && (
+      {!error && activeTab === "STAGES" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {stages.map((st: any) => (
             <div
@@ -376,7 +384,7 @@ export default function TeacherSkylineJourneyPage() {
       )}
 
       {/* TAB 2: STUDENT PROGRESS MATRIX & TEACHER CONFIRMATION */}
-      {activeTab === "STUDENTS" && (
+      {!error && activeTab === "STUDENTS" && (
         <div className="bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -568,7 +576,7 @@ export default function TeacherSkylineJourneyPage() {
       )}
 
       {/* TAB 3: TOP DANH SÁCH HỌC SINH XẾP HẠNG HỌC TẬP */}
-      {activeTab === "LEADERBOARD" && (
+      {!error && activeTab === "LEADERBOARD" && (
         <div className="bg-white border-2 border-amber-300 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
             <div>

@@ -21,7 +21,7 @@ export default async function ExperientialReportsPage() {
 
   const user = session.user as any
   const userRole = (user?.role || "").toUpperCase();
-  const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU", "BGH", "QLCM", "TTCM", "TEACHER", "CTHS", "CONG_TAC_HOC_SINH", "BAN_CTHS"];
+  const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU", "BGH", "QLCM", "TTCM", "TEACHER", "CTHS", "CONG_TAC_HOC_SINH", "BAN_CTHS"];
   const { hasModulePermission } = await import("@/lib/permissions");
   const hasExpPerm = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_REPORTS"]);
 

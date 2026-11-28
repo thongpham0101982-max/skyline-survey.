@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 export async function GET(req: any) {
   try {
@@ -26,6 +27,8 @@ export async function GET(req: any) {
 
 export async function POST(req: any) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { categoryType, code, name, academicYearId } = await req.json();
     if (!categoryType || !code || !name) return NextResponse.json({ error: "Thieu thong tin" }, { status: 400 });
     if (["target", "LOAI_TUYEN_SINH", "DOI_TUONG_TS", "loai_tuyen_sinh", "doi_tuong_ts", "target_type", "TARGET_TYPE", "targetType"].includes(categoryType)) {
@@ -44,6 +47,8 @@ export async function POST(req: any) {
 
 export async function PUT(req: any) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { id, name, code } = await req.json();
     if (!id) return NextResponse.json({ error: "Thieu ID" }, { status: 400 });
     const data: any = {};
@@ -58,6 +63,8 @@ export async function PUT(req: any) {
 
 export async function DELETE(req: any) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const ids = searchParams.get("ids");

@@ -30,6 +30,7 @@ import {
   detectCtqtLevel,
 } from "@/lib/ctqt/config";
 import { SavePeriodConfirmModal } from "@/components/grading/SavePeriodConfirmModal";
+import { CtqtClassSubjectSummary } from "@/components/ctqt/CtqtClassSubjectSummary";
 
 interface Props {
   teacher: any;
@@ -193,6 +194,7 @@ export function SoDiemCtqtTeacherClient({
   const [consolidatedClassId, setConsolidatedClassId] = useState<string>(
     urlClassId || ctqtClasses[0]?.id || ""
   );
+  const [consolidatedSubView, setConsolidatedSubView] = useState<"summary" | "detail">("summary");
   const [consolidatedData, setConsolidatedData] = useState<any>(null);
   const [loadingConsolidated, setLoadingConsolidated] = useState(false);
   const [savingCompetencies, setSavingCompetencies] = useState(false);
@@ -2995,20 +2997,57 @@ export function SoDiemCtqtTeacherClient({
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSaveSemesterModalAction("competencies")}
-                disabled={savingCompetencies || !consolidatedData}
-                className="text-xs font-bold px-4 py-2 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-              >
-                <Save className="w-4 h-4 text-[#5EEAD4]" />
-                {savingCompetencies ? "Đang lưu..." : "Lưu đánh giá năng lực cốt lõi"}
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center bg-[#F8FAFC] p-1 rounded-xl border border-[#E2E8F0]">
+                <button
+                  type="button"
+                  onClick={() => setConsolidatedSubView("summary")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    consolidatedSubView === "summary"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A]"
+                  }`}
+                >
+                  Tổng hợp môn học theo lớp
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConsolidatedSubView("detail")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    consolidatedSubView === "detail"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A]"
+                  }`}
+                >
+                  Chi tiết cột &amp; 6 Năng lực cốt lõi
+                </button>
+              </div>
+
+              {consolidatedSubView === "detail" && (
+                <button
+                  type="button"
+                  onClick={() => setSaveSemesterModalAction("competencies")}
+                  disabled={savingCompetencies || !consolidatedData}
+                  className="text-xs font-bold px-4 py-2 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <Save className="w-4 h-4 text-[#5EEAD4]" />
+                  {savingCompetencies ? "Đang lưu..." : "Lưu đánh giá năng lực cốt lõi"}
+                </button>
+              )}
             </div>
           </div>
 
-          {loadingConsolidated ? (
+          {consolidatedSubView === "summary" ? (
+            <CtqtClassSubjectSummary
+              data={consolidatedData}
+              loading={loadingConsolidated}
+              semester={selectedSemester}
+              mode="gvcn"
+              onOpenSubjectGradebook={subjectCode =>
+                handleSelectSlotForEntry(consolidatedClassId, subjectCode)
+              }
+            />
+          ) : loadingConsolidated ? (
             <div className="bg-white border border-[#E2E8F0] rounded-2xl p-16 text-center text-slate-500 font-semibold text-sm">
               Đang tải Sổ điểm Tổng hợp...
             </div>

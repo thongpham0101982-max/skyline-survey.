@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { formatStandardBatchName } from "@/lib/batchNaming"
 
 export async function GET(req: Request) {
   try {
@@ -257,17 +258,17 @@ export async function POST(req: Request) {
           .map((b: any) => Number(b.batchNumber))
           .filter((n: number) => !isNaN(n) && n > 0)
         const nextBatchNumber = nums.length > 0 ? Math.max(...nums) + 1 : 1
-        const pNameNorm = (periodObj.name || "").toLowerCase().normalize("NFC")
-        const periodCode =
-          pNameNorm.includes("khảo sát lẻ") || pNameNorm.includes("khao sat le")
-            ? "KSL"
-            : periodObj.code || "KSL"
-        const cCode = campusObj?.campusCode || campusObj?.campusName || "CS1"
         const dObj = new Date(sessionDate)
-        const dd = String(dObj.getDate()).padStart(2, "0")
-        const mm = String(dObj.getMonth() + 1).padStart(2, "0")
-        const yyyy = dObj.getFullYear()
-        const scientificBatchName = `${cCode} _ ${periodCode} _ Đợt ${nextBatchNumber} _ KSĐV _ ${name} _ ${dd}/${mm}/${yyyy}`
+        const scientificBatchName = formatStandardBatchName({
+          campusCode: campusObj?.campusCode,
+          campusName: campusObj?.campusName || "CS1",
+          periodName: periodObj.name,
+          periodCode: periodObj.code,
+          batchNumber: nextBatchNumber,
+          startDate: dObj,
+          endDate: dObj,
+          note: name
+        })
         const createdBatch = await (prisma as any).inputAssessmentBatch.create({
           data: {
             periodId,

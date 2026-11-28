@@ -21,6 +21,7 @@ import {
   parseTeacherSplitJson,
   serializeTeacherSplitJson
 } from "@/lib/timetable/teacherGroupHelper"
+import { applyQd82CurriculumStandardAction } from "@/app/admin/thoi-khoa-bieu/actions"
 
 const DEFAULT_QUOTA = {
   quotaPrimary: 0, quotaMiddle: 0, quotaHigh: 0,
@@ -429,6 +430,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   const [filterTimetable, setFilterTimetable] = useState<"ALL_TKB" | "SCHEDULABLE_ONLY" | "NON_SCHEDULABLE_ONLY">("ALL_TKB")
   const [compactSameQuota, setCompactSameQuota] = useState(true)
   const [togglingTimetableIds, setTogglingTimetableIds] = useState<Record<string, boolean>>({})
+  const [applyingQd82, setApplyingQd82] = useState(false)
 
   // Trạng thái dải Tag KSĐV phục vụ map điểm
   const [showKsdvKeywords, setShowKsdvKeywords] = useState(false)
@@ -811,11 +813,31 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
       : formData.baseCategory
 
     const cleanProgs = isPureKsdv ? [] : Array.from(new Set(formData.studyPrograms.filter(p => p && p !== "DEFAULT")))
-    const quotasArr = cleanProgs.map(prog => ({
-      ...(formData.quotasByProgram[prog] || { ...DEFAULT_QUOTA }),
-      academicYearId: selectedYearId,
-      studyProgram: prog
-    }))
+    const quotasArr = cleanProgs.map(prog => {
+      const baseQ: any = { ...(formData.quotasByProgram[prog] || { ...DEFAULT_QUOTA }) }
+      // Flush any unblurred decimal / comma rawInputs for this program
+      ALL_K12_QUOTA_COLS.forEach(col => {
+        const rk = `${prog}-${col.field}`
+        if (rawInputs[rk] !== undefined) {
+          const rawStr = String(rawInputs[rk]).trim()
+          const hasStar = rawStr.endsWith("*")
+          const cleanNumStr = rawStr.replace(/\*/g, "").replace(/,/g, ".")
+          const parsed = cleanNumStr === "" ? 0 : parseFloat(cleanNumStr)
+          const finalVal = Number.isFinite(parsed) && parsed >= 0 ? roundQuota(parsed) : 0
+          baseQ[col.field] = finalVal
+          const flags = parseStarFlags(baseQ.specialNoteFlags)
+          if (hasStar && finalVal > 0) flags.add(col.key)
+          else if (rawStr !== "" && !hasStar) flags.delete(col.key)
+          baseQ.specialNoteFlags = serializeStarFlags(flags)
+        }
+      })
+      recomputeQuotaAggregates(baseQ)
+      return {
+        ...baseQ,
+        academicYearId: selectedYearId,
+        studyProgram: prog
+      }
+    })
 
     const levelPayload = isPureKsdv
       ? "ALL"
@@ -2032,6 +2054,35 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
 
           <button
             type="button"
+            disabled={applyingQd82 || !selectedYearId}
+            onClick={async () => {
+              const ok = window.confirm(
+                "Áp dụng Khung thời lượng giáo dục chuẩn 40 tiết/tuần (K1–K12, cả Hệ S & Hệ I) theo Quyết định số 82/2026/QĐ-SKL ngày 12/06/2026 cho năm học đang chọn?"
+              )
+              if (!ok) return
+              setApplyingQd82(true)
+              try {
+                const res = await applyQd82CurriculumStandardAction({
+                  academicYearId: selectedYearId,
+                })
+                if (!res.success) {
+                  alert(res.error)
+                  return
+                }
+                window.location.reload()
+              } finally {
+                setApplyingQd82(false)
+              }
+            }}
+            className="px-3.5 py-2.5 bg-[#F0FDFA] hover:bg-teal-100/80 text-[#003B3A] border border-[#00A19A]/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
+            title="Đồng bộ toàn bộ định mức Hệ S & Hệ I (K1–K12) chuẩn 40 tiết/tuần theo Quyết định số 82/2026/QĐ-SKL ngày 12/06/2026"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#00736E]" />
+            <span>{applyingQd82 ? "Đang áp chuẩn QĐ 82..." : "Áp chuẩn QĐ 82/2026 (40 tiết)"}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => startEdit(undefined, true)}
             className="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-[#D97706] border border-amber-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             title="Thêm mã tag riêng cho công tác map điểm Khảo sát đầu vào (không hiển thị vào bảng tiết)"
@@ -3185,7 +3236,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                             <span>3. Số tiết theo khối, tổ hợp TN/XH & tổng số tiết</span>
                           </h3>
                           <p className="text-[11px] text-slate-500 mt-0.5">
-                            Nhập số tiết/tuần cho từng khối hoặc tổ hợp THPT (hỗ trợ gõ <strong className="text-slate-700">2*</strong> cho tiết lựa chọn / lớp ghép đặc thù)
+                            Nhập số tiết/tuần cho từng khối hoặc tổ hợp THPT (hỗ trợ số lẻ như <strong className="text-slate-700">4.5</strong>, <strong className="text-slate-700">0,5</strong> và gõ <strong className="text-slate-700">2*</strong> cho tiết lựa chọn / lớp ghép)
                           </p>
                         </div>
 
@@ -3285,7 +3336,11 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                             side: "gvvn" | "gvnn",
                             rawVal: string
                           ) => {
-                            const parsed = rawVal === "" ? 0 : Math.max(0, Number(rawVal) || 0)
+                            const normalized = rawVal.replace(/,/g, ".")
+                            const parsed =
+                              normalized.trim() === ""
+                                ? 0
+                                : Math.max(0, parseFloat(normalized) || 0)
                             setFormData(prev => {
                               const current = prev.quotasByProgram[activeTab] || hydrateEditableQuota()
                               const nextQ: any = { ...current }
@@ -3597,6 +3652,8 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                                         </div>
                                         {showTeacherSplitEditor && numVal > 0 && (() => {
                                           const sp = getSlotSplitEntry(q, col)
+                                          const vnRawKey = `${activeTab}-split-${col.field}-gvvn`
+                                          const nnRawKey = `${activeTab}-split-${col.field}-gvnn`
                                           return (
                                             <div className="grid grid-cols-2 gap-1 pt-1">
                                               <div>
@@ -3604,12 +3661,31 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                                                   GVVN
                                                 </span>
                                                 <input
-                                                  type="number"
-                                                  step="0.5"
-                                                  min={0}
-                                                  max={20}
-                                                  value={sp ? sp.gvvn : ""}
-                                                  onChange={e => updateSlotSplit(col, "gvvn", e.target.value)}
+                                                  type="text"
+                                                  inputMode="decimal"
+                                                  value={
+                                                    rawInputs[vnRawKey] !== undefined
+                                                      ? rawInputs[vnRawKey]
+                                                      : sp
+                                                        ? String(sp.gvvn)
+                                                        : ""
+                                                  }
+                                                  onChange={e => {
+                                                    const raw = e.target.value
+                                                    if (raw !== "" && !/^[0-9]*[.,]?[0-9]*$/.test(raw)) return
+                                                    setRawInputs(prev => ({ ...prev, [vnRawKey]: raw }))
+                                                    if (!raw.endsWith(".") && !raw.endsWith(",")) {
+                                                      updateSlotSplit(col, "gvvn", raw)
+                                                    }
+                                                  }}
+                                                  onBlur={e => {
+                                                    updateSlotSplit(col, "gvvn", e.target.value)
+                                                    setRawInputs(prev => {
+                                                      const next = { ...prev }
+                                                      delete next[vnRawKey]
+                                                      return next
+                                                    })
+                                                  }}
                                                   placeholder="VN"
                                                   className="w-full text-center text-[11px] font-semibold py-1 px-1 rounded border border-teal-200 bg-[#F0FDFA] text-[#003B3A] focus:bg-white focus:border-[#00A19A] outline-none"
                                                 />
@@ -3619,12 +3695,31 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                                                   GVNN
                                                 </span>
                                                 <input
-                                                  type="number"
-                                                  step="0.5"
-                                                  min={0}
-                                                  max={20}
-                                                  value={sp ? sp.gvnn : ""}
-                                                  onChange={e => updateSlotSplit(col, "gvnn", e.target.value)}
+                                                  type="text"
+                                                  inputMode="decimal"
+                                                  value={
+                                                    rawInputs[nnRawKey] !== undefined
+                                                      ? rawInputs[nnRawKey]
+                                                      : sp
+                                                        ? String(sp.gvnn)
+                                                        : ""
+                                                  }
+                                                  onChange={e => {
+                                                    const raw = e.target.value
+                                                    if (raw !== "" && !/^[0-9]*[.,]?[0-9]*$/.test(raw)) return
+                                                    setRawInputs(prev => ({ ...prev, [nnRawKey]: raw }))
+                                                    if (!raw.endsWith(".") && !raw.endsWith(",")) {
+                                                      updateSlotSplit(col, "gvnn", raw)
+                                                    }
+                                                  }}
+                                                  onBlur={e => {
+                                                    updateSlotSplit(col, "gvnn", e.target.value)
+                                                    setRawInputs(prev => {
+                                                      const next = { ...prev }
+                                                      delete next[nnRawKey]
+                                                      return next
+                                                    })
+                                                  }}
                                                   placeholder="NN"
                                                   className="w-full text-center text-[11px] font-semibold py-1 px-1 rounded border border-emerald-200 bg-emerald-50/70 text-[#059669] focus:bg-white focus:border-[#059669] outline-none"
                                                 />

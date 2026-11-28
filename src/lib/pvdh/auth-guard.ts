@@ -243,16 +243,16 @@ export async function resolveStudentPvdhAccess(params: {
 
   const inCampus = isStudentInActorCampus(actor, student);
 
-  // 2. GĐCS / BGH / QLCM / TTCM / Giáo vụ thuộc đúng Cơ sở của hồ sơ
-  if (inCampus && (actor.canReviewAndLock || actor.canCoordinate)) {
+  // 2. GĐCS / BGH / QLCM / TTCM thuộc đúng Cơ sở của hồ sơ (có quyền duyệt/khóa và toàn quyền hiệu chỉnh)
+  if (inCampus && actor.canReviewAndLock) {
     return {
       allowedToRead: true,
-      canEditStudentPart: actor.canReviewAndLock,
-      canEditParentPart: actor.canReviewAndLock,
-      canEditOrientationPart: actor.canReviewAndLock,
-      canReviewLock: actor.canReviewAndLock,
+      canEditStudentPart: true,
+      canEditParentPart: true,
+      canEditOrientationPart: true,
+      canReviewLock: true,
       canReopen: actor.canReopenLocked,
-      canHandover: actor.canCoordinate || actor.canReviewAndLock,
+      canHandover: true,
       isGvcnViewer: false,
       canViewSensitiveHealth: true,
     };
@@ -317,7 +317,13 @@ export async function resolveStudentPvdhAccess(params: {
 
       for (const ex of examiners || []) {
         const sc = String(ex?.subjectCode || "").toUpperCase();
-        if (sc === "PDHDV" || sc === "PVDH" || sc.includes("DINH_HUONG")) {
+        if (
+          sc === "PDHDV" ||
+          sc === "PVDH" ||
+          sc.startsWith("PVDH") ||
+          sc.includes("PDHDV") ||
+          sc.includes("DINH_HUONG")
+        ) {
           isAssignedOrientationTeacher = true;
           break;
         }
@@ -325,18 +331,26 @@ export async function resolveStudentPvdhAccess(params: {
     }
   }
 
-  if (isDirectStudentInterviewer || isDirectParentInterviewer || isAssignedOrientationTeacher) {
-    // Nếu có gán tách riêng 2 người khác nhau cho HS và PHHS: mỗi người sửa đúng phần của mình
-    const hasSplitStudent = Boolean(existingRecord?.studentInterviewerUserId);
-    const hasSplitParent = Boolean(existingRecord?.parentInterviewerUserId);
+  // Giáo viên được phân công Phỏng vấn định hướng luôn có quyền hiệu chỉnh đầy đủ cả phần HS (A) & PHHS (B, C, D),
+  // tránh bị khóa phần A khi quản trị/KT&ĐBCL hoặc người khác mở xem trước phiếu.
+  if (isAssignedOrientationTeacher) {
+    return {
+      allowedToRead: true,
+      canEditStudentPart: true,
+      canEditParentPart: true,
+      canEditOrientationPart: true,
+      canReviewLock: false,
+      canReopen: false,
+      canHandover: inCampus && actor.canCoordinate,
+      isGvcnViewer: false,
+      canViewSensitiveHealth: true,
+    };
+  }
 
-    const canEditStudent = hasSplitStudent
-      ? isDirectStudentInterviewer
-      : isAssignedOrientationTeacher || isDirectStudentInterviewer;
-
-    const canEditParent = hasSplitParent
-      ? isDirectParentInterviewer
-      : isAssignedOrientationTeacher || isDirectParentInterviewer;
+  if (isDirectStudentInterviewer || isDirectParentInterviewer) {
+    // Trường hợp được gán trực tiếp tách riêng 2 người khác nhau cho HS và PHHS (không qua phân công chung GVBM)
+    const canEditStudent = isDirectStudentInterviewer;
+    const canEditParent = isDirectParentInterviewer;
 
     return {
       allowedToRead: true,
@@ -345,7 +359,22 @@ export async function resolveStudentPvdhAccess(params: {
       canEditOrientationPart: canEditStudent || canEditParent,
       canReviewLock: false,
       canReopen: false,
-      canHandover: false,
+      canHandover: inCampus && actor.canCoordinate,
+      isGvcnViewer: false,
+      canViewSensitiveHealth: true,
+    };
+  }
+
+  // 4b. Giáo vụ / điều phối thuộc đúng cơ sở nhưng không trực tiếp được phân công phỏng vấn -> chỉ xem & bàn giao
+  if (inCampus && actor.canCoordinate) {
+    return {
+      allowedToRead: true,
+      canEditStudentPart: false,
+      canEditParentPart: false,
+      canEditOrientationPart: false,
+      canReviewLock: false,
+      canReopen: actor.canReopenLocked,
+      canHandover: true,
       isGvcnViewer: false,
       canViewSensitiveHealth: true,
     };

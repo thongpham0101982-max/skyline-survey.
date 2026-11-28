@@ -1470,3 +1470,65 @@ export function resolveGradeConfigForScope<T extends {
 
   return null
 }
+
+/**
+ * Find an explicit, exact-scope INTERNAL config ("2. Đánh giá nội bộ Sky-Line")
+ * for a specific (academicYearId, subjectId, grade, evaluationPeriod).
+ * Never matches generic "ALL" grade/period, general templates (subjectId == null), or KSĐN,
+ * so it is safe to check when resolving VNEDU main-period gradebooks (GK1/CK1/GK2/CK2).
+ */
+export function findExactPeriodInternalOverrideConfig<T extends {
+  academicYearId?: string | null
+  program?: string | null
+  grade?: string | null
+  subjectId?: string | null
+  evaluationPeriod?: string | null
+  configType?: string | null
+  isActive?: boolean | null
+  updatedAt?: string | Date | null
+}>(
+  configs: T[],
+  scope: {
+    academicYearId?: string | null
+    program?: string | null
+    grade: string
+    subjectId: string
+    evaluationPeriod: string
+  }
+): T | null {
+  if (!scope.subjectId || !scope.evaluationPeriod || scope.evaluationPeriod === "ALL") return null
+  if (isKsdnEvaluationPeriod(scope.evaluationPeriod)) return null
+  const gradeNum = extractGradeNumber(scope.grade)
+  if (gradeNum === null) return null
+
+  const targetProgram = (scope.program || "ALL").trim()
+  const targetPeriod = scope.evaluationPeriod.trim()
+
+  const matches = configs.filter(c => {
+    if (c.isActive === false) return false
+    if ((c.configType || "INTERNAL") !== "INTERNAL") return false
+    if (scope.academicYearId && c.academicYearId && c.academicYearId !== scope.academicYearId) return false
+    if (c.subjectId !== scope.subjectId) return false
+    const cPeriod = String(c.evaluationPeriod || "").trim()
+    if (cPeriod !== targetPeriod) return false
+    const cGrade = String(c.grade || "").trim()
+    if (!cGrade || cGrade === "ALL") return false
+    const cGradeNum = extractGradeNumber(cGrade)
+    if (cGradeNum === null || cGradeNum !== gradeNum) return false
+    const cProg = (c.program || "ALL").trim()
+    return cProg === targetProgram || cProg === "ALL" || targetProgram === "ALL"
+  })
+
+  if (matches.length === 0) return null
+
+  matches.sort((a, b) => {
+    const aExactProg = (a.program || "ALL").trim() === targetProgram ? 1 : 0
+    const bExactProg = (b.program || "ALL").trim() === targetProgram ? 1 : 0
+    if (aExactProg !== bExactProg) return bExactProg - aExactProg
+    const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
+    const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
+    return bTime - aTime
+  })
+
+  return matches[0] || null
+}

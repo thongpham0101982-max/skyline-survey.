@@ -639,7 +639,7 @@ export async function resolveTeacherAssignmentProfile(
     upperPosJoined.includes("GIÁM ĐỐC CƠ SỞ") ||
     upperPosJoined.includes("BGH") ||
     upperPosJoined.includes("ADMIN") ||
-    upperPosJoined.includes("KT_DBCL")
+    (upperPosJoined.includes("KT_DBCL") || upperPosJoined.includes("KHAO_THI") || upperPosJoined.includes("DBCL") || upperPosJoined.includes("ĐBCL"))
 
   const totalInputTasks =
     generalInputCount +
@@ -701,7 +701,7 @@ export async function resolveTeacherAssignmentProfile(
     "QLCM",
     "BGH",
     "BGH_MN",
-    "KT_DBCL",
+    "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL",
     "NHOM_TRUONG",
     "NHOM_TRUONG_CM",
   ]

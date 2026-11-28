@@ -26,6 +26,7 @@ import { TimetableShell, VERSION_STATUS_BADGE } from "@/components/timetable/Tim
 import { TimetableFilterBar } from "@/components/timetable/TimetableFilterBar"
 import { ValidationSummaryPanel } from "@/components/timetable/ValidationSummaryPanel"
 import { GradeWeeklyStatsTable } from "@/components/timetable/GradeWeeklyStatsTable"
+import { TimetableWorkflowBar, type WorkflowStepMetrics } from "@/components/timetable/TimetableWorkflowBar"
 import { useTimetableFilterNavigation } from "@/components/timetable/useTimetableFilterNavigation"
 import {
   DAY_LABELS,
@@ -33,7 +34,9 @@ import {
   SHORT_DAY_LABELS,
 } from "@/lib/timetable/scopeResolver"
 import {
+  buildSingleGradeStats,
   computeClassSlotSummary,
+  sortGradeStrings,
   WEEKLY_STANDARD_PERIODS,
 } from "@/lib/timetable/gradeStatsHelper"
 import { validateTimetable } from "@/lib/timetable/validator"
@@ -63,6 +66,7 @@ import type {
   WeekTypeCode,
 } from "@/lib/timetable/types"
 import {
+  applyQd82CurriculumStandardAction,
   assignTeacherToClassSubjectAction,
   clearDraftVersionSlotsAction,
   compareVersionWithBaselineAction,
@@ -75,6 +79,7 @@ import {
   saveDraftSlotsBatchAction,
   saveScopeFixedSlotRuleAction,
   syncDraftTeachersFromAssignmentsAction,
+  transitionTimetableVersionStatusAction,
   updateSubjectGradeQuotaAction,
 } from "../actions"
 
@@ -163,6 +168,8 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
   const [paletteDepartmentId, setPaletteDepartmentId] = useState<string>("ALL")
   const [syncTeacherToAssignment, setSyncTeacherToAssignment] = useState(true)
   const [unscheduledOnlyFocusedClass, setUnscheduledOnlyFocusedClass] = useState(false)
+  const [onlyMultiCampusFilter, setOnlyMultiCampusFilter] = useState(false)
+  const [submittingApproval, setSubmittingApproval] = useState(false)
 
   // Drag & Drop live state
   const [activeDrag, setActiveDrag] = useState<DraggedTimetablePayload | null>(null)
@@ -233,6 +240,8 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
   const revisionRef = useRef<number>(data.selectedVersion?.revision || 1)
   const versionIdRef = useRef<string | null>(data.selectedVersion?.id || null)
   const allScopeClassIdsRef = useRef<string[]>(data.allScopeClasses.map((c) => c.id))
+  const dirtyClassIdsRef = useRef<Set<string>>(new Set())
+  const dirtyRef = useRef<boolean>(false)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inFlightSavePromiseRef = useRef<Promise<boolean> | null>(null)
   const pendingAfterFlightRef = useRef<boolean>(false)
@@ -267,6 +276,8 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
       debounceTimerRef.current = null
     }
     pendingAfterFlightRef.current = false
+    dirtyClassIdsRef.current = new Set()
+    dirtyRef.current = false
     setSlots(data.slots)
     latestSlotsRef.current = data.slots
     setBaseQuotaItems(data.quotaItems)
@@ -298,6 +309,11 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
   const isEditableDraft = data.selectedVersion?.status === "DRAFT"
 
   const flushAutoSave = useCallback(async (): Promise<boolean> => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = null
+    }
+
     const verId = versionIdRef.current
     if (!verId) return false
 
@@ -309,35 +325,64 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     const executeLoop = async (): Promise<boolean> => {
       const snapshotSlots = latestSlotsRef.current
       const expectedRev = revisionRef.current
+      const targetClassIds =
+        dirtyClassIdsRef.current.size > 0
+          ? Array.from(dirtyClassIdsRef.current)
+          : allScopeClassIdsRef.current
+      const targetClassSet = new Set(targetClassIds)
+      const slotsToSave = snapshotSlots.filter((s) => targetClassSet.has(s.classId))
+
+      // Reset dirty set before awaiting so any drag-drops during flight are tracked for the next pass
+      dirtyClassIdsRef.current = new Set()
       setAutoSaveStatus("SAVING")
       setAutoSaveError(null)
 
-      const res = await saveDraftSlotsBatchAction({
-        versionId: verId,
-        expectedRevision: expectedRev,
-        scopedClassIds: allScopeClassIdsRef.current,
-        slots: snapshotSlots,
-      })
+      try {
+        const res = await saveDraftSlotsBatchAction({
+          versionId: verId,
+          expectedRevision: expectedRev,
+          scopedClassIds: targetClassIds,
+          slots: slotsToSave,
+        })
 
-      if (!res.success) {
+        if (!res.success) {
+          for (const cid of targetClassIds) dirtyClassIdsRef.current.add(cid)
+          setAutoSaveStatus("ERROR")
+          setAutoSaveError(res.error)
+          toast.error(res.error)
+          pendingAfterFlightRef.current = false
+          return false
+        }
+
+        revisionRef.current = res.newRevision
+        setRevision(res.newRevision)
+
+        if (
+          pendingAfterFlightRef.current ||
+          dirtyClassIdsRef.current.size > 0 ||
+          latestSlotsRef.current !== snapshotSlots
+        ) {
+          pendingAfterFlightRef.current = false
+          return executeLoop()
+        }
+
+        dirtyRef.current = false
+        setDirty(false)
+        setAutoSaveStatus("SAVED")
+        return true
+      } catch (err) {
+        for (const cid of targetClassIds) dirtyClassIdsRef.current.add(cid)
+        const errMsg =
+          err instanceof Error && err.message
+            ? `Lỗi lưu tự động: ${err.message}`
+            : "Không thể kết nối máy chủ để lưu bản nháp thời khóa biểu. Vui lòng nhấn thử lại."
+        console.error("[SchedulerClient] Auto-save failed:", err)
         setAutoSaveStatus("ERROR")
-        setAutoSaveError(res.error)
-        toast.error(res.error)
+        setAutoSaveError(errMsg)
+        toast.error(errMsg)
         pendingAfterFlightRef.current = false
         return false
       }
-
-      revisionRef.current = res.newRevision
-      setRevision(res.newRevision)
-
-      if (pendingAfterFlightRef.current || latestSlotsRef.current !== snapshotSlots) {
-        pendingAfterFlightRef.current = false
-        return executeLoop()
-      }
-
-      setDirty(false)
-      setAutoSaveStatus("SAVED")
-      return true
     }
 
     const p = executeLoop().finally(() => {
@@ -348,9 +393,17 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
   }, [])
 
   const applySlotsAndAutoSave = useCallback(
-    (nextSlots: SlotRecord[]) => {
+    (nextSlots: SlotRecord[], affectedClassIds?: string[]) => {
       setSlots(nextSlots)
       latestSlotsRef.current = nextSlots
+      const targets =
+        affectedClassIds && affectedClassIds.length > 0
+          ? affectedClassIds
+          : allScopeClassIdsRef.current
+      for (const cid of targets) {
+        if (cid) dirtyClassIdsRef.current.add(cid)
+      }
+      dirtyRef.current = true
       setDirty(true)
       setAutoSaveStatus("PENDING")
 
@@ -363,6 +416,20 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
       }, 450)
     },
     [flushAutoSave]
+  )
+
+  const safeReloadWithPatch = useCallback(
+    async (patch: Parameters<typeof reloadWithPatch>[0] = {}) => {
+      if (dirtyRef.current || debounceTimerRef.current || inFlightSavePromiseRef.current) {
+        const flushed = await flushAutoSave()
+        if (!flushed) {
+          toast.error("Chưa thể chuyển bộ lọc vì dữ liệu kéo thả vừa rồi chưa lưu được. Vui lòng thử lưu lại.")
+          return null
+        }
+      }
+      return reloadWithPatch(patch)
+    },
+    [flushAutoSave, reloadWithPatch]
   )
 
   const slotByCell = useMemo(() => {
@@ -503,7 +570,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
             slotByCell,
             quotaItems: liveQuotaItems,
             teachersById,
-            campusId: data.filterContext.selectedCampusId,
+            campusId: cls.campusId || data.filterContext.selectedCampusId,
             config: effectiveConfig,
             busySlots: data.busySlots,
             externalActiveSlots: data.externalActiveSlots,
@@ -556,6 +623,34 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     return list
   }, [effectiveConfig.morningPeriods, effectiveConfig.afternoonPeriods])
 
+  const teacherCampusCodesMap = useMemo<Record<string, string[]>>(() => {
+    return (data as any).teacherCampusCodes || {}
+  }, [data])
+
+  const getTeacherCampuses = useCallback(
+    (tid?: string | null): string[] => {
+      if (!tid) return []
+      return teacherCampusCodesMap[tid] || []
+    },
+    [teacherCampusCodesMap]
+  )
+
+  const getMultiCampusRank = useCallback(
+    (tid?: string | null): number => {
+      const cps = getTeacherCampuses(tid)
+      if (cps.length <= 1) return 0
+      let score = cps.length * 10
+      if (cps.some((c) => c.toUpperCase().includes("CS4") || c.toUpperCase().includes("HILL"))) {
+        score += 25
+      }
+      if (cps.some((c) => c.toUpperCase().includes("CS5") || c.toUpperCase().includes("BEACH"))) {
+        score += 15
+      }
+      return score
+    },
+    [getTeacherCampuses]
+  )
+
   const pendingQuotaActivities = useMemo(() => {
     return liveQuotaItems.filter(
       (q) => displayedClassIdsSet.has(q.classId) && q.missingWeeklyPeriods > 0
@@ -565,24 +660,48 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
   const filteredPaletteUnscheduled = useMemo(() => {
     const kw = paletteSearch.trim().toLowerCase()
     const targetClsId = activeSingleClass?.id || ""
-    return pendingQuotaActivities.filter((q) => {
-      if (viewMode === "SINGLE_CLASS" && unscheduledOnlyFocusedClass && targetClsId) {
-        if (q.classId !== targetClsId) return false
-      }
-      if (!kw) return true
-      return (
-        q.subjectName.toLowerCase().includes(kw) ||
-        q.className.toLowerCase().includes(kw) ||
-        (q.primaryTeacherName || "").toLowerCase().includes(kw) ||
-        (q.primaryTeacherCode || "").toLowerCase().includes(kw)
-      )
-    })
+    return pendingQuotaActivities
+      .filter((q) => {
+        if (viewMode === "SINGLE_CLASS" && unscheduledOnlyFocusedClass && targetClsId) {
+          if (q.classId !== targetClsId) return false
+        }
+        if (onlyMultiCampusFilter) {
+          const isMc =
+            getMultiCampusRank(q.primaryTeacherId) > 0 ||
+            getMultiCampusRank(q.gvvnTeacherId) > 0 ||
+            getMultiCampusRank(q.gvnnTeacherId) > 0
+          if (!isMc) return false
+        }
+        if (!kw) return true
+        return (
+          q.subjectName.toLowerCase().includes(kw) ||
+          q.className.toLowerCase().includes(kw) ||
+          (q.primaryTeacherName || "").toLowerCase().includes(kw) ||
+          (q.primaryTeacherCode || "").toLowerCase().includes(kw)
+        )
+      })
+      .sort((a, b) => {
+        const rankA = Math.max(
+          getMultiCampusRank(a.primaryTeacherId),
+          getMultiCampusRank(a.gvvnTeacherId),
+          getMultiCampusRank(a.gvnnTeacherId)
+        )
+        const rankB = Math.max(
+          getMultiCampusRank(b.primaryTeacherId),
+          getMultiCampusRank(b.gvvnTeacherId),
+          getMultiCampusRank(b.gvnnTeacherId)
+        )
+        if (rankA !== rankB) return rankB - rankA
+        return b.missingWeeklyPeriods - a.missingWeeklyPeriods
+      })
   }, [
     pendingQuotaActivities,
     paletteSearch,
     viewMode,
     unscheduledOnlyFocusedClass,
+    onlyMultiCampusFilter,
     activeSingleClass,
+    getMultiCampusRank,
   ])
 
   const byClassQuotaItems = useMemo(() => {
@@ -610,12 +729,20 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     })
   }, [data.subjects, paletteSearch])
 
+  const multiCampusTeachersInPoolCount = useMemo(
+    () => data.teachers.filter((t) => getMultiCampusRank(t.id) > 0).length,
+    [data.teachers, getMultiCampusRank]
+  )
+
   const filteredTeachers = useMemo(() => {
     const kw = paletteSearch.trim().toLowerCase()
     const campusId = data.filterContext.selectedCampusId
     return [...data.teachers]
       .filter((t) => teacherMatchesDepartment(t as any, paletteDepartmentId))
+      .filter((t) => !onlyMultiCampusFilter || getMultiCampusRank(t.id) > 0)
       .sort((a, b) => {
+        const mcDiff = getMultiCampusRank(b.id) - getMultiCampusRank(a.id)
+        if (mcDiff !== 0) return mcDiff
         const aSame = (a as any).campusId === campusId ? 0 : 1
         const bSame = (b as any).campusId === campusId ? 0 : 1
         if (aSame !== bSame) return aSame - bSame
@@ -623,14 +750,221 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
       })
       .filter((t) => {
         if (!kw) return true
+        const cpsLabel = getTeacherCampuses(t.id).join(" ").toLowerCase()
         return (
           t.teacherName.toLowerCase().includes(kw) ||
           (t.teacherCode || "").toLowerCase().includes(kw) ||
           ((t as any).departmentName || "").toLowerCase().includes(kw) ||
-          ((t as any).allDepartmentNames || "").toLowerCase().includes(kw)
+          ((t as any).allDepartmentNames || "").toLowerCase().includes(kw) ||
+          cpsLabel.includes(kw)
         )
       })
-  }, [data.teachers, data.filterContext.selectedCampusId, paletteDepartmentId, paletteSearch])
+  }, [
+    data.teachers,
+    data.filterContext.selectedCampusId,
+    paletteDepartmentId,
+    onlyMultiCampusFilter,
+    paletteSearch,
+    getMultiCampusRank,
+    getTeacherCampuses,
+  ])
+
+  const workflowMetrics = useMemo<WorkflowStepMetrics>(() => {
+    const classesInScope = data.campusFilteredScopeClasses || data.allScopeClasses || []
+    const grades = sortGradeStrings(
+      Array.from(new Set(classesInScope.map((c) => String(c.grade).trim()).filter(Boolean)))
+    )
+    let exact40Grades = 0
+    let overQuotaSubjectCount = 0
+    for (const g of grades) {
+      const rep = buildSingleGradeStats({
+        grade: g,
+        classes: classesInScope,
+        quotaItems: liveQuotaItems,
+        slots,
+        subjects: data.subjects,
+        subjectQuotas: subjectQuotasState,
+        targetWeeklyPeriods: WEEKLY_STANDARD_PERIODS,
+      })
+      const hasS = rep.classes.some((c) => c.studyProgram === "Hệ S")
+      const hasI = rep.classes.some((c) => c.studyProgram === "Hệ I")
+      const sOk = !hasS || Math.abs(rep.totalQuotaHeS - WEEKLY_STANDARD_PERIODS) < 0.001
+      const iOk = !hasI || Math.abs(rep.totalQuotaHeI - WEEKLY_STANDARD_PERIODS) < 0.001
+      if (sOk && iOk) exact40Grades++
+      overQuotaSubjectCount += rep.subjectRows.filter((r) => r.rowStatus === "OVER").length
+    }
+
+    const scopedClassIdSet = new Set(classesInScope.map((c) => c.id))
+    const scopedQuotaItems = liveQuotaItems.filter(
+      (q) => scopedClassIdSet.has(q.classId) && q.weeklyQuota > 0
+    )
+    const missingTeacherCount = scopedQuotaItems.filter((q) => q.status === "MISSING_TEACHER").length
+
+    const multiCampusIdsInScope = new Set<string>()
+    let multiCampusMissingPeriods = 0
+    for (const q of scopedQuotaItems) {
+      for (const tid of [q.primaryTeacherId, q.gvvnTeacherId, q.gvnnTeacherId]) {
+        if (tid && getMultiCampusRank(tid) > 0) {
+          multiCampusIdsInScope.add(tid)
+        }
+      }
+      const hasMc =
+        getMultiCampusRank(q.primaryTeacherId) > 0 ||
+        getMultiCampusRank(q.gvvnTeacherId) > 0 ||
+        getMultiCampusRank(q.gvnnTeacherId) > 0
+      if (hasMc && q.missingWeeklyPeriods > 0) {
+        multiCampusMissingPeriods =
+          Math.round((multiCampusMissingPeriods + q.missingWeeklyPeriods) * 100) / 100
+      }
+    }
+
+    let multiCampusPlacedUnlockedCount = 0
+    let multiCampusLockedCount = 0
+    for (const s of slots) {
+      if (!scopedClassIdSet.has(s.classId)) continue
+      const isMcSlot =
+        getMultiCampusRank(s.teacherId) > 0 ||
+        getMultiCampusRank(s.coTeacherId) > 0 ||
+        getMultiCampusRank(s.altTeacherId) > 0
+      if (!isMcSlot) continue
+      if (s.isLocked) multiCampusLockedCount++
+      else multiCampusPlacedUnlockedCount++
+    }
+
+    const requiredPeriodsTotal =
+      Math.round(scopedQuotaItems.reduce((acc, q) => acc + q.weeklyQuota, 0) * 100) / 100
+    const scheduledPeriodsTotal =
+      Math.round(
+        scopedQuotaItems.reduce((acc, q) => acc + q.scheduledWeeklyEquivalent, 0) * 100
+      ) / 100
+    const missingActivityCount = scopedQuotaItems.filter((q) => q.missingWeeklyPeriods > 0).length
+    const hardViolationCount = liveValidationReport.allIssues.filter(
+      (i) => i.severity === "ERROR"
+    ).length
+
+    return {
+      totalGrades: grades.length,
+      exact40Grades,
+      overQuotaSubjectCount,
+      totalQuotaPairs: scopedQuotaItems.length,
+      missingTeacherCount,
+      unhydratedSlotTeacherCount: Number((data as any).autoHydratedCount || 0),
+      fixedRuleCount: fixedSlotsConfig.length,
+      multiCampusTeacherCount: multiCampusIdsInScope.size,
+      multiCampusMissingPeriods,
+      multiCampusPlacedUnlockedCount,
+      multiCampusLockedCount,
+      scheduledPeriodsTotal,
+      requiredPeriodsTotal,
+      missingActivityCount,
+      hardViolationCount,
+      canSubmitApproval: liveValidationReport.canPublish && missingActivityCount === 0,
+      versionStatus: data.selectedVersion?.status || "NONE",
+    }
+  }, [
+    data,
+    liveQuotaItems,
+    slots,
+    subjectQuotasState,
+    fixedSlotsConfig.length,
+    liveValidationReport,
+    getMultiCampusRank,
+  ])
+
+  const handleLockMultiCampusSlots = useCallback(() => {
+    if (!isEditableDraft) return
+    let lockedCount = 0
+    const affectedClassIds = new Set<string>()
+    const nextSlots = slots.map((s) => {
+      const isMcSlot =
+        getMultiCampusRank(s.teacherId) > 0 ||
+        getMultiCampusRank(s.coTeacherId) > 0 ||
+        getMultiCampusRank(s.altTeacherId) > 0
+      if (isMcSlot && !s.isLocked) {
+        lockedCount++
+        if (s.classId) affectedClassIds.add(s.classId)
+        return { ...s, isLocked: true }
+      }
+      return s
+    })
+    if (lockedCount === 0) {
+      toast.success("Tất cả ô tiết đã xếp của GV liên cơ sở đều đã được khóa.")
+      return
+    }
+    applySlotsAndAutoSave(nextSlots, Array.from(affectedClassIds))
+    toast.success(
+      `Đã khóa bảo vệ ${lockedCount} ô tiết của GV liên cơ sở để không bị xáo trộn khi chia tự động.`
+    )
+  }, [isEditableDraft, slots, getMultiCampusRank, applySlotsAndAutoSave])
+
+  const handleApplyQd82Standard = useCallback(async () => {
+    const ok = window.confirm(
+      "Áp dụng Khung thời lượng giáo dục chuẩn 40 tiết/tuần (K1–K12, cả Hệ S & Hệ I) theo Quyết định số 82/2026/QĐ-SKL ngày 12/06/2026 cho năm học đang chọn?"
+    )
+    if (!ok) return
+    const res = await applyQd82CurriculumStandardAction({
+      academicYearId: data.filterContext.selectedYearId,
+      campusId: data.filterContext.selectedCampusId,
+    })
+    if (!res.success) {
+      toast.error(res.error)
+      return
+    }
+    toast.success(
+      `Đã đồng bộ chuẩn QĐ 82/2026/QĐ-SKL (${res.updatedSubjects} môn, đủ 40 tiết/tuần cho Hệ S & Hệ I).`
+    )
+    await safeReloadWithPatch({})
+  }, [data.filterContext.selectedCampusId, data.filterContext.selectedYearId, safeReloadWithPatch])
+
+  const handleSubmitDraftForApproval = useCallback(async () => {
+    if (!data.selectedVersion) return
+    if (dirty) {
+      const flushed = await flushAutoSave()
+      if (!flushed) return
+    }
+    const ok = window.confirm(
+      `Gửi phiên bản "${data.selectedVersion.name}" sang trạng thái Chờ duyệt để Ban Giám hiệu / KT&ĐBCL phê duyệt ban hành?`
+    )
+    if (!ok) return
+    setSubmittingApproval(true)
+    try {
+      const res = await transitionTimetableVersionStatusAction({
+        versionId: data.selectedVersion.id,
+        expectedRevision: revisionRef.current,
+        transition: "SUBMIT_APPROVAL",
+      })
+      if (!res.success) {
+        toast.error(res.error)
+        return
+      }
+      toast.success("Đã gửi phương án thời khóa biểu sang trạng thái Chờ duyệt.")
+      await reloadWithPatch({})
+    } finally {
+      setSubmittingApproval(false)
+    }
+  }, [data.selectedVersion, dirty, flushAutoSave, reloadWithPatch])
+
+  const buildScopedSiblingHref = useCallback(
+    (basePath: string) => {
+      const qs = new URLSearchParams()
+      if (data.filterContext.selectedYearId) {
+        qs.set("academicYearId", data.filterContext.selectedYearId)
+      }
+      qs.set("semester", String(data.filterContext.semester))
+      qs.set("scopeGroup", data.filterContext.selectedScopeGroup)
+      if (
+        data.filterContext.selectedCampusFilter &&
+        data.filterContext.selectedCampusFilter !== "ALL"
+      ) {
+        qs.set("campusId", data.filterContext.selectedCampusFilter)
+      }
+      if (data.selectedVersion?.id) {
+        qs.set("versionId", data.selectedVersion.id)
+      }
+      return `${basePath}?${qs.toString()}`
+    },
+    [data.filterContext, data.selectedVersion?.id]
+  )
 
   const handleDropOnCell = (
     cls: SchedulerPageData["allScopeClasses"][number],
@@ -843,7 +1177,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
       }
     }
 
-    applySlotsAndAutoSave(nextSlots)
+    applySlotsAndAutoSave(nextSlots, [cls.id])
 
     if (evalRes.status === "CONFLICT" && evalRes.reason) {
       toast.error(`Cảnh báo trùng lịch: ${evalRes.reason}`)
@@ -853,12 +1187,13 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
   const handleToggleLock = (cellKey: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!isEditableDraft) return
+    const classId = cellKey.split("::")[0]
     const nextSlots = slots.map((s) =>
       makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber) === cellKey
         ? { ...s, isLocked: !s.isLocked }
         : s
     )
-    applySlotsAndAutoSave(nextSlots)
+    applySlotsAndAutoSave(nextSlots, classId ? [classId] : undefined)
   }
 
   const handleQuickClearCell = (cellKey: string, e: React.MouseEvent) => {
@@ -873,7 +1208,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     const nextSlots = slots.filter(
       (s) => makeSlotCellKey(s.classId, s.dayOfWeek, s.session, s.periodNumber) !== cellKey
     )
-    applySlotsAndAutoSave(nextSlots)
+    applySlotsAndAutoSave(nextSlots, target.classId ? [target.classId] : undefined)
   }
 
   const openBulkApplyFromSlotOrSubject = (params: {
@@ -915,10 +1250,13 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
   const handleExecuteBulkApply = async () => {
     if (!bulkApplyModal || !isEditableDraft) return
 
+    const activeCampusScopeClasses =
+      data.campusFilteredScopeClasses || data.allScopeClasses
+
     const targetClasses =
       bulkApplyModal.targetMode === "ALL_SCOPE"
-        ? data.allScopeClasses
-        : data.allScopeClasses.filter((c) => c.grade === bulkApplyModal.targetGrade)
+        ? activeCampusScopeClasses
+        : activeCampusScopeClasses.filter((c) => c.grade === bulkApplyModal.targetGrade)
 
     if (targetClasses.length === 0) {
       toast.error("Không có lớp học nào thuộc phạm vi áp dụng đã chọn.")
@@ -947,7 +1285,10 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
       travelRules: data.travelRules,
     })
 
-    applySlotsAndAutoSave(bulkRes.nextSlots)
+    applySlotsAndAutoSave(
+      bulkRes.nextSlots,
+      targetClasses.map((c) => c.id)
+    )
 
     if (bulkApplyModal.rememberInScopeConfig) {
       const saveRuleRes = await saveScopeFixedSlotRuleAction({
@@ -1047,6 +1388,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
     const res = await runAutoScheduleDraftAction({
       versionId: data.selectedVersion.id,
       expectedRevision: revisionRef.current,
+      campusFilter: data.filterContext.selectedCampusFilter || "ALL",
       timeLimitMs: 7000,
     })
     setAutoRunning(false)
@@ -1209,7 +1551,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                 onClick={handleDownloadExcelTemplate}
                 className="px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-slate-700 text-xs font-semibold hover:bg-[#F8FAFC] cursor-pointer"
               >
-                Tải mẫu Excel
+                Mẫu Excel
               </button>
 
               <label className="px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-slate-700 text-xs font-semibold hover:bg-[#F8FAFC] cursor-pointer">
@@ -1225,37 +1567,6 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                   }}
                 />
               </label>
-
-              <button
-                type="button"
-                onClick={handleSyncFromAssignments}
-                disabled={syncingTeachers}
-                title="Cập nhật toàn bộ giáo viên chính và giáo viên môn luân phiên theo bảng Phân công giảng dạy hiện hành"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F0FDFA] border border-teal-200 text-[#003B3A] text-xs font-semibold hover:bg-teal-100/70 disabled:opacity-50 cursor-pointer tabular-nums"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 text-[#008B85] ${syncingTeachers ? "animate-spin" : ""}`} />
-                <span>{syncingTeachers ? "Đang đồng bộ..." : "Đồng bộ GV từ Phân công"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleAutoSchedule}
-                disabled={autoRunning}
-                className="px-3.5 py-2 rounded-xl bg-[#00A19A] text-white text-xs font-semibold hover:bg-[#008B85] disabled:opacity-50 cursor-pointer"
-              >
-                {autoRunning ? "Đang chia lịch..." : "Chia lịch tự động"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmVersionCode("")
-                  setShowClearDraftModal(true)
-                }}
-                className="px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-[#E11D48] text-xs font-semibold hover:bg-rose-100 cursor-pointer"
-              >
-                Xóa dữ liệu bản nháp
-              </button>
             </>
           )}
 
@@ -1274,16 +1585,41 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
               }}
               className="px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-slate-700 text-xs font-semibold hover:bg-[#F8FAFC] cursor-pointer"
             >
-              So sánh với lịch nền
+              So sánh lịch nền
             </button>
+          )}
+
+          {isEditableDraft && (
+            <>
+              <button
+                type="button"
+                onClick={handleAutoSchedule}
+                disabled={autoRunning}
+                className="px-3.5 py-2 rounded-xl bg-[#00A19A] text-white text-xs font-semibold hover:bg-[#008B85] disabled:opacity-50 cursor-pointer shadow-xs"
+              >
+                {autoRunning ? "Đang chia lịch..." : "Chia lịch tự động"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmVersionCode("")
+                  setShowClearDraftModal(true)
+                }}
+                title="Xóa các tiết trong bản nháp (có tùy chọn giữ lại các ô đã khóa)"
+                className="px-2.5 py-2 rounded-xl bg-white border border-rose-200 text-[#E11D48] text-xs font-semibold hover:bg-rose-50 cursor-pointer"
+              >
+                Làm trống nháp
+              </button>
+            </>
           )}
         </>
       }
     >
       <TimetableFilterBar
         context={data.filterContext}
-        onChange={reloadWithPatch}
-        hasUnsavedChanges={dirty && autoSaveStatus === "ERROR"}
+        onChange={safeReloadWithPatch}
+        hasUnsavedChanges={dirty}
         loading={loading}
         extraSlot={
           <div className="flex flex-wrap items-center gap-2">
@@ -1371,9 +1707,49 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
             >
               Hoạt động chưa xếp ({pendingQuotaActivities.length})
             </button>
+
+            {isEditableDraft && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (dirty || autoSaveStatus === "ERROR") void flushAutoSave()
+                }}
+                title={autoSaveError || "Trạng thái tự động lưu thao tác kéo thả"}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold tabular-nums transition-colors cursor-pointer ${
+                  autoSaveStatus === "ERROR"
+                    ? "bg-rose-50 border-rose-200 text-[#E11D48]"
+                    : autoSaveStatus === "SAVING" || autoSaveStatus === "PENDING"
+                    ? "bg-amber-50 border-amber-200 text-[#D97706]"
+                    : "bg-emerald-50 border-emerald-200 text-[#059669]"
+                }`}
+              >
+                {autoSaveStatus === "ERROR"
+                  ? "Lỗi lưu — Nhấn thử lại"
+                  : autoSaveStatus === "SAVING"
+                  ? "Đang lưu..."
+                  : autoSaveStatus === "PENDING"
+                  ? "Chờ lưu..."
+                  : `Đã lưu • Rev #${revision}`}
+              </button>
+            )}
           </div>
         }
       />
+
+      {autoSaveStatus === "ERROR" && autoSaveError && (
+        <div className="bg-rose-50 border border-rose-200 text-[#E11D48] rounded-2xl px-4 py-3 text-xs font-medium flex flex-wrap items-center justify-between gap-2">
+          <span>
+            <strong>Chưa lưu được thay đổi kéo thả:</strong> {autoSaveError}
+          </span>
+          <button
+            type="button"
+            onClick={() => void flushAutoSave()}
+            className="px-3 py-1.5 rounded-xl bg-[#E11D48] text-white text-xs font-semibold hover:bg-rose-700 cursor-pointer shrink-0"
+          >
+            Thử lưu lại ngay
+          </button>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="bg-rose-50 border border-rose-200 text-[#E11D48] rounded-2xl px-4 py-3 text-xs font-medium">
@@ -1431,6 +1807,29 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
             </div>
           )}
 
+          {/* 5-Step Guided Scheduling Workflow Bar */}
+          <TimetableWorkflowBar
+            metrics={workflowMetrics}
+            isEditableDraft={isEditableDraft}
+            onlyMultiCampusActive={onlyMultiCampusFilter}
+            syncingTeachers={syncingTeachers}
+            autoRunning={autoRunning}
+            submittingApproval={submittingApproval}
+            publishPageHref={buildScopedSiblingHref("/admin/thoi-khoa-bieu/ban-hanh")}
+            quotaPageHref={buildScopedSiblingHref("/admin/thoi-khoa-bieu/phan-cong")}
+            onOpenGradeStats={() => setShowGradeStatsPanel((v) => !v)}
+            onApplyQd82={handleApplyQd82Standard}
+            onSyncTeachers={handleSyncFromAssignments}
+            onFocusMultiCampusTeachers={() => {
+              setPaletteOpen(true)
+              setPaletteTab("UNSCHEDULED")
+              setOnlyMultiCampusFilter((v) => !v)
+            }}
+            onLockMultiCampusSlots={handleLockMultiCampusSlots}
+            onRunAutoSchedule={handleAutoSchedule}
+            onSubmitApproval={handleSubmitDraftForApproval}
+          />
+
           {/* Live 10-Rule Validation Summary */}
           <ValidationSummaryPanel report={liveValidationReport} />
 
@@ -1458,7 +1857,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
           {/* Grade-level Subject & 40-Period Weekly Reconciliation Table */}
           {showGradeStatsPanel && (
             <GradeWeeklyStatsTable
-              classes={data.allScopeClasses}
+              classes={data.campusFilteredScopeClasses || data.allScopeClasses}
               quotaItems={liveQuotaItems}
               slots={slots}
               subjects={data.subjects}
@@ -1473,7 +1872,25 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                 setViewMode("SINGLE_CLASS")
               }}
               onSelectStudyProgram={(sp) => {
-                void reloadWithPatch({ studyProgram: sp, classId: "ALL" })
+                void safeReloadWithPatch({ studyProgram: sp, classId: "ALL" })
+              }}
+              onApplyQd82Standard={async () => {
+                const ok = window.confirm(
+                  "Áp dụng Khung thời lượng giáo dục chuẩn 40 tiết/tuần (K1–K12, cả Hệ S & Hệ I) theo Quyết định số 82/2026/QĐ-SKL ngày 12/06/2026 cho năm học đang chọn?"
+                )
+                if (!ok) return
+                const res = await applyQd82CurriculumStandardAction({
+                  academicYearId: data.filterContext.selectedYearId,
+                  campusId: data.filterContext.selectedCampusId,
+                })
+                if (!res.success) {
+                  toast.error(res.error)
+                  return
+                }
+                toast.success(
+                  `Đã đồng bộ chuẩn QĐ 82/2026/QĐ-SKL (${res.updatedSubjects} môn, đủ 40 tiết/tuần cho Hệ S & Hệ I).`
+                )
+                await reloadWithPatch({})
               }}
               onUpdateQuota={
                 isEditableDraft
@@ -1854,6 +2271,23 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                     </select>
                   )}
 
+                  {(paletteTab === "UNSCHEDULED" || paletteTab === "TEACHERS") && (
+                    <label className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-amber-50/70 border border-amber-200 text-[11px] font-semibold text-[#003B3A] cursor-pointer tabular-nums">
+                      <span className="inline-flex items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={onlyMultiCampusFilter}
+                          onChange={(e) => setOnlyMultiCampusFilter(e.target.checked)}
+                          className="accent-[#003B3A]"
+                        />
+                        <span>Ưu tiên GV dạy nhiều cơ sở</span>
+                      </span>
+                      <span className="px-1.5 py-0.2 rounded bg-white text-[#D97706] border border-amber-200 text-[10px] font-bold">
+                        {multiCampusTeachersInPoolCount} GV
+                      </span>
+                    </label>
+                  )}
+
                   {paletteTab === "UNSCHEDULED" && viewMode === "SINGLE_CLASS" && activeSingleClass && (
                     <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] font-medium text-slate-700 cursor-pointer">
                       <input
@@ -2060,6 +2494,19 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                                   Thiếu {q.missingWeeklyPeriods}/{q.weeklyQuota}
                                 </span>
                               </div>
+                              {(() => {
+                                const cps = getTeacherCampuses(
+                                  q.primaryTeacherId || q.gvvnTeacherId || q.gvnnTeacherId
+                                )
+                                if (cps.length <= 1) return null
+                                return (
+                                  <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-[#00736E]">
+                                    <span className="px-1.5 py-0.2 rounded bg-[#F0FDFA] border border-teal-200">
+                                      Liên CS: {cps.join(" • ")}
+                                    </span>
+                                  </div>
+                                )
+                              })()}
                             </div>
                           )
                         })
@@ -2374,6 +2821,14 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
                               </div>
                             </div>
                           </div>
+                          {getTeacherCampuses(t.id).length > 1 && (
+                            <span
+                              title="Giáo viên giảng dạy tại nhiều cơ sở — nên gom buổi/ngày và khóa trước khi chia tự động"
+                              className="px-1.5 py-0.5 rounded bg-amber-50 text-[#D97706] border border-amber-200 text-[10px] font-semibold shrink-0"
+                            >
+                              {getTeacherCampuses(t.id).join("•")}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </>
@@ -3604,7 +4059,7 @@ export function SchedulerClient({ initialData }: { initialData: SchedulerPageDat
               }
             }
 
-            applySlotsAndAutoSave(nextSlots)
+            applySlotsAndAutoSave(nextSlots, [editingCell.classId])
             setEditingCell(null)
           }}
         />

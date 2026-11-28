@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/mail";
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const ctx = await requireAdminOrLeadershipSession();
+  if (!ctx) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const toEmail = (url.searchParams.get("to") || "thongpn@skylineschool.edu.vn").trim().toLowerCase();
 
@@ -30,13 +36,6 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     recipient: toEmail,
-    result,
-    env: {
-      smtpUser: (process.env.SMTP_USER || '').trim(),
-      rawPassLength: (process.env.SMTP_PASS || '').length,
-      rawPassStart: (process.env.SMTP_PASS || '').trim().slice(0, 4),
-      rawPassEnd: (process.env.SMTP_PASS || '').trim().slice(-4),
-      hasBackupPass: !!process.env.BACKUP_SMTP_PASS,
-    }
+    result
   });
 }

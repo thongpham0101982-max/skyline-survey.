@@ -2,11 +2,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
+  generateK12ApprovalToken,
   verifyK12ApprovalToken,
   verifyBatchApprovalToken
 } from "@/lib/k12-approval-service";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 import { isOfficiallyApprovedConclusion } from "@/lib/entrance-progress/constants";
+
+const SAFE_HTML_HEADERS = {
+  "Content-Type": "text/html; charset=utf-8",
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+  "Pragma": "no-cache",
+  "Expires": "0",
+  "X-Robots-Tag": "noindex, nofollow"
+};
+
+function escapeHtml(raw: unknown): string {
+  return String(raw ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function extractCampusShortLabel(raw?: string | null): string {
   const s = String(raw || "").trim();
@@ -197,14 +215,18 @@ export async function GET(req: NextRequest) {
   const action = searchParams.get("action") || "DAT";
   const email = searchParams.get("email") || "gdcs@skylineschool.edu.vn";
   const token = searchParams.get("token") || "";
-  const confirm = searchParams.get("confirm") === "1";
   const preselect = searchParams.get("preselect") || "";
 
   const host = req.headers.get("host") || "ssm.skylineschool.edu.vn";
   const protocol = req.headers.get("x-forwarded-proto") || "https";
   const baseUrl = `${protocol}://${host}`;
 
-  // --- MODE 1: BATCH APPROVAL ---
+  // IMPORTANT: HTTP GET MUST NEVER MUTATE THE DATABASE.
+  // Email security scanners (Microsoft Defender Safe Links, Outlook Copilot / link prefetchers,
+  // Proofpoint, mobile mail previews) automatically send GET requests to all links in an email
+  // the moment the email is delivered or opened. All database writes happen ONLY on POST.
+
+  // --- MODE 1: BATCH APPROVAL (READ-ONLY CONFIRMATION PAGE ON GET) ---
   if (mode === "batch") {
     const validBatch = verifyBatchApprovalToken(periodId, batchId, isPreschool, email, token);
     if (!validBatch) {
@@ -214,7 +236,7 @@ export async function GET(req: NextRequest) {
           bodyHtml: `<div class="error-box">Liên kết phê duyệt theo đợt không hợp lệ hoặc đã hết hạn. Vui lòng truy cập trực tiếp hệ thống SSM Portal.</div>
           <a href="${baseUrl}/admin/xet-duyet-ket-qua" class="btn-primary">Mở Cổng Xét duyệt SSM &rarr;</a>`
         }),
-        { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
+        { status: 400, headers: SAFE_HTML_HEADERS }
       );
     }
 
@@ -222,60 +244,27 @@ export async function GET(req: NextRequest) {
     const whereClause: any = { periodId };
     if (batchId && batchId !== "all") whereClause.batchId = batchId;
 
-    if (isPreschool) {
-      const list = await (prisma as any).preschoolInputAssessmentStudent.findMany({ where: whereClause });
-      const targetList = list.filter((s: any) => !s.isAbsent && !s.admissionResult);
-      for (const st of targetList) {
-        await (prisma as any).preschoolInputAssessmentStudent.update({
-          where: { id: st.id },
-          data: {
-            gdcsApprovalStatus: "DAT_MIEN_HOC_THU",
-            gdcsApprovalUser: approverName,
-            gdcsApprovalDate: new Date(),
-            admissionResult: "Đạt - Miễn Học Thử"
-          }
-        });
-      }
-      return new NextResponse(
-        renderPageHtml({
-          title: "Phê duyệt đợt khảo sát thành công",
-          bodyHtml: `
-            <div class="badge-ok">✓ Đã phê duyệt toàn đợt thành công</div>
-            <p class="desc">Hệ thống đã ghi nhận quyết định phê duyệt <strong>Đạt - Miễn Học Thử</strong> cho <strong>${targetList.length}</strong> học sinh chờ duyệt trong đợt khảo sát bởi <strong>${approverName}</strong>.</p>
-            <a href="${baseUrl}/admin/xet-duyet-ket-qua?tab=mam-non&periodId=${encodeURIComponent(periodId)}&batchId=${encodeURIComponent(batchId)}" class="btn-primary">Xem danh sách trên SSM Portal &rarr;</a>
-          `
-        }),
-        { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-      );
-    } else {
-      const list = await (prisma as any).inputAssessmentStudent.findMany({ where: whereClause });
-      const targetList = list.filter((s: any) => !s.isAbsent && !s.admissionResult);
-      for (const st of targetList) {
-        const updatedNote = buildUpdatedDirectorNote(st.directorNote, approverName, st.admissionResult || "", "Đạt", [], "Duyệt Đạt toàn đợt qua Email");
-        await (prisma as any).inputAssessmentStudent.update({
-          where: { id: st.id },
-          data: {
-            admissionResult: "Đạt",
-            signatureName: approverName,
-            directorNote: updatedNote
-          }
-        });
-      }
-      return new NextResponse(
-        renderPageHtml({
-          title: "Phê duyệt đợt khảo sát thành công",
-          bodyHtml: `
-            <div class="badge-ok">✓ Đã phê duyệt toàn đợt thành công</div>
-            <p class="desc">Hệ thống đã ghi nhận quyết định phê duyệt <strong>Đạt chuẩn</strong> cho <strong>${targetList.length}</strong> học sinh chờ duyệt trong đợt khảo sát bởi <strong>${approverName}</strong>.</p>
-            <a href="${baseUrl}/admin/xet-duyet-ket-qua?tab=k12&periodId=${encodeURIComponent(periodId)}&batchId=${encodeURIComponent(batchId)}" class="btn-primary">Xem danh sách trên SSM Portal &rarr;</a>
-          `
-        }),
-        { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-      );
-    }
+    const list = isPreschool
+      ? await (prisma as any).preschoolInputAssessmentStudent.findMany({ where: whereClause })
+      : await (prisma as any).inputAssessmentStudent.findMany({ where: whereClause });
+    const targetList = list.filter((s: any) => !s.isAbsent && !s.admissionResult);
+
+    return new NextResponse(
+      renderBatchConfirmPage({
+        targetList,
+        isPreschool,
+        periodId,
+        batchId,
+        email,
+        token,
+        approverName,
+        baseUrl
+      }),
+      { status: 200, headers: SAFE_HTML_HEADERS }
+    );
   }
 
-  // --- MODE 2: SINGLE K-12 STUDENT ---
+  // --- MODE 2: SINGLE K-12 STUDENT (READ-ONLY CONFIRMATION PAGE ON GET) ---
   const isValid = verifyK12ApprovalToken(studentId, action, email, token);
   if (!isValid) {
     return new NextResponse(
@@ -286,7 +275,7 @@ export async function GET(req: NextRequest) {
           <a href="${baseUrl}/admin/xet-duyet-ket-qua?tab=k12&studentId=${encodeURIComponent(studentId)}" class="btn-primary">Mở Cổng Xét duyệt SSM &rarr;</a>
         `
       }),
-      { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
+      { status: 400, headers: SAFE_HTML_HEADERS }
     );
   }
 
@@ -304,7 +293,7 @@ export async function GET(req: NextRequest) {
           <a href="${baseUrl}/admin/xet-duyet-ket-qua?tab=k12" class="btn-primary">Mở Cổng Xét duyệt SSM &rarr;</a>
         `
       }),
-      { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } }
+      { status: 404, headers: SAFE_HTML_HEADERS }
     );
   }
 
@@ -313,111 +302,8 @@ export async function GET(req: NextRequest) {
     include: { subject: true }
   }).catch(() => []);
 
-  // Immediate 1-tap approval when confirm === true (supports ALL options: DAT, DAT_CAM_KET + preselect, HOC_THU, KHONG_DAT)
-  if (confirm && ["DAT", "DAT_CAM_KET", "HOC_THU", "KHONG_DAT", "KHONG_DAT_KTL"].includes(action)) {
-    const approverName = await resolveApproverDisplayName(email);
-    const oldResult = student.admissionResult || "Chưa duyệt";
-
-    let newResult = "Đạt";
-    let defaultNote = "Phê duyệt Đạt chuẩn trực tiếp qua Email";
-    if (action === "DAT_CAM_KET") {
-      newResult = "Đạt cam kết";
-      defaultNote = "Phê duyệt Đạt cam kết trực tiếp qua Email";
-    } else if (action === "HOC_THU") {
-      newResult = "Học thử";
-      defaultNote = "Phê duyệt Học thử trực tiếp qua Email";
-    } else if (action === "KHONG_DAT" || action === "KHONG_DAT_KTL") {
-      newResult = "Không đạt - Kiểm tra lại";
-      defaultNote = "Phê duyệt Không đạt / Khảo sát lại trực tiếp qua Email";
-    }
-
-    // Parse 1-tap committed subjects (supports comma-separated list & smart merge if already Đạt cam kết)
-    const incomingSubjects = preselect
-      ? preselect.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
-      : [];
-    const mergedSubjects: string[] = [];
-    const seenSubj = new Set<string>();
-    const addSubj = (name: string) => {
-      const clean = name.trim();
-      if (!clean) return;
-      const k = clean.toLowerCase().normalize("NFC").replace(/[–—-]/g, "-").replace(/\s+/g, " ");
-      if (seenSubj.has(k)) return;
-      seenSubj.add(k);
-      mergedSubjects.push(clean);
-    };
-
-    if (action === "DAT_CAM_KET" && oldResult === "Đạt cam kết" && incomingSubjects.length > 0) {
-      const m = String(student.directorNote || "").match(/\[Môn cam kết:\s*([^\]]+)\]/i);
-      if (m?.[1]) {
-        m[1].split(/[,;]+/).forEach(addSubj);
-      }
-    }
-    incomingSubjects.forEach(addSubj);
-
-    const customNote =
-      mergedSubjects.length > 0
-        ? `${defaultNote} (${mergedSubjects.join(", ")})`
-        : defaultNote;
-
-    const finalNote = buildUpdatedDirectorNote(
-      student.directorNote,
-      approverName,
-      oldResult,
-      newResult,
-      mergedSubjects,
-      customNote
-    );
-
-    await (prisma as any).inputAssessmentStudent.update({
-      where: { id: studentId },
-      data: {
-        admissionResult: newResult,
-        signatureName: approverName,
-        directorNote: finalNote
-      }
-    });
-
-    if (isOfficiallyApprovedConclusion(newResult)) {
-      try {
-        await executeEntranceWorkflowAction({
-          action: "CONFIRM",
-          targetScope: "STUDENT",
-          isPreschool: false,
-          periodId: student.periodId || "PERIOD_APPROVAL",
-          batchId: student.batchId || null,
-          studentIds: [student.id],
-          stageNumber: 6,
-          status: "COMPLETED",
-          admissionResult: newResult,
-          note: `GĐCS (${approverName}) phê duyệt 1 chạm qua Email: ${newResult}${mergedSubjects.length > 0 ? ` (${mergedSubjects.join(", ")})` : ""}`,
-          actor: {
-            id: "gdcs_email_approver",
-            fullName: approverName,
-            role: "GDCS",
-            isSuperAdmin: false
-          }
-        });
-      } catch {}
-    }
-
-    return new NextResponse(
-      renderStudentSuccessPage({
-        student,
-        scores,
-        finalResult: newResult,
-        committedSubjects: mergedSubjects,
-        customNote,
-        approverName,
-        baseUrl,
-        action,
-        email,
-        token
-      }),
-      { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
-    );
-  }
-
-  // Otherwise render interactive Quick-Approve Form for GĐCS (supports Đạt, Đạt cam kết + chọn môn, Học thử, Không đạt + ghi chú)
+  // Always render safe interactive confirmation form (pre-selected with the tapped option & subjects)
+  // so email security scanners/prefetchers can never trigger unintended approvals.
   return new NextResponse(
     renderInteractiveApprovalForm({
       student,
@@ -428,7 +314,7 @@ export async function GET(req: NextRequest) {
       baseUrl,
       preselect
     }),
-    { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+    { status: 200, headers: SAFE_HTML_HEADERS }
   );
 }
 
@@ -439,6 +325,86 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData();
+    const mode = String(formData.get("mode") || "student");
+
+    // --- MODE 1: BATCH APPROVAL EXECUTION (POST ONLY) ---
+    if (mode === "batch") {
+      const periodId = String(formData.get("periodId") || "");
+      const batchId = String(formData.get("batchId") || "");
+      const isPreschool = String(formData.get("isPreschool") || "") === "1";
+      const email = String(formData.get("email") || "gdcs@skylineschool.edu.vn");
+      const token = String(formData.get("token") || "");
+
+      const validBatch = verifyBatchApprovalToken(periodId, batchId, isPreschool, email, token);
+      if (!validBatch) {
+        return new NextResponse(
+          renderPageHtml({
+            title: "Xác thực không hợp lệ",
+            bodyHtml: `<div class="error-box">Phiên xác thực phê duyệt theo đợt không hợp lệ hoặc đã hết hạn. Vui lòng truy cập trực tiếp hệ thống SSM Portal.</div>
+            <a href="${baseUrl}/admin/xet-duyet-ket-qua" class="btn-primary">Mở Cổng Xét duyệt SSM &rarr;</a>`
+          }),
+          { status: 400, headers: SAFE_HTML_HEADERS }
+        );
+      }
+
+      const approverName = await resolveApproverDisplayName(email);
+      const whereClause: any = { periodId };
+      if (batchId && batchId !== "all") whereClause.batchId = batchId;
+
+      if (isPreschool) {
+        const list = await (prisma as any).preschoolInputAssessmentStudent.findMany({ where: whereClause });
+        const targetList = list.filter((s: any) => !s.isAbsent && !s.admissionResult);
+        for (const st of targetList) {
+          await (prisma as any).preschoolInputAssessmentStudent.update({
+            where: { id: st.id },
+            data: {
+              gdcsApprovalStatus: "DAT_MIEN_HOC_THU",
+              gdcsApprovalUser: approverName,
+              gdcsApprovalDate: new Date(),
+              admissionResult: "Đạt - Miễn Học Thử"
+            }
+          });
+        }
+        return new NextResponse(
+          renderPageHtml({
+            title: "Phê duyệt đợt khảo sát thành công",
+            bodyHtml: `
+              <div class="badge-ok">✓ Hệ thống đã ghi nhận kết quả xét duyệt trên SSM</div>
+              <p class="desc">Hệ thống đã ghi nhận quyết định phê duyệt <strong>Đạt - Miễn Học Thử</strong> cho <strong>${targetList.length}</strong> học sinh chờ duyệt trong đợt khảo sát bởi <strong>${escapeHtml(approverName)}</strong>.</p>
+              <a href="${baseUrl}/admin/xet-duyet-ket-qua?tab=mam-non&periodId=${encodeURIComponent(periodId)}&batchId=${encodeURIComponent(batchId)}" class="btn-primary">Xem danh sách trên SSM Portal &rarr;</a>
+            `
+          }),
+          { status: 200, headers: SAFE_HTML_HEADERS }
+        );
+      } else {
+        const list = await (prisma as any).inputAssessmentStudent.findMany({ where: whereClause });
+        const targetList = list.filter((s: any) => !s.isAbsent && !s.admissionResult);
+        for (const st of targetList) {
+          const updatedNote = buildUpdatedDirectorNote(st.directorNote, approverName, st.admissionResult || "", "Đạt", [], "Duyệt Đạt toàn đợt qua Email");
+          await (prisma as any).inputAssessmentStudent.update({
+            where: { id: st.id },
+            data: {
+              admissionResult: "Đạt",
+              signatureName: approverName,
+              directorNote: updatedNote
+            }
+          });
+        }
+        return new NextResponse(
+          renderPageHtml({
+            title: "Phê duyệt đợt khảo sát thành công",
+            bodyHtml: `
+              <div class="badge-ok">✓ Hệ thống đã ghi nhận kết quả xét duyệt trên SSM</div>
+              <p class="desc">Hệ thống đã ghi nhận quyết định phê duyệt <strong>Đạt chuẩn</strong> cho <strong>${targetList.length}</strong> học sinh chờ duyệt trong đợt khảo sát bởi <strong>${escapeHtml(approverName)}</strong>.</p>
+              <a href="${baseUrl}/admin/xet-duyet-ket-qua?tab=k12&periodId=${encodeURIComponent(periodId)}&batchId=${encodeURIComponent(batchId)}" class="btn-primary">Xem danh sách trên SSM Portal &rarr;</a>
+            `
+          }),
+          { status: 200, headers: SAFE_HTML_HEADERS }
+        );
+      }
+    }
+
+    // --- MODE 2: SINGLE K-12 STUDENT EXECUTION (POST ONLY) ---
     const studentId = String(formData.get("studentId") || "");
     const action = String(formData.get("action") || "DAT");
     const email = String(formData.get("email") || "gdcs@skylineschool.edu.vn");
@@ -454,7 +420,7 @@ export async function POST(req: NextRequest) {
           title: "Xác thực không hợp lệ",
           bodyHtml: `<div class="error-box">Phiên xác thực phê duyệt không hợp lệ. Vui lòng thử lại từ email hoặc đăng nhập hệ thống.</div>`
         }),
-        { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
+        { status: 400, headers: SAFE_HTML_HEADERS }
       );
     }
 
@@ -469,7 +435,7 @@ export async function POST(req: NextRequest) {
           title: "Không tìm thấy học sinh",
           bodyHtml: `<div class="error-box">Không tìm thấy hồ sơ học sinh.</div>`
         }),
-        { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } }
+        { status: 404, headers: SAFE_HTML_HEADERS }
       );
     }
 
@@ -505,7 +471,7 @@ export async function POST(req: NextRequest) {
           stageNumber: 6,
           status: "COMPLETED",
           admissionResult: decision,
-          note: customNote.trim() || `GĐCS (${approverName}) phê duyệt qua Email: ${decision}`,
+          note: customNote.trim() || `GĐCS (${approverName}) phê duyệt qua Email: ${decision}${committedSubjects.length > 0 ? ` (${committedSubjects.join(", ")})` : ""}`,
           actor: {
             id: "gdcs_email_approver",
             fullName: approverName,
@@ -534,17 +500,102 @@ export async function POST(req: NextRequest) {
         email,
         token
       }),
-      { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+      { status: 200, headers: SAFE_HTML_HEADERS }
     );
   } catch (err: any) {
     return new NextResponse(
       renderPageHtml({
         title: "Lỗi xử lý phê duyệt",
-        bodyHtml: `<div class="error-box">Có lỗi xảy ra: ${err?.message || "Lỗi không xác định"}</div>`
+        bodyHtml: `<div class="error-box">Có lỗi xảy ra: ${escapeHtml(err?.message || "Lỗi không xác định")}</div>`
       }),
-      { status: 500, headers: { "Content-Type": "text/html; charset=utf-8" } }
+      { status: 500, headers: SAFE_HTML_HEADERS }
     );
   }
+}
+
+function renderBatchConfirmPage(p: {
+  targetList: any[];
+  isPreschool: boolean;
+  periodId: string;
+  batchId: string;
+  email: string;
+  token: string;
+  approverName: string;
+  baseUrl: string;
+}) {
+  const { targetList, isPreschool, periodId, batchId, email, token, approverName, baseUrl } = p;
+  const tab = isPreschool ? "mam-non" : "k12";
+  const portalUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=${tab}&periodId=${encodeURIComponent(periodId)}&batchId=${encodeURIComponent(batchId)}`;
+  const decisionLabel = isPreschool ? "Đạt - Miễn Học Thử" : "Đạt chuẩn";
+
+  if (targetList.length === 0) {
+    return renderPageHtml({
+      title: "Không còn học sinh chờ duyệt",
+      bodyHtml: `
+        <div class="badge-ok">✓ Toàn bộ học sinh trong đợt đã có kết quả xét duyệt</div>
+        <p class="desc">Hiện không còn hồ sơ nào ở trạng thái chờ duyệt trong đợt khảo sát này.</p>
+        <a href="${portalUrl}" class="btn-primary">Xem danh sách trên SSM Portal &rarr;</a>
+      `
+    });
+  }
+
+  const previewRows = targetList.slice(0, 30).map((s: any, idx: number) => `
+    <tr>
+      <td class="mono">${idx + 1}</td>
+      <td class="mono">${escapeHtml(s.studentCode || "—")}</td>
+      <td><strong>${escapeHtml(s.fullName || "—")}</strong></td>
+      <td>${escapeHtml(s.grade ? `Khối ${s.grade}` : "—")}</td>
+      <td><span class="campus-badge">${escapeHtml(extractCampusShortLabel(s.admissionCampus || s.registeredCampus))}</span></td>
+    </tr>
+  `).join("");
+  const extraCount = targetList.length > 30 ? targetList.length - 30 : 0;
+
+  return renderPageHtml({
+    title: `Xác nhận duyệt Đạt toàn đợt (${targetList.length} HS)`,
+    bodyHtml: `
+      <div class="confirm-banner" style="background:#ECFDF5;border:1.5px solid #059669;border-radius:12px;padding:18px 20px;margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:700;color:#065F46;margin-bottom:6px;">
+          Xác nhận phê duyệt theo đợt — Người duyệt: ${escapeHtml(approverName)}
+        </div>
+        <div style="font-size:16px;font-weight:800;color:#003B3A;margin-bottom:12px;">
+          Phê duyệt <span style="color:#059669;">${decisionLabel}</span> cho <strong>${targetList.length} học sinh</strong> đang chờ duyệt
+        </div>
+        <form method="POST" action="${baseUrl}/api/admin/quick-approve/k12">
+          <input type="hidden" name="mode" value="batch" />
+          <input type="hidden" name="periodId" value="${escapeHtml(periodId)}" />
+          <input type="hidden" name="batchId" value="${escapeHtml(batchId)}" />
+          <input type="hidden" name="isPreschool" value="${isPreschool ? "1" : "0"}" />
+          <input type="hidden" name="email" value="${escapeHtml(email)}" />
+          <input type="hidden" name="token" value="${escapeHtml(token)}" />
+          <button type="submit" class="btn-submit" style="background-color:#059669;margin-right:10px;">
+            ✓ Xác nhận &amp; Ghi nhận ${targetList.length} học sinh ngay
+          </button>
+          <a href="${portalUrl}" class="btn-secondary" style="margin-top:0;">Xem chi tiết trên SSM Portal &rarr;</a>
+        </form>
+        <div style="margin-top:10px;font-size:11.5px;color:#475569;">
+          Bước xác nhận này bảo vệ dữ liệu khỏi trình quét bảo mật tự động của Email (Outlook Safe Links).
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Mã HS</th>
+              <th>Học sinh</th>
+              <th>Khối</th>
+              <th>Cơ sở</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${previewRows}
+            ${extraCount > 0 ? `<tr><td colspan="5" style="text-align:center;color:#64748B;font-style:italic;">... và ${extraCount} học sinh chờ duyệt khác</td></tr>` : ""}
+          </tbody>
+        </table>
+      </div>
+    `
+  });
 }
 
 function renderInteractiveApprovalForm(p: {
@@ -642,58 +693,115 @@ function renderInteractiveApprovalForm(p: {
     }
   });
 
-  const preselectNorm = preselect.trim().toLowerCase().normalize("NFC");
+  const preselectSet = new Set<string>(
+    preselect
+      .split(/[,;]+/)
+      .map(s => canonicalizeName(s).toLowerCase().normalize("NFC").replace(/[–—-]/g, "-").replace(/\s+/g, " "))
+      .filter(Boolean)
+  );
+  // If no explicit preselect was passed and student already has committed subjects recorded, pre-check them
+  if (preselectSet.size === 0 && defaultDecision === "Đạt cam kết" && student.directorNote) {
+    const m = String(student.directorNote).match(/\[Môn cam kết:\s*([^\]]+)\]/i);
+    if (m?.[1]) {
+      m[1]
+        .split(/[,;]+/)
+        .map(s => canonicalizeName(s).toLowerCase().normalize("NFC").replace(/[–—-]/g, "-").replace(/\s+/g, " "))
+        .filter(Boolean)
+        .forEach(k => preselectSet.add(k));
+    }
+  }
+  const initialSelectedSubjects = selectableSubjects
+    .filter(sub => preselectSet.has(sub.name.toLowerCase().normalize("NFC").replace(/[–—-]/g, "-").replace(/\s+/g, " ")))
+    .map(sub => sub.name);
+
   const showSubjectPickerInitially = defaultDecision === "Đạt cam kết" || defaultDecision === "Không đạt - Kiểm tra lại";
   const portalUrl = `${baseUrl}/admin/xet-duyet-ket-qua?tab=k12&periodId=${encodeURIComponent(student.periodId || "")}&batchId=${encodeURIComponent(student.batchId || "")}&studentId=${encodeURIComponent(student.id)}`;
+  const pvdhToken = generateK12ApprovalToken(String(student.id), "VIEW_PVDH", email);
+  const viewPvdhUrl = `${baseUrl}/api/admin/quick-approve/pvdh?studentId=${encodeURIComponent(student.id)}&email=${encodeURIComponent(email)}&token=${pvdhToken}`;
+
+  const bannerTheme =
+    defaultDecision === "Đạt"
+      ? { bg: "#ECFDF5", border: "#059669", accent: "#059669", label: "Đạt chuẩn" }
+      : defaultDecision === "Đạt cam kết"
+      ? { bg: "#FFFBEB", border: "#D97706", accent: "#D97706", label: "Đạt cam kết" }
+      : defaultDecision === "Học thử"
+      ? { bg: "#F0FDFA", border: "#00736E", accent: "#00736E", label: "Học thử" }
+      : { bg: "#FFF1F2", border: "#E11D48", accent: "#E11D48", label: defaultDecision };
 
   return renderPageHtml({
-    title: `Xét duyệt nhanh kết quả khảo sát - ${student.fullName}`,
+    title: `Xác nhận phê duyệt - ${student.fullName}`,
     bodyHtml: `
       <div class="sub-header">
-        <span class="ledger-tag">Sổ cái Xét duyệt Tuyển sinh • Trực tiếp từ Email</span>
-        <h3 class="student-title">${student.fullName} <span class="code-pill">${student.studentCode || "—"}</span></h3>
-        <div class="meta-line">${student.period?.name || "Kỳ khảo sát"} &bull; ${student.batch?.name || "Khảo sát lẻ"}</div>
+        <span class="ledger-tag">Sổ cái Xét duyệt Tuyển sinh • Xác nhận an toàn từ Email</span>
+        <h3 class="student-title">${escapeHtml(student.fullName)} <span class="code-pill">${escapeHtml(student.studentCode || "—")}</span></h3>
+        <div class="meta-line">${escapeHtml(student.period?.name || "Kỳ khảo sát")} &bull; ${escapeHtml(student.batch?.name || "Khảo sát lẻ")}</div>
       </div>
 
-      <div class="table-scroll">
-      <table class="ledger-table">
-        <thead>
-          <tr>
-            <th>Mã HS</th>
-            <th>Học sinh</th>
-            <th>Ngày sinh</th>
-            <th>Giới tính</th>
-            <th>Khối</th>
-            <th>Hệ</th>
-            <th>Cơ sở</th>
-            <th>KQ hiện tại</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="mono">${student.studentCode || "—"}</td>
-            <td><strong>${student.fullName}</strong></td>
-            <td>${dobStr}</td>
-            <td>${genderStr}</td>
-            <td><strong>Khối ${student.grade || "—"}</strong></td>
-            <td>${student.surveyFormType || student.surveySystem || "—"}</td>
-            <td><span class="campus-badge">${campusLabel}</span></td>
-            <td><span class="status-badge">${student.admissionResult || "Chờ duyệt"}</span></td>
-          </tr>
-        </tbody>
-      </table>
-      </div>
+      <form method="POST" action="${baseUrl}/api/admin/quick-approve/k12" class="approve-form" id="quick-approve-form">
+        <input type="hidden" name="mode" value="student" />
+        <input type="hidden" name="studentId" value="${escapeHtml(student.id)}" />
+        <input type="hidden" name="action" value="${escapeHtml(defaultAction)}" />
+        <input type="hidden" name="email" value="${escapeHtml(email)}" />
+        <input type="hidden" name="token" value="${escapeHtml(token)}" />
 
-      <div class="section-box">
-        <div class="section-label">Kết quả khảo sát các môn</div>
-        <div class="pills-wrap">${scoresHtml}</div>
-      </div>
+        <!-- INSTANT CONFIRM BANNER (ABOVE THE FOLD — 1 TAP CONFIRM, SAFE FROM EMAIL SCANNERS) -->
+        <div id="instant-confirm-banner" style="background:${bannerTheme.bg};border:1.5px solid ${bannerTheme.border};border-radius:12px;padding:16px 18px;margin-bottom:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:700;color:#003B3A;">Lựa chọn Thầy/Cô vừa chạm trên Email:</span>
+            <span style="font-size:11.5px;font-weight:600;color:#475569;">Trạng thái hiện tại trên SSM: <strong>${escapeHtml(student.admissionResult || "Chờ duyệt")}</strong></span>
+          </div>
+          <div id="instant-confirm-summary" style="font-size:16px;font-weight:800;color:${bannerTheme.accent};margin-bottom:12px;">
+            ${escapeHtml(bannerTheme.label)}${initialSelectedSubjects.length > 0 ? ` — Môn: ${escapeHtml(initialSelectedSubjects.join(", "))}` : ""}
+          </div>
+          <button type="submit" id="instant-confirm-btn" class="btn-submit" style="background-color:${bannerTheme.accent};width:100%;text-align:center;margin:0;padding:13px 20px;font-size:14px;">
+            ✓ Xác nhận &amp; Ghi nhận kết quả vào SSM ngay
+          </button>
+          <div style="margin-top:8px;font-size:11px;color:#475569;line-height:1.45;">
+            Bước xác nhận nhanh (không cần đăng nhập) giúp chống trình quét bảo mật Email (Outlook Safe Links) tự động lưu nhầm khi mới mở thư. Thầy/Cô cũng có thể điều chỉnh môn hoặc thêm ghi chú bên dưới trước khi bấm Xác nhận.
+          </div>
+        </div>
 
-      <form method="POST" action="${baseUrl}/api/admin/quick-approve/k12" class="approve-form">
-        <input type="hidden" name="studentId" value="${student.id}" />
-        <input type="hidden" name="action" value="${defaultAction}" />
-        <input type="hidden" name="email" value="${email}" />
-        <input type="hidden" name="token" value="${token}" />
+        <div class="table-scroll">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Mã HS</th>
+              <th>Học sinh</th>
+              <th>Ngày sinh</th>
+              <th>Giới tính</th>
+              <th>Khối</th>
+              <th>Hệ</th>
+              <th>Cơ sở</th>
+              <th>KQ hiện tại</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">${escapeHtml(student.studentCode || "—")}</td>
+              <td><strong>${escapeHtml(student.fullName)}</strong></td>
+              <td>${dobStr}</td>
+              <td>${genderStr}</td>
+              <td><strong>Khối ${escapeHtml(student.grade || "—")}</strong></td>
+              <td>${escapeHtml(student.surveyFormType || student.surveySystem || "—")}</td>
+              <td><span class="campus-badge">${escapeHtml(campusLabel)}</span></td>
+              <td><span class="status-badge">${escapeHtml(student.admissionResult || "Chờ duyệt")}</span></td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+
+        <div class="section-box">
+          <div class="section-label">Kết quả khảo sát các môn</div>
+          <div class="pills-wrap">${scoresHtml}</div>
+        </div>
+
+        <div class="section-box" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#F0FDFA;border-color:#99F6E4;">
+          <div>
+            <div class="section-label" style="margin-bottom:2px;color:#003B3A;">Phiếu phỏng vấn định hướng</div>
+            <div style="font-size:12px;color:#475569;">Xem toàn bộ nội dung phỏng vấn học sinh, trao đổi phụ huynh và định hướng của giáo viên.</div>
+          </div>
+          <a href="${viewPvdhUrl}" target="_blank" class="btn-primary" style="margin-top:0;padding:8px 14px;font-size:12.5px;">Xem Phiếu PVĐH &rarr;</a>
+        </div>
 
         <div class="form-group">
           <label class="form-label">1. Quyết định xét duyệt của Giám đốc Cơ sở</label>
@@ -725,11 +833,12 @@ function renderInteractiveApprovalForm(p: {
           <label class="form-label" style="color: #92400E;">2. Chọn môn Cam kết / Khảo sát lại (theo các môn xét kết quả của HS)</label>
           <div class="checkbox-grid">
             ${selectableSubjects.map(sub => {
-              const isChecked = preselectNorm && sub.name.toLowerCase().normalize("NFC") === preselectNorm;
+              const normSub = sub.name.toLowerCase().normalize("NFC").replace(/[–—-]/g, "-").replace(/\s+/g, " ");
+              const isChecked = preselectSet.has(normSub);
               return `
               <label class="check-item" style="background: #FFFFFF; border-color: ${isChecked ? "#D97706" : "#FCD34D"};">
-                <input type="checkbox" name="committedSubjects" value="${sub.name}" ${isChecked ? "checked" : ""} />
-                <span><strong>${sub.name}</strong>${sub.scoreLabel ? ` <span style="color:#00736E;font-weight:700;">(${sub.scoreLabel})</span>` : ""}</span>
+                <input type="checkbox" name="committedSubjects" value="${escapeHtml(sub.name)}" ${isChecked ? "checked" : ""} />
+                <span><strong>${escapeHtml(sub.name)}</strong>${sub.scoreLabel ? ` <span style="color:#00736E;font-weight:700;">(${escapeHtml(sub.scoreLabel)})</span>` : ""}</span>
               </label>
             `;
             }).join("")}
@@ -747,15 +856,37 @@ function renderInteractiveApprovalForm(p: {
       <script>
         (function() {
           var radios = document.querySelectorAll('input[name="decision"]');
+          var checks = document.querySelectorAll('input[name="committedSubjects"]');
           var group = document.getElementById('commit-subjects-group');
+          var banner = document.getElementById('instant-confirm-banner');
+          var summary = document.getElementById('instant-confirm-summary');
+          var topBtn = document.getElementById('instant-confirm-btn');
           if (!group || !radios.length) return;
           function sync() {
             var checked = document.querySelector('input[name="decision"]:checked');
-            var val = checked ? checked.value : '';
+            var val = checked ? checked.value : 'Đạt';
             var needSubjects = (val === 'Đạt cam kết' || val === 'Không đạt - Kiểm tra lại');
             group.style.display = needSubjects ? 'block' : 'none';
+            var selectedSubs = [];
+            if (needSubjects) {
+              checks.forEach(function(cb) { if (cb.checked) selectedSubs.push(cb.value); });
+            }
+            var theme = val === 'Đạt'
+              ? { bg: '#ECFDF5', border: '#059669', accent: '#059669', label: 'Đạt chuẩn' }
+              : val === 'Đạt cam kết'
+              ? { bg: '#FFFBEB', border: '#D97706', accent: '#D97706', label: 'Đạt cam kết' }
+              : val === 'Học thử'
+              ? { bg: '#F0FDFA', border: '#00736E', accent: '#00736E', label: 'Học thử' }
+              : { bg: '#FFF1F2', border: '#E11D48', accent: '#E11D48', label: val };
+            if (banner) { banner.style.background = theme.bg; banner.style.borderColor = theme.border; }
+            if (summary) {
+              summary.style.color = theme.accent;
+              summary.textContent = theme.label + (selectedSubs.length ? ' — Môn: ' + selectedSubs.join(', ') : '');
+            }
+            if (topBtn) { topBtn.style.backgroundColor = theme.accent; }
           }
           radios.forEach(function(r) { r.addEventListener('change', sync); });
+          checks.forEach(function(cb) { cb.addEventListener('change', sync); });
           sync();
         })();
       </script>
@@ -794,8 +925,8 @@ function renderStudentSuccessPage(p: {
   return renderPageHtml({
     title: `Đã phê duyệt: ${student.fullName}`,
     bodyHtml: `
-      <div class="badge-ok">✓ Đã lưu kết quả phê duyệt vào hệ thống</div>
-      <p class="desc">Cảm ơn Thầy/Cô <strong>${approverName}</strong>. Quyết định xét duyệt cho học sinh <strong>${student.fullName}</strong> đã được cập nhật tức thời lên Hệ thống Quản trị Khảo sát Sky-Line.</p>
+      <div class="badge-ok">✓ Hệ thống đã ghi nhận kết quả xét duyệt trên SSM</div>
+      <p class="desc">Cảm ơn Thầy/Cô <strong>${escapeHtml(approverName)}</strong>. Quyết định xét duyệt cho học sinh <strong>${escapeHtml(student.fullName)}</strong> đã được cập nhật tức thời lên Hệ thống Quản trị Khảo sát Sky-Line.</p>
 
       <table class="ledger-table">
         <thead>
@@ -834,6 +965,7 @@ function renderStudentSuccessPage(p: {
 
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px;">
         <button type="button" onclick="window.close()" class="btn-primary" style="margin-top:0;border:none;cursor:pointer;">✓ Đã ghi nhận — Đóng cửa sổ</button>
+        <a href="${baseUrl}/api/admin/quick-approve/pvdh?studentId=${encodeURIComponent(student.id)}&email=${encodeURIComponent(email)}&token=${generateK12ApprovalToken(String(student.id), "VIEW_PVDH", email)}" target="_blank" class="btn-secondary" style="margin-top:0;">📋 Xem Phiếu PVĐH</a>
         <a href="${adjustUrl}" class="btn-secondary" style="margin-top:0;">✎ Điều chỉnh quyết định / Chọn thêm môn</a>
       </div>
       <p style="text-align:center;font-size:11.5px;color:#64748B;margin-top:10px;">

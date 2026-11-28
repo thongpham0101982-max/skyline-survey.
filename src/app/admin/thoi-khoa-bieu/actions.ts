@@ -35,6 +35,11 @@ import {
   type SpecialAssignmentRow,
 } from "@/lib/timetable/quotaReconciler"
 import {
+  buildPrismaQuotaFieldsFromQd82Spec,
+  mergeSubjectLevelCsv,
+  QD82_2026_SUBJECT_STANDARDS,
+} from "@/lib/timetable/curriculumStandardQd82"
+import {
   parseTeacherSplitJson,
   resolveTeacherGroup,
   serializeTeacherSplitJson,
@@ -73,6 +78,23 @@ function formatActionError(err: unknown): { success: false; error: string; error
   return { success: false, error: message }
 }
 
+/**
+ * Inserts TimetableSlot rows in safe chunks (default 100 rows ≈ 3,800 SQL vars)
+ * so SQLite / Turso libSQL never hits SQLITE_MAX_VARIABLE_NUMBER (32,766)
+ * when saving full multi-campus scopes (up to 1,760+ slots).
+ */
+async function createManySlotsChunked(
+  tx: { timetableSlot: { createMany: (args: { data: any[] }) => Promise<any> } },
+  rows: any[],
+  chunkSize = 100
+) {
+  if (!rows.length) return
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize)
+    await tx.timetableSlot.createMany({ data: chunk })
+  }
+}
+
 async function appendAuditLog(params: {
   versionId?: string | null
   campusId?: string | null
@@ -104,6 +126,9 @@ async function appendAuditLog(params: {
 }
 
 function serializeFilterContext(ws: Awaited<ReturnType<typeof loadScopedWorkspaceContext>>) {
+  const campusCodeMap = new Map(
+    ws.allCampuses.map((c) => [c.id, c.campusCode || c.campusName || ""])
+  )
   return {
     academicYears: ws.academicYears.map((y) => ({
       id: y.id,
@@ -125,6 +150,9 @@ function serializeFilterContext(ws: Awaited<ReturnType<typeof loadScopedWorkspac
       displayName: formatCampusDisplayName(c),
     })),
     selectedCampusId: ws.selectedCampusId,
+    selectedCampusIds: ws.selectedCampusIds,
+    selectedCampusFilter: ws.selectedCampusFilter,
+    isAllCampusesSelected: ws.isAllCampusesSelected,
     levelOptions: ws.levelOptions,
     selectedLevelCode: ws.selectedLevelCode,
     availableStudyPrograms: ws.availableStudyPrograms,
@@ -140,6 +168,7 @@ function serializeFilterContext(ws: Awaited<ReturnType<typeof loadScopedWorkspac
       studyProgram: resolveClassStudyProgram(c),
       homeroomTeacherId: c.homeroomTeacherId || "",
       campusId: c.campusId,
+      campusCode: campusCodeMap.get(c.campusId) || "",
     })),
     selectedClassId: ws.selectedClassId,
     versions: ws.versions.map((v) => ({
@@ -973,11 +1002,40 @@ export async function updateSubjectGradeQuotaAction(payload: {
       return { success: false as const, error: `Mã khối "${payload.grade}" không hợp lệ (K1–K12).` }
     }
 
-    const qVal = Math.max(0, Number(payload.weeklyQuota || 0))
+    const qVal = Math.round(Math.max(0, Number(payload.weeklyQuota || 0)) * 100) / 100
     const gradeField = `quotaG${gradeNum}`
     const studyProgram = payload.studyProgram || "DEFAULT"
 
-    await prisma.subjectQuota.upsert({
+    const existingQuota = await prisma.subjectQuota.findUnique({
+      where: {
+        subjectId_academicYearId_studyProgram: {
+          subjectId: payload.subjectId,
+          academicYearId: payload.academicYearId,
+          studyProgram,
+        },
+      },
+    })
+
+    const extraUpdateFields: Record<string, number | null> = {}
+    if (gradeNum === 10 || gradeNum === 11 || gradeNum === 12) {
+      const tnField = `quotaG${gradeNum}TN` as const
+      const xhField = `quotaG${gradeNum}XH` as const
+      const prevTn = (existingQuota as Record<string, unknown> | null)?.[tnField]
+      const prevXh = (existingQuota as Record<string, unknown> | null)?.[xhField]
+      const tnNum = prevTn !== null && prevTn !== undefined ? Number(prevTn) || 0 : null
+      const xhNum = prevXh !== null && prevXh !== undefined ? Number(prevXh) || 0 : null
+
+      if (tnNum !== null && xhNum !== null && ((tnNum === 0 && xhNum > 0) || (xhNum === 0 && tnNum > 0))) {
+        // Preserve TN vs XH elective polarity while updating the active track's quota
+        extraUpdateFields[tnField] = tnNum > 0 ? qVal : 0
+        extraUpdateFields[xhField] = xhNum > 0 ? qVal : 0
+      } else {
+        extraUpdateFields[tnField] = qVal
+        extraUpdateFields[xhField] = qVal
+      }
+    }
+
+    const saved = await prisma.subjectQuota.upsert({
       where: {
         subjectId_academicYearId_studyProgram: {
           subjectId: payload.subjectId,
@@ -987,18 +1045,154 @@ export async function updateSubjectGradeQuotaAction(payload: {
       },
       update: {
         [gradeField]: qVal,
+        ...extraUpdateFields,
       },
       create: {
         subjectId: payload.subjectId,
         academicYearId: payload.academicYearId,
         studyProgram,
         [gradeField]: qVal,
+        ...extraUpdateFields,
       },
+    })
+
+    const r2 = (n: number) => Math.round(n * 100) / 100
+    const quotaPrimary = r2(
+      (Number(saved.quotaG1) || 0) +
+        (Number(saved.quotaG2) || 0) +
+        (Number(saved.quotaG3) || 0) +
+        (Number(saved.quotaG4) || 0) +
+        (Number(saved.quotaG5) || 0)
+    )
+    const quotaMiddle = r2(
+      (Number(saved.quotaG6) || 0) +
+        (Number(saved.quotaG7) || 0) +
+        (Number(saved.quotaG8) || 0) +
+        (Number(saved.quotaG9) || 0)
+    )
+    const g10tn = saved.quotaG10TN ?? saved.quotaG10 ?? 0
+    const g10xh = saved.quotaG10XH ?? saved.quotaG10 ?? 0
+    const g11tn = saved.quotaG11TN ?? saved.quotaG11 ?? 0
+    const g11xh = saved.quotaG11XH ?? saved.quotaG11 ?? 0
+    const g12tn = saved.quotaG12TN ?? saved.quotaG12 ?? 0
+    const g12xh = saved.quotaG12XH ?? saved.quotaG12 ?? 0
+    const quotaHigh = r2(
+      (Number(g10tn) || 0) +
+        (Number(g10xh) || 0) +
+        (Number(g11tn) || 0) +
+        (Number(g11xh) || 0) +
+        (Number(g12tn) || 0) +
+        (Number(g12xh) || 0)
+    )
+    await prisma.subjectQuota.update({
+      where: { id: saved.id },
+      data: { quotaPrimary, quotaMiddle, quotaHigh },
     })
 
     revalidateTimetablePaths()
     revalidatePath("/admin/subjects")
     return { success: true as const }
+  } catch (err) {
+    return formatActionError(err)
+  }
+}
+
+/**
+ * Applies the official Sky-Line curriculum quota framework for Academic Year 2026–2027
+ * (Decision No. 82/2026/QĐ-SKL dated 12/06/2026 — 40 periods/week across all grades K1–K12 for Hệ S & Hệ I).
+ * Invoked only upon explicit user confirmation via the UI button.
+ */
+export async function applyQd82CurriculumStandardAction(payload: {
+  academicYearId: string
+  campusId?: string
+}) {
+  try {
+    await requireTimetablePermission("canUpdate", {
+      subModuleCode: "TIMETABLE_QUOTA",
+      campusIds: payload.campusId ? [payload.campusId] : undefined,
+    })
+
+    const allSubjects = await prisma.subject.findMany({
+      select: { id: true, subjectCode: true, subjectName: true, level: true },
+    })
+    const byCode = new Map<string, (typeof allSubjects)[number]>()
+    for (const s of allSubjects) {
+      byCode.set(String(s.subjectCode || "").trim().toUpperCase(), s)
+    }
+
+    const standardCodes = new Set(
+      QD82_2026_SUBJECT_STANDARDS.map((e) => e.subjectCode.trim().toUpperCase())
+    )
+    let updatedSubjects = 0
+    let upsertedQuotas = 0
+    const missingCodes: string[] = []
+
+    await prisma.$transaction(async (tx) => {
+      for (const entry of QD82_2026_SUBJECT_STANDARDS) {
+        const sub = byCode.get(entry.subjectCode.trim().toUpperCase())
+        if (!sub) {
+          missingCodes.push(entry.subjectCode)
+          continue
+        }
+
+        const mergedLevel = mergeSubjectLevelCsv(sub.level, entry.requiredLevels)
+        if (mergedLevel !== String(sub.level || "").trim()) {
+          await tx.subject.update({
+            where: { id: sub.id },
+            data: { level: mergedLevel },
+          })
+        }
+
+        for (const [program, spec] of [
+          ["Hệ S", entry.heS],
+          ["Hệ I", entry.heI],
+        ] as const) {
+          const dataFields = buildPrismaQuotaFieldsFromQd82Spec(spec)
+          await tx.subjectQuota.upsert({
+            where: {
+              subjectId_academicYearId_studyProgram: {
+                subjectId: sub.id,
+                academicYearId: payload.academicYearId,
+                studyProgram: program,
+              },
+            },
+            update: dataFields,
+            create: {
+              subjectId: sub.id,
+              academicYearId: payload.academicYearId,
+              studyProgram: program,
+              ...dataFields,
+            },
+          })
+          upsertedQuotas++
+        }
+        updatedSubjects++
+      }
+
+      // Zero out any residual non-QĐ82 subject quotas in this academic year so no stray subject inflates 40 periods/week
+      const otherSubjects = allSubjects.filter(
+        (s) => !standardCodes.has(String(s.subjectCode || "").trim().toUpperCase())
+      )
+      if (otherSubjects.length > 0) {
+        const zeroFields = buildPrismaQuotaFieldsFromQd82Spec({ grades1To9: {} })
+        await tx.subjectQuota.updateMany({
+          where: {
+            academicYearId: payload.academicYearId,
+            subjectId: { in: otherSubjects.map((s) => s.id) },
+          },
+          data: zeroFields,
+        })
+      }
+    })
+
+    revalidateTimetablePaths()
+    revalidatePath("/admin/subjects")
+    return {
+      success: true as const,
+      updatedSubjects,
+      upsertedQuotas,
+      missingCodes,
+    }
   } catch (err) {
     return formatActionError(err)
   }
@@ -1109,7 +1303,7 @@ export async function saveClassSubjectDualAssignmentAction(payload: {
   gvnnPeriods: number | null
 }) {
   try {
-    await requireTimetablePermission("canUpdate", {
+    const authCtx = await requireTimetablePermission("canUpdate", {
       subModuleCode: "TIMETABLE_QUOTA",
       campusIds: [payload.campusId],
       scopeGroup: payload.scopeGroup,
@@ -1121,6 +1315,8 @@ export async function saveClassSubjectDualAssignmentAction(payload: {
       academicYearId: payload.academicYearId,
       campusId: payload.campusId,
       scopeGroup: payload.scopeGroup,
+      allowAnyScopeCampus: true,
+      authCtx,
     })
 
     const semester = payload.semester === 2 ? 2 : 1
@@ -1269,7 +1465,7 @@ export async function assignTeacherToClassSubjectAction(payload: {
   teacherId: string
 }) {
   try {
-    await requireTimetablePermission("canUpdate", {
+    const authCtx = await requireTimetablePermission("canUpdate", {
       subModuleCode: "TIMETABLE_QUOTA",
       campusIds: [payload.campusId],
       scopeGroup: payload.scopeGroup,
@@ -1280,6 +1476,8 @@ export async function assignTeacherToClassSubjectAction(payload: {
       academicYearId: payload.academicYearId,
       campusId: payload.campusId,
       scopeGroup: payload.scopeGroup,
+      allowAnyScopeCampus: true,
+      authCtx,
     })
 
     const semester = payload.semester === 2 ? 2 : 1
@@ -1416,9 +1614,9 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
       loadExternalActiveSlots: true,
     })
 
-    // Load across ALL classes of the active Bộ thời khóa biểu at this campus
-    // so cross-grade conflicts & scope-wide quick apply always have complete context.
-    const scopeClasses = ws.campusAllScopeClasses
+    // Load across ALL permitted campuses of the active Bộ thời khóa biểu
+    // so multi-campus / select-all / single-campus filtering never drops other campuses' slots!
+    const scopeClasses = ws.fullScopeAllCampusesClasses
     const classIds = scopeClasses.map((c) => c.id)
 
     const [
@@ -1427,6 +1625,7 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
       ctqtAssignments,
       versionSlotsRaw,
       specialAssignments,
+      allYearTeacherCampusRows,
     ] = await Promise.all([
       prisma.subjectQuota.findMany({ where: { academicYearId: ws.selectedYearId } }),
       classIds.length > 0
@@ -1460,7 +1659,47 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
           })
         : Promise.resolve([]),
       fetchSpecialAssignmentsForScope(ws.selectedYearId, ws.semester, classIds),
+      prisma.teachingAssignment
+        .findMany({
+          where: {
+            academicYearId: ws.selectedYearId,
+            semester: ws.semester,
+          },
+          select: {
+            teacherId: true,
+            class: { select: { campus: { select: { campusCode: true } } } },
+          },
+        })
+        .catch(() => []),
     ])
+
+    const teacherCampusCodes: Record<string, string[]> = {}
+    const teacherCampusSetMap = new Map<string, Set<string>>()
+    for (const row of allYearTeacherCampusRows) {
+      const code = String(row.class?.campus?.campusCode || "").trim()
+      if (!row.teacherId || !code) continue
+      if (!teacherCampusSetMap.has(row.teacherId)) {
+        teacherCampusSetMap.set(row.teacherId, new Set())
+      }
+      teacherCampusSetMap.get(row.teacherId)!.add(code)
+    }
+    const campusCodeById = new Map(
+      (ws.allCampuses || []).map((cp) => [
+        cp.id,
+        String(cp.campusCode || cp.campusName || "").trim(),
+      ])
+    )
+    for (const ext of ws.externalActiveSlots || []) {
+      const tid = ext.slot.teacherId
+      const code = campusCodeById.get(ext.campusId) || ""
+      if (tid && code) {
+        if (!teacherCampusSetMap.has(tid)) teacherCampusSetMap.set(tid, new Set())
+        teacherCampusSetMap.get(tid)!.add(code)
+      }
+    }
+    for (const [tid, cset] of teacherCampusSetMap.entries()) {
+      teacherCampusCodes[tid] = Array.from(cset).sort()
+    }
 
     const rawSlots = versionSlotsRaw.map((s) =>
       mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
@@ -1506,6 +1745,15 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
       success: true as const,
       filterContext: serializeFilterContext(ws),
       campusName,
+      campusFilteredScopeClasses: ws.campusAllScopeClasses.map((c) => ({
+        id: c.id,
+        className: c.className,
+        grade: c.grade,
+        level: c.level,
+        educationSystem: c.educationSystem || "",
+        homeroomTeacherId: c.homeroomTeacherId || "",
+        campusId: c.campusId || "",
+      })),
       allScopeClasses: scopeClasses.map((c) => ({
         id: c.id,
         className: c.className,
@@ -1556,6 +1804,7 @@ export async function getTimetableSchedulerPageAction(filters: TimetableFilterPa
       busySlots: ws.busySlots,
       travelRules: ws.travelRules,
       externalActiveSlots: ws.externalActiveSlots,
+      teacherCampusCodes,
     }
   } catch (err) {
     return formatActionError(err)
@@ -1667,8 +1916,9 @@ export async function createTimetableVersionAction(payload: {
             where: { versionId: sourceVer.id, status: "ACTIVE" },
           })
           if (sourceSlots.length > 0) {
-            await tx.timetableSlot.createMany({
-              data: sourceSlots.map((s) => ({
+            await createManySlotsChunked(
+              tx,
+              sourceSlots.map((s) => ({
                 versionId: ver.id,
                 academicYearId: ver.academicYearId,
                 semester: ver.semester,
@@ -1706,8 +1956,8 @@ export async function createTimetableVersionAction(payload: {
                 colorCode: s.colorCode,
                 notes: s.notes,
                 updatedById: authCtx.actorId,
-              })),
-            })
+              }))
+            )
           }
         }
       } else if (shouldApplyRemembered && campus) {
@@ -1779,7 +2029,7 @@ export async function createTimetableVersionAction(payload: {
           }
 
           if (seedRows.length > 0) {
-            await tx.timetableSlot.createMany({ data: seedRows })
+            await createManySlotsChunked(tx, seedRows)
           }
         }
       }
@@ -2013,7 +2263,14 @@ export async function saveDraftSlotsBatchAction(payload: {
       academicYearId: version.academicYearId,
       campusId: version.campusId,
       scopeGroup,
+      allowAnyScopeCampus: true,
+      authCtx,
     })
+
+    const verifiedClassesList = Array.from(verifiedClassesMap.values())
+    const targetCampusIds = Array.from(
+      new Set([version.campusId, ...verifiedClassesList.map((c) => c.campusId)].filter(Boolean))
+    )
 
     // Prefetch subjects, teachers, rooms, and assignments once (0 N+1 queries)
     const [subjects, teachers, rooms, subjectQuotas, teachingAssignments, ctqtAssignments, specialAssignments] =
@@ -2021,7 +2278,7 @@ export async function saveDraftSlotsBatchAction(payload: {
         prisma.subject.findMany({ select: { id: true, subjectCode: true, subjectName: true } }),
         prisma.teacher.findMany({ select: { id: true, teacherCode: true, teacherName: true } }),
         prisma.timetableRoom.findMany({
-          where: { campusId: version.campusId, status: "ACTIVE" },
+          where: { campusId: { in: targetCampusIds }, status: "ACTIVE" },
           select: { id: true, roomCode: true, roomName: true },
         }),
         typeof prisma.subjectQuota?.findMany === "function"
@@ -2055,7 +2312,6 @@ export async function saveDraftSlotsBatchAction(payload: {
         fetchSpecialAssignmentsForScope(version.academicYearId, version.semester, allTargetClassIds),
       ])
 
-    const verifiedClassesList = Array.from(verifiedClassesMap.values())
     const quotaItemsForSave =
       verifiedClassesList.length > 0
         ? reconcileQuotasAndAssignments({
@@ -2106,7 +2362,7 @@ export async function saveDraftSlotsBatchAction(payload: {
           versionId: version.id,
           academicYearId: version.academicYearId,
           semester: version.semester,
-          campusId: version.campusId,
+          campusId: cls.campusId || version.campusId,
           level: cls.level,
           grade: cls.grade,
           classId: cls.id,
@@ -2173,9 +2429,7 @@ export async function saveDraftSlotsBatchAction(payload: {
       }
 
       if (normalizedRows.length > 0) {
-        await tx.timetableSlot.createMany({
-          data: normalizedRows,
-        })
+        await createManySlotsChunked(tx, normalizedRows)
       }
 
       const updatedVer = await tx.timetableVersion.findUnique({ where: { id: version.id } })
@@ -2224,13 +2478,13 @@ export async function syncDraftTeachersFromAssignmentsAction(payload: {
         academicYearId: version.academicYearId,
         semester: version.semester,
         scopeGroup: version.scopeGroup as ManageableScopeGroup,
-        campusId: version.campusId,
+        campusId: "ALL",
         versionId: version.id,
       },
       authCtx
     )
 
-    const scopeClasses = ws.campusAllScopeClasses
+    const scopeClasses = ws.fullScopeAllCampusesClasses
     const classIds = scopeClasses.map((c) => c.id)
 
     const [subjectQuotas, teachingAssignments, ctqtAssignments, currentSlotsRaw, specialAssignments] =
@@ -2353,11 +2607,20 @@ export async function syncScopeDraftsFromAssignmentsAction(payload: {
       authCtx
     )
 
+    const allowedScopeCampusIds = (
+      ws.catalog.campusesByScope[ws.selectedScopeGroup] || []
+    ).map((c) => c.id)
+
     const draftVersions = await prisma.timetableVersion.findMany({
       where: {
         academicYearId: ws.selectedYearId,
         semester: ws.semester,
-        campusId: ws.selectedCampusId,
+        campusId: {
+          in:
+            allowedScopeCampusIds.length > 0
+              ? allowedScopeCampusIds
+              : ws.selectedCampusIds,
+        },
         scopeGroup: ws.selectedScopeGroup,
         status: "DRAFT",
       },
@@ -2534,6 +2797,8 @@ export async function clearDraftVersionSlotsAction(payload: {
         academicYearId: version.academicYearId,
         campusId: version.campusId,
         scopeGroup: version.scopeGroup as ManageableScopeGroup,
+        allowAnyScopeCampus: true,
+        authCtx,
       })
     }
 
@@ -2590,11 +2855,13 @@ export async function clearDraftVersionSlotsAction(payload: {
 export async function runAutoScheduleDraftAction(payload: {
   versionId: string
   expectedRevision: number
+  campusFilter?: string
   timeLimitMs?: number
 }) {
   try {
     const authCtx = await requireTimetablePermission("canUpdate", {
       subModuleCode: "TIMETABLE_SCHEDULE",
+      campusIds: payload.campusFilter ? [payload.campusFilter] : undefined,
     })
     await ensureTimetableSchema()
 
@@ -2605,7 +2872,7 @@ export async function runAutoScheduleDraftAction(payload: {
         academicYearId: version.academicYearId,
         semester: version.semester,
         scopeGroup: version.scopeGroup as ManageableScopeGroup,
-        campusId: version.campusId,
+        campusId: payload.campusFilter || "ALL",
         versionId: version.id,
       },
       authCtx,
@@ -2664,6 +2931,55 @@ export async function runAutoScheduleDraftAction(payload: {
       mode: "FILL_MISSING",
     }).slots
 
+    // Load baseline schedule memory + system-wide teacher multi-campus footprint
+    let baselineId = version.baseVersionId || null
+    if (!baselineId) {
+      const latestBaseline = await prisma.timetableVersion
+        .findFirst({
+          where: {
+            academicYearId: version.academicYearId,
+            semester: version.semester,
+            scopeGroup: version.scopeGroup,
+            status: { in: ["PUBLISHED", "APPROVED"] },
+            id: { not: version.id },
+          },
+          orderBy: { versionNumber: "desc" },
+        })
+        .catch(() => null)
+      baselineId = latestBaseline?.id || null
+    }
+
+    const [baselineRawSlots, allYearTaMeta] = await Promise.all([
+      baselineId
+        ? prisma.timetableSlot
+            .findMany({ where: { versionId: baselineId, status: "ACTIVE" } })
+            .catch(() => [])
+        : Promise.resolve([]),
+      prisma.teachingAssignment
+        .findMany({
+          where: {
+            academicYearId: version.academicYearId,
+            semester: version.semester,
+          },
+          select: {
+            teacherId: true,
+            class: { select: { campusId: true, level: true } },
+          },
+        })
+        .catch(() => []),
+    ])
+
+    const baselineSlots = baselineRawSlots.map((s) =>
+      mapDbSlotToRecord(s, ws.teacherCodeById, ws.subjectCodeById)
+    )
+    const teacherAssignmentsMeta = allYearTaMeta
+      .filter((r) => r.teacherId && r.class?.campusId)
+      .map((r) => ({
+        teacherId: r.teacherId,
+        campusId: r.class.campusId,
+        level: r.class.level,
+      }))
+
     const result = runAutoScheduler({
       campusId: version.campusId,
       campusName: formatCampusDisplayName(ws.selectedCampusObj),
@@ -2675,6 +2991,9 @@ export async function runAutoScheduleDraftAction(payload: {
       teachers: ws.teachers,
       quotaItems,
       existingSlots,
+      baselineSlots,
+      campuses: ws.allCampuses,
+      teacherAssignmentsMeta,
       rooms: ws.rooms,
       busySlots: ws.busySlots,
       travelRules: ws.travelRules,

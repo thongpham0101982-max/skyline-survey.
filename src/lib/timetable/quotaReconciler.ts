@@ -125,6 +125,44 @@ export function detectHighSchoolTrack(className?: string | null): "TN" | "XH" | 
   return null
 }
 
+export function hasAnyPerGradeQuota(row: SubjectQuotaRow | undefined): boolean {
+  if (!row) return false
+  for (let g = 1; g <= 12; g++) {
+    const val = Number((row as unknown as Record<string, unknown>)[`quotaG${g}`] || 0)
+    if (val > 0) return true
+  }
+  const trackKeys: Array<keyof SubjectQuotaRow> = [
+    "quotaG10TN",
+    "quotaG10XH",
+    "quotaG11TN",
+    "quotaG11XH",
+    "quotaG12TN",
+    "quotaG12XH",
+  ]
+  for (const tk of trackKeys) {
+    const tv = row[tk]
+    if (tv !== null && tv !== undefined && Number(tv) > 0) return true
+  }
+  return false
+}
+
+export function getHighSchoolTrackPair(
+  row: SubjectQuotaRow | undefined,
+  gradeNum: number | null
+): { tn: number; xh: number; hasTrackSplit: boolean; isTrackOnlyElective: boolean } | null {
+  if (!row || (gradeNum !== 10 && gradeNum !== 11 && gradeNum !== 12)) return null
+  const rawTn = row[`quotaG${gradeNum}TN` as keyof SubjectQuotaRow]
+  const rawXh = row[`quotaG${gradeNum}XH` as keyof SubjectQuotaRow]
+  if (rawTn === null || rawTn === undefined || rawXh === null || rawXh === undefined) {
+    return null
+  }
+  const tn = Math.max(0, Number(rawTn) || 0)
+  const xh = Math.max(0, Number(rawXh) || 0)
+  const hasTrackSplit = Math.abs(tn - xh) > 0.001
+  const isTrackOnlyElective = (tn === 0 && xh > 0) || (xh === 0 && tn > 0)
+  return { tn, xh, hasTrackSplit, isTrackOnlyElective }
+}
+
 export function resolveGradeQuotaValue(
   row: SubjectQuotaRow | undefined,
   gradeNum: number | null,
@@ -141,11 +179,18 @@ export function resolveGradeQuotaValue(
         return Number(trackVal) || 0
       }
     }
+    const pair = getHighSchoolTrackPair(row, gradeNum)
+    if (pair && (pair.tn > 0 || pair.xh > 0)) {
+      return Math.max(pair.tn, pair.xh)
+    }
   }
   if (gradeNum && gradeNum >= 1 && gradeNum <= 12) {
     const key = `quotaG${gradeNum}` as keyof SubjectQuotaRow
     const gradeSpecific = Number(row[key] || 0)
     if (gradeSpecific > 0) return gradeSpecific
+    // When per-grade quotas are populated on this row, quotaPrimary/quotaMiddle/quotaHigh
+    // store level-wide aggregates (e.g. G1+..+G5), so 0 on quotaG{n} means 0 periods on grade n.
+    if (hasAnyPerGradeQuota(row)) return 0
   }
   if (levelNorm === "TH" && row.quotaPrimary > 0) return Number(row.quotaPrimary)
   if (levelNorm === "THCS" && row.quotaMiddle > 0) return Number(row.quotaMiddle)
@@ -370,7 +415,8 @@ export function reconcileQuotasAndAssignments(params: {
         quotaMap.get(`${sub.id}::DEFAULT`) ||
         (studyProgram === "DEFAULT" ? quotaMap.get(`${sub.id}::Hệ S`) : undefined)
 
-      const weeklyQuota = resolveGradeQuotaValue(exactQuotaRow, gradeNum, levelNorm, cls.className)
+      const rawWeeklyQuota = resolveGradeQuotaValue(exactQuotaRow, gradeNum, levelNorm, cls.className)
+      const trackPair = getHighSchoolTrackPair(exactQuotaRow, gradeNum)
       const splitMap = parseTeacherSplitJson(exactQuotaRow?.teacherSplitJson)
       const quotaSplit = resolveSlotKeyTeacherSplit(splitMap, gradeNum, track)
       const quotaGvvnPeriods = quotaSplit ? quotaSplit.gvvn : null
@@ -390,6 +436,18 @@ export function reconcileQuotasAndAssignments(params: {
       const ctqtRow = ctqtMap.get(`${cls.id}::${sub.id}`)
       const specialRow = specialMap.get(`${cls.id}::${sub.id}`)
       const scheduledWeeklyEquivalent = scheduledMap.get(`${cls.id}::${sub.id}`) || 0
+
+      // For generic THPT class names without explicit TN/XH suffix, a track-only elective
+      // (e.g. TN=2/XH=0 or TN=0/XH=2) applies to this class only when assigned or scheduled on it.
+      const weeklyQuota =
+        !track &&
+        trackPair?.isTrackOnlyElective &&
+        taRows.length === 0 &&
+        !ctqtRow &&
+        !specialRow &&
+        scheduledWeeklyEquivalent <= 0
+          ? 0
+          : rawWeeklyQuota
 
       // Only surface (class, subject) pairs that have quota > 0, an active assignment, or scheduled slots
       if (

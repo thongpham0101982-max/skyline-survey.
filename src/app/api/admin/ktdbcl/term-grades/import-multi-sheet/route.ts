@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
+import crypto from "crypto"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import * as XLSX from "xlsx"
 import { normalizeKey } from "@/lib/competency-service"
 import { normalizeEvaluationGrade, isAssessmentOnlySubject } from "@/lib/grading/tt22EvaluationEngine"
+import { acquireIdempotencyLock } from "@/lib/idempotency"
+import { recordApiMetric } from "@/lib/observability"
 
-const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
+const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
 
 async function checkAuth() {
   const session = await auth()
@@ -36,11 +39,14 @@ function normalizeSheetToClassCode(sheetName: string, availableClasses: any[] = 
 }
 
 export async function POST(req: NextRequest) {
+  const startedAt = Date.now()
   const session = await checkAuth()
   if (!session) {
+    recordApiMetric({ route: "/api/admin/ktdbcl/term-grades/import-multi-sheet", method: "POST", statusCode: 403, durationMs: Date.now() - startedAt })
     return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 })
   }
 
+  let idemLock: ReturnType<typeof acquireIdempotencyLock> | null = null
   try {
     const formData = await req.formData()
     const file = formData.get("file") as File | null
@@ -52,6 +58,23 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
+    const fileHash = crypto.createHash("sha256").update(buffer).digest("hex").slice(0, 16)
+    const userId = String((session.user as any)?.id || "anon")
+    const idemHeader = req.headers.get("idempotency-key") || `${semester}:${academicYearId}:${fileHash}`
+    idemLock = acquireIdempotencyLock(`import-multi-sheet:${userId}:${idemHeader}`, 30_000)
+
+    if (!idemLock.acquired) {
+      if (idemLock.reason === "IN_FLIGHT") {
+        return NextResponse.json(
+          { error: "Tệp điểm này đang được xử lý. Vui lòng không bấm nạp nhiều lần liên tiếp." },
+          { status: 409 }
+        )
+      }
+      if (idemLock.cachedResponse) {
+        return NextResponse.json(idemLock.cachedResponse)
+      }
+    }
+
     const workbook = XLSX.read(buffer, { type: "buffer" })
 
     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
@@ -74,12 +97,20 @@ export async function POST(req: NextRequest) {
       }),
       prisma.subject.findMany({ where: { status: "ACTIVE" } }),
       prisma.subjectAlias.findMany({ select: { subjectId: true, normalizedKey: true, aliasPattern: true } }),
-      prisma.studentCodeMapping.findMany({ where: { academicYearId: academicYear.id } })
+      prisma.studentCodeMapping.findMany({ orderBy: { updatedAt: "desc" } })
     ])
 
-    const mappingMap = new Map<string, string>(
-      mappings.map(m => [m.markFileCode.toUpperCase(), m.databaseCode.toUpperCase()])
-    )
+    const mappingMap = new Map<string, string>()
+    // Ưu tiên bản ghi của năm học hiện tại, kế thừa các năm học khác nếu chưa có
+    for (const m of mappings) {
+      const mf = String(m.markFileCode || "").trim().toUpperCase()
+      const db = String(m.databaseCode || "").trim().toUpperCase()
+      if (!mf || !db) continue
+      const normalizedDb = /^\d+$/.test(db) && db.length === 9 ? `0${db}` : db
+      if (!mappingMap.has(mf) || m.academicYearId === academicYear.id) {
+        mappingMap.set(mf, normalizedDb)
+      }
+    }
 
     // Subject Map: name/alias -> subjectId
     const subjectMap = new Map<string, { id: string; name: string; code: string }>()
@@ -470,14 +501,19 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       message: `Đã nạp thành công ${totalImportedStudents} học sinh từ ${sheetResults.filter(s => s.status === "SUCCESS").length} lớp.`,
       totalImportedStudents,
       totalScoresUpserted,
       sheetResults
-    })
+    }
+    if (idemLock?.acquired) idemLock.complete(payload)
+    recordApiMetric({ route: "/api/admin/ktdbcl/term-grades/import-multi-sheet", method: "POST", statusCode: 200, durationMs: Date.now() - startedAt })
+    return NextResponse.json(payload)
   } catch (error: any) {
+    if (idemLock?.acquired) idemLock.abort()
+    recordApiMetric({ route: "/api/admin/ktdbcl/term-grades/import-multi-sheet", method: "POST", statusCode: 500, durationMs: Date.now() - startedAt })
     console.error("Lỗi import multi-sheet điểm tổng kết:", error)
     return NextResponse.json({ error: error.message || "Lỗi xử lý file Excel" }, { status: 500 })
   }

@@ -9,6 +9,19 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function buildContentDispositionHeader(disposition: "inline" | "attachment", rawFileName: string): string {
+  const safeRaw = String(rawFileName || "pvdh_document").replace(/[\r\n]/g, "").trim() || "pvdh_document";
+  const asciiFallback =
+    safeRaw
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .replace(/[^a-zA-Z0-9._-]/g, "_")
+      .replace(/_+/g, "_") || "pvdh_document";
+  return `${disposition}; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(safeRaw)}`;
+}
+
 export async function GET(request: Request) {
   try {
     const actor = await getAuthenticatedPvdhActor();
@@ -42,7 +55,7 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         "Content-Type": doc.contentType,
-        "Content-Disposition": `${disposition}; filename="${doc.fileName}"`,
+        "Content-Disposition": buildContentDispositionHeader(disposition, doc.fileName),
         "Cache-Control": "private, no-store, max-age=0",
       },
     });
@@ -91,7 +104,7 @@ export async function POST(request: Request) {
       status: 200,
       headers: {
         "Content-Type": jobResult.contentType,
-        "Content-Disposition": `attachment; filename="${jobResult.fileName}"`,
+        "Content-Disposition": buildContentDispositionHeader("attachment", jobResult.fileName),
         "X-Export-Success-Count": String(
           jobResult.report.filter((r) => r.status === "SUCCESS").length
         ),

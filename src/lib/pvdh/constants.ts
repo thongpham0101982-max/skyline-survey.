@@ -31,13 +31,44 @@ export const RESULT_STATUS_LABELS: Record<ResultStatusCode, string> = {
   PASSED: "Đạt",
 };
 
-export type PvdhTemplateCode = "PVDH-01" | "PVDH-02" | "PVDH-03" | "PVDH-04" | "PVDH-05";
+export type PvdhTemplateCode =
+  | "BM.KTĐBCL.31"
+  | "BM.KTĐBCL.32"
+  | "BM.KTĐBCL.33"
+  | "BM.KTĐBCL.34"
+  | "BM.KTĐBCL.35"
+  | "BM.KTĐBCL.36"
+  | "BM.KTĐBCL.37"
+  | "BM.KTĐBCL.38"
+  | "BM.KTĐBCL.39"
+  | "BM.KTĐBCL.40"
+  | "BM.KTĐBCL.41"
+  | "BM.KTĐBCL.42"
+  | "PVDH-01"
+  | "PVDH-02"
+  | "PVDH-03"
+  | "PVDH-04"
+  | "PVDH-05"
+  | string;
 
 export type PvdhGradeGroup =
   | "KHOI_1"
+  | "KHOI_2"
+  | "KHOI_3"
+  | "KHOI_4"
+  | "KHOI_5"
+  | "KHOI_6"
+  | "KHOI_7"
+  | "KHOI_8"
+  | "KHOI_9"
+  | "KHOI_10"
+  | "KHOI_11"
+  | "KHOI_12"
   | "KHOI_2_3"
+  | "KHOI_3_5"
   | "KHOI_4_5"
   | "KHOI_6_9"
+  | "KHOI_7_9"
   | "KHOI_10_12";
 
 export type PvdhSectionCode =
@@ -45,7 +76,9 @@ export type PvdhSectionCode =
   | "II_STUDENT"
   | "III_TEACHER"
   | "IV_PARENT"
-  | "V_ORIENTATION";
+  | "V_ORIENTATION"
+  | "C_PARENT_GRADE"
+  | "D_TEACHER_SUMMARY";
 
 export type PvdhFieldDataType =
   | "READONLY_PROFILE"
@@ -53,8 +86,39 @@ export type PvdhFieldDataType =
   | "TEXTAREA"
   | "DATE"
   | "CHECKBOX_GROUP"
+  | "RADIO_STATUS"
+  | "BOOLEAN_CHECKBOX"
   | "ACTION_LIST"
   | "INTERVIEW_GROUP";
+
+export type BmSheetStatusCode =
+  | "HOAN_THANH"
+  | "CAN_BO_SUNG_THONG_TIN"
+  | "CAN_TRAO_DOI_CHUYEN_MON";
+
+export const BM_SHEET_STATUS_OPTIONS: Array<{
+  code: BmSheetStatusCode;
+  label: string;
+}> = [
+  { code: "HOAN_THANH", label: "Hoàn thành" },
+  { code: "CAN_BO_SUNG_THONG_TIN", label: "Cần bổ sung thông tin" },
+  { code: "CAN_TRAO_DOI_CHUYEN_MON", label: "Cần trao đổi chuyên môn" },
+];
+
+export interface PvdhTeacherSummaryD {
+  d01: string;
+  d02: string;
+  d03: string;
+  d04: string;
+  sheetStatus: BmSheetStatusCode | "";
+  psychInterviewRequested: boolean;
+  psychReferralNote?: string;
+  psychAssignedTeacherId?: string;
+  psychAssignedTeacherName?: string;
+  psychAssignedTeacherEmail?: string;
+  psychEmailSentAt?: string;
+  psychEmailRecipients?: string[];
+}
 
 export type PvdhWorkflowStatus =
   | "DRAFT"
@@ -120,6 +184,7 @@ export interface PvdhFieldConfig {
   requiredOnComplete: boolean;
   allowNotRecorded?: boolean;
   maxLength?: number;
+  options?: Array<{ value: string; label: string }>;
   visibilityCondition?: PvdhVisibilityCondition | null;
   viewRoles: string[];   // ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"]
   editRoles: string[];   // ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "BOTH_INTERVIEWERS", "REVIEWER"]
@@ -140,6 +205,12 @@ export interface PvdhSectionConfig {
 export interface PvdhExportLayoutConfig {
   paperSize: "A4";
   orientation: "PORTRAIT";
+  layoutVariant?: "BM_KTDBCL_ABCD" | "PROPOSED_PVDH";
+  formCodeBox?: string;
+  ownerUnit?: string;
+  headerSubtitle?: string;
+  headerGuideLine?: string;
+  internalFooterText?: string;
   part1Title: string;
   part1Subtitle: string;
   part2Title: string;
@@ -148,7 +219,7 @@ export interface PvdhExportLayoutConfig {
   privacyDisclaimer: string;
   showDraftBadgeWhenUnlocked: boolean;
   signatureColumns: Array<{
-    key: "interviewer" | "parent" | "student";
+    key: "interviewer" | "parent" | "student" | string;
     title: string;
     subtitle: string;
   }>;
@@ -257,7 +328,7 @@ function buildSectionsForTemplate(isGrade1: boolean): PvdhSectionConfig[] {
   ];
 }
 
-function buildFieldsForTemplate(params: {
+export function buildFieldsForTemplate(params: {
   studentQuestions: Array<{
     num: number;
     label: string;
@@ -679,454 +750,861 @@ function buildFieldsForTemplate(params: {
   return fields;
 }
 
+const BM_COMMON_PARENT_B_QUESTIONS: Array<{ code: string; label: string; prompt: string }> = [
+  {
+    code: "b01",
+    label: "B01. Đặc điểm cá nhân & cảm xúc.",
+    prompt:
+      "Ba từ mô tả con; điểm mạnh; điều con cần cải thiện. Con thường phản ứng thế nào khi gặp khó khăn, bị góp ý hoặc thất bại?",
+  },
+  {
+    code: "b02",
+    label: "B02. Quá trình học tập.",
+    prompt:
+      "Môn học/hoạt động con yêu thích và lĩnh vực cần hỗ trợ? Gia đình hoặc giáo viên đã áp dụng biện pháp hỗ trợ nào; hiệu quả?",
+  },
+  {
+    code: "b03",
+    label: "B03. Thói quen tại nhà.",
+    prompt:
+      "Con tự học, tự quản lý thời gian ở mức nào? Thói quen sinh hoạt, sử dụng thiết bị và hoạt động ngoài giờ ra sao?",
+  },
+  {
+    code: "b04",
+    label: "B04. Gia đình đồng hành.",
+    prompt:
+      "Gia đình thường theo dõi và hỗ trợ việc học thế nào? Khi kết quả chưa tốt, gia đình phản hồi ra sao; mong muốn trao đổi với trường theo cách nào?",
+  },
+  {
+    code: "b05",
+    label: "B05. Mục tiêu & kỳ vọng.",
+    prompt:
+      "Gia đình kỳ vọng điều gì nhất khi chọn Sky-Line? Ưu tiên phát triển kiến thức, tiếng Anh, kỹ năng, phẩm chất hay trải nghiệm nào?",
+  },
+];
+
+function buildBmKtdbclSections(gradeNum: number): PvdhSectionConfig[] {
+  return [
+    {
+      sectionCode: "I_GENERAL",
+      romanNumeral: "",
+      title: "Thông tin chung",
+      partNumber: 1,
+      sortOrder: 1,
+      guideline:
+        "Hướng dẫn: Hỏi mở, tôn trọng ý kiến HS/PHHS; ghi nhận nguồn thông tin, không tự quy đổi thành điểm xét tuyển.",
+    },
+    {
+      sectionCode: "II_STUDENT",
+      romanNumeral: "A",
+      title: "A. PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH",
+      partNumber: 1,
+      sortOrder: 2,
+      guideline:
+        "Ghi nhận lời chia sẻ, biểu hiện giao tiếp và cách HS trình bày. Với khối nhỏ, kết hợp trò chuyện và hoạt động đơn giản.",
+    },
+    {
+      sectionCode: "IV_PARENT",
+      romanNumeral: "B",
+      title: "B. TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH",
+      partNumber: 1,
+      sortOrder: 3,
+      guideline: "",
+    },
+    {
+      sectionCode: "C_PARENT_GRADE",
+      romanNumeral: "C",
+      title: `C. CÂU HỎI PHÂN HÓA RIÊNG CHO KHỐI ${gradeNum} (PHỤ HUYNH)`,
+      partNumber: 2,
+      sortOrder: 4,
+      guideline: "",
+    },
+    {
+      sectionCode: "D_TEACHER_SUMMARY",
+      romanNumeral: "D",
+      title: "D. TỔNG HỢP VÀ ĐỊNH HƯỚNG CỦA GIÁO VIÊN",
+      partNumber: 2,
+      sortOrder: 5,
+      guideline: "",
+    },
+  ];
+}
+
+function buildBmKtdbclFields(params: {
+  studentQuestionsA: Array<{ code: string; label: string }>;
+  parentQuestionsC: Array<{ code: string; label: string; prompt: string }>;
+}): PvdhFieldConfig[] {
+  const fields: PvdhFieldConfig[] = [
+    // Thông tin chung — đúng 7 trường theo mẫu BM.KTĐBCL.31 / 32
+    {
+      fieldKey: "gen_student_name",
+      label: "Họ và tên HS",
+      sectionCode: "I_GENERAL",
+      dataType: "READONLY_PROFILE",
+      sortOrder: 1,
+      requiredOnComplete: false,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: [],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "student.fullName",
+    },
+    {
+      fieldKey: "gen_program_system",
+      label: "Hệ",
+      sectionCode: "I_GENERAL",
+      dataType: "READONLY_PROFILE",
+      sortOrder: 2,
+      requiredOnComplete: false,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: [],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "student.programSystem",
+    },
+    {
+      fieldKey: "gen_campus",
+      label: "Cơ sở",
+      sectionCode: "I_GENERAL",
+      dataType: "READONLY_PROFILE",
+      sortOrder: 3,
+      requiredOnComplete: false,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: [],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "student.campusName",
+    },
+    {
+      fieldKey: "gen_academic_year",
+      label: "Năm học",
+      sectionCode: "I_GENERAL",
+      dataType: "READONLY_PROFILE",
+      sortOrder: 4,
+      requiredOnComplete: false,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: [],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "student.academicYearName",
+    },
+    {
+      fieldKey: "gen_interview_date",
+      label: "Ngày phỏng vấn",
+      sectionCode: "I_GENERAL",
+      dataType: "DATE",
+      sortOrder: 5,
+      requiredOnComplete: true,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "pvdh.interviewDate",
+    },
+    {
+      fieldKey: "gen_parent_name",
+      label: "Phụ huynh tham gia",
+      sectionCode: "I_GENERAL",
+      dataType: "TEXT",
+      sortOrder: 6,
+      requiredOnComplete: true,
+      maxLength: 200,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "pvdh.parentFullName",
+    },
+    {
+      fieldKey: "gen_parent_relationship",
+      label: "Quan hệ với HS",
+      sectionCode: "I_GENERAL",
+      dataType: "TEXT",
+      sortOrder: 7,
+      requiredOnComplete: true,
+      maxLength: 100,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "pvdh.parentRelationship",
+    },
+  ];
+
+  // A. Phỏng vấn định hướng học sinh (A01..A06) — chỉ có câu hỏi đơn dòng theo đúng mẫu BM.KTĐBCL.31/32
+  params.studentQuestionsA.forEach((q, idx) => {
+    fields.push({
+      fieldKey: q.code,
+      label: q.label,
+      sectionCode: "II_STUDENT",
+      dataType: "INTERVIEW_GROUP",
+      sortOrder: idx + 1,
+      requiredOnComplete: true,
+      allowNotRecorded: true,
+      maxLength: 2500,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: `pvdh.studentResponses.${q.code}`,
+    });
+  });
+
+  // B. Trao đổi định hướng với phụ huynh (B01..B05)
+  BM_COMMON_PARENT_B_QUESTIONS.forEach((q, idx) => {
+    fields.push({
+      fieldKey: q.code,
+      label: q.label,
+      promptQuestion: q.prompt,
+      sectionCode: "IV_PARENT",
+      dataType: "INTERVIEW_GROUP",
+      sortOrder: idx + 1,
+      requiredOnComplete: true,
+      allowNotRecorded: true,
+      maxLength: 2500,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: `pvdh.parentResponses.${q.code}`,
+    });
+  });
+
+  // C. Câu hỏi phân hóa riêng cho khối 1 / khối 2 (Phụ huynh) (C01..C05)
+  params.parentQuestionsC.forEach((q, idx) => {
+    fields.push({
+      fieldKey: q.code,
+      label: q.label,
+      promptQuestion: q.prompt,
+      sectionCode: "C_PARENT_GRADE",
+      dataType: "INTERVIEW_GROUP",
+      sortOrder: idx + 1,
+      requiredOnComplete: true,
+      allowNotRecorded: true,
+      maxLength: 2500,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: `pvdh.parentResponses.${q.code}`,
+    });
+  });
+
+  // D. Tổng hợp và định hướng của giáo viên (D01..D04 + Trạng thái phiếu + Đề nghị phỏng vấn tâm lí)
+  fields.push(
+    {
+      fieldKey: "d01",
+      label: "D01. Điểm mạnh nổi bật của HS (nguồn HS / PHHS / quan sát)",
+      sectionCode: "D_TEACHER_SUMMARY",
+      dataType: "TEXTAREA",
+      sortOrder: 1,
+      requiredOnComplete: true,
+      maxLength: 2500,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "pvdh.teacherSummary.d01",
+    },
+    {
+      fieldKey: "d02",
+      label: "D02. Khó khăn, nhu cầu hỗ trợ và nội dung cần xác minh",
+      sectionCode: "D_TEACHER_SUMMARY",
+      dataType: "TEXTAREA",
+      sortOrder: 2,
+      requiredOnComplete: true,
+      maxLength: 2500,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "pvdh.teacherSummary.d02",
+    },
+    {
+      fieldKey: "d03",
+      label: "D03. Kỳ vọng của HS và gia đình (tương đồng / khác biệt)",
+      sectionCode: "D_TEACHER_SUMMARY",
+      dataType: "TEXTAREA",
+      sortOrder: 3,
+      requiredOnComplete: true,
+      maxLength: 2500,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "pvdh.teacherSummary.d03",
+    },
+    {
+      fieldKey: "d04",
+      label: "D04. Định hướng giáo dục, phối hợp và bước tiếp theo",
+      sectionCode: "D_TEACHER_SUMMARY",
+      dataType: "TEXTAREA",
+      sortOrder: 4,
+      requiredOnComplete: true,
+      maxLength: 2500,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "pvdh.teacherSummary.d04",
+    },
+    {
+      fieldKey: "sheet_status",
+      label: "Trạng thái phiếu",
+      sectionCode: "D_TEACHER_SUMMARY",
+      dataType: "RADIO_STATUS",
+      sortOrder: 5,
+      requiredOnComplete: true,
+      options: BM_SHEET_STATUS_OPTIONS.map((o) => ({ value: o.code, label: o.label })),
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SHARED",
+      exportMappingKey: "pvdh.teacherSummary.sheetStatus",
+    },
+    {
+      fieldKey: "psych_interview_requested",
+      label: "Đề nghị phỏng vấn (tâm lí)",
+      sectionCode: "D_TEACHER_SUMMARY",
+      dataType: "BOOLEAN_CHECKBOX",
+      sortOrder: 6,
+      requiredOnComplete: false,
+      viewRoles: ["ALL_ASSIGNED", "REVIEWER", "GVCN", "ADMIN"],
+      editRoles: ["STUDENT_INTERVIEWER", "PARENT_INTERVIEWER", "REVIEWER"],
+      sensitivityTier: "SENSITIVE_HEALTH_PSYCH",
+      exportMappingKey: "pvdh.teacherSummary.psychInterviewRequested",
+    }
+  );
+
+  return fields;
+}
+
+function createBmKtdbclSeedTemplate(params: {
+  gradeNum: number;
+  code: PvdhTemplateCode;
+  studentQuestionsA: Array<{ code: string; label: string }>;
+  parentQuestionsC: Array<{ code: string; label: string; prompt: string }>;
+}): PvdhSeedTemplateDefinition {
+  const g = params.gradeNum;
+  return {
+    code: params.code,
+    name: `Phiếu phỏng vấn định hướng học sinh và trao đổi với phụ huynh (Dành cho khối ${g})`,
+    description: `Biểu mẫu ${params.code} của Ban Khảo thí & Đảm bảo chất lượng — Phiếu phỏng vấn định hướng học sinh và trao đổi với phụ huynh dành cho khối ${g}.`,
+    gradeGroup: `KHOI_${g}` as PvdhGradeGroup,
+    gradeDisplayLabel: `KHỐI ${g}`,
+    grades: [String(g)],
+    priorityOrder: 100,
+    sections: buildBmKtdbclSections(g),
+    fields: buildBmKtdbclFields({
+      studentQuestionsA: params.studentQuestionsA,
+      parentQuestionsC: params.parentQuestionsC,
+    }),
+    exportLayout: {
+      paperSize: "A4",
+      orientation: "PORTRAIT",
+      layoutVariant: "BM_KTDBCL_ABCD",
+      formCodeBox: params.code,
+      ownerUnit: "Ban Khảo thí & Đảm bảo chất lượng",
+      headerSubtitle: `(Dành cho khối ${g})`,
+      headerGuideLine:
+        "Hướng dẫn: Hỏi mở, tôn trọng ý kiến HS/PHHS; ghi nhận nguồn thông tin, không tự quy đổi thành điểm xét tuyển.",
+      internalFooterText: "SSM Sky-Line | Phiếu lưu hành nội bộ",
+      part1Title: "PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ TRAO ĐỔI VỚI PHỤ HUYNH",
+      part1Subtitle: `(Dành cho khối ${g})`,
+      part2Title: "PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ TRAO ĐỔI VỚI PHỤ HUYNH",
+      part2Subtitle: `(Dành cho khối ${g})`,
+      purposeLine:
+        "Hướng dẫn: Hỏi mở, tôn trọng ý kiến HS/PHHS; ghi nhận nguồn thông tin, không tự quy đổi thành điểm xét tuyển.",
+      privacyDisclaimer: "SSM Sky-Line | Phiếu lưu hành nội bộ",
+      showDraftBadgeWhenUnlocked: false,
+      signatureColumns: [
+        {
+          key: "TEACHER_EXECUTOR",
+          title: "Giáo viên thực hiện",
+          subtitle: "(Kí và ghi rõ họ tên)",
+        },
+      ],
+    },
+  };
+}
+
 export const PVDH_SEED_TEMPLATES: PvdhSeedTemplateDefinition[] = [
-  // 1. PVDH-01: KHỐI 1
-  {
-    code: "PVDH-01",
-    name: "Phiếu phỏng vấn định hướng HS và PHHS – Khối 1",
-    description:
-      "Mẫu đề xuất phục vụ triển khai phỏng vấn định hướng học sinh và trao đổi PHHS dự tuyển Khối 1 (thực hiện độc lập với khảo sát 16 tiêu chí TCI).",
-    gradeGroup: "KHOI_1",
-    gradeDisplayLabel: "KHỐI 1",
-    grades: ["1"],
-    priorityOrder: 100,
-    sections: buildSectionsForTemplate(true),
-    fields: buildFieldsForTemplate({
-      studentQuestions: [
-        {
-          num: 1,
-          label: "Làm quen và giao tiếp",
-          prompt: "Con tên gì? Con thích được gọi là gì? Con thích chơi cùng ai?",
-        },
-        {
-          num: 2,
-          label: "Cảm xúc khi đến trường",
-          prompt: "Con mong được làm gì ở trường mới? Khi nhớ bố mẹ hoặc buồn, con muốn ai giúp?",
-        },
-        {
-          num: 3,
-          label: "Tự phục vụ",
-          prompt: "Con tự làm được những việc gì khi ăn, mặc, đi vệ sinh và sắp xếp đồ dùng?",
-        },
-        {
-          num: 4,
-          label: "Sở thích và cách tham gia",
-          prompt: "Con thích nghe kể chuyện, vẽ, xếp hình hay vận động? Con kể về một hoạt động con thích nhé.",
-        },
-        {
-          num: 5,
-          label: "Giao tiếp và tìm kiếm hỗ trợ",
-          prompt: "Nếu chưa hiểu lời cô hoặc gặp khó khăn với bạn, con sẽ làm gì?",
-        },
-        {
-          num: 6,
-          label: "Mong muốn của học sinh",
-          prompt: "Con muốn cô giáo và bố mẹ giúp con điều gì khi vào lớp 1?",
-        },
-      ],
-      parentQuestions: [
-        {
-          num: 1,
-          label: "Quá trình học và thích nghi",
-          prompt: "Trẻ đã học mầm non ở đâu? Khi thay đổi môi trường hoặc xa người thân, trẻ thường phản ứng thế nào?",
-        },
-        {
-          num: 2,
-          label: "Nếp sinh hoạt và tự phục vụ",
-          prompt: "Giờ ăn ngủ, khả năng tự phục vụ, đi vệ sinh và những việc gia đình đang hỗ trợ trẻ?",
-        },
-        {
-          num: 3,
-          label: "Sức khỏe và nhu cầu hỗ trợ",
-          prompt: "Thông tin sức khỏe, dị ứng, ăn uống hoặc nhu cầu hỗ trợ nào nhà trường cần biết để chăm sóc trẻ?",
-          sensitive: true,
-        },
-        {
-          num: 4,
-          label: "Hiểu trẻ qua gia đình",
-          prompt: "Điểm mạnh, sở thích, điều khiến trẻ lo lắng và cách gia đình thường giúp trẻ bình tĩnh?",
-        },
-        {
-          num: 5,
-          label: "Kỳ vọng và phối hợp",
-          prompt: "Gia đình mong trẻ tiến bộ điều gì trong giai đoạn đầu? Có thể phối hợp rèn nếp và trao đổi với giáo viên thế nào?",
-        },
-      ],
-    }),
-    exportLayout: {
-      paperSize: "A4",
-      orientation: "PORTRAIT",
-      part1Title: "PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ PHỤ HUYNH HỌC SINH",
-      part1Subtitle: "KHỐI 1   •   Mẫu PVDH 01   •   Phần 1 trên 2",
-      part2Title: "TRAO ĐỔI VỚI PHỤ HUYNH VÀ ĐỊNH HƯỚNG",
-      part2Subtitle: "KHỐI 1   •   Mẫu PVDH 01   •   Phần 2 trên 2",
-      purposeLine: "Mục đích: tìm hiểu học sinh, ghi nhận kỳ vọng gia đình và xác định nội dung cần hỗ trợ khi nhập học.",
-      privacyDisclaimer: COMMON_PRIVACY_DISCLAIMER,
-      showDraftBadgeWhenUnlocked: true,
-      signatureColumns: DEFAULT_SIGNATURE_COLUMNS,
-    },
-  },
+  // 1. BM.KTĐBCL.31: KHỐI 1
+  createBmKtdbclSeedTemplate({
+    gradeNum: 1,
+    code: "BM.KTĐBCL.31",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Con thích chơi hoặc làm hoạt động gì nhất?" },
+      { code: "a02", label: "A02. Con đã tự làm được những việc gì?" },
+      { code: "a03", label: "A03. Khi gặp việc khó, con thường làm gì?" },
+      { code: "a04", label: "A04. Con làm quen với bạn mới thế nào?" },
+      { code: "a05", label: "A05. Điều gì khiến con vui hoặc lo khi đến trường?" },
+      { code: "a06", label: "A06. Con mong được làm gì ở Sky-Line?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Khả năng thích nghi:",
+        prompt: "Con phản ứng thế nào khi xa bố mẹ, gặp thầy cô hoặc bạn mới?",
+      },
+      {
+        code: "c02",
+        label: "C02. Sẵn sàng vào lớp 1:",
+        prompt: "Con có thể tự phục vụ, nghe hướng dẫn, tập trung vào một hoạt động ra sao?",
+      },
+      {
+        code: "c03",
+        label: "C03. Tiền đọc viết & số học:",
+        prompt: "Con thích kể chuyện, nhận diện chữ/số, đếm và quan sát như thế nào?",
+      },
+      {
+        code: "c04",
+        label: "C04. Nếp sinh hoạt:",
+        prompt: "Giấc ngủ, ăn uống, đi vệ sinh, tự chuẩn bị đồ dùng có cần hỗ trợ?",
+      },
+      {
+        code: "c05",
+        label: "C05. Giao tiếp & phối hợp:",
+        prompt: "Con diễn đạt nhu cầu, chờ lượt và chia sẻ với bạn thế nào?",
+      },
+    ],
+  }),
 
-  // 2. PVDH-02: KHỐI 2 VÀ 3
-  {
-    code: "PVDH-02",
-    name: "Phiếu phỏng vấn định hướng HS và PHHS – Khối 2 và 3",
-    description:
-      "Mẫu đề xuất phục vụ triển khai phỏng vấn định hướng học sinh và trao đổi PHHS dự tuyển Khối 2 và Khối 3.",
-    gradeGroup: "KHOI_2_3",
-    gradeDisplayLabel: "KHỐI 2 VÀ 3",
-    grades: ["2", "3"],
-    priorityOrder: 100,
-    sections: buildSectionsForTemplate(false),
-    fields: buildFieldsForTemplate({
-      studentQuestions: [
-        {
-          num: 1,
-          label: "Trải nghiệm học tập",
-          prompt: "Con thích điều gì ở lớp hiện tại? Điều gì khiến con thấy khó hoặc chưa vui?",
-        },
-        {
-          num: 2,
-          label: "Điểm mạnh và hứng thú",
-          prompt: "Con thích môn học hoặc hoạt động nào? Kể một việc con làm được và thấy vui.",
-        },
-        {
-          num: 3,
-          label: "Thói quen học tập",
-          prompt: "Ở nhà con chuẩn bị bài và đồ dùng thế nào? Khi chưa hiểu bài, con thường nhờ ai?",
-        },
-        {
-          num: 4,
-          label: "Bạn bè và cảm xúc",
-          prompt: "Khi bất đồng với bạn hoặc làm bài chưa tốt, con thường làm gì? Ai có thể giúp con?",
-        },
-        {
-          num: 5,
-          label: "Tự lập và tham gia",
-          prompt: "Con tự làm được những việc gì? Con muốn tham gia hoạt động nào ở trường mới?",
-        },
-        {
-          num: 6,
-          label: "Mục tiêu gần",
-          prompt: "Nếu đến trường mới, con muốn làm tốt hơn điều gì? Con muốn thầy cô giúp như thế nào?",
-        },
-      ],
-      parentQuestions: [
-        {
-          num: 1,
-          label: "Lịch sử học tập",
-          prompt: "Trường/lớp đang học, lý do chuyển trường và những thay đổi trong việc học gần đây?",
-        },
-        {
-          num: 2,
-          label: "Năng lực và thói quen",
-          prompt: "Con thuận lợi hoặc cần hỗ trợ ở nội dung nào của Toán, Tiếng Việt và Tiếng Anh? Căn cứ từ bài học hoặc nhận xét nào?",
-        },
-        {
-          num: 3,
-          label: "Nếp sinh hoạt và sử dụng thiết bị",
-          prompt: "Khả năng tự học, tự phục vụ, thời gian nghỉ ngơi và cách gia đình quản lý thiết bị số?",
-        },
-        {
-          num: 4,
-          label: "Sức khỏe và quan hệ",
-          prompt: "Thông tin sức khỏe, cảm xúc, quan hệ bạn bè hoặc nhu cầu hỗ trợ mà gia đình muốn nhà trường lưu ý?",
-          sensitive: true,
-        },
-        {
-          num: 5,
-          label: "Kỳ vọng và phối hợp",
-          prompt: "Ưu tiên tiến bộ của con là gì? Gia đình có thể đồng hành bằng việc cụ thể nào?",
-        },
-      ],
-    }),
-    exportLayout: {
-      paperSize: "A4",
-      orientation: "PORTRAIT",
-      part1Title: "PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ PHỤ HUYNH HỌC SINH",
-      part1Subtitle: "KHỐI 2 VÀ 3   •   Mẫu PVDH 02   •   Phần 1 trên 2",
-      part2Title: "TRAO ĐỔI VỚI PHỤ HUYNH VÀ ĐỊNH HƯỚNG",
-      part2Subtitle: "KHỐI 2 VÀ 3   •   Mẫu PVDH 02   •   Phần 2 trên 2",
-      purposeLine: "Mục đích: tìm hiểu học sinh, ghi nhận kỳ vọng gia đình và xác định nội dung cần hỗ trợ khi nhập học.",
-      privacyDisclaimer: COMMON_PRIVACY_DISCLAIMER,
-      showDraftBadgeWhenUnlocked: true,
-      signatureColumns: DEFAULT_SIGNATURE_COLUMNS,
-    },
-  },
+  // 2. BM.KTĐBCL.32: KHỐI 2
+  createBmKtdbclSeedTemplate({
+    gradeNum: 2,
+    code: "BM.KTĐBCL.32",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em thích môn học hoặc hoạt động nào?" },
+      { code: "a02", label: "A02. Khi gặp bài đọc hoặc toán khó, em làm gì?" },
+      { code: "a03", label: "A03. Em tự chuẩn bị đồ dùng học tập như thế nào?" },
+      { code: "a04", label: "A04. Khi làm bài sai, em thường làm gì?" },
+      { code: "a05", label: "A05. Em làm gì khi muốn chơi với bạn mới?" },
+      { code: "a06", label: "A06. Em muốn học thêm điều gì ở trường mới?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Thích nghi với học tập:",
+        prompt: "Con làm quen việc đọc, viết và bài tập về nhà ở lớp 1 như thế nào?",
+      },
+      {
+        code: "c02",
+        label: "C02. Đọc hiểu & toán cơ bản:",
+        prompt: "Con tự đọc yêu cầu và giải bài toán ở mức nào?",
+      },
+      {
+        code: "c03",
+        label: "C03. Tính tự giác:",
+        prompt: "Con có tự chuẩn bị sách vở và hoàn thành việc học không?",
+      },
+      {
+        code: "c04",
+        label: "C04. Tiếng Anh:",
+        prompt: "Con thích học từ vựng, nghe nói hay hoạt động nào bằng tiếng Anh?",
+      },
+      {
+        code: "c05",
+        label: "C05. Kỳ vọng:",
+        prompt: "Gia đình mong con cải thiện thói quen hay năng lực nào ở lớp 2?",
+      },
+    ],
+  }),
 
-  // 3. PVDH-03: KHỐI 4 VÀ 5
-  {
-    code: "PVDH-03",
-    name: "Phiếu phỏng vấn định hướng HS và PHHS – Khối 4 và 5",
-    description:
-      "Mẫu đề xuất phục vụ triển khai phỏng vấn định hướng học sinh và trao đổi PHHS dự tuyển Khối 4 và Khối 5.",
-    gradeGroup: "KHOI_4_5",
-    gradeDisplayLabel: "KHỐI 4 VÀ 5",
-    grades: ["4", "5"],
-    priorityOrder: 100,
-    sections: buildSectionsForTemplate(false),
-    fields: buildFieldsForTemplate({
-      studentQuestions: [
-        {
-          num: 1,
-          label: "Nhìn lại việc học",
-          prompt: "Em thấy mình làm tốt môn hoặc hoạt động nào? Nội dung nào em cần được hỗ trợ? Hãy nêu ví dụ.",
-        },
-        {
-          num: 2,
-          label: "Cách học và tự quản",
-          prompt: "Em sắp xếp việc học, chuẩn bị bài và kiểm tra kết quả ra sao? Khi bài khó, em thử cách nào?",
-        },
-        {
-          num: 3,
-          label: "Hợp tác và trách nhiệm",
-          prompt: "Kể một lần em làm việc nhóm. Em đảm nhận việc gì và xử lý bất đồng thế nào?",
-        },
-        {
-          num: 4,
-          label: "Cảm xúc và an toàn",
-          prompt: "Khi áp lực hoặc gặp điều khiến em không thoải mái ở trường hay trên mạng, em thường tìm ai hỗ trợ?",
-        },
-        {
-          num: 5,
-          label: "Sở thích và chuyển tiếp",
-          prompt: "Em muốn tham gia hoạt động nào? Em mong đợi hoặc lo lắng điều gì khi học ở trường mới, lên THCS?",
-        },
-        {
-          num: 6,
-          label: "Mục tiêu phát triển",
-          prompt: "Em muốn cải thiện điều gì trong học kỳ tới? Em có thể bắt đầu bằng việc nào và cần ai giúp?",
-        },
-      ],
-      parentQuestions: [
-        {
-          num: 1,
-          label: "Quá trình học tập",
-          prompt: "Lịch sử học tập, lý do chuyển trường và các thay đổi đáng chú ý về kết quả hoặc thái độ học?",
-        },
-        {
-          num: 2,
-          label: "Điểm mạnh và khoảng trống",
-          prompt: "Gia đình nhận thấy điểm mạnh, nội dung cần củng cố và mức độ tự học của con như thế nào?",
-        },
-        {
-          num: 3,
-          label: "Quan hệ và phát triển cá nhân",
-          prompt: "Con thích nghi với bạn bè, quy tắc, phản hồi và thay đổi ra sao? Cách hỗ trợ nào thường có hiệu quả?",
-        },
-        {
-          num: 4,
-          label: "Sức khỏe và sinh hoạt",
-          prompt: "Thông tin sức khỏe, cảm xúc, giấc ngủ hoặc sử dụng thiết bị số nào cần lưu ý?",
-          sensitive: true,
-        },
-        {
-          num: 5,
-          label: "Kỳ vọng và chuyển tiếp",
-          prompt: "Gia đình ưu tiên điều gì cho giai đoạn cuối tiểu học/chuyển cấp? Thống nhất cách đồng hành thế nào?",
-        },
-      ],
-    }),
-    exportLayout: {
-      paperSize: "A4",
-      orientation: "PORTRAIT",
-      part1Title: "PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ PHỤ HUYNH HỌC SINH",
-      part1Subtitle: "KHỐI 4 VÀ 5   •   Mẫu PVDH 03   •   Phần 1 trên 2",
-      part2Title: "TRAO ĐỔI VỚI PHỤ HUYNH VÀ ĐỊNH HƯỚNG",
-      part2Subtitle: "KHỐI 4 VÀ 5   •   Mẫu PVDH 03   •   Phần 2 trên 2",
-      purposeLine: "Mục đích: tìm hiểu học sinh, ghi nhận kỳ vọng gia đình và xác định nội dung cần hỗ trợ khi nhập học.",
-      privacyDisclaimer: COMMON_PRIVACY_DISCLAIMER,
-      showDraftBadgeWhenUnlocked: true,
-      signatureColumns: DEFAULT_SIGNATURE_COLUMNS,
-    },
-  },
+  // 3. BM.KTĐBCL.33: KHỐI 3
+  createBmKtdbclSeedTemplate({
+    gradeNum: 3,
+    code: "BM.KTĐBCL.33",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em thích khám phá điều gì ngoài giờ học?" },
+      { code: "a02", label: "A02. Khi chưa hiểu bài, em tìm cách nào để hiểu?" },
+      { code: "a03", label: "A03. Em tự hoàn thành bài tập hằng ngày thế nào?" },
+      { code: "a04", label: "A04. Khi làm việc nhóm, em thường nhận nhiệm vụ gì?" },
+      { code: "a05", label: "A05. Em giải quyết bất đồng với bạn thế nào?" },
+      { code: "a06", label: "A06. Em mong muốn cải thiện điều gì ở bản thân?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Đọc hiểu:",
+        prompt: "Con có thể đọc, kể lại và giải thích một nội dung đã học không?",
+      },
+      {
+        code: "c02",
+        label: "C02. Tư duy toán:",
+        prompt: "Con xử lý bài toán có lời văn, trình bày cách làm ra sao?",
+      },
+      {
+        code: "c03",
+        label: "C03. Hợp tác:",
+        prompt: "Con làm việc nhóm, nhờ giúp đỡ hoặc hỗ trợ bạn thế nào?",
+      },
+      {
+        code: "c04",
+        label: "C04. Tự học:",
+        prompt: "Con có cần nhắc thường xuyên để bắt đầu và hoàn thành bài?",
+      },
+      {
+        code: "c05",
+        label: "C05. Mục tiêu:",
+        prompt: "Gia đình mong con phát triển điểm mạnh nào trong năm tới?",
+      },
+    ],
+  }),
 
-  // 4. PVDH-04: KHỐI 6 ĐẾN 9
-  {
-    code: "PVDH-04",
-    name: "Phiếu phỏng vấn định hướng HS và PHHS – Khối 6 đến 9",
-    description:
-      "Mẫu đề xuất phục vụ triển khai phỏng vấn định hướng học sinh và trao đổi PHHS dự tuyển THCS (Khối 6, 7, 8, 9; có nhấn mạnh định hướng sau THCS cho Khối 9).",
-    gradeGroup: "KHOI_6_9",
-    gradeDisplayLabel: "KHỐI 6 ĐẾN 9",
-    grades: ["6", "7", "8", "9"],
-    priorityOrder: 100,
-    sections: buildSectionsForTemplate(false),
-    fields: buildFieldsForTemplate({
-      studentQuestions: [
-        {
-          num: 1,
-          label: "Tự đánh giá học tập",
-          prompt: "Em đánh giá điểm mạnh và khó khăn học tập của mình thế nào? Nêu ví dụ từ môn học hoặc kết quả gần đây.",
-        },
-        {
-          num: 2,
-          label: "Phương pháp và tự quản",
-          prompt: "Em lập kế hoạch học, ôn tập và điều chỉnh sau bài kiểm tra như thế nào? Điều gì thường cản trở em?",
-        },
-        {
-          num: 3,
-          label: "Động lực và môi trường mới",
-          prompt: "Vì sao em muốn học tại trường? Em mong môi trường mới giúp mình phát triển điều gì?",
-        },
-        {
-          num: 4,
-          label: "Quan hệ và cảm xúc",
-          prompt: "Khi căng thẳng hoặc bất đồng với bạn, thầy cô, gia đình, em thường xử lý và tìm hỗ trợ ra sao?",
-        },
-        {
-          num: 5,
-          label: "Sở thích và hướng phát triển",
-          prompt: "Em muốn khám phá lĩnh vực, câu lạc bộ hay hoạt động nào? Với khối 9, em đang nghĩ gì về hướng học sau THCS?",
-          visibilityCondition: {
-            gradeEmphasisNote: {
-              "6": "Trọng tâm Khối 6–8: Tìm hiểu lĩnh vực, câu lạc bộ hoặc hoạt động học sinh muốn khám phá.",
-              "7": "Trọng tâm Khối 6–8: Tìm hiểu lĩnh vực, câu lạc bộ hoặc hoạt động học sinh muốn khám phá.",
-              "8": "Trọng tâm Khối 6–8: Tìm hiểu lĩnh vực, câu lạc bộ hoặc hoạt động học sinh muốn khám phá.",
-              "9": "Trọng tâm chuyển cấp Khối 9: Bổ sung trao đổi sâu về dự định hướng học / tổ hợp môn sau THCS.",
-            },
-          },
-        },
-        {
-          num: 6,
-          label: "Mục tiêu và đồng hành",
-          prompt: "Chọn một mục tiêu học kỳ tới: em sẽ làm gì, nhận biết tiến bộ bằng cách nào và cần hỗ trợ gì?",
-        },
-      ],
-      parentQuestions: [
-        {
-          num: 1,
-          label: "Lịch sử và động lực chuyển trường",
-          prompt: "Quá trình học, lý do chuyển trường, mong muốn của gia đình và mức độ đồng thuận của học sinh?",
-        },
-        {
-          num: 2,
-          label: "Học tập và tự chủ",
-          prompt: "Điểm mạnh, môn cần hỗ trợ, khả năng tự học và phản ứng của con trước áp lực học tập?",
-        },
-        {
-          num: 3,
-          label: "Giao tiếp và quan hệ",
-          prompt: "Gia đình nhận thấy con thích nghi, kết bạn và trao đổi khó khăn thế nào? Cách phối hợp nào phù hợp với con?",
-        },
-        {
-          num: 4,
-          label: "Sức khỏe và sinh hoạt",
-          prompt: "Thông tin sức khỏe, cảm xúc, giấc ngủ, thiết bị số hoặc hỗ trợ đã có cần bàn giao cho trường?",
-          sensitive: true,
-        },
-        {
-          num: 5,
-          label: "Kỳ vọng và hướng học",
-          prompt: "Ưu tiên phát triển của gia đình; với khối 9, dự kiến hướng học sau THCS và cách hỗ trợ lựa chọn của con?",
-          visibilityCondition: {
-            gradeEmphasisNote: {
-              "9": "Trọng tâm chuyển cấp Khối 9: Trao đổi rõ dự kiến hướng học sau THCS và cách gia đình hỗ trợ lựa chọn của con.",
-            },
-          },
-        },
-      ],
-    }),
-    exportLayout: {
-      paperSize: "A4",
-      orientation: "PORTRAIT",
-      part1Title: "PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ PHỤ HUYNH HỌC SINH",
-      part1Subtitle: "KHỐI 6 ĐẾN 9   •   Mẫu PVDH 04   •   Phần 1 trên 2",
-      part2Title: "TRAO ĐỔI VỚI PHỤ HUYNH VÀ ĐỊNH HƯỚNG",
-      part2Subtitle: "KHỐI 6 ĐẾN 9   •   Mẫu PVDH 04   •   Phần 2 trên 2",
-      purposeLine: "Mục đích: tìm hiểu học sinh, ghi nhận kỳ vọng gia đình và xác định nội dung cần hỗ trợ khi nhập học.",
-      privacyDisclaimer: COMMON_PRIVACY_DISCLAIMER,
-      showDraftBadgeWhenUnlocked: true,
-      signatureColumns: DEFAULT_SIGNATURE_COLUMNS,
-    },
-  },
+  // 4. BM.KTĐBCL.34: KHỐI 4
+  createBmKtdbclSeedTemplate({
+    gradeNum: 4,
+    code: "BM.KTĐBCL.34",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em tự hào nhất về khả năng nào của mình?" },
+      { code: "a02", label: "A02. Em sắp xếp việc học khi có nhiều bài tập ra sao?" },
+      { code: "a03", label: "A03. Em giải quyết một vấn đề chưa biết cách làm thế nào?" },
+      { code: "a04", label: "A04. Em thường chủ động đặt câu hỏi khi nào?" },
+      { code: "a05", label: "A05. Em làm gì nếu bất đồng với bạn?" },
+      { code: "a06", label: "A06. Em muốn tham gia hoạt động nào tại Sky-Line?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Tự quản lý:",
+        prompt: "Con có tự sắp xếp lịch học, đồ dùng và nhiệm vụ của mình không?",
+      },
+      {
+        code: "c02",
+        label: "C02. Đọc & trình bày:",
+        prompt: "Con đọc hiểu, diễn đạt ý tưởng và viết đoạn văn như thế nào?",
+      },
+      {
+        code: "c03",
+        label: "C03. Toán & giải quyết vấn đề:",
+        prompt: "Con có biết giải thích lý do chọn cách giải không?",
+      },
+      {
+        code: "c04",
+        label: "C04. Ngoại ngữ:",
+        prompt: "Mức độ tự tin giao tiếp tiếng Anh và kinh nghiệm học hiện có?",
+      },
+      {
+        code: "c05",
+        label: "C05. Trách nhiệm:",
+        prompt: "Con nhận và hoàn thành trách nhiệm ở nhà thế nào?",
+      },
+    ],
+  }),
 
-  // 5. PVDH-05: KHỐI 10 ĐẾN 12
-  {
-    code: "PVDH-05",
-    name: "Phiếu phỏng vấn định hướng HS và PHHS – Khối 10 đến 12",
-    description:
-      "Mẫu đề xuất phục vụ triển khai phỏng vấn định hướng học sinh và trao đổi PHHS dự tuyển THPT (Khối 10, 11, 12).",
-    gradeGroup: "KHOI_10_12",
-    gradeDisplayLabel: "KHỐI 10 ĐẾN 12",
-    grades: ["10", "11", "12"],
-    priorityOrder: 100,
-    sections: buildSectionsForTemplate(false),
-    fields: buildFieldsForTemplate({
-      studentQuestions: [
-        {
-          num: 1,
-          label: "Hồ sơ học tập và thế mạnh",
-          prompt: "Em có thế mạnh, kết quả hoặc trải nghiệm học tập nổi bật nào? Nội dung nào đang cần củng cố?",
-        },
-        {
-          num: 2,
-          label: "Động lực và lựa chọn",
-          prompt: "Vì sao em lựa chọn trường/chương trình này? Điều gì khiến em hứng thú hoặc còn băn khoăn?",
-        },
-        {
-          num: 3,
-          label: "Phương pháp và tiến độ",
-          prompt: "Em quản lý thời gian, tự học và theo dõi mục tiêu ra sao? Em điều chỉnh thế nào khi kết quả chưa như mong muốn?",
-        },
-        {
-          num: 4,
-          label: "Định hướng sau THPT",
-          prompt: "Em đang quan tâm ngành, nghề hoặc hướng học nào? Đã tìm hiểu và trải nghiệm gì? Nếu chưa rõ, em muốn khám phá điều gì?",
-        },
-        {
-          num: 5,
-          label: "Cảm xúc và nguồn hỗ trợ",
-          prompt: "Khi áp lực học tập hoặc gặp khó khăn trong quan hệ, em thường làm gì? Em mong người lớn hỗ trợ theo cách nào?",
-        },
-        {
-          num: 6,
-          label: "Mục tiêu và kế hoạch",
-          prompt: "Mục tiêu ưu tiên trong học kỳ tới là gì? Nêu hành động, mốc kiểm tra tiến bộ và hỗ trợ em cần.",
-        },
-      ],
-      parentQuestions: [
-        {
-          num: 1,
-          label: "Quá trình học và lựa chọn",
-          prompt: "Lịch sử học tập, lý do chuyển trường, chương trình dự kiến và mức độ thống nhất với học sinh?",
-        },
-        {
-          num: 2,
-          label: "Năng lực và thói quen",
-          prompt: "Nhận định của gia đình về thế mạnh, nội dung cần củng cố và khả năng tự chủ của con?",
-        },
-        {
-          num: 3,
-          label: "Định hướng tương lai",
-          prompt: "Kỳ vọng về hướng học, ngành nghề hoặc môi trường học sau THPT? Điểm thống nhất và khác biệt với mong muốn của con?",
-        },
-        {
-          num: 4,
-          label: "Sức khỏe và áp lực",
-          prompt: "Thông tin sức khỏe, cảm xúc, sinh hoạt hoặc hỗ trợ đã có nào cần lưu ý khi đồng hành với con?",
-          sensitive: true,
-        },
-        {
-          num: 5,
-          label: "Điều kiện và phối hợp",
-          prompt: "Gia đình có thể hỗ trợ mục tiêu của con thế nào? Cần tư vấn thêm nội dung nào và thống nhất kênh trao đổi ra sao?",
-        },
-      ],
-    }),
-    exportLayout: {
-      paperSize: "A4",
-      orientation: "PORTRAIT",
-      part1Title: "PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ PHỤ HUYNH HỌC SINH",
-      part1Subtitle: "KHỐI 10 ĐẾN 12   •   Mẫu PVDH 05   •   Phần 1 trên 2",
-      part2Title: "TRAO ĐỔI VỚI PHỤ HUYNH VÀ ĐỊNH HƯỚNG",
-      part2Subtitle: "KHỐI 10 ĐẾN 12   •   Mẫu PVDH 05   •   Phần 2 trên 2",
-      purposeLine: "Mục đích: tìm hiểu học sinh, ghi nhận kỳ vọng gia đình và xác định nội dung cần hỗ trợ khi nhập học.",
-      privacyDisclaimer: COMMON_PRIVACY_DISCLAIMER,
-      showDraftBadgeWhenUnlocked: true,
-      signatureColumns: DEFAULT_SIGNATURE_COLUMNS,
-    },
-  },
+  // 5. BM.KTĐBCL.35: KHỐI 5
+  createBmKtdbclSeedTemplate({
+    gradeNum: 5,
+    code: "BM.KTĐBCL.35",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Môn học nào là thế mạnh của em?" },
+      { code: "a02", label: "A02. Em đã tự lập kế hoạch ôn tập ra sao?" },
+      { code: "a03", label: "A03. Em dự đoán điều gì thay đổi khi lên THCS?" },
+      { code: "a04", label: "A04. Khi gặp khó khăn em sẽ nhờ ai hỗ trợ?" },
+      { code: "a05", label: "A05. Em xử lý mâu thuẫn với bạn thế nào?" },
+      { code: "a06", label: "A06. Em kỳ vọng điều gì ở môi trường mới?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Chuẩn bị chuyển cấp:",
+        prompt: "Con có mong đợi hay lo lắng gì về môi trường THCS?",
+      },
+      {
+        code: "c02",
+        label: "C02. Học tập độc lập:",
+        prompt: "Con tự ghi chép, ôn tập và lên kế hoạch kiểm tra ra sao?",
+      },
+      {
+        code: "c03",
+        label: "C03. Quan hệ bạn bè:",
+        prompt: "Con xử lý mâu thuẫn, xây dựng tình bạn và tìm kiếm hỗ trợ thế nào?",
+      },
+      {
+        code: "c04",
+        label: "C04. Tiếng Anh:",
+        prompt: "Gia đình kỳ vọng kỹ năng giao tiếp, học thuật hoặc chứng chỉ nào?",
+      },
+      {
+        code: "c05",
+        label: "C05. Định hướng:",
+        prompt: "Những hỗ trợ con cần để chuyển cấp tự tin?",
+      },
+    ],
+  }),
+
+  // 6. BM.KTĐBCL.36: KHỐI 6
+  createBmKtdbclSeedTemplate({
+    gradeNum: 6,
+    code: "BM.KTĐBCL.36",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em nghĩ thế nào về việc học nhiều môn và giáo viên?" },
+      { code: "a02", label: "A02. Em theo dõi bài tập và lịch kiểm tra thế nào?" },
+      { code: "a03", label: "A03. Khi không hiểu bài em chủ động giải quyết ra sao?" },
+      { code: "a04", label: "A04. Em có dễ kết bạn khi chuyển môi trường không?" },
+      { code: "a05", label: "A05. Điều gì khiến em lo lắng khi học THCS?" },
+      { code: "a06", label: "A06. Em mong đạt được mục tiêu gì năm học này?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Thích nghi THCS:",
+        prompt: "Con phản ứng thế nào với nhiều môn học, giáo viên và thời khóa biểu mới?",
+      },
+      {
+        code: "c02",
+        label: "C02. Tự học & tổ chức:",
+        prompt: "Con ghi bài, chuẩn bị bài và theo dõi hạn nộp như thế nào?",
+      },
+      {
+        code: "c03",
+        label: "C03. Cảm xúc & bạn bè:",
+        prompt: "Con thích nghi với nhóm bạn mới và xử lý xung đột ra sao?",
+      },
+      {
+        code: "c04",
+        label: "C04. Ngoại ngữ & hệ học:",
+        prompt: "Gia đình kỳ vọng lộ trình tiếng Anh/hệ Song ngữ như thế nào?",
+      },
+      {
+        code: "c05",
+        label: "C05. Hỗ trợ chuyển cấp:",
+        prompt: "Gia đình muốn GVCN lưu ý điều gì trong học kỳ đầu THCS?",
+      },
+    ],
+  }),
+
+  // 7. BM.KTĐBCL.37: KHỐI 7
+  createBmKtdbclSeedTemplate({
+    gradeNum: 7,
+    code: "BM.KTĐBCL.37",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Điều gì tạo động lực học tập cho em?" },
+      { code: "a02", label: "A02. Em phản ứng thế nào trước bài khó hoặc điểm thấp?" },
+      { code: "a03", label: "A03. Em tự phân bổ thời gian học và dùng thiết bị thế nào?" },
+      { code: "a04", label: "A04. Em đã từng chủ động giải quyết vấn đề nào?" },
+      { code: "a05", label: "A05. Em xử lý bất đồng với bạn ra sao?" },
+      { code: "a06", label: "A06. Em mong nhà trường hỗ trợ điều gì?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Động lực:",
+        prompt: "Con thích những môn học nào và điều gì thúc đẩy con học?",
+      },
+      {
+        code: "c02",
+        label: "C02. Thói quen số:",
+        prompt: "Con sử dụng mạng, thiết bị và tự điều chỉnh thời gian thế nào?",
+      },
+      {
+        code: "c03",
+        label: "C03. Tự quản lý:",
+        prompt: "Con có kế hoạch học tập và chịu trách nhiệm với kết quả không?",
+      },
+      {
+        code: "c04",
+        label: "C04. Quan hệ xã hội:",
+        prompt: "Con giao tiếp, hợp tác và giải quyết bất đồng với bạn thế nào?",
+      },
+      {
+        code: "c05",
+        label: "C05. Phát triển năng lực:",
+        prompt: "Gia đình muốn con tăng cường năng lực/kỹ năng nào?",
+      },
+    ],
+  }),
+
+  // 8. BM.KTĐBCL.38: KHỐI 8
+  createBmKtdbclSeedTemplate({
+    gradeNum: 8,
+    code: "BM.KTĐBCL.38",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em có thể kể một khó khăn đã tự giải quyết?" },
+      { code: "a02", label: "A02. Em đặt mục tiêu và theo dõi tiến bộ thế nào?" },
+      { code: "a03", label: "A03. Em muốn tìm hiểu sâu lĩnh vực nào?" },
+      { code: "a04", label: "A04. Em làm gì khi gặp áp lực học tập?" },
+      { code: "a05", label: "A05. Khi ý kiến khác nhau, em trao đổi thế nào?" },
+      { code: "a06", label: "A06. Em muốn phát triển phẩm chất, kỹ năng nào?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Áp lực học tập:",
+        prompt: "Khi gặp kiểm tra hoặc bài khó, con thường ứng phó ra sao?",
+      },
+      {
+        code: "c02",
+        label: "C02. Mục tiêu cá nhân:",
+        prompt: "Con đã biết đặt mục tiêu học tập và theo dõi tiến bộ chưa?",
+      },
+      {
+        code: "c03",
+        label: "C03. Cảm xúc & giao tiếp:",
+        prompt: "Con có chủ động chia sẻ khó khăn với người lớn tin cậy không?",
+      },
+      {
+        code: "c04",
+        label: "C04. Ngoại ngữ:",
+        prompt: "Kỹ năng tiếng Anh nào cần được ưu tiên hỗ trợ?",
+      },
+      {
+        code: "c05",
+        label: "C05. Sở thích:",
+        prompt: "Con có dự án, câu lạc bộ hoặc năng khiếu muốn theo đuổi?",
+      },
+    ],
+  }),
+
+  // 9. BM.KTĐBCL.39: KHỐI 9
+  createBmKtdbclSeedTemplate({
+    gradeNum: 9,
+    code: "BM.KTĐBCL.39",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em đã có mục tiêu học THPT như thế nào?" },
+      { code: "a02", label: "A02. Đâu là môn học mạnh và môn cần cải thiện?" },
+      { code: "a03", label: "A03. Em lên kế hoạch ôn tập thế nào?" },
+      { code: "a04", label: "A04. Em ứng phó với áp lực kiểm tra ra sao?" },
+      { code: "a05", label: "A05. Em chủ động tìm sự hỗ trợ khi cần thế nào?" },
+      { code: "a06", label: "A06. Em kỳ vọng điều gì tại Sky-Line?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Định hướng lên THPT:",
+        prompt: "Con có quan tâm lựa chọn hệ học, tổ hợp hoặc môi trường THPT?",
+      },
+      {
+        code: "c02",
+        label: "C02. Chuẩn bị kỳ thi:",
+        prompt: "Con quản lý lịch ôn tập và áp lực đánh giá cuối cấp thế nào?",
+      },
+      {
+        code: "c03",
+        label: "C03. Điểm mạnh học thuật:",
+        prompt: "Môn học nào nổi trội; môn nào cần kế hoạch củng cố?",
+      },
+      {
+        code: "c04",
+        label: "C04. Kỹ năng quyết định:",
+        prompt: "Con tham gia như thế nào vào quyết định về lộ trình học?",
+      },
+      {
+        code: "c05",
+        label: "C05. Tiếng Anh & định hướng:",
+        prompt: "Gia đình mong muốn mục tiêu ngoại ngữ trong 2–3 năm tới?",
+      },
+    ],
+  }),
+
+  // 10. BM.KTĐBCL.40: KHỐI 10
+  createBmKtdbclSeedTemplate({
+    gradeNum: 10,
+    code: "BM.KTĐBCL.40",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em quan tâm môn học hoặc lĩnh vực nào nhất?" },
+      { code: "a02", label: "A02. Em có căn cứ gì khi lựa chọn môn học?" },
+      { code: "a03", label: "A03. Em tự tìm kiếm tài liệu để giải quyết vấn đề ra sao?" },
+      { code: "a04", label: "A04. Em dự kiến quản lý khối lượng học THPT thế nào?" },
+      { code: "a05", label: "A05. Em quan tâm chứng chỉ ngoại ngữ hoặc trải nghiệm nào?" },
+      { code: "a06", label: "A06. Em mong muốn phát triển bản thân ra sao trong ba năm tới?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Thích nghi THPT:",
+        prompt: "Con có khó khăn khi thay đổi yêu cầu học tập, bạn bè, thầy cô?",
+      },
+      {
+        code: "c02",
+        label: "C02. Lựa chọn học tập:",
+        prompt: "Điểm mạnh và sở thích của con phù hợp nhóm môn nào?",
+      },
+      {
+        code: "c03",
+        label: "C03. Tự chủ:",
+        prompt: "Con biết cân đối học tập, hoạt động và nghỉ ngơi không?",
+      },
+      {
+        code: "c04",
+        label: "C04. Ngoại ngữ:",
+        prompt: "Con có định hướng IELTS, chứng chỉ khác hoặc học chương trình quốc tế?",
+      },
+      {
+        code: "c05",
+        label: "C05. Định hướng nghề:",
+        prompt: "Con đã hình dung lĩnh vực nghề nghiệp quan tâm chưa?",
+      },
+    ],
+  }),
+
+  // 11. BM.KTĐBCL.41: KHỐI 11
+  createBmKtdbclSeedTemplate({
+    gradeNum: 11,
+    code: "BM.KTĐBCL.41",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em quan tâm ngành nghề nào và vì sao?" },
+      { code: "a02", label: "A02. Em đã tìm hiểu yêu cầu đầu vào trường/ngành mục tiêu chưa?" },
+      { code: "a03", label: "A03. Em xây dựng kế hoạch kết quả học và ngoại ngữ ra sao?" },
+      { code: "a04", label: "A04. Khi kết quả không như mong đợi em điều chỉnh thế nào?" },
+      { code: "a05", label: "A05. Em tham gia ra quyết định về tương lai của mình thế nào?" },
+      { code: "a06", label: "A06. Em mong được tư vấn hướng nghiệp nội dung gì?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Lộ trình cuối cấp:",
+        prompt: "Con có mục tiêu học tập hoặc ngành nghề ban đầu không?",
+      },
+      {
+        code: "c02",
+        label: "C02. Hiệu quả học tập:",
+        prompt: "Con có phương pháp ôn tập và đánh giá tiến bộ từng môn không?",
+      },
+      {
+        code: "c03",
+        label: "C03. Áp lực & sức khỏe tinh thần:",
+        prompt: "Con ứng phó với kỳ vọng, áp lực thi cử ra sao?",
+      },
+      {
+        code: "c04",
+        label: "C04. Chứng chỉ & tiếng Anh:",
+        prompt: "Gia đình dự kiến chứng chỉ ngoại ngữ, mốc thời gian nào?",
+      },
+      {
+        code: "c05",
+        label: "C05. Hướng nghiệp:",
+        prompt: "Con cần hoạt động trải nghiệm hoặc tư vấn nghề nào?",
+      },
+    ],
+  }),
+
+  // 12. BM.KTĐBCL.42: KHỐI 12
+  createBmKtdbclSeedTemplate({
+    gradeNum: 12,
+    code: "BM.KTĐBCL.42",
+    studentQuestionsA: [
+      { code: "a01", label: "A01. Em xác định mục tiêu sau THPT như thế nào?" },
+      { code: "a02", label: "A02. Em dựa vào yếu tố nào để chọn ngành/trường?" },
+      { code: "a03", label: "A03. Kế hoạch xét tuyển, học tập và chứng chỉ của em là gì?" },
+      { code: "a04", label: "A04. Nếu chưa đạt nguyện vọng ban đầu, em có phương án khác không?" },
+      { code: "a05", label: "A05. Em tự đánh giá kỹ năng nào cần cải thiện trước đại học?" },
+      { code: "a06", label: "A06. Em mong nhà trường hỗ trợ điều gì trong năm cuối cấp?" },
+    ],
+    parentQuestionsC: [
+      {
+        code: "c01",
+        label: "C01. Mục tiêu sau THPT:",
+        prompt: "Con ưu tiên đại học, chương trình quốc tế, học nghề hay lựa chọn khác?",
+      },
+      {
+        code: "c02",
+        label: "C02. Phương án tuyển sinh:",
+        prompt: "Gia đình đã trao đổi về ngành học, trường, phương thức xét tuyển?",
+      },
+      {
+        code: "c03",
+        label: "C03. Tự quản lý áp lực:",
+        prompt: "Con quản lý tiến độ ôn thi, nghỉ ngơi và cảm xúc thế nào?",
+      },
+      {
+        code: "c04",
+        label: "C04. Ngoại ngữ & hồ sơ:",
+        prompt: "Có mục tiêu chứng chỉ, hồ sơ du học hoặc điều kiện đầu vào nào?",
+      },
+      {
+        code: "c05",
+        label: "C05. Kế hoạch dự phòng:",
+        prompt: "Gia đình và học sinh đã chuẩn bị phương án thay thế chưa?",
+      },
+    ],
+  }),
 ];
 
 /**
@@ -1146,16 +1624,33 @@ export function normalizeK12GradeNumber(rawGrade: unknown): string {
 }
 
 /**
- * Xác định mã mẫu PVDH mặc định cho Khối 1..12
+ * Xác định mã mẫu BM.KTĐBCL mặc định cho Khối 1..12 (BM.KTĐBCL.31 -> BM.KTĐBCL.42)
  */
 export function getDefaultPvdhCodeForGrade(rawGrade: unknown): PvdhTemplateCode | null {
   const g = Number(normalizeK12GradeNumber(rawGrade));
   if (!Number.isInteger(g) || g < 1 || g > 12) return null;
-  if (g === 1) return "PVDH-01";
-  if (g === 2 || g === 3) return "PVDH-02";
-  if (g === 4 || g === 5) return "PVDH-03";
-  if (g >= 6 && g <= 9) return "PVDH-04";
-  return "PVDH-05";
+  return `BM.KTĐBCL.${30 + g}`;
+}
+
+/**
+ * Kiểm tra xem cấu hình phiếu có thuộc định dạng chuẩn BM.KTĐBCL.31 / BM.KTĐBCL.32 (A, B, C, D) không
+ */
+export function isBmKtdbclTemplate(params: {
+  exportLayout?: Partial<PvdhExportLayoutConfig> | null;
+  sections?: PvdhSectionConfig[] | null;
+  fields?: PvdhFieldConfig[] | null;
+  templateCode?: string | null;
+}): boolean {
+  if (params.exportLayout?.layoutVariant === "BM_KTDBCL_ABCD") return true;
+  const code = String(params.templateCode || "").toUpperCase();
+  if (code.startsWith("BM.KTĐBCL.") || code.startsWith("BM.KTDBCL.")) return true;
+  if (params.sections?.some((s) => s.sectionCode === "C_PARENT_GRADE" || s.sectionCode === "D_TEACHER_SUMMARY")) {
+    return true;
+  }
+  if (params.fields?.some((f) => f.sectionCode === "C_PARENT_GRADE" || f.sectionCode === "D_TEACHER_SUMMARY")) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -1185,6 +1680,8 @@ export function classifyAssessmentContentCategory(subject: {
     code === "PDHDV" ||
     code === "PVDH" ||
     code.startsWith("PVDH-") ||
+    code.startsWith("BM.KTĐBCL.") ||
+    code.startsWith("BM.KTDBCL.") ||
     stype.includes("định hướng") ||
     name.includes("định hướng") ||
     name.includes("phỏng vấn định hướng")

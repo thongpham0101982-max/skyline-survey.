@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 export async function GET(req: NextRequest) {
   try {
@@ -28,6 +29,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const body = await req.json()
     const { action } = body
 
@@ -60,6 +63,8 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const body = await req.json()
     const { action, id } = body
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
@@ -99,6 +104,8 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const { searchParams } = new URL(req.url)
     const type = searchParams.get("type")
     const id = searchParams.get("id")

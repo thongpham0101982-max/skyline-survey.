@@ -23,7 +23,8 @@ import {
     Printer,
     Calendar,
     Users,
-    UserCheck
+    UserCheck,
+    Eye
 } from "lucide-react"
 
 import {
@@ -109,6 +110,16 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
     const [sendingReport, setSendingReport] = useState(false)
     const [reportSentInfo, setReportSentInfo] = useState<any>(null)
     const [digitalSignature, setDigitalSignature] = useState<any>(null)
+    const [reportModalTab, setReportModalTab] = useState<"compose" | "preview">("compose")
+    const [loadingEmailPreview, setLoadingEmailPreview] = useState(false)
+    const [emailPreviewData, setEmailPreviewData] = useState<{
+        subject: string
+        to: string
+        cc: string[]
+        html: string
+        assignedSurveyTeachers?: any[]
+    } | null>(null)
+    const [emailPreviewError, setEmailPreviewError] = useState("")
 
     // Trạng thái GĐCS xác nhận nội dung làm việc liên quan
     const [gdcsResponse, setGdcsResponse] = useState<any>(null)
@@ -270,30 +281,66 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
             })
     }, [student])
 
-    useEffect(() => {
-        const scoreData = student?.scores?.find((sc: any) => sc.subject?.code === "TLY") || student?.scores?.[0]
-        if (scoreData) {
-            try {
-                const parsedScores = JSON.parse(scoreData.scores || "[]")
-                if (parsedScores.length >= 27) {
-                    setScores(parsedScores.slice(7, 27).map(Number))
-                } else if (parsedScores.length === 20) {
-                    setScores(parsedScores.map(Number))
-                }
+    const tlyScoreData = student?.scores?.find(
+        (sc: any) => sc.subject?.code === "TLY" || String(sc.subject?.name || "").toLowerCase().includes("tâm lý")
+    ) || student?.scores?.[0]
 
-                const parsedComments = JSON.parse(scoreData.comments || "[]")
-                if (parsedComments.length >= 2) {
-                    setConclusion(parsedComments[0] || "")
-                    setRecommendation(parsedComments[1] || "")
-                    if (parsedComments.length >= 22) {
-                        setNotes(parsedComments.slice(2, 22))
-                    }
-                }
+    useEffect(() => {
+        let parsedScores: any[] = []
+        let parsedComments: any[] = []
+
+        if (tlyScoreData) {
+            try {
+                parsedScores = JSON.parse(tlyScoreData.scores || "[]")
             } catch (e) {
                 console.error("Error parsing psychology scores", e)
             }
+            try {
+                parsedComments = JSON.parse(tlyScoreData.comments || "[]")
+            } catch (e) {
+                console.error("Error parsing psychology comments", e)
+            }
+        } else if (Array.isArray(student?.scoreVals) && student.scoreVals.length > 0) {
+            parsedScores = student.scoreVals
+            parsedComments = Array.isArray(student?.commentVals) ? student.commentVals : []
         }
-    }, [student])
+
+        const toValidScore = (v: any) => {
+            if (v === "" || v === null || v === undefined) return -1
+            const n = Number(v)
+            return Number.isFinite(n) && n >= 0 ? n : -1
+        }
+
+        if (parsedScores.length >= 27) {
+            setScores(parsedScores.slice(7, 27).map(toValidScore))
+        } else if (parsedScores.length === 20) {
+            setScores(parsedScores.map(toValidScore))
+        } else {
+            setScores(Array(20).fill(-1))
+        }
+
+        if (parsedComments.length >= 2) {
+            setConclusion(parsedComments[0] || "")
+            setRecommendation(parsedComments[1] || "")
+            if (parsedComments.length >= 22) {
+                setNotes(parsedComments.slice(2, 22).map((n: any) => String(n ?? "")))
+            } else {
+                setNotes(Array(20).fill(""))
+            }
+            if (parsedComments.length >= 23 && parsedComments[22]) {
+                try {
+                    const meta = typeof parsedComments[22] === "string" ? JSON.parse(parsedComments[22]) : parsedComments[22]
+                    if (meta && typeof meta.manualPsychSignsFlag === "boolean") {
+                        setManualPsychSignsFlag(meta.manualPsychSignsFlag)
+                    }
+                } catch {}
+            }
+        } else {
+            setConclusion("")
+            setRecommendation("")
+            setNotes(Array(20).fill(""))
+        }
+    }, [student?.id, tlyScoreData?.scores, tlyScoreData?.comments])
 
     // Chỉ cộng các câu đã chọn điểm (>= 0), tránh lỗi hiển thị -20 điểm khi chưa chọn câu hỏi
     const calculateSectionScore = (sectionIdx: number) => {
@@ -354,20 +401,116 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
         window.print()
     }
 
+    const getSectionAnsweredCount = (sectionIdx: number) => {
+        if (!sections[sectionIdx]) return 0
+        let questionOffset = 0
+        for (let i = 0; i < sectionIdx; i++) {
+            questionOffset += sections[i].questions.length
+        }
+        const sectionQuestions = sections[sectionIdx].questions
+        return scores
+            .slice(questionOffset, questionOffset + sectionQuestions.length)
+            .filter((s) => s >= 0).length
+    }
+
     const handleSave = async () => {
+        if (isScoredForm) {
+            const incompleteSections: { idx: number; title: string; answered: number; total: number }[] = []
+            sections.forEach((sec, idx) => {
+                const ans = getSectionAnsweredCount(idx)
+                if (ans < sec.questions.length) {
+                    incompleteSections.push({ idx, title: sec.title, answered: ans, total: sec.questions.length })
+                }
+            })
+            if (incompleteSections.length > 0) {
+                const detail = incompleteSections.map((s) => `- ${s.title}: đã chọn ${s.answered}/${s.total} câu`).join("\n")
+                const ok = window.confirm(
+                    `Còn câu hỏi chưa chọn mức điểm:\n${detail}\n\nNhấn OK để vẫn lưu (các câu chưa chọn sẽ tính 0 điểm), hoặc Hủy để chuyển tới mục chưa chọn.`
+                )
+                if (!ok) {
+                    setActiveSection(incompleteSections[0].idx)
+                    return
+                }
+            }
+        }
+
         setIsSaving(true)
         try {
             const normalizedRawScores = scores.map(s => (s >= 0 ? s : 0))
             const sectionScores = sections.map((_, i) => calculateSectionScore(i))
             const finalScores = [...sectionScores, totalScore, ...normalizedRawScores]
-            const finalComments = [conclusion, recommendation, ...notes]
+            const finalComments = [
+                conclusion,
+                recommendation,
+                ...notes,
+                JSON.stringify({ manualPsychSignsFlag })
+            ]
 
             await onSave(student, finalScores, finalComments)
             alert("Lưu kết quả đánh giá Tâm lý thành công!")
-        } catch (e) {
-            alert("Lỗi khi lưu kết quả.")
+        } catch (e: any) {
+            alert(e?.message || "Lỗi khi lưu kết quả.")
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleLoadEmailPreview = async () => {
+        if (!hasPsychologySigns) {
+            setEmailPreviewError("Chỉ xem trước / gửi email báo cáo GĐCS khi kết quả TỔNG HỢP học sinh có dấu hiệu Tâm lý (> 15 điểm hoặc đã xác nhận thủ công).")
+            return
+        }
+        if (!selectedGdcsEmail) {
+            setEmailPreviewError("Vui lòng chọn Giám Đốc Cơ Sở để xem trước email báo cáo.")
+            return
+        }
+        setReportModalTab("preview")
+        setLoadingEmailPreview(true)
+        setEmailPreviewError("")
+        try {
+            const normalizedRawScores = scores.map(s => (s >= 0 ? s : 0))
+            const sectionScores = sections.map((_, i) => calculateSectionScore(i))
+            const res = await fetch("/api/admin/orientation/psychology-referral", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "previewReportToGdcs",
+                    studentId: student?.id,
+                    gdcsName: selectedGdcsName,
+                    gdcsEmail: selectedGdcsEmail,
+                    campusCode: selectedCampusCode,
+                    giaovuEmail: ccGiaovuEmail,
+                    tuyensinhEmail: ccTuyensinhEmail,
+                    hasPsychologySigns: true,
+                    needGdcsDirective: true,
+                    proposedAction,
+                    directiveTopic: messageToGdcs || conclusion || evaluation?.suggestion || "",
+                    scores: normalizedRawScores,
+                    sectionScores,
+                    totalScore,
+                    evaluation: evaluation || {},
+                    conclusion,
+                    recommendation,
+                    notes,
+                    messageToGdcs
+                })
+            })
+            const data = await res.json()
+            if (res.ok && data.success) {
+                setEmailPreviewData({
+                    subject: data.subject || "",
+                    to: data.to || selectedGdcsEmail,
+                    cc: Array.isArray(data.cc) ? data.cc : [],
+                    html: data.html || "",
+                    assignedSurveyTeachers: Array.isArray(data.assignedSurveyTeachers) ? data.assignedSurveyTeachers : []
+                })
+            } else {
+                setEmailPreviewError(data.error || "Không thể tạo bản xem trước Email.")
+            }
+        } catch (e: any) {
+            setEmailPreviewError(e?.message || "Lỗi kết nối khi tải bản xem trước Email.")
+        } finally {
+            setLoadingEmailPreview(false)
         }
     }
 
@@ -386,7 +529,12 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
             const normalizedRawScores = scores.map(s => (s >= 0 ? s : 0))
             const sectionScores = sections.map((_, i) => calculateSectionScore(i))
             const finalScores = [...sectionScores, totalScore, ...normalizedRawScores]
-            const finalComments = [conclusion, recommendation, ...notes]
+            const finalComments = [
+                conclusion,
+                recommendation,
+                ...notes,
+                JSON.stringify({ manualPsychSignsFlag })
+            ]
             await onSave(student, finalScores, finalComments, { keepOpen: true })
 
             // 2. Gửi API báo cáo GĐCS & gửi Email (CC Giáo vụ cơ sở, Tư vấn cơ sở)
@@ -573,29 +721,29 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
         {
             code: "DIRECT_PARENT_MEETING" as const,
             badge: "Phương án 1",
-            label: "1. Trao đổi trực tiếp PHHS",
-            desc: "GĐCS hẹn gặp trực tiếp Phụ huynh học sinh & thống nhất cam kết phối hợp",
+            label: "1. GĐCS Gặp trực tiếp PHHS",
+            desc: "GĐCS gặp trực tiếp Phụ huynh học sinh & thống nhất cam kết phối hợp",
             autoTask: "Tư vấn CS liên hệ mời PHHS • Giáo vụ CS chuẩn bị hồ sơ",
             defaultProposalMsg:
-                "Kính trình GĐCS xem xét phương án 1 (Trao đổi trực tiếp PHHS) để thống nhất lộ trình đồng hành tâm lý và cam kết phối hợp giữa Gia đình & Nhà trường."
-        },
-        {
-            code: "SCHEDULE_MEETING" as const,
-            badge: "Phương án 2",
-            label: "2. Hẹn lịch làm việc / Hội chẩn chuyên môn",
-            desc: "Tổ chức buổi làm việc giữa GĐCS, Giáo vụ CS, Tư vấn CS, GV Tâm lý & GVCN",
-            autoTask: "Giáo vụ CS sắp xếp lịch họp • Tư vấn CS tổng hợp thông tin",
-            defaultProposalMsg:
-                "Kính trình GĐCS xem xét phương án 2 (Hẹn lịch làm việc / Hội chẩn chuyên môn) giữa GĐCS, Tổ Giáo vụ, Tổ Tư vấn và GV Tâm lý để thống nhất lộ trình hỗ trợ."
+                "Kính trình GĐCS xem xét phương án 1 (GĐCS Gặp trực tiếp PHHS) để thống nhất lộ trình đồng hành tâm lý và cam kết phối hợp giữa Gia đình & Nhà trường."
         },
         {
             code: "DELEGATE_TEACHER" as const,
-            badge: "Phương án 3",
-            label: "3. Ủy quyền Giáo viên đồng hành",
-            desc: "Chỉ định Giáo viên đồng hành hỗ trợ học sinh & làm việc với PHHS",
+            badge: "Phương án 2",
+            label: "2. Ủy quyền cho NTCM / GV phụ trách",
+            desc: "Chọn từ danh sách GV khảo sát (GV phỏng vấn định hướng, GV Tâm lý theo phân công)",
             autoTask: "Giáo vụ CS cập nhật phân công • Tư vấn CS chuyển đầu mối PHHS",
             defaultProposalMsg:
-                "Kính trình GĐCS xem xét phương án 3 (Ủy quyền Giáo viên đồng hành) theo dõi sát biểu hiện tâm lý - hành vi và phối hợp cùng PHHS trong 4 tuần đầu."
+                "Kính trình GĐCS xem xét phương án 2 (Ủy quyền cho NTCM / GV phụ trách từ danh sách GV phỏng vấn định hướng hoặc GV Tâm lý theo phân công) để trao đổi PHHS và đồng hành cùng học sinh."
+        },
+        {
+            code: "SCHEDULE_MEETING" as const,
+            badge: "Phương án 3",
+            label: "3. Đặt lịch hẹn với PHHS",
+            desc: "GĐCS chọn thời gian, địa điểm cụ thể để đặt lịch hẹn làm việc với PHHS",
+            autoTask: "Tư vấn CS xác nhận lịch hẹn PHHS • Giáo vụ CS chuẩn bị phòng & hồ sơ",
+            defaultProposalMsg:
+                "Kính trình GĐCS xem xét phương án 3 (Đặt lịch hẹn với PHHS — chọn thời gian hẹn cụ thể) để Tư vấn cơ sở & Giáo vụ cơ sở liên hệ sắp xếp buổi làm việc."
         }
     ]
 
@@ -616,11 +764,16 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
                                 <span className="text-slate-500 text-xs font-medium tabular-nums">
                                     Mã HS: <strong className="text-slate-800">{student?.studentCode || "—"}</strong>
                                 </span>
-                                {(student?.admissionCampus || student?.registeredCampus) && (
-                                    <span className="text-slate-500 text-xs font-medium">
-                                        • Cơ sở: <strong className="text-[#003B3A]">{student?.admissionCampus || student?.registeredCampus}</strong>
-                                    </span>
-                                )}
+                                {(() => {
+                                    const rawCampus = student?.campus?.name || student?.campusName || student?.admissionCampus || student?.registeredCampus || ""
+                                    const isCuid = /^c[a-z0-9]{20,}$/i.test(String(rawCampus).trim())
+                                    const displayCampus = isCuid ? selectedCampusCode : rawCampus
+                                    return displayCampus ? (
+                                        <span className="text-slate-500 text-xs font-medium">
+                                            • Cơ sở: <strong className="text-[#003B3A]">{displayCampus}</strong>
+                                        </span>
+                                    ) : null
+                                })()}
                             </div>
                             <h1 className="text-xl md:text-2xl font-bold text-[#003B3A] mb-1">{student?.fullName}</h1>
                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
@@ -780,28 +933,48 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
 
                 {/* Thanh chuyển đổi 6 Mục */}
                 <div className="bg-white rounded-2xl shadow-xs border border-[#E2E8F0] p-2 overflow-x-auto custom-scrollbar flex gap-2">
-                    {sections.map((section, idx) => (
-                        <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setActiveSection(idx)}
-                            className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-bold transition-colors border cursor-pointer ${
-                                activeSection === idx
-                                    ? "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
-                                    : "bg-transparent text-slate-600 border-transparent hover:bg-[#F8FAFC] hover:text-[#003B3A]"
-                            }`}
-                        >
-                            <div className="flex items-center gap-2">
-                                <span className={`w-1.5 h-1.5 rounded-full ${activeSection === idx ? "bg-[#5EEAD4]" : "bg-slate-300"}`} />
-                                <span>{section.title}</span>
-                                <span className={`px-1.5 py-0.2 rounded text-[10px] tabular-nums ${
-                                    activeSection === idx ? "bg-white/15 text-[#CCFBF1]" : "bg-slate-100 text-slate-600"
-                                }`}>
-                                    {calculateSectionScore(idx)}đ
-                                </span>
-                            </div>
-                        </button>
-                    ))}
+                    {sections.map((section, idx) => {
+                        const secAnswered = getSectionAnsweredCount(idx)
+                        const secTotalQ = section.questions.length
+                        const isSecComplete = secAnswered === secTotalQ
+                        return (
+                            <button
+                                key={idx}
+                                type="button"
+                                onClick={() => setActiveSection(idx)}
+                                className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-bold transition-colors border cursor-pointer ${
+                                    activeSection === idx
+                                        ? "bg-[#003B3A] text-white border-[#003B3A] shadow-2xs"
+                                        : "bg-transparent text-slate-600 border-transparent hover:bg-[#F8FAFC] hover:text-[#003B3A]"
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <span
+                                        className={`w-1.5 h-1.5 rounded-full ${
+                                            activeSection === idx
+                                                ? "bg-[#5EEAD4]"
+                                                : isSecComplete
+                                                ? "bg-[#059669]"
+                                                : "bg-amber-400"
+                                        }`}
+                                    />
+                                    <span>{section.title}</span>
+                                    <span className={`px-1.5 py-0.2 rounded text-[10px] tabular-nums ${
+                                        activeSection === idx ? "bg-white/15 text-[#CCFBF1]" : "bg-slate-100 text-slate-600"
+                                    }`}>
+                                        {calculateSectionScore(idx)}đ
+                                    </span>
+                                    {!isSecComplete && (
+                                        <span className={`px-1.5 py-0.2 rounded text-[10px] tabular-nums ${
+                                            activeSection === idx ? "bg-amber-400/25 text-amber-200" : "bg-amber-50 text-amber-700 border border-amber-200"
+                                        }`}>
+                                            {secAnswered}/{secTotalQ}
+                                        </span>
+                                    )}
+                                </div>
+                            </button>
+                        )
+                    })}
                 </div>
 
                 {/* Danh sách câu hỏi theo mục đang chọn */}
@@ -820,7 +993,7 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
                         {currentQuestions.map((q, qIdx) => {
                             const actualIdx = currentOffset + qIdx
                             return (
-                                <div key={qIdx} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 items-center p-4 hover:bg-[#F8FAFC] transition-colors">
+                                <div key={actualIdx} className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-6 items-center p-4 hover:bg-[#F8FAFC] transition-colors">
                                     <div className="lg:col-span-6 flex items-start gap-2.5">
                                         <span className="text-slate-400 font-bold text-xs sm:text-sm w-5 shrink-0 mt-0.5 tabular-nums">
                                             {actualIdx + 1}.
@@ -829,37 +1002,51 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
                                             {q.text.replace(/^\d+\.\s*/, "")}
                                         </span>
                                     </div>
-                                    <div className={`lg:col-span-6 flex ${isScoredForm ? "gap-5 justify-start mt-1 lg:mt-0" : "gap-2"} w-full ml-7 lg:ml-0`}>
+                                    <div className={`lg:col-span-6 flex flex-wrap ${isScoredForm ? "gap-2.5 justify-start mt-1 lg:mt-0" : "gap-2"} w-full ml-7 lg:ml-0`}>
                                         {q.options.map((opt, oIdx) => {
                                             const optValue = q.options.length === 5 ? oIdx : oIdx + 1
                                             const isChecked = scores[actualIdx] === optValue
                                             return isScoredForm ? (
-                                                <label key={oIdx} className="flex items-center gap-1.5 cursor-pointer group">
+                                                <label
+                                                    key={`${actualIdx}-${oIdx}`}
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all select-none ${
+                                                        isLocked
+                                                            ? "opacity-60 cursor-not-allowed bg-slate-50 border-slate-200"
+                                                            : isChecked
+                                                            ? "bg-[#F0FDFA] border-[#00A19A] text-[#003B3A] shadow-2xs cursor-pointer"
+                                                            : "bg-white border-slate-200 text-slate-600 hover:border-[#00A19A]/60 hover:bg-[#F8FAFC] cursor-pointer"
+                                                    }`}
+                                                >
                                                     <input
                                                         type="radio"
                                                         disabled={isLocked}
                                                         name={`question-${actualIdx}`}
+                                                        value={optValue}
                                                         checked={isChecked}
                                                         onChange={() => {
-                                                            const newScores = [...scores]
-                                                            newScores[actualIdx] = optValue
-                                                            setScores(newScores)
+                                                            setScores((prev) => {
+                                                                const next = [...prev]
+                                                                next[actualIdx] = optValue
+                                                                return next
+                                                            })
                                                         }}
                                                         className="w-4 h-4 border-slate-300 text-[#008B85] focus:ring-[#00A19A] cursor-pointer"
                                                     />
-                                                    <span className={`font-bold text-xs sm:text-sm tabular-nums ${isChecked ? "text-[#003B3A]" : "text-slate-600 group-hover:text-[#00736E]"}`}>
+                                                    <span className={`font-bold text-xs sm:text-sm tabular-nums ${isChecked ? "text-[#003B3A]" : "text-slate-600"}`}>
                                                         {opt}
                                                     </span>
                                                 </label>
                                             ) : (
                                                 <button
-                                                    key={oIdx}
+                                                    key={`${actualIdx}-${oIdx}`}
                                                     type="button"
                                                     disabled={isLocked}
                                                     onClick={() => {
-                                                        const newScores = [...scores]
-                                                        newScores[actualIdx] = optValue
-                                                        setScores(newScores)
+                                                        setScores((prev) => {
+                                                            const next = [...prev]
+                                                            next[actualIdx] = optValue
+                                                            return next
+                                                        })
                                                     }}
                                                     className={`flex-1 py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                                                         isChecked
@@ -879,9 +1066,12 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
                                                 type="text"
                                                 value={notes[actualIdx] || ""}
                                                 onChange={(e) => {
-                                                    const newNotes = [...notes]
-                                                    newNotes[actualIdx] = e.target.value
-                                                    setNotes(newNotes)
+                                                    const val = e.target.value
+                                                    setNotes((prev) => {
+                                                        const next = [...prev]
+                                                        next[actualIdx] = val
+                                                        return next
+                                                    })
                                                 }}
                                                 disabled={isLocked}
                                                 placeholder="Nhập biểu hiện quan sát thực tế (nếu có)..."
@@ -986,15 +1176,6 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
                                         </label>
                                     )}
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsReportModalOpen(true)}
-                                    disabled={isSaving || sendingReport}
-                                    className="px-4 py-2.5 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 shrink-0 cursor-pointer transition-colors"
-                                >
-                                    <Mail size={15} className="text-[#5EEAD4]" />
-                                    <span>{reportSentInfo ? "Gửi lại Email GĐCS (CC Giáo vụ, Tư vấn)" : "Gửi Email GĐCS (CC Giáo vụ, Tư vấn)"}</span>
-                                </button>
                             </div>
                         ) : (
                             <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1174,370 +1355,25 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
                             </div>
                         )}
 
-                        {/* Biểu mẫu trực quan 1 chạm để GĐCS xác nhận phương án làm việc liên quan */}
-                        <div className="space-y-3 pt-1">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div>
-                                    <label className="block text-xs font-bold text-[#003B3A]">
-                                        Chọn phương án làm việc (1 chạm xác nhận &amp; thông báo Tổ Giáo vụ, Tư vấn {selectedCampusCode}):
-                                    </label>
-                                    <p className="text-[11px] text-slate-500">
-                                        Chạm trực tiếp vào 1 trong 3 thẻ phương án bên dưới để tự động điền nội dung chuẩn và xác nhận ngay
+                        {/* Thông báo phân quyền: Chỉ GĐCS chọn phương án làm việc qua email / cổng GĐCS */}
+                        {!gdcsResponse && (
+                            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-start gap-2.5 text-xs text-slate-600">
+                                <ShieldCheck size={16} className="text-[#00736E] shrink-0 mt-0.5" />
+                                <div className="space-y-1">
+                                    <div className="font-semibold text-[#003B3A]">
+                                        Đang chờ Giám đốc Cơ sở ({selectedCampusCode}) xác nhận phương án làm việc
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                                        Báo cáo sàng lọc tâm lý đã được gửi tới GĐCS. Phương án chỉ đạo (1. GĐCS Gặp trực tiếp PHHS / 2. Ủy quyền cho NTCM/GV phụ trách / 3. Đặt lịch hẹn với PHHS) do GĐCS trực tiếp xác nhận trên hệ thống; sau khi xác nhận, trạng thái sẽ cập nhật tự động tại đây và trên Hồ sơ định hướng (mục Tâm lý).
                                     </p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F0FDFA] border border-[#99F6E4] text-[11px] font-bold text-[#003B3A] cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={oneTouchConfirmMode}
-                                            onChange={(e) => setOneTouchConfirmMode(e.target.checked)}
-                                            className="rounded border-teal-400 text-[#003B3A] focus:ring-[#00A19A]"
-                                        />
-                                        <span>Chạm là xác nhận ngay</span>
-                                    </label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAdvancedDirectiveFields(!showAdvancedDirectiveFields)}
-                                        className="px-2.5 py-1 rounded-lg bg-white border border-[#E2E8F0] hover:border-[#00A19A] text-[11px] font-semibold text-slate-700 cursor-pointer"
-                                    >
-                                        {showAdvancedDirectiveFields ? "Ẩn tùy chỉnh chi tiết" : "Tùy chỉnh chi tiết"}
-                                    </button>
-                                </div>
                             </div>
-
-                            {/* 3 THẺ PHƯƠNG ÁN TRỰC QUAN 1 CHẠM */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                {proposedActionOptions.map((opt, idx) => {
-                                    const active = directiveResponseType === opt.code
-                                    const isConfirmedOption = gdcsResponse?.responseType === opt.code
-                                    const isProposedByPsych = reportSentInfo?.proposedAction === opt.code
-                                    const OptionIcon = idx === 0 ? MessageSquare : idx === 1 ? Calendar : UserCheck
-                                    return (
-                                        <div
-                                            key={opt.code}
-                                            onClick={() => {
-                                                if (!confirmingDirective) {
-                                                    handleSelectDirectiveOption(opt.code, false)
-                                                }
-                                            }}
-                                            className={`group relative p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
-                                                active
-                                                    ? "bg-[#003B3A] border-[#003B3A] text-white shadow-md ring-2 ring-[#00A19A]/35"
-                                                    : "bg-white border-[#E2E8F0] text-slate-800 hover:border-[#00A19A] hover:bg-[#F8FAFC]"
-                                            }`}
-                                        >
-                                            <div className="space-y-1.5">
-                                                <div className="flex items-center justify-between gap-1.5">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
-                                                            active ? "bg-white/15 text-[#5EEAD4]" : "bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1]"
-                                                        }`}>
-                                                            <OptionIcon size={15} />
-                                                        </span>
-                                                        <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-md ${
-                                                            active ? "bg-white/15 text-[#5EEAD4]" : "bg-slate-100 text-slate-600"
-                                                        }`}>
-                                                            {opt.badge}
-                                                        </span>
-                                                    </div>
-                                                    {isConfirmedOption ? (
-                                                        <span className="px-2 py-0.5 rounded-md bg-emerald-500 text-white text-[10px] font-bold flex items-center gap-1">
-                                                            <Check size={11} /> Đã xác nhận
-                                                        </span>
-                                                    ) : isProposedByPsych ? (
-                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                                            active ? "bg-amber-400/20 text-amber-200 border border-amber-300/40" : "bg-amber-50 text-amber-800 border border-amber-200"
-                                                        }`}>
-                                                            Đề xuất từ GV
-                                                        </span>
-                                                    ) : active ? (
-                                                        <Check size={15} className="text-[#5EEAD4] shrink-0" />
-                                                    ) : null}
-                                                </div>
-
-                                                <div className={`font-bold text-xs sm:text-[13px] leading-snug ${active ? "text-white" : "text-[#003B3A]"}`}>
-                                                    {opt.label}
-                                                </div>
-
-                                                <p className={`text-[11px] leading-snug font-normal ${active ? "text-teal-100" : "text-slate-500"}`}>
-                                                    {opt.desc}
-                                                </p>
-                                            </div>
-
-                                            <div className={`pt-2 border-t flex items-center justify-between gap-2 ${
-                                                active ? "border-white/15" : "border-slate-100"
-                                            }`}>
-                                                <span className={`text-[10px] font-medium truncate ${active ? "text-teal-200" : "text-slate-400"}`}>
-                                                    {opt.autoTask}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    disabled={confirmingDirective}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        handleSelectDirectiveOption(opt.code, true)
-                                                    }}
-                                                    className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold shrink-0 transition-all cursor-pointer ${
-                                                        active
-                                                            ? "bg-[#00A19A] hover:bg-[#008B85] text-white shadow-2xs"
-                                                            : "bg-[#F0FDFA] hover:bg-[#003B3A] text-[#003B3A] hover:text-white border border-[#99F6E4]"
-                                                    }`}
-                                                >
-                                                    {confirmingDirective && active ? "Đang lưu..." : "Chọn & Xác nhận"}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-
-                            {/* CHIPS CHỌN NHANH 1 CHẠM CHO PHƯƠNG ÁN ĐANG CHỌN */}
-                            <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2 text-xs">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[11px] font-bold text-[#003B3A] mr-1">Gợi ý 1 chạm:</span>
-                                    {directiveResponseType === "DIRECT_PARENT_MEETING" && (
-                                        <>
-                                            {["Phòng Giám đốc Cơ sở", "Phòng Tư vấn Tuyển sinh", "Trao đổi trực tuyến / Điện thoại"].map((loc) => (
-                                                <button
-                                                    key={loc}
-                                                    type="button"
-                                                    onClick={() => setDirectiveMeetingLocation(loc)}
-                                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border cursor-pointer transition-all ${
-                                                        directiveMeetingLocation === loc
-                                                            ? "bg-[#003B3A] text-white border-[#003B3A]"
-                                                            : "bg-white text-slate-700 border-slate-200 hover:border-[#00A19A]"
-                                                    }`}
-                                                >
-                                                    {loc}
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
-                                    {directiveResponseType === "SCHEDULE_MEETING" && (
-                                        <>
-                                            {[
-                                                "GĐCS, Tổ Giáo vụ CS, Tổ Tư vấn CS, GV Tâm lý",
-                                                "Hội đồng Tuyển sinh, Tổ Giáo vụ CS, GV Tâm lý & GVCN"
-                                            ].map((part) => (
-                                                <button
-                                                    key={part}
-                                                    type="button"
-                                                    onClick={() => setDirectiveParticipants(part)}
-                                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border cursor-pointer transition-all ${
-                                                        directiveParticipants === part
-                                                            ? "bg-[#003B3A] text-white border-[#003B3A]"
-                                                            : "bg-white text-slate-700 border-slate-200 hover:border-[#00A19A]"
-                                                    }`}
-                                                >
-                                                    {part}
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
-                                    {directiveResponseType === "DELEGATE_TEACHER" && (
-                                        <>
-                                            {["2 tuần đầu nhập học", "4 tuần đầu năm học", "Học kỳ I", "Cả năm học"].map((dur) => (
-                                                <button
-                                                    key={dur}
-                                                    type="button"
-                                                    onClick={() => setDirectiveDelegationDuration(dur)}
-                                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border cursor-pointer transition-all ${
-                                                        directiveDelegationDuration === dur
-                                                            ? "bg-[#003B3A] text-white border-[#003B3A]"
-                                                            : "bg-white text-slate-700 border-slate-200 hover:border-[#00A19A]"
-                                                    }`}
-                                                >
-                                                    {dur}
-                                                </button>
-                                            ))}
-                                        </>
-                                    )}
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => handleConfirmGdcsDirective()}
-                                    disabled={confirmingDirective}
-                                    className="px-4 py-2 bg-[#003B3A] hover:bg-[#005250] text-white font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer transition-colors disabled:opacity-50"
-                                >
-                                    <ShieldCheck size={14} className="text-[#5EEAD4]" />
-                                    <span>
-                                        {confirmingDirective
-                                            ? "Đang xác nhận..."
-                                            : gdcsResponse
-                                            ? "Lưu cập nhật xác nhận GĐCS"
-                                            : "Xác nhận & Thông báo Giáo vụ, Tư vấn"}
-                                    </span>
-                                </button>
-                            </div>
-
-                            {/* KHỐI TÙY CHỈNH CHI TIẾT (MỞ KHI CẦN NHẬP THỜI GIAN CỤ THỂ HOẶC CHỌN GV ỦY QUYỀN) */}
-                            {(showAdvancedDirectiveFields || directiveResponseType === "DELEGATE_TEACHER") && (
-                                <div className="space-y-3 animate-in fade-in duration-150">
-                                    {directiveResponseType === "DIRECT_PARENT_MEETING" && (
-                                        <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Thời gian hẹn gặp PHHS:</label>
-                                                <input
-                                                    type="datetime-local"
-                                                    value={directiveMeetingTime}
-                                                    onChange={(e) => setDirectiveMeetingTime(e.target.value)}
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800 tabular-nums"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Địa điểm làm việc:</label>
-                                                <input
-                                                    type="text"
-                                                    value={directiveMeetingLocation}
-                                                    onChange={(e) => setDirectiveMeetingLocation(e.target.value)}
-                                                    placeholder="Phòng Giám đốc Cơ sở..."
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                />
-                                            </div>
-                                            <div className="sm:col-span-2">
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Nội dung làm việc &amp; thỏa thuận với PHHS:</label>
-                                                <textarea
-                                                    rows={2}
-                                                    value={directiveParentContent}
-                                                    onChange={(e) => setDirectiveParentContent(e.target.value)}
-                                                    placeholder="Nhập nội dung GĐCS xác nhận làm việc với PHHS (cam kết đồng hành, lộ trình hỗ trợ tâm lý)..."
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {directiveResponseType === "SCHEDULE_MEETING" && (
-                                        <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Thời gian làm việc / hội chẩn:</label>
-                                                <input
-                                                    type="datetime-local"
-                                                    value={directiveMeetingTime}
-                                                    onChange={(e) => setDirectiveMeetingTime(e.target.value)}
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800 tabular-nums"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Địa điểm tổ chức:</label>
-                                                <input
-                                                    type="text"
-                                                    value={directiveMeetingLocation}
-                                                    onChange={(e) => setDirectiveMeetingLocation(e.target.value)}
-                                                    placeholder="Phòng họp Chuyên môn Cơ sở..."
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Thành phần tham dự:</label>
-                                                <input
-                                                    type="text"
-                                                    value={directiveParticipants}
-                                                    onChange={(e) => setDirectiveParticipants(e.target.value)}
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Nội dung hội chẩn chuyên môn:</label>
-                                                <input
-                                                    type="text"
-                                                    value={directiveAgenda}
-                                                    onChange={(e) => setDirectiveAgenda(e.target.value)}
-                                                    placeholder="Thống nhất phương án hỗ trợ tâm lý và xếp lớp thích hợp..."
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {directiveResponseType === "DELEGATE_TEACHER" && (
-                                        <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Giáo viên nhận ủy quyền (1 chạm):</label>
-                                                {campusTeachers.length > 0 ? (
-                                                    <select
-                                                        value={directiveDelegatedTeacherId}
-                                                        onChange={(e) => {
-                                                            const tId = e.target.value
-                                                            setDirectiveDelegatedTeacherId(tId)
-                                                            const found = campusTeachers.find((t: any) => t.id === tId || t.userId === tId)
-                                                            if (found) {
-                                                                setDirectiveDelegatedTeacherName(found.teacherName || "")
-                                                                setDirectiveDelegatedTeacherEmail(found.email || "")
-                                                            }
-                                                        }}
-                                                        className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                    >
-                                                        <option value="">-- Chọn giáo viên cơ sở --</option>
-                                                        {campusTeachers.map((t: any) => (
-                                                            <option key={t.id} value={t.id}>
-                                                                {t.teacherName} {t.email ? `(${t.email})` : ""}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                ) : (
-                                                    <input
-                                                        type="text"
-                                                        value={directiveDelegatedTeacherName}
-                                                        onChange={(e) => setDirectiveDelegatedTeacherName(e.target.value)}
-                                                        placeholder="Nhập họ tên GV..."
-                                                        className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                    />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Email Giáo viên ủy quyền:</label>
-                                                <input
-                                                    type="email"
-                                                    value={directiveDelegatedTeacherEmail}
-                                                    onChange={(e) => setDirectiveDelegatedTeacherEmail(e.target.value)}
-                                                    placeholder="gv@skylineschool.edu.vn"
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Thời hạn đồng hành:</label>
-                                                <input
-                                                    type="text"
-                                                    value={directiveDelegationDuration}
-                                                    onChange={(e) => setDirectiveDelegationDuration(e.target.value)}
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                />
-                                            </div>
-                                            <div className="sm:col-span-3">
-                                                <label className="block text-[11px] font-bold text-slate-700 mb-1">Nội dung công việc ủy quyền:</label>
-                                                <input
-                                                    type="text"
-                                                    value={directiveDelegationNote}
-                                                    onChange={(e) => setDirectiveDelegationNote(e.target.value)}
-                                                    placeholder="Làm việc với PHHS, theo dõi hỗ trợ tâm lý học sinh và báo cáo định kỳ..."
-                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                                            Ý kiến xác nhận / chỉ đạo chung của Giám đốc Cơ sở:
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={directiveGeneralNote}
-                                            onChange={(e) => setDirectiveGeneralNote(e.target.value)}
-                                            placeholder="Nhập nội dung xác nhận làm việc của GĐCS để thông báo cho Giáo vụ cơ sở, Tư vấn cơ sở và GV..."
-                                            className="w-full p-2.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] focus:bg-white focus:border-[#00A19A] outline-none text-xs text-slate-800"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                 )}
 
                 {/* Thanh tác vụ cố định dưới đáy */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-[#E2E8F0] flex flex-col md:flex-row justify-between items-center gap-4 sticky bottom-4 z-10">
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-[0_-6px_24px_-6px_rgba(0,59,58,0.14)] border border-[#CBD5E1] flex flex-col md:flex-row justify-between items-center gap-4 sticky bottom-0 z-20">
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2 text-slate-600 text-xs font-medium">
                             <AlertCircle size={14} className="text-[#008B85]" />
@@ -1584,10 +1420,10 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
                     </div>
                 </div>
 
-                {/* MODAL GỬI EMAIL BÁO CÁO KẾT QUẢ TÂM LÝ CHO GĐCS (CC GIÁO VỤ CƠ SỞ, TƯ VẤN CƠ SỞ) */}
+                {/* MODAL GỬI EMAIL BÁO CÁO KẾT QUẢ TÂM LÝ CHO GĐCS (CC GIÁO VỤ CƠ SỞ, TƯ VẤN CƠ SỞ) — CÓ XEM TRƯỚC TRƯỚC KHI GỬI */}
                 {isReportModalOpen && (
                     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl shadow-2xl border border-[#E2E8F0] max-w-2xl w-full p-6 space-y-4 my-8">
+                        <div className="bg-white rounded-2xl shadow-2xl border border-[#E2E8F0] max-w-3xl w-full p-6 space-y-4 my-8">
                             <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-10 h-10 rounded-xl bg-[#003B3A] flex items-center justify-center text-white">
@@ -1598,230 +1434,345 @@ export default function PsychologyAssessmentForm({ student, user, onSave, isLock
                                             Gửi Email báo cáo GĐCS (Học sinh có dấu hiệu Tâm lý)
                                         </h3>
                                         <p className="text-xs text-slate-500 font-medium">
-                                            Gửi trực tiếp Giám đốc Cơ sở • Đồng gửi (CC) Giáo vụ cơ sở &amp; Tư vấn cơ sở
+                                            Gửi trực tiếp Giám đốc Cơ sở • Đồng gửi (CC) Giáo vụ cơ sở &amp; Tư vấn cơ sở • Xem trước trước khi gửi
                                         </p>
                                     </div>
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setIsReportModalOpen(false)}
+                                    onClick={() => {
+                                        setIsReportModalOpen(false)
+                                        setReportModalTab("compose")
+                                    }}
                                     className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
                                 >
                                     <X size={18} />
                                 </button>
                             </div>
 
-                            {/* 1. CHỌN GĐCS */}
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-[#003B3A] block">
-                                    1. Người nhận chính (To) — Giám đốc Cơ sở (GĐCS) <span className="text-rose-500">*</span>:
-                                </label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {gdcsList.map((g: any) => {
-                                        const isSelected = selectedGdcsEmail === (g.managerEmail || g.gdcsEmail)
-                                        const cCode = g.campusCode || "CS1"
-                                        return (
-                                            <button
-                                                key={cCode || g.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedCampusCode(cCode)
-                                                    setSelectedGdcsName(g.managerName || g.gdcsName || "")
-                                                    setSelectedGdcsEmail(g.managerEmail || g.gdcsEmail || "")
-                                                    if (Array.isArray(g.giaovuStaff)) setGiaovuStaffList(g.giaovuStaff)
-                                                    if (Array.isArray(g.tuvanStaff)) setTuvanStaffList(g.tuvanStaff)
-                                                    setCcGiaovuEmail(g.giaovuEmail || DEFAULT_GIAOVU_MAP[cCode] || DEFAULT_GIAOVU_MAP.CS1)
-                                                    setCcTuyensinhEmail(g.tuyensinhEmail || DEFAULT_TUYENSINH_MAP[cCode] || DEFAULT_TUYENSINH_MAP.CS1)
-                                                }}
-                                                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                                                    isSelected
-                                                        ? "bg-[#F0FDFA] border-[#00A19A] ring-2 ring-[#00A19A]/20"
-                                                        : "bg-[#F8FAFC] border-[#E2E8F0] hover:bg-white"
-                                                }`}
-                                            >
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <span className="text-[10px] font-bold text-[#003B3A] bg-[#CCFBF1]/70 px-2 py-0.5 rounded-md">
-                                                        {cCode} - {g.campusName?.replace("Sky-Line", "").trim() || cCode}
-                                                    </span>
-                                                    {isSelected && <Check size={14} className="text-[#008B85]" />}
-                                                </div>
-                                                <div className="text-xs font-bold text-slate-900">{g.managerName || g.gdcsName}</div>
-                                                <div className="text-[11px] text-slate-500 truncate">{g.managerEmail || g.gdcsEmail}</div>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
+                            {/* THANH CHUYỂN TAB: CẤU HÌNH & XEM TRƯỚC EMAIL THỰC TẾ */}
+                            <div className="flex items-center gap-2 p-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl">
+                                <button
+                                    type="button"
+                                    onClick={() => setReportModalTab("compose")}
+                                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                        reportModalTab === "compose"
+                                            ? "bg-[#003B3A] text-white shadow-xs"
+                                            : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                                    }`}
+                                >
+                                    <Mail size={14} className={reportModalTab === "compose" ? "text-[#5EEAD4]" : "text-slate-400"} />
+                                    <span>1. Cấu hình người nhận &amp; Nội dung đề xuất</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleLoadEmailPreview}
+                                    disabled={loadingEmailPreview || !selectedGdcsEmail}
+                                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 ${
+                                        reportModalTab === "preview"
+                                            ? "bg-[#003B3A] text-white shadow-xs"
+                                            : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                                    }`}
+                                >
+                                    <Eye size={14} className={reportModalTab === "preview" ? "text-[#5EEAD4]" : "text-[#008B85]"} />
+                                    <span>2. Xem trước Email trước khi gửi</span>
+                                </button>
                             </div>
 
-                            {/* 2. ĐỒNG GỬI (CC): TỔ GIÁO VỤ CƠ SỞ & TỔ TƯ VẤN CƠ SỞ */}
-                            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5">
-                                <label className="text-xs font-bold text-[#003B3A] block">
-                                    2. Đồng gửi bắt buộc (CC) — Tổ Giáo vụ cơ sở &amp; Tổ Tư vấn cơ sở ({selectedCampusCode}):
-                                </label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                    <div>
-                                        <span className="text-[11px] font-semibold text-slate-600 block mb-1">
-                                            Tổ Giáo vụ cơ sở ({selectedCampusCode}):
-                                        </span>
-                                        {giaovuStaffList.length > 0 && (
-                                            <div className="mb-1.5 flex flex-wrap gap-1">
-                                                {giaovuStaffList.map((st: any, idx: number) => (
-                                                    <span
-                                                        key={idx}
-                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F0FDFA] border border-[#99F6E4] text-[10.5px] font-semibold text-[#003B3A]"
+                            {reportModalTab === "compose" ? (
+                                <div className="space-y-4">
+                                    {/* 1. CHỌN GĐCS */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-[#003B3A] block">
+                                            1. Người nhận chính (To) — Giám đốc Cơ sở (GĐCS) <span className="text-rose-500">*</span>:
+                                        </label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {gdcsList.map((g: any) => {
+                                                const isSelected = selectedGdcsEmail === (g.managerEmail || g.gdcsEmail)
+                                                const cCode = g.campusCode || "CS1"
+                                                return (
+                                                    <button
+                                                        key={cCode || g.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedCampusCode(cCode)
+                                                            setSelectedGdcsName(g.managerName || g.gdcsName || "")
+                                                            setSelectedGdcsEmail(g.managerEmail || g.gdcsEmail || "")
+                                                            if (Array.isArray(g.giaovuStaff)) setGiaovuStaffList(g.giaovuStaff)
+                                                            if (Array.isArray(g.tuvanStaff)) setTuvanStaffList(g.tuvanStaff)
+                                                            setCcGiaovuEmail(g.giaovuEmail || DEFAULT_GIAOVU_MAP[cCode] || DEFAULT_GIAOVU_MAP.CS1)
+                                                            setCcTuyensinhEmail(g.tuyensinhEmail || DEFAULT_TUYENSINH_MAP[cCode] || DEFAULT_TUYENSINH_MAP.CS1)
+                                                        }}
+                                                        className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                                                            isSelected
+                                                                ? "bg-[#F0FDFA] border-[#00A19A] ring-2 ring-[#00A19A]/20"
+                                                                : "bg-[#F8FAFC] border-[#E2E8F0] hover:bg-white"
+                                                        }`}
                                                     >
-                                                        <span>{st.fullName}</span>
-                                                        <span className="text-[#00736E] font-normal">({st.email})</span>
-                                                    </span>
-                                                ))}
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <span className="text-[10px] font-bold text-[#003B3A] bg-[#CCFBF1]/70 px-2 py-0.5 rounded-md">
+                                                                {cCode} - {g.campusName?.replace("Sky-Line", "").trim() || cCode}
+                                                            </span>
+                                                            {isSelected && <Check size={14} className="text-[#008B85]" />}
+                                                        </div>
+                                                        <div className="text-xs font-bold text-slate-900">{g.managerName || g.gdcsName}</div>
+                                                        <div className="text-[11px] text-slate-500 truncate">{g.managerEmail || g.gdcsEmail}</div>
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* 2. ĐỒNG GỬI (CC): TỔ GIÁO VỤ CƠ SỞ & TỔ TƯ VẤN CƠ SỞ */}
+                                    <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5">
+                                        <label className="text-xs font-bold text-[#003B3A] block">
+                                            2. Đồng gửi bắt buộc (CC) — Tổ Giáo vụ cơ sở &amp; Tổ Tư vấn cơ sở ({selectedCampusCode}):
+                                        </label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                            <div>
+                                                <span className="text-[11px] font-semibold text-slate-600 block mb-1">
+                                                    Tổ Giáo vụ cơ sở ({selectedCampusCode}):
+                                                </span>
+                                                {giaovuStaffList.length > 0 && (
+                                                    <div className="mb-1.5 flex flex-wrap gap-1">
+                                                        {giaovuStaffList.map((st: any, idx: number) => (
+                                                            <span
+                                                                key={idx}
+                                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F0FDFA] border border-[#99F6E4] text-[10.5px] font-semibold text-[#003B3A]"
+                                                            >
+                                                                <span>{st.fullName}</span>
+                                                                <span className="text-[#00736E] font-normal">({st.email})</span>
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <input
+                                                    type="text"
+                                                    value={ccGiaovuEmail}
+                                                    onChange={(e) => setCcGiaovuEmail(e.target.value)}
+                                                    placeholder="Email nhân sự Tổ Giáo vụ cơ sở..."
+                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800 text-xs focus:border-[#00A19A] outline-none"
+                                                />
                                             </div>
-                                        )}
-                                        <input
-                                            type="text"
-                                            value={ccGiaovuEmail}
-                                            onChange={(e) => setCcGiaovuEmail(e.target.value)}
-                                            placeholder="Email nhân sự Tổ Giáo vụ cơ sở..."
-                                            className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800 text-xs focus:border-[#00A19A] outline-none"
+                                            <div>
+                                                <span className="text-[11px] font-semibold text-slate-600 block mb-1">
+                                                    Tổ Tư vấn cơ sở ({selectedCampusCode}):
+                                                </span>
+                                                {tuvanStaffList.length > 0 && (
+                                                    <div className="mb-1.5 flex flex-wrap gap-1">
+                                                        {tuvanStaffList.map((st: any, idx: number) => (
+                                                            <span
+                                                                key={idx}
+                                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F0FDFA] border border-[#99F6E4] text-[10.5px] font-semibold text-[#003B3A]"
+                                                            >
+                                                                <span>{st.fullName}</span>
+                                                                <span className="text-[#00736E] font-normal">({st.email})</span>
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <input
+                                                    type="text"
+                                                    value={ccTuyensinhEmail}
+                                                    onChange={(e) => setCcTuyensinhEmail(e.target.value)}
+                                                    placeholder="Email nhân sự Tổ Tư vấn cơ sở..."
+                                                    className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800 text-xs focus:border-[#00A19A] outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="text-[11px] text-slate-500">
+                                            Danh sách email được lấy trực tiếp từ nhân sự thuộc <strong>Tổ Giáo vụ</strong> và <strong>Tổ Tư vấn cơ sở</strong> ({selectedCampusCode}), đồng thời CC về Ban KT&amp;ĐBCL (<strong>ktdbcl@skylineschool.edu.vn</strong>).
+                                        </div>
+                                    </div>
+
+                                    {/* 3. TÓM TẮT KẾT QUẢ TỔNG HỢP */}
+                                    <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-bold text-[#003B3A] flex items-center gap-1.5">
+                                                <Award size={14} className="text-[#008B85]" />
+                                                <span>3. Tóm tắt kết quả Tổng hợp đính kèm:</span>
+                                            </span>
+                                            <span className="text-[#003B3A] font-black text-sm tabular-nums">{totalScore} / 80 điểm</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                                            <div className="p-2 bg-white rounded-lg border border-[#E2E8F0]">
+                                                <span className="text-slate-400 block text-[10px]">Học sinh:</span>
+                                                <strong className="text-slate-800">{student?.fullName} (Khối {rawGrade})</strong>
+                                            </div>
+                                            <div className="p-2 bg-white rounded-lg border border-[#E2E8F0]">
+                                                <span className="text-slate-400 block text-[10px]">Mức độ dấu hiệu:</span>
+                                                <strong className={evaluation?.color || "text-[#D97706]"}>{evaluation?.level || "Có dấu hiệu tâm lý"}</strong>
+                                            </div>
+                                            <div className="p-2 bg-white rounded-lg border border-[#E2E8F0]">
+                                                <span className="text-slate-400 block text-[10px]">Gợi ý chuyên môn:</span>
+                                                <strong className="text-slate-800 truncate block">{evaluation?.suggestion || "Theo dõi hỗ trợ"}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 4. ĐỀ XUẤT PHƯƠNG ÁN LÀM VIỆC TRÌNH GĐCS CHỈ ĐẠO */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <label className="text-xs font-bold text-[#003B3A] block">
+                                                4. Chọn phương án đề xuất trình GĐCS chỉ đạo:
+                                            </label>
+                                            <span className="text-[10.5px] text-[#00736E] font-semibold">
+                                                Chạm để chọn &amp; tự động điền nội dung đề xuất
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                            {proposedActionOptions.map((opt, idx) => {
+                                                const active = proposedAction === opt.code
+                                                const OptIcon = idx === 0 ? MessageSquare : idx === 1 ? UserCheck : Calendar
+                                                return (
+                                                    <button
+                                                        key={opt.code}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setProposedAction(opt.code)
+                                                            setMessageToGdcs(opt.defaultProposalMsg)
+                                                        }}
+                                                        className={`p-3 rounded-xl border text-left text-xs transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                                                            active
+                                                                ? "bg-[#003B3A] text-white border-[#003B3A] shadow-sm ring-2 ring-[#00A19A]/30"
+                                                                : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0] hover:bg-white hover:border-[#00A19A]"
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center justify-between gap-1">
+                                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                                active ? "bg-white/15 text-[#5EEAD4]" : "bg-white text-[#003B3A] border border-slate-200"
+                                                            }`}>
+                                                                <OptIcon size={12} />
+                                                                <span>{opt.badge}</span>
+                                                            </span>
+                                                            {active && <Check size={14} className="text-[#5EEAD4] shrink-0" />}
+                                                        </div>
+                                                        <div className="font-bold text-xs leading-snug">{opt.label}</div>
+                                                        <div className={`text-[10.5px] leading-snug font-normal ${active ? "text-teal-100" : "text-slate-500"}`}>
+                                                            {opt.desc}
+                                                        </div>
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                        <textarea
+                                            rows={2}
+                                            value={messageToGdcs}
+                                            onChange={(e) => setMessageToGdcs(e.target.value)}
+                                            placeholder="Nội dung đề xuất tự động điền khi chạm chọn phương án trên (có thể chỉnh sửa thêm nếu cần)..."
+                                            className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#00A19A] focus:bg-white resize-none"
                                         />
                                     </div>
-                                    <div>
-                                        <span className="text-[11px] font-semibold text-slate-600 block mb-1">
-                                            Tổ Tư vấn cơ sở ({selectedCampusCode}):
-                                        </span>
-                                        {tuvanStaffList.length > 0 && (
-                                            <div className="mb-1.5 flex flex-wrap gap-1">
-                                                {tuvanStaffList.map((st: any, idx: number) => (
-                                                    <span
-                                                        key={idx}
-                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F0FDFA] border border-[#99F6E4] text-[10.5px] font-semibold text-[#003B3A]"
-                                                    >
-                                                        <span>{st.fullName}</span>
-                                                        <span className="text-[#00736E] font-normal">({st.email})</span>
+                                </div>
+                            ) : (
+                                /* TAB 2: XEM TRƯỚC EMAIL THỰC TẾ TRƯỚC KHI GỬI */
+                                <div className="space-y-3">
+                                    {loadingEmailPreview ? (
+                                        <div className="py-16 flex flex-col items-center justify-center gap-2.5 text-slate-500">
+                                            <div className="w-7 h-7 border-2 border-[#003B3A]/20 border-t-[#003B3A] rounded-full animate-spin" />
+                                            <span className="text-xs font-semibold text-[#003B3A]">Đang tạo bản xem trước Email gửi GĐCS...</span>
+                                        </div>
+                                    ) : emailPreviewError ? (
+                                        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                                            <AlertCircle size={16} className="shrink-0" />
+                                            <span>{emailPreviewError}</span>
+                                        </div>
+                                    ) : emailPreviewData ? (
+                                        <>
+                                            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-1.5 text-xs">
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-slate-500 font-semibold w-20 shrink-0">Tiêu đề:</span>
+                                                    <strong className="text-[#003B3A] leading-snug">{emailPreviewData.subject}</strong>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-slate-500 font-semibold w-20 shrink-0">Gửi đến (To):</span>
+                                                    <span className="text-slate-800 font-semibold">
+                                                        {selectedGdcsName} ({emailPreviewData.to})
                                                     </span>
-                                                ))}
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-slate-500 font-semibold w-20 shrink-0">Đồng gửi (CC):</span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {emailPreviewData.cc.map((em, i) => (
+                                                            <span
+                                                                key={i}
+                                                                className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] text-[11px] font-medium text-slate-700"
+                                                            >
+                                                                {em}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        )}
-                                        <input
-                                            type="text"
-                                            value={ccTuyensinhEmail}
-                                            onChange={(e) => setCcTuyensinhEmail(e.target.value)}
-                                            placeholder="Email nhân sự Tổ Tư vấn cơ sở..."
-                                            className="w-full p-2 rounded-lg border border-[#E2E8F0] bg-white text-slate-800 text-xs focus:border-[#00A19A] outline-none"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="text-[11px] text-slate-500">
-                                    Danh sách email được lấy trực tiếp từ nhân sự thuộc <strong>Tổ Giáo vụ</strong> và <strong>Tổ Tư vấn cơ sở</strong> ({selectedCampusCode}), đồng thời CC về Ban KT&amp;ĐBCL (<strong>ktdbcl@skylineschool.edu.vn</strong>).
-                                </div>
-                            </div>
 
-                            {/* 3. TÓM TẮT KẾT QUẢ TỔNG HỢP */}
-                            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs">
-                                <div className="flex items-center justify-between">
-                                    <span className="font-bold text-[#003B3A] flex items-center gap-1.5">
-                                        <Award size={14} className="text-[#008B85]" />
-                                        <span>3. Tóm tắt kết quả Tổng hợp đính kèm:</span>
-                                    </span>
-                                    <span className="text-[#003B3A] font-black text-sm tabular-nums">{totalScore} / 80 điểm</span>
+                                            <div className="rounded-xl border border-[#E2E8F0] overflow-hidden bg-slate-100">
+                                                <iframe
+                                                    title="Xem trước Email gửi GĐCS"
+                                                    srcDoc={emailPreviewData.html}
+                                                    sandbox="allow-same-origin"
+                                                    className="w-full h-[460px] bg-white"
+                                                />
+                                            </div>
+                                        </>
+                                    ) : null}
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
-                                    <div className="p-2 bg-white rounded-lg border border-[#E2E8F0]">
-                                        <span className="text-slate-400 block text-[10px]">Học sinh:</span>
-                                        <strong className="text-slate-800">{student?.fullName} (Khối {rawGrade})</strong>
-                                    </div>
-                                    <div className="p-2 bg-white rounded-lg border border-[#E2E8F0]">
-                                        <span className="text-slate-400 block text-[10px]">Mức độ dấu hiệu:</span>
-                                        <strong className={evaluation?.color || "text-[#D97706]"}>{evaluation?.level || "Có dấu hiệu tâm lý"}</strong>
-                                    </div>
-                                    <div className="p-2 bg-white rounded-lg border border-[#E2E8F0]">
-                                        <span className="text-slate-400 block text-[10px]">Gợi ý chuyên môn:</span>
-                                        <strong className="text-slate-800 truncate block">{evaluation?.suggestion || "Theo dõi hỗ trợ"}</strong>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* 4. ĐỀ XUẤT PHƯƠNG ÁN LÀM VIỆC TRÌNH GĐCS XÁC NHẬN (1 CHẠM) */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <label className="text-xs font-bold text-[#003B3A] block">
-                                        4. Chọn 1 chạm phương án đề xuất trình GĐCS xác nhận:
-                                    </label>
-                                    <span className="text-[10.5px] text-[#00736E] font-semibold">
-                                        Chạm để chọn &amp; tự động điền nội dung đề xuất
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                                    {proposedActionOptions.map((opt, idx) => {
-                                        const active = proposedAction === opt.code
-                                        const OptIcon = idx === 0 ? MessageSquare : idx === 1 ? Calendar : UserCheck
-                                        return (
-                                            <button
-                                                key={opt.code}
-                                                type="button"
-                                                onClick={() => {
-                                                    setProposedAction(opt.code)
-                                                    setMessageToGdcs(opt.defaultProposalMsg)
-                                                }}
-                                                className={`p-3 rounded-xl border text-left text-xs transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
-                                                    active
-                                                        ? "bg-[#003B3A] text-white border-[#003B3A] shadow-sm ring-2 ring-[#00A19A]/30"
-                                                        : "bg-[#F8FAFC] text-slate-700 border-[#E2E8F0] hover:bg-white hover:border-[#00A19A]"
-                                                }`}
-                                            >
-                                                <div className="flex items-center justify-between gap-1">
-                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
-                                                        active ? "bg-white/15 text-[#5EEAD4]" : "bg-white text-[#003B3A] border border-slate-200"
-                                                    }`}>
-                                                        <OptIcon size={12} />
-                                                        <span>{opt.badge}</span>
-                                                    </span>
-                                                    {active && <Check size={14} className="text-[#5EEAD4] shrink-0" />}
-                                                </div>
-                                                <div className="font-bold text-xs leading-snug">{opt.label}</div>
-                                                <div className={`text-[10.5px] leading-snug font-normal ${active ? "text-teal-100" : "text-slate-500"}`}>
-                                                    {opt.desc}
-                                                </div>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-                                <textarea
-                                    rows={2}
-                                    value={messageToGdcs}
-                                    onChange={(e) => setMessageToGdcs(e.target.value)}
-                                    placeholder="Nội dung đề xuất tự động điền khi chạm chọn phương án trên (có thể chỉnh sửa thêm nếu cần)..."
-                                    className="w-full p-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#00A19A] focus:bg-white resize-none"
-                                />
-                            </div>
+                            )}
 
                             {/* MODAL ACTIONS */}
-                            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#E2E8F0]">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsReportModalOpen(false)}
-                                    disabled={sendingReport}
-                                    className="px-4 py-2 border border-[#E2E8F0] text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
-                                >
-                                    Hủy bỏ
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleSendEmailToGdcs}
-                                    disabled={sendingReport || !selectedGdcsEmail}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl text-xs font-bold shadow-sm transition-all disabled:opacity-50 cursor-pointer"
-                                >
-                                    {sendingReport ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            <span>Đang gửi email GĐCS (CC Giáo vụ, Tư vấn)...</span>
-                                        </>
+                            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-[#E2E8F0]">
+                                <div>
+                                    {reportModalTab === "compose" ? (
+                                        <button
+                                            type="button"
+                                            onClick={handleLoadEmailPreview}
+                                            disabled={loadingEmailPreview || !selectedGdcsEmail}
+                                            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#F0FDFA] hover:bg-[#CCFBF1] text-[#003B3A] border border-[#99F6E4] rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                                        >
+                                            <Eye size={14} className="text-[#008B85]" />
+                                            <span>Xem trước Email</span>
+                                        </button>
                                     ) : (
-                                        <>
-                                            <Send size={15} className="text-[#5EEAD4]" />
-                                            <span>Xác nhận &amp; Gửi Email GĐCS (CC Giáo vụ, Tư vấn)</span>
-                                        </>
+                                        <button
+                                            type="button"
+                                            onClick={() => setReportModalTab("compose")}
+                                            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                        >
+                                            <span>&larr; Quay lại chỉnh sửa</span>
+                                        </button>
                                     )}
-                                </button>
+                                </div>
+
+                                <div className="flex items-center gap-2.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsReportModalOpen(false)
+                                            setReportModalTab("compose")
+                                        }}
+                                        disabled={sendingReport}
+                                        className="px-4 py-2 border border-[#E2E8F0] text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                                    >
+                                        Hủy bỏ
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleSendEmailToGdcs}
+                                        disabled={sendingReport || !selectedGdcsEmail}
+                                        className="flex items-center gap-2 px-5 py-2.5 bg-[#003B3A] hover:bg-[#005250] text-white rounded-xl text-xs font-bold shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                                    >
+                                        {sendingReport ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                <span>Đang gửi email GĐCS (CC Giáo vụ, Tư vấn)...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send size={15} className="text-[#5EEAD4]" />
+                                                <span>Xác nhận &amp; Gửi Email GĐCS (CC Giáo vụ, Tư vấn)</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

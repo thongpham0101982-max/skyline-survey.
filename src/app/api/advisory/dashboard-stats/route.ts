@@ -49,7 +49,7 @@ export async function GET(req: Request) {
     if (academicYearId) classWhere.academicYearId = academicYearId
     if (campusId && campusId !== "ALL") {
       classWhere.campusId = campusId
-    } else if (allowedCampusIds.length > 0 && !["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KTDBCL"].includes(userRole)) {
+    } else if (allowedCampusIds.length > 0 && !["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL"].includes(userRole)) {
       classWhere.campusId = { in: allowedCampusIds }
     }
 

@@ -1139,62 +1139,216 @@ export function hasPsychologicalSignsForGdcs(totalScore: number, manualFlag = fa
 }
 
 /**
+ * Định dạng thời gian từ input datetime-local (YYYY-MM-DDTHH:mm) sang tiếng Việt dễ đọc (HH:mm ngày dd/MM/yyyy)
+ */
+export function formatMeetingTimeVi(rawTime?: string | null): string {
+  const s = String(rawTime || "").trim();
+  if (!s) return "";
+  const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (isoMatch) {
+    const [, year, month, day, hour, minute] = isoMatch;
+    return `${hour}:${minute} ngày ${day}/${month}/${year}`;
+  }
+  return s;
+}
+
+/**
  * Lấy danh sách toàn bộ Giáo viên đã được phân công chấm điểm hoặc khảo sát học sinh này
- * (bao gồm GV các môn Tiếng Anh, Toán, Ngữ Văn, Tâm lý, Mầm non...)
+ * Ưu tiên xếp đầu:
+ * 1. GV phỏng vấn định hướng (từ PvdhOrientationRecord / StudentOrientationRecord / phân công ĐH)
+ * 2. GV Tâm lý theo phân công (từ StudentOrientationRecord / phân công môn TLY / ca khảo sát)
+ * 3. GV khảo sát các môn khác (Toán, Tiếng Anh, Ngữ Văn, Mầm non...)
  */
 export async function getStudentAssignedSurveyTeachers(studentId: string) {
   const pAny = prisma as any;
   try {
-    const student = await pAny.inputAssessmentStudent.findUnique({
-      where: { id: studentId },
-      select: {
-        id: true,
-        fullName: true,
-        studentCode: true,
-        grade: true,
-        periodId: true,
-        batchId: true,
-        admissionCampus: true,
-        registeredCampus: true,
-        scores: {
-          include: {
-            subject: true
+    const [student, orientationRec, pvdhRec, assignedPsychList] = await Promise.all([
+      pAny.inputAssessmentStudent.findUnique({
+        where: { id: studentId },
+        select: {
+          id: true,
+          fullName: true,
+          studentCode: true,
+          grade: true,
+          periodId: true,
+          batchId: true,
+          admissionCampus: true,
+          registeredCampus: true,
+          scores: {
+            include: {
+              subject: true
+            }
           }
         }
-      }
-    });
+      }),
+      getStudentOrientationRecord(studentId).catch(() => null),
+      pAny.pvdhOrientationRecord
+        ?.findFirst({
+          where: { studentId },
+          orderBy: { updatedAt: "desc" },
+          select: {
+            studentInterviewerId: true,
+            studentInterviewerName: true,
+            parentInterviewerId: true,
+            parentInterviewerName: true
+          }
+        })
+        .catch(() => null),
+      getAssignedPsychologyTeachers(studentId).catch(() => [])
+    ]);
 
     if (!student) return [];
 
     const rawGrade = String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim();
     const teacherMap = new Map<string, any>();
 
-    // 1. Từ StudentAssessmentScore (những GV đã trực tiếp chấm điểm các môn cho HS)
+    const isUsableEmail = (em?: string | null) => {
+      const v = String(em || "").trim();
+      return Boolean(v && v.includes("@") && !v.includes(" ") && !/^\d+@/.test(v));
+    };
+
+    const addOrMergeTeacher = (entry: {
+      teacherId?: string;
+      teacherName?: string;
+      email?: string;
+      phone?: string;
+      subject?: string;
+      roleCategory: "ORIENTATION" | "PSYCHOLOGY" | "SUBJECT";
+      roleBadge: string;
+      isDirectScorer?: boolean;
+      source?: string;
+    }) => {
+      const tId = String(entry.teacherId || "").trim();
+      const tName = String(entry.teacherName || "").trim();
+      if (!tId && !tName) return;
+
+      let foundKey = "";
+      for (const [k, v] of teacherMap.entries()) {
+        if ((tId && v.teacherId === tId) || (tName && v.teacherName?.toLowerCase() === tName.toLowerCase())) {
+          foundKey = k;
+          break;
+        }
+      }
+
+      const priorityRank = (cat: string) => (cat === "ORIENTATION" ? 1 : cat === "PSYCHOLOGY" ? 2 : 3);
+
+      if (foundKey) {
+        const item = teacherMap.get(foundKey);
+        if (tId && !item.teacherId) item.teacherId = tId;
+        if (isUsableEmail(entry.email) && !isUsableEmail(item.email)) item.email = String(entry.email).trim();
+        if (entry.phone && !item.phone) item.phone = entry.phone;
+        if (entry.subject && !item.subjects.includes(entry.subject)) item.subjects.push(entry.subject);
+        if (entry.roleBadge && !item.roleBadges.includes(entry.roleBadge)) item.roleBadges.push(entry.roleBadge);
+        if (priorityRank(entry.roleCategory) < priorityRank(item.roleCategory)) {
+          item.roleCategory = entry.roleCategory;
+          item.roleBadge = entry.roleBadge;
+        }
+        if (entry.isDirectScorer) item.isDirectScorer = true;
+      } else {
+        const key = tId || tName;
+        teacherMap.set(key, {
+          teacherId: tId,
+          teacherName: tName || "Giáo viên khảo sát",
+          email: isUsableEmail(entry.email) ? String(entry.email).trim() : "",
+          phone: entry.phone || "",
+          subjects: entry.subject ? [entry.subject] : [],
+          roleCategory: entry.roleCategory,
+          roleBadge: entry.roleBadge,
+          roleBadges: [entry.roleBadge],
+          isDirectScorer: Boolean(entry.isDirectScorer),
+          source: entry.source || entry.roleBadge
+        });
+      }
+    };
+
+    // 1. GV phỏng vấn định hướng (từ PvdhOrientationRecord & StudentOrientationRecord)
+    if (pvdhRec?.studentInterviewerId || pvdhRec?.studentInterviewerName) {
+      addOrMergeTeacher({
+        teacherId: pvdhRec.studentInterviewerId || "",
+        teacherName: pvdhRec.studentInterviewerName || "",
+        subject: "Phỏng vấn định hướng",
+        roleCategory: "ORIENTATION",
+        roleBadge: "GV phỏng vấn định hướng",
+        isDirectScorer: true,
+        source: "Phiếu PVĐH"
+      });
+    }
+    if (pvdhRec?.parentInterviewerId || pvdhRec?.parentInterviewerName) {
+      addOrMergeTeacher({
+        teacherId: pvdhRec.parentInterviewerId || "",
+        teacherName: pvdhRec.parentInterviewerName || "",
+        subject: "Phỏng vấn định hướng (PHHS)",
+        roleCategory: "ORIENTATION",
+        roleBadge: "GV phỏng vấn định hướng",
+        isDirectScorer: true,
+        source: "Phiếu PVĐH"
+      });
+    }
+    if (orientationRec?.interviewerId || orientationRec?.interviewerName) {
+      addOrMergeTeacher({
+        teacherId: orientationRec.interviewerId || "",
+        teacherName: orientationRec.interviewerName || "",
+        subject: "Phỏng vấn định hướng",
+        roleCategory: "ORIENTATION",
+        roleBadge: "GV phỏng vấn định hướng",
+        isDirectScorer: true,
+        source: "Hồ sơ định hướng"
+      });
+    }
+
+    // 2. GV Tâm lý theo phân công (từ Hồ sơ định hướng & Phân công đợt/kỳ)
+    if (orientationRec?.psychologyTeacherId || orientationRec?.psychologyTeacherName) {
+      addOrMergeTeacher({
+        teacherId: orientationRec.psychologyTeacherId || "",
+        teacherName: orientationRec.psychologyTeacherName || "",
+        subject: "Tâm lý học đường",
+        roleCategory: "PSYCHOLOGY",
+        roleBadge: "GV Tâm lý theo phân công",
+        isDirectScorer: true,
+        source: "Hồ sơ Tâm lý"
+      });
+    }
+    for (const pt of assignedPsychList || []) {
+      addOrMergeTeacher({
+        teacherId: pt.userId || pt.teacherId || "",
+        teacherName: pt.fullName || pt.teacherName || "",
+        email: pt.email || pt.teacherEmail || "",
+        phone: pt.phone || pt.teacherPhone || "",
+        subject: pt.subjectName || "Tâm lý",
+        roleCategory: "PSYCHOLOGY",
+        roleBadge: "GV Tâm lý theo phân công",
+        isDirectScorer: Boolean(pt.isBatchAssigned),
+        source: pt.isBatchAssigned ? "Phân công Tâm lý đợt KS" : "Phân công Tâm lý kỳ KS"
+      });
+    }
+
+    // 3. Từ InputAssessmentScore (những GV đã trực tiếp chấm điểm các môn cho HS)
     if (Array.isArray(student.scores)) {
       for (const sc of student.scores) {
         if (!sc.teacherName && !sc.teacherId) continue;
-        const key = sc.teacherId || sc.teacherName;
+        const subjCode = String(sc.subject?.code || "").toUpperCase();
         const subjName = sc.subject?.name || "Môn khảo sát";
-        if (!teacherMap.has(key)) {
-          teacherMap.set(key, {
-            teacherId: sc.teacherId || "",
-            teacherName: sc.teacherName,
-            email: "",
-            phone: "",
-            subjects: [subjName],
-            isDirectScorer: true,
-            source: "Đã chấm điểm"
-          });
-        } else {
-          const item = teacherMap.get(key);
-          if (!item.subjects.includes(subjName)) {
-            item.subjects.push(subjName);
-          }
-        }
+        const subjLower = subjName.toLowerCase();
+        const isPsych = subjCode === "TLY" || subjLower.includes("tâm lý");
+        const isOrient = subjCode === "DH" || subjCode === "PVDH" || subjLower.includes("định hướng");
+
+        addOrMergeTeacher({
+          teacherId: sc.teacherId || "",
+          teacherName: sc.teacherName || "",
+          subject: subjName,
+          roleCategory: isOrient ? "ORIENTATION" : isPsych ? "PSYCHOLOGY" : "SUBJECT",
+          roleBadge: isOrient
+            ? "GV phỏng vấn định hướng"
+            : isPsych
+            ? "GV Tâm lý theo phân công"
+            : "GV khảo sát",
+          isDirectScorer: true,
+          source: "Đã chấm điểm"
+        });
       }
     }
 
-    // 2. Từ InputAssessmentTeacherAssignment (phân công khảo sát kỳ/đợt/khối)
+    // 4. Từ InputAssessmentTeacherAssignment (phân công khảo sát kỳ/đợt/khối)
     if (student.periodId) {
       const assignments = await pAny.inputAssessmentTeacherAssignment.findMany({
         where: {
@@ -1221,62 +1375,74 @@ export async function getStudentAssignedSurveyTeachers(studentId: string) {
         const uName = a.user.fullName || a.user.name || a.user.teacher?.teacherName || "Giáo viên";
         const uEmail = a.user.teacher?.email || a.user.email || "";
         const uPhone = a.user.teacher?.phone || "";
+        const subjCode = String(a.subject?.code || "").toUpperCase();
         const subjName = a.subject?.name || "Khảo sát đầu vào";
+        const subjLower = subjName.toLowerCase();
+        const isPsych = subjCode === "TLY" || subjLower.includes("tâm lý");
+        const isOrient = subjCode === "DH" || subjCode === "PVDH" || subjLower.includes("định hướng");
 
-        let foundKey = "";
-        for (const [k, v] of teacherMap.entries()) {
-          if (v.teacherId === uId || v.teacherName === uName) {
-            foundKey = k;
-            break;
-          }
-        }
-
-        if (foundKey) {
-          const item = teacherMap.get(foundKey);
-          if (uId && !item.teacherId) item.teacherId = uId;
-          if (uEmail && !item.email) item.email = uEmail;
-          if (uPhone && !item.phone) item.phone = uPhone;
-          if (!item.subjects.includes(subjName)) item.subjects.push(subjName);
-        } else {
-          teacherMap.set(uId, {
-            teacherId: uId,
-            teacherName: uName,
-            email: uEmail,
-            phone: uPhone,
-            subjects: [subjName],
-            isDirectScorer: false,
-            source: "Phân công khảo sát"
-          });
-        }
+        addOrMergeTeacher({
+          teacherId: uId,
+          teacherName: uName,
+          email: uEmail,
+          phone: uPhone,
+          subject: subjName,
+          roleCategory: isOrient ? "ORIENTATION" : isPsych ? "PSYCHOLOGY" : "SUBJECT",
+          roleBadge: isOrient
+            ? "GV phỏng vấn định hướng"
+            : isPsych
+            ? "GV Tâm lý theo phân công"
+            : "GV khảo sát",
+          isDirectScorer: false,
+          source: "Phân công khảo sát"
+        });
       }
     }
 
     // Lookup missing emails/phones from User & Teacher table for existing keys
     for (const [, v] of teacherMap.entries()) {
-      if (!v.email && (v.teacherId || v.teacherName)) {
+      if (!isUsableEmail(v.email) && (v.teacherId || v.teacherName)) {
         try {
           const u = await pAny.user.findFirst({
             where: {
               OR: [
                 ...(v.teacherId ? [{ id: v.teacherId }] : []),
-                { fullName: v.teacherName }
+                ...(v.teacherName ? [{ fullName: v.teacherName }, { name: v.teacherName }] : [])
               ]
             },
             include: { teacher: true }
           });
           if (u) {
-            v.email = u.teacher?.email || u.email || "";
-            v.phone = u.teacher?.phone || "";
+            const candidateEmail = isUsableEmail(u.teacher?.email) ? u.teacher.email : isUsableEmail(u.email) ? u.email : "";
+            if (candidateEmail) v.email = candidateEmail.trim();
+            if (!v.phone && u.teacher?.phone) v.phone = u.teacher.phone;
             if (!v.teacherId) v.teacherId = u.id;
+          } else if (v.teacherId || v.teacherName) {
+            const tRec = await pAny.teacher.findFirst({
+              where: {
+                OR: [
+                  ...(v.teacherId ? [{ id: v.teacherId }, { userId: v.teacherId }] : []),
+                  ...(v.teacherName ? [{ teacherName: v.teacherName }] : [])
+                ]
+              }
+            });
+            if (tRec) {
+              if (isUsableEmail(tRec.email)) v.email = tRec.email.trim();
+              if (!v.phone && tRec.phone) v.phone = tRec.phone;
+              if (!v.teacherId) v.teacherId = tRec.userId || tRec.id;
+            }
           }
         } catch (e) {}
       }
     }
 
-    return Array.from(teacherMap.values()).map(t => ({
-      ...t,
-      subjectLabel: t.subjects.join(", ")
-    }));
+    const priorityOrder: Record<string, number> = { ORIENTATION: 1, PSYCHOLOGY: 2, SUBJECT: 3 };
+    return Array.from(teacherMap.values())
+      .sort((a, b) => (priorityOrder[a.roleCategory] || 9) - (priorityOrder[b.roleCategory] || 9))
+      .map(t => ({
+        ...t,
+        subjectLabel: t.subjects.length > 0 ? t.subjects.join(", ") : t.roleBadge
+      }));
   } catch (error) {
     console.error("Error in getStudentAssignedSurveyTeachers:", error);
     return [];

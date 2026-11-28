@@ -23,7 +23,7 @@ const ADMIN_INSPECT_ROLES = new Set([
   "ADMINISTRATOR",
   "BAN_DHCM",
   "TB_DHCM",
-  "KT_DBCL",
+  "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL",
   "BGH",
   "GDCS",
   "GĐCS",

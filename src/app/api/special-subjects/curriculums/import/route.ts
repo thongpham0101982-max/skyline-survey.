@@ -8,8 +8,8 @@ import path from "path";
 export const dynamic = "force-dynamic";
 
 const LOCAL_DB_PATH = path.resolve(process.cwd(), "local.db").replace(/\\/g, "/");
-const CLOUD_URL = "libsql://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io";
-const CLOUD_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw";
+const CLOUD_URL = (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || "libsql://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io").trim();
+const CLOUD_TOKEN = (process.env.TURSO_AUTH_TOKEN || "").trim();
 
 interface ParsedCriterion {
   criterionIndex: number;
@@ -451,10 +451,10 @@ export async function POST(req: NextRequest) {
         versionId = existingVersion.id;
       }
 
-      // Execute ingestion for each sheet on both Local and Turso
+      // Execute ingestion for each sheet on Local and (if configured) Turso Cloud
       const clients = [
         { client: createClient({ url: `file:${LOCAL_DB_PATH}` }), name: "LOCAL SQLite" },
-        { client: createClient({ url: CLOUD_URL, authToken: CLOUD_TOKEN }), name: "TURSO Cloud" }
+        ...(CLOUD_TOKEN ? [{ client: createClient({ url: CLOUD_URL, authToken: CLOUD_TOKEN }), name: "TURSO Cloud" }] : [])
       ];
 
       for (const { client, name } of clients) {

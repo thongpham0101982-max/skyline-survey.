@@ -451,7 +451,31 @@ export async function dispatchDirectorSummaryReport(options: {
         const found =
           roster.directorCandidates.find((c) => c.id === uid) ||
           roster.members.find((m) => m.id === uid)
-        if (found?.email) recipientEmailSet.add(found.email)
+        if (found?.email) {
+          recipientEmailSet.add(found.email)
+        } else {
+          const directUser = await prisma.user
+            .findUnique({ where: { id: uid }, select: { email: true } })
+            .catch(() => null)
+          if (directUser?.email && directUser.email.includes("@")) {
+            recipientEmailSet.add(directUser.email.trim())
+          }
+        }
+      }
+    }
+    // Ưu tiên tài khoản Giám đốc Ban Phạm Nguyên Thông nếu chưa cấu hình email nhận thủ công
+    if (recipientEmailSet.size === 0) {
+      const allCandidates = [...roster.directorCandidates, ...roster.members]
+      const thongAccount = allCandidates.find((c) => {
+        const norm = String(c.fullName || "")
+          .toLowerCase()
+          .replace(/đ/g, "d")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+        return norm.includes("pham nguyen thong") && Boolean(c.email)
+      })
+      if (thongAccount?.email) {
+        recipientEmailSet.add(thongAccount.email)
       }
     }
     // Fallback to KT&ĐBCL Directors in roster if no explicit email configured yet

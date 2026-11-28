@@ -3013,7 +3013,15 @@ export function StudentOrientationModal({
                         <h4 className="font-black uppercase text-[#083d39] text-xs">
                           Khảo Sát &amp; Đánh Giá Tâm Lý Học Đường (Dành Cho HS Có Vấn Đề Tâm Lý)
                         </h4>
-                        {psychologyReferralStatus === "COMPLETED" || psychologyData ? (
+                        {psychologyData?.gdcsResponse || psychologyReferralStatus === "DIRECTED" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-[#F0FDFA] text-[#003B3A] border border-[#00A19A] text-[10px] font-bold">
+                            ✓ GĐCS đã chỉ đạo: {psychologyData?.gdcsResponse?.responseTypeName || "Đã xác nhận phương án"}
+                          </span>
+                        ) : psychologyData?.reportedToGdcs || psychologyReferralStatus === "REQUESTED_DIRECTIVE" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold">
+                            ⏳ Đã gửi GĐCS • Chờ chỉ đạo ({psychologyData?.totalScore ?? psychTotalScore}/80đ)
+                          </span>
+                        ) : psychologyReferralStatus === "COMPLETED" || psychologyData ? (
                           <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black">
                             ✓ Đã hoàn thành đánh giá Form Tâm lý ({psychologyData?.totalScore ?? psychTotalScore}/80đ)
                           </span>
@@ -3144,6 +3152,69 @@ export function StudentOrientationModal({
                         </p>
                       </div>
                     </div>
+
+                    {/* CẬP NHẬT TRẠNG THÁI GĐCS NGAY TẠI MỤC TÂM LÝ CỦA HỒ SƠ ĐỊNH HƯỚNG */}
+                    {psychologyData?.gdcsResponse ? (
+                      <div className="p-3 bg-white rounded-xl border border-[#00A19A] border-l-4 border-l-[#003B3A] space-y-1 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="font-bold text-[#003B3A]">
+                            Trạng thái chỉ đạo GĐCS ({psychologyData.gdcsResponse.directorName || "Ban Giám đốc Cơ sở"}):{" "}
+                            <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white text-[11px]">
+                              {psychologyData.gdcsResponse.responseTypeName || psychologyData.gdcsResponse.responseType}
+                            </span>
+                          </span>
+                          <span className="text-[11px] text-slate-500 tabular-nums">
+                            {psychologyData.gdcsResponse.respondedAtFormatted ||
+                              (psychologyData.gdcsResponse.respondedAt
+                                ? new Date(psychologyData.gdcsResponse.respondedAt).toLocaleString("vi-VN")
+                                : "")}
+                          </span>
+                        </div>
+                        {psychologyData.gdcsResponse.details?.meetingTime && (
+                          <div className="text-slate-700">
+                            • <strong>Thời gian / Địa điểm hẹn PHHS:</strong> {psychologyData.gdcsResponse.details.meetingTime}
+                            {psychologyData.gdcsResponse.details.meetingLocation ? ` — ${psychologyData.gdcsResponse.details.meetingLocation}` : ""}
+                          </div>
+                        )}
+                        {psychologyData.gdcsResponse.details?.delegatedTeacherName && (
+                          <div className="text-slate-700">
+                            • <strong>NTCM / GV phụ trách được ủy quyền:</strong> {psychologyData.gdcsResponse.details.delegatedTeacherName}
+                            {psychologyData.gdcsResponse.details.delegatedTeacherRole ? ` (${psychologyData.gdcsResponse.details.delegatedTeacherRole})` : ""}
+                            {psychologyData.gdcsResponse.details.delegatedTeacherEmail ? ` • ${psychologyData.gdcsResponse.details.delegatedTeacherEmail}` : ""}
+                          </div>
+                        )}
+                        {(psychologyData.gdcsResponse.details?.parentMeetingContent ||
+                          psychologyData.gdcsResponse.details?.meetingAgenda ||
+                          psychologyData.gdcsResponse.details?.delegationNote ||
+                          psychologyData.gdcsResponse.generalDirectiveNote) && (
+                          <div className="text-slate-700">
+                            • <strong>Nội dung chỉ đạo:</strong>{" "}
+                            {psychologyData.gdcsResponse.details?.parentMeetingContent ||
+                              psychologyData.gdcsResponse.details?.meetingAgenda ||
+                              psychologyData.gdcsResponse.details?.delegationNote ||
+                              psychologyData.gdcsResponse.generalDirectiveNote}
+                          </div>
+                        )}
+                        {psychologyData.gdcsResponse.delegationFeedback?.agreementContent && (
+                          <div className="pt-1 border-t border-emerald-200 text-emerald-800 font-medium">
+                            • <strong>Kết quả trao đổi PHHS ({psychologyData.gdcsResponse.delegationFeedback.updatedBy || "GV phụ trách"}):</strong>{" "}
+                            {psychologyData.gdcsResponse.delegationFeedback.agreementContent}
+                          </div>
+                        )}
+                      </div>
+                    ) : (psychologyData?.reportedToGdcs || psychologyReferralStatus === "REQUESTED_DIRECTIVE") ? (
+                      <div className="p-2.5 bg-amber-50/90 rounded-xl border border-amber-200 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
+                        <span>
+                          <strong>Trạng thái GĐCS:</strong> Đã gửi Email báo cáo đến GĐCS{" "}
+                          <strong>{psychologyData?.reportedToGdcs?.gdcsName || "cơ sở"}</strong> — Đang chờ GĐCS chỉ đạo phương án làm việc.
+                        </span>
+                        {psychologyData?.reportedToGdcs?.proposedActionLabel && (
+                          <span className="px-2 py-0.5 rounded bg-white border border-amber-300 text-[11px] font-bold text-amber-900">
+                            Đề xuất: {psychologyData.reportedToGdcs.proposedActionLabel}
+                          </span>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -3274,10 +3345,10 @@ export function StudentOrientationModal({
                       <div className="text-[10.5px] text-slate-600 pl-5">
                         • Đề xuất phương án: <strong className="text-amber-800">{
                           (psychologyData?.gdcsDirectiveRequest?.proposedAction || psychologyData?.reportedToGdcs?.proposedAction) === "SCHEDULE_MEETING"
-                            ? "2. Hẹn lịch làm việc / Hội chẩn chuyên môn"
+                            ? "3. Đặt lịch hẹn với PHHS"
                             : (psychologyData?.gdcsDirectiveRequest?.proposedAction || psychologyData?.reportedToGdcs?.proposedAction) === "DELEGATE_TEACHER"
-                            ? "3. Ủy quyền Giáo viên đồng hành"
-                            : "1. Trao đổi trực tiếp PHHS"
+                            ? "2. Ủy quyền cho NTCM / GV phụ trách"
+                            : "1. GĐCS Gặp trực tiếp PHHS"
                         }</strong>
                       </div>
                       {psychologyData?.reportedToGdcs?.giaovuEmail && (
@@ -3304,8 +3375,8 @@ export function StudentOrientationModal({
                         {
                           code: "DIRECT_PARENT_MEETING" as const,
                           badge: "Phương án 1",
-                          title: "1. Trao đổi trực tiếp PHHS",
-                          desc: "GĐCS trực tiếp gặp PHHS & thống nhất cam kết phối hợp",
+                          title: "1. GĐCS Gặp trực tiếp PHHS",
+                          desc: "GĐCS trực tiếp gặp gỡ PHHS & thống nhất cam kết phối hợp",
                           active: gdcsDirectParentMeeting,
                           onSelect: () => {
                             setGdcsDirectParentMeeting(true);
@@ -3313,7 +3384,7 @@ export function StudentOrientationModal({
                             setGdcsDelegateTeacher(false);
                             if (!gdcsParentMeetingLocation) setGdcsParentMeetingLocation("Phòng Giám đốc Cơ sở");
                             if (!gdcsParentMeetingContent) {
-                              setGdcsParentMeetingContent("Trao đổi trực tiếp với PHHS về kết quả khảo sát & sàng lọc tâm lý, thống nhất lộ trình đồng hành và cam kết phối hợp giữa Gia đình & Nhà trường.");
+                              setGdcsParentMeetingContent("GĐCS gặp trực tiếp PHHS trao đổi về kết quả khảo sát & sàng lọc tâm lý, thống nhất lộ trình đồng hành và cam kết phối hợp giữa Gia đình & Nhà trường.");
                             }
                             if (!gdcsGeneralNote) {
                               setGdcsGeneralNote("Đề nghị Tổ Tư vấn cơ sở liên hệ mời PHHS; Tổ Giáo vụ cơ sở chuẩn bị hồ sơ làm việc.");
@@ -3322,33 +3393,10 @@ export function StudentOrientationModal({
                           }
                         },
                         {
-                          code: "SCHEDULE_MEETING" as const,
-                          badge: "Phương án 2",
-                          title: "2. Hẹn lịch làm việc / Hội chẩn",
-                          desc: "Họp hội chẩn giữa GĐCS, Tổ Giáo vụ, Tổ Tư vấn & GV Tâm lý",
-                          active: gdcsScheduleMeeting,
-                          onSelect: () => {
-                            setGdcsDirectParentMeeting(false);
-                            setGdcsScheduleMeeting(true);
-                            setGdcsDelegateTeacher(false);
-                            if (!gdcsMeetingLocation) setGdcsMeetingLocation("Văn phòng Chuyên môn Cơ sở");
-                            if (!gdcsMeetingParticipants) {
-                              setGdcsMeetingParticipants("GĐCS, Tổ Giáo vụ cơ sở, Tổ Tư vấn cơ sở, GV Tâm lý, GVCN");
-                            }
-                            if (!gdcsMeetingAgenda) {
-                              setGdcsMeetingAgenda("Hội chẩn chuyên môn thống nhất phương án hỗ trợ tâm lý, lộ trình tiếp nhận và xếp lớp phù hợp.");
-                            }
-                            if (!gdcsGeneralNote) {
-                              setGdcsGeneralNote("Đề nghị Tổ Giáo vụ cơ sở sắp xếp lịch hội chẩn; Tổ Tư vấn cơ sở tổng hợp thông tin gia đình.");
-                            }
-                            markDirty();
-                          }
-                        },
-                        {
                           code: "DELEGATE_TEACHER" as const,
-                          badge: "Phương án 3",
-                          title: "3. Ủy quyền Giáo viên đồng hành",
-                          desc: "Chỉ định Giáo viên đồng hành hỗ trợ HS & làm việc với PHHS",
+                          badge: "Phương án 2",
+                          title: "2. Ủy quyền cho NTCM / GV phụ trách",
+                          desc: "Chọn từ danh sách GV khảo sát (GV phỏng vấn định hướng, GV Tâm lý theo phân công)",
                           active: gdcsDelegateTeacher,
                           onSelect: () => {
                             setGdcsDirectParentMeeting(false);
@@ -3362,10 +3410,33 @@ export function StudentOrientationModal({
                             }
                             if (!gdcsDelegationDuration) setGdcsDelegationDuration("4 tuần đầu năm học");
                             if (!gdcsDelegationNote) {
-                              setGdcsDelegationNote("Theo dõi sát biểu hiện tâm lý - hành vi, làm việc với PHHS, hỗ trợ học sinh thích nghi và báo cáo định kỳ cho GĐCS & Tổ Giáo vụ.");
+                              setGdcsDelegationNote("Trao đổi với PHHS, theo dõi sát biểu hiện tâm lý - hành vi, hỗ trợ học sinh thích nghi và báo cáo định kỳ cho GĐCS & Tổ Giáo vụ.");
                             }
                             if (!gdcsGeneralNote) {
-                              setGdcsGeneralNote("Ủy quyền Giáo viên đồng hành sát sao cùng học sinh; Tổ Giáo vụ và Tổ Tư vấn cơ sở phối hợp hỗ trợ.");
+                              setGdcsGeneralNote("Ủy quyền NTCM / GV phụ trách trao đổi PHHS & đồng hành cùng học sinh; Tổ Giáo vụ và Tổ Tư vấn cơ sở phối hợp hỗ trợ.");
+                            }
+                            markDirty();
+                          }
+                        },
+                        {
+                          code: "SCHEDULE_MEETING" as const,
+                          badge: "Phương án 3",
+                          title: "3. Đặt lịch hẹn với PHHS",
+                          desc: "Chọn thời gian & địa điểm cụ thể để đặt lịch hẹn làm việc với PHHS",
+                          active: gdcsScheduleMeeting,
+                          onSelect: () => {
+                            setGdcsDirectParentMeeting(false);
+                            setGdcsScheduleMeeting(true);
+                            setGdcsDelegateTeacher(false);
+                            if (!gdcsMeetingLocation) setGdcsMeetingLocation("Phòng Tiếp phụ huynh / Phòng Giám đốc Cơ sở");
+                            if (!gdcsMeetingParticipants) {
+                              setGdcsMeetingParticipants("GĐCS, Tổ Tư vấn cơ sở, Tổ Giáo vụ cơ sở, GV phỏng vấn định hướng, GV Tâm lý");
+                            }
+                            if (!gdcsMeetingAgenda) {
+                              setGdcsMeetingAgenda("Đặt lịch hẹn làm việc với PHHS để trao đổi kết quả sàng lọc tâm lý và thống nhất lộ trình hỗ trợ.");
+                            }
+                            if (!gdcsGeneralNote) {
+                              setGdcsGeneralNote("Đề nghị Tổ Tư vấn cơ sở xác nhận lịch hẹn với PHHS; Tổ Giáo vụ cơ sở chuẩn bị phòng và hồ sơ.");
                             }
                             markDirty();
                           }
@@ -3446,6 +3517,11 @@ export function StudentOrientationModal({
                                   });
                                   const data = await res.json();
                                   if (data.success) {
+                                    setPsychologyReferralStatus("DIRECTED");
+                                    setPsychologyData((prev: any) => ({
+                                      ...(prev || {}),
+                                      gdcsResponse: data.data || prev?.gdcsResponse
+                                    }));
                                     alert(data.message || "GĐCS đã xác nhận phương án làm việc thành công!");
                                   } else {
                                     alert(data.error || "Không thể xác nhận phương án làm việc.");
@@ -3789,8 +3865,21 @@ export function StudentOrientationModal({
                                             <span>{t.teacherName}</span>
                                             {isSelected && <span className="text-[9px] bg-teal-100 text-teal-800 px-1 rounded font-bold">Đang chọn</span>}
                                           </div>
-                                          <div className="text-[10.5px] text-teal-700 font-medium">
-                                            {t.subjectLabel || t.subjects?.join(", ") || "GV Khảo sát"}
+                                          <div className="flex flex-wrap items-center gap-1">
+                                            {t.roleBadge && (
+                                              <span className={`px-1.5 py-0.5 rounded border text-[9.5px] font-semibold ${
+                                                t.roleCategory === "ORIENTATION"
+                                                  ? "bg-[#F0FDFA] text-[#00736E] border-[#99F6E4]"
+                                                  : t.roleCategory === "PSYCHOLOGY"
+                                                  ? "bg-amber-50 text-amber-800 border-amber-200"
+                                                  : "bg-slate-100 text-slate-700 border-slate-200"
+                                              }`}>
+                                                {t.roleBadge}
+                                              </span>
+                                            )}
+                                            <span className="text-[10px] text-teal-700 font-medium">
+                                              {t.subjectLabel || t.subjects?.join(", ") || "GV khảo sát"}
+                                            </span>
                                           </div>
                                           <div className="text-[10px] text-slate-500 truncate max-w-[190px]">
                                             {t.email || "Chưa có email"}

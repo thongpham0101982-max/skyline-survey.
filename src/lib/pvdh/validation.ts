@@ -1,10 +1,14 @@
 import {
+  BM_SHEET_STATUS_OPTIONS,
+  BmSheetStatusCode,
   FurtherInquiryTopicCode,
   FURTHER_INQUIRY_OPTIONS,
+  isBmKtdbclTemplate,
   PvdhFieldConfig,
   PvdhFollowUpActionItem,
   PvdhInterviewItemValue,
   PvdhSectionCode,
+  PvdhTeacherSummaryD,
   ResultStatusCode,
   formatFollowUpActionsToText,
 } from "./constants";
@@ -104,11 +108,63 @@ export function parseFollowUpActions(raw: unknown): PvdhFollowUpActionItem[] {
     }));
 }
 
+const VALID_BM_SHEET_STATUSES = new Set<string>(BM_SHEET_STATUS_OPTIONS.map((o) => o.code));
+
+export function parseTeacherSummary(raw: unknown): PvdhTeacherSummaryD {
+  let obj: any = raw;
+  if (typeof raw === "string") {
+    try {
+      obj = JSON.parse(raw || "{}");
+    } catch {
+      obj = {};
+    }
+  }
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+    return {
+      d01: "",
+      d02: "",
+      d03: "",
+      d04: "",
+      sheetStatus: "",
+      psychInterviewRequested: false,
+    };
+  }
+  const rawStatus = String(obj.sheetStatus || "").trim().toUpperCase();
+  return {
+    d01: typeof obj.d01 === "string" ? obj.d01 : "",
+    d02: typeof obj.d02 === "string" ? obj.d02 : "",
+    d03: typeof obj.d03 === "string" ? obj.d03 : "",
+    d04: typeof obj.d04 === "string" ? obj.d04 : "",
+    sheetStatus: VALID_BM_SHEET_STATUSES.has(rawStatus) ? (rawStatus as BmSheetStatusCode) : "",
+    psychInterviewRequested: Boolean(obj.psychInterviewRequested),
+    psychReferralNote: typeof obj.psychReferralNote === "string" ? obj.psychReferralNote : undefined,
+    psychAssignedTeacherId:
+      typeof obj.psychAssignedTeacherId === "string" && obj.psychAssignedTeacherId.trim()
+        ? obj.psychAssignedTeacherId.trim()
+        : undefined,
+    psychAssignedTeacherName:
+      typeof obj.psychAssignedTeacherName === "string" && obj.psychAssignedTeacherName.trim()
+        ? obj.psychAssignedTeacherName.trim()
+        : undefined,
+    psychAssignedTeacherEmail:
+      typeof obj.psychAssignedTeacherEmail === "string" && obj.psychAssignedTeacherEmail.trim()
+        ? obj.psychAssignedTeacherEmail.trim()
+        : undefined,
+    psychEmailSentAt:
+      typeof obj.psychEmailSentAt === "string" && obj.psychEmailSentAt.trim()
+        ? obj.psychEmailSentAt.trim()
+        : undefined,
+    psychEmailRecipients: Array.isArray(obj.psychEmailRecipients)
+      ? obj.psychEmailRecipients.map((e: unknown) => String(e || "").trim()).filter(Boolean)
+      : undefined,
+  };
+}
+
 export type PvdhValidationScope =
-  | "STUDENT_PART"      // Mục I (ngày PV), Mục II (HS), Mục III (GV)
-  | "PARENT_PART"       // Mục I (PHHS), Mục IV (PHHS)
-  | "ORIENTATION_PART"  // Mục V (Thống nhất định hướng & hỗ trợ)
-  | "FULL";             // Toàn bộ phiếu (Mục I -> V)
+  | "STUDENT_PART"      // Mục I (ngày PV), Mục II / A (HS), Mục III (GV với mẫu PVDH 3..12)
+  | "PARENT_PART"       // Mục I (PHHS), Mục IV / B & C (PHHS)
+  | "ORIENTATION_PART"  // Mục V / D (Tổng hợp & định hướng)
+  | "FULL";             // Toàn bộ phiếu
 
 export interface PvdhRecordValidationInput {
   interviewDate?: string | null;
@@ -123,6 +179,7 @@ export interface PvdhRecordValidationInput {
   obsParticipationLevel?: string | null;
   obsSupportNeeds?: string | null;
   parentResponses: Record<string, PvdhInterviewItemValue>;
+  teacherSummary?: Partial<PvdhTeacherSummaryD> | null;
   planStrengthsPriority?: string | null;
   planGoalsActionsText?: string | null;
   followUpActions?: PvdhFollowUpActionItem[];
@@ -153,6 +210,7 @@ export function validatePvdhRecordData(params: {
   const checkParentPart = scope === "FULL" || scope === "PARENT_PART";
   const checkOrientationPart = scope === "FULL" || scope === "ORIENTATION_PART";
 
+  const isBmLayout = isBmKtdbclTemplate({ fields });
   const fieldByKey = new Map(fields.map((f) => [f.fieldKey, f]));
 
   const pushLengthCheck = (key: string, val: string | null | undefined) => {
@@ -177,33 +235,170 @@ export function validatePvdhRecordData(params: {
     pushLengthCheck(k, v?.responseText);
     pushLengthCheck(k, v?.notRecordedReason);
   }
-  pushLengthCheck("obs_strengths_interests", input.obsStrengthsInterests);
-  pushLengthCheck("obs_communication_style", input.obsCommunicationStyle);
-  pushLengthCheck("obs_participation_level", input.obsParticipationLevel);
-  pushLengthCheck("obs_support_needs", input.obsSupportNeeds);
-  pushLengthCheck("plan_strengths_priority", input.planStrengthsPriority);
-  pushLengthCheck("plan_goals_actions", input.planGoalsActionsText);
-  pushLengthCheck("plan_further_other_text", input.planFurtherOtherText);
-  pushLengthCheck("plan_referral_reason", input.planReferralReason);
-  pushLengthCheck("plan_referral_receiver", input.planReferralReceiver);
-  pushLengthCheck("plan_handover_notes", input.planHandoverNotes);
 
-  // Kiểm tra loại trừ Không vs các lựa chọn tìm hiểu thêm
-  const rawTopics = Array.isArray(input.planFurtherTopics) ? input.planFurtherTopics : [];
-  if (rawTopics.includes("KHONG") && rawTopics.length > 1) {
-    issues.push({
-      fieldKey: "plan_further_topics",
-      sectionCode: "V_ORIENTATION",
-      label: "Nội dung cần tìm hiểu thêm",
-      message: "Lựa chọn 'Không' không thể chọn đồng thời với các nội dung cần tìm hiểu thêm khác.",
-    });
+  if (isBmLayout) {
+    pushLengthCheck("d01", input.teacherSummary?.d01);
+    pushLengthCheck("d02", input.teacherSummary?.d02);
+    pushLengthCheck("d03", input.teacherSummary?.d03);
+    pushLengthCheck("d04", input.teacherSummary?.d04);
+  } else {
+    pushLengthCheck("obs_strengths_interests", input.obsStrengthsInterests);
+    pushLengthCheck("obs_communication_style", input.obsCommunicationStyle);
+    pushLengthCheck("obs_participation_level", input.obsParticipationLevel);
+    pushLengthCheck("obs_support_needs", input.obsSupportNeeds);
+    pushLengthCheck("plan_strengths_priority", input.planStrengthsPriority);
+    pushLengthCheck("plan_goals_actions", input.planGoalsActionsText);
+    pushLengthCheck("plan_further_other_text", input.planFurtherOtherText);
+    pushLengthCheck("plan_referral_reason", input.planReferralReason);
+    pushLengthCheck("plan_referral_receiver", input.planReferralReceiver);
+    pushLengthCheck("plan_handover_notes", input.planHandoverNotes);
+
+    // Kiểm tra loại trừ Không vs các lựa chọn tìm hiểu thêm
+    const rawTopics = Array.isArray(input.planFurtherTopics) ? input.planFurtherTopics : [];
+    if (rawTopics.includes("KHONG") && rawTopics.length > 1) {
+      issues.push({
+        fieldKey: "plan_further_topics",
+        sectionCode: "V_ORIENTATION",
+        label: "Nội dung cần tìm hiểu thêm",
+        message: "Lựa chọn 'Không' không thể chọn đồng thời với các nội dung cần tìm hiểu thêm khác.",
+      });
+    }
   }
 
   if (mode === "DRAFT") {
     return { valid: issues.length === 0, issues };
   }
 
-  // === KIỂM TRA KHI HOÀN TẤT (COMPLETE) ===
+  // === NHÁNH 1: MẪU BM.KTĐBCL.31 / BM.KTĐBCL.32 (KHỐI 1 & KHỐI 2) ===
+  if (isBmLayout) {
+    if (checkStudentPart) {
+      const effDate = (input.studentInterviewDate || input.interviewDate || "").trim();
+      const dateField = fieldByKey.get("gen_interview_date");
+      if (dateField?.requiredOnComplete !== false && !effDate) {
+        issues.push({
+          fieldKey: "gen_interview_date",
+          sectionCode: "I_GENERAL",
+          label: dateField?.label || "Ngày phỏng vấn",
+          message: "Vui lòng chọn Ngày phỏng vấn.",
+        });
+      }
+
+      const sectionAFields = fields
+        .filter((f) => f.sectionCode === "II_STUDENT")
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+
+      for (const f of sectionAFields) {
+        if (!f.requiredOnComplete) continue;
+        const item = input.studentResponses?.[f.fieldKey];
+        if (item?.notRecorded) {
+          if (!String(item.notRecordedReason || "").trim()) {
+            issues.push({
+              fieldKey: f.fieldKey,
+              sectionCode: "II_STUDENT",
+              label: f.label,
+              message: `${f.label}: Đã chọn "Chưa ghi nhận", vui lòng nhập rõ lý do.`,
+            });
+          }
+        } else if (!String(item?.responseText || "").trim()) {
+          issues.push({
+            fieldKey: f.fieldKey,
+            sectionCode: "II_STUDENT",
+            label: f.label,
+            message: `${f.label}: Chưa nhập nội dung phỏng vấn học sinh (hoặc chọn Chưa ghi nhận kèm lý do).`,
+          });
+        }
+      }
+    }
+
+    if (checkParentPart) {
+      const pNameField = fieldByKey.get("gen_parent_name");
+      if (pNameField?.requiredOnComplete !== false && !String(input.parentFullName || "").trim()) {
+        issues.push({
+          fieldKey: "gen_parent_name",
+          sectionCode: "I_GENERAL",
+          label: pNameField?.label || "Phụ huynh tham gia",
+          message: "Vui lòng nhập Họ tên Phụ huynh tham gia.",
+        });
+      }
+
+      const pRelField = fieldByKey.get("gen_parent_relationship");
+      if (pRelField?.requiredOnComplete !== false && !String(input.parentRelationship || "").trim()) {
+        issues.push({
+          fieldKey: "gen_parent_relationship",
+          sectionCode: "I_GENERAL",
+          label: pRelField?.label || "Quan hệ với HS",
+          message: "Vui lòng nhập Quan hệ với HS.",
+        });
+      }
+
+      const sectionBCFields = fields
+        .filter((f) => f.sectionCode === "IV_PARENT" || f.sectionCode === "C_PARENT_GRADE")
+        .sort((a, b) => {
+          if (a.sectionCode !== b.sectionCode) return a.sectionCode === "IV_PARENT" ? -1 : 1;
+          return a.sortOrder - b.sortOrder;
+        });
+
+      for (const f of sectionBCFields) {
+        if (!f.requiredOnComplete) continue;
+        const item = input.parentResponses?.[f.fieldKey];
+        if (item?.notRecorded) {
+          if (!String(item.notRecordedReason || "").trim()) {
+            issues.push({
+              fieldKey: f.fieldKey,
+              sectionCode: f.sectionCode,
+              label: f.label,
+              message: `${f.label}: Đã chọn "Chưa ghi nhận", vui lòng nhập rõ lý do.`,
+            });
+          }
+        } else if (!String(item?.responseText || "").trim()) {
+          issues.push({
+            fieldKey: f.fieldKey,
+            sectionCode: f.sectionCode,
+            label: f.label,
+            message: `${f.label}: Chưa nhập nội dung trao đổi với phụ huynh (hoặc chọn Chưa ghi nhận kèm lý do).`,
+          });
+        }
+      }
+    }
+
+    if (checkOrientationPart) {
+      const dChecks: Array<{ key: "d01" | "d02" | "d03" | "d04"; fallbackLabel: string }> = [
+        { key: "d01", fallbackLabel: "D01. Điểm mạnh nổi bật của HS (nguồn HS / PHHS / quan sát)" },
+        { key: "d02", fallbackLabel: "D02. Khó khăn, nhu cầu hỗ trợ và nội dung cần xác minh" },
+        { key: "d03", fallbackLabel: "D03. Kỳ vọng của HS và gia đình (tương đồng / khác biệt)" },
+        { key: "d04", fallbackLabel: "D04. Định hướng giáo dục, phối hợp và bước tiếp theo" },
+      ];
+      for (const dc of dChecks) {
+        const f = fieldByKey.get(dc.key);
+        if (f && !f.requiredOnComplete) continue;
+        const val = String(input.teacherSummary?.[dc.key] || "").trim();
+        if (!val) {
+          issues.push({
+            fieldKey: dc.key,
+            sectionCode: "D_TEACHER_SUMMARY",
+            label: f?.label || dc.fallbackLabel,
+            message: `${f?.label || dc.fallbackLabel}: Vui lòng nhập nội dung tổng hợp và định hướng của giáo viên.`,
+          });
+        }
+      }
+
+      const statusField = fieldByKey.get("sheet_status");
+      const statusVal = String(input.teacherSummary?.sheetStatus || "").trim().toUpperCase();
+      if ((!statusField || statusField.requiredOnComplete) && !VALID_BM_SHEET_STATUSES.has(statusVal)) {
+        issues.push({
+          fieldKey: "sheet_status",
+          sectionCode: "D_TEACHER_SUMMARY",
+          label: statusField?.label || "Trạng thái phiếu",
+          message: "Vui lòng chọn Trạng thái phiếu (Hoàn thành / Cần bổ sung thông tin / Cần trao đổi chuyên môn).",
+        });
+      }
+    }
+
+    return { valid: issues.length === 0, issues };
+  }
+
+  // === NHÁNH 2: MẪU PVDH-03..05 (KHỐI 3 ĐẾN 12) ===
+  const rawTopics = Array.isArray(input.planFurtherTopics) ? input.planFurtherTopics : [];
   if (checkStudentPart) {
     const effDate = (input.studentInterviewDate || input.interviewDate || "").trim();
     const dateField = fieldByKey.get("gen_interview_date");

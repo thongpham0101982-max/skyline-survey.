@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Clock, AlertTriangle, CheckCircle2, Filter, AlertCircle, ShieldAlert } from "lucide-react";
+import { Clock, CheckCircle2, Filter, AlertCircle, ShieldAlert } from "lucide-react";
 
 export interface DeadlineCountdownBannerProps {
   deadlineDate: string | Date | null | undefined;
@@ -78,51 +78,54 @@ export default function DeadlineCountdownBanner({
     return () => clearInterval(timer);
   }, [deadlineDate]);
 
-  // Determine urgency tier
-  // > 48h: Safe (Emerald)
-  // 24h - 48h: Warning (Amber)
-  // < 24h: Critical (Red)
-  // Expired: Gray/Red Alert
   const hoursLeft = timeLeft.totalMs / (1000 * 60 * 60);
 
   const urgencyConfig = useMemo(() => {
     if (timeLeft.isExpired) {
       return {
-        wrapperBg: "bg-rose-50/90 border-rose-200 text-rose-900",
-        badgeBg: "bg-rose-600 text-white",
-        icon: <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />,
-        statusLabel: "ĐÃ HẾT HẠN NHẬP ĐIỂM",
-        timeColor: "text-rose-700 font-bold",
-        filterBtn: "bg-rose-100 hover:bg-rose-200 text-rose-800 border-rose-300"
+        wrapperBg: "bg-white border-slate-200/80 shadow-[0_2px_10px_-3px_rgba(15,23,42,0.04)]",
+        dotColor: "bg-rose-500",
+        badgeBg: "bg-rose-50 text-rose-700 border border-rose-200/80",
+        icon: <ShieldAlert className="w-3.5 h-3.5 text-rose-500 shrink-0" />,
+        statusLabel: "Đã hết hạn nhập điểm",
+        timerBox: "bg-slate-50 text-slate-600 border-slate-200/80",
+        timeColor: "text-rose-600 font-semibold",
+        filterBtn: "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200"
       };
     }
     if (hoursLeft < 24) {
       return {
-        wrapperBg: "bg-red-50/90 border-red-200 text-red-900 shadow-xs",
-        badgeBg: "bg-red-500 text-white animate-pulse",
-        icon: <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />,
-        statusLabel: "HẠN CHỐT KHẨN CẤP (< 24H)",
-        timeColor: "text-red-700 font-bold",
-        filterBtn: "bg-red-100 hover:bg-red-200 text-red-800 border-red-300"
+        wrapperBg: "bg-rose-50/50 border-rose-200/80 shadow-[0_2px_10px_-3px_rgba(244,63,94,0.08)]",
+        dotColor: "bg-rose-600",
+        badgeBg: "bg-rose-600 text-white",
+        icon: <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />,
+        statusLabel: "Hạn chốt khẩn cấp (< 24h)",
+        timerBox: "bg-white text-rose-900 border-rose-200",
+        timeColor: "text-rose-600 font-bold",
+        filterBtn: "bg-rose-100 hover:bg-rose-200 text-rose-800 border-rose-300"
       };
     }
     if (hoursLeft < 48) {
       return {
-        wrapperBg: "bg-amber-50/90 border-amber-200 text-amber-900 shadow-xs",
-        badgeBg: "bg-amber-500 text-white",
-        icon: <Clock className="w-4 h-4 text-amber-600 shrink-0" />,
-        statusLabel: "SẮP ĐẾN HẠN KHÓA SỔ",
-        timeColor: "text-amber-800 font-bold",
+        wrapperBg: "bg-amber-50/50 border-amber-200/80 shadow-[0_2px_10px_-3px_rgba(245,158,11,0.08)]",
+        dotColor: "bg-amber-500",
+        badgeBg: "bg-amber-100 text-amber-800 border border-amber-200",
+        icon: <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />,
+        statusLabel: "Sắp đến hạn khóa sổ",
+        timerBox: "bg-white text-amber-900 border-amber-200",
+        timeColor: "text-amber-700 font-bold",
         filterBtn: "bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300"
       };
     }
     return {
-      wrapperBg: "bg-emerald-50/80 border-emerald-200 text-emerald-950 shadow-2xs",
-      badgeBg: "bg-emerald-600 text-white",
-      icon: <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />,
-      statusLabel: "TRONG THỜI HẠN QUI ĐỊNH",
-      timeColor: "text-emerald-800 font-bold",
-      filterBtn: "bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border-emerald-300"
+      wrapperBg: "bg-white border-slate-200/80 shadow-[0_2px_10px_-3px_rgba(15,23,42,0.04)]",
+      dotColor: "bg-emerald-500",
+      badgeBg: "bg-emerald-50 text-emerald-700 border border-emerald-200/80",
+      icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />,
+      statusLabel: "Trong thời hạn quy định",
+      timerBox: "bg-slate-50 text-slate-700 border-slate-200/80",
+      timeColor: "text-emerald-700 font-bold",
+      filterBtn: "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200"
     };
   }, [timeLeft.isExpired, hoursLeft]);
 
@@ -132,68 +135,75 @@ export default function DeadlineCountdownBanner({
     <div
       role="region"
       aria-label="Cảnh báo hạn chốt nhập điểm"
-      className={`rounded-xl border p-3.5 transition-all duration-200 ${urgencyConfig.wrapperBg} ${className}`}
+      className={`rounded-2xl border px-4 py-2.5 transition-all duration-200 ${urgencyConfig.wrapperBg} ${className}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Left info: Icon, Batch Title & Status Badge */}
-        <div className="flex items-center gap-2.5">
-          {urgencyConfig.icon}
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${urgencyConfig.badgeBg}`}>
-                {urgencyConfig.statusLabel}
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        {/* Left: Compact Single-line Status & Batch Title */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${urgencyConfig.badgeBg}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${urgencyConfig.dotColor}`} />
+            {urgencyConfig.statusLabel}
+          </span>
+          <span className="text-xs font-bold text-slate-800">
+            {batchName}
+          </span>
+          <span className="hidden sm:inline text-slate-300">•</span>
+          <span className="text-[11px] text-slate-500 tabular-nums">
+            Hạn chốt:{" "}
+            <strong className="font-semibold text-slate-700">
+              {new Date(deadlineDate).toLocaleDateString("vi-VN", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              })}
+            </strong>
+          </span>
+        </div>
+
+        {/* Right: Sleek Countdown Pill + Optional Filter */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className={`flex items-center gap-1.5 font-mono text-xs tabular-nums px-3 py-1 rounded-full border ${urgencyConfig.timerBox}`}>
+            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+            {timeLeft.isExpired ? (
+              <span className="font-sans text-[11px] font-medium text-slate-500">
+                Đã khóa sổ (<span className={urgencyConfig.timeColor}>00:00:00</span>)
               </span>
-              <span className="text-xs font-bold text-slate-800">
-                {batchName}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-600 mt-0.5">
-              Hạn hoàn thành: <span className="font-semibold">{new Date(deadlineDate).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-            </p>
+            ) : (
+              <>
+                <span className="text-[11px] font-sans font-medium text-slate-500 mr-0.5">Còn:</span>
+                {timeLeft.days > 0 && (
+                  <>
+                    <span className={urgencyConfig.timeColor}>{String(timeLeft.days).padStart(2, "0")}</span>
+                    <span className="text-slate-400 font-sans text-[10px] mr-0.5">ngày</span>
+                  </>
+                )}
+                <span className={urgencyConfig.timeColor}>{String(timeLeft.hours).padStart(2, "0")}</span>
+                <span className="text-slate-400">:</span>
+                <span className={urgencyConfig.timeColor}>{String(timeLeft.minutes).padStart(2, "0")}</span>
+                <span className="text-slate-400">:</span>
+                <span className={urgencyConfig.timeColor}>{String(timeLeft.seconds).padStart(2, "0")}</span>
+              </>
+            )}
           </div>
-        </div>
 
-        {/* Middle: Real-time Countdown Timer */}
-        <div className="flex items-center gap-1.5 font-mono text-xs tabular-nums bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-slate-200/80 shadow-2xs">
-          <Clock className="w-3.5 h-3.5 text-slate-500" />
-          <span className="text-[11px] font-sans font-medium text-slate-500 mr-1">Thời gian còn:</span>
-          {timeLeft.isExpired ? (
-            <span className="font-bold text-rose-600">00:00:00 (Hết hạn)</span>
-          ) : (
-            <>
-              {timeLeft.days > 0 && (
-                <>
-                  <span className={urgencyConfig.timeColor}>{String(timeLeft.days).padStart(2, "0")}</span>
-                  <span className="text-slate-400 font-sans text-[10px] mr-1">ngày</span>
-                </>
-              )}
-              <span className={urgencyConfig.timeColor}>{String(timeLeft.hours).padStart(2, "0")}</span>
-              <span className="text-slate-400">:</span>
-              <span className={urgencyConfig.timeColor}>{String(timeLeft.minutes).padStart(2, "0")}</span>
-              <span className="text-slate-400">:</span>
-              <span className={urgencyConfig.timeColor}>{String(timeLeft.seconds).padStart(2, "0")}</span>
-            </>
-          )}
-        </div>
-
-        {/* Right: Action to filter pending students */}
-        {onToggleFilterPending && (
-          <div className="flex items-center gap-2">
+          {onToggleFilterPending && (
             <button
               type="button"
               onClick={onToggleFilterPending}
               aria-pressed={isPendingFiltered}
-              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all shadow-2xs cursor-pointer ${
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border transition-all cursor-pointer tabular-nums ${
                 isPendingFiltered
-                  ? "bg-[#003B3A] text-white border-[#003B3A] ring-2 ring-[#08AAA4]/40"
+                  ? "bg-[#003B3A] text-white border-[#003B3A]"
                   : urgencyConfig.filterBtn
               }`}
             >
-              <Filter className="w-3.5 h-3.5" />
-              <span>{isPendingFiltered ? "Xem tất cả học sinh" : `Chỉ xem chưa có điểm (${pendingCount}/${totalCount})`}</span>
+              <Filter className="w-3 h-3" />
+              <span>{isPendingFiltered ? "Xem tất cả học sinh" : `Chưa có điểm (${pendingCount}/${totalCount})`}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

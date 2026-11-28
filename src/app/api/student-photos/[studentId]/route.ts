@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { sanitizeFileName, requireStaffSession, writeSecurityAuditLog } from "@/lib/security-guard";
 import fs from "fs";
 import path from "path";
 
@@ -73,7 +74,7 @@ export async function GET(
       return new NextResponse(buffer, {
         headers: {
           "Content-Type": contentType,
-          "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+          "Cache-Control": "private, max-age=3600, stale-while-revalidate=86400",
         },
       });
     }
@@ -86,15 +87,17 @@ export async function GET(
       ].filter(Boolean);
 
       for (const idOrCode of candidates) {
+        const safeCode = sanitizeFileName(idOrCode, "");
+        if (!safeCode) continue;
         for (const ext of ["jpg", "jpeg", "png", "webp"]) {
-          const localPath = path.join(process.cwd(), "public", "uploads", "students", `${idOrCode}.${ext}`);
+          const localPath = path.join(process.cwd(), "public", "uploads", "students", `${safeCode}.${ext}`);
           if (fs.existsSync(localPath)) {
             const fileBuffer = fs.readFileSync(localPath);
             const ct = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
             return new NextResponse(fileBuffer, {
               headers: {
                 "Content-Type": ct,
-                "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+                "Cache-Control": "private, max-age=3600, stale-while-revalidate=86400",
               },
             });
           }
@@ -114,8 +117,8 @@ export async function POST(
   { params }: { params: Promise<{ studentId: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user) {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -208,8 +211,8 @@ export async function DELETE(
   { params }: { params: Promise<{ studentId: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user) {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -242,6 +245,14 @@ export async function DELETE(
         where: { studentId },
       });
     }
+
+    await writeSecurityAuditLog({
+      userId: ctx.userId,
+      userEmail: ctx.userEmail,
+      action: "DELETE_STUDENT_PHOTO",
+      targetTable: "StudentPhoto",
+      targetId: String(studentId)
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

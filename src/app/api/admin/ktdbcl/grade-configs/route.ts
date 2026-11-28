@@ -7,6 +7,7 @@ import {
   isEnglishSubjectName,
   normalizeGradeColumnDefs,
 } from "@/lib/grading/vnedu-config-types"
+import { recalculateGradeEntriesForConfig } from "@/lib/grading/recalculate-grade-entries"
 
 const CONFIG_ALLOWED_ROLES = [
   "ADMIN",
@@ -331,11 +332,19 @@ export async function POST(request: Request) {
         }
       }
 
+      let recalculatedCount = 0
+      if (!previewOnly) {
+        for (const cfg of appliedConfigs) {
+          recalculatedCount += await recalculateGradeEntriesForConfig(cfg).catch(() => 0)
+        }
+      }
+
       return NextResponse.json({
         success: true,
         previewOnly,
         previewRows,
         count: appliedConfigs.length,
+        recalculatedCount,
         configs: appliedConfigs,
       })
     }
@@ -408,7 +417,11 @@ export async function POST(request: Request) {
         })
         results.push(res.config)
       }
-      return NextResponse.json({ success: true, count: results.length, configs: results })
+      let recalculatedCount = 0
+      for (const cfg of results) {
+        recalculatedCount += await recalculateGradeEntriesForConfig(cfg).catch(() => 0)
+      }
+      return NextResponse.json({ success: true, count: results.length, recalculatedCount, configs: results })
     }
 
     // Mode 3: Single scope create/update
@@ -445,7 +458,9 @@ export async function POST(request: Request) {
               roundingRule: "ROUND_1",
             },
           })
-          return NextResponse.json({ success: true, config: res.config })
+          const recalculatedCount = await recalculateGradeEntriesForConfig(res.config).catch(() => 0)
+
+    return NextResponse.json({ success: true, recalculatedCount, config: res.config })
         }
       }
     }
@@ -475,7 +490,9 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({ success: true, config: res.config })
+    const recalculatedCount = await recalculateGradeEntriesForConfig(res.config).catch(() => 0)
+
+    return NextResponse.json({ success: true, recalculatedCount, config: res.config })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }

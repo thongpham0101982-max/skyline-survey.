@@ -118,6 +118,7 @@ const PVDH_DDL_STATEMENTS: string[] = [
     "obsSupportNeeds" TEXT,
     "teacherSectionStatus" TEXT NOT NULL DEFAULT 'DRAFT',
     "parentResponsesJson" TEXT NOT NULL DEFAULT '{}',
+    "teacherSummaryJson" TEXT NOT NULL DEFAULT '{}',
     "planStrengthsPriority" TEXT,
     "planGoalsActionsText" TEXT,
     "followUpActionsJson" TEXT NOT NULL DEFAULT '[]',
@@ -599,6 +600,15 @@ export async function ensurePvdhSchema(): Promise<void> {
         // Cột đã tồn tại
       }
 
+      // Bổ sung cột teacherSummaryJson (D01..D04 + Trạng thái phiếu + Đề nghị phỏng vấn tâm lí) nếu DB đã tạo trước đó
+      try {
+        await executeRawSql(
+          `ALTER TABLE "pvdh_assessment_records" ADD COLUMN "teacherSummaryJson" TEXT NOT NULL DEFAULT '{}'`
+        );
+      } catch {
+        // Cột đã tồn tại
+      }
+
       // Cập nhật phân loại Môn khảo sát vs Nội dung phỏng vấn định hướng trên danh mục hiện có
       try {
         const subjects = await queryRawRows(`SELECT "id", "code", "name", "subjectType", "contentCategory" FROM "AssessmentSubject"`);
@@ -618,12 +628,232 @@ export async function ensurePvdhSchema(): Promise<void> {
       const db = getPvdhDb();
       const nowIso = new Date().toISOString();
 
-      // Seed 5 mẫu đề xuất PVDH-01 .. PVDH-05 (nếu chưa tồn tại)
+      const slugifyCode = (raw: string) =>
+        raw
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/[^a-z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "");
+
+      const syncFileTemplateAndMappings = async (
+        fileTplId: string,
+        def: (typeof PVDH_SEED_TEMPLATES)[number]
+      ) => {
+        const existingFileTpl = await db.ksdvFileTemplate.findFirst({ where: { id: fileTplId } });
+        const parentQCount = def.fields.filter(
+          (f) => f.sectionCode === "IV_PARENT" || f.sectionCode === "C_PARENT_GRADE"
+        ).length;
+        const tplPayload = {
+          code: `FILE_${def.code}`,
+          name: `${def.name} (Bản in A4 / PDF)`,
+          resultType: "ORIENTATION",
+          contentCategory: "ORIENTATION_INTERVIEW",
+          subjectCode: "PDHDV",
+          subjectName: "Phiếu định hướng đầu vào",
+          academicYearId: "ALL",
+          periodIdsJson: JSON.stringify(["ALL"]),
+          educationSystemsJson: JSON.stringify(["ALL"]),
+          campusIdsJson: JSON.stringify(["ALL"]),
+          gradesJson: JSON.stringify(def.grades),
+          priorityOrder: def.priorityOrder,
+          versionNumber: 1,
+          versionCode: "v1.0",
+          status: "ACTIVE",
+          schemaConfigJson: JSON.stringify({
+            pvdhTemplateCode: def.code,
+            layoutVariant: def.exportLayout.layoutVariant || "PVDH_PROPOSED_V1",
+            hasNumericScore: false,
+            hasTotalScore: false,
+            autoAdmissionDecision: false,
+            sectionsCount: def.sections.length,
+            studentQuestionGroups: def.fields.filter((f) => f.sectionCode === "II_STUDENT").length,
+            parentQuestionGroups: parentQCount,
+          }),
+          exportFormat: "HTML_PDF",
+          pageSize: "A4",
+          pageOrientation: "PORTRAIT",
+          copyCount: 1,
+          signatureBlocksJson: JSON.stringify(def.exportLayout.signatureColumns),
+          fileNamePattern: `${slugifyCode(def.code).toUpperCase()}_{studentCode}_{periodCode}_v{version}.pdf`,
+          sourceVerified: true,
+        };
+
+        if (!existingFileTpl) {
+          await db.ksdvFileTemplate.create({
+            data: {
+              id: fileTplId,
+              ...tplPayload,
+              createdByName: "Hệ thống SSM Sky-Line",
+              publishedAt: nowIso,
+              createdAt: nowIso,
+              updatedAt: nowIso,
+            },
+          });
+        } else {
+          await db.ksdvFileTemplate.update({
+            where: { id: existingFileTpl.id },
+            data: tplPayload,
+          });
+          await db.ksdvExportMapping.deleteMany({ where: { fileTemplateId: existingFileTpl.id } });
+        }
+
+        let mapOrder = 1;
+        for (const f of def.fields) {
+          const mapDataType =
+            f.dataType === "DATE"
+              ? "DATE"
+              : f.dataType === "ACTION_LIST"
+              ? "ACTION_LIST"
+              : f.dataType === "BOOLEAN_CHECKBOX"
+              ? "BOOLEAN"
+              : "TEXT";
+          await db.ksdvExportMapping.create({
+            data: {
+              id: `ksdvmap_${slugifyCode(def.code)}_${f.fieldKey}`,
+              fileTemplateId: fileTplId,
+              fieldKey: f.fieldKey,
+              sourcePath: f.exportMappingKey,
+              targetFormat: "HTML_PDF",
+              targetRef: `{{${f.fieldKey}}}`,
+              dataType: mapDataType,
+              formatPattern: f.dataType === "DATE" ? "dd/MM/yyyy" : null,
+              isRequired: f.requiredOnComplete,
+              emptyValuePolicy:
+                f.dataType === "INTERVIEW_GROUP" || f.allowNotRecorded ? "EXPLICIT_STATUS_LABEL" : "KEEP_BLANK",
+              sortOrder: mapOrder++,
+            },
+          });
+        }
+      };
+
+      // Đồng bộ chuẩn hóa mẫu Khối 1 (PVDH-01 -> BM.KTĐBCL.31), Khối 2 (PVDH-02 -> BM.KTĐBCL.32) và Khối 3–5 (PVDH-03)
+      const legacyUpgrades: Array<{
+        legacyCode: string;
+        legacyFileTplId: string;
+        def: (typeof PVDH_SEED_TEMPLATES)[number];
+        sourceNote: string;
+      }> = [
+        {
+          legacyCode: "PVDH-01",
+          legacyFileTplId: "ksdvtpl_pvdh_01_v1",
+          def: PVDH_SEED_TEMPLATES[0],
+          sourceNote: "Biểu mẫu BM.KTĐBCL.31 – Ban Khảo thí & Đảm bảo chất lượng",
+        },
+        {
+          legacyCode: "PVDH-02",
+          legacyFileTplId: "ksdvtpl_pvdh_02_v1",
+          def: PVDH_SEED_TEMPLATES[1],
+          sourceNote: "Biểu mẫu BM.KTĐBCL.32 – Ban Khảo thí & Đảm bảo chất lượng",
+        },
+      ];
+
+      for (const upg of legacyUpgrades) {
+        const legacyTpl = await db.pvdhTemplate.findFirst({ where: { code: upg.legacyCode } });
+        const targetTpl = await db.pvdhTemplate.findFirst({ where: { code: upg.def.code } });
+        if (legacyTpl && !targetTpl) {
+          const lockedCnt = await db.pvdhAssessmentRecord.count({
+            where: { templateId: legacyTpl.id, isLocked: true },
+          });
+          if (lockedCnt === 0) {
+            await db.pvdhTemplate.update({
+              where: { id: legacyTpl.id },
+              data: {
+                code: upg.def.code,
+                name: upg.def.name,
+                description: upg.def.description,
+                gradeGroup: upg.def.gradeGroup,
+                gradesJson: JSON.stringify(upg.def.grades),
+                sourceNote: upg.sourceNote,
+              },
+            });
+            const v1 = await db.pvdhTemplateVersion.findFirst({
+              where: { templateId: legacyTpl.id, versionNumber: 1 },
+            });
+            if (v1) {
+              await db.pvdhTemplateVersion.update({
+                where: { id: v1.id },
+                data: {
+                  templateCode: upg.def.code,
+                  nameSnapshot: upg.def.name,
+                  purposeText: upg.def.exportLayout.purposeLine,
+                  gradesJson: JSON.stringify(upg.def.grades),
+                  sectionsJson: JSON.stringify(upg.def.sections),
+                  fieldsJson: JSON.stringify(upg.def.fields),
+                  exportLayoutJson: JSON.stringify(upg.def.exportLayout),
+                  changeSummary: `Cập nhật chuẩn biểu mẫu ${upg.def.code} của Ban Khảo thí & Đảm bảo chất lượng`,
+                },
+              });
+            }
+            const draftRecords = await db.pvdhAssessmentRecord.findMany({
+              where: { templateId: legacyTpl.id, isLocked: false },
+            });
+            for (const rec of draftRecords) {
+              if (upg.legacyCode === "PVDH-02" && String(rec.gradeAtCreation).trim() === "3") {
+                const tpl03 = await db.pvdhTemplate.findFirst({ where: { code: "PVDH-03" } });
+                const ver03 = tpl03
+                  ? await db.pvdhTemplateVersion.findFirst({
+                      where: { templateId: tpl03.id, status: "ACTIVE" },
+                    })
+                  : null;
+                if (tpl03 && ver03) {
+                  await db.pvdhAssessmentRecord.update({
+                    where: { id: rec.id },
+                    data: {
+                      templateId: tpl03.id,
+                      templateVersionId: ver03.id,
+                      templateCode: tpl03.code,
+                      templateVersionNumber: ver03.versionNumber,
+                      templateVersionCode: ver03.versionCode,
+                    },
+                  });
+                  continue;
+                }
+              }
+              await db.pvdhAssessmentRecord.update({
+                where: { id: rec.id },
+                data: { templateCode: upg.def.code },
+              });
+            }
+            await syncFileTemplateAndMappings(upg.legacyFileTplId, upg.def);
+          } else {
+            // Bảo toàn lịch sử bản ghi đã khóa trên mẫu cũ, ngừng áp dụng mẫu cũ để mẫu mới được kích hoạt
+            await db.pvdhTemplate.update({
+              where: { id: legacyTpl.id },
+              data: { status: "INACTIVE" },
+            });
+          }
+        } else if (targetTpl) {
+          const lockedTargetCnt = await db.pvdhAssessmentRecord.count({
+            where: { templateId: targetTpl.id, isLocked: true },
+          });
+          if (lockedTargetCnt === 0) {
+            const v1Target = await db.pvdhTemplateVersion.findFirst({
+              where: { templateId: targetTpl.id, versionNumber: 1 },
+            });
+            if (v1Target && String(v1Target.fieldsJson || "").includes('"promptQuestion":""')) {
+              await db.pvdhTemplateVersion.update({
+                where: { id: v1Target.id },
+                data: {
+                  sectionsJson: JSON.stringify(upg.def.sections),
+                  fieldsJson: JSON.stringify(upg.def.fields),
+                  exportLayoutJson: JSON.stringify(upg.def.exportLayout),
+                },
+              });
+            }
+          }
+        }
+      }
+
+      // Seed các mẫu PVDH / BM.KTĐBCL (BM.KTĐBCL.31 .. BM.KTĐBCL.36, PVDH-04, PVDH-05) nếu chưa tồn tại
       for (const def of PVDH_SEED_TEMPLATES) {
         const existingTpl = await db.pvdhTemplate.findFirst({ where: { code: def.code } });
         if (!existingTpl) {
-          const tplId = `pvdhtpl_${def.code.toLowerCase().replace("-", "_")}`;
-          const verId = `pvdhver_${def.code.toLowerCase().replace("-", "_")}_v1`;
+          const slug = slugifyCode(def.code);
+          const tplId = `pvdhtpl_${slug}`;
+          const verId = `pvdhver_${slug}_v1`;
+          const isBm = def.exportLayout.layoutVariant === "BM_KTDBCL_ABCD";
 
           await db.pvdhTemplate.create({
             data: {
@@ -643,7 +873,9 @@ export async function ensurePvdhSchema(): Promise<void> {
               status: "ACTIVE",
               currentVersionNumber: 1,
               currentVersionCode: "v1.0",
-              sourceNote: "Mẫu đề xuất phục vụ triển khai (Phieu_phong_van_dinh_huong_HS_PHHS_Khoi_1_12)",
+              sourceNote: isBm
+                ? `Biểu mẫu ${def.code} – Ban Khảo thí & Đảm bảo chất lượng`
+                : "Mẫu đề xuất phục vụ triển khai (Phieu_phong_van_dinh_huong_HS_PHHS_Khoi_1_12)",
               createdByName: "Hệ thống SSM Sky-Line",
               createdAt: nowIso,
               updatedAt: nowIso,
@@ -670,7 +902,9 @@ export async function ensurePvdhSchema(): Promise<void> {
               sectionsJson: JSON.stringify(def.sections),
               fieldsJson: JSON.stringify(def.fields),
               exportLayoutJson: JSON.stringify(def.exportLayout),
-              changeSummary: "Khởi tạo phiên bản v1.0 từ bộ mẫu đề xuất phục vụ triển khai (Khối 1–12)",
+              changeSummary: isBm
+                ? `Khởi tạo phiên bản v1.0 theo biểu mẫu ${def.code}`
+                : "Khởi tạo phiên bản v1.0 từ bộ mẫu đề xuất phục vụ triển khai (Khối 7–12)",
               createdByName: "Hệ thống SSM Sky-Line",
               publishedAt: nowIso,
               publishedByName: "Hệ thống SSM Sky-Line",
@@ -679,70 +913,74 @@ export async function ensurePvdhSchema(): Promise<void> {
             },
           });
 
-          // Đăng ký cấu hình xuất tương ứng trong ksdv_file_templates & ksdv_export_mappings
-          const fileTplId = `ksdvtpl_${def.code.toLowerCase().replace("-", "_")}_v1`;
-          const existingFileTpl = await db.ksdvFileTemplate.findFirst({ where: { id: fileTplId } });
-          if (!existingFileTpl) {
-            await db.ksdvFileTemplate.create({
+          await syncFileTemplateAndMappings(`ksdvtpl_${slug}_v1`, def);
+        }
+      }
+
+      // Chuyển tiếp toàn bộ các mẫu đề xuất cũ PVDH-01..PVDH-05 sang trọn bộ biểu mẫu BM.KTĐBCL.31..BM.KTĐBCL.42 (Khối 1..12)
+      const legacyGroupCodes: Array<{ code: string; defaultGrade: number; fileIds: string[] }> = [
+        { code: "PVDH-01", defaultGrade: 1, fileIds: ["ksdvtpl_pvdh_01_v1", "FILE_PVDH-01", "FILE_PVDH_01"] },
+        { code: "PVDH-02", defaultGrade: 2, fileIds: ["ksdvtpl_pvdh_02_v1", "FILE_PVDH-02", "FILE_PVDH_02"] },
+        { code: "PVDH-03", defaultGrade: 3, fileIds: ["ksdvtpl_pvdh_03_v1", "FILE_PVDH-03", "FILE_PVDH_03"] },
+        { code: "PVDH-04", defaultGrade: 7, fileIds: ["ksdvtpl_pvdh_04_v1", "FILE_PVDH-04", "FILE_PVDH_04"] },
+        { code: "PVDH-05", defaultGrade: 10, fileIds: ["ksdvtpl_pvdh_05_v1", "FILE_PVDH-05", "FILE_PVDH_05"] },
+      ];
+
+      for (const leg of legacyGroupCodes) {
+        const existingLegacy = await db.pvdhTemplate.findFirst({ where: { code: leg.code } });
+        if (!existingLegacy) continue;
+
+        const draftRecs = await db.pvdhAssessmentRecord.findMany({
+          where: { templateId: existingLegacy.id, isLocked: false },
+        });
+        for (const rec of draftRecs) {
+          const parsedG = Number(String(rec.gradeAtCreation || "").replace(/\D/g, ""));
+          const g = parsedG >= 1 && parsedG <= 12 ? parsedG : leg.defaultGrade;
+          const targetBmCode = `BM.KTĐBCL.${30 + g}`;
+          const targetBmTpl = await db.pvdhTemplate.findFirst({ where: { code: targetBmCode } });
+          const targetBmVer = targetBmTpl
+            ? await db.pvdhTemplateVersion.findFirst({
+                where: { templateId: targetBmTpl.id, status: "ACTIVE" },
+              })
+            : null;
+          if (targetBmTpl && targetBmVer) {
+            await db.pvdhAssessmentRecord.update({
+              where: { id: rec.id },
               data: {
-                id: fileTplId,
-                code: `FILE_${def.code}`,
-                name: `${def.name} (Bản in A4 / PDF)`,
-                resultType: "ORIENTATION",
-                contentCategory: "ORIENTATION_INTERVIEW",
-                subjectCode: "PDHDV",
-                subjectName: "Phiếu định hướng đầu vào",
-                academicYearId: "ALL",
-                periodIdsJson: JSON.stringify(["ALL"]),
-                educationSystemsJson: JSON.stringify(["ALL"]),
-                campusIdsJson: JSON.stringify(["ALL"]),
-                gradesJson: JSON.stringify(def.grades),
-                priorityOrder: def.priorityOrder,
-                versionNumber: 1,
-                versionCode: "v1.0",
-                status: "ACTIVE",
-                schemaConfigJson: JSON.stringify({
-                  pvdhTemplateCode: def.code,
-                  hasNumericScore: false,
-                  hasTotalScore: false,
-                  autoAdmissionDecision: false,
-                  sectionsCount: 5,
-                  studentQuestionGroups: 6,
-                  parentQuestionGroups: 5,
-                }),
-                exportFormat: "HTML_PDF",
-                pageSize: "A4",
-                pageOrientation: "PORTRAIT",
-                copyCount: 1,
-                signatureBlocksJson: JSON.stringify(def.exportLayout.signatureColumns),
-                fileNamePattern: `${def.code}_{studentCode}_{periodCode}_v{version}.pdf`,
-                sourceVerified: true,
-                createdByName: "Hệ thống SSM Sky-Line",
-                publishedAt: nowIso,
-                createdAt: nowIso,
-                updatedAt: nowIso,
+                templateId: targetBmTpl.id,
+                templateVersionId: targetBmVer.id,
+                templateCode: targetBmTpl.code,
+                templateVersionNumber: targetBmVer.versionNumber,
+                templateVersionCode: targetBmVer.versionCode,
               },
             });
-
-            let mapOrder = 1;
-            for (const f of def.fields) {
-              await db.ksdvExportMapping.create({
-                data: {
-                  id: `ksdvmap_${def.code.toLowerCase().replace("-", "_")}_${f.fieldKey}`,
-                  fileTemplateId: fileTplId,
-                  fieldKey: f.fieldKey,
-                  sourcePath: f.exportMappingKey,
-                  targetFormat: "HTML_PDF",
-                  targetRef: `{{${f.fieldKey}}}`,
-                  dataType: f.dataType === "DATE" ? "DATE" : f.dataType === "ACTION_LIST" ? "ACTION_LIST" : "TEXT",
-                  formatPattern: f.dataType === "DATE" ? "dd/MM/yyyy" : null,
-                  isRequired: f.requiredOnComplete,
-                  emptyValuePolicy: f.allowNotRecorded ? "EXPLICIT_STATUS_LABEL" : "KEEP_BLANK",
-                  sortOrder: mapOrder++,
-                },
-              });
-            }
           }
+        }
+
+        const remainingCnt = await db.pvdhAssessmentRecord.count({
+          where: { templateId: existingLegacy.id },
+        });
+        if (remainingCnt === 0) {
+          await db.pvdhTemplateVersion.deleteMany({ where: { templateId: existingLegacy.id } });
+          await db.pvdhTemplate.delete({ where: { id: existingLegacy.id } });
+          const oldFile = await db.ksdvFileTemplate.findFirst({
+            where: {
+              OR: [
+                { id: leg.fileIds[0] },
+                { code: leg.fileIds[1] },
+                { code: leg.fileIds[2] },
+              ],
+            },
+          });
+          if (oldFile) {
+            await db.ksdvExportMapping.deleteMany({ where: { fileTemplateId: oldFile.id } });
+            await db.ksdvFileTemplate.delete({ where: { id: oldFile.id } });
+          }
+        } else if (existingLegacy.status === "ACTIVE") {
+          await db.pvdhTemplate.update({
+            where: { id: existingLegacy.id },
+            data: { status: "INACTIVE" },
+          });
         }
       }
 

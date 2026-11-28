@@ -1,9 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ensureSlcSchema } from "@/lib/skyline-connect/schema-init";
 
 export const dynamic = "force-dynamic";
+
+let avatarTableEnsured = false;
+
+async function ensureAvatarProfileTable() {
+  if (avatarTableEnsured) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "slc_community_profiles" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "userId" TEXT NOT NULL UNIQUE,
+        "teacherId" TEXT,
+        "fullName" TEXT,
+        "avatarUrl" TEXT,
+        "campusId" TEXT,
+        "campusName" TEXT,
+        "mainSubject" TEXT,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    avatarTableEnsured = true;
+  } catch {
+    // Table already exists or managed by schema
+  }
+}
 
 /**
  * GET: Lấy ảnh đại diện (avatar) của người dùng hiện tại hoặc theo userId
@@ -19,7 +43,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const targetUserId = searchParams.get("userId") || currentUserId;
 
-    await ensureSlcSchema();
+    await ensureAvatarProfileTable();
     const pAny = prisma as any;
 
     const profile = await pAny.slcCommunityProfile
@@ -105,7 +129,7 @@ export async function POST(req: NextRequest) {
       cleanAvatarUrl = trimmed;
     }
 
-    await ensureSlcSchema();
+    await ensureAvatarProfileTable();
     const pAny = prisma as any;
 
     const teacher = await prisma.teacher
@@ -145,34 +169,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Đồng bộ ảnh đại diện sang các bài viết, bình luận, nhóm & dự án của giáo viên
-    await Promise.all([
-      pAny.slcPost
-        ?.updateMany({
-          where: { authorId: userId },
-          data: { authorAvatar: cleanAvatarUrl },
-        })
-        .catch(() => null),
-      pAny.slcComment
-        ?.updateMany({
-          where: { authorId: userId },
-          data: { authorAvatar: cleanAvatarUrl },
-        })
-        .catch(() => null),
-      pAny.slcGroupMember
-        ?.updateMany({
-          where: { userId },
-          data: { userAvatar: cleanAvatarUrl },
-        })
-        .catch(() => null),
-      pAny.slcProjectMember
-        ?.updateMany({
-          where: { userId },
-          data: { userAvatar: cleanAvatarUrl },
-        })
-        .catch(() => null),
-    ]);
-
     return NextResponse.json({
       success: true,
       avatarUrl: updatedProfile?.avatarUrl ?? cleanAvatarUrl,
@@ -200,7 +196,7 @@ export async function DELETE() {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
 
-    await ensureSlcSchema();
+    await ensureAvatarProfileTable();
     const pAny = prisma as any;
 
     await pAny.slcCommunityProfile
@@ -209,33 +205,6 @@ export async function DELETE() {
         data: { avatarUrl: null },
       })
       .catch(() => null);
-
-    await Promise.all([
-      pAny.slcPost
-        ?.updateMany({
-          where: { authorId: userId },
-          data: { authorAvatar: null },
-        })
-        .catch(() => null),
-      pAny.slcComment
-        ?.updateMany({
-          where: { authorId: userId },
-          data: { authorAvatar: null },
-        })
-        .catch(() => null),
-      pAny.slcGroupMember
-        ?.updateMany({
-          where: { userId },
-          data: { userAvatar: null },
-        })
-        .catch(() => null),
-      pAny.slcProjectMember
-        ?.updateMany({
-          where: { userId },
-          data: { userAvatar: null },
-        })
-        .catch(() => null),
-    ]);
 
     return NextResponse.json({
       success: true,

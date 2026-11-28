@@ -46,11 +46,35 @@ export function isConfirmedPsychEntranceAssessment(record: {
   }
   if (record.psychologyTarget === true) return true
 
-  const combined = `${record.admissionResult || ""} ${record.directorNote || ""}`.trim()
+  const resText = String(record.admissionResult || "").trim()
+  const noteText = String(record.directorNote || "").trim()
+  const combined = `${resText} ${noteText}`.trim()
   if (!combined) return false
-  const hasPsychKeyword = /tâm\s*lý|tam\s*ly|tâm\s*lí|tam\s*li|psychology/i.test(combined)
-  const hasCommitmentKeyword = /cam\s*kết|cam\s*ket|theo\s*dõi|yêu\s*cầu|lưu\s*ý/i.test(combined)
-  return hasPsychKeyword && hasCommitmentKeyword
+
+  const psychRegex = /tâm\s*lý|tam\s*ly|tâm\s*lí|tam\s*li|psychology/i
+  const commitmentRegex = /cam\s*kết|cam\s*ket/i
+
+  // Bắt buộc phải có xác nhận "cam kết" rõ ràng; không nhận nhầm các nhận xét
+  // tâm lý bình thường có từ "lưu ý" / "theo dõi" / "yêu cầu" thông thường.
+  if (!commitmentRegex.test(combined)) return false
+  if (!psychRegex.test(combined)) return false
+
+  // Nếu có danh sách cam kết tường minh (VD: "Môn cam kết: [Toán, Tiếng Anh]"),
+  // chỉ xác nhận Tâm lý cam kết đầu vào khi danh sách/cụm cam kết thực sự nhắc đến Tâm lý.
+  const explicitListMatch = noteText.match(
+    /(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n.]+)\]?/i
+  )
+  if (explicitListMatch && explicitListMatch[1]) {
+    const inExplicitList = psychRegex.test(explicitListMatch[1])
+    const inResult = psychRegex.test(resText)
+    const explicitPsychCommitPhrase =
+      /(?:cam\s*kết|cam\s*ket)[^.\r\n]{0,40}(?:tâm\s*lý|tam\s*ly|tâm\s*lí|tam\s*li|psychology)|(?:tâm\s*lý|tam\s*ly|tâm\s*lí|tam\s*li|psychology)[^.\r\n]{0,40}(?:cam\s*kết|cam\s*ket)/i.test(
+        noteText
+      )
+    return inExplicitList || inResult || explicitPsychCommitPhrase
+  }
+
+  return true
 }
 
 /**

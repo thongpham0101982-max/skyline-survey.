@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await auth();
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
-    const isAdmin = ["ADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole);
+    const isAdmin = ["ADMIN", "SUPER_ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL"].includes(userRole);
 
     if (!isAdmin) {
       return NextResponse.json({ error: "Không đủ quyền truy cập" }, { status: 403 });
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     const userRole = ((session?.user as any)?.role || "").toUpperCase();
-    const isAdmin = ["ADMIN", "SUPER_ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole);
+    const isAdmin = ["ADMIN", "SUPER_ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL"].includes(userRole);
 
     if (!isAdmin) {
       return NextResponse.json({ error: "Không đủ quyền quản trị" }, { status: 403 });

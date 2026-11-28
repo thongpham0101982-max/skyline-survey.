@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     }
 
     const userRole = (session.user as any)?.role || ""
-    const isKTDBCL = ["ADMIN", "KT_DBCL", "KTDBCL", "ADMINISTRATOR"].includes(userRole)
+    const isKTDBCL = ["ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL", "KTDBCL", "ADMINISTRATOR"].includes(userRole)
 
     const teacher = !isKTDBCL
       ? await prisma.teacher.findUnique({ where: { userId: session.user.id } })

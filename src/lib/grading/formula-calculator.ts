@@ -204,7 +204,7 @@ export function calculateCompositeScore(
 
   if (formula === "CUSTOM" && config.formulaCustom && config.formulaCustom.trim()) {
     try {
-      let expr = config.formulaCustom
+      let expr = sanitizeFormulaExpression(config.formulaCustom)
       // Replace col0, col1, [col0], [Cột 1], etc.
       for (let i = 0; i < count; i++) {
         const val = numericMap[i] !== undefined ? numericMap[i] : 0
@@ -281,7 +281,7 @@ export function generateExcelFormula(
   }
 
   if (formula === "CUSTOM" && config.formulaCustom) {
-    let expr = config.formulaCustom
+    let expr = sanitizeFormulaExpression(config.formulaCustom)
     colLetters.forEach((col, i) => {
       expr = expr.replace(new RegExp(`\\[col${i}\\]|\\[cột\\s*${i + 1}\\]|col${i}`, "gi"), `${col}${rowNum}`)
     })
@@ -289,4 +289,128 @@ export function generateExcelFormula(
   }
 
   return wrapRound(`AVERAGE(${firstCol}:${lastCol})`)
+}
+
+/**
+ * Clean up stray leading `+` after `(` or at expression start (e.g. `( + [col0] + [col1] ) / 10` -> `([col0] + [col1]) / 10`)
+ */
+export function sanitizeFormulaExpression(raw: string): string {
+  return String(raw || "")
+    .replace(/^\s*\+\s*/, "")
+    .replace(/\(\s*\+\s*/g, "(")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+/**
+ * Determine whether a SubjectGradeConfig uses formula-calculator composite calculation
+ * (excludes CN year-end average, comment-only configs, and THCS/THPT TT22 TX/GK/CK default configs).
+ */
+export function shouldAutoComputeFormulaComposite(
+  config: any,
+  evaluationPeriod?: string | null
+): boolean {
+  if (!config || config.hasCompositeColumn === false) return false
+  const periodUpper = String(evaluationPeriod || config.evaluationPeriod || "").toUpperCase().trim()
+  if (periodUpper === "CN") return false
+
+  let colDefs: Array<{ key?: string; type?: string }> = []
+  if (config.columnsJson) {
+    try {
+      const parsed = typeof config.columnsJson === "string" ? JSON.parse(config.columnsJson) : config.columnsJson
+      if (Array.isArray(parsed)) colDefs = parsed
+    } catch {
+      colDefs = []
+    }
+  }
+
+  // Exclude TT22 secondary TX/GK/CK structures when using default AVERAGE (handled by calculateTt22SemesterAverage)
+  const formulaUpper = String(config.formula || "AVERAGE").toUpperCase().trim()
+  if (formulaUpper === "AVERAGE" && colDefs.length > 0) {
+    const keys = new Set(colDefs.map(d => String(d.key || "").toLowerCase()))
+    if ((keys.has("tx1") || keys.has("tx2")) && (keys.has("gk") || keys.has("ck"))) {
+      return false
+    }
+  }
+
+  let colCount = Number(config.columnCount || 0)
+  if (colCount <= 0 && config.columnNames) {
+    try {
+      const names = typeof config.columnNames === "string" ? JSON.parse(config.columnNames) : config.columnNames
+      if (Array.isArray(names)) colCount = names.length
+    } catch {}
+  }
+  return colCount > 0
+}
+
+/**
+ * Compute expected composite score from an entry's componentScores and its SubjectGradeConfig.
+ * Returns null if no numeric component scores are present or formula yields empty.
+ */
+export function computeCompositeFromComponentScores(
+  componentScoresRaw: any,
+  config: any
+): { value: number; formatted: string } | null {
+  if (!config || config.hasCompositeColumn === false) return null
+
+  let compObj: Record<string, any> = {}
+  if (componentScoresRaw) {
+    if (typeof componentScoresRaw === "string") {
+      try {
+        compObj = JSON.parse(componentScoresRaw)
+      } catch {
+        return null
+      }
+    } else if (typeof componentScoresRaw === "object") {
+      compObj = componentScoresRaw
+    }
+  }
+
+  let colDefs: Array<{ key?: string; type?: string }> = []
+  if (config.columnsJson) {
+    try {
+      const parsed = typeof config.columnsJson === "string" ? JSON.parse(config.columnsJson) : config.columnsJson
+      if (Array.isArray(parsed)) colDefs = parsed
+    } catch {
+      colDefs = []
+    }
+  }
+
+  const numericDefs = colDefs.filter(d => !d.type || !["REMARK", "GRADE_SKL", "GRADE_INTL"].includes(String(d.type).toUpperCase()))
+
+  let colCount = Number(config.columnCount || 0)
+  if (colCount <= 0) {
+    if (numericDefs.length > 0) {
+      colCount = numericDefs.length
+    } else if (config.columnNames) {
+      try {
+        const names = typeof config.columnNames === "string" ? JSON.parse(config.columnNames) : config.columnNames
+        if (Array.isArray(names)) colCount = names.length
+      } catch {}
+    }
+  }
+  if (colCount <= 0) return null
+
+  const indexedScores: Record<string, any> = {}
+  if (numericDefs.length > 0) {
+    numericDefs.forEach((def, idx) => {
+      const val = (def.key ? compObj[def.key] : undefined) ?? compObj[`col${idx}`]
+      if (val !== undefined && val !== null && String(val).trim() !== "") {
+        indexedScores[`col${idx}`] = val
+      }
+    })
+  } else {
+    for (let i = 0; i < colCount; i++) {
+      const val = compObj[`col${i}`]
+      if (val !== undefined && val !== null && String(val).trim() !== "") {
+        indexedScores[`col${i}`] = val
+      }
+    }
+  }
+
+  const formatted = calculateCompositeScore(indexedScores, config, colCount)
+  if (!formatted) return null
+  const value = parseFloat(formatted)
+  if (isNaN(value) || !isFinite(value)) return null
+  return { value, formatted }
 }

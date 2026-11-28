@@ -294,53 +294,8 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
           })}
         </nav>
 
-        {/* Bottom Sidebar Controls: Language Switcher, Collapse, Sign Out */}
+        {/* Bottom Sidebar Controls: Collapse, Sign Out */}
         <div className="mt-auto pt-3 flex flex-col gap-2">
-          <div
-            className={`flex items-center ${
-              isCollapsed ? "justify-center p-1.5" : "justify-between px-3 py-1.5"
-            } bg-white/5 border border-white/10 rounded-xl transition-all`}
-          >
-            {!isCollapsed && (
-              <span className="text-[11px] text-white/70 font-medium flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-teal-400" />
-                <span>{lang === "en" ? "Language" : "Ngôn ngữ"}</span>
-              </span>
-            )}
-            <div className={`flex items-center gap-1 ${isCollapsed ? "flex-col" : ""}`}>
-              <button
-                type="button"
-                onClick={() => handleLanguageChange("vi")}
-                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
-                  lang === "vi"
-                    ? "bg-[#48BFE3] text-slate-900 shadow-xs"
-                    : "text-white/60 hover:text-white hover:bg-white/10"
-                }`}
-                title="Tiếng Việt"
-              >
-                <span className="inline-flex shrink-0 overflow-hidden rounded-[2px] border border-black/10">
-                  <VietnamFlag className="w-[14px] h-[9px]" />
-                </span>
-                <span>VI</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleLanguageChange("en")}
-                className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
-                  lang === "en"
-                    ? "bg-[#48BFE3] text-slate-900 shadow-xs"
-                    : "text-white/60 hover:text-white hover:bg-white/10"
-                }`}
-                title="English"
-              >
-                <span className="inline-flex shrink-0 overflow-hidden rounded-[2px] border border-black/10">
-                  <UKFlag className="w-[14px] h-[9px]" />
-                </span>
-                <span>EN</span>
-              </button>
-            </div>
-          </div>
-
           <button
             type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}

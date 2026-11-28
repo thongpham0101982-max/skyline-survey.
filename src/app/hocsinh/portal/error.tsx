@@ -17,7 +17,7 @@ export default function StudentPortalError({
 
   return (
     <div className="flex flex-col items-center justify-center p-8 sm:p-12 min-h-[420px] bg-white rounded-3xl border border-sky-100 shadow-sm max-w-lg mx-auto my-10 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-sky-50 text-[#0284C7] flex items-center justify-center mb-4 border border-sky-100 shadow-inner">
+      <div className="w-16 h-16 rounded-2xl bg-[#F0FDFA] text-[#00A19A] flex items-center justify-center mb-4 border border-[#99F6E4] shadow-inner">
         <Sparkles className="w-8 h-8" />
       </div>
 
@@ -33,7 +33,7 @@ export default function StudentPortalError({
         <button
           type="button"
           onClick={() => reset()}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow w-full sm:w-auto cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003B3A] hover:bg-[#00A19A] text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow w-full sm:w-auto cursor-pointer"
         >
           <RefreshCcw className="w-4 h-4" />
           <span>Thử lại</span>

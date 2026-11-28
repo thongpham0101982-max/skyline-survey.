@@ -40,6 +40,7 @@ interface StorageInfo {
   backupDirBytes: number
   redundantBytes?: number
   redundantFilesCount?: number
+  expiredMonthCount?: number
   photoVault?: PhotoVaultInfo | null
 }
 
@@ -144,19 +145,23 @@ export function BackupSection({ initialBackups, storageInfo }: BackupSectionProp
   const handleOptimizeStorage = async () => {
     if (isOptimizing || isLoading) return
     const confirmed = window.confirm(
-      "Hệ thống sẽ tiến hành:\n1. Xóa các tệp .db thô bị lưu trùng với .db.gz\n2. Gộp các bản sao lưu chạy trùng lặp trong cùng 1 đêm\n3. Xóa các tệp tạm (.tmp) rác\n4. Tự động kiểm định & cấp mã băm SHA-256 cho các bản chưa xác minh.\n\nBạn có muốn tiếp tục?"
+      "Hệ thống sẽ tiến hành:\n1. Xóa toàn bộ bản sao lưu của các tháng trước (chỉ giữ dữ liệu tháng hiện tại)\n2. Xóa các tệp .db thô bị lưu trùng với .db.gz\n3. Gộp các bản sao lưu chạy trùng lặp trong cùng 1 ngày và xóa tệp tạm (.tmp)\n4. Tự động kiểm định & cấp mã băm SHA-256 cho các bản chưa xác minh.\n\nBạn có muốn tiếp tục?"
     )
     if (!confirmed) return
 
     setIsOptimizing(true)
     setErrorMessage(null)
-    setStatusMessage("Đang dọn dẹp tệp trùng lặp, giải phóng ổ đĩa và xác minh toàn vẹn SHA-256...")
+    setStatusMessage("Đang dọn dẹp bản sao lưu các tháng trước, giải phóng ổ đĩa và xác minh toàn vẹn SHA-256...")
 
     try {
       const res = await optimizeBackupStorageAction()
       if (res.success && res.result) {
+        const expiredNote =
+          res.result.expiredMonthBackupsCount > 0
+            ? ` (gồm ${res.result.expiredMonthBackupsCount} bản tháng trước)`
+            : ""
         setStatusMessage(
-          `Tối ưu hóa hoàn tất! Đã giải phóng ${formatBytes(res.result.freedBytes)} (${res.result.removedFilesCount} tệp thừa/trùng lặp) và xác minh SHA-256 cho ${res.result.verifiedCount} bản sao lưu.`
+          `Tối ưu hóa hoàn tất! Đã giải phóng ${formatBytes(res.result.freedBytes)} (${res.result.removedFilesCount} tệp thừa/tháng cũ${expiredNote}) và xác minh SHA-256 cho ${res.result.verifiedCount} bản sao lưu.`
         )
         if (res.backups) setBackups(res.backups)
         if (res.storage) setStorage(res.storage)
@@ -291,11 +296,11 @@ export function BackupSection({ initialBackups, storageInfo }: BackupSectionProp
             onClick={handleOptimizeStorage}
             disabled={isOptimizing || isLoading}
             className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all border ${
-              (storage?.redundantBytes || 0) > 0 || unverifiedCount > 0
+              (storage?.redundantBytes || 0) > 0 || (storage?.expiredMonthCount || 0) > 0 || unverifiedCount > 0
                 ? "bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300"
                 : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
             }`}
-            title="Xóa file .db thô trùng lặp, gộp bản chạy trùng đêm và xác minh SHA-256 tự động"
+            title="Xóa bản sao lưu các tháng trước, dọn file .db thô trùng lặp và xác minh SHA-256 tự động"
           >
             {isOptimizing ? (
               <>
@@ -463,8 +468,8 @@ export function BackupSection({ initialBackups, storageInfo }: BackupSectionProp
             <ShieldCheck className="w-4 h-4 text-[#003B3A]" />
             Danh sách tệp sao lưu hợp lệ ({backups.length})
           </h4>
-          <span className="text-xs text-slate-400 font-medium">
-            Chính sách: Lưu 12 bản chuẩn gần nhất (Chỉ giữ .db.gz, giải nén Stream khi tải .db)
+          <span className="text-xs text-slate-500 font-medium">
+            Chính sách: Chỉ lưu dữ liệu tháng hiện tại (Tự động xóa các tháng trước • Chỉ giữ .db.gz, giải nén Stream khi tải .db)
           </span>
         </div>
 

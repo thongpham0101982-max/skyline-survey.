@@ -191,7 +191,7 @@ export function AdmissionRegulationManager({
       if (systemFilter === "HNS" && !sysUpper.includes("HNS")) return false
       if (
         systemFilter === "INTL" &&
-        !sysUpper.some(s => s === "HNG" || s === "HNC" || s === "COMPASS" || s === "SB")
+        !sysUpper.some(s => s === "HNG" || s === "HNC" || s === "COMPASS" || s === "SB" || s === "CHUYEN_HE_S_I")
       ) {
         return false
       }
@@ -274,7 +274,7 @@ export function AdmissionRegulationManager({
     const isOnlyIntl =
       sysUpper.length > 0 &&
       !sysUpper.includes("HNS") &&
-      sysUpper.every(s => ["HNG", "HNC", "COMPASS", "SB"].includes(s))
+      sysUpper.every(s => ["HNG", "HNC", "COMPASS", "SB", "CHUYEN_HE_S_I"].includes(s))
     const isOnlyHns = sysUpper.length === 1 && sysUpper[0] === "HNS"
 
     // 1. Kiểm tra môn Tiếng Việt vs Ngữ Văn theo Khối & Thời điểm
@@ -457,7 +457,7 @@ export function AdmissionRegulationManager({
     setSystemFilter("ALL")
     setGradeFilter("ALL")
     showToast(
-      "Đã nạp bộ Quy chế Tuyển sinh Phổ thông 2026 chuẩn (19 quy tắc theo Hệ HNS & Hệ Global, Compass, Song bằng). Hãy nhấn 'Lưu cấu hình quy chế' để áp dụng!"
+      `Đã nạp bộ Quy chế Tuyển sinh Phổ thông 2026 chuẩn (${DEFAULT_ADMISSION_REGULATIONS.rules.length} quy tắc gồm Hệ HNS, Hệ Global/Compass/Song bằng & Chuyển hệ S → I). Hãy nhấn 'Lưu cấu hình quy chế' để áp dụng!`
     )
   }
 
@@ -531,7 +531,7 @@ export function AdmissionRegulationManager({
 
   const hnsCount = config.rules.filter(r => r.systems.map(s => s.toUpperCase()).includes("HNS")).length
   const intlCount = config.rules.filter(r =>
-    r.systems.map(s => s.toUpperCase()).some(s => ["HNG", "HNC", "COMPASS", "SB"].includes(s))
+    r.systems.map(s => s.toUpperCase()).some(s => ["HNG", "HNC", "COMPASS", "SB", "CHUYEN_HE_S_I"].includes(s))
   ).length
   const isLegacyConfig = (config.schemaVersion || 1) < 2
 
@@ -1877,7 +1877,7 @@ export function AdmissionRegulationManager({
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-[#003B3A] border border-[#E2E8F0] text-xs font-semibold transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5 text-[#008B85]" />
-              <span>Nạp chuẩn Quy chế Sky-Line 2026 (19 quy tắc)</span>
+              <span>Nạp chuẩn Quy chế Sky-Line 2026 ({DEFAULT_ADMISSION_REGULATIONS.rules.length} quy tắc)</span>
             </button>
           )}
           {config.updatedAt && (

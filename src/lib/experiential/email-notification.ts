@@ -469,7 +469,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
                 <tr>
                   <td align="center" style="padding-bottom: 8px;">
                     <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     </span>
                   </td>
                 </tr>
@@ -918,7 +918,7 @@ export async function sendActivityAllocationNotification(payload: TLHNAllocation
                 <tr>
                   <td align="center" style="padding-bottom: 8px;">
                     <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     </span>
                   </td>
                 </tr>
@@ -1105,7 +1105,7 @@ export async function sendActivityAllocationNotification(payload: TLHNAllocation
                 <tr>
                   <td align="center" style="padding-bottom: 8px;">
                     <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                      <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     </span>
                   </td>
                 </tr>

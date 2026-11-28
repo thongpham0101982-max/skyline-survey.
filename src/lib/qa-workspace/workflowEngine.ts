@@ -167,7 +167,6 @@ export const DEFAULT_WORKSPACE_CARDS: QaWorkspaceCardConfig[] = [
       { label: "Báo cáo Tuần KT&ĐBCL", href: "/admin/weekly-reports" },
       { label: "Thống kê Sổ điểm & Phổ điểm", href: "/admin/ktdbcl/thong-ke-bao-cao" },
       { label: "Hỗ trợ Học tập", href: "/admin/ktdbcl/support" },
-      { label: "Import KQHT", href: "/admin/ktdbcl/import-kqht?v=2.1" },
     ],
   },
   {

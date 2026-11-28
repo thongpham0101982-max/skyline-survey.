@@ -76,6 +76,11 @@ interface Student {
   devProfessionalComment?: string;
   devPsychologyComment?: string;
   directorNote?: string;
+  enrollmentStatus?: string | null;
+  enrollmentClassId?: string | null;
+  enrollmentDate?: string | null;
+  enrollmentCode?: string | null;
+  enrollmentClass?: { id: string; className: string; classCode?: string } | null;
 }
 interface Assignment {
   id: string; periodId: string; batchId?: string; userId: string; 
@@ -5111,7 +5116,9 @@ ${reportForm.directorNote}`;
 
   const saveStudent = async (andAddAnother: boolean | React.MouseEvent = false) => {
     const shouldAddAnother = typeof andAddAnother === "boolean" ? andAddAnother : false;
-    if (editS ? cannotUpdate : cannotCreate) return;
+    if (editS ? cannotUpdate : cannotCreate) {
+      return notify("Bạn không có quyền thực hiện thao tác này", "err");
+    }
     
     if (isChuyenHe && !editS) {
       const selectedStudentsData = Object.values(selectedStudentsMap);
@@ -5168,6 +5175,19 @@ ${reportForm.directorNote}`;
 
     if (!sForm.studentCode.trim() || !sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên", "err");
 
+    const syncedLocType = selectedLocationType || sForm.targetType || "Nội tỉnh";
+    const syncedPayload = {
+      ...sForm,
+      studentCode: sForm.studentCode.trim(),
+      fullName: sForm.fullName.trim(),
+      surveyFormType: sForm.surveyFormType || (isChuyenHe ? targetSystem : ""),
+      targetType: syncedLocType,
+      oldSchoolName: schoolNameInput || sForm.oldSchoolName || "",
+      oldSchoolType: schoolTypeInput || sForm.oldSchoolType || "",
+      cityName: syncedLocType === "Nội tỉnh" ? "Thành phố Đà Nẵng" : (syncedLocType === "Ngoại tỉnh" ? (selectedProvince || sForm.cityName || "") : ""),
+      countryName: syncedLocType === "Nước ngoài" ? (selectedCountry || sForm.countryName || "") : "Việt Nam",
+    };
+
     setIsSavingStudent(true);
     try {
       const r = editS
@@ -5176,7 +5196,7 @@ ${reportForm.directorNote}`;
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               id: editS.id,
-              data: { ...sForm, surveyFormType: isChuyenHe ? targetSystem : sForm.surveyFormType }
+              data: syncedPayload
             })
           })
         : await fetch("/api/input-assessment-students", {
@@ -5185,7 +5205,7 @@ ${reportForm.directorNote}`;
             body: JSON.stringify({
               action: "CREATE",
               data: {
-                ...sForm,
+                ...syncedPayload,
                 periodId: sForm.periodId || sPeriodId,
                 batchId: sForm.batchId || sBatchId || null,
                 registeredCampus: sForm.registeredCampus || null
@@ -5225,9 +5245,16 @@ ${reportForm.directorNote}`;
             kqgdTieuHoc: "",
           }));
         } else {
+          const savedData = await r.json().catch(() => null);
           setSModal(false);
           fetchStudents();
-          notify(editS ? "Đã cập nhật học sinh" : "Đã thêm học sinh thành công");
+          notify(
+            editS
+              ? (savedData?.syncedEnrolledStudentCount > 0
+                  ? "Đã cập nhật hồ sơ và đồng bộ sang thông tin Học sinh đã nhập học!"
+                  : "Đã cập nhật học sinh")
+              : "Đã thêm học sinh thành công"
+          );
         }
       } else {
         const err = await r.json().catch(() => ({}));
@@ -5373,6 +5400,9 @@ ${reportForm.directorNote}`;
         if (String(value || "").toLowerCase().includes("homeschool")) {
           next.programType = "HOMESCHOOLING";
         }
+      }
+      if (field === "oldSchoolType" && String(value || "").toLowerCase().includes("homeschool")) {
+        next.programType = "HOMESCHOOLING";
       }
       return { ...prev, [s.id]: next };
     });
@@ -6099,6 +6129,7 @@ ${reportForm.directorNote}`;
       const isHomeschool = hasExplicitProgram
         ? rec.programType === "HOMESCHOOLING"
         : (rec.programType === "HOMESCHOOLING"
+          || (s.oldSchoolType || "").toLowerCase().includes("homeschool")
           || (s.oldSchoolName || "").toLowerCase().includes("homeschool")
           || rawKqgd.toLowerCase().includes("homeschool"));
 
@@ -9936,6 +9967,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           if (!hasExplicitProgram) {
                             const inferredHomeschool =
                               entranceRec.programType === "HOMESCHOOLING"
+                              || (parsedOldSchoolType || "").toLowerCase().includes("homeschool")
+                              || (s.oldSchoolType || "").toLowerCase().includes("homeschool")
                               || (parsedOldSchoolName || "").toLowerCase().includes("homeschool")
                               || (s.oldSchoolName || "").toLowerCase().includes("homeschool")
                               || (rawKqgd || "").toLowerCase().includes("homeschool")
@@ -14018,6 +14051,27 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
 
             {studentModalTab === "profile" ? (
               <div className="space-y-4">
+                {editS && (editS.enrollmentStatus === "COMPLETED" || editS.enrollmentStatus === "ENROLLED" || editS.enrollmentClassId || editS.enrollmentCode) && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-[#059669] rounded-xl px-4 py-2.5 text-xs tabular-nums">
+                    <div className="flex items-center gap-2 text-[#003B3A]">
+                      <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0" />
+                      <span>
+                        <strong className="font-bold">Học sinh đã nhập học</strong>
+                        {(editS.enrollmentClass?.className || editS.enrollmentCode) && (
+                          <span className="text-slate-600">
+                            {" ("}
+                            {[
+                              editS.enrollmentClass?.className ? `Lớp ${editS.enrollmentClass.className}` : null,
+                              editS.enrollmentCode ? `Mã HS: ${editS.enrollmentCode}` : null,
+                            ].filter(Boolean).join(" · ")}
+                            {")"}
+                          </span>
+                        )}
+                        {" — Thay đổi về Họ tên, Ngày sinh, Giới tính sẽ tự động đồng bộ sang hồ sơ Học sinh chính khóa."}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {/* MỤC 1: THÔNG TIN CÁ NHÂN HỌC SINH */}
                 <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
                   <div className="flex items-center justify-between pb-2.5 border-b border-[#F1F5F9]">
@@ -14050,9 +14104,8 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       <input
                         type="text"
                         value={sForm.studentCode}
-                        onChange={e => setSForm(f => ({ ...f, studentCode: e.target.value }))}
-                        className={`${inp} font-mono font-semibold tabular-nums ${editS ? 'bg-slate-100 cursor-not-allowed text-slate-500' : ''}`}
-                        disabled={!!editS}
+                        onChange={e => setSForm(f => ({ ...f, studentCode: e.target.value.toUpperCase().replace(/\s/g, "") }))}
+                        className={`${inp} font-mono font-semibold tabular-nums`}
                         placeholder="VD: HS701020240"
                       />
                     </div>
@@ -14388,6 +14441,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             <option value="Tư thục">Tư thục</option>
                             <option value="Song ngữ">Song ngữ</option>
                             <option value="Quốc tế">Quốc tế</option>
+                            <option value="Homeschooling">Homeschooling</option>
                           </select>
                         </div>
 
@@ -16383,6 +16437,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                             <option value="Tư thục">Tư thục</option>
                             <option value="Song ngữ">Song ngữ</option>
                             <option value="Quốc tế">Quốc tế</option>
+                            <option value="Homeschooling">Homeschooling</option>
                           </select>
                         </div>
 

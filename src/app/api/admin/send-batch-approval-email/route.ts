@@ -1,9 +1,9 @@
 // @ts-nocheck
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
 import { buildStudentQuickApproveUrls, generateBatchApprovalToken } from "@/lib/k12-approval-service";
+import { requireEntranceOperationsSession } from "@/lib/security-guard";
 
 function extractShortCampus(raw?: string | null): string {
   const s = String(raw || "").trim();
@@ -74,13 +74,13 @@ function summarizeStudentScoresForEmail(s: any): string {
 }
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { error } = await requireEntranceOperationsSession();
+  if (error) {
+    return error;
   }
 
   try {
-    const { periodId, batchId, gdcsEmail, isPreschool } = await req.json();
+    const { periodId, batchId, gdcsEmail, isPreschool, studentIds } = await req.json();
     if (!periodId || !batchId || !gdcsEmail) {
       return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
     }
@@ -127,6 +127,9 @@ export async function POST(req: Request) {
       const whereClause: any = { periodId };
       if (batchId && batchId !== "all") {
         whereClause.batchId = batchId;
+      }
+      if (Array.isArray(studentIds) && studentIds.length > 0) {
+        whereClause.id = { in: studentIds };
       }
       students = await prisma.inputAssessmentStudent.findMany({
         where: whereClause,
@@ -267,6 +270,11 @@ export async function POST(req: Request) {
                 <a href="${quickUrls.approveKhongDatUrl}" target="_blank" style="display:inline-block; padding:3px 8px; font-size:10px; font-weight:700; color:#E11D48; background:#FFF1F2; border:1px solid #FECDD3; border-radius:5px; text-decoration:none; margin-right:3px;">
                   ${quickUrls.rejectLabel}
                 </a>
+                ${!isPreschool && quickUrls.viewPvdhUrl ? `
+                <a href="${quickUrls.viewPvdhUrl}" target="_blank" style="display:inline-block; padding:3px 8px; font-size:10px; font-weight:700; color:#00736E; background:#F0FDFA; border:1px solid #99F6E4; border-radius:5px; text-decoration:none; margin-right:3px;">
+                  Phiếu PVĐH
+                </a>
+                ` : ""}
                 <a href="${quickUrls.portalUrl}" target="_blank" style="display:inline-block; padding:3px 8px; font-size:10px; font-weight:700; color:#003B3A; background:#F8FAFC; border:1px solid #CBD5E1; border-radius:5px; text-decoration:none;">
                   Chi tiết
                 </a>
@@ -296,7 +304,7 @@ export async function POST(req: Request) {
             <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 10px auto;">
               <tr>
                 <td bgcolor="#0B4A47" style="background-color:#0B4A47; border:1px solid #00A19A; border-radius:20px; padding:3px 14px; font-size:10.5px; font-weight:800; color:#5EEAD4; letter-spacing:1px; text-transform:uppercase;">
-                  🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                  <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                 </td>
               </tr>
             </table>
@@ -406,7 +414,7 @@ export async function POST(req: Request) {
               </table>
             </div>
             <div style="margin-top:8px; font-size:11.5px; color:#0F766E; font-weight:600;">
-              💡 <strong>Duyệt trực tiếp trên Email:</strong> Thầy/Cô có thể bấm trực tiếp vào các nút <strong>✓ Duyệt Đạt</strong>, <strong>⚠ Cam kết</strong> hoặc <strong>✕ Không đạt</strong> ở cột <em>Thao tác</em> trên từng học sinh để phê duyệt ngay trên Email.
+              💡 <strong>Duyệt trực tiếp trên Email:</strong> Thầy/Cô bấm vào các nút <strong>✓ Duyệt Đạt</strong>, <strong>⚠ Cam kết</strong> hoặc <strong>✕ Không đạt</strong> ở cột <em>Thao tác</em> rồi bấm <strong>Xác nhận</strong> trên trang mở ra (không cần đăng nhập; an toàn trước trình quét link tự động của Outlook).
             </div>
           </td>
         </tr>
@@ -554,6 +562,22 @@ export async function POST(req: Request) {
           replyTo: "ktdbcl@skylineschool.edu.vn"
         });
 
+        if (!isPreschool && Array.isArray(group) && group.length > 0) {
+          try {
+            const sentIso = new Date().toISOString();
+            await (prisma as any).auditLog.createMany({
+              data: group.map((st: any) => ({
+                userId: "system",
+                userEmail: "ktdbcl@skylineschool.edu.vn",
+                action: "GDCS_APPROVAL_EMAIL_SENT",
+                targetTable: "InputAssessmentStudent",
+                targetId: String(st.id),
+                newValues: JSON.stringify({ to: currentGdcsEmail, batchId, sentAt: sentIso })
+              }))
+            });
+          } catch {}
+        }
+
         sentSummary[currentGdcsEmail] = (sentSummary[currentGdcsEmail] || 0) + totalGroup;
       }
 
@@ -568,6 +592,22 @@ export async function POST(req: Request) {
       html: emailHtml,
       replyTo: "ktdbcl@skylineschool.edu.vn"
     });
+
+    if (!isPreschool && Array.isArray(students) && students.length > 0) {
+      try {
+        const sentIso = new Date().toISOString();
+        await (prisma as any).auditLog.createMany({
+          data: students.map((st: any) => ({
+            userId: "system",
+            userEmail: "ktdbcl@skylineschool.edu.vn",
+            action: "GDCS_APPROVAL_EMAIL_SENT",
+            targetTable: "InputAssessmentStudent",
+            targetId: String(st.id),
+            newValues: JSON.stringify({ to: gdcsEmail, batchId, sentAt: sentIso })
+          }))
+        });
+      } catch {}
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

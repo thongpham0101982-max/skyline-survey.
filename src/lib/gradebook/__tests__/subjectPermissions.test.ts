@@ -48,7 +48,7 @@ describe("Gradebook Category & Subject Permission Scope", () => {
     mockFindFirstAcademicYear.mockResolvedValue({ id: "ay-2026" })
   })
 
-  it("includes GRADEBOOK_REMARKS (Sổ điểm - Nhận xét) category with 5 modules including Xuất bảng điểm", () => {
+  it("includes GRADEBOOK_REMARKS (Sổ điểm - Nhận xét) category with 6 modules including Giám sát tiến độ nhập điểm & Xuất bảng điểm", () => {
     const gradebookCat = APP_CATEGORIES.find((c) => c.id === "GRADEBOOK_REMARKS")
     expect(gradebookCat).toBeDefined()
     expect(gradebookCat?.name).toBe("Sổ điểm - Nhận xét")
@@ -60,13 +60,23 @@ describe("Gradebook Category & Subject Permission Scope", () => {
       "KTDBCL_GRADE_CTQT",
       "KTDBCL_THONG_KE_BAO_CAO",
       "KTDBCL_PHAN_TICH_THKQ",
+      "KTDBCL_GIAM_SAT_TIEN_DO",
       "KTDBCL_XUAT_BANG_DIEM",
+    ])
+
+    const gstdMod = gradebookCat?.modules.find((m) => m.code === "KTDBCL_GIAM_SAT_TIEN_DO")
+    expect(gstdMod?.subModules?.map((s) => s.code)).toEqual([
+      "KTDBCL_GSTD_HS_THIEU_DIEM",
+      "KTDBCL_GSTD_TINH_HINH_NHAP",
     ])
 
     expect(getModuleName("KTDBCL_GRADE_REMARKS", "", "vi")).toBe("Sổ điểm Vnedu")
     expect(getModuleName("KTDBCL_GRADE_CTQT", "", "vi")).toBe("Sổ điểm CTQT")
     expect(getModuleName("KTDBCL_THONG_KE_BAO_CAO", "", "vi")).toBe("Thống kê báo cáo")
     expect(getModuleName("KTDBCL_PHAN_TICH_THKQ", "", "vi")).toBe("Phân tích Tổng hợp Kết quả (THKQ)")
+    expect(getModuleName("KTDBCL_GIAM_SAT_TIEN_DO", "", "vi")).toBe("Giám sát tiến độ nhập điểm")
+    expect(getModuleName("KTDBCL_GSTD_HS_THIEU_DIEM", "", "vi")).toBe("1. Thống kê học sinh thiếu điểm")
+    expect(getModuleName("KTDBCL_GSTD_TINH_HINH_NHAP", "", "vi")).toBe("2. Thống kê tình hình nhập điểm")
     expect(getModuleName("KTDBCL_XUAT_BANG_DIEM", "", "vi")).toBe("Xuất bảng điểm")
     expect(SIDEBAR_TRANSLATIONS.modules.KTDBCL_GRADE_REMARKS.vi).toBe("Sổ điểm Vnedu")
     expect(SIDEBAR_TRANSLATIONS.modules.KTDBCL_XUAT_BANG_DIEM.vi).toBe("Xuất bảng điểm")

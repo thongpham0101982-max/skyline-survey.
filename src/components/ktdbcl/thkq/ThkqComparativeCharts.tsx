@@ -45,53 +45,46 @@ export function ThkqComparativeCharts({ charts, selectedCampusName = "Cơ sở",
   const campusKeys = Object.keys(sampleRow).filter(k => k !== "grade" && k !== "gradeLabel" && k !== "Hệ thống")
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 mb-6">
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5">
       {/* Header Biểu đồ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white shadow-md shadow-sky-600/20">
-            <BarChart3 className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-800 tracking-tight">
-                Phân tích So sánh Đối chuẩn Chất lượng Đa tầng
-              </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700">
-                Comparative Analytics
-              </span>
-            </div>
-            <p className="text-xs text-slate-500">
-              Đối chiếu ĐTB môn theo Khối giữa các Cơ sở và với Chuẩn Toàn Hệ thống Sky-Line
-            </p>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F1F5F9]">
+        <div className="border-l-4 border-[#003B3A] pl-3">
+          <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+            Biểu đồ so sánh điểm trung bình theo khối, cơ sở &amp; toàn hệ thống
+          </h3>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Đối chiếu ĐTB môn học giữa các cơ sở và mặt bằng chung toàn hệ thống Sky-Line.
+          </p>
         </div>
 
         {/* Tab chuyển đổi biểu đồ */}
-        <div className="flex items-center rounded-xl bg-slate-100 p-0.5 border border-slate-200/80 text-xs font-semibold">
+        <div className="flex items-center rounded-xl bg-[#F8FAFC] p-0.5 border border-[#E2E8F0] text-xs font-semibold">
           <button
+            type="button"
             onClick={() => setActiveTab("CAMPUS_GRADE")}
-            className={`px-3 py-1.5 rounded-lg transition ${
-              activeTab === "CAMPUS_GRADE" ? "bg-white text-sky-700 shadow-xs" : "text-slate-600 hover:text-slate-900"
+            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+              activeTab === "CAMPUS_GRADE" ? "bg-[#003B3A] text-white" : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Cơ sở vs Khối & Hệ thống
+            Cơ sở vs Khối &amp; Hệ thống
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("SUBJECT_SYSTEM")}
-            className={`px-3 py-1.5 rounded-lg transition ${
-              activeTab === "SUBJECT_SYSTEM" ? "bg-white text-sky-700 shadow-xs" : "text-slate-600 hover:text-slate-900"
+            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+              activeTab === "SUBJECT_SYSTEM" ? "bg-[#003B3A] text-white" : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Đối chuẩn Môn học
+            Đối chuẩn môn học
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("DISTRIBUTION")}
-            className={`px-3 py-1.5 rounded-lg transition ${
-              activeTab === "DISTRIBUTION" ? "bg-white text-sky-700 shadow-xs" : "text-slate-600 hover:text-slate-900"
+            className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+              activeTab === "DISTRIBUTION" ? "bg-[#003B3A] text-white" : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Phổ điểm (Distribution)
+            Phân phối phổ điểm
           </button>
         </div>
       </div>

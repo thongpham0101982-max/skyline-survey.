@@ -186,7 +186,7 @@ export async function createTask(data: any) {
                         <tr>
                           <td bgcolor="${task.isImportant ? '#881337' : '#003B3A'}" style="background-color: ${task.isImportant ? '#881337' : '#003B3A'}; padding: 32px 28px; text-align: center;">
                             <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.15); border-radius: 20px; color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
-                              ${task.isImportant ? '⚠️ QUAN TRỌNG / KHẨN CẤP' : '🏫 HỆ THỐNG GIÁO DỤC SKY-LINE'}
+                              ${task.isImportant ? '⚠️ QUAN TRỌNG / KHẨN CẤP' : '<img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>'}
                             </div>
                             <h1 style="margin: 0; color: #FFFFFF; font-size: 20px; font-weight: 800; letter-spacing: 0.3px; line-height: 1.3;">
                               ${task.title}
@@ -371,7 +371,7 @@ export async function confirmTaskAssignment(taskId: string) {
                       <tr>
                         <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 30px 24px; text-align: center;">
                           <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">
-                            🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                            <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                           </div>
                           <h1 style="margin: 0; color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
                             ✅ ĐÃ TIẾP NHẬN CÔNG VIỆC

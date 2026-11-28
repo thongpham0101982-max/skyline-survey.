@@ -4,10 +4,15 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine"
+import { formatStandardBatchName, extractMeaningfulBatchNote } from "@/lib/batchNaming"
+import { requireStaffSession, requireEntranceOperationsSession, requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 export async function GET(req) {
-  const session = await auth();
-  const user = session?.user as any;
+  const ctx = await requireStaffSession();
+  if (!ctx) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const user = ctx.user as any;
   try {
     const { searchParams } = new URL(req.url);
     
@@ -82,6 +87,10 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
+    const ctx = await requireEntranceOperationsSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const body = await req.json();
     const { action, data } = body;
     
@@ -126,6 +135,10 @@ export async function POST(req) {
 
 export async function PUT(req) {
   try {
+    const ctx = await requireEntranceOperationsSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const body = await req.json();
     const { action, id, data } = body;
     
@@ -158,6 +171,55 @@ export async function PUT(req) {
         }
       });
       return NextResponse.json(result);
+    }
+    else if (action === "NORMALIZE_BATCH_NAMES") {
+      const targetYearId = data?.academicYearId || undefined;
+      const whereBatch: any = targetYearId ? { period: { academicYearId: targetYearId } } : {};
+
+      const [batchesToCheck, allCampuses] = await Promise.all([
+        (prisma as any).preschoolInputAssessmentBatch.findMany({
+          where: whereBatch,
+          include: {
+            period: { select: { id: true, name: true, code: true } }
+          }
+        }),
+        (prisma as any).campus.findMany({
+          select: { id: true, campusCode: true, campusName: true }
+        })
+      ]);
+
+      const campusMap = new Map<string, any>();
+      (allCampuses || []).forEach((c: any) => campusMap.set(c.id, c));
+
+      let updatedCount = 0;
+      for (const b of batchesToCheck || []) {
+        const campus = b.campusId ? campusMap.get(b.campusId) : null;
+        const note = extractMeaningfulBatchNote(b.name);
+        const newName = formatStandardBatchName({
+          campusCode: campus?.campusCode,
+          campusName: campus?.campusName,
+          periodName: b.period?.name,
+          periodCode: b.period?.code,
+          batchNumber: b.batchNumber,
+          startDate: b.startDate,
+          endDate: b.endDate,
+          note,
+          isPreschool: true
+        });
+        if (newName && newName !== b.name) {
+          await (prisma as any).preschoolInputAssessmentBatch.update({
+            where: { id: b.id },
+            data: { name: newName }
+          });
+          updatedCount++;
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        updatedCount,
+        totalChecked: (batchesToCheck || []).length
+      });
     }
     else if (action === "SEND_ASSIGNMENT_EMAIL" || action === "HANDOVER_TO_GIAO_VU") {
       const targetBatchId = id || data?.batchId || body?.batchId || null;
@@ -220,6 +282,10 @@ export async function PUT(req) {
 
 export async function DELETE(req) {
   try {
+    const ctx = await requireAdminOrLeadershipSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const type = searchParams.get("type"); // 'period' or 'batch'
@@ -483,7 +549,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
             id: options?.actorUser?.id || "system_handover",
             fullName: senderName,
             role: options?.actorUser?.role || "GIAO_VU",
-            isSuperAdmin: true,
+            isSuperAdmin: ["ADMIN", "SUPER_ADMIN", "KT_DBCL"].includes(String(options?.actorUser?.role || "").toUpperCase()),
           },
         });
       } catch (wfErr) {
@@ -540,7 +606,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string, options?: {
                       <tr>
                         <td align="center" style="padding-bottom: 8px;">
                           <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                            🏫 BẬC MẦM NON • HỆ THỐNG GIÁO DỤC SKY-LINE
+                            <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">BẬC MẦM NON • HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                           </span>
                         </td>
                       </tr>

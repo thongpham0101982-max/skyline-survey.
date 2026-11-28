@@ -129,17 +129,17 @@ export function XetDuyetKetQuaClient({
   return (
     <div className="space-y-4 max-w-[1440px] mx-auto">
       {/* AUTHORITATIVE ADMISSIONS LEDGER MASTHEAD */}
-      <header className="bg-white border border-[#E2E8F0] border-l-4 border-l-[#003B3A] rounded-2xl px-5 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 no-print shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+      <header className="bg-white border border-[#E2E8F0] border-l-4 border-l-[#003B3A] rounded-2xl px-3.5 py-3 sm:px-5 sm:py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 no-print shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         <div className="min-w-0 flex flex-col gap-0.5">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-[#CCFBF1] text-[11px] font-semibold whitespace-nowrap shrink-0">
               Hội đồng Tuyển sinh
             </span>
-            <h1 className="text-base sm:text-lg font-bold text-[#003B3A] tracking-tight whitespace-nowrap">
+            <h1 className="text-base sm:text-lg font-bold text-[#003B3A] tracking-tight sm:whitespace-nowrap">
               {activeTab === "k12" ? "Xét duyệt kết quả đầu vào K-12" : "Xét duyệt đầu vào Mầm non"}
             </h1>
           </div>
-          <p className="text-xs text-slate-500 font-medium truncate">
+          <p className="text-xs text-slate-500 font-medium line-clamp-2 sm:truncate">
             {activeTab === "k12"
               ? "Thẩm định hồ sơ khảo sát năng lực, định hướng đầu vào và phê duyệt trúng tuyển phổ thông"
               : "Đánh giá sự phát triển của trẻ và phê duyệt kết quả tiếp nhận bậc Mầm non"}
@@ -169,10 +169,10 @@ export function XetDuyetKetQuaClient({
           )}
 
           {hasK12 && hasPreschool && (
-            <div className="flex p-1 bg-[#F8FAFC] rounded-xl gap-1 shrink-0 border border-[#E2E8F0]">
+            <div className="flex w-full sm:w-auto p-1 bg-[#F8FAFC] rounded-xl gap-1 shrink-0 border border-[#E2E8F0]">
               <button
                 onClick={() => handleTabChange("k12")}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                   activeTab === "k12"
                     ? "bg-[#003B3A] text-white shadow-2xs"
                     : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
@@ -183,7 +183,7 @@ export function XetDuyetKetQuaClient({
               </button>
               <button
                 onClick={() => handleTabChange("preschool")}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
                   activeTab === "preschool"
                     ? "bg-[#003B3A] text-white shadow-2xs"
                     : "text-slate-600 hover:text-[#003B3A] hover:bg-white"

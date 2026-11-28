@@ -3,6 +3,7 @@ import JSZip from "jszip";
 import * as XLSX from "xlsx";
 import {
   PVDH_SEED_TEMPLATES,
+  buildFieldsForTemplate,
   classifyAssessmentContentCategory,
   getDefaultPvdhCodeForGrade,
   formatFollowUpActionsToText,
@@ -234,6 +235,35 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
+const sentEmailsLog: any[] = [];
+
+vi.mock("@/lib/mail", () => ({
+  sendEmail: vi.fn(async (opts: any) => {
+    sentEmailsLog.push(opts);
+    return { success: true, messageId: `mock_msg_${sentEmailsLog.length}` };
+  }),
+}));
+
+vi.mock("@/lib/orientation/service", () => ({
+  getAssignedPsychologyTeachers: vi.fn(async () => [
+    {
+      userId: "USR_PSYCH_1",
+      fullName: "Cô Nguyễn Tâm Lý",
+      email: "tamly.cs1@skylineschool.edu.vn",
+      isBatchAssigned: true,
+      subjectName: "Tâm lý",
+    },
+  ]),
+  getDepartmentTeachers: vi.fn(async () => []),
+  getStudentOrientationRecord: vi.fn(async () => null),
+  upsertStudentOrientationRecord: vi.fn(async () => ({})),
+  getCampusGiaovuEmail: vi.fn((cs?: string) =>
+    String(cs || "").toUpperCase().includes("CS2")
+      ? "giaovu.cs2@skylineschool.edu.vn"
+      : "giaovu.cs1@skylineschool.edu.vn"
+  ),
+}));
+
 vi.mock("@/lib/entrance-progress/entranceProgressEngine", () => ({
   executeEntranceWorkflowAction: vi.fn(async () => ({ success: true })),
 }));
@@ -288,6 +318,7 @@ import {
   handoverConfirmedPvdhToGvcn,
   listGvcnHandoversForActor,
   resolveApplicablePvdhTemplate,
+  requestPvdhPsychInterview,
   runBatchPvdhExportJob,
   saveKsdvFileTemplateAndMappings,
   savePvdhRecord,
@@ -337,9 +368,18 @@ function seedInMemoryTemplatesAndSampleContext() {
   mem.studentScores.clear();
   mem.storedFiles.clear();
 
+  const slugifyCode = (raw: string) =>
+    raw
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+
   const now = new Date().toISOString();
   for (const seed of PVDH_SEED_TEMPLATES) {
-    const tplId = `pvdhtpl_${seed.code.toLowerCase().replace("-", "_")}`;
+    const tplId = `pvdhtpl_${slugifyCode(seed.code)}`;
     const verId = `${tplId}_v1`;
     mem.pvdhTemplates.set(tplId, {
       id: tplId,
@@ -390,6 +430,7 @@ function seedInMemoryTemplatesAndSampleContext() {
 
 function buildCompleteValidPayload(templateCode: string) {
   const seed = PVDH_SEED_TEMPLATES.find((s) => s.code === templateCode)!;
+  const isBm = seed.exportLayout.layoutVariant === "BM_KTDBCL_ABCD";
   const studentResponses: Record<string, any> = {};
   const parentResponses: Record<string, any> = {};
 
@@ -404,14 +445,14 @@ function buildCompleteValidPayload(templateCode: string) {
               notRecordedReason: "Thời lượng trao đổi có hạn, hẹn bổ sung",
             }
           : {
-              responseText: `Chia sẻ chi tiết của học sinh cho nhóm ${idx + 1} (${f.label}) với nhiều câu văn tiếng Việt có dấu đầy đủ.`,
+              responseText: `Chia sẻ chi tiết của học sinh cho mục ${idx + 1} (${f.label}) với nhiều câu văn tiếng Việt có dấu đầy đủ.`,
               notRecorded: false,
               notRecordedReason: "",
             };
     });
 
   seed.fields
-    .filter((f) => f.sectionCode === "IV_PARENT")
+    .filter((f) => f.sectionCode === "IV_PARENT" || f.sectionCode === "C_PARENT_GRADE")
     .forEach((f, idx) => {
       parentResponses[f.fieldKey] = {
         responseText: `Ý kiến trao đổi thực tế của phụ huynh tại mục ${idx + 1} (${f.label}).`,
@@ -419,6 +460,29 @@ function buildCompleteValidPayload(templateCode: string) {
         notRecordedReason: "",
       };
     });
+
+  if (isBm) {
+    return {
+      parentFullName: "Trần Thị Minh Châu",
+      parentRelationship: "Mẹ",
+      interviewDate: "2026-11-17",
+      studentInterviewDate: "2026-11-17",
+      parentInterviewDate: "2026-11-17",
+      studentResponses,
+      parentResponses,
+      teacherSummary: {
+        d01: "Con tự tin giao tiếp, hào hứng với các hoạt động vẽ tranh và kể chuyện.",
+        d02: "Cần theo dõi thêm nếp ngủ trưa và làm quen bạn mới trong 2 tuần đầu.",
+        d03: "Gia đình và học sinh cùng mong muốn môi trường thân thiện, chú trọng tiếng Anh và kỹ năng tự lập.",
+        d04: "GVCN phối hợp trao đổi định kỳ cùng phụ huynh sau 2 tuần nhập học.",
+        sheetStatus: "HOAN_THANH" as const,
+        psychInterviewRequested: false,
+      },
+      obsStrengthsInterests: "",
+      followUpActions: [],
+      planFurtherTopics: [] as any[],
+    };
+  }
 
   return {
     parentFullName: "Trần Thị Minh Châu",
@@ -470,41 +534,55 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
     seedInMemoryTemplatesAndSampleContext();
   });
 
-  it("1 & 2. Khối 1..12 mở đúng PVDH-01..05; mỗi mẫu có đủ 6 nhóm HS, 4 trường GV, 5 nhóm PHHS và Mục V", async () => {
-    const expectedByGrade: Record<number, string> = {
-      1: "PVDH-01",
-      2: "PVDH-02",
-      3: "PVDH-02",
-      4: "PVDH-03",
-      5: "PVDH-03",
-      6: "PVDH-04",
-      7: "PVDH-04",
-      8: "PVDH-04",
-      9: "PVDH-04",
-      10: "PVDH-05",
-      11: "PVDH-05",
-      12: "PVDH-05",
-    };
-
+  it("1 & 2. Trọn bộ Khối 1..12 mở đúng BM.KTĐBCL.31..42 bám sát 100% cấu trúc A, B, C, D", async () => {
     for (let g = 1; g <= 12; g++) {
-      expect(getDefaultPvdhCodeForGrade(`Khối ${g}`)).toBe(expectedByGrade[g]);
+      const expectedCode = `BM.KTĐBCL.${30 + g}`;
+      expect(getDefaultPvdhCodeForGrade(`Khối ${g}`)).toBe(expectedCode);
       const resolved = await resolveApplicablePvdhTemplate({ grade: `Khối ${g}` });
-      expect(resolved.template.code).toBe(expectedByGrade[g]);
+      expect(resolved.template.code).toBe(expectedCode);
     }
 
-    expect(PVDH_SEED_TEMPLATES).toHaveLength(5);
-    for (const tpl of PVDH_SEED_TEMPLATES) {
-      expect(tpl.description).not.toContain("đã ban hành");
-      expect(tpl.fields.filter((f) => f.sectionCode === "II_STUDENT")).toHaveLength(6);
-      expect(tpl.fields.filter((f) => f.sectionCode === "III_TEACHER")).toHaveLength(4);
-      expect(tpl.fields.filter((f) => f.sectionCode === "IV_PARENT")).toHaveLength(5);
-      expect(tpl.fields.filter((f) => f.sectionCode === "V_ORIENTATION").length).toBeGreaterThanOrEqual(6);
-    }
+    expect(PVDH_SEED_TEMPLATES).toHaveLength(12);
 
-    // Kiểm tra câu chuyển cấp khối 9 của PVDH-04
-    const pvdh04 = PVDH_SEED_TEMPLATES.find((t) => t.code === "PVDH-04")!;
-    const q5 = pvdh04.fields.find((f) => f.fieldKey === "hs_q5")!;
-    expect(JSON.stringify(q5)).toContain("THCS");
+    // Kiểm tra toàn bộ 12 mẫu BM.KTĐBCL.31 .. BM.KTĐBCL.42 (Khối 1 .. Khối 12): chỉ gồm đúng Thông tin chung (7 trường), A01..A06, B01..B05, C01..C05, D01..D04 + trạng thái + tâm lí
+    for (let g = 1; g <= 12; g++) {
+      const bmCode = `BM.KTĐBCL.${30 + g}`;
+      const bmTpl = PVDH_SEED_TEMPLATES.find((t) => t.code === bmCode)!;
+      expect(bmTpl).toBeTruthy();
+      expect(bmTpl.exportLayout.layoutVariant).toBe("BM_KTDBCL_ABCD");
+      expect(bmTpl.exportLayout.formCodeBox).toBe(bmCode);
+      expect(bmTpl.exportLayout.headerSubtitle).toBe(`(Dành cho khối ${g})`);
+      expect(bmTpl.fields.filter((f) => f.sectionCode === "I_GENERAL")).toHaveLength(7);
+      const aFields = bmTpl.fields.filter((f) => f.sectionCode === "II_STUDENT");
+      expect(aFields.map((f) => f.fieldKey)).toEqual(["a01", "a02", "a03", "a04", "a05", "a06"]);
+      // Đảm bảo A01..A06 không có promptQuestion rỗng thừa
+      aFields.forEach((f) => expect(f.promptQuestion).toBeUndefined());
+      expect(bmTpl.fields.filter((f) => f.sectionCode === "IV_PARENT").map((f) => f.fieldKey)).toEqual([
+        "b01",
+        "b02",
+        "b03",
+        "b04",
+        "b05",
+      ]);
+      expect(bmTpl.fields.filter((f) => f.sectionCode === "C_PARENT_GRADE").map((f) => f.fieldKey)).toEqual([
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05",
+      ]);
+      expect(bmTpl.fields.filter((f) => f.sectionCode === "D_TEACHER_SUMMARY").map((f) => f.fieldKey)).toEqual([
+        "d01",
+        "d02",
+        "d03",
+        "d04",
+        "sheet_status",
+        "psych_interview_requested",
+      ]);
+      // Tuyệt đối không chứa trường ngoài biểu mẫu gốc
+      expect(bmTpl.fields.filter((f) => f.sectionCode === "III_TEACHER")).toHaveLength(0);
+      expect(bmTpl.fields.filter((f) => f.sectionCode === "V_ORIENTATION")).toHaveLength(0);
+    }
   });
 
   it("3 & 4. Lưu nháp được phép thiếu; hoàn tất báo đúng fieldKey thiếu; KHÔNG sinh điểm môn hoặc tự kết luận tiếp nhận", async () => {
@@ -568,7 +646,7 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
     });
 
     // Hoàn tất đủ dữ liệu thành công, reload giữ nguyên toàn bộ nội dung
-    const validPayload = buildCompleteValidPayload("PVDH-04");
+    const validPayload = buildCompleteValidPayload("BM.KTĐBCL.36");
     const completedWs = await savePvdhRecord({
       actor: gvActor,
       studentId: "STU_K6",
@@ -578,8 +656,8 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       payload: validPayload,
     });
     expect(completedWs.record.workflowStatus).toBe("COMPLETED");
-    expect(completedWs.record.studentResponses.hs_q6.notRecorded).toBe(true);
-    expect(completedWs.record.studentResponses.hs_q6.notRecordedReason).toContain("Thời lượng");
+    expect(completedWs.record.studentResponses.a06.notRecorded).toBe(true);
+    expect(completedWs.record.studentResponses.a06.notRecordedReason).toContain("Thời lượng");
 
     // Kiểm chứng nguyên tắc 4: không phát sinh bản ghi điểm môn học và không tự đổi admissionResult
     expect(mem.studentScores.size).toBe(0);
@@ -606,7 +684,7 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       studentId: "STU_SEC",
       mode: "COMPLETE",
       completionScope: "FULL",
-      payload: buildCompleteValidPayload("PVDH-02"),
+      payload: buildCompleteValidPayload("BM.KTĐBCL.32"),
     });
 
     const unassignedTeacher = makeActor({
@@ -700,7 +778,7 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       studentId: "STU_VER",
       mode: "COMPLETE",
       completionScope: "FULL",
-      payload: buildCompleteValidPayload("PVDH-01"),
+      payload: buildCompleteValidPayload("BM.KTĐBCL.31"),
     });
 
     // Xác nhận & khóa phiếu ở v1.0
@@ -714,7 +792,7 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
     expect(locked.record.templateVersionNumber).toBe(1);
 
     // Không cho xóa mẫu đang được hồ sơ tham chiếu
-    const tpl01Id = "pvdhtpl_pvdh_01";
+    const tpl01Id = "pvdhtpl_bm_ktdbcl_31";
     await expect(deletePvdhTemplate({ actor: sysAdmin, templateId: tpl01Id })).rejects.toMatchObject({
       statusCode: 409,
     });
@@ -732,15 +810,15 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       code: "VERSION_IMMUTABLE",
     });
 
-    // Tạo phiên bản mới v2.0, chỉnh nhãn câu 1 và phát hành
+    // Tạo phiên bản mới v2.0, chỉnh nhãn câu A01 và phát hành
     const v2 = await createNewPvdhTemplateVersion({
       actor: sysAdmin,
       templateId: tpl01Id,
-      changeSummary: "Cập nhật nhãn câu 1 cho đợt 2",
+      changeSummary: "Cập nhật nhãn câu A01 cho đợt 2",
     });
     const seed01 = PVDH_SEED_TEMPLATES[0];
     const modifiedFields = seed01.fields.map((f) =>
-      f.fieldKey === "hs_q1" ? { ...f, label: "1. Tự giới thiệu (Phiên bản v2.0 mới)" } : f
+      f.fieldKey === "a01" ? { ...f, label: "A01. Hoạt động yêu thích (Phiên bản v2.0 mới)" } : f
     );
     await updatePvdhTemplateVersion({
       actor: sysAdmin,
@@ -761,7 +839,7 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       studentId: "STU_VER",
     });
     expect(reloadedLocked.record.templateVersionNumber).toBe(1);
-    const q1Old = reloadedLocked.version.fields.find((f: any) => f.fieldKey === "hs_q1");
+    const q1Old = reloadedLocked.version.fields.find((f: any) => f.fieldKey === "a01");
     expect(q1Old?.label).not.toContain("v2.0");
 
     // Mở khóa lại không có lý do -> bị chặn
@@ -858,8 +936,8 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
     // Chặn phát hành 2 mẫu PVDH trùng khối + hệ + cơ sở + cùng mức ưu tiên
     const cloned = await clonePvdhTemplate({
       actor: sysAdmin,
-      sourceTemplateId: "pvdhtpl_pvdh_01",
-      newCode: "PVDH-01-DUP",
+      sourceTemplateId: "pvdhtpl_bm_ktdbcl_31",
+      newCode: "PVDH-K1-DUP",
       newName: "Mẫu Khối 1 trùng độ ưu tiên",
       priorityOrder: 100,
     });
@@ -906,14 +984,12 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
     expect(JSON.stringify(diffPrioCheck.prioritizedOverlaps[0])).toContain("PVDH-01-HNG");
   });
 
-  it("9. Xuất HTML & PDF cho cả 5 mẫu PVDH-01..05: văn bản dài, checkbox ☑/☐, watermark Bản nháp khi chưa khóa, 3 cột chữ ký và nhãn 'Ký xác nhận bằng ảnh chữ ký'", async () => {
-    const sampleGrades = [
-      { code: "PVDH-01", grade: "Khối 1" },
-      { code: "PVDH-02", grade: "Khối 3" },
-      { code: "PVDH-03", grade: "Khối 5" },
-      { code: "PVDH-04", grade: "Khối 9" },
-      { code: "PVDH-05", grade: "Khối 11" },
-    ];
+  it("9. Xuất HTML & PDF cho trọn bộ 12 mẫu (BM.KTĐBCL.31..42): bám sát 100% bố cục chuẩn của từng khối", async () => {
+    const sampleGrades = Array.from({ length: 12 }, (_, idx) => ({
+      code: `BM.KTĐBCL.${31 + idx}`,
+      grade: `Khối ${idx + 1}`,
+      isBm: true,
+    }));
 
     mem.signatureProfiles.set("TCH_SIGN", {
       id: "SIG_01",
@@ -951,12 +1027,20 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
         batchId: "BAT_01",
         admissionCampus: "Cơ sở 1",
         batch: { id: "BAT_01", name: "Đợt 1", campusId: "CAMPUS_1" },
-        period: { id: "PER_26", code: "KS26", name: "Khảo sát 2026", campusId: "CAMPUS_1" },
+        period: {
+          id: "PER_26",
+          code: "KS26",
+          name: "Khảo sát 2026-2027",
+          campusId: "CAMPUS_1",
+          academicYear: { name: "2026 - 2027" },
+        },
       });
 
       const payload = buildCompleteValidPayload(item.code);
-      payload.obsStrengthsInterests =
-        "Đoạn văn dài nhiều dòng để kiểm thử ngắt trang tự động trên khổ A4: ".repeat(12);
+      if (!item.isBm) {
+        payload.obsStrengthsInterests =
+          "Đoạn văn dài nhiều dòng để kiểm thử ngắt trang tự động trên khổ A4: ".repeat(12);
+      }
 
       const ws = await savePvdhRecord({
         actor: signerActor,
@@ -966,22 +1050,36 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
         payload,
       });
 
-      // Khi chưa khóa: HTML có watermark BẢN NHÁP – CHƯA XÁC NHẬN
       const unlockedHtmlDoc = await getPvdhDocumentOutput({
         actor: signerActor,
         studentId: stId,
         format: "html",
       });
       const unlockedHtml = unlockedHtmlDoc.buffer.toString("utf-8");
-      expect(unlockedHtml).toContain("BẢN NHÁP");
       expect(unlockedHtml).toContain(item.code);
       expect(unlockedHtml).toContain("☑");
       expect(unlockedHtml).toContain("☐");
-      expect(unlockedHtml).toContain("Người phỏng vấn");
-      expect(unlockedHtml).toContain("PHHS");
-      expect(unlockedHtml).toContain("Học sinh nếu phù hợp");
 
-      // Sau khi xác nhận & khóa kèm ảnh chữ ký: không còn watermark nháp, dùng đúng cụm từ "Ký xác nhận bằng ảnh chữ ký"
+      if (item.isBm) {
+        // Kiểm chứng BM.KTĐBCL.31 / BM.KTĐBCL.32: chỉ hiển thị đúng các mục chuẩn, KHÔNG chèn nội dung ngoài biểu mẫu
+        expect(unlockedHtml).toContain("Đơn vị sở hữu: Ban Khảo thí &amp; Đảm bảo chất lượng");
+        expect(unlockedHtml).toContain("A. PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH");
+        expect(unlockedHtml).toContain("B. TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH");
+        expect(unlockedHtml).toContain("D. TỔNG HỢP VÀ ĐỊNH HƯỚNG CỦA GIÁO VIÊN");
+        expect(unlockedHtml).toContain("Trạng thái phiếu:");
+        expect(unlockedHtml).toContain("Đề nghị phỏng vấn (tâm lí)");
+        expect(unlockedHtml).toContain("Giáo viên thực hiện");
+        expect(unlockedHtml).toContain("SSM Sky-Line | Phiếu lưu hành nội bộ");
+        expect(unlockedHtml).not.toContain("Trường/lớp đang học");
+        expect(unlockedHtml).not.toContain("Học sinh nếu phù hợp");
+        expect(unlockedHtml).not.toContain("Nội dung bàn giao cho GVCN");
+      } else {
+        expect(unlockedHtml).toContain("BẢN NHÁP");
+        expect(unlockedHtml).toContain("Người phỏng vấn");
+        expect(unlockedHtml).toContain("PHHS");
+        expect(unlockedHtml).toContain("Học sinh nếu phù hợp");
+      }
+
       await executePvdhWorkflowTransition({
         actor: signerActor,
         recordId: ws.record.id,
@@ -995,8 +1093,10 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
         format: "html",
       });
       const lockedHtml = lockedHtmlDoc.buffer.toString("utf-8");
-      expect(lockedHtml).toContain("Ký xác nhận bằng ảnh chữ ký");
-      expect(lockedHtml).not.toContain("Chữ ký số được xác thực");
+      if (!item.isBm) {
+        expect(lockedHtml).toContain("Ký xác nhận bằng ảnh chữ ký");
+        expect(lockedHtml).not.toContain("Chữ ký số được xác thực");
+      }
 
       const pdfDoc = await getPvdhDocumentOutput({
         actor: signerActor,
@@ -1026,17 +1126,73 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
     expect(sanitizeSpreadsheetCell("=CMD|' /C calc'!A0")).toBe("'=CMD|' /C calc'!A0");
   });
 
-  it("10. Mục V: 'Không' và lựa chọn cần tìm hiểu thêm loại trừ nhau; bắt buộc lý do/người nhận khi có tìm hiểu thêm; chỉ bắt buộc mốc trao đổi lại khi có hành động tiếp nối", () => {
-    const seed03 = PVDH_SEED_TEMPLATES.find((t) => t.code === "PVDH-03")!;
-    const base = buildCompleteValidPayload("PVDH-03");
+  it("10. Kiểm tra validation Mục D (BM.KTĐBCL.31..42) và tương thích ngược Mục V (bản tùy chỉnh I–V)", () => {
+    const bm39 = PVDH_SEED_TEMPLATES.find((t) => t.code === "BM.KTĐBCL.39")!;
+    const validBm39 = buildCompleteValidPayload("BM.KTĐBCL.39");
+    const bmValidCheck = validatePvdhRecordData({
+      mode: "COMPLETE",
+      scope: "FULL",
+      fields: bm39.fields,
+      input: validBm39,
+    });
+    expect(bmValidCheck.valid).toBe(true);
 
-    // Không có hành động tiếp nối và chọn "KHONG" tìm hiểu thêm -> KHÔNG yêu cầu planReviewDate, lý do hay đầu mối nhận
+    const bmMissingStatus = validatePvdhRecordData({
+      mode: "COMPLETE",
+      scope: "FULL",
+      fields: bm39.fields,
+      input: {
+        ...validBm39,
+        teacherSummary: {
+          ...validBm39.teacherSummary!,
+          sheetStatus: "" as any,
+        },
+      },
+    });
+    expect(bmMissingStatus.valid).toBe(false);
+    expect(bmMissingStatus.issues.map((i) => i.fieldKey)).toContain("sheet_status");
+
+    // Kiểm tra tương thích ngược cho phiên bản tùy chỉnh I–V
+    const customFields = buildFieldsForTemplate({
+      studentQuestions: [{ num: 1, label: "Q1", prompt: "P1" }],
+      parentQuestions: [{ num: 1, label: "PQ1", prompt: "PP1" }],
+    });
+    const customBase = {
+      parentFullName: "Trần Thị Minh Châu",
+      parentRelationship: "Mẹ",
+      interviewDate: "2026-11-18",
+      studentResponses: { hs_q1: { responseText: "Trả lời 1", notRecorded: false, notRecordedReason: "" } },
+      parentResponses: { ph_q1: { responseText: "Phụ huynh 1", notRecorded: false, notRecordedReason: "" } },
+      obsStrengthsInterests: "Điểm mạnh",
+      obsCommunicationStyle: "Giao tiếp tốt",
+      obsParticipationLevel: "Hợp tác",
+      obsSupportNeeds: "Ổn định",
+      planStrengthsPriority: "Ưu tiên",
+      planGoalsActionsText: "Mục tiêu",
+      followUpActions: [
+        {
+          id: "ACT_1",
+          actionContent: "Trao đổi nhanh cuối tuần thứ 2 sau nhập học",
+          owner: "GVCN & PHHS",
+          dueDate: "2026-12-01",
+          progressIndicator: "Học sinh chủ động hòa nhập",
+        },
+      ],
+      planCoordinator: "GVCN",
+      planReviewDate: "2026-12-05",
+      planFurtherTopics: ["THICH_NGHI" as const],
+      planFurtherOtherText: "",
+      planReferralReason: "Theo dõi nhịp thích nghi",
+      planReferralReceiver: "GVCN",
+      planHandoverNotes: "Lưu ý đầu năm",
+    };
+
     const noFollowUpCheck = validatePvdhRecordData({
       mode: "COMPLETE",
       scope: "FULL",
-      fields: seed03.fields,
+      fields: customFields,
       input: {
-        ...base,
+        ...customBase,
         followUpActions: [],
         planCoordinator: "",
         planFurtherTopics: ["KHONG"],
@@ -1047,13 +1203,12 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
     });
     expect(noFollowUpCheck.valid).toBe(true);
 
-    // Chọn cần tìm hiểu thêm ("HOC_TAP") nhưng để trống lý do & đầu mối tiếp nhận -> Bị chặn
     const missingInquiryMetaCheck = validatePvdhRecordData({
       mode: "COMPLETE",
       scope: "FULL",
-      fields: seed03.fields,
+      fields: customFields,
       input: {
-        ...base,
+        ...customBase,
         planFurtherTopics: ["HOC_TAP" as const],
         planReferralReason: "",
         planReferralReceiver: "",
@@ -1061,39 +1216,31 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       },
     });
     expect(missingInquiryMetaCheck.valid).toBe(false);
-    expect(missingInquiryMetaCheck.issues.map((i) => i.fieldKey)).toEqual(
-      expect.arrayContaining([
-        "plan_referral_reason",
-        "plan_referral_receiver",
-        "plan_review_date",
-      ])
-    );
 
-    // Chọn đồng thời "KHONG" và "TIENG_ANH" -> bị chặn loại trừ
     const conflictTopicCheck = validatePvdhRecordData({
       mode: "DRAFT",
       scope: "FULL",
-      fields: seed03.fields,
+      fields: customFields,
       input: {
-        ...base,
+        ...customBase,
         planFurtherTopics: ["KHONG" as const, "TIENG_ANH" as const],
       },
     });
     expect(conflictTopicCheck.valid).toBe(false);
 
-    const mappedText = formatFollowUpActionsToText(base.followUpActions);
+    const mappedText = formatFollowUpActionsToText(customBase.followUpActions);
     expect(mappedText).toContain("Trao đổi nhanh cuối tuần thứ 2");
     expect(mappedText).toContain("GVCN & PHHS");
   });
 
-  it("11. Đổi khối cảnh báo & chuyển mẫu có kiểm soát; chống ghi đè đồng thời (409); phân công tách HS/PHHS; bàn giao & GVCN xác nhận đã đọc", async () => {
+  it("11. Đổi khối cảnh báo & chuyển mẫu có kiểm soát (BM.KTĐBCL.37 -> BM.KTĐBCL.40); chống ghi đè đồng thời (409); phân công tách HS/PHHS; bàn giao & GVCN xác nhận đã đọc", async () => {
     mem.inputStudents.set("STU_E2E", {
       id: "STU_E2E",
       studentCode: "HS26E2E",
       enrollmentCode: "HS26E2E",
       enrollmentClassId: "CLS_6A1",
       fullName: "Đặng Minh Khôi",
-      grade: "Khối 5",
+      grade: "Khối 7",
       periodId: "PER_26",
       batchId: "BAT_01",
       batch: { id: "BAT_01", name: "Đợt 1", campusId: "CAMPUS_1" },
@@ -1102,8 +1249,8 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
 
     mem.classes.set("CLS_6A1", {
       id: "CLS_6A1",
-      classCode: "6A1",
-      className: "6A1",
+      classCode: "10A1",
+      className: "10A1",
       homeroomTeacherId: "TCH_GVCN_6A1",
       campusId: "CAMPUS_1",
       teachers: [{ teacherId: "TCH_GVCN_6A1", roleInClass: "GVCN" }],
@@ -1133,9 +1280,10 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
         parentInterviewerName: "Thầy Minh (Trao đổi PHHS)",
       },
     });
+    expect(initWs.record.templateCode).toBe("BM.KTĐBCL.37");
 
-    // Cô Lan hoàn tất riêng phần Học sinh (STUDENT_PART)
-    const validPvdh03 = buildCompleteValidPayload("PVDH-03");
+    // Cô Lan hoàn tất riêng phần Học sinh (STUDENT_PART: A01..A06)
+    const validBm37 = buildCompleteValidPayload("BM.KTĐBCL.37");
     const afterHs = await savePvdhRecord({
       actor: gvStudent,
       studentId: "STU_E2E",
@@ -1143,13 +1291,11 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       completionScope: "STUDENT_PART",
       expectedLockVersion: initWs.record.lockVersion,
       payload: {
-        interviewDate: validPvdh03.interviewDate,
-        studentInterviewDate: validPvdh03.studentInterviewDate,
-        studentResponses: validPvdh03.studentResponses,
-        obsStrengthsInterests: validPvdh03.obsStrengthsInterests,
-        obsCommunicationStyle: validPvdh03.obsCommunicationStyle,
-        obsParticipationLevel: validPvdh03.obsParticipationLevel,
-        obsSupportNeeds: validPvdh03.obsSupportNeeds,
+        interviewDate: validBm37.interviewDate,
+        studentInterviewDate: validBm37.studentInterviewDate,
+        parentFullName: validBm37.parentFullName,
+        parentRelationship: validBm37.parentRelationship,
+        studentResponses: validBm37.studentResponses,
       },
     });
     expect(afterHs.record.workflowStatus).toBe("PARTIAL_COMPLETED");
@@ -1168,7 +1314,7 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       })
     ).rejects.toMatchObject({ statusCode: 409, code: "CONCURRENCY_CONFLICT" });
 
-    // Thầy Minh hoàn tất phần PHHS + Định hướng với đúng lockVersion mới
+    // Thầy Minh hoàn tất phần PHHS (B01..B05 & C01..C05) + Mục D với đúng lockVersion mới
     const afterParent = await savePvdhRecord({
       actor: gvParent,
       studentId: "STU_E2E",
@@ -1176,11 +1322,10 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       completionScope: "PARENT_PART",
       expectedLockVersion: afterHs.record.lockVersion,
       payload: {
-        parentInterviewDate: validPvdh03.parentInterviewDate,
-        parentFullName: validPvdh03.parentFullName,
-        parentRelationship: validPvdh03.parentRelationship,
-        parentContactChannel: validPvdh03.parentContactChannel,
-        parentResponses: validPvdh03.parentResponses,
+        parentInterviewDate: validBm37.parentInterviewDate,
+        parentFullName: validBm37.parentFullName,
+        parentRelationship: validBm37.parentRelationship,
+        parentResponses: validBm37.parentResponses,
       },
     });
     const afterFull = await savePvdhRecord({
@@ -1190,35 +1335,27 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       completionScope: "ORIENTATION_PART",
       expectedLockVersion: afterParent.record.lockVersion,
       payload: {
-        planStrengthsPriority: validPvdh03.planStrengthsPriority,
-        planGoalsActionsText: validPvdh03.planGoalsActionsText,
-        followUpActions: validPvdh03.followUpActions,
-        planCoordinator: validPvdh03.planCoordinator,
-        planReviewDate: validPvdh03.planReviewDate,
-        planFurtherTopics: validPvdh03.planFurtherTopics,
-        planReferralReason: validPvdh03.planReferralReason,
-        planReferralReceiver: validPvdh03.planReferralReceiver,
-        planHandoverNotes: validPvdh03.planHandoverNotes,
+        teacherSummary: validBm37.teacherSummary,
       },
     });
     expect(afterFull.record.workflowStatus).toBe("COMPLETED");
 
-    // Đổi khối dự kiến của hồ sơ từ Khối 5 -> Khối 6: workspace báo cảnh báo lệch mẫu PVDH-03 vs PVDH-04
-    mem.inputStudents.get("STU_E2E").grade = "Khối 6";
+    // Đổi khối dự kiến của hồ sơ từ Khối 7 -> Khối 10: workspace báo cảnh báo lệch mẫu BM.KTĐBCL.37 vs BM.KTĐBCL.40
+    mem.inputStudents.get("STU_E2E").grade = "Khối 10";
     const mismatchCheck = await getOrInitStudentPvdhWorkspace({
       actor: sysAdmin,
       studentId: "STU_E2E",
     });
     expect(mismatchCheck.gradeChangeWarning).toBeTruthy();
 
-    // Chuyển mẫu có kiểm soát sang PVDH-04, bảo toàn câu trả lời cùng fieldKey
+    // Chuyển mẫu có kiểm soát sang BM.KTĐBCL.40, bảo toàn câu trả lời cùng fieldKey (a01..a06, b01..b05, c01..c05)
     const switched = await switchRecordTemplateWithMapping({
       actor: sysAdmin,
       recordId: afterFull.record.id,
-      reason: "Cập nhật hồ sơ dự tuyển lên Khối 6 THCS",
+      reason: "Cập nhật hồ sơ dự tuyển lên Khối 10 THPT",
     });
-    expect(switched.record.templateCode).toBe("PVDH-04");
-    expect(switched.record.studentResponses.hs_q1.responseText).toContain("Chia sẻ chi tiết");
+    expect(switched.record.templateCode).toBe("BM.KTĐBCL.40");
+    expect(switched.record.studentResponses.a01.responseText).toContain("Chia sẻ chi tiết");
 
     // Xác nhận & khóa phiếu mới trước khi bàn giao cho GVCN
     const switchedCompleted = await savePvdhRecord({
@@ -1227,7 +1364,7 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
       mode: "COMPLETE",
       completionScope: "FULL",
       expectedLockVersion: switched.record.lockVersion,
-      payload: buildCompleteValidPayload("PVDH-04"),
+      payload: buildCompleteValidPayload("BM.KTĐBCL.40"),
     });
     await executePvdhWorkflowTransition({
       actor: sysAdmin,
@@ -1269,5 +1406,180 @@ describe("PVDH (Khối 1–12) & Cấu hình File KSDV 3 Lớp — 13 Kịch b�
     });
     const emptyInbox = await listGvcnHandoversForActor(otherGvcn);
     expect(emptyInbox).toHaveLength(0);
+  });
+
+  it("13. Cấu hình môn Tiếng Anh (viết & vấn đáp) chuẩn hóa thang điểm 10 và Phiếu định hướng Khối 4 bám sát PVDH-03", async () => {
+    const { resolvePresetDataForSubject, SUBJECT_PRESETS } = await import(
+      "@/app/admin/cau-hinh-file-diem-ksdv/presets"
+    );
+    const { getOrientationGradeGroupConfig } = await import("@/lib/orientation/criteria-config");
+
+    // 1. Tiếng Anh viết & vấn đáp ở mọi khối đều mặc định thang 10
+    for (const g of ["Khối 1", "Khối 4", "Khối 7", "Khối 10"]) {
+      const tavPreset = resolvePresetDataForSubject("TAv", g);
+      expect(tavPreset).toBeTruthy();
+      const sumMax = (tavPreset.columnMaxScores as number[]).reduce((a, b) => a + b, 0);
+      expect(sumMax).toBe(10);
+      expect(tavPreset.passScore).toBe(5.0);
+
+      const tavdPreset = resolvePresetDataForSubject("TAvd", g);
+      expect(tavdPreset).toBeTruthy();
+      expect(tavdPreset.columnMaxScores).toEqual([10, 10, 10]);
+      expect(tavdPreset.formulaType).toBe("AVERAGE");
+      expect(tavdPreset.passScore).toBe(5.0);
+    }
+
+    expect(SUBJECT_PRESETS.ESL_VD.passScore).toBe(5.0);
+
+    // 2. Cấu hình toàn bộ Khối 1 .. Khối 12 trong criteria-config.ts đồng bộ 100% với BM.KTĐBCL.31 .. BM.KTĐBCL.42
+    for (let g = 1; g <= 12; g++) {
+      const bmCode = `BM.KTĐBCL.${30 + g}`;
+      const gConfig = getOrientationGradeGroupConfig(`Khối ${g}`);
+      expect(gConfig.label).toContain(bmCode);
+      expect(gConfig.criteria.map((c) => c.code)).toEqual(["a01", "a02", "a03", "a04", "a05", "a06"]);
+      expect(gConfig.parentGroups.map((p) => p.code)).toEqual([
+        "b01",
+        "b02",
+        "b03",
+        "b04",
+        "b05",
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05",
+      ]);
+    }
+  });
+
+  it("14. Bấm nút Đề nghị phỏng vấn tâm lý tự động gửi Email cho Giáo vụ phụ trách cơ sở và GV tâm lý phân công", async () => {
+    sentEmailsLog.length = 0;
+    mem.inputStudents.set("STU_K5", {
+      id: "STU_K5",
+      studentCode: "HS701020238",
+      fullName: "Lê Trần Gia Phúc",
+      grade: "5",
+      surveyFormType: "HNS",
+      periodId: "PER_26",
+      batchId: "BAT_01",
+      registeredCampus: "CS1",
+      admissionCampus: "Cơ sở 1",
+      batch: { id: "BAT_01", name: "Chuyển hệ", campusId: "CAMPUS_1", campus: { id: "CAMPUS_1", campusCode: "CS1", campusName: "Sky-Line Riverside (CS1)" } },
+      period: { id: "PER_26", code: "KS26", name: "Chuyển hệ", campusId: "CAMPUS_1" },
+    });
+    const teacherActor = makeActor({
+      userId: "USR_GV_1",
+      userName: "Thầy Hoàng Trọng Đài",
+      userEmail: "daiht@skylineschool.edu.vn",
+      canReviewAndLock: true,
+      isSystemWideAdmin: true,
+    });
+
+    const res = await requestPvdhPsychInterview({
+      actor: teacherActor,
+      studentId: "STU_K5",
+      referralNote: "Học sinh cần trao đổi thêm về thích nghi cảm xúc khi chuyển trường",
+      payload: {
+        interviewDate: "2026-11-18",
+        teacherSummary: {
+          d01: "Ngoan, lễ phép",
+          d02: "Hơi lo lắng khi làm bài kiểm tra dài",
+          d03: "Gia đình mong con tự tin hơn",
+          d04: "Phối hợp GVCN và bộ phận Tâm lý học đường",
+          sheetStatus: "CAN_TRAO_DOI_CHUYEN_MON",
+          psychInterviewRequested: true,
+        },
+      },
+      baseUrl: "https://ssm.skylineschool.edu.vn",
+    });
+
+    expect((res as any).emailDispatch?.sent).toBe(true);
+    expect(sentEmailsLog.length).toBe(1);
+    const recipients = Array.isArray(sentEmailsLog[0].to) ? sentEmailsLog[0].to : [sentEmailsLog[0].to];
+    expect(recipients).toContain("tamly.cs1@skylineschool.edu.vn");
+    expect(recipients).toContain("giaovu.cs1@skylineschool.edu.vn");
+    expect(res.record.teacherSummary.psychInterviewRequested).toBe(true);
+    expect(res.record.teacherSummary.psychEmailSentAt).toBeTruthy();
+  });
+
+  it("15. GVBM được phân công vẫn hiệu chỉnh đầy đủ Mục A/B/C/D kể cả khi KT&ĐBCL đã mở xem hoặc lưu trước phiếu", async () => {
+    mem.inputStudents.set("STU_K7_GVBM", {
+      id: "STU_K7_GVBM",
+      studentCode: "HS701020246",
+      fullName: "Lê Văn Anh Khoa",
+      grade: "Khối 7",
+      surveyFormType: "HNS",
+      periodId: "PER_26",
+      batchId: "BAT_01",
+      registeredCampus: "CS1",
+      batch: { id: "BAT_01", name: "Khảo sát lẻ", campusId: "CAMPUS_1" },
+      period: { id: "PER_26", code: "KS26", name: "Khảo sát lẻ", campusId: "CAMPUS_1" },
+    });
+
+    mem.assignments.push({
+      id: "ASG_PVDH_K7",
+      periodId: "PER_26",
+      batchId: "BAT_01",
+      userId: "USR_GVBM_K7",
+      grade: "Khối 7",
+      subject: { id: "SUB_PVDH", code: "PDHDV", name: "Phỏng vấn định hướng" },
+    });
+
+    const ktdbclActor = makeActor({
+      userId: "USR_KTDBCL",
+      userName: "KT&ĐBCL",
+      role: "KTDBCL",
+      isSystemWideAdmin: true,
+      canReviewAndLock: true,
+      canCoordinate: true,
+    });
+
+    const gvbmActor = makeActor({
+      userId: "USR_GVBM_K7",
+      userName: "Cô Nguyễn Thị Hoa",
+      role: "TEACHER",
+      teacherId: "TCH_GVBM_K7",
+      isSystemWideAdmin: false,
+      canReviewAndLock: false,
+      canCoordinate: false,
+    });
+
+    // 1. KT&ĐBCL mở xem trước phiếu -> không tự gắn cứng studentInterviewerUserId
+    const adminWs = await getOrInitStudentPvdhWorkspace({
+      actor: ktdbclActor,
+      studentId: "STU_K7_GVBM",
+    });
+    expect(adminWs.record.studentInterviewerUserId).toBeNull();
+
+    // 2. Giả lập bản ghi cũ trong DB đã lỡ bị gắn studentInterviewerUserId = KT&ĐBCL (hiện trạng production)
+    const rawRec = mem.pvdhRecords.get(adminWs.record.id);
+    rawRec.studentInterviewerUserId = "USR_KTDBCL";
+    rawRec.studentInterviewerName = "KT&ĐBCL";
+
+    // 3. GVBM được phân công mở phiếu -> vẫn phải có quyền sửa cả phần HS (Mục A) & PHHS (Mục B, C, D)
+    const gvWs = await getOrInitStudentPvdhWorkspace({
+      actor: gvbmActor,
+      studentId: "STU_K7_GVBM",
+    });
+    expect(gvWs.accessRights.allowedToRead).toBe(true);
+    expect(gvWs.accessRights.canEditStudentPart).toBe(true);
+    expect(gvWs.accessRights.canEditParentPart).toBe(true);
+    expect(gvWs.accessRights.canEditOrientationPart).toBe(true);
+
+    // 4. GVBM hoàn tất toàn bộ Mục A/B/C/D -> lưu thành công và cập nhật tên GV thực hiện
+    const validBm37 = buildCompleteValidPayload("BM.KTĐBCL.37");
+    const saved = await savePvdhRecord({
+      actor: gvbmActor,
+      studentId: "STU_K7_GVBM",
+      mode: "COMPLETE",
+      completionScope: "FULL",
+      expectedLockVersion: gvWs.record.lockVersion,
+      payload: validBm37,
+    });
+    expect(saved.record.workflowStatus).toBe("COMPLETED");
+    expect(saved.record.studentSectionStatus).toBe("COMPLETED");
+    expect(saved.record.parentSectionStatus).toBe("COMPLETED");
+    expect(saved.record.studentInterviewerUserId).toBe("USR_GVBM_K7");
+    expect(saved.record.studentInterviewerName).toBe("Cô Nguyễn Thị Hoa");
   });
 });

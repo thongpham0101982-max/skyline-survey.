@@ -33,7 +33,10 @@ import {
 import { toast } from "react-hot-toast";
 import { CTQT_LEVEL_CONFIGS, detectCtqtLevel, CORE_COMPETENCIES_DEF, compareCtqtClasses } from "@/lib/ctqt/config";
 import { CtqtGradeProgressTab } from "./grade-progress-tab";
+import { CtqtPeriodicExportCard } from "./periodic-export-card";
 import { SavePeriodConfirmModal } from "@/components/grading/SavePeriodConfirmModal";
+import { CtqtClassSubjectSummary } from "@/components/ctqt/CtqtClassSubjectSummary";
+import { Settings2, FileBarChart2 } from "lucide-react";
 
 interface Props {
   academicYears: any[];
@@ -120,8 +123,21 @@ export function DiemCtqtAdminClient({
   const [selectedSemester, setSelectedSemester] = useState(2); // Default to HK2 as seen in screenshots
   const [selectedCampusId, setSelectedCampusId] = useState("");
   const [activeTab, setActiveTab] = useState<
-    "subject_gradebook" | "consolidated" | "assignments" | "grade_progress" | "excel" | "report_card"
+    | "subject_gradebook"
+    | "consolidated"
+    | "assignments"
+    | "grade_progress"
+    | "excel"
+    | "class_subject_summary"
+    | "report_card"
   >("subject_gradebook");
+
+  const activeGroup: "gradebook" | "admin_ops" | "reports" =
+    activeTab === "subject_gradebook" || activeTab === "consolidated"
+      ? "gradebook"
+      : activeTab === "assignments" || activeTab === "grade_progress" || activeTab === "excel"
+      ? "admin_ops"
+      : "reports";
   const [progressPresetSearch, setProgressPresetSearch] = useState<string>("");
 
   // Subject Gradebook Tab state
@@ -344,7 +360,13 @@ export function DiemCtqtAdminClient({
   };
 
   useEffect(() => {
-    if (selectedClassId && (activeTab === "subject_gradebook" || activeTab === "consolidated" || activeTab === "report_card")) {
+    if (
+      selectedClassId &&
+      (activeTab === "subject_gradebook" ||
+        activeTab === "consolidated" ||
+        activeTab === "class_subject_summary" ||
+        activeTab === "report_card")
+    ) {
       fetchConsolidatedGrades();
     }
   }, [selectedClassId, selectedYearId, selectedSemester, activeTab]);
@@ -1744,88 +1766,187 @@ export function DiemCtqtAdminClient({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 mt-6 border-b border-slate-200 overflow-x-auto no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setActiveTab("subject_gradebook")}
-            className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === "subject_gradebook"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            1. Sổ điểm theo Môn (GVBM)
-          </button>
+        {/* Structured 2-Level Navigation: Nhóm chức năng chính -> Tab con */}
+        <div className="mt-5 space-y-3">
+          {/* Level 1: Primary Functional Groups */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-[#E2E8F0]">
+            <button
+              type="button"
+              onClick={() => {
+                if (activeGroup !== "gradebook") setActiveTab("subject_gradebook");
+              }}
+              className={`pb-3 px-4 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                activeGroup === "gradebook"
+                  ? "border-[#003B3A] text-[#003B3A]"
+                  : "border-transparent text-slate-500 hover:text-[#003B3A]"
+              }`}
+            >
+              <BookOpen className="w-4 h-4 text-[#00736E]" />
+              <span>Sổ điểm</span>
+              <span
+                className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+                  activeGroup === "gradebook"
+                    ? "bg-[#003B3A] text-white"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                2
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("consolidated")}
-            className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === "consolidated"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            2. Sổ điểm Tổng hợp
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (activeGroup !== "admin_ops") setActiveTab("assignments");
+              }}
+              className={`pb-3 px-4 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                activeGroup === "admin_ops"
+                  ? "border-[#003B3A] text-[#003B3A]"
+                  : "border-transparent text-slate-500 hover:text-[#003B3A]"
+              }`}
+            >
+              <Settings2 className="w-4 h-4 text-[#00736E]" />
+              <span>Quản trị hệ thống</span>
+              <span
+                className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+                  activeGroup === "admin_ops"
+                    ? "bg-[#003B3A] text-white"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                3
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("assignments")}
-            className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === "assignments"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            3. Phân công Giáo viên (GVBM)
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (activeGroup !== "reports") setActiveTab("class_subject_summary");
+              }}
+              className={`pb-3 px-4 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                activeGroup === "reports"
+                  ? "border-[#003B3A] text-[#003B3A]"
+                  : "border-transparent text-slate-500 hover:text-[#003B3A]"
+              }`}
+            >
+              <FileBarChart2 className="w-4 h-4 text-[#00736E]" />
+              <span>Báo cáo</span>
+              <span
+                className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+                  activeGroup === "reports"
+                    ? "bg-[#003B3A] text-white"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                2
+              </span>
+            </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setProgressPresetSearch("");
-              setActiveTab("grade_progress");
-            }}
-            className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === "grade_progress"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            4. Thống kê nhập điểm theo GV phân công
-          </button>
+          {/* Level 2: Sub-tabs Segmented Control */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-[#F8FAFC] p-1.5 rounded-xl border border-[#E2E8F0]">
+            {activeGroup === "gradebook" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("subject_gradebook")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                    activeTab === "subject_gradebook"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Sổ điểm theo môn (GVBM)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("consolidated")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                    activeTab === "consolidated"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  Sổ điểm tổng hợp
+                </button>
+              </>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("excel")}
-            className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === "excel"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            5. Quản lý File & Import/Export
-          </button>
+            {activeGroup === "admin_ops" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("assignments")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                    activeTab === "assignments"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  Phân công giáo viên (GVBM)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProgressPresetSearch("");
+                    setActiveTab("grade_progress");
+                  }}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                    activeTab === "grade_progress"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  Thống kê nhập điểm theo GV phân công
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("excel")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                    activeTab === "excel"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                  }`}
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  Quản lý File &amp; Import/Export
+                </button>
+              </>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("report_card")}
-            className={`pb-3 px-3 text-xs md:text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === "report_card"
-                ? "border-teal-600 text-teal-700"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Award className="w-4 h-4" />
-            6. Xuất Report Card (PDF)
-          </button>
+            {activeGroup === "reports" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("class_subject_summary")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                    activeTab === "class_subject_summary"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                  }`}
+                >
+                  <FileBarChart2 className="w-3.5 h-3.5" />
+                  Tổng hợp môn học theo lớp
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("report_card")}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                    activeTab === "report_card"
+                      ? "bg-[#003B3A] text-white shadow-2xs"
+                      : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+                  }`}
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  Xuất Report Card (PDF)
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -4098,7 +4219,8 @@ export function DiemCtqtAdminClient({
       {/* TAB 5: QUẢN LÝ FILE & IMPORT / EXPORT                                     */}
       {/* ========================================================================= */}
       {activeTab === "excel" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Box 1: Tải File mẫu */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
             <div>
@@ -4241,11 +4363,96 @@ export function DiemCtqtAdminClient({
               )}
             </div>
           </div>
+          </div>
+
+          {/* Box 3: Xuất bảng điểm chi tiết định kỳ theo khối & môn học */}
+          <CtqtPeriodicExportCard
+            academicYearId={selectedYearId}
+            campuses={campuses}
+            classes={sortedInitialClasses}
+            defaultCampusId={selectedCampusId}
+            defaultSemester={selectedSemester}
+            isSubjectScoped={isSubjectScoped}
+            allowedCtqtSubjectCodes={allowedCtqtSubjectCodes}
+          />
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 5: XUẤT REPORT CARD                                                  */}
+      {/* BÁO CÁO 1: TỔNG HỢP MÔN HỌC THEO LỚP (IMPROVED)                           */}
+      {/* ========================================================================= */}
+      {activeTab === "class_subject_summary" && (
+        <div className="space-y-4">
+          {/* Filter Bar */}
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3 tabular-nums">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600">Chọn cơ sở:</span>
+                <select
+                  value={selectedCampusId}
+                  onChange={e => setSelectedCampusId(e.target.value)}
+                  className="text-xs font-semibold px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[#003B3A] focus:outline-[#008B85]"
+                >
+                  <option value="">Tất cả cơ sở ({campusClassCounts.total} lớp)</option>
+                  {campuses.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.campusName} ({campusClassCounts.byCampusId.get(c.id) || 0} lớp)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600">Chọn lớp:</span>
+                <select
+                  value={selectedClassId}
+                  onChange={e => setSelectedClassId(e.target.value)}
+                  className="text-xs font-semibold px-3.5 py-2 bg-[#F0FDFA] border border-[#008B85]/50 rounded-xl text-[#003B3A] focus:outline-[#008B85] min-w-[190px]"
+                >
+                  {renderGroupedClassOptions(filteredClasses, { idKey: "id" })}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-600">Học kỳ:</span>
+                <select
+                  value={selectedSemester}
+                  onChange={e => setSelectedSemester(Number(e.target.value))}
+                  className="text-xs font-semibold px-3 py-2 bg-[#F0FDFA] border border-[#008B85]/50 rounded-xl text-[#003B3A] focus:outline-[#008B85]"
+                >
+                  <option value={1}>Học kỳ 1</option>
+                  <option value={2}>Học kỳ 2</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("consolidated")}
+              className="text-xs font-semibold px-3.5 py-2 bg-white hover:bg-[#F8FAFC] text-[#003B3A] border border-[#E2E8F0] rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Layers className="w-3.5 h-3.5 text-[#00736E]" />
+              Mở Sổ điểm tổng hợp chi tiết
+            </button>
+          </div>
+
+          <CtqtClassSubjectSummary
+            data={consolidatedData}
+            loading={loadingConsolidated}
+            semester={selectedSemester}
+            mode="admin"
+            onOpenSubjectGradebook={subjectCode => {
+              setSelectedSubjectCode(subjectCode);
+              setActiveTab("subject_gradebook");
+            }}
+            onExportPdf={studentId => handleExportPdf(studentId)}
+            generatingPdf={generatingPdf}
+          />
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* BÁO CÁO 2: XUẤT REPORT CARD (PDF)                                         */}
       {/* ========================================================================= */}
       {activeTab === "report_card" && (
         <div className="space-y-4">

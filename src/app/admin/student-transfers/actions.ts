@@ -3,6 +3,97 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { normalizePersonName } from "@/lib/nameNormalizer"
+import { resolveVnEduCodeMap } from "@/lib/grading/vnedu-code-resolver"
+
+async function validateAndSyncVnEduCodeInTx(
+  tx: any,
+  academicYearId: string,
+  studentCode: string,
+  vnEduCode?: string | null,
+  excludeStudentId?: string
+): Promise<string | null> {
+  const sCode = String(studentCode || "").trim().toUpperCase();
+  const markCode = vnEduCode !== undefined && vnEduCode !== null ? String(vnEduCode).trim().toUpperCase() : "";
+
+  if (!markCode) {
+    if (sCode && academicYearId) {
+      await tx.studentCodeMapping.deleteMany({
+        where: {
+          academicYearId,
+          databaseCode: sCode,
+        },
+      });
+    }
+    return null;
+  }
+
+  // Kiểm tra ràng buộc 1-1 xuyên suốt trong StudentCodeMapping
+  const existingMapping = await tx.studentCodeMapping.findFirst({
+    where: {
+      markFileCode: markCode,
+      databaseCode: { not: sCode },
+    },
+  });
+  if (existingMapping) {
+    const otherStudent = await tx.student.findFirst({
+      where: { studentCode: existingMapping.databaseCode },
+      select: { studentName: true, studentCode: true },
+    });
+    const otherName = otherStudent
+      ? `${otherStudent.studentName} (${otherStudent.studentCode})`
+      : existingMapping.databaseCode;
+    throw new Error(
+      `Mã VNEdu '${markCode}' đã được gán cho học sinh ${otherName}! Mỗi học sinh chỉ có 1 Mã VNEdu duy nhất.`
+    );
+  }
+
+  // Kiểm tra trùng trên bảng Student cùng năm học
+  const existingStudent = await tx.student.findFirst({
+    where: {
+      vnEduCode: markCode,
+      academicYearId,
+      ...(excludeStudentId ? { id: { not: excludeStudentId } } : {}),
+    },
+    select: { studentName: true, studentCode: true },
+  });
+  if (existingStudent) {
+    throw new Error(
+      `Mã VNEdu '${markCode}' đã được gán cho học sinh ${existingStudent.studentName} (${existingStudent.studentCode}) trong năm học này!`
+    );
+  }
+
+  // Upsert mapping cho năm học hiện tại
+  await tx.studentCodeMapping.upsert({
+    where: {
+      academicYearId_databaseCode: {
+        academicYearId,
+        databaseCode: sCode,
+      },
+    },
+    update: { markFileCode: markCode },
+    create: {
+      academicYearId,
+      databaseCode: sCode,
+      markFileCode: markCode,
+    },
+  });
+
+  // Đồng bộ xuyên suốt cho các năm học khác (nếu đã có mapping)
+  const otherYearMappings = await tx.studentCodeMapping.findMany({
+    where: {
+      databaseCode: sCode,
+      academicYearId: { not: academicYearId },
+    },
+  });
+  for (const otherMap of otherYearMappings) {
+    await tx.studentCodeMapping.update({
+      where: { id: otherMap.id },
+      data: { markFileCode: markCode },
+    });
+  }
+
+  return markCode;
+}
 
 export async function createTransferOutAction(data: any) {
   try {
@@ -101,7 +192,39 @@ export async function getTransfersAction() {
         createdBy: { select: { fullName: true } }
       }
     })
-    return transfers
+
+    // Đồng bộ tra cứu Mã VNEdu từ StudentCodeMapping xuyên suốt các năm học (ưu tiên năm học của học sinh)
+    const codesByYear = new Map<string, Set<string>>();
+    for (const t of transfers) {
+      const sCode = t.student?.studentCode?.trim();
+      if (!sCode) continue;
+      const yId = t.student?.academicYearId || t.student?.class?.academicYearId || "";
+      if (!codesByYear.has(yId)) codesByYear.set(yId, new Set());
+      codesByYear.get(yId)!.add(sCode);
+    }
+
+    const vnEduMapsByYear = new Map<string, Map<string, string>>();
+    await Promise.all(
+      Array.from(codesByYear.entries()).map(async ([yId, codeSet]) => {
+        const map = await resolveVnEduCodeMap(Array.from(codeSet), yId || undefined);
+        vnEduMapsByYear.set(yId, map);
+      })
+    );
+
+    return transfers.map(t => {
+      if (!t.student) return t;
+      const yId = t.student.academicYearId || t.student.class?.academicYearId || "";
+      const sCode = t.student.studentCode?.trim() || "";
+      const yearMap = vnEduMapsByYear.get(yId);
+      const mappedVnEdu = yearMap?.get(sCode) || yearMap?.get(sCode.toUpperCase()) || null;
+      return {
+        ...t,
+        student: {
+          ...t.student,
+          vnEduCode: mappedVnEdu || t.student.vnEduCode || null,
+        }
+      };
+    });
   } catch (e: any) {
     console.error(e)
     return []
@@ -321,41 +444,53 @@ export async function createTransferInAction(data: any) {
     const session = await auth()
     const userId = (session?.user as any)?.id
 
-    if (!data.assessmentStudentId || !data.classId || !data.academicYearId || !data.campusId || !data.transferDate) {
+    if (!data.classId || !data.academicYearId || !data.campusId || !data.transferDate) {
       return { success: false, error: "Thiếu thông tin bắt buộc" }
     }
 
     const isPreschool = !!data.isPreschool;
-    let assessmentStudent;
-    if (isPreschool) {
-      assessmentStudent = await prisma.preschoolInputAssessmentStudent.findUnique({
-        where: { id: data.assessmentStudentId }
-      });
-    } else {
-      assessmentStudent = await prisma.inputAssessmentStudent.findUnique({
-        where: { id: data.assessmentStudentId }
-      });
+    let assessmentStudent: any = null;
+    if (data.assessmentStudentId) {
+      if (isPreschool) {
+        assessmentStudent = await prisma.preschoolInputAssessmentStudent.findUnique({
+          where: { id: data.assessmentStudentId }
+        });
+      } else {
+        assessmentStudent = await prisma.inputAssessmentStudent.findUnique({
+          where: { id: data.assessmentStudentId }
+        });
+      }
+
+      if (!assessmentStudent) {
+        return { success: false, error: "Không tìm thấy học sinh KSĐV" }
+      }
+    } else if (!data.studentName?.trim() || !data.studentCode?.trim()) {
+      return { success: false, error: "Vui lòng nhập đầy đủ Họ và tên và Mã học sinh!" }
     }
 
-    if (!assessmentStudent) {
-      return { success: false, error: "Không tìm thấy học sinh KSĐV" }
-    }
-
-    return await prisma.$transaction(async (tx) => {
-      const studentCode = (data.studentCode || assessmentStudent.studentCode)?.trim().toUpperCase();
+    const res = await prisma.$transaction(async (tx) => {
+      const studentCode = (data.studentCode || assessmentStudent?.studentCode)?.trim().toUpperCase();
       if (!studentCode) {
         throw new Error("Mã học sinh không được để trống!");
       }
       const existing = await tx.student.findFirst({
-        where: { studentCode }
+        where: { studentCode, academicYearId: data.academicYearId }
       });
       if (existing) {
         throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức!`);
       }
 
+      // Kiểm tra và đồng bộ Mã VNEdu (nếu có)
+      const resolvedVnEduCode = await validateAndSyncVnEduCodeInTx(
+        tx,
+        data.academicYearId,
+        studentCode,
+        data.vnEduCode
+      );
+
       // Determine studentType based on admissionResult (Đạt - Giao lưu -> GIAO_LUU, còn lại -> CHINH_KHOA)
-      const admResult1 = (assessmentStudent.admissionResult || "").toLowerCase();
-      const dirNote1 = (assessmentStudent.directorNote || "").toLowerCase();
+      const admResult1 = (assessmentStudent?.admissionResult || "").toLowerCase();
+      const dirNote1 = (assessmentStudent?.directorNote || "").toLowerCase();
       const isGiaoLuu1 = admResult1.includes("giao lưu") || 
                          admResult1.includes("giao luu") ||
                          dirNote1.includes("học giao lưu") ||
@@ -365,9 +500,10 @@ export async function createTransferInAction(data: any) {
       const newStudent = await tx.student.create({
         data: {
           studentCode: studentCode,
-          studentName: normalizePersonName(data.studentName || assessmentStudent.fullName),
-          dateOfBirth: assessmentStudent.dateOfBirth,
-          gender: assessmentStudent.gender,
+          vnEduCode: resolvedVnEduCode,
+          studentName: normalizePersonName(data.studentName || assessmentStudent?.fullName || ""),
+          dateOfBirth: assessmentStudent?.dateOfBirth || null,
+          gender: assessmentStudent?.gender || null,
           classId: data.classId,
           campusId: data.campusId,
           academicYearId: data.academicYearId,
@@ -394,27 +530,29 @@ export async function createTransferInAction(data: any) {
         }
       });
 
-      // Update candidate enrollment info to COMPLETED
-      if (isPreschool) {
-        await tx.preschoolInputAssessmentStudent.update({
-          where: { id: data.assessmentStudentId },
-          data: {
-            enrollmentStatus: "COMPLETED",
-            enrollmentClassId: data.classId,
-            enrollmentDate: new Date(data.transferDate),
-            enrollmentCode: data.studentCode || assessmentStudent.studentCode
-          }
-        });
-      } else {
-        await tx.inputAssessmentStudent.update({
-          where: { id: data.assessmentStudentId },
-          data: {
-            enrollmentStatus: "COMPLETED",
-            enrollmentClassId: data.classId,
-            enrollmentDate: new Date(data.transferDate),
-            enrollmentCode: data.studentCode || assessmentStudent.studentCode
-          }
-        });
+      // Update candidate enrollment info to COMPLETED (nếu liên kết từ KSĐV)
+      if (data.assessmentStudentId && assessmentStudent) {
+        if (isPreschool) {
+          await tx.preschoolInputAssessmentStudent.update({
+            where: { id: data.assessmentStudentId },
+            data: {
+              enrollmentStatus: "COMPLETED",
+              enrollmentClassId: data.classId,
+              enrollmentDate: new Date(data.transferDate),
+              enrollmentCode: studentCode
+            }
+          });
+        } else {
+          await tx.inputAssessmentStudent.update({
+            where: { id: data.assessmentStudentId },
+            data: {
+              enrollmentStatus: "COMPLETED",
+              enrollmentClassId: data.classId,
+              enrollmentDate: new Date(data.transferDate),
+              enrollmentCode: studentCode
+            }
+          });
+        }
       }
 
       // Send notification to GVCN if requested
@@ -424,6 +562,10 @@ export async function createTransferInAction(data: any) {
 
       return { success: true }
     })
+
+    revalidatePath("/admin/student-transfers")
+    if (data.classId) revalidatePath(`/admin/classes/${data.classId}`)
+    return res
   } catch (error: any) {
     console.error("Error creating transfer in:", error)
     return { success: false, error: error.message }
@@ -435,12 +577,21 @@ export async function updateTransferInAction(id: string, data: any) {
     const session = await auth()
     if (!session) return { success: false, error: "Unauthorized" }
 
+    let oldClassId: string | null = null;
+
     await prisma.$transaction(async (tx) => {
       const transfer = await tx.studentTransfer.findUnique({
         where: { id },
         include: { student: true }
       })
       if (!transfer) throw new Error("Không tìm thấy phiếu")
+      oldClassId = transfer.student?.classId || null;
+
+      // Fetch destination class info for recording
+      const destClass = data.classId
+        ? await tx.class.findUnique({ where: { id: data.classId }, include: { campus: true } })
+        : null;
+      const destName = destClass ? destClass.className + " (" + destClass.campus.campusName + ")" : undefined;
 
       // Update transfer record
       await tx.studentTransfer.update({
@@ -448,36 +599,74 @@ export async function updateTransferInAction(id: string, data: any) {
         data: {
           transferDate: new Date(data.transferDate),
           semester: data.semester || null,
+          ...(destName ? { destinationSchool: destName } : {}),
           reason: data.reason || null,
         }
       })
 
       // Update student record
       if (transfer.student) {
+        const normalizedCode = (data.studentCode || transfer.student.studentCode)?.trim().toUpperCase();
+        const targetAcademicYearId = data.academicYearId || transfer.student.academicYearId;
+
+        const studentUpdateData: any = {
+          studentCode: normalizedCode,
+          studentName: normalizePersonName(data.studentName || transfer.student.studentName),
+          classId: data.classId,
+          campusId: data.campusId,
+          academicYearId: targetAcademicYearId,
+        };
+
+        if (data.vnEduCode !== undefined) {
+          const resolvedVnEduCode = await validateAndSyncVnEduCodeInTx(
+            tx,
+            targetAcademicYearId,
+            normalizedCode,
+            data.vnEduCode,
+            transfer.studentId
+          );
+          studentUpdateData.vnEduCode = resolvedVnEduCode;
+        }
+
         await tx.student.update({
           where: { id: transfer.studentId },
-          data: {
-            studentCode: data.studentCode,
-            studentName: data.studentName,
-            classId: data.classId,
-            campusId: data.campusId,
-            academicYearId: data.academicYearId,
-          }
+          data: studentUpdateData
         })
 
         // Send notification to GVCN if requested
         if (data.notifyGVCN) {
-          await notifyGVCNOfNewStudent(tx, { studentName: data.studentName, studentCode: data.studentCode }, data.classId);
+          await notifyGVCNOfNewStudent(tx, { studentName: studentUpdateData.studentName, studentCode: normalizedCode }, data.classId);
         }
       }
     })
 
     revalidatePath("/admin/student-transfers")
+    if (data.classId) revalidatePath(`/admin/classes/${data.classId}`)
+    if (oldClassId && oldClassId !== data.classId) revalidatePath(`/admin/classes/${oldClassId}`)
     return { success: true }
   } catch (error: any) {
     console.error("Error updating transfer in:", error)
     return { success: false, error: error.message }
   }
+}
+
+function isTransferAssessmentStudent(s: any): boolean {
+  if (!s) return false;
+  const periodName = (s.period?.name || "").toLowerCase();
+  const criteria = (s.admissionCriteria || "").toLowerCase();
+  const target = (s.targetType || "").toLowerCase();
+  const batchName = (s.batch?.name || "").toLowerCase();
+  return (
+    periodName.includes("chuyển hệ") ||
+    periodName.includes("chuyen he") ||
+    criteria.includes("chuyển hệ") ||
+    criteria.includes("chuyen he") ||
+    target.includes("chuyển hệ") ||
+    target.includes("chuyen he") ||
+    batchName.includes("chuyen_he") ||
+    batchName.includes("chuyển hệ") ||
+    Boolean(s.className && s.surveySystem && s.surveyFormType && s.surveySystem !== s.surveyFormType)
+  );
 }
 
 export async function confirmEnrollmentAction(studentId: string, isPreschool: boolean) {
@@ -486,7 +675,7 @@ export async function confirmEnrollmentAction(studentId: string, isPreschool: bo
     const userId = (session?.user as any)?.id
     if (!userId) return { success: false, error: "Unauthorized" }
 
-    let student;
+    let student: any;
     if (isPreschool) {
       student = await prisma.preschoolInputAssessmentStudent.update({
         where: { id: studentId },
@@ -497,15 +686,17 @@ export async function confirmEnrollmentAction(studentId: string, isPreschool: bo
       student = await prisma.inputAssessmentStudent.update({
         where: { id: studentId },
         data: { enrollmentStatus: "PENDING" },
-        include: { period: true }
+        include: { period: true, batch: { select: { name: true } } }
       });
     }
 
     if (!student) return { success: false, error: "Không tìm thấy học sinh" }
 
+    const isTransfer = !isPreschool && isTransferAssessmentStudent(student);
+
     // Notify all GIÁO VỤ (Academic Staff) assigned to the student's campus
     const campusId = student.period?.campusId;
-    let targetGiaoVuUsers = [];
+    let targetGiaoVuUsers: any[] = [];
     if (campusId) {
       targetGiaoVuUsers = await prisma.user.findMany({
         where: {
@@ -526,9 +717,11 @@ export async function confirmEnrollmentAction(studentId: string, isPreschool: bo
     }
 
     // Create notifications
-    const title = "Yêu cầu xếp lớp mới";
-    const message = `Học sinh ${student.fullName} (Mã KS: ${student.studentCode}) đạt kết quả tuyển sinh, đang chờ giáo vụ tổ chức nhập học và xếp lớp.`;
-    const link = "/admin/student-transfers";
+    const title = isTransfer ? "Yêu cầu chuyển lớp mới" : "Yêu cầu xếp lớp mới";
+    const message = isTransfer
+      ? `Học sinh ${student.fullName} (Mã HS: ${student.studentCode}) đạt kết quả khảo sát chuyển hệ, đang chờ giáo vụ tiến hành chuyển lớp học.`
+      : `Học sinh ${student.fullName} (Mã KS: ${student.studentCode}) đạt kết quả tuyển sinh, đang chờ giáo vụ tổ chức nhập học và xếp lớp.`;
+    const link = isTransfer ? "/admin/student-transfers?tab=CHANGE_CLASS&subTab=general" : "/admin/student-transfers";
 
     for (const gv of targetGiaoVuUsers) {
       await prisma.notification.create({
@@ -543,7 +736,8 @@ export async function confirmEnrollmentAction(studentId: string, isPreschool: bo
 
     revalidatePath("/admin/student-transfers")
     revalidatePath("/admin/student-info")
-    return { success: true }
+    revalidatePath("/admin/ket-qua-khao-sat")
+    return { success: true, isTransfer }
   } catch (e: any) {
     console.error("confirmEnrollmentAction Error:", e)
     return { success: false, error: e.message }
@@ -560,6 +754,9 @@ export async function getPendingEnrollmentsAction() {
       include: {
         period: {
           select: { id: true, name: true, academicYearId: true, campusId: true, campus: { select: { campusName: true } } }
+        },
+        batch: {
+          select: { name: true }
         }
       }
     });
@@ -573,12 +770,55 @@ export async function getPendingEnrollmentsAction() {
       }
     });
 
+    // Lookup existing official Student records for transfer-system pending students
+    const transferCodes = Array.from(
+      new Set(
+        generalPending
+          .filter((x: any) => isTransferAssessmentStudent(x) && x.studentCode)
+          .map((x: any) => String(x.studentCode).trim().toUpperCase())
+      )
+    );
+    const officialStudentsByCode = new Map<string, any[]>();
+    if (transferCodes.length > 0) {
+      const existingStudents = await prisma.student.findMany({
+        where: {
+          studentCode: { in: transferCodes },
+          status: "ACTIVE"
+        },
+        include: {
+          class: {
+            select: {
+              id: true,
+              className: true,
+              campusId: true,
+              campus: { select: { campusName: true } }
+            }
+          }
+        },
+        orderBy: { id: "desc" }
+      });
+      for (const st of existingStudents) {
+        const key = String(st.studentCode).trim().toUpperCase();
+        if (!officialStudentsByCode.has(key)) officialStudentsByCode.set(key, []);
+        officialStudentsByCode.get(key)!.push(st);
+      }
+    }
+
     return [
       ...generalPending.map((x: any) => {
         const isGL = (x.admissionResult || "").toLowerCase().includes("giao lưu") ||
                      (x.admissionResult || "").toLowerCase().includes("giao luu") ||
                      (x.directorNote || "").toLowerCase().includes("học giao lưu") ||
                      (x.directorNote || "").toLowerCase().includes("học giao luu");
+        const isTransferSystem = isTransferAssessmentStudent(x);
+        const codeKey = String(x.studentCode || "").trim().toUpperCase();
+        const yearId = x.period?.academicYearId || "";
+        const matchedList = isTransferSystem ? (officialStudentsByCode.get(codeKey) || []) : [];
+        const matchedStudent =
+          matchedList.find((st) => st.academicYearId === yearId) ||
+          matchedList[0] ||
+          null;
+
         return {
           id: x.id,
           studentCode: x.studentCode,
@@ -591,6 +831,14 @@ export async function getPendingEnrollmentsAction() {
           campusId: x.period?.campusId || "",
           academicYearId: x.period?.academicYearId || x.academicYearId || "",
           isPreschool: false,
+          isTransferSystem,
+          surveySystem: x.surveySystem || "",
+          surveyFormType: x.surveyFormType || "",
+          existingStudentId: matchedStudent?.id || "",
+          currentClassId: matchedStudent?.classId || "",
+          currentCampusId: matchedStudent?.campusId || matchedStudent?.class?.campusId || "",
+          currentClassName: matchedStudent?.class?.className || x.className || "",
+          currentCampusName: matchedStudent?.class?.campus?.campusName || "",
           period: x.period,
           admissionResult: x.admissionResult,
           directorNote: x.directorNote,
@@ -614,6 +862,7 @@ export async function getPendingEnrollmentsAction() {
           campusId: x.period?.campusId || "",
           academicYearId: x.period?.academicYearId || x.academicYearId || "",
           isPreschool: true,
+          isTransferSystem: false,
           period: x.period,
           admissionResult: x.admissionResult,
           directorNote: x.directorNote,
@@ -624,6 +873,113 @@ export async function getPendingEnrollmentsAction() {
   } catch (e: any) {
     console.error("getPendingEnrollmentsAction Error:", e);
     return [];
+  }
+}
+
+export async function completeChangeClassRequestAction(assessmentStudentId: string, data: any) {
+  try {
+    const session = await auth()
+    const userId = (session?.user as any)?.id
+    if (!userId) return { success: false, error: "Unauthorized" }
+
+    if (!data.destCampusId) return { success: false, error: "Thiếu Cơ sở chuyển đến" }
+    if (!data.destClassId) return { success: false, error: "Thiếu Lớp chuyển đến" }
+    if (!data.transferDate) return { success: false, error: "Thiếu ngày chuyển lớp" }
+
+    const candidate = await prisma.inputAssessmentStudent.findUnique({
+      where: { id: assessmentStudentId },
+      include: { period: true, batch: true }
+    });
+    if (!candidate) {
+      return { success: false, error: "Không tìm thấy hồ sơ học sinh khảo sát chuyển hệ" }
+    }
+
+    let previousClassId: string | null = null;
+
+    await prisma.$transaction(async (tx) => {
+      let officialStudent = data.studentId
+        ? await tx.student.findUnique({ where: { id: data.studentId } })
+        : null;
+
+      if (!officialStudent && candidate.studentCode) {
+        const code = candidate.studentCode.trim().toUpperCase();
+        const targetYearId = data.academicYearId || candidate.period?.academicYearId;
+        if (targetYearId) {
+          officialStudent = await tx.student.findFirst({
+            where: { studentCode: code, academicYearId: targetYearId }
+          });
+        }
+        if (!officialStudent) {
+          officialStudent = await tx.student.findFirst({
+            where: { studentCode: code, status: "ACTIVE" },
+            orderBy: { id: "desc" }
+          });
+        }
+      }
+
+      if (!officialStudent) {
+        throw new Error(
+          `Không tìm thấy học sinh chính thức (Mã HS: ${candidate.studentCode}) để thực hiện chuyển lớp. Vui lòng chọn đúng học sinh hiện tại.`
+        );
+      }
+
+      previousClassId = officialStudent.classId;
+
+      const destClass = await tx.class.findUnique({
+        where: { id: data.destClassId },
+        include: { campus: true }
+      });
+      const destName = destClass ? `${destClass.className} (${destClass.campus.campusName})` : data.destClassId;
+
+      // 1. Create CHANGE_CLASS transfer record
+      await tx.studentTransfer.create({
+        data: {
+          studentId: officialStudent.id,
+          type: "CHANGE_CLASS",
+          transferDate: new Date(data.transferDate),
+          semester: data.semester || null,
+          destinationSchool: destName,
+          reason: data.reason || "Chuyển lớp theo kết quả khảo sát chuyển hệ",
+          createdById: userId,
+        }
+      });
+
+      // 2. Update official Student class & campus
+      const updatedStudent = await tx.student.update({
+        where: { id: officialStudent.id },
+        data: {
+          classId: data.destClassId,
+          campusId: data.destCampusId,
+          status: "ACTIVE"
+        }
+      });
+
+      // 3. Mark assessment student as COMPLETED with new class
+      await tx.inputAssessmentStudent.update({
+        where: { id: assessmentStudentId },
+        data: {
+          enrollmentStatus: "COMPLETED",
+          enrollmentClassId: data.destClassId,
+          enrollmentDate: new Date(data.transferDate),
+          enrollmentCode: officialStudent.studentCode
+        }
+      });
+
+      // 4. Optional notification to new GVCN
+      if (data.notifyGVCN) {
+        await notifyGVCNOfNewStudent(tx, updatedStudent, data.destClassId);
+      }
+    });
+
+    revalidatePath("/admin/student-transfers")
+    revalidatePath("/admin/student-info")
+    revalidatePath("/admin/ket-qua-khao-sat")
+    if (previousClassId) revalidatePath(`/admin/classes/${previousClassId}`)
+    if (data.destClassId) revalidatePath(`/admin/classes/${data.destClassId}`)
+    return { success: true }
+  } catch (e: any) {
+    console.error("completeChangeClassRequestAction Error:", e)
+    return { success: false, error: e.message }
   }
 }
 
@@ -652,7 +1008,7 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
       return { success: false, error: "Không tìm thấy học sinh khảo sát" }
     }
 
-    return await prisma.$transaction(async (tx) => {
+    const res = await prisma.$transaction(async (tx) => {
       const studentCode = (data.studentCode || candidate.studentCode)?.trim().toUpperCase();
       if (!studentCode) {
         throw new Error("Mã học sinh không được để trống!");
@@ -667,6 +1023,14 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
         throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức!`);
       }
 
+      // Kiểm tra và đồng bộ Mã VNEdu (nếu có)
+      const resolvedVnEduCode = await validateAndSyncVnEduCodeInTx(
+        tx,
+        data.academicYearId,
+        studentCode,
+        data.vnEduCode
+      );
+
       // Determine studentType based on admissionResult (Đạt - Giao lưu -> GIAO_LUU, còn lại -> CHINH_KHOA)
       const admResult2 = (candidate.admissionResult || "").toLowerCase();
       const dirNote2 = (candidate.directorNote || "").toLowerCase();
@@ -679,6 +1043,7 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
       const newStudent = await tx.student.create({
         data: {
           studentCode: studentCode,
+          vnEduCode: resolvedVnEduCode,
           studentName: normalizePersonName(data.studentName || candidate.fullName),
           dateOfBirth: candidate.dateOfBirth,
           gender: candidate.gender,
@@ -719,7 +1084,7 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
             enrollmentStatus: "COMPLETED",
             enrollmentClassId: data.classId,
             enrollmentDate: new Date(data.transferDate),
-            enrollmentCode: data.studentCode
+            enrollmentCode: studentCode
           }
         });
       } else {
@@ -729,7 +1094,7 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
             enrollmentStatus: "COMPLETED",
             enrollmentClassId: data.classId,
             enrollmentDate: new Date(data.transferDate),
-            enrollmentCode: data.studentCode
+            enrollmentCode: studentCode
           }
         });
       }
@@ -741,6 +1106,10 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
 
       return { success: true }
     });
+
+    revalidatePath("/admin/student-transfers")
+    if (data.classId) revalidatePath(`/admin/classes/${data.classId}`)
+    return res
   } catch (e: any) {
     console.error("completeEnrollmentAction Error:", e);
     return { success: false, error: e.message }
@@ -1160,6 +1529,7 @@ export async function revertEnrollmentAction(studentId: string, isPreschool: boo
 
     revalidatePath("/admin/student-transfers")
     revalidatePath("/admin/student-info")
+    revalidatePath("/admin/ket-qua-khao-sat")
     return { success: true }
   } catch (e: any) {
     console.error("revertEnrollmentAction Error:", e)

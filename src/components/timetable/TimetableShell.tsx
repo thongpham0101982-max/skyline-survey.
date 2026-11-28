@@ -9,16 +9,47 @@ export interface TimetableNavTab {
   code: string
   label: string
   href: string
+  group?: "SETUP_WORKFLOW" | "OPERATIONS"
 }
 
 export const TIMETABLE_NAV_TABS: TimetableNavTab[] = [
-  { code: "OVERVIEW", label: "Tổng quan", href: "/admin/thoi-khoa-bieu" },
-  { code: "CONFIG", label: "Cấu hình", href: "/admin/thoi-khoa-bieu/cau-hinh" },
-  { code: "QUOTA", label: "Định mức & Phân công", href: "/admin/thoi-khoa-bieu/phan-cong" },
-  { code: "SCHEDULE", label: "Xếp TKB (Kéo & Thả)", href: "/admin/thoi-khoa-bieu/xep-lich" },
-  { code: "LOOKUP", label: "Tra cứu", href: "/admin/thoi-khoa-bieu/tra-cuu" },
-  { code: "ADJUST", label: "Điều chỉnh & Dạy thay", href: "/admin/thoi-khoa-bieu/dieu-chinh" },
-  { code: "PUBLISH", label: "Duyệt & Ban hành", href: "/admin/thoi-khoa-bieu/ban-hanh" },
+  { code: "OVERVIEW", label: "Tổng quan", href: "/admin/thoi-khoa-bieu", group: "SETUP_WORKFLOW" },
+  {
+    code: "CONFIG",
+    label: "Bước 1. Khung giờ & Quy tắc",
+    href: "/admin/thoi-khoa-bieu/cau-hinh",
+    group: "SETUP_WORKFLOW",
+  },
+  {
+    code: "QUOTA",
+    label: "Bước 2. Định mức 40t & Phân công",
+    href: "/admin/thoi-khoa-bieu/phan-cong",
+    group: "SETUP_WORKFLOW",
+  },
+  {
+    code: "SCHEDULE",
+    label: "Bước 3. Xếp TKB (Kéo thả & Tự động)",
+    href: "/admin/thoi-khoa-bieu/xep-lich",
+    group: "SETUP_WORKFLOW",
+  },
+  {
+    code: "PUBLISH",
+    label: "Bước 4. Duyệt & Ban hành",
+    href: "/admin/thoi-khoa-bieu/ban-hanh",
+    group: "SETUP_WORKFLOW",
+  },
+  {
+    code: "LOOKUP",
+    label: "Tra cứu TKB",
+    href: "/admin/thoi-khoa-bieu/tra-cuu",
+    group: "OPERATIONS",
+  },
+  {
+    code: "ADJUST",
+    label: "Điều chỉnh & Dạy thay",
+    href: "/admin/thoi-khoa-bieu/dieu-chinh",
+    group: "OPERATIONS",
+  },
 ]
 
 export const VERSION_STATUS_BADGE: Record<
@@ -129,30 +160,40 @@ export function TimetableShell({
         )}
       </div>
 
-      {/* Segmented Sub-navigation */}
+      {/* Segmented Sub-navigation: Quy trình 4 bước lập TKB | Vận hành & Tra cứu */}
       <div className="bg-white rounded-2xl border border-[#E2E8F0] p-1.5 shadow-xs overflow-x-auto">
         <div className="flex items-center gap-1 min-w-max">
-          {TIMETABLE_NAV_TABS.map((tab) => {
+          {TIMETABLE_NAV_TABS.map((tab, idx) => {
             const isCurrent =
               tab.code === activeTabCode ||
               (tab.href === "/admin/thoi-khoa-bieu"
                 ? pathname === "/admin/thoi-khoa-bieu"
                 : pathname?.startsWith(tab.href))
             const dest = buildScopedHref(tab.href)
+            const prevTab = idx > 0 ? TIMETABLE_NAV_TABS[idx - 1] : null
+            const showGroupDivider =
+              prevTab && prevTab.group === "SETUP_WORKFLOW" && tab.group === "OPERATIONS"
 
             return (
-              <Link
-                key={tab.code}
-                href={dest}
-                onClick={(e) => handleTabNavigate(e, dest)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap ${
-                  isCurrent
-                    ? "bg-[#003B3A] text-white shadow-xs"
-                    : "text-slate-600 hover:text-[#003B3A] hover:bg-[#F8FAFC]"
-                }`}
-              >
-                {tab.label}
-              </Link>
+              <React.Fragment key={tab.code}>
+                {showGroupDivider && (
+                  <span
+                    aria-hidden="true"
+                    className="h-5 w-px bg-[#E2E8F0] mx-1 shrink-0"
+                  />
+                )}
+                <Link
+                  href={dest}
+                  onClick={(e) => handleTabNavigate(e, dest)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap ${
+                    isCurrent
+                      ? "bg-[#003B3A] text-white shadow-xs"
+                      : "text-slate-600 hover:text-[#003B3A] hover:bg-[#F8FAFC]"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              </React.Fragment>
             )
           })}
         </div>

@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { buildStudentCtqtPortfolio } from "@/lib/ctqt/studentProfilePortfolio";
+import { requireStaffSession } from "@/lib/security-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const campusId = searchParams.get("campusId");
     const schoolBlock = searchParams.get("schoolBlock");
@@ -18,7 +23,12 @@ export async function GET(req: NextRequest) {
 
     const where: any = {};
 
-    if (campusId && campusId !== "all") {
+    if (ctx.isGDCS && ctx.allowedCampusIds.length > 0) {
+      if (campusId && campusId !== "all" && !ctx.allowedCampusIds.includes(campusId)) {
+        return NextResponse.json({ success: false, error: "Không có quyền truy cập cơ sở này" }, { status: 403 });
+      }
+      where.campusId = campusId && campusId !== "all" ? campusId : { in: ctx.allowedCampusIds };
+    } else if (campusId && campusId !== "all") {
       where.campusId = campusId;
     }
     if (classId && classId !== "all") {

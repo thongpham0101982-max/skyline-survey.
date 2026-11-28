@@ -3,7 +3,9 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
 import { buildStudentQuickApproveUrls } from "@/lib/k12-approval-service"
-import { buildPsychologyGdcsCcList } from "@/lib/orientation/service"
+import { buildPsychologyGdcsCcList, getStudentOrientationRecord } from "@/lib/orientation/service"
+import { ensurePvdhSchema, getPvdhDb } from "@/lib/pvdh/schema-init"
+import { PVDH_WORKFLOW_STATUS_LABELS, PvdhWorkflowStatus } from "@/lib/pvdh/constants"
 import {
   requireStaffSession,
   requireAdminOrLeadershipSession,
@@ -114,6 +116,7 @@ export async function GET(req) {
       include: { 
         period: { select: { id: true, name: true, code: true } },
         batch: { select: { id: true, name: true, status: true, startDate: true, endDate: true } },
+        enrollmentClass: { select: { id: true, className: true, classCode: true } },
         scores: {
           include: {
             subject: true
@@ -741,7 +744,7 @@ export async function POST(req) {
             <tr>
               <td style="padding: 10px 12px; text-align: center;">
                 <div style="font-size: 11px; font-weight: 700; color: #92400E; margin-bottom: 8px;">
-                  Chọn nhanh 1 chạm môn Cam kết (ghi nhận ngay vào kết quả):
+                  Chọn nhanh môn Cam kết (tự động tích sẵn khi mở trang xác nhận):
                 </div>
                 <div>
                   ${commitSelectableSubjects.map(s => `
@@ -762,6 +765,119 @@ export async function POST(req) {
         : "";
 
       const dateOfBirthStr = student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "—";
+
+      // Tra cứu trạng thái Phiếu phỏng vấn định hướng (PVĐH chuẩn mới -> fallback bản cũ) để hiển thị & cho phép chạm xem trực tiếp
+      let pvdhRecord: any = null;
+      let legacyOrientationRecord: any = null;
+      try {
+        await ensurePvdhSchema();
+        pvdhRecord = await getPvdhDb().pvdhAssessmentRecord.findFirst({
+          where: { studentId: student.id, isLatestAttempt: true },
+          orderBy: [{ attemptNumber: "desc" }]
+        });
+      } catch {}
+      if (!pvdhRecord) {
+        try {
+          legacyOrientationRecord = await getStudentOrientationRecord(student.id);
+        } catch {}
+      }
+
+      let pvdhStatusLabel = "Chưa lập phiếu";
+      let pvdhBadgeBg = "#F1F5F9";
+      let pvdhBadgeColor = "#475569";
+      let pvdhBadgeBorder = "#CBD5E1";
+      let pvdhMetaParts: string[] = [];
+      let pvdhPsychReferral = false;
+
+      if (pvdhRecord) {
+        const stKey = (pvdhRecord.workflowStatus || "DRAFT") as PvdhWorkflowStatus;
+        pvdhStatusLabel = PVDH_WORKFLOW_STATUS_LABELS[stKey]?.label || pvdhRecord.workflowStatus || "Bản nháp";
+        if (["COMPLETED", "SUBMITTED", "VERIFIED_LOCKED", "HANDED_OVER"].includes(stKey)) {
+          pvdhBadgeBg = "#ECFDF5";
+          pvdhBadgeColor = "#059669";
+          pvdhBadgeBorder = "#A7F3D0";
+        } else {
+          pvdhBadgeBg = "#FFFBEB";
+          pvdhBadgeColor = "#B45309";
+          pvdhBadgeBorder = "#FCD34D";
+        }
+        if (pvdhRecord.templateCode) pvdhMetaParts.push(`Biểu mẫu ${pvdhRecord.templateCode}`);
+        const interviewer = pvdhRecord.studentInterviewerName || pvdhRecord.parentInterviewerName;
+        if (interviewer) pvdhMetaParts.push(`GV: ${interviewer}`);
+        try {
+          const parsedSum = pvdhRecord.teacherSummaryJson ? JSON.parse(pvdhRecord.teacherSummaryJson) : null;
+          if (parsedSum?.psychInterviewRequested) pvdhPsychReferral = true;
+        } catch {}
+      } else if (legacyOrientationRecord) {
+        const legSt = String(legacyOrientationRecord.status || "").toUpperCase();
+        if (legSt === "COMPLETED") {
+          pvdhStatusLabel = "Đã hoàn thành";
+          pvdhBadgeBg = "#ECFDF5";
+          pvdhBadgeColor = "#059669";
+          pvdhBadgeBorder = "#A7F3D0";
+        } else {
+          pvdhStatusLabel = legSt === "IN_PROGRESS" ? "Đang thực hiện" : "Đã ghi nhận";
+          pvdhBadgeBg = "#FFFBEB";
+          pvdhBadgeColor = "#B45309";
+          pvdhBadgeBorder = "#FCD34D";
+        }
+        if (legacyOrientationRecord.interviewerName) {
+          pvdhMetaParts.push(`GV: ${legacyOrientationRecord.interviewerName}`);
+        }
+        if (legacyOrientationRecord.psychologyReferralStatus && legacyOrientationRecord.psychologyReferralStatus !== "NONE") {
+          pvdhPsychReferral = true;
+        }
+      }
+
+      const pvdhSectionHtml = quickUrls.viewPvdhUrl ? `
+                  <!-- Phiếu phỏng vấn định hướng -->
+                  <tr>
+                    <td style="padding: 0 30px 22px 30px;">
+                      <div style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        📋 PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG
+                      </div>
+                      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border: 1px solid #99F6E4; border-radius: 10px; border-collapse: separate;">
+                        <tr>
+                          <td style="padding: 14px 16px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                              <tr>
+                                <td style="vertical-align: middle;">
+                                  <a href="${quickUrls.viewPvdhUrl}" target="_blank" style="font-size: 13.5px; font-weight: 800; color: #003B3A; text-decoration: none; display: inline-block; margin-bottom: 5px;">
+                                    Phiếu phỏng vấn định hướng HS &amp; PHHS
+                                  </a>
+                                  <div>
+                                    <span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background-color: ${pvdhBadgeBg}; color: ${pvdhBadgeColor}; border: 1px solid ${pvdhBadgeBorder};">
+                                      ${pvdhStatusLabel}
+                                    </span>
+                                    ${pvdhPsychReferral ? `
+                                    <span style="display: inline-block; margin-left: 5px; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background-color: #FFF1F2; color: #E11D48; border: 1px solid #FECDD3;">
+                                      Đề nghị PV Tâm lý
+                                    </span>
+                                    ` : ""}
+                                  </div>
+                                  ${pvdhMetaParts.length > 0 ? `
+                                  <div style="margin-top: 6px; font-size: 11.5px; color: #475569;">
+                                    ${pvdhMetaParts.join(" &bull; ")}
+                                  </div>
+                                  ` : `
+                                  <div style="margin-top: 6px; font-size: 11.5px; color: #64748B;">
+                                    Chạm vào nút bên cạnh để xem kết quả phỏng vấn trực tiếp không cần đăng nhập.
+                                  </div>
+                                  `}
+                                </td>
+                                <td align="right" style="vertical-align: middle; padding-left: 12px; white-space: nowrap;">
+                                  <a href="${quickUrls.viewPvdhUrl}" target="_blank" style="display: inline-block; padding: 9px 14px; background-color: #003B3A; color: #FFFFFF; font-size: 12px; font-weight: 700; text-decoration: none; border-radius: 8px;">
+                                    Xem kết quả &rarr;
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+      ` : "";
 
       const emailHtml = `
         <!DOCTYPE html>
@@ -865,6 +981,8 @@ export async function POST(req) {
                   </tr>
                   ` : ""}
 
+                  ${pvdhSectionHtml}
+
                   <!-- DIRECT 1-TAP EMAIL APPROVAL BUTTONS FOR GDCS -->
                   <tr>
                     <td align="center" style="padding: 16px 30px 26px 30px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0;">
@@ -904,7 +1022,7 @@ export async function POST(req) {
                       </table>
 
                       <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748B; line-height: 1.5;">
-                        * Chọn trực tiếp 1 chạm ở các tùy chọn trên — hệ thống sẽ cập nhật ngay vào bảng Ghi nhận kết quả mà không cần đăng nhập hay mở cổng.
+                        * Chạm vào tùy chọn trên rồi bấm <strong>Xác nhận</strong> trên trang mở ra (không cần đăng nhập). Bước xác nhận nhanh giúp chống trình quét bảo mật Email (Outlook Safe Links) tự động lưu nhầm khi mới mở thư.
                       </p>
                     </td>
                   </tr>
@@ -1054,15 +1172,14 @@ export async function PUT(req) {
     const body = await req.json();
     const { id, ids, data } = body;
 
-    if (data?.admissionResult !== undefined && !isApproverRole) {
-      return NextResponse.json(
-        { error: "Chỉ Ban Giám đốc Cơ sở (GĐCS), Ban Giám hiệu hoặc KT&ĐBCL mới có thẩm quyền phê duyệt kết quả khảo sát đầu vào" },
-        { status: 403 }
-      );
-    }
-
     // Hỗ trợ cập nhật hàng loạt (Batch Approval)
     if (ids && Array.isArray(ids) && ids.length > 0) {
+      if (data?.admissionResult !== undefined && !isApproverRole) {
+        return NextResponse.json(
+          { error: "Chỉ Ban Giám đốc Cơ sở (GĐCS), Ban Giám hiệu hoặc KT&ĐBCL mới có thẩm quyền phê duyệt kết quả khảo sát đầu vào" },
+          { status: 403 }
+        );
+      }
       const updatePayload: any = {};
       if (data.admissionResult !== undefined) updatePayload.admissionResult = data.admissionResult;
       if (data.admissionCampus !== undefined) updatePayload.admissionCampus = data.admissionCampus;
@@ -1084,7 +1201,7 @@ export async function PUT(req) {
       return NextResponse.json({ success: true, count: batchRes.count });
     }
 
-    // Check if the student belongs to a locked batch
+    // Check if the student exists
     const student = await (prisma as any).inputAssessmentStudent.findUnique({
       where: { id },
       include: { batch: true }
@@ -1092,18 +1209,57 @@ export async function PUT(req) {
 
     if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 });
 
+    const normalizeOptStr = (v: any) => {
+      if (v === undefined || v === null) return "";
+      return String(v).trim();
+    };
+    const isAdmissionResultChanged =
+      data?.admissionResult !== undefined &&
+      normalizeOptStr(data.admissionResult) !== normalizeOptStr(student.admissionResult);
+
+    if (isAdmissionResultChanged && !isApproverRole) {
+      return NextResponse.json(
+        { error: "Chỉ Ban Giám đốc Cơ sở (GĐCS), Ban Giám hiệu hoặc KT&ĐBCL mới có thẩm quyền phê duyệt kết quả khảo sát đầu vào" },
+        { status: 403 }
+      );
+    }
+
+    const isChangingScoresOrApproval =
+      isAdmissionResultChanged ||
+      data?.psychologyScore !== undefined ||
+      data?.writtenEnglishScore !== undefined ||
+      data?.oralEnglishScore !== undefined ||
+      data?.mathScore !== undefined ||
+      data?.literatureScore !== undefined;
+
     const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
-    if (isBatchLocked && !isManagerOrAdmin) {
-      return NextResponse.json({ error: "Đợt khảo sát này ĐÃ BỊ KHÓA! Mọi tính năng nhập, chỉnh sửa, xét duyệt đều bị vô hiệu hóa." }, { status: 403 });
+    // Cho phép cập nhật thông tin hồ sơ học sinh (kể cả sau khi nhập học hoặc đợt đã khóa);
+    // chỉ khóa việc sửa điểm khảo sát / kết quả phê duyệt khi đợt đã bị khóa đối với non-manager.
+    if (isBatchLocked && !isManagerOrAdmin && isChangingScoresOrApproval) {
+      return NextResponse.json({ error: "Đợt khảo sát này ĐÃ BỊ KHÓA! Không thể chỉnh sửa điểm khảo sát hoặc kết quả xét duyệt." }, { status: 403 });
     }
     
     // Clean relational & undefined fields from payload
     const updatePayload: any = {};
+    if (data.studentCode !== undefined && String(data.studentCode).trim()) {
+      const nextCode = String(data.studentCode).trim().toUpperCase();
+      if (nextCode !== String(student.studentCode || "").trim().toUpperCase()) {
+        const dup = await (prisma as any).inputAssessmentStudent.findFirst({
+          where: { studentCode: nextCode, id: { not: id } },
+          select: { id: true }
+        });
+        if (dup) {
+          return NextResponse.json({ error: `Mã HS khảo sát "${nextCode}" đã tồn tại trên hồ sơ khác.` }, { status: 400 });
+        }
+        updatePayload.studentCode = nextCode;
+      }
+    }
     if (data.fullName !== undefined) updatePayload.fullName = data.fullName;
     if (data.dateOfBirth !== undefined) updatePayload.dateOfBirth = parseSmartDate(data.dateOfBirth);
     if (data.gender !== undefined) updatePayload.gender = data.gender || null;
     if (data.className !== undefined) updatePayload.className = data.className || null;
     if (data.grade !== undefined) updatePayload.grade = data.grade || null;
+    if (data.periodId !== undefined && data.periodId) updatePayload.periodId = data.periodId;
     if (data.academicRating !== undefined) updatePayload.academicRating = data.academicRating || null;
     if (data.conductRating !== undefined) updatePayload.conductRating = data.conductRating || null;
     if (data.admissionCriteria !== undefined) updatePayload.admissionCriteria = data.admissionCriteria || null;
@@ -1118,7 +1274,7 @@ export async function PUT(req) {
     if (data.kqRenLuyen !== undefined) updatePayload.kqRenLuyen = data.kqRenLuyen || null;
     if (data.batchId !== undefined) updatePayload.batchId = data.batchId || null;
     if (data.registeredCampus !== undefined) updatePayload.registeredCampus = data.registeredCampus || null;
-    if (data.admissionResult !== undefined) updatePayload.admissionResult = data.admissionResult;
+    if (isAdmissionResultChanged) updatePayload.admissionResult = data.admissionResult;
     if (data.directorNote !== undefined) updatePayload.directorNote = data.directorNote;
     if (data.admissionCampus !== undefined) updatePayload.admissionCampus = data.admissionCampus;
     if (data.isAbsent !== undefined) updatePayload.isAbsent = Boolean(data.isAbsent);
@@ -1153,28 +1309,47 @@ export async function PUT(req) {
     await writeSecurityAuditLog({
       userId: ctx.userId,
       userEmail: ctx.userEmail,
-      action: data.admissionResult !== undefined ? "APPROVE_INPUT_ASSESSMENT" : "UPDATE_INPUT_ASSESSMENT_STUDENT",
+      action: isAdmissionResultChanged ? "APPROVE_INPUT_ASSESSMENT" : "UPDATE_INPUT_ASSESSMENT_STUDENT",
       targetTable: "InputAssessmentStudent",
       targetId: String(id),
       oldValues: {
+        fullName: student.fullName,
+        dateOfBirth: student.dateOfBirth,
+        gender: student.gender,
         admissionResult: student.admissionResult,
         directorNote: student.directorNote
       },
       newValues: updatePayload
     });
 
-    // Auto-sync Student.studentType if admissionResult is updated
-    if (data.admissionResult !== undefined) {
+    // Auto-sync profile fields (fullName, dateOfBirth, gender) and Student.studentType to enrolled Student record(s)
+    let syncedEnrolledStudentCount = 0;
+    const isEnrolledStudent =
+      result.enrollmentStatus === "COMPLETED" ||
+      result.enrollmentStatus === "ENROLLED" ||
+      Boolean(result.enrollmentClassId) ||
+      Boolean(result.enrollmentCode);
+    const hasProfileSyncFields =
+      data.fullName !== undefined || data.dateOfBirth !== undefined || data.gender !== undefined;
+
+    if (isAdmissionResultChanged || (isEnrolledStudent && hasProfileSyncFields)) {
       try {
-        const candidateCodes = [result.enrollmentCode, result.studentCode].map((c: any) => (c || "").trim().toUpperCase()).filter(Boolean);
+        const candidateCodes = [result.enrollmentCode, result.studentCode]
+          .map((c: any) => (c || "").trim().toUpperCase())
+          .filter(Boolean);
+        const nameCandidates = Array.from(
+          new Set([student.fullName?.trim(), result.fullName?.trim()].filter(Boolean))
+        );
         const matchingStudents = await prisma.student.findMany({
           where: {
             OR: [
-              { studentCode: { in: candidateCodes } },
-              result.enrollmentClassId && result.fullName ? {
-                classId: result.enrollmentClassId,
-                studentName: result.fullName.trim()
-              } : undefined
+              candidateCodes.length > 0 ? { studentCode: { in: candidateCodes } } : undefined,
+              result.enrollmentClassId && nameCandidates.length > 0
+                ? {
+                    classId: result.enrollmentClassId,
+                    studentName: { in: nameCandidates }
+                  }
+                : undefined
             ].filter(Boolean) as any
           }
         });
@@ -1183,30 +1358,44 @@ export async function PUT(req) {
         const isGiaoLuu = resLower.includes("giao lưu") || resLower.includes("giao luu");
 
         for (const ms of matchingStudents) {
-          if (isGiaoLuu && ms.studentType !== "GIAO_LUU") {
+          const studentUpdateData: any = {};
+
+          if (isEnrolledStudent && hasProfileSyncFields) {
+            if (data.fullName !== undefined && result.fullName?.trim()) {
+              studentUpdateData.studentName = result.fullName.trim();
+            }
+            if (data.dateOfBirth !== undefined) {
+              studentUpdateData.dateOfBirth = result.dateOfBirth || null;
+            }
+            if (data.gender !== undefined) {
+              studentUpdateData.gender = result.gender || null;
+            }
+          }
+
+          if (isAdmissionResultChanged) {
+            if (isGiaoLuu && ms.studentType !== "GIAO_LUU") {
+              studentUpdateData.studentType = "GIAO_LUU";
+              studentUpdateData.studentTypeNote = "Học giao lưu theo kết quả khảo sát đầu vào";
+            } else if (!isGiaoLuu && ms.studentType === "GIAO_LUU" && (ms.studentTypeNote || "").includes("khảo sát")) {
+              studentUpdateData.studentType = "CHINH_KHOA";
+              studentUpdateData.studentTypeNote = null;
+            }
+          }
+
+          if (Object.keys(studentUpdateData).length > 0) {
             await prisma.student.update({
               where: { id: ms.id },
-              data: {
-                studentType: "GIAO_LUU",
-                studentTypeNote: "Học giao lưu theo kết quả khảo sát đầu vào"
-              }
+              data: studentUpdateData
             });
-          } else if (!isGiaoLuu && ms.studentType === "GIAO_LUU" && (ms.studentTypeNote || "").includes("khảo sát")) {
-            await prisma.student.update({
-              where: { id: ms.id },
-              data: {
-                studentType: "CHINH_KHOA",
-                studentTypeNote: null
-              }
-            });
+            syncedEnrolledStudentCount++;
           }
         }
       } catch (syncErr) {
-        console.error("Auto sync Student.studentType error:", syncErr);
+        console.error("Auto sync enrolled Student error:", syncErr);
       }
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, syncedEnrolledStudentCount });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }

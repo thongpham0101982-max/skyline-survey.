@@ -1,6 +1,7 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
 import { ensureTimetableSchema } from "@/lib/timetable/schemaInit"
 import {
   hydrateSlotsFromAssignments,
@@ -23,6 +24,8 @@ export async function saveAssignment(data: {
   weeklyPeriods?: number | null
 }) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false as const, error: "Unauthorized" }
     await ensureTimetableSchema().catch(() => {})
 
     const [teacherRow, subRow, teacherGroupRaw] = await Promise.all([
@@ -227,6 +230,8 @@ export async function updateAssignmentWeeklyPeriods(
   weeklyPeriods: number | null
 ) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false as const, error: "Unauthorized" }
     await ensureTimetableSchema().catch(() => {})
     const norm =
       weeklyPeriods === null || weeklyPeriods === undefined || Number.isNaN(Number(weeklyPeriods))
@@ -249,6 +254,8 @@ export async function updateAssignmentWeeklyPeriods(
 
 export async function deleteAssignment(id: string) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false as const, error: "Unauthorized" }
     await prisma.teachingAssignment.delete({ where: { id } })
     revalidatePath('/admin/teaching-assignments')
     revalidatePath('/admin/thoi-khoa-bieu', 'layout')
@@ -260,6 +267,8 @@ export async function deleteAssignment(id: string) {
 
 export async function syncAllAssignmentsToTimetableAction(academicYearId: string) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false as const, error: "Unauthorized" }
     if (!academicYearId) {
       return { success: false as const, error: "Vui lòng chọn Năm học cần đồng bộ." }
     }

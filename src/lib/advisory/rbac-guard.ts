@@ -29,7 +29,7 @@ const ADMIN_ROLES = [
   "ADMINISTRATOR",
   "BGH",
   "BAN_GIAM_HIEU",
-  "KT_DBCL",
+  "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL",
   "KTDBCL"
 ]
 

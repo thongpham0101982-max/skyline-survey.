@@ -281,7 +281,7 @@ export async function POST(req: Request) {
                     <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
                       <tr>
                         <td bgcolor="#0B4A47" style="background-color:#0B4A47; border:1px solid #00A19A; border-radius:20px; padding:3px 12px; font-size:10.5px; font-weight:800; color:#5EEAD4; letter-spacing:1px; text-transform:uppercase;">
-                          🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                          <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                         </td>
                       </tr>
                     </table>

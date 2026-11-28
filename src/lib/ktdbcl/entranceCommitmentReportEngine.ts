@@ -791,12 +791,17 @@ export async function generateEntranceCommitmentReport(
     academicYears.find((y) => y.id === selectedYearId) || activeYear
 
   // 2. Lấy danh sách cơ sở trong phạm vi phân quyền
+  const isCampusRestricted = Boolean(accessScope.isCampusRestricted)
+  const isClassRestricted = Boolean(
+    accessScope.isClassRestricted && (accessScope.allowedClassIds || []).length > 0
+  )
+
   const allCampuses = await prisma.campus.findMany({
     where: {
       status: "ACTIVE",
-      ...(accessScope.hasFullAccess
-        ? {}
-        : { id: { in: accessScope.allowedCampusIds } }),
+      ...(isCampusRestricted
+        ? { id: { in: accessScope.allowedCampusIds } }
+        : {}),
     },
     orderBy: { campusCode: "asc" },
     select: { id: true, campusCode: true, campusName: true },
@@ -806,29 +811,28 @@ export async function generateEntranceCommitmentReport(
   if (
     filters.campusId &&
     filters.campusId !== "ALL" &&
-    !accessScope.hasFullAccess &&
+    isCampusRestricted &&
     !accessScope.allowedCampusIds.includes(filters.campusId)
   ) {
     throw new Error("FORBIDDEN_SCOPE: Tài khoản không có quyền truy cập cơ sở này.")
   }
 
-  // Với tài khoản chỉ có quyền một cơ sở, chọn sẵn cơ sở đó
+  // Với tài khoản bị giới hạn chỉ 1 cơ sở, chọn sẵn cơ sở đó
   let selectedCampusId = filters.campusId || "ALL"
-  if (!accessScope.hasFullAccess && allCampuses.length === 1) {
+  if (isCampusRestricted && allCampuses.length === 1) {
     selectedCampusId = allCampuses[0].id
   } else if (
     selectedCampusId !== "ALL" &&
     !allCampuses.some((c) => c.id === selectedCampusId)
   ) {
-    selectedCampusId = !accessScope.hasFullAccess && allCampuses.length > 0 ? allCampuses[0].id : "ALL"
+    selectedCampusId = isCampusRestricted && allCampuses.length > 0 ? allCampuses[0].id : "ALL"
   }
 
   // Kiểm tra phân quyền nếu người dùng truyền trực tiếp classId qua URL
   if (
     filters.classId &&
     filters.classId !== "ALL" &&
-    !accessScope.hasFullAccess &&
-    accessScope.allowedClassIds.length > 0 &&
+    isClassRestricted &&
     !accessScope.allowedClassIds.includes(filters.classId)
   ) {
     throw new Error("FORBIDDEN_SCOPE: Tài khoản không có quyền truy cập lớp học này.")
@@ -1257,7 +1261,7 @@ export async function generateEntranceCommitmentReport(
   // 4. Áp dụng phân quyền cơ sở / lớp / môn lên tập học sinh cam kết đầu vào
   const allowedSubjectIdSet = new Set(accessScope.allowedSubjectIds || [])
   const hasSubjectRestriction =
-    !accessScope.hasFullAccess && allowedSubjectIdSet.size > 0
+    Boolean(accessScope.isSubjectRestricted) && allowedSubjectIdSet.size > 0
 
   // Map mỗi tên môn cam kết chuẩn ("Toán", "Tiếng Việt", "Ngữ văn", "Tiếng Anh"...) sang danh sách Subject IDs trong DB
   const matchedSubjectIdsByCommittedName = new Map<string, string[]>()
@@ -1292,16 +1296,14 @@ export async function generateEntranceCommitmentReport(
     const campusId = cls.campusId || cls.campus?.id || ""
 
     if (
-      !accessScope.hasFullAccess &&
-      accessScope.allowedCampusIds.length > 0 &&
+      isCampusRestricted &&
       !accessScope.allowedCampusIds.includes(campusId)
     ) {
       continue
     }
 
     if (
-      !accessScope.hasFullAccess &&
-      accessScope.allowedClassIds.length > 0 &&
+      isClassRestricted &&
       !accessScope.allowedClassIds.includes(cls.id)
     ) {
       continue

@@ -6,7 +6,7 @@ const ALLOWED_ROLES = [
   "ADMIN",
   "ADMINISTRATOR",
   "SUPER_ADMIN",
-  "KT_DBCL",
+  "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL",
   "KTDBCL",
   "GDCS",
   "GD_CS",

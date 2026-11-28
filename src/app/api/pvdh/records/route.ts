@@ -5,6 +5,7 @@ import {
   getOrInitStudentPvdhWorkspace,
   listGvcnHandoversForActor,
   listOrientationRecordsPaginated,
+  requestPvdhPsychInterview,
   savePvdhRecord,
   switchRecordTemplateWithMapping,
 } from "@/lib/pvdh/service";
@@ -106,12 +107,29 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const action = String(body?.action || "SAVE_DRAFT");
+    const host = request.headers.get("host") || "ssm.skylineschool.edu.vn";
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    const baseUrl = `${proto}://${host}`;
 
     if (action === "SWITCH_TEMPLATE") {
       const workspace = await switchRecordTemplateWithMapping({
         actor,
         recordId: body.recordId,
         reason: body.reason || "Đồng bộ theo khối dự kiến mới của hồ sơ",
+      });
+      return NextResponse.json({ success: true, ...workspace });
+    }
+
+    if (action === "REQUEST_PSYCH_INTERVIEW") {
+      const workspace = await requestPvdhPsychInterview({
+        actor,
+        studentId: body.studentId,
+        recordId: body.recordId,
+        expectedLockVersion: body.expectedLockVersion,
+        payload: body.payload,
+        selectedPsychTeacherId: body.selectedPsychTeacherId || null,
+        referralNote: body.referralNote,
+        baseUrl,
       });
       return NextResponse.json({ success: true, ...workspace });
     }
@@ -125,6 +143,7 @@ export async function POST(request: Request) {
         mode: action === "COMPLETE" ? "COMPLETE" : "DRAFT",
         completionScope: body.completionScope,
         payload: body.payload || body,
+        baseUrl,
       });
       return NextResponse.json({ success: true, ...workspace });
     }

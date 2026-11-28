@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { isPrivilegedGradebookRole } from "@/lib/security-guard"
 
 export async function GET(request: Request) {
   try {
@@ -35,10 +36,13 @@ export async function GET(request: Request) {
     let currentLock = null
 
     if (classId && subjectId) {
-      const itemLock = locks.find(l => l.classId === classId && l.subjectId === subjectId && Boolean(l.isLocked))
-      if (itemLock || isPeriodLocked) {
+      const specificLock = locks.find(l => l.classId === classId && l.subjectId === subjectId)
+      if (specificLock !== undefined) {
+        isItemLocked = Boolean(specificLock.isLocked)
+        currentLock = specificLock.isLocked ? specificLock : null
+      } else if (isPeriodLocked) {
         isItemLocked = true
-        currentLock = itemLock || periodLock
+        currentLock = periodLock
       }
     }
 
@@ -64,7 +68,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Unauthorized: Vui lòng đăng nhập" }, { status: 401 })
     }
     const role = ((session.user as any)?.role || "").toUpperCase().trim()
-    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "KHAO_THI", "TB_DHCM", "GDCS"].includes(role)
+    const userRoles = Array.isArray((session.user as any)?.roles) ? (session.user as any).roles : []
+    const isAllowed =
+      isPrivilegedGradebookRole(role, userRoles) ||
+      ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "KHAO_THI", "TB_DHCM", "GDCS"].includes(role)
     if (!isAllowed) {
       return NextResponse.json({ success: false, error: "Forbidden: Bạn không có quyền khóa/mở khóa sổ điểm" }, { status: 403 })
     }

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
-const SYNC_API_SECRET = process.env.SYNC_API_SECRET || "skyline_sync_secret_token_2026"
+const SYNC_API_SECRET = (process.env.SYNC_API_SECRET || "").trim()
 
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get("Authorization")
-    if (!authHeader || authHeader !== `Bearer ${SYNC_API_SECRET}`) {
+    if (!SYNC_API_SECRET || !authHeader || authHeader !== `Bearer ${SYNC_API_SECRET}`) {
       return NextResponse.json({ error: "Unauthorized access" }, { status: 401 })
     }
 

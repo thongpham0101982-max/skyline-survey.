@@ -2,11 +2,16 @@
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireStaffSession } from "@/lib/security-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get("classId");
     const campusId = searchParams.get("campusId");
@@ -15,6 +20,13 @@ export async function GET(request: NextRequest) {
     const where: any = {
       status: "ACTIVE",
     };
+
+    if (ctx.isGDCS && ctx.allowedCampusIds.length > 0) {
+      if (campusId && !ctx.allowedCampusIds.includes(campusId)) {
+        return NextResponse.json({ error: "Bạn không có quyền truy cập dữ liệu cơ sở này" }, { status: 403 });
+      }
+      where.campusId = { in: ctx.allowedCampusIds };
+    }
 
     if (classId) {
       where.classId = classId;

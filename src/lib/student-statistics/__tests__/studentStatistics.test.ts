@@ -79,6 +79,7 @@ import {
 import {
   evaluatePsychMonthTracking,
   generatePsychologyCommitmentStatistics,
+  isConfirmedPsychEntranceAssessment,
   isConfirmedPsychEntranceTarget,
 } from "../psychologyCommitmentEngine"
 import {
@@ -473,6 +474,29 @@ describe("Báo cáo thống kê học sinh trên SSM", () => {
           reason: "Hỗ trợ tâm lý định kỳ",
         })
       ).toBe(false)
+      // Không nhận nhầm HS có tâm lý bình thường kèm "Lưu ý để hỗ trợ trẻ tốt hơn" (VD: Lê Hồ Duy Khang)
+      expect(
+        isConfirmedPsychEntranceAssessment({
+          admissionResult: "Đạt",
+          directorNote:
+            "Tâm lý: Các chỉ số phát triển bình thường (trẻ rất nhút nhát, ngại nói chuyện khi gặp người lạ. Lưu ý để hỗ trợ trẻ tốt hơn)",
+        })
+      ).toBe(false)
+      // Không nhận nhầm HS chỉ cam kết môn văn hóa nhưng có ghi chú lưu ý tâm lý thông thường
+      expect(
+        isConfirmedPsychEntranceAssessment({
+          admissionResult: "Đạt cam kết",
+          directorNote:
+            "Môn cam kết: [Toán, Tiếng Anh]. Tâm lý bình thường, lưu ý hỗ trợ trẻ hòa nhập.",
+        })
+      ).toBe(false)
+      // Vẫn nhận đúng HS có cam kết Tâm lý rõ ràng
+      expect(
+        isConfirmedPsychEntranceAssessment({
+          admissionResult: "Đạt cam kết",
+          directorNote: "Môn cam kết: [Tâm lý]",
+        })
+      ).toBe(true)
 
       mockPrisma.class.findMany.mockResolvedValue([
         {

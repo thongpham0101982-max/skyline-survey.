@@ -130,6 +130,8 @@ export function NextBestActionHeroCard({
   nba,
   stages,
   activeTab,
+  activeStepNumber,
+  compactStudentMode = false,
   onContinueAction,
   onOpenAiAdvisor,
   onOpenFullJourney,
@@ -146,6 +148,8 @@ export function NextBestActionHeroCard({
   nba: NextBestAction
   stages?: JourneyStageComputed[]
   activeTab?: string
+  activeStepNumber?: number
+  compactStudentMode?: boolean
   onContinueAction: (targetTab: TeacherAdvisoryTab, actionMode?: string, stepNumber?: number) => void
   onOpenAiAdvisor?: () => void
   onOpenFullJourney?: () => void
@@ -157,6 +161,162 @@ export function NextBestActionHeroCard({
   const priBadge = getPriorityBadge(nba.priority)
   const stBadge = getJourneyStatusBadge(nba.status)
   const progressPct = Math.round((completedStagesCount / 8) * 100)
+
+  if (compactStudentMode) {
+    return (
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-2xs space-y-3 tabular-nums">
+        {/* Header Strip */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-[#003B3A]">
+              Chu trình Cố vấn & Đồng hành Học sinh
+            </span>
+            <span className="text-xs text-slate-400">·</span>
+            <span className="text-xs text-slate-500">
+              Chọn từng bước để mở chức năng hỗ trợ tương ứng
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            {loopCount > 1 && (
+              <span className="px-2 py-0.5 rounded-md bg-[#F0FDFA] text-[#00736E] border border-teal-200 text-[11px] font-semibold">
+                Vòng lặp #{loopCount}
+              </span>
+            )}
+            <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div
+                className="bg-[#008B85] h-full rounded-full transition-all"
+                style={{ width: `${Math.min(100, Math.max(6, progressPct))}%` }}
+              />
+            </div>
+            <span className="text-xs font-bold text-[#003B3A]">
+              {completedStagesCount}/8 bước ({progressPct}%)
+            </span>
+          </div>
+        </div>
+
+        {/* 8-Step Interactive Cycle Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          {CANONICAL_8_STEPS.map(step => {
+            const computedStage = stages?.find(s => s.stepNumber === step.stepNumber)
+            const isCompleted = computedStage
+              ? computedStage.status === "COMPLETED"
+              : step.stepNumber < currentStageNumber
+            const isCurrent = step.stepNumber === currentStageNumber
+            const isOverdue = computedStage?.status === "OVERDUE"
+            const isSelected = activeStepNumber === step.stepNumber
+
+            return (
+              <button
+                key={step.stepNumber}
+                type="button"
+                onClick={() =>
+                  onContinueAction(
+                    computedStage?.targetTab || step.targetTab,
+                    step.actionMode,
+                    step.stepNumber
+                  )
+                }
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                  isSelected
+                    ? "bg-[#008B85] border-[#00736E] text-white shadow-sm"
+                    : isCurrent
+                    ? "bg-amber-50/70 border-amber-300 text-slate-900 hover:border-[#008B85]"
+                    : isOverdue
+                    ? "bg-rose-50/60 border-rose-200 text-slate-900 hover:border-rose-400"
+                    : isCompleted
+                    ? "bg-emerald-50/40 border-emerald-200/80 text-slate-800 hover:border-[#008B85]"
+                    : "bg-[#F8FAFC] border-[#E2E8F0] text-slate-600 hover:bg-white hover:border-[#008B85]"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span
+                    className={`w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                      isSelected
+                        ? "bg-white text-[#00736E]"
+                        : isCompleted
+                        ? "bg-emerald-600 text-white"
+                        : isCurrent
+                        ? "bg-amber-500 text-white"
+                        : isOverdue
+                        ? "bg-rose-600 text-white"
+                        : "bg-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {isCompleted && !isSelected ? <Check className="w-3 h-3" /> : step.stepNumber}
+                  </span>
+                  <span
+                    className={`text-[10px] font-medium ${
+                      isSelected ? "text-teal-200" : "text-slate-400"
+                    }`}
+                  >
+                    {step.roleBadge}
+                  </span>
+                </div>
+                <div>
+                  <div
+                    className={`text-[11px] font-semibold leading-snug ${
+                      isSelected ? "text-white" : "text-slate-800"
+                    }`}
+                  >
+                    {step.shortLabel.replace(/^\d+\.\s*/, "")}
+                  </div>
+                  <div
+                    className={`text-[10px] mt-0.5 truncate ${
+                      isSelected
+                        ? "text-[#5EEAD4]"
+                        : isCurrent
+                        ? "text-amber-700 font-medium"
+                        : isOverdue
+                        ? "text-rose-600 font-medium"
+                        : isCompleted
+                        ? "text-emerald-700"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    {isSelected
+                      ? "Đang mở"
+                      : isCurrent
+                      ? "Cần làm tiếp"
+                      : isOverdue
+                      ? "Quá hạn"
+                      : isCompleted
+                      ? "Hoàn thành"
+                      : "Chưa thực hiện"}
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Single Slim Next-Step Suggestion Bar */}
+        <div className="bg-[#F8FAFC] rounded-xl px-3.5 py-2.5 border border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2 min-w-0 text-xs">
+            <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white text-[11px] font-semibold shrink-0">
+              Việc tiếp theo
+            </span>
+            <span className="font-semibold text-slate-800 truncate">
+              {nba.title}
+            </span>
+            <span className="text-slate-500 hidden md:inline">
+              · Hạn: <strong className="text-slate-700">{nba.deadlineLabel}</strong>
+            </span>
+          </div>
+          {activeStepNumber !== nba.stageNumber && (
+            <button
+              type="button"
+              onClick={() => onContinueAction(nba.targetTab, nba.actionMode, nba.stageNumber)}
+              className="px-3 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#00524F] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+            >
+              <span>Mở bước {nba.stageNumber}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-2xs space-y-3.5">
@@ -372,6 +532,8 @@ export function TeacherStudentJourneyBar({
   academicYearId,
   selectedClassId,
   selectedStudentId,
+  activeStepNumber,
+  compactStudentMode = false,
   onNavigateAction,
   onOpenAiAdvisor,
   onOpenFullJourney
@@ -379,6 +541,8 @@ export function TeacherStudentJourneyBar({
   academicYearId: string
   selectedClassId: string
   selectedStudentId?: string
+  activeStepNumber?: number
+  compactStudentMode?: boolean
   onNavigateAction: (
     studentId: string,
     targetTab: TeacherAdvisoryTab,
@@ -435,6 +599,8 @@ export function TeacherStudentJourneyBar({
       loopCount={journey.loopCount}
       nba={journey.nextBestAction}
       stages={journey.stages}
+      activeStepNumber={activeStepNumber}
+      compactStudentMode={compactStudentMode}
       onContinueAction={(targetTab, actionMode, stepNumber) => {
         onNavigateAction(journey.studentId, targetTab, actionMode, stepNumber)
       }}
@@ -453,6 +619,7 @@ interface AdvisoryJourneyTabProps {
   selectedClassId?: string
   selectedStudentId?: string
   selectedCampusId?: string
+  classOverviewOnly?: boolean
   classesList?: Array<{ id: string; className: string; grade?: string }>
   campusesList?: Array<{ id: string; campusName: string }>
   onNavigateToStudentAction?: (
@@ -469,6 +636,7 @@ export default function AdvisoryJourneyTab({
   selectedClassId = "ALL",
   selectedStudentId = "",
   selectedCampusId = "ALL",
+  classOverviewOnly = false,
   classesList = [],
   campusesList = [],
   onNavigateToStudentAction,
@@ -784,8 +952,8 @@ export default function AdvisoryJourneyTab({
             </select>
           )}
 
-          {/* Student Selector */}
-          {studentJourneys.length > 0 && (
+          {/* Student Selector (ẩn khi đang ở chế độ Tổng quan cả lớp) */}
+          {!classOverviewOnly && studentJourneys.length > 0 && (
             <select
               value={activeStudentId}
               onChange={e => setActiveStudentId(e.target.value)}
@@ -801,16 +969,18 @@ export default function AdvisoryJourneyTab({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleDispatchSmartReminders}
-            disabled={actionSaving}
-            className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-            title="Gửi nhắc việc thông minh vào hộp thư thông báo (có lọc chống trùng lặp)"
-          >
-            <BellRing className="w-3.5 h-3.5 text-amber-600" />
-            <span>Đồng bộ nhắc việc ({smartReminders.length})</span>
-          </button>
+          {!classOverviewOnly && (
+            <button
+              type="button"
+              onClick={handleDispatchSmartReminders}
+              disabled={actionSaving}
+              className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              title="Gửi nhắc việc thông minh vào hộp thư thông báo (có lọc chống trùng lặp)"
+            >
+              <BellRing className="w-3.5 h-3.5 text-amber-600" />
+              <span>Đồng bộ nhắc việc ({smartReminders.length})</span>
+            </button>
+          )}
 
           {role === "ADMIN" && (
             <button
@@ -984,8 +1154,9 @@ export default function AdvisoryJourneyTab({
 
       {/* ===================================================================== */}
       {/* 3. CARD "BƯỚC TIẾP THEO" & CHI TIẾT 8 GIAI ĐOẠN CỦA HỌC SINH ĐANG CHỌN */}
+      {/* (Ẩn hoàn toàn khi đang ở chế độ Tổng quan cả lớp để không trộn lẫn)    */}
       {/* ===================================================================== */}
-      {selectedJourney && (
+      {!classOverviewOnly && selectedJourney && (
         <div className="space-y-4">
           <NextBestActionHeroCard
             studentName={selectedJourney.studentName}
@@ -1584,125 +1755,63 @@ export default function AdvisoryJourneyTab({
       </div>
 
       {/* ===================================================================== */}
-      {/* 5. TRUNG TÂM NHẮC VIỆC THÔNG MINH & BẢNG LỚP (MỤC 7 & MỤC 8) */}
+      {/* 5. BẢNG TIẾN ĐỘ LỘ TRÌNH THEO LỚP & CƠ SỞ (NHẮC VIỆC ĐÃ TÁCH SANG TRANG CÁ NHÂN) */}
       {/* ===================================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Smart Reminders Panel */}
-        <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                <BellRing className="w-4 h-4 text-amber-500" />
-                <span>Nhắc Việc Thông Minh ({smartReminders.length})</span>
-              </h4>
-              <p className="text-[11px] text-slate-500">
-                Tự động phát hiện hạn sắp tới, quá hạn, phản hồi GVBM/HS và phiếu chờ duyệt (chống lặp {configForm.cooldownHours}h).
-              </p>
-            </div>
-          </div>
-
-          {smartReminders.length === 0 ? (
-            <div className="p-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
-              Không có cảnh báo hoặc nhắc việc tồn đọng.
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-              {smartReminders.slice(0, 15).map(rem => (
-                <div
-                  key={rem.id}
-                  className={`p-3 rounded-xl border flex items-start justify-between gap-3 ${
-                    rem.severity === "URGENT"
-                      ? "bg-rose-50/50 border-rose-200"
-                      : rem.severity === "HIGH"
-                      ? "bg-amber-50/50 border-amber-200"
-                      : "bg-slate-50 border-slate-200/80"
-                  }`}
-                >
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700">
-                        {rem.categoryLabel}
-                      </span>
-                      <span className="text-[11px] font-bold text-slate-500">
-                        Lớp {rem.className}
-                      </span>
-                    </div>
-                    <div className="text-xs font-bold text-slate-900">{rem.title}</div>
-                    <p className="text-[11px] text-slate-600 line-clamp-2">{rem.message}</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      executeNavigation(rem.studentId, rem.targetTab, "OPEN_TAB")
-                    }
-                    className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 text-[11px] font-bold shrink-0 cursor-pointer"
-                  >
-                    Xử lý →
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs space-y-3">
+        <div>
+          <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+            <Users className="w-4 h-4 text-teal-600" />
+            <span>Tiến Độ Lộ Trình Theo Lớp & Cơ Sở ({summary.classBreakdown?.length || 0} lớp)</span>
+          </h4>
+          <p className="text-[11px] text-slate-500">
+            Tổng hợp tỷ lệ hoàn thiện kế hoạch, đánh giá Rubric và công việc quá hạn theo từng lớp.
+          </p>
         </div>
 
-        {/* Class Breakdown Table (Mục 8) */}
-        <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-2xs space-y-3">
-          <div>
-            <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-              <Users className="w-4 h-4 text-teal-600" />
-              <span>Tiến Độ Lộ Trình Theo Lớp & Cơ Sở ({summary.classBreakdown?.length || 0} lớp)</span>
-            </h4>
-            <p className="text-[11px] text-slate-500">
-              Tổng hợp tỷ lệ hoàn thiện kế hoạch, đánh giá Rubric và công việc quá hạn theo từng lớp.
-            </p>
-          </div>
-
-          <div className="overflow-x-auto max-h-72">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                <tr className="border-b text-[10px] font-semibold">
-                  <th className="py-2 px-2.5 font-semibold">Lớp / GVCN</th>
-                  <th className="py-2 px-2 text-center font-semibold">Sĩ số</th>
-                  <th className="py-2 px-2 text-center font-semibold">Kế hoạch</th>
-                  <th className="py-2 px-2 text-center font-semibold">Đánh giá kỳ</th>
-                  <th className="py-2 px-2 text-center font-semibold">Quá hạn</th>
+        <div className="overflow-x-auto max-h-72">
+          <table className="w-full text-left border-collapse text-xs tabular-nums">
+            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+              <tr className="border-b text-[11px] font-semibold">
+                <th className="py-2.5 px-3 font-semibold">Lớp / GVCN</th>
+                <th className="py-2.5 px-3 text-center font-semibold">Sĩ số</th>
+                <th className="py-2.5 px-3 text-center font-semibold">Kế hoạch</th>
+                <th className="py-2.5 px-3 text-center font-semibold">Đánh giá kỳ</th>
+                <th className="py-2.5 px-3 text-center font-semibold">Quá hạn</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E2E8F0]">
+              {(summary.classBreakdown || []).map((cls: any) => (
+                <tr key={cls.classId} className="hover:bg-[#F8FAFC]">
+                  <td className="py-2.5 px-3">
+                    <div className="font-bold text-slate-800">
+                      Lớp {cls.className} ({cls.campusName})
+                    </div>
+                    <div className="text-[11px] text-slate-500">{cls.homeroomTeacherName}</div>
+                  </td>
+                  <td className="py-2.5 px-3 text-center font-bold">{cls.totalStudents}</td>
+                  <td className="py-2.5 px-3 text-center">
+                    <span className="font-bold text-teal-700">{cls.planCompletionRate}%</span>
+                  </td>
+                  <td className="py-2.5 px-3 text-center">
+                    <span className="font-bold text-emerald-700">
+                      {cls.termEvalCompletionRate}%
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 text-center">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                        cls.overdueCount > 0
+                          ? "bg-rose-100 text-rose-700"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {cls.overdueCount}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E2E8F0]">
-                {(summary.classBreakdown || []).map((cls: any) => (
-                  <tr key={cls.classId} className="hover:bg-slate-50">
-                    <td className="py-2 px-2.5">
-                      <div className="font-bold text-slate-800">
-                        Lớp {cls.className} ({cls.campusName})
-                      </div>
-                      <div className="text-[10px] text-slate-500">{cls.homeroomTeacherName}</div>
-                    </td>
-                    <td className="py-2 px-2 text-center font-bold">{cls.totalStudents}</td>
-                    <td className="py-2 px-2 text-center">
-                      <span className="font-bold text-teal-700">{cls.planCompletionRate}%</span>
-                    </td>
-                    <td className="py-2 px-2 text-center">
-                      <span className="font-bold text-emerald-700">
-                        {cls.termEvalCompletionRate}%
-                      </span>
-                    </td>
-                    <td className="py-2 px-2 text-center">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          cls.overdueCount > 0
-                            ? "bg-rose-100 text-rose-700"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {cls.overdueCount}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

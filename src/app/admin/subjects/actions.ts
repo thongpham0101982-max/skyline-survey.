@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { normalizeSubjectForImport, removeVietnameseTones } from "@/lib/subject-mapping"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 function isPureKsdvCategory(cat?: string | null): boolean {
   const tokens = (cat || "")
@@ -125,29 +126,41 @@ async function validateUniqueSubject(
   return null
 }
 
-function parseOptionalFloat(v: any): number | null {
+function normalizeDecimalInput(v: any): number | null {
   if (v === null || v === undefined || v === "") return null
-  const num = Number(v)
-  return Number.isFinite(num) ? num : null
+  if (typeof v === "number") return Number.isFinite(v) ? Math.round(v * 100) / 100 : null
+  const clean = String(v).trim().replace(/\*/g, "").replace(/,/g, ".")
+  if (!clean) return null
+  const num = Number(clean)
+  return Number.isFinite(num) ? Math.round(num * 100) / 100 : null
+}
+
+function parseOptionalFloat(v: any): number | null {
+  return normalizeDecimalInput(v)
+}
+
+function parseQuotaFloat(v: any): number {
+  const parsed = normalizeDecimalInput(v)
+  return parsed !== null && parsed >= 0 ? parsed : 0
 }
 
 function buildQuotaData(q: any) {
   return {
-    quotaPrimary: Number(q.quotaPrimary) || 0,
-    quotaMiddle: Number(q.quotaMiddle) || 0,
-    quotaHigh: Number(q.quotaHigh) || 0,
-    quotaG1: Number(q.quotaG1) || 0,
-    quotaG2: Number(q.quotaG2) || 0,
-    quotaG3: Number(q.quotaG3) || 0,
-    quotaG4: Number(q.quotaG4) || 0,
-    quotaG5: Number(q.quotaG5) || 0,
-    quotaG6: Number(q.quotaG6) || 0,
-    quotaG7: Number(q.quotaG7) || 0,
-    quotaG8: Number(q.quotaG8) || 0,
-    quotaG9: Number(q.quotaG9) || 0,
-    quotaG10: Number(q.quotaG10) || 0,
-    quotaG11: Number(q.quotaG11) || 0,
-    quotaG12: Number(q.quotaG12) || 0,
+    quotaPrimary: parseQuotaFloat(q.quotaPrimary),
+    quotaMiddle: parseQuotaFloat(q.quotaMiddle),
+    quotaHigh: parseQuotaFloat(q.quotaHigh),
+    quotaG1: parseQuotaFloat(q.quotaG1),
+    quotaG2: parseQuotaFloat(q.quotaG2),
+    quotaG3: parseQuotaFloat(q.quotaG3),
+    quotaG4: parseQuotaFloat(q.quotaG4),
+    quotaG5: parseQuotaFloat(q.quotaG5),
+    quotaG6: parseQuotaFloat(q.quotaG6),
+    quotaG7: parseQuotaFloat(q.quotaG7),
+    quotaG8: parseQuotaFloat(q.quotaG8),
+    quotaG9: parseQuotaFloat(q.quotaG9),
+    quotaG10: parseQuotaFloat(q.quotaG10),
+    quotaG11: parseQuotaFloat(q.quotaG11),
+    quotaG12: parseQuotaFloat(q.quotaG12),
     quotaG10TN: parseOptionalFloat(q.quotaG10TN),
     quotaG10XH: parseOptionalFloat(q.quotaG10XH),
     quotaG11TN: parseOptionalFloat(q.quotaG11TN),
@@ -193,6 +206,8 @@ export async function createSubject(
   isTimetableSchedulable?: boolean
 ) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await ensureSubjectTimetableColumn()
     const cleanCode = code.trim()
     const cleanName = name.trim()
@@ -282,6 +297,8 @@ export async function updateSubject(
   isTimetableSchedulable?: boolean
 ) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await ensureSubjectTimetableColumn()
     const cleanCode = code.trim()
     const cleanName = name.trim()
@@ -369,6 +386,8 @@ export async function updateSubject(
 
 export async function toggleSubjectTimetableAction(id: string, isTimetableSchedulable: boolean) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await ensureSubjectTimetableColumn()
     await (prisma as any).$executeRawUnsafe(
       `UPDATE "Subject" SET "isTimetableSchedulable" = ? WHERE "id" = ?`,
@@ -385,6 +404,8 @@ export async function toggleSubjectTimetableAction(id: string, isTimetableSchedu
 
 export async function deleteSubject(id: string) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await prisma.subject.delete({ where: { id } })
     revalidatePath('/admin/subjects')
     revalidatePath('/admin/thoi-khoa-bieu')
@@ -394,6 +415,8 @@ export async function deleteSubject(id: string) {
 
 export async function deleteMultipleSubjects(ids: string[]) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await prisma.subject.deleteMany({
       where: { id: { in: ids } }
     })
@@ -416,6 +439,8 @@ export async function bulkUpdateSubjects(
   }
 ) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     await ensureSubjectTimetableColumn()
     const updatePayload: any = {}
     if (data.evaluationType) updatePayload.evaluationType = data.evaluationType
@@ -487,6 +512,8 @@ export async function bulkUpdateSubjects(
 
 export async function toggleKsdvTagForSubjects(ids: string[], attach: boolean) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     const targets = await prisma.subject.findMany({
       where: { id: { in: ids } },
       select: { id: true, category: true }

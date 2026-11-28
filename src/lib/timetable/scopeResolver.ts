@@ -357,6 +357,56 @@ export function mapEducationSystemToStudyProgram(educationSystem?: string | null
   return "DEFAULT"
 }
 
+export function parseSelectedCampusIds(
+  rawCampusFilter: string | null | undefined,
+  allowedCampusesForScope: CampusLike[]
+): {
+  selectedCampusIds: string[]
+  isAllSelected: boolean
+  normalizedFilterValue: string
+} {
+  const allIds = allowedCampusesForScope.map((c) => c.id)
+  if (allIds.length === 0) {
+    return { selectedCampusIds: [], isAllSelected: true, normalizedFilterValue: "ALL" }
+  }
+
+  const trimmed = String(rawCampusFilter || "").trim()
+  if (!trimmed || trimmed.toUpperCase() === "ALL") {
+    return {
+      selectedCampusIds: allIds,
+      isAllSelected: true,
+      normalizedFilterValue: "ALL",
+    }
+  }
+
+  const allowedSet = new Set(allIds)
+  const requested = Array.from(
+    new Set(
+      trimmed
+        .split(",")
+        .map((s) => s.trim())
+        .filter((id) => id && id.toUpperCase() !== "ALL" && allowedSet.has(id))
+    )
+  )
+
+  if (requested.length === 0) {
+    return {
+      selectedCampusIds: allIds,
+      isAllSelected: true,
+      normalizedFilterValue: "ALL",
+    }
+  }
+
+  const isAll = requested.length === allIds.length
+  // Preserve canonical order from allowedCampusesForScope
+  const ordered = allIds.filter((id) => requested.includes(id))
+  return {
+    selectedCampusIds: ordered,
+    isAllSelected: isAll,
+    normalizedFilterValue: isAll ? "ALL" : ordered.join(","),
+  }
+}
+
 export function resolveClassStudyProgram(cls: {
   educationSystem?: string | null
   className?: string | null

@@ -22,6 +22,10 @@ export default function TeacherPortalError({
     error?.message?.includes('instantiated because it was required');
 
   const handleReload = () => {
+    if (!isChunkError) {
+      reset();
+      return;
+    }
     try {
       if (typeof window !== 'undefined' && 'caches' in window) {
         caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).finally(() => {
@@ -76,7 +80,7 @@ export default function TeacherPortalError({
           <button 
             type="button" 
             onClick={() => setShowDetails(!showDetails)}
-            className="text-[11px] font-bold text-[#48BFE3] flex items-center gap-1 hover:underline cursor-pointer"
+            className="text-[11px] font-bold text-[#00A19A] flex items-center gap-1 hover:underline cursor-pointer"
           >
             <span>{showDetails ? "Ẩn chi tiết" : "Xem chi tiết"}</span>
             {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -92,7 +96,7 @@ export default function TeacherPortalError({
       <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
         <button
           onClick={handleReload}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:shadow w-full sm:w-auto cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003B3A] hover:bg-[#00A19A] text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:shadow w-full sm:w-auto cursor-pointer"
         >
           <RefreshCcw className="w-4 h-4" />
           Thử tải lại
@@ -100,7 +104,7 @@ export default function TeacherPortalError({
 
         <button
           onClick={handleClearCacheAndRelogin}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:shadow w-full sm:w-auto cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-all w-full sm:w-auto cursor-pointer"
         >
           <Trash2 className="w-4 h-4" />
           Xóa Cache & Đăng nhập lại

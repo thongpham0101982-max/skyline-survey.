@@ -2,13 +2,23 @@
 import { useState, useEffect } from "react"
 import toast from "react-hot-toast"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Search, Filter, RefreshCw, Clock, User, Eye, X, Shield, Globe, Trash2, AlertTriangle, Calendar, Loader2 } from "lucide-react"
+import { Search, Filter, RefreshCw, Clock, User, Eye, X, Shield, Globe, Trash2, AlertTriangle, Calendar, Loader2, ClipboardList, BarChart3, FileText } from "lucide-react"
+import { UsageStatsTab } from "./UsageStatsTab"
+import {
+  formatAuditLogSummary,
+  formatAuditPrimitive,
+  getAuditActionLabel,
+  getAuditFieldLabel,
+  getAuditTableLabel,
+  safeParseAuditJson,
+} from "@/lib/audit-format"
 
-export function LogsClient({ initialLogs, total, page, limit, search, selectedAction, selectedRole, actions, roles }: any) {
+export function LogsClient({ initialTab = "logs", initialLogs, total, page, limit, search, selectedAction, selectedRole, actions, roles }: any) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  const [activeTab, setActiveTab] = useState<"logs" | "stats">(initialTab === "stats" ? "stats" : "logs")
   const [searchVal, setSearchVal] = useState(search)
   const [actionVal, setActionVal] = useState(selectedAction)
   const [roleVal, setRoleVal] = useState(selectedRole || "")
@@ -110,20 +120,150 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
     router.push(pathname)
   }
 
-  const formatJSON = (val: string | null) => {
-    if (!val) return "—"
-    try {
-      const parsed = JSON.parse(val)
-      return <pre className="bg-slate-50 p-3 rounded-lg border border-slate-100 font-mono text-xs text-slate-700 max-h-40 overflow-y-auto whitespace-pre-wrap">{JSON.stringify(parsed, null, 2)}</pre>
-    } catch {
-      return <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 font-mono text-xs text-slate-700 max-h-40 overflow-y-auto whitespace-pre-wrap">{val}</div>
+  const renderStructuredPayload = (val: string | null) => {
+    if (!val) return <p className="text-xs text-slate-400 italic">Không có dữ liệu</p>
+
+    const parsed = safeParseAuditJson(val)
+    if (!parsed || typeof parsed !== "object") {
+      return (
+        <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0] text-xs text-slate-700 whitespace-pre-wrap break-words">
+          {val}
+        </div>
+      )
     }
+
+    const itemsArray = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray((parsed as Record<string, unknown>).items)
+        ? ((parsed as Record<string, unknown>).items as unknown[])
+        : null
+
+    const scalarEntries = !Array.isArray(parsed)
+      ? Object.entries(parsed as Record<string, unknown>).filter(([k, v]) => k !== "items" && v !== null && v !== undefined && v !== "")
+      : []
+
+    return (
+      <div className="space-y-3">
+        {scalarEntries.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0]">
+            {scalarEntries.map(([k, v]) => (
+              <div key={k} className="text-xs">
+                <span className="text-slate-500 font-medium">{getAuditFieldLabel(k)}: </span>
+                <span className="text-slate-800 font-semibold break-words">
+                  {formatAuditPrimitive(k, v)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {itemsArray && itemsArray.length > 0 && (
+          <div className="rounded-xl border border-[#E2E8F0] overflow-hidden">
+            <div className="bg-[#F8FAFC] px-3 py-2 border-b border-[#E2E8F0] text-[11px] font-semibold text-[#003B3A]">
+              Danh sách chi tiết ({itemsArray.length} mục)
+            </div>
+            <div className="max-h-56 overflow-y-auto divide-y divide-[#E2E8F0] bg-white">
+              {itemsArray.map((item, idx) => {
+                if (!item || typeof item !== "object") {
+                  return (
+                    <div key={idx} className="px-3 py-2 text-xs text-slate-700 font-mono">
+                      {String(item)}
+                    </div>
+                  )
+                }
+                const entries = Object.entries(item as Record<string, unknown>).filter(
+                  ([, v]) => v !== null && v !== undefined && v !== ""
+                )
+                return (
+                  <div key={idx} className="px-3 py-2.5 text-xs flex flex-wrap gap-x-4 gap-y-1">
+                    <span className="text-[11px] font-bold text-[#00736E] tabular-nums">#{idx + 1}</span>
+                    {entries.map(([k, v]) => (
+                      <span key={k} className="text-slate-700">
+                        <span className="text-slate-400">{getAuditFieldLabel(k)}:</span>{" "}
+                        <span className="font-semibold text-slate-800">{formatAuditPrimitive(k, v)}</span>
+                      </span>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        <details className="group">
+          <summary className="text-[11px] font-semibold text-[#00736E] hover:text-[#003B3A] cursor-pointer select-none">
+            Xem dữ liệu JSON gốc
+          </summary>
+          <pre className="mt-2 bg-slate-50 p-3 rounded-lg border border-[#E2E8F0] font-mono text-[11px] text-slate-700 max-h-48 overflow-y-auto whitespace-pre-wrap break-all">
+            {JSON.stringify(parsed, null, 2)}
+          </pre>
+        </details>
+      </div>
+    )
+  }
+
+  const handleTabChange = (nextTab: "logs" | "stats") => {
+    setActiveTab(nextTab)
+    const params = new URLSearchParams(searchParams.toString())
+    if (nextTab === "stats") {
+      params.set("tab", "stats")
+    } else {
+      params.delete("tab")
+    }
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }
 
   const totalPages = Math.ceil(total / limit)
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+    <div className="space-y-6">
+      {/* Masthead Header - Sky-Line Academic Ledger */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-xs border-l-4 border-l-[#003B3A]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-[#003B3A] tracking-tight">
+              Nhật ký Hệ thống (Audit Logs)
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Theo dõi hoạt động đăng nhập, thay đổi dữ liệu và thống kê mức độ sử dụng của tài khoản nhân sự và giáo viên.
+            </p>
+          </div>
+
+          {/* Tab Switcher */}
+          <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] w-fit">
+            <button
+              type="button"
+              onClick={() => handleTabChange("logs")}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                activeTab === "logs"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+              }`}
+            >
+              <ClipboardList className="w-3.5 h-3.5" />
+              Nhật ký hoạt động
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("stats")}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                activeTab === "stats"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-[#003B3A] hover:bg-white"
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              Thống kê sử dụng
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {activeTab === "stats" ? (
+        <UsageStatsTab roles={roles} />
+      ) : (
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-xs">
       {/* Filters bar */}
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
@@ -156,9 +296,14 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
             className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-white transition-all font-bold cursor-pointer"
           >
             <option value="">-- Tất cả Hoạt động --</option>
-            {actions.map((act: string) => (
-              <option key={act} value={act}>{act}</option>
-            ))}
+            {actions.map((act: string) => {
+              const label = getAuditActionLabel(act)
+              return (
+                <option key={act} value={act}>
+                  {label !== act ? `${label} (${act})` : act}
+                </option>
+              )
+            })}
           </select>
         </div>
         <div className="flex gap-2 w-full lg:w-auto">
@@ -190,95 +335,146 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-slate-150">
-        <table className="w-full border-collapse text-left text-xs">
-          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-            <tr className="border-b text-[11px] font-semibold">
-              <th className="px-6 py-4 font-semibold">Thời gian</th>
-              <th className="px-6 py-4 font-semibold">Tài khoản</th>
-              <th className="px-6 py-4 font-semibold">Họ và tên</th>
-              <th className="px-6 py-4 font-semibold">Nhóm quyền</th>
-              <th className="px-6 py-4 font-semibold">Thao tác</th>
-              <th className="px-6 py-4 font-semibold">Thông tin chi tiết</th>
-              <th className="px-6 py-4 font-semibold">Địa chỉ IP</th>
-              <th className="px-6 py-4 text-center font-semibold">Dữ liệu gốc</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#E2E8F0]">
-            {initialLogs.map((log: any) => {
-              const isFailed = log.action.includes("FAILED");
-              const isSuccess = log.action.includes("SUCCESS");
+      {/* Table - Sky-Line Academic Ledger */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left text-xs">
+            <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+              <tr className="text-[11px] font-semibold whitespace-nowrap">
+                <th className="py-3 px-3 font-semibold text-teal-100">Thời gian</th>
+                <th className="py-3 px-3 font-semibold text-white">Người thực hiện</th>
+                <th className="py-3 px-3 font-semibold text-teal-100">Nhóm quyền</th>
+                <th className="py-3 px-3 font-semibold text-white">Thao tác</th>
+                <th className="py-3 px-3 font-semibold text-[#5EEAD4]">Thông tin chi tiết</th>
+                <th className="py-3 px-3 font-semibold text-teal-100">Địa chỉ IP</th>
+                <th className="py-3 px-3 text-center font-semibold text-white">Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+              {initialLogs.map((log: any) => {
+                const isFailed = log.action.includes("FAILED")
+                const isSuccess = log.action.includes("SUCCESS")
+                const isDelete = log.action.includes("DELETE")
+                const summary = formatAuditLogSummary(log)
 
-              return (
-                <tr key={log.id} className="hover:bg-slate-50/40 transition-colors font-semibold">
-                  <td className="px-6 py-3.5 whitespace-nowrap text-slate-400 font-medium">
-                    <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {new Date(log.createdAt).toLocaleString('vi-VN')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-slate-700">
-                    <span className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      {log.userEmail}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-slate-755 font-bold">
-                    {log.userFullName}
-                  </td>
-                  <td className="px-6 py-3.5 text-slate-700 whitespace-nowrap">
-                    <span className="flex items-center gap-1.5">
-                      <Shield className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-semibold text-slate-650">{log.roleName}</span>
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 whitespace-nowrap">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${
-                      isFailed ? "bg-rose-50 text-rose-700 border border-rose-200" :
-                      isSuccess ? "bg-emerald-50 text-emerald-700 border border-emerald-250" :
-                      log.action.includes("DELETE") ? "bg-amber-50 text-amber-700 border border-amber-200" :
-                      "bg-blue-50 text-blue-700 border border-blue-200"
-                    }`}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-slate-600 font-medium">
-                    {log.newValues && !log.newValues.startsWith("{") && !log.newValues.startsWith("[") ? (
-                      <span className={isFailed ? "text-rose-600 font-bold" : ""}>{log.newValues}</span>
-                    ) : (
-                      <span className="text-slate-400 font-mono text-[11px]">{log.targetTable || "System"}: {log.targetId || "SYSTEM"}</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-3.5 text-slate-550 font-mono text-[11px]">
-                    <span className="flex items-center gap-1">
-                      <Globe className="w-3.5 h-3.5 text-slate-400" />
-                      {log.ipAddress || "127.0.0.1"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-center whitespace-nowrap">
-                    {(log.oldValues || (log.newValues && (log.newValues.startsWith("{") || log.newValues.startsWith("[")))) ? (
-                      <button 
+                return (
+                  <tr
+                    key={log.id}
+                    className="transition-colors align-middle hover:bg-[#F8FAFC]"
+                  >
+                    <td className="py-3 px-3 whitespace-nowrap text-slate-500 font-medium align-middle">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        {new Date(log.createdAt).toLocaleString("vi-VN")}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 align-middle">
+                      <div className="font-semibold text-slate-800 leading-snug">
+                        {log.userFullName}
+                      </div>
+                      <div className="inline-flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
+                        <User className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span className="truncate max-w-[160px]" title={log.userEmail}>
+                          {log.userEmail}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-slate-700 whitespace-nowrap align-middle">
+                      <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
+                        <Shield className="w-3.5 h-3.5 text-[#008B85] shrink-0" />
+                        {log.roleName}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 align-middle max-w-[220px]">
+                      <div className="space-y-1">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold leading-tight ${
+                            isFailed
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
+                              : isSuccess
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : isDelete
+                                  ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                  : "bg-[#F0FDFA] text-[#00736E] border border-[#99F6E4]"
+                          }`}
+                        >
+                          {summary.actionLabel}
+                        </span>
+                        {summary.actionLabel !== log.action && (
+                          <p className="text-[10px] font-mono text-slate-400 break-all leading-tight pl-1">
+                            {log.action}
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 align-middle min-w-[240px] max-w-[380px]">
+                      <div className="space-y-1">
+                        <p
+                          className={`font-medium leading-snug break-words ${
+                            isFailed ? "text-rose-700 font-semibold" : "text-slate-800"
+                          }`}
+                        >
+                          {summary.title}
+                        </p>
+                        {summary.detailLines.length > 0 && (
+                          <ul className="space-y-0.5 text-[11px] text-slate-600 pl-3 list-disc">
+                            {summary.detailLines.map((line, idx) => (
+                              <li key={idx} className="leading-snug break-words">
+                                {line}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {summary.subtitle && (
+                          <p className="text-[11px] text-slate-500 leading-snug break-words">
+                            {summary.subtitle}
+                          </p>
+                        )}
+                        {summary.badges.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {summary.badges.map((b, i) => (
+                              <span
+                                key={`${b.label}-${i}`}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-slate-600"
+                              >
+                                <span className="text-slate-400">{b.label}:</span>
+                                <span className="font-semibold text-slate-700">{b.value}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-slate-500 font-mono text-[11px] whitespace-nowrap align-middle">
+                      <span className="inline-flex items-center gap-1">
+                        <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        {log.ipAddress || "127.0.0.1"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap align-middle">
+                      <button
+                        type="button"
                         onClick={() => setDetailsLog(log)}
-                        className="p-1 text-slate-400 hover:text-[#48BFE3] hover:bg-slate-100 rounded transition-all cursor-pointer inline-flex items-center justify-center"
-                        title="Xem chi tiết thay đổi"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-[#003B3A] bg-[#F0FDFA] hover:bg-[#CCFBF1] border border-[#99F6E4] transition-colors cursor-pointer"
+                        title="Xem đầy đủ thông tin chi tiết"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3.5 h-3.5" />
+                        Xem
                       </button>
-                    ) : "—"}
+                    </td>
+                  </tr>
+                )
+              })}
+              {initialLogs.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-10 text-center text-slate-400 font-medium">
+                    Không tìm thấy hoạt động nào được ghi nhận.
                   </td>
                 </tr>
-              )
-            })}
-            {initialLogs.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-6 py-10 text-center text-slate-400 font-medium">
-                  Không tìm thấy hoạt động nào được ghi nhận.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination */}
@@ -493,55 +689,131 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
       )}
 
       {/* Detail Modal */}
-      {detailsLog && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
-              <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
-                Chi tiết dữ liệu hoạt động
-              </h3>
-              <button 
-                onClick={() => setDetailsLog(null)} 
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1">Hoạt động / Đối tượng</p>
-                <div className="flex gap-2">
-                  <span className="bg-blue-50 text-blue-700 font-bold border border-blue-200 px-2 py-0.5 rounded text-[10px] uppercase font-black">{detailsLog.action}</span>
-                  {detailsLog.targetTable && (
-                    <span className="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded text-[10px] font-mono">{detailsLog.targetTable} ({detailsLog.targetId})</span>
+      {detailsLog && (() => {
+        const modalSummary = formatAuditLogSummary(detailsLog)
+        return (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl border border-[#E2E8F0] w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between px-6 py-4 bg-[#003B3A] text-white shrink-0">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#5EEAD4]" />
+                  Thông tin chi tiết nhật ký hoạt động
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setDetailsLog(null)}
+                  className="p-1.5 text-teal-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5 overflow-y-auto tabular-nums">
+                {/* Summary highlight */}
+                <div className="bg-[#F0FDFA] border border-[#99F6E4] rounded-xl p-4 space-y-1.5">
+                  <p className="text-[11px] font-semibold text-[#00736E]">Tóm tắt thao tác</p>
+                  <p className="text-sm font-bold text-[#003B3A] leading-snug">{modalSummary.title}</p>
+                  {modalSummary.detailLines.length > 0 && (
+                    <ul className="space-y-0.5 text-xs text-slate-700 pl-4 list-disc">
+                      {modalSummary.detailLines.map((line, idx) => (
+                        <li key={idx} className="leading-snug break-words">{line}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {modalSummary.subtitle && (
+                    <p className="text-xs text-slate-600">{modalSummary.subtitle}</p>
                   )}
                 </div>
+
+                {/* Metadata grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 text-xs">
+                  <div>
+                    <p className="text-[11px] text-slate-500">Thời gian</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">
+                      {new Date(detailsLog.createdAt).toLocaleString("vi-VN")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-500">Người thực hiện</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">
+                      {detailsLog.userFullName} ({detailsLog.userEmail})
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-500">Nhóm quyền</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">{detailsLog.roleName}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-500">Địa chỉ IP</p>
+                    <p className="font-mono font-semibold text-slate-800 mt-0.5">
+                      {detailsLog.ipAddress || "127.0.0.1"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-500">Thao tác</p>
+                    <p className="font-semibold text-[#003B3A] mt-0.5">{modalSummary.actionLabel}</p>
+                    {modalSummary.actionLabel !== detailsLog.action && (
+                      <p className="font-mono text-[10px] text-slate-400 break-all mt-0.5">
+                        {detailsLog.action}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-500">Bảng dữ liệu</p>
+                    <p className="font-semibold text-slate-800 mt-0.5">
+                      {getAuditTableLabel(detailsLog.targetTable)}{" "}
+                      {detailsLog.targetTable && (
+                        <span className="text-slate-400 font-mono text-[11px]">
+                          ({detailsLog.targetTable})
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  {detailsLog.targetId && (
+                    <div className="sm:col-span-2">
+                      <p className="text-[11px] text-slate-500">Mã đối tượng</p>
+                      <p className="font-mono text-[11px] text-slate-700 bg-white border border-[#E2E8F0] rounded-lg px-2.5 py-1.5 mt-1 break-all">
+                        {detailsLog.targetId}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {detailsLog.oldValues && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-[#003B3A]">Dữ liệu cũ (Trước thay đổi / Đã xóa)</p>
+                    {renderStructuredPayload(detailsLog.oldValues)}
+                  </div>
+                )}
+
+                {detailsLog.newValues && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-[#003B3A]">Dữ liệu mới / Thông tin ghi nhận</p>
+                    {renderStructuredPayload(detailsLog.newValues)}
+                  </div>
+                )}
+
+                {!detailsLog.oldValues && !detailsLog.newValues && (
+                  <div className="text-xs text-slate-500 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4">
+                    Bản ghi nhật ký này không lưu kèm dữ liệu thay đổi chi tiết (oldValues / newValues).
+                  </div>
+                )}
               </div>
-              
-              {detailsLog.oldValues && (
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1">Dữ liệu cũ (Trước thay đổi)</p>
-                  {formatJSON(detailsLog.oldValues)}
-                </div>
-              )}
-              
-              {detailsLog.newValues && (
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1">Dữ liệu mới / Thông tin chi tiết</p>
-                  {formatJSON(detailsLog.newValues)}
-                </div>
-              )}
-            </div>
-            <div className="px-6 py-4 bg-slate-50 flex justify-end gap-2 border-t border-slate-100">
-              <button 
-                onClick={() => setDetailsLog(null)}
-                className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all cursor-pointer text-xs"
-              >
-                Đóng
-              </button>
+
+              <div className="px-6 py-3.5 bg-[#F8FAFC] flex justify-end gap-2 border-t border-[#E2E8F0] shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDetailsLog(null)}
+                  className="px-5 py-2 bg-[#003B3A] hover:bg-[#005755] text-white font-semibold rounded-xl transition-colors cursor-pointer text-xs"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )
+      })()}
+      </div>
       )}
     </div>
   )

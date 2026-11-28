@@ -2,8 +2,19 @@
 import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { revalidatePath } from "next/cache"
+import { getAdminSession } from "@/lib/session"
+import { writeSecurityAuditLog } from "@/lib/security-guard"
+
+async function assertMaintenanceAdmin() {
+  const session = await getAdminSession()
+  if (!session.userId || !session.isFullAccess) {
+    throw new Error("Unauthorized: Chỉ Quản trị viên mới có quyền thực thi tác vụ bảo trì & sao lưu.")
+  }
+  return session
+}
 
 export async function syncPortalAccountsAction() {
+  const session = await assertMaintenanceAdmin()
   const students = await prisma.student.findMany()
   const passwordHashBase = await bcrypt.hash("temp", 10) // We will use studentCode as pass
 
@@ -67,6 +78,7 @@ export async function syncPortalAccountsAction() {
 }
 
 export async function getBackupListAction() {
+  await assertMaintenanceAdmin();
   const fs = require("fs");
   const path = require("path");
   const backupDir = path.join(process.cwd(), "data-backups");
@@ -138,9 +150,34 @@ export async function getBackupListAction() {
     .filter(Boolean)
     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  // Tính thêm dung lượng các bản sao lưu trùng lặp trong cùng 1 ngày
+  // Tính thêm dung lượng các bản sao lưu trùng lặp trong cùng 1 ngày hoặc thuộc các tháng trước
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const getItemMonthKey = (item: any) => {
+    const d = new Date(item.createdAt);
+    if (!Number.isNaN(d.getTime())) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
+    const m = String(item.gzFilename || item.filename || item.id || "").match(/(\d{4})-(\d{2})-\d{2}/);
+    return m ? `${m[1]}-${m[2]}` : currentMonthKey;
+  };
+
+  const hasCurrentMonthBackup = metaList.some((item: any) => getItemMonthKey(item) === currentMonthKey);
   const seenDayRows = new Set<string>();
-  for (const item of metaList) {
+  let expiredMonthCount = 0;
+
+  metaList.forEach((item: any, index: number) => {
+    const itemMonthKey = getItemMonthKey(item);
+    const isExpiredPreviousMonth =
+      itemMonthKey !== currentMonthKey && (hasCurrentMonthBackup || index > 0);
+
+    if (isExpiredPreviousMonth) {
+      redundantBytes += Number(item.gzSizeBytes || 0);
+      redundantFilesCount++;
+      expiredMonthCount++;
+      return;
+    }
+
     const dayKey = new Date(item.createdAt).toISOString().split("T")[0];
     const key = `${dayKey}_${item.totalRows || 0}`;
     if (!seenDayRows.has(key)) {
@@ -149,7 +186,7 @@ export async function getBackupListAction() {
       redundantBytes += Number(item.gzSizeBytes || 0);
       redundantFilesCount++;
     }
-  }
+  });
 
   return {
     backups: metaList,
@@ -159,6 +196,7 @@ export async function getBackupListAction() {
       backupDirBytes,
       redundantBytes,
       redundantFilesCount,
+      expiredMonthCount,
       photoVault
     }
   };
@@ -166,6 +204,7 @@ export async function getBackupListAction() {
 
 export async function verifyBackupAction(backupId: string) {
   try {
+    await assertMaintenanceAdmin();
     const path = require("path");
     const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
     const dynamicRequire = eval("require");
@@ -183,6 +222,7 @@ export async function verifyBackupAction(backupId: string) {
 
 export async function triggerBackupAction(options?: { mode?: string; source?: string }) {
   try {
+    const session = await assertMaintenanceAdmin();
     const path = require("path");
     const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
     const dynamicRequire = eval("require");
@@ -205,6 +245,7 @@ export async function triggerBackupAction(options?: { mode?: string; source?: st
 
 export async function optimizeBackupStorageAction() {
   try {
+    const session = await assertMaintenanceAdmin();
     const path = require("path");
     const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
     const dynamicRequire = eval("require");
@@ -227,12 +268,20 @@ export async function optimizeBackupStorageAction() {
 
 export async function deleteBackupAction(backupId: string) {
   try {
+    const session = await assertMaintenanceAdmin();
     const path = require("path");
     const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
     const dynamicRequire = eval("require");
     delete dynamicRequire.cache[dynamicRequire.resolve(scriptPath)];
     const { deleteBackupById } = dynamicRequire(scriptPath);
     const result = deleteBackupById(backupId);
+    await writeSecurityAuditLog({
+      userId: session.userId,
+      userEmail: session.role || "ADMIN",
+      action: "DELETE_BACKUP",
+      targetTable: "DatabaseBackup",
+      targetId: backupId
+    });
     const updatedData = await getBackupListAction();
     revalidatePath("/admin/maintenance");
     return {
@@ -249,6 +298,7 @@ export async function deleteBackupAction(backupId: string) {
 
 export async function syncSurveyStudentTypesAction() {
   try {
+    await assertMaintenanceAdmin();
     const [k12GiaoLuu, preGiaoLuu] = await Promise.all([
       prisma.inputAssessmentStudent.findMany({
         where: {

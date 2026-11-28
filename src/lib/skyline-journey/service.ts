@@ -1566,38 +1566,27 @@ export async function verifyTeacherClassAccess(params: {
     return { allowed: false, isGVCN: false, isSubjectTeacher: false, isAdmin: false };
   }
 
-  const [specialAssign, regularAssign, clsObj] = await Promise.all([
-    prisma.specialTeachingAssignment.findFirst({
-      where: {
-        teacherId,
-        classId: params.classId,
-        status: "ACTIVE",
-        ...(params.subjectId ? { subjectId: params.subjectId } : {})
-      }
-    }),
-    prisma.teachingAssignment.findFirst({
-      where: {
-        teacherId,
-        classId: params.classId
-      }
-    }),
-    prisma.class.findUnique({
-      where: { id: params.classId }
-    })
-  ]);
+  const specialAssign = await prisma.specialTeachingAssignment.findFirst({
+    where: {
+      teacherId,
+      classId: params.classId,
+      status: "ACTIVE",
+      ...(params.subjectId ? { subjectId: params.subjectId } : {})
+    }
+  });
 
   const isSubjectTeacher = Boolean(specialAssign);
-  const isGVCN = Boolean(regularAssign || (clsObj && (clsObj as any).homeroomTeacherId === teacherId));
   return {
-    allowed: isSubjectTeacher || isGVCN,
-    isGVCN,
+    allowed: isSubjectTeacher,
+    isGVCN: false,
     isSubjectTeacher,
     isAdmin: false
   };
 }
 
 /**
- * Teacher & GVCN Dashboard: Get assigned classes, 15 stages status, and student progress matrix
+ * Special-Subject Teacher Dashboard: Get classes assigned to this GVBM for special subjects,
+ * 15 stages status, and student progress matrix
  */
 export async function getTeacherJourneyDashboard(params: {
   userId: string;
@@ -1633,50 +1622,19 @@ export async function getTeacherJourneyDashboard(params: {
       roleByClass.set(c.id, "ADMIN");
     }
   } else if (teacherId) {
-    const [specAssigns, homeroomAssigns, homeroomClasses] = await Promise.all([
-      prisma.specialTeachingAssignment.findMany({
-        where: {
-          teacherId,
-          status: "ACTIVE"
-        }
-      }),
-      prisma.teachingAssignment.findMany({
-        where: {
-          teacherId
-        },
-        include: { class: true }
-      }),
-      prisma.class.findMany({
-        where: {
-          homeroomTeacherId: teacherId,
-          grade: { in: ["1", "2", "3", "4", "5"] }
-        }
-      })
-    ]);
+    // Hành trình Sky-Line chỉ dành cho GVBM được phân công dạy học các môn đặc thù
+    const specAssigns = await prisma.specialTeachingAssignment.findMany({
+      where: {
+        teacherId,
+        status: "ACTIVE"
+      }
+    });
 
     for (const sa of specAssigns) {
       if (!accessibleClassIds.includes(sa.classId)) {
         accessibleClassIds.push(sa.classId);
       }
       roleByClass.set(sa.classId, "SPECIAL_TEACHER");
-    }
-    for (const ha of homeroomAssigns) {
-      if (["1", "2", "3", "4", "5"].includes(String(ha.class?.grade || ""))) {
-        if (!accessibleClassIds.includes(ha.classId)) {
-          accessibleClassIds.push(ha.classId);
-        }
-        if (!roleByClass.has(ha.classId)) {
-          roleByClass.set(ha.classId, "GVCN");
-        }
-      }
-    }
-    for (const hc of homeroomClasses) {
-      if (!accessibleClassIds.includes(hc.id)) {
-        accessibleClassIds.push(hc.id);
-      }
-      if (!roleByClass.has(hc.id)) {
-        roleByClass.set(hc.id, "GVCN");
-      }
     }
   }
 

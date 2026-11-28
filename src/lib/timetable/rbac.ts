@@ -83,8 +83,12 @@ export async function requireTimetablePermission(
     }
 
     if (options?.campusIds && options.campusIds.length > 0) {
-      const unauthorized = options.campusIds.filter(
-        (cid) => cid && !adminSession.allowedCampusIds.includes(cid)
+      const expandedIds = options.campusIds
+        .flatMap((raw) => String(raw || "").split(","))
+        .map((s) => s.trim())
+        .filter((cid) => cid && cid.toUpperCase() !== "ALL")
+      const unauthorized = expandedIds.filter(
+        (cid) => !adminSession.allowedCampusIds.includes(cid)
       )
       if (unauthorized.length > 0) {
         throw new TimetableAccessError(
@@ -123,38 +127,100 @@ export function assertCampusAllowed(ctx: TimetableAuthContext, campusId: string)
 }
 
 /**
- * Verifies from DB that every target class belongs to the expected academicYearId, campusId, and scopeGroup.
+ * Verifies from DB that every target class belongs to the expected academicYearId, campus scope, and scopeGroup.
  */
 export async function verifyClassesBelongToScope(params: {
   classIds: string[]
   academicYearId: string
   campusId: string
   scopeGroup: ManageableScopeGroup
+  allowAnyScopeCampus?: boolean
+  authCtx?: TimetableAuthContext
 }) {
   const uniqueIds = Array.from(new Set(params.classIds.filter(Boolean)))
   if (uniqueIds.length === 0) return new Map<string, any>()
 
-  const [campus, classes] = await Promise.all([
-    prisma.campus.findUnique({ where: { id: params.campusId } }),
-    prisma.class.findMany({
-      where: { id: { in: uniqueIds } },
-      select: {
-        id: true,
-        className: true,
-        campusId: true,
-        academicYearId: true,
-        level: true,
-        grade: true,
-        educationSystem: true,
-        homeroomTeacherId: true,
-        status: true,
-      },
-    }),
-  ])
+  const rawCampusTokens = String(params.campusId || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s && s.toUpperCase() !== "ALL")
+  const isMultiOrAllMode =
+    Boolean(params.allowAnyScopeCampus) ||
+    String(params.campusId || "").trim().toUpperCase() === "ALL" ||
+    rawCampusTokens.length !== 1
 
-  if (!campus) {
-    throw new TimetableAccessError("Không tìm thấy cơ sở trong hệ thống.", "SCOPE_VIOLATION")
+  const classes = await prisma.class.findMany({
+    where: { id: { in: uniqueIds } },
+    select: {
+      id: true,
+      className: true,
+      campusId: true,
+      academicYearId: true,
+      level: true,
+      grade: true,
+      educationSystem: true,
+      homeroomTeacherId: true,
+      status: true,
+    },
+  })
+
+  if (!isMultiOrAllMode) {
+    const singleCampusId = rawCampusTokens[0]
+    const campus = await prisma.campus.findUnique({ where: { id: singleCampusId } })
+    if (!campus) {
+      throw new TimetableAccessError("Không tìm thấy cơ sở trong hệ thống.", "SCOPE_VIOLATION")
+    }
+
+    const map = new Map<string, (typeof classes)[number]>()
+    for (const c of classes) {
+      map.set(c.id, c)
+    }
+
+    for (const cid of uniqueIds) {
+      const cls = map.get(cid)
+      if (!cls) {
+        throw new TimetableAccessError(
+          `Lớp học (${cid}) không tồn tại trong hệ thống.`,
+          "SCOPE_VIOLATION"
+        )
+      }
+      if (cls.campusId !== singleCampusId) {
+        throw new TimetableAccessError(
+          `Lớp ${cls.className} không thuộc cơ sở đang chọn — chặn ghi chéo cơ sở.`,
+          "SCOPE_VIOLATION"
+        )
+      }
+      if (cls.academicYearId !== params.academicYearId) {
+        throw new TimetableAccessError(
+          `Lớp ${cls.className} không thuộc năm học đang chọn.`,
+          "SCOPE_VIOLATION"
+        )
+      }
+      if (!doesClassBelongToScope(cls, campus, params.scopeGroup, "ALL")) {
+        const actualScope = inferScopeGroupForClass(cls, campus)
+        throw new TimetableAccessError(
+          `Lớp ${cls.className} (${cls.level}) thuộc bộ TKB ${
+            actualScope || "khác"
+          }, không thuộc bộ TKB ${params.scopeGroup}.`,
+          "SCOPE_VIOLATION"
+        )
+      }
+    }
+
+    return map
   }
+
+  // Multi-campus / Full Bộ TKB verification across permitted campuses
+  const referencedCampusIds = Array.from(
+    new Set([...classes.map((c) => c.campusId), ...rawCampusTokens].filter(Boolean))
+  )
+  const campusRows =
+    referencedCampusIds.length > 0
+      ? await prisma.campus.findMany({ where: { id: { in: referencedCampusIds } } })
+      : []
+  const campusById = new Map(campusRows.map((c) => [c.id, c]))
+  const explicitFilterSet =
+    !params.allowAnyScopeCampus && rawCampusTokens.length > 0 ? new Set(rawCampusTokens) : null
 
   const map = new Map<string, (typeof classes)[number]>()
   for (const c of classes) {
@@ -164,11 +230,24 @@ export async function verifyClassesBelongToScope(params: {
   for (const cid of uniqueIds) {
     const cls = map.get(cid)
     if (!cls) {
-      throw new TimetableAccessError(`Lớp học (${cid}) không tồn tại trong hệ thống.`, "SCOPE_VIOLATION")
-    }
-    if (cls.campusId !== params.campusId) {
       throw new TimetableAccessError(
-        `Lớp ${cls.className} không thuộc cơ sở đang chọn — chặn ghi chéo cơ sở.`,
+        `Lớp học (${cid}) không tồn tại trong hệ thống.`,
+        "SCOPE_VIOLATION"
+      )
+    }
+    if (params.authCtx) {
+      assertCampusAllowed(params.authCtx, cls.campusId)
+    }
+    if (explicitFilterSet && !explicitFilterSet.has(cls.campusId)) {
+      throw new TimetableAccessError(
+        `Lớp ${cls.className} không thuộc danh sách cơ sở đang chọn.`,
+        "SCOPE_VIOLATION"
+      )
+    }
+    const campus = campusById.get(cls.campusId)
+    if (!campus) {
+      throw new TimetableAccessError(
+        `Không tìm thấy cơ sở của lớp ${cls.className}.`,
         "SCOPE_VIOLATION"
       )
     }
@@ -181,7 +260,9 @@ export async function verifyClassesBelongToScope(params: {
     if (!doesClassBelongToScope(cls, campus, params.scopeGroup, "ALL")) {
       const actualScope = inferScopeGroupForClass(cls, campus)
       throw new TimetableAccessError(
-        `Lớp ${cls.className} (${cls.level}) thuộc bộ TKB ${actualScope || "khác"}, không thuộc bộ TKB ${params.scopeGroup}.`,
+        `Lớp ${cls.className} (${cls.level}) thuộc bộ TKB ${
+          actualScope || "khác"
+        }, không thuộc bộ TKB ${params.scopeGroup}.`,
         "SCOPE_VIOLATION"
       )
     }

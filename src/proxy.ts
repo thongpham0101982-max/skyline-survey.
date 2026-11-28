@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth'
+import { isParentRole, isTeacherOrStaffPortalRole } from '@/lib/rbac-utils'
 import { NextResponse } from 'next/server'
 
 export default auth((req) => {
@@ -48,19 +49,22 @@ export default auth((req) => {
 
   if (isLoggedIn) {
     const role = (req.auth?.user as any)?.role || 'PARENT'
-    
+
+    if (pathname.startsWith('/admin') && isParentRole(role)) {
+      return NextResponse.redirect(new URL('/parent', req.nextUrl))
+    }
+
     if (pathname.startsWith('/teacher')) {
-      const isTeacherOrStaff = ['TEACHER', 'GV_MN', 'ADMIN', 'ADMINISTRATOR', 'SUPER_ADMIN', 'GDCS', 'GD_CS', 'BGH', 'KT_DBCL', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU'].some(r => role.toUpperCase().includes(r));
-      if (!isTeacherOrStaff) {
-        if (role === 'PARENT') return NextResponse.redirect(new URL('/parent', req.nextUrl))
+      if (!isTeacherOrStaffPortalRole(role)) {
+        if (isParentRole(role)) return NextResponse.redirect(new URL('/parent', req.nextUrl))
         return NextResponse.redirect(new URL('/admin', req.nextUrl))
       }
     }
     
     if (pathname.startsWith('/parent')) {
-      const isParent = role === 'PARENT';
+      const isParent = isParentRole(role);
       if (!isParent) {
-        const isTeacher = ['TEACHER', 'GV_MN'].includes(role);
+        const isTeacher = ['TEACHER', 'GV_MN', 'GVNN'].includes(role.toUpperCase());
         if (isTeacher) return NextResponse.redirect(new URL('/teacher', req.nextUrl))
         return NextResponse.redirect(new URL('/admin', req.nextUrl))
       }

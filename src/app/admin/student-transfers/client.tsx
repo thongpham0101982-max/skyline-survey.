@@ -15,6 +15,7 @@ import {
   importTransfersOutAction,
   getTransfersAction,
   createChangeClassAction,
+  createTransferInAction,
   updateTransferInAction,
   getInputAssessmentStudentsAction,
   getInputAssessmentPeriodsAction,
@@ -23,6 +24,7 @@ import {
   getPendingEnrollmentsAction,
   completeEnrollmentAction,
   completeBatchEnrollmentAction,
+  completeChangeClassRequestAction,
   getPreschoolInputAssessmentPeriodsAction,
   getPreschoolInputAssessmentBatchesAction,
   getPreschoolInputAssessmentStudentsByPeriodAction,
@@ -824,6 +826,22 @@ export function StudentTransfersClient() {
   const [showInModal, setShowInModal] = useState(false)
   const [editingTransfer, setEditingTransfer] = useState<any>(null)
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [selectedChangeClassRequest, setSelectedChangeClassRequest] = useState<any>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab");
+    const subTabParam = params.get("subTab");
+    if (tabParam === "OUT" || tabParam === "IN" || tabParam === "CHANGE_CLASS") {
+      setActiveTab(tabParam);
+    }
+    if (subTabParam === "dashboard" || subTabParam === "general" || subTabParam === "preschool") {
+      setActiveSubTab(subTabParam);
+    } else if (tabParam === "CHANGE_CLASS") {
+      setActiveSubTab("general");
+    }
+  }, []);
 
   const [transfers, setTransfers] = useState<any[]>([])
   const [pendingRequests, setPendingRequests] = useState<any[]>([])
@@ -1069,9 +1087,11 @@ export function StudentTransfersClient() {
 
     // Search filter
     if (globalSearch) {
+      const q = globalSearch.toLowerCase();
       const sMatch =
-        (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
-        (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase());
+        (t.student?.studentName || "").toLowerCase().includes(q) ||
+        (t.student?.studentCode || "").toLowerCase().includes(q) ||
+        (t.student?.vnEduCode || "").toLowerCase().includes(q);
       if (!sMatch) return false;
     }
 
@@ -1101,12 +1121,14 @@ export function StudentTransfersClient() {
   const changeTransfers = filteredTransfers.filter(t => t.type === "CHANGE_CLASS" && (
     !globalSearch ||
     (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
-    (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase())
+    (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
+    (t.student?.vnEduCode || "").toLowerCase().includes(globalSearch.toLowerCase())
   ))
   const inTransfers = filteredTransfers.filter(t => t.type === "IN" && (
     !globalSearch ||
     (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
-    (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase())
+    (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
+    (t.student?.vnEduCode || "").toLowerCase().includes(globalSearch.toLowerCase())
   ))
 
   // --- PAGINATED HISTORY ---
@@ -1351,10 +1373,26 @@ export function StudentTransfersClient() {
     };
   })();
 
-  // Dynamic filter options based on pendingRequests
-  const availableCampuses = Array.from(new Set(pendingRequests.map(r => r.admissionCampus).filter(Boolean)));
+  const pendingEnrollmentRequests = pendingRequests.filter(req => !req.isTransferSystem);
+  const pendingChangeClassRequests = pendingRequests.filter(req => {
+    if (!req.isTransferSystem) return false;
+    const matchTab = activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool;
+    if (!matchTab) return false;
+    if (globalSearch.trim()) {
+      const q = globalSearch.toLowerCase();
+      return (
+        (req.fullName || "").toLowerCase().includes(q) ||
+        (req.studentCode || "").toLowerCase().includes(q) ||
+        (req.currentClassName || "").toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
-  const availableGrades = Array.from(new Set(pendingRequests
+  // Dynamic filter options based on pendingEnrollmentRequests
+  const availableCampuses = Array.from(new Set(pendingEnrollmentRequests.map(r => r.admissionCampus).filter(Boolean)));
+
+  const availableGrades = Array.from(new Set(pendingEnrollmentRequests
     .filter(r => activeSubTab === "preschool" ? r.isPreschool : !r.isPreschool)
     .map(r => r.isPreschool ? "Mầm non" : `Khối ${r.grade}`)
     .filter(Boolean)
@@ -1366,7 +1404,7 @@ export function StudentTransfersClient() {
     return numA - numB;
   });
 
-  const filteredPendingRequests = pendingRequests.filter(req => {
+  const filteredPendingRequests = pendingEnrollmentRequests.filter(req => {
     const matchTab = activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool;
     if (!matchTab) return false;
 
@@ -1921,6 +1959,11 @@ export function StudentTransfersClient() {
           >
             <ArrowRightLeft className="w-5 h-5 mr-3" />
             Chuyển lớp
+            {pendingChangeClassRequests.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-[#D97706] border border-amber-200 tabular-nums">
+                {pendingChangeClassRequests.length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -1931,7 +1974,7 @@ export function StudentTransfersClient() {
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-450" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm học sinh..."
+                  placeholder="Tìm theo tên, Mã HS, Mã VNEdu..."
                   value={globalSearch}
                   onChange={(e) => setGlobalSearch(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#00A19A] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800"
@@ -2108,6 +2151,7 @@ export function StudentTransfersClient() {
                       </th>
                       <th className="px-4 py-3 font-semibold">Ngày chuyển</th>
                       <th className="px-4 py-3 font-semibold">Học sinh</th>
+                      <th className="px-4 py-3 font-semibold text-teal-100">Mã VNEdu</th>
                       <th className="px-4 py-3 font-semibold">Lớp / Cơ sở cũ</th>
                       <th className="px-4 py-3 font-semibold">Diện chuyển</th>
                       <th className="px-4 py-3 font-semibold">Nơi đến</th>
@@ -2141,9 +2185,18 @@ export function StudentTransfersClient() {
                         <td className="px-4 py-3.5 font-bold text-slate-900">
                           {t.student?.studentName}
                           <br />
-                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block tabular-nums">
                             {t.student?.studentCode}
                           </span>
+                        </td>
+                        <td className="px-4 py-3.5 tabular-nums">
+                          {t.student?.vnEduCode ? (
+                            <span className="px-2 py-0.5 bg-teal-50 text-[#00736E] border border-teal-200/80 rounded text-[11px] font-semibold">
+                              {t.student.vnEduCode}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-normal">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5">
                           <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 border border-slate-200/40">
@@ -2203,13 +2256,106 @@ export function StudentTransfersClient() {
           {activeTab === "CHANGE_CLASS" && (
             loadingList ? (
               <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
-            ) : changeTransfers.length > 0 ? (
+            ) : (
+              <div className="space-y-8">
+                {/* Pending Class Transfer Requests (Học sinh Chuyển hệ) */}
+                {pendingChangeClassRequests.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="text-sm font-bold text-[#003B3A] flex items-center gap-2">
+                        <ArrowRightLeft className="w-4 h-4 text-[#00A19A]" />
+                        <span>Danh sách Yêu cầu Chuyển lớp chờ xử lý — Học sinh Chuyển hệ ({pendingChangeClassRequests.length})</span>
+                      </h3>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse tabular-nums">
+                          <thead className="bg-[#003B3A] border-b border-[#003B3A]">
+                            <tr className="text-[11px] font-semibold whitespace-nowrap">
+                              <th className="py-3 px-3 text-teal-100 font-semibold">Ngày yêu cầu</th>
+                              <th className="py-3 px-3 text-white font-semibold">Học sinh</th>
+                              <th className="py-3 px-3 text-teal-100 font-semibold">Lớp hiện tại</th>
+                              <th className="py-3 px-3 text-teal-100 font-semibold">Cơ sở / Khối</th>
+                              <th className="py-3 px-3 text-teal-100 font-semibold">Hệ chuyển đến</th>
+                              <th className="py-3 px-3 text-[#5EEAD4] font-semibold">Trạng thái</th>
+                              <th className="py-3 px-3 text-right text-white font-semibold">Thao tác</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white">
+                            {pendingChangeClassRequests.map(req => (
+                              <tr key={req.id} className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                                <td className="py-3 px-3 font-medium text-slate-700 whitespace-nowrap">
+                                  {new Date(req.createdAt).toLocaleDateString('vi-VN')}
+                                </td>
+                                <td className="py-3 px-3">
+                                  <div className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                                    <span>{req.fullName}</span>
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-[#D97706] border border-amber-200">
+                                      Chuyển hệ
+                                    </span>
+                                  </div>
+                                  <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                                    Mã HS: {req.studentCode}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 font-semibold text-slate-700">
+                                  {req.currentClassName ? (
+                                    <div>
+                                      <span className="text-[#003B3A]">{req.currentClassName}</span>
+                                      {req.currentCampusName && (
+                                        <div className="text-[11px] font-normal text-slate-500">{req.currentCampusName}</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 font-normal">—</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3">
+                                  <div className="font-semibold text-slate-700">{req.admissionCampus || "—"}</div>
+                                  {req.grade && (
+                                    <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-teal-50 text-[#00736E] border border-teal-200">
+                                      Khối {req.grade}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 font-semibold text-[#00736E]">
+                                  {req.surveySystem || req.surveyFormType || "—"}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-[#D97706] border border-amber-200 text-[11px] font-semibold rounded-md">
+                                    Chờ chuyển lớp
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 text-right whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedChangeClassRequest(req);
+                                      setShowChangeModal(true);
+                                    }}
+                                    className="px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#005854] text-white rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <ArrowRightLeft className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                                    Chuyển lớp
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {changeTransfers.length > 0 ? (
               <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-left text-sm border-collapse bg-white">
                   <thead className="bg-[#003B3A] text-[10px] border-b text-white border-[#003B3A]">
                     <tr className="text-[11px] font-semibold whitespace-nowrap">
                       <th className="px-4 py-3 font-semibold">Ngày chuyển</th>
                       <th className="px-4 py-3 font-semibold">Học sinh</th>
+                      <th className="px-4 py-3 font-semibold text-teal-100">Mã VNEdu</th>
                       <th className="px-4 py-3 font-semibold">Lớp chuyển đến</th>
                       <th className="px-4 py-3 font-semibold">Lý do</th>
                     </tr>
@@ -2227,9 +2373,18 @@ export function StudentTransfersClient() {
                         <td className="px-4 py-3.5 font-bold text-slate-900">
                           {t.student?.studentName}
                           <br />
-                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block tabular-nums">
                             {t.student?.studentCode}
                           </span>
+                        </td>
+                        <td className="px-4 py-3.5 tabular-nums">
+                          {t.student?.vnEduCode ? (
+                            <span className="px-2 py-0.5 bg-teal-50 text-[#00736E] border border-teal-200/80 rounded text-[11px] font-semibold">
+                              {t.student.vnEduCode}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-normal">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 font-semibold text-[#00A19A]">{t.destinationSchool}</td>
                         <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
@@ -2238,13 +2393,15 @@ export function StudentTransfersClient() {
                   </tbody>
                 </table>
               </div>
-            ) : (
+                ) : pendingChangeClassRequests.length === 0 ? (
               <div className="p-16 text-center text-xs font-semibold">
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
                   <ArrowRightLeft className="w-8 h-8 text-teal-700" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-700 mb-2">Chưa có dữ liệu chuyển lớp</h3>
                 <p className="text-slate-500 font-medium">Bấm "Tạo phiếu Chuyển lớp" để thêm mới.</p>
+              </div>
+                ) : null}
               </div>
             )
           )}
@@ -2255,7 +2412,7 @@ export function StudentTransfersClient() {
             ) : (
               <div className="space-y-8">
                 {/* Pending Enrollment Requests Section */}
-                {pendingRequests.filter(req => activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool).length > 0 && (
+                {pendingEnrollmentRequests.filter(req => activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool).length > 0 && (
                   <div className="p-6 text-xs font-semibold">
                     <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                       <div className="flex items-center gap-2">
@@ -2516,6 +2673,7 @@ export function StudentTransfersClient() {
                             <tr className="text-[11px] font-semibold whitespace-nowrap">
                               <th className="px-4 py-3 font-semibold">Ngày nhập học</th>
                               <th className="px-4 py-3 font-semibold">Học sinh</th>
+                              <th className="px-4 py-3 font-semibold text-teal-100">Mã VNEdu</th>
                               <th className="px-4 py-3 font-semibold">Lớp chuyển đến</th>
                               <th className="px-4 py-3 font-semibold">Lý do</th>
                               <th className="px-4 py-3 text-right font-semibold">Thao tác</th>
@@ -2540,9 +2698,18 @@ export function StudentTransfersClient() {
                                       </span>
                                     )}
                                   </div>
-                                  <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                                  <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block tabular-nums">
                                     {t.student?.studentCode}
                                   </span>
+                                </td>
+                                <td className="px-4 py-3.5 tabular-nums">
+                                  {t.student?.vnEduCode ? (
+                                    <span className="px-2 py-0.5 bg-teal-50 text-[#00736E] border border-teal-200/80 rounded text-[11px] font-semibold">
+                                      {t.student.vnEduCode}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 font-normal">—</span>
+                                  )}
                                 </td>
                                 <td className="px-4 py-3.5 font-bold text-emerald-600">{t.destinationSchool}</td>
                                 <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
@@ -2621,7 +2788,20 @@ export function StudentTransfersClient() {
             }}
           />
         )}
-        {showChangeModal && <ChangeClassModal activeSubTab={activeSubTab} onClose={() => setShowChangeModal(false)} onSaved={loadTransfers} />}
+        {showChangeModal && (
+          <ChangeClassModal
+            activeSubTab={activeSubTab}
+            changeClassRequest={selectedChangeClassRequest}
+            onClose={() => {
+              setShowChangeModal(false);
+              setSelectedChangeClassRequest(null);
+            }}
+            onSaved={() => {
+              setSelectedChangeClassRequest(null);
+              loadTransfers();
+            }}
+          />
+        )}
         {showInModal && (
           <TransferInModal
             activeSubTab={activeSubTab}
@@ -3035,7 +3215,17 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
   )
 }
 
-function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "general" | "preschool", onClose: () => void, onSaved: () => void }) {
+function ChangeClassModal({
+  activeSubTab,
+  changeClassRequest,
+  onClose,
+  onSaved
+}: {
+  activeSubTab: "dashboard" | "general" | "preschool";
+  changeClassRequest?: any;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -3045,15 +3235,17 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
   const [students, setStudents] = useState<any[]>([])
 
   const [form, setForm] = useState({
-    academicYearId: "",
-    campusId: "",
-    classId: "",
-    studentId: "",
-    destCampusId: "",
+    academicYearId: changeClassRequest?.academicYearId || "",
+    campusId: changeClassRequest?.currentCampusId || "",
+    classId: changeClassRequest?.currentClassId || "",
+    studentId: changeClassRequest?.existingStudentId || "",
+    destCampusId: changeClassRequest?.campusId || changeClassRequest?.currentCampusId || "",
     destClassId: "",
-    transferDate: "",
+    transferDate: changeClassRequest ? new Date().toISOString().split("T")[0] : "",
     semester: "",
-    reason: ""
+    reason: changeClassRequest
+      ? `Chuyển lớp theo kết quả khảo sát chuyển hệ${changeClassRequest.surveySystem ? ` (${changeClassRequest.surveySystem})` : ""}`
+      : ""
   })
 
   useEffect(() => {
@@ -3067,7 +3259,9 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
       if (data && data.years) {
         setOptions(data)
         const activeYear = data.years.find((y: any) => !y.isOff) || data.years[0];
-        if (activeYear) setForm(f => ({ ...f, academicYearId: activeYear.id }))
+        if (activeYear) {
+          setForm(f => ({ ...f, academicYearId: f.academicYearId || activeYear.id }))
+        }
       }
     } catch (e: any) {
       console.error("Error loading transfer data:", e)
@@ -3079,7 +3273,14 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
     if (form.campusId && form.academicYearId) {
       getClassesByCampusAndYearAction(form.campusId, form.academicYearId).then(data => {
         setClasses(data)
-        setForm(f => ({ ...f, classId: "", studentId: "" }))
+        setForm(f => {
+          const keepClass = data.some((c: any) => c.id === f.classId);
+          return {
+            ...f,
+            classId: keepClass ? f.classId : "",
+            studentId: keepClass ? f.studentId : ""
+          };
+        })
       })
     }
   }, [form.campusId, form.academicYearId])
@@ -3088,7 +3289,10 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
     if (form.classId) {
       getStudentsByClassAction(form.classId).then(data => {
         setStudents(data)
-        setForm(f => ({ ...f, studentId: "" }))
+        setForm(f => ({
+          ...f,
+          studentId: data.some((s: any) => s.id === f.studentId) ? f.studentId : ""
+        }))
       })
     }
   }, [form.classId])
@@ -3097,7 +3301,10 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
     if (form.destCampusId && form.academicYearId) {
       getClassesByCampusAndYearAction(form.destCampusId, form.academicYearId).then(data => {
         setDestClasses(data)
-        setForm(f => ({ ...f, destClassId: "" }))
+        setForm(f => ({
+          ...f,
+          destClassId: data.some((c: any) => c.id === f.destClassId) ? f.destClassId : ""
+        }))
       })
     }
   }, [form.destCampusId, form.academicYearId])
@@ -3105,7 +3312,9 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
   async function handleSubmit(e: any) {
     e.preventDefault()
     setSaving(true)
-    const res = await createChangeClassAction(form)
+    const res = changeClassRequest
+      ? await completeChangeClassRequestAction(changeClassRequest.id, form)
+      : await createChangeClassAction(form)
     setSaving(false)
     if (res.success) {
       alert("Đã chuyển lớp thành công!")
@@ -3132,7 +3341,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
         <div className="flex items-center justify-between p-6 text-xs font-semibold">
           <h2 className="text-xl font-bold text-slate-900 flex items-center">
             <ArrowRightLeft className="w-5 h-5 mr-3 text-teal-700" />
-            Tạo phiếu Chuyển lớp
+            {changeClassRequest ? "Xử lý yêu cầu Chuyển lớp (Học sinh Chuyển hệ)" : "Tạo phiếu Chuyển lớp"}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
             <X className="w-5 h-5" />
@@ -3143,6 +3352,31 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
           <div className="p-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+            {changeClassRequest && (
+              <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-2xl">
+                <div className="text-xs font-bold text-[#D97706] mb-2">
+                  Yêu cầu chuyển lớp từ Kết quả khảo sát Chuyển hệ
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-500">Học sinh:</span>{" "}
+                    <span className="font-bold text-slate-900">{changeClassRequest.fullName}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Mã HS:</span>{" "}
+                    <span className="font-bold text-[#003B3A] tabular-nums">{changeClassRequest.studentCode}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Lớp hiện tại:</span>{" "}
+                    <span className="font-bold text-slate-800">{changeClassRequest.currentClassName || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Hệ khảo sát:</span>{" "}
+                    <span className="font-bold text-[#00736E]">{changeClassRequest.surveySystem || changeClassRequest.surveyFormType || "—"}</span>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Filter Group */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
@@ -3272,6 +3506,7 @@ function TransferInModal({
     classId: "",
     assessmentStudentId: "",
     studentCode: "",
+    vnEduCode: "",
     studentName: "",
     transferDate: new Date().toISOString().split("T")[0],
     semester: "HK1",
@@ -3314,6 +3549,7 @@ function TransferInModal({
           classId: "",
           assessmentStudentId: enrollmentRequest.id,
           studentCode: enrollmentRequest.studentCode || "",
+          vnEduCode: enrollmentRequest.vnEduCode || "",
           studentName: enrollmentRequest.fullName || "",
           transferDate: new Date().toISOString().split("T")[0],
           semester: "HK1",
@@ -3342,6 +3578,7 @@ function TransferInModal({
           classId: "",
           assessmentStudentId: "BATCH",
           studentCode: "BATCH",
+          vnEduCode: "",
           studentName: "BATCH",
           transferDate: new Date().toISOString().split("T")[0],
           semester: "HK1",
@@ -3354,6 +3591,7 @@ function TransferInModal({
           classId: initialData.student?.classId || "",
           assessmentStudentId: "EXISTING",
           studentCode: initialData.student?.studentCode || "",
+          vnEduCode: initialData.student?.vnEduCode || "",
           studentName: initialData.student?.studentName || "",
           transferDate: new Date(initialData.transferDate).toISOString().split("T")[0],
           semester: initialData.semester || "HK1",
@@ -3530,18 +3768,22 @@ function TransferInModal({
             <div className="space-y-4">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Thông tin tiếp nhận</h4>
               {!batchRequests ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-200">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Họ và tên học sinh</label>
-                    <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentName} onChange={e => setForm({ ...form, studentName: e.target.value })} placeholder="Nhập họ và tên..." />
+                    <label className="block text-xs font-semibold text-slate-600 mb-2">Họ và tên học sinh</label>
+                    <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all text-xs font-semibold text-slate-800" value={form.studentName} onChange={e => setForm({ ...form, studentName: e.target.value })} placeholder="Nhập họ và tên..." />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã KS (Khảo sát)</label>
-                    <input disabled type="text" className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 font-semibold outline-none text-slate-550 cursor-not-allowed" value={selectedAssessmentStudent?.studentCode || ""} placeholder="Mã KS từ dữ liệu..." />
+                    <label className="block text-xs font-semibold text-slate-600 mb-2">Mã KS (Khảo sát)</label>
+                    <input disabled type="text" className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 font-semibold outline-none text-slate-500 cursor-not-allowed text-xs tabular-nums" value={selectedAssessmentStudent?.studentCode || ""} placeholder="Mã KS từ dữ liệu..." />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mã HS</label>
-                    <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-teal-200 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentCode} onChange={e => setForm({ ...form, studentCode: e.target.value })} placeholder="Nhập mã HS mới..." />
+                    <label className="block text-xs font-semibold text-slate-600 mb-2">Mã HS</label>
+                    <input required type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all text-xs font-semibold text-slate-800 tabular-nums" value={form.studentCode} onChange={e => setForm({ ...form, studentCode: e.target.value })} placeholder="Nhập mã HS mới..." />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-2">Mã VNEdu</label>
+                    <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/15 transition-all text-xs font-semibold text-slate-800 tabular-nums" value={form.vnEduCode} onChange={e => setForm({ ...form, vnEduCode: e.target.value })} placeholder="Nhập mã VNEdu (nếu có)..." />
                   </div>
                 </div>
               ) : (

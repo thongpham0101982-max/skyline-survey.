@@ -4,6 +4,7 @@ import {
   buildPrimaryVnEduDefaultConfig,
   buildSecondaryTt22VnEduDefaultConfig,
   calculateTt22SemesterAverage,
+  findExactPeriodInternalOverrideConfig,
   getPrimaryEnglishVnEduPreset,
   getPrimaryPeriodMeta,
   getSubjectCurriculumGroup,
@@ -99,6 +100,48 @@ describe("1. Cấu hình Sổ điểm theo vnEdu & Đặc thù Tiếng Anh Tiể
       configType: "VNEDU",
     })
     expect(resolvedKsdn?.id).toBe("ksdn_int")
+  })
+
+  it("findExactPeriodInternalOverrideConfig tự động nhận cấu hình Tiếng Anh Khối 4, 5 cuối kỳ từ 2. ĐG nội bộ nhưng không lấy nhầm mẫu chung ALL/KSĐN", () => {
+    const configs = [
+      { id: "int_all", academicYearId: "y1", program: "ALL", grade: "Khối 4", subjectId: "sub_ta", evaluationPeriod: "ALL", configType: "INTERNAL", isActive: true, updatedAt: "2026-11-20T09:00:00Z" },
+      { id: "int_ksdn", academicYearId: "y1", program: "ALL", grade: "Khối 4", subjectId: "sub_ta", evaluationPeriod: "KSĐN", configType: "INTERNAL", isActive: true, updatedAt: "2026-11-20T09:00:00Z" },
+      { id: "int_null", academicYearId: "y1", program: "ALL", grade: "Khối 4", subjectId: null, evaluationPeriod: "CK1", configType: "INTERNAL", isActive: true, updatedAt: "2026-11-20T09:00:00Z" },
+      { id: "int_g4_ck1", academicYearId: "y1", program: "ALL", grade: "Khối 4", subjectId: "sub_ta", evaluationPeriod: "CK1", configType: "INTERNAL", isActive: true, updatedAt: "2026-11-20T10:00:00Z" },
+      { id: "int_g5_ck2", academicYearId: "y1", program: "ALL", grade: "Khối 5", subjectId: "sub_ta", evaluationPeriod: "CK2", configType: "INTERNAL", isActive: true, updatedAt: "2026-11-20T10:05:00Z" },
+    ]
+
+    // Khớp chính xác Tiếng Anh Khối 4 CK1 & Khối 5 CK2
+    expect(
+      findExactPeriodInternalOverrideConfig(configs, {
+        academicYearId: "y1",
+        program: "Hệ S",
+        grade: "4S_CS4",
+        subjectId: "sub_ta",
+        evaluationPeriod: "CK1",
+      })?.id
+    ).toBe("int_g4_ck1")
+
+    expect(
+      findExactPeriodInternalOverrideConfig(configs, {
+        academicYearId: "y1",
+        program: "Hệ I",
+        grade: "5I_CS1",
+        subjectId: "sub_ta",
+        evaluationPeriod: "CK2",
+      })?.id
+    ).toBe("int_g5_ck2")
+
+    // Không lấy nhầm mẫu ALL / KSĐN / subjectId == null cho kỳ chưa cấu hình (vd: Khối 4 CK2)
+    expect(
+      findExactPeriodInternalOverrideConfig(configs, {
+        academicYearId: "y1",
+        program: "Hệ S",
+        grade: "Khối 4",
+        subjectId: "sub_ta",
+        evaluationPeriod: "CK2",
+      })
+    ).toBeNull()
   })
 
   it("validateColumnValue giữ điểm 0 hợp lệ và không chuyển 'Đ' thành điểm số", () => {

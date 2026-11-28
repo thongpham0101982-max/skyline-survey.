@@ -9,25 +9,30 @@ export default async function LogsPage({ searchParams }: { searchParams: any }) 
   const session = await getAdminSession() // Enforce admin session verification
   
   const params = await searchParams;
+  const activeTab = params.tab === "stats" ? "stats" : "logs"
   const page = parseInt(params.page) || 1
   const limit = 10 // Show 10 rows per page as requested
   const search = params.search || ""
   const action = params.action || ""
   const roleFilter = params.role || ""
 
-  const where: any = {}
+  const andConditions: any[] = []
   
   if (search) {
-    where.OR = [
-      { userEmail: { contains: search } },
-      { targetTable: { contains: search } },
-      { action: { contains: search } },
-      { newValues: { contains: search } }
-    ]
+    andConditions.push({
+      OR: [
+        { userEmail: { contains: search } },
+        { targetTable: { contains: search } },
+        { targetId: { contains: search } },
+        { action: { contains: search } },
+        { newValues: { contains: search } },
+        { oldValues: { contains: search } },
+      ]
+    })
   }
   
   if (action) {
-    where.action = action
+    andConditions.push({ action })
   }
 
   // Fetch all roles to map codes to names
@@ -45,11 +50,15 @@ export default async function LogsPage({ searchParams }: { searchParams: any }) 
     const userIds = usersWithRole.map(u => u.id)
     const userEmails = usersWithRole.map(u => u.email).filter(Boolean)
     
-    where.OR = [
-      { userId: { in: userIds } },
-      { userEmail: { in: userEmails } }
-    ]
+    andConditions.push({
+      OR: [
+        { userId: { in: userIds } },
+        { userEmail: { in: userEmails } }
+      ]
+    })
   }
+
+  const where: any = andConditions.length > 0 ? { AND: andConditions } : {}
 
   const [logs, total] = await Promise.all([
     prisma.auditLog.findMany({
@@ -99,19 +108,16 @@ export default async function LogsPage({ searchParams }: { searchParams: any }) 
 
   return (
     <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Nhật ký Hệ thống (Audit Logs)</h1>
-        <p className="text-slate-500 mt-1">Theo dõi hoạt động đăng nhập, thay đổi dữ liệu của tài khoản nhân sự và giáo viên.</p>
-      </div>
-      <LogsClient 
-        initialLogs={mappedLogs} 
-        total={total} 
-        page={page} 
-        limit={limit} 
-        search={search} 
-        selectedAction={action} 
+      <LogsClient
+        initialTab={activeTab}
+        initialLogs={mappedLogs}
+        total={total}
+        page={page}
+        limit={limit}
+        search={search}
+        selectedAction={action}
         selectedRole={roleFilter}
-        actions={actionsResult.map(a => a.action).filter(Boolean)} 
+        actions={actionsResult.map(a => a.action).filter(Boolean)}
         roles={roles}
       />
     </div>

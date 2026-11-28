@@ -22,7 +22,23 @@ export default function AdminPortalError({
     error?.message?.includes('stale browser cache') ||
     error?.message?.includes('instantiated because it was required')
 
+  const isConnectionError =
+    error?.message?.includes('Connection closed') ||
+    error?.message?.includes('Failed to fetch') ||
+    error?.message?.includes('Load failed') ||
+    error?.message?.includes('ERR_INCOMPLETE_CHUNKED_ENCODING') ||
+    error?.message?.includes('network error') ||
+    error?.message?.includes('Unexpected end of JSON')
+
   const handleReload = () => {
+    if (!isChunkError && !isConnectionError) {
+      reset()
+      return
+    }
+    if (isConnectionError) {
+      window.location.reload()
+      return
+    }
     try {
       if (typeof window !== 'undefined' && 'caches' in window) {
         caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).finally(() => {
@@ -37,15 +53,16 @@ export default function AdminPortalError({
   useEffect(() => {
     console.error('Admin Portal Error Boundary caught:', error)
 
-    if (isChunkError && typeof window !== 'undefined') {
-      const lastChunkReload = sessionStorage.getItem('last_chunk_reload')
+    if ((isChunkError || isConnectionError) && typeof window !== 'undefined') {
+      const storageKey = isConnectionError ? 'last_connection_reload' : 'last_chunk_reload'
+      const lastReload = sessionStorage.getItem(storageKey)
       const now = Date.now()
-      if (!lastChunkReload || now - parseInt(lastChunkReload, 10) > 10000) {
-        sessionStorage.setItem('last_chunk_reload', now.toString())
+      if (!lastReload || now - parseInt(lastReload, 10) > 15000) {
+        sessionStorage.setItem(storageKey, now.toString())
         handleReload()
       }
     }
-  }, [error, isChunkError])
+  }, [error, isChunkError, isConnectionError])
 
   return (
     <div className="flex flex-col items-center justify-center p-8 sm:p-12 min-h-[450px] bg-white rounded-3xl border border-red-200/80 shadow-xs max-w-xl mx-auto my-8 text-center">
@@ -69,7 +86,7 @@ export default function AdminPortalError({
           <button
             type="button"
             onClick={() => setShowDetails(!showDetails)}
-            className="text-[11px] font-bold text-[#0284C7] flex items-center gap-1 hover:underline cursor-pointer"
+            className="text-[11px] font-bold text-[#00A19A] flex items-center gap-1 hover:underline cursor-pointer"
           >
             <span>{showDetails ? 'Ẩn chi tiết' : 'Xem chi tiết'}</span>
             {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -86,7 +103,7 @@ export default function AdminPortalError({
         <button
           type="button"
           onClick={handleReload}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow w-full sm:w-auto cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003B3A] hover:bg-[#00A19A] text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow w-full sm:w-auto cursor-pointer"
         >
           <RefreshCcw className="w-4 h-4" />
           <span>Thử tải lại</span>

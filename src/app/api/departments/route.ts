@@ -27,6 +27,22 @@ const DepartmentInputSchema = z.object({
 
 export async function GET() {
   try {
+    const session = await getAdminSession();
+    if (!session || !session.userId) {
+      return NextResponse.json(
+        { error: "Unauthorized: Vui lòng đăng nhập" },
+        { status: 401 }
+      );
+    }
+
+    const canSeeContactPii = Boolean(
+      session.isFullAccess ||
+      session.isSuperAdmin ||
+      session.isHeadOfAcademic ||
+      session.isGDCS ||
+      session.isTBP
+    );
+
     const [departments, divisionAssignments] = await Promise.all([
       prisma.department.findMany({
         orderBy: { name: "asc" },
@@ -46,8 +62,7 @@ export async function GET() {
               id: true,
               teacherCode: true,
               teacherName: true,
-              email: true,
-              phone: true,
+              ...(canSeeContactPii ? { email: true, phone: true } : {}),
               campus: { select: { campusName: true } }
             }
           }
@@ -55,8 +70,12 @@ export async function GET() {
       }).catch(() => [])
     ]);
 
+    const safeDepartments = canSeeContactPii
+      ? departments
+      : departments.map(({ teamsWebhookUrl, ...rest }: any) => rest);
+
     return NextResponse.json({
-      departments,
+      departments: safeDepartments,
       divisionAssignments: divisionAssignments || []
     });
   } catch (error: any) {

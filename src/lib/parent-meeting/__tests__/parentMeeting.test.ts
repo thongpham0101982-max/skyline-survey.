@@ -26,7 +26,10 @@ import {
     verifyAndCheckInQrToken,
 } from "../parentMeetingService";
 
-describe("Digital Parent Meeting (Họp Phụ huynh số) – 15 Mandatory Scenarios", () => {
+// Guard: Do NOT automatically generate test records in the operating database unless explicitly enabled
+const describeDb = process.env.ALLOW_TEST_DB_SEED === "true" ? describe : describe.skip;
+
+describeDb("Digital Parent Meeting (Họp Phụ huynh số) – 15 Mandatory Scenarios", () => {
     const testRunId = crypto.randomBytes(4).toString("hex");
     const yearId = `pm_test_year_${testRunId}`;
     const campus1Id = `pm_test_campus1_${testRunId}`;

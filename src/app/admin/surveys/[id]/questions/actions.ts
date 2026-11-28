@@ -1,9 +1,12 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 export async function createSectionAction(name: string) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     const cleanName = name.trim()
     if (!cleanName) return { success: false, error: "Tên mục không được để trống" }
     
@@ -29,6 +32,8 @@ export async function saveSurveyQuestionsAction(
   periodDetails?: { name?: string }
 ) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { success: false, error: "Unauthorized" }
     if (periodDetails?.name?.trim()) {
       await prisma.surveyPeriod.update({
         where: { id: surveyPeriodId },

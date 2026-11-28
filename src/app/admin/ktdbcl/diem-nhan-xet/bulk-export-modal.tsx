@@ -18,7 +18,10 @@ import {
   Filter,
   Search
 } from "lucide-react"
-import { generateBulkGradeExcel } from "@/lib/grading/bulk-grade-excel-exporter"
+import {
+  generateBulkGradeExcel,
+  getPeriodScoreColumnLabel
+} from "@/lib/grading/bulk-grade-excel-exporter"
 import { isGradeMatching } from "./grade-utils"
 
 interface BulkExportModalProps {
@@ -33,6 +36,13 @@ interface BulkExportModalProps {
   evalPeriods: { code: string; name: string }[]
   grades: string[]
   savedConfigs?: any[]
+}
+
+function getGradeNum(grade: string): number | null {
+  const digits = String(grade || "").replace(/\D/g, "")
+  if (!digits) return null
+  const n = parseInt(digits, 10)
+  return isNaN(n) ? null : n
 }
 
 export function BulkExportModal({
@@ -51,13 +61,14 @@ export function BulkExportModal({
   const [selectedCampusId, setSelectedCampusId] = useState(defaultCampusId || "ALL")
   const [selectedPeriod, setSelectedPeriod] = useState(defaultPeriod || "KSDN")
   const [selectedYearId, setSelectedYearId] = useState(defaultYearId || "")
-  const [selectedGrade, setSelectedGrade] = useState("ALL")
+  const [selectedGrades, setSelectedGrades] = useState<string[]>(() => [...grades])
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([])
   const [subjectSearch, setSubjectSearch] = useState("")
   const [onlyPeriodSubjects, setOnlyPeriodSubjects] = useState(true)
 
   const [includeOverviewSheet, setIncludeOverviewSheet] = useState(true)
   const [includeMasterSummarySheet, setIncludeMasterSummarySheet] = useState(true)
+  const [onlyPeriodScoreColumn, setOnlyPeriodScoreColumn] = useState(false)
 
   const [isExporting, setIsExporting] = useState(false)
   const [progressPercent, setProgressPercent] = useState(0)
@@ -65,21 +76,40 @@ export function BulkExportModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [exportSuccess, setExportSuccess] = useState(false)
 
-  // Identify subjects configured for current period & grade (KSĐN luôn lấy theo 2. Đánh giá nội bộ Sky-Line)
-  const periodSubjectIds = useMemo(() => {
+  const isAllGradesSelected = grades.length > 0 && selectedGrades.length === grades.length
+  const periodScoreLabel = getPeriodScoreColumnLabel(selectedPeriod)
+
+  // Compute configured subjects for a given period & selected grade list
+  const computePeriodSubjectIds = (periodCode: string, activeGrades: string[]) => {
     const ids = new Set<string>()
-    const isKsdn = selectedPeriod === "KSĐN" || selectedPeriod === "KSDN"
+    const isKsdn = periodCode === "KSĐN" || periodCode === "KSDN"
+    const allSelected = activeGrades.length === 0 || (grades.length > 0 && activeGrades.length === grades.length)
+    const fallbackSem =
+      periodCode === "GK1" || periodCode === "CK1"
+        ? "HK1"
+        : periodCode === "GK2" || periodCode === "CK2"
+        ? "HK2"
+        : ""
+
     savedConfigs.forEach(c => {
       if (c.isActive === false) return
       if (isKsdn && (c.configType || "INTERNAL") !== "INTERNAL") return
-      const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
-      const gMatch = selectedGrade === "ALL" || isGradeMatching(c.grade, selectedGrade)
+      const pMatch =
+        c.evaluationPeriod === periodCode ||
+        (fallbackSem && c.evaluationPeriod === fallbackSem) ||
+        c.evaluationPeriod === "ALL"
+      const gMatch = allSelected || activeGrades.some(g => isGradeMatching(c.grade, g))
       if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
         ids.add(c.subjectId)
       }
     })
     return ids
-  }, [savedConfigs, selectedPeriod, selectedGrade])
+  }
+
+  const periodSubjectIds = useMemo(
+    () => computePeriodSubjectIds(selectedPeriod, selectedGrades),
+    [savedConfigs, selectedPeriod, selectedGrades, grades.length]
+  )
 
   // Sync initial state when modal opens
   useEffect(() => {
@@ -89,62 +119,94 @@ export function BulkExportModal({
       } else if (campuses.length > 0 && selectedCampusId === "ALL") {
         setSelectedCampusId(campuses[0].id)
       }
-      if (defaultPeriod) setSelectedPeriod(defaultPeriod)
+      const nextPeriod = defaultPeriod || "KSDN"
+      setSelectedPeriod(nextPeriod)
       if (defaultYearId) setSelectedYearId(defaultYearId)
 
-      // Nếu kỳ này có cấu hình môn riêng (ví dụ 13 môn của KSĐN), mặc định chỉ chọn 13 môn này
-      if (periodSubjectIds.size > 0) {
-        setSelectedSubjectIds(Array.from(periodSubjectIds))
+      const initialGrades = [...grades]
+      setSelectedGrades(initialGrades)
+
+      const initialPeriodIds = computePeriodSubjectIds(nextPeriod, initialGrades)
+      if (initialPeriodIds.size > 0) {
+        setSelectedSubjectIds(Array.from(initialPeriodIds))
         setOnlyPeriodSubjects(true)
       } else {
         setSelectedSubjectIds(subjects.map(s => s.id))
         setOnlyPeriodSubjects(false)
       }
 
+      setOnlyPeriodScoreColumn(false)
       setErrorMessage(null)
       setExportSuccess(false)
       setProgressPercent(0)
       setProgressMessage("")
       setSubjectSearch("")
     }
-  }, [isOpen, defaultCampusId, defaultPeriod, defaultYearId, subjects, campuses])
+  }, [isOpen, defaultCampusId, defaultPeriod, defaultYearId, subjects, campuses, grades])
 
-  // Khi người dùng thay đổi Kỳ hoặc Khối: Cập nhật lại danh sách môn theo kỳ
-  const handlePeriodChange = (newPeriod: string) => {
-    setSelectedPeriod(newPeriod)
-    const isKsdn = newPeriod === "KSĐN" || newPeriod === "KSDN"
-    // Tính toán lại các môn theo kỳ mới
-    const newPeriodIds = new Set<string>()
-    savedConfigs.forEach(c => {
-      if (c.isActive === false) return
-      if (isKsdn && (c.configType || "INTERNAL") !== "INTERNAL") return
-      const pMatch = c.evaluationPeriod === newPeriod || c.evaluationPeriod === "ALL"
-      const gMatch = selectedGrade === "ALL" || isGradeMatching(c.grade, selectedGrade)
-      if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
-        newPeriodIds.add(c.subjectId)
-      }
-    })
+  const applyPeriodAndGradesUpdate = (newPeriod: string, newGrades: string[]) => {
+    const newPeriodIds = computePeriodSubjectIds(newPeriod, newGrades)
     if (onlyPeriodSubjects && newPeriodIds.size > 0) {
       setSelectedSubjectIds(Array.from(newPeriodIds))
     }
   }
 
-  const handleGradeChange = (newGrade: string) => {
-    setSelectedGrade(newGrade)
-    const isKsdn = selectedPeriod === "KSĐN" || selectedPeriod === "KSDN"
-    const newPeriodIds = new Set<string>()
-    savedConfigs.forEach(c => {
-      if (c.isActive === false) return
-      if (isKsdn && (c.configType || "INTERNAL") !== "INTERNAL") return
-      const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
-      const gMatch = newGrade === "ALL" || isGradeMatching(c.grade, newGrade)
-      if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
-        newPeriodIds.add(c.subjectId)
-      }
-    })
-    if (onlyPeriodSubjects && newPeriodIds.size > 0) {
-      setSelectedSubjectIds(Array.from(newPeriodIds))
+  const handlePeriodChange = (newPeriod: string) => {
+    setSelectedPeriod(newPeriod)
+    if (!getPeriodScoreColumnLabel(newPeriod)) {
+      setOnlyPeriodScoreColumn(false)
     }
+    applyPeriodAndGradesUpdate(newPeriod, selectedGrades)
+  }
+
+  const updateSelectedGrades = (nextGrades: string[]) => {
+    setSelectedGrades(nextGrades)
+    setErrorMessage(null)
+    applyPeriodAndGradesUpdate(selectedPeriod, nextGrades)
+  }
+
+  const toggleGrade = (grade: string) => {
+    const next = selectedGrades.includes(grade)
+      ? selectedGrades.filter(g => g !== grade)
+      : grades.filter(g => g === grade || selectedGrades.includes(g))
+    updateSelectedGrades(next)
+  }
+
+  const selectGradePreset = (preset: "ALL" | "TIEU_HOC" | "THCS" | "THPT" | "NONE") => {
+    if (preset === "ALL") {
+      updateSelectedGrades([...grades])
+      return
+    }
+    if (preset === "NONE") {
+      updateSelectedGrades([])
+      return
+    }
+    const filtered = grades.filter(g => {
+      const n = getGradeNum(g)
+      if (n === null) return false
+      if (preset === "TIEU_HOC") return n >= 1 && n <= 5
+      if (preset === "THCS") return n >= 6 && n <= 9
+      if (preset === "THPT") return n >= 10 && n <= 12
+      return false
+    })
+    updateSelectedGrades(filtered)
+  }
+
+  const isPresetActive = (preset: "ALL" | "TIEU_HOC" | "THCS" | "THPT") => {
+    if (preset === "ALL") return isAllGradesSelected
+    const expected = grades.filter(g => {
+      const n = getGradeNum(g)
+      if (n === null) return false
+      if (preset === "TIEU_HOC") return n >= 1 && n <= 5
+      if (preset === "THCS") return n >= 6 && n <= 9
+      if (preset === "THPT") return n >= 10 && n <= 12
+      return false
+    })
+    return (
+      expected.length > 0 &&
+      selectedGrades.length === expected.length &&
+      expected.every(g => selectedGrades.includes(g))
+    )
   }
 
   // Filtered subjects based on search & period filter
@@ -163,7 +225,6 @@ export function BulkExportModal({
     })
   }, [subjects, subjectSearch, onlyPeriodSubjects, periodSubjectIds])
 
-  // Danh sách ID môn THỰC SỰ được chọn để xuất (chỉ tính các môn nằm trong phạm vi đang lọc)
   const effectiveSelectedIds = useMemo(() => {
     if (onlyPeriodSubjects && periodSubjectIds.size > 0) {
       return selectedSubjectIds.filter(id => periodSubjectIds.has(id))
@@ -171,19 +232,16 @@ export function BulkExportModal({
     return selectedSubjectIds
   }, [selectedSubjectIds, onlyPeriodSubjects, periodSubjectIds])
 
-  // Select all currently displayed subjects
   const handleSelectAll = () => {
     const idsToAdd = displayedSubjects.map(s => s.id)
     setSelectedSubjectIds(prev => Array.from(new Set([...prev, ...idsToAdd])))
   }
 
-  // Deselect all currently displayed subjects
   const handleDeselectAll = () => {
     const idsToRemove = new Set(displayedSubjects.map(s => s.id))
     setSelectedSubjectIds(prev => prev.filter(id => !idsToRemove.has(id)))
   }
 
-  // Select only subjects configured for this period
   const handleSelectOnlyPeriodSubjects = () => {
     if (periodSubjectIds.size > 0) {
       setOnlyPeriodSubjects(true)
@@ -195,7 +253,6 @@ export function BulkExportModal({
     const nextVal = !onlyPeriodSubjects
     setOnlyPeriodSubjects(nextVal)
     if (nextVal && periodSubjectIds.size > 0) {
-      // Khi bật chế độ chỉ môn theo kỳ: tự động loại bỏ các môn ngoài kỳ khỏi lựa chọn
       setSelectedSubjectIds(prev => {
         const kept = prev.filter(id => periodSubjectIds.has(id))
         return kept.length > 0 ? kept : Array.from(periodSubjectIds)
@@ -203,14 +260,27 @@ export function BulkExportModal({
     }
   }
 
-  // Toggle single subject
   const toggleSubject = (id: string) => {
     setSelectedSubjectIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     )
   }
 
+  const gradeSummaryText = useMemo(() => {
+    if (selectedGrades.length === 0) return "Chưa chọn khối"
+    if (isAllGradesSelected) return "Tất cả các khối"
+    const shortLabels = selectedGrades.map(g => {
+      const n = getGradeNum(g)
+      return n !== null ? `K${n}` : g
+    })
+    return shortLabels.join(", ")
+  }, [selectedGrades, isAllGradesSelected])
+
   const handleExport = async () => {
+    if (selectedGrades.length === 0) {
+      setErrorMessage("Vui lòng chọn ít nhất 1 khối lớp để xuất dữ liệu!")
+      return
+    }
     if (effectiveSelectedIds.length === 0) {
       setErrorMessage("Vui lòng chọn ít nhất 1 môn học để xuất dữ liệu!")
       return
@@ -221,14 +291,14 @@ export function BulkExportModal({
       setErrorMessage(null)
       setExportSuccess(false)
       setProgressPercent(10)
-      setProgressMessage(`Đang gửi yêu cầu nạp dữ liệu cho ${effectiveSelectedIds.length} môn đã chọn...`)
+      setProgressMessage(`Đang tải dữ liệu cho ${effectiveSelectedIds.length} môn (${gradeSummaryText})...`)
 
-      // Chỉ gửi đúng danh sách ID các môn được người dùng lựa chọn
       const queryParams = new URLSearchParams({
         academicYearId: selectedYearId,
         campusId: selectedCampusId,
         evaluationPeriod: selectedPeriod,
-        grade: selectedGrade,
+        grade: isAllGradesSelected ? "ALL" : selectedGrades[0],
+        grades: isAllGradesSelected ? "ALL" : selectedGrades.join(","),
         subjectIds: effectiveSelectedIds.join(",")
       })
 
@@ -240,12 +310,10 @@ export function BulkExportModal({
       }
 
       if (!data.students || data.students.length === 0) {
-        throw new Error("Không tìm thấy học sinh nào thuộc cơ sở/khối này trong năm học đã chọn!")
+        throw new Error("Không tìm thấy học sinh nào thuộc cơ sở/khối đã chọn trong năm học này!")
       }
 
-      // Đảm bảo chỉ các môn nằm trong effectiveSelectedIds mới được tạo Sheet
       const finalSubjects = (data.subjects || []).filter(s => effectiveSelectedIds.includes(s.id))
-
       if (finalSubjects.length === 0) {
         throw new Error("Không tìm thấy dữ liệu môn học tương ứng với các môn đã chọn!")
       }
@@ -265,6 +333,7 @@ export function BulkExportModal({
         academicYearName: yearName,
         evaluationPeriodCode: selectedPeriod,
         evaluationPeriodName: periodName,
+        selectedGrades: isAllGradesSelected ? [] : selectedGrades,
         classes: data.classes || [],
         students: data.students || [],
         subjects: finalSubjects,
@@ -273,6 +342,7 @@ export function BulkExportModal({
         teachingAssignments: data.teachingAssignments || [],
         includeOverviewSheet,
         includeMasterSummarySheet,
+        onlyPeriodScoreColumn: Boolean(onlyPeriodScoreColumn && periodScoreLabel),
         onProgress: (pct, msg) => {
           setProgressPercent(pct)
           setProgressMessage(msg)
@@ -281,7 +351,7 @@ export function BulkExportModal({
 
       setExportSuccess(true)
       setProgressPercent(100)
-      setProgressMessage(`Xuất file Excel thành công với ${finalSubjects.length} môn đã chọn! Tệp tin đã được lưu về máy của bạn.`)
+      setProgressMessage(`Xuất file Excel thành công với ${finalSubjects.length} môn (${gradeSummaryText})! Tệp tin đã được lưu về máy của bạn.`)
     } catch (err: any) {
       console.error("Bulk export error:", err)
       setErrorMessage(err.message || "Đã xảy ra sự cố khi xuất file Excel")
@@ -297,22 +367,22 @@ export function BulkExportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl border border-[#E2E8F0] w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-[#005B58] via-[#006e6a] to-[#00827d] text-white flex items-center justify-between shadow-md">
+        <div className="px-6 py-4 bg-[#003B3A] text-white flex items-center justify-between border-b border-[#002E2D]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-inner">
-              <FileSpreadsheet className="w-5 h-5 text-emerald-300" />
+            <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-white border border-white/15">
+              <FileSpreadsheet className="w-5 h-5 text-[#5EEAD4]" />
             </div>
             <div>
-              <h3 className="text-base font-black tracking-tight text-white flex items-center gap-2">
-                Xuất Bảng Điểm Kỳ Khảo Sát
-                <span className="text-[10px] font-bold bg-emerald-400 text-teal-950 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Đa Sheet
+              <h3 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
+                Xuất bảng điểm kỳ khảo sát
+                <span className="text-[11px] font-semibold bg-[#00A19A] text-white px-2.5 py-0.5 rounded-full">
+                  Đa sheet
                 </span>
               </h3>
-              <p className="text-[11px] text-teal-100 font-medium">
-                Xuất toàn bộ môn học theo cơ sở, mỗi môn 1 Sheet gồm Khối, Lớp và Điểm học sinh
+              <p className="text-xs text-teal-100">
+                Xuất theo cơ sở, tùy chọn nhiều khối lớp và danh sách môn học (hỗ trợ chuẩn ĐĐGgk / ĐĐGck)
               </p>
             </div>
           </div>
@@ -320,102 +390,197 @@ export function BulkExportModal({
             type="button"
             onClick={onClose}
             disabled={isExporting}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors disabled:opacity-50"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-5 flex-1">
+        <div className="p-6 overflow-y-auto space-y-5 flex-1 bg-[#F8FAFC]">
           {errorMessage && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-800 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-800">
+              <AlertCircle className="w-4 h-4 text-[#E11D48] shrink-0 mt-0.5" />
               <div className="flex-1 font-semibold">{errorMessage}</div>
             </div>
           )}
 
           {exportSuccess && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-800 animate-in fade-in">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-800">
+              <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0 mt-0.5" />
               <div className="flex-1 font-semibold">{progressMessage}</div>
             </div>
           )}
 
-          {/* SECTION 1: BỘ LỌC CƠ BẢN */}
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-            <div className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-[#005B58]" />
-              1. Thông tin Phạm vi Xuất Bảng Điểm
+          {/* SECTION 1: PHẠM VI XUẤT BẢNG ĐIỂM */}
+          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] space-y-4">
+            <div className="text-xs font-bold text-[#003B3A] flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-[#00736E]" />
+              1. Thông tin phạm vi xuất bảng điểm
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* 1. Cơ sở */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Cơ sở */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
-                  <Building2 className="w-3.5 h-3.5 text-teal-600" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-[#00736E]" />
                   Cơ sở xuất:
                 </label>
                 <select
                   value={selectedCampusId}
                   onChange={(e) => setSelectedCampusId(e.target.value)}
                   disabled={isExporting}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-[#005B58] outline-none shadow-sm cursor-pointer"
+                  className="w-full border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#00A19A] focus:border-[#00A19A] outline-none cursor-pointer"
                 >
-                  <option value="ALL">-- Tất cả Cơ sở trong trường --</option>
+                  <option value="ALL">-- Tất cả cơ sở trong trường --</option>
                   {campuses.map(cp => (
                     <option key={cp.id} value={cp.id}>{cp.campusName}</option>
                   ))}
                 </select>
               </div>
 
-              {/* 2. Kỳ khảo sát */}
+              {/* Kỳ khảo sát */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-teal-600" />
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#00736E]" />
                   Kỳ khảo sát / Học kỳ:
                 </label>
                 <select
                   value={selectedPeriod}
                   onChange={(e) => handlePeriodChange(e.target.value)}
                   disabled={isExporting}
-                  className="w-full border border-teal-300 rounded-xl px-3 py-2 text-xs font-bold text-teal-950 bg-teal-50/60 focus:ring-2 focus:ring-[#005B58] outline-none shadow-sm cursor-pointer"
+                  className="w-full border border-[#00A19A]/50 rounded-xl px-3 py-2 text-xs font-semibold text-[#003B3A] bg-[#F0FDFA] focus:ring-2 focus:ring-[#00A19A] outline-none cursor-pointer"
                 >
                   {evalPeriods.map(p => (
                     <option key={p.code} value={p.code}>{p.name}</option>
                   ))}
                 </select>
               </div>
+            </div>
 
-              {/* 3. Phạm vi Khối */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
-                  <Layers className="w-3.5 h-3.5 text-teal-600" />
-                  Khối lớp áp dụng:
-                </label>
-                <select
-                  value={selectedGrade}
-                  onChange={(e) => handleGradeChange(e.target.value)}
-                  disabled={isExporting}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#005B58] outline-none shadow-sm cursor-pointer"
-                >
-                  <option value="ALL">-- Tất cả các Khối --</option>
-                  {grades.map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+            {/* Khối lớp áp dụng (Multi-select) */}
+            <div className="pt-3 border-t border-[#F1F5F9] space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-[#00736E]" />
+                    Khối lớp áp dụng:
+                  </label>
+                  <span
+                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full tabular-nums ${
+                      selectedGrades.length === 0
+                        ? "bg-rose-50 text-[#E11D48] border border-rose-200"
+                        : "bg-[#F0FDFA] text-[#003B3A] border border-[#00A19A]/30"
+                    }`}
+                  >
+                    {isAllGradesSelected
+                      ? `Tất cả (${grades.length}/${grades.length} khối)`
+                      : `Đã chọn: ${selectedGrades.length}/${grades.length} khối`}
+                  </span>
+                </div>
+
+                {/* Preset chọn nhanh theo cấp học */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => selectGradePreset("ALL")}
+                    disabled={isExporting}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                      isPresetActive("ALL")
+                        ? "bg-[#003B3A] text-white border-[#003B3A]"
+                        : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                    }`}
+                  >
+                    Tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectGradePreset("TIEU_HOC")}
+                    disabled={isExporting}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer tabular-nums ${
+                      isPresetActive("TIEU_HOC")
+                        ? "bg-[#00736E] text-white border-[#00736E]"
+                        : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                    }`}
+                  >
+                    Tiểu học (K1–K5)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectGradePreset("THCS")}
+                    disabled={isExporting}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer tabular-nums ${
+                      isPresetActive("THCS")
+                        ? "bg-[#00736E] text-white border-[#00736E]"
+                        : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                    }`}
+                  >
+                    THCS (K6–K9)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectGradePreset("THPT")}
+                    disabled={isExporting}
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer tabular-nums ${
+                      isPresetActive("THPT")
+                        ? "bg-[#00736E] text-white border-[#00736E]"
+                        : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-[#F8FAFC]"
+                    }`}
+                  >
+                    THPT (K10–K12)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => selectGradePreset("NONE")}
+                    disabled={isExporting || selectedGrades.length === 0}
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 text-[#E11D48] hover:bg-rose-100 transition-colors disabled:opacity-40 cursor-pointer"
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              </div>
+
+              {/* Lưới chọn từng khối */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 tabular-nums">
+                {grades.map(g => {
+                  const checked = selectedGrades.includes(g)
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => !isExporting && toggleGrade(g)}
+                      disabled={isExporting}
+                      className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer select-none ${
+                        checked
+                          ? "bg-[#F0FDFA] border-[#00A19A] text-[#003B3A] ring-1 ring-[#00A19A]/30"
+                          : "bg-[#F8FAFC] border-[#E2E8F0] text-slate-500 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span
+                        className={`w-3.5 h-3.5 rounded flex items-center justify-center border shrink-0 ${
+                          checked
+                            ? "bg-[#003B3A] border-[#003B3A] text-white"
+                            : "bg-white border-slate-300"
+                        }`}
+                      >
+                        {checked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </span>
+                      <span>{g}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
 
           {/* SECTION 2: CHỌN MÔN HỌC */}
-          <div className="space-y-2.5">
+          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-[#005B58]" />
-                2. Chọn Danh Sách Môn Học Cần Xuất
-                <span className="text-teal-900 bg-teal-100 border border-teal-300 px-2.5 py-0.5 rounded-full font-black text-[11px] shadow-2xs">
-                  ĐÃ CHỌN: {effectiveSelectedIds.length}/{displayedSubjects.length} MÔN
+              <div className="text-xs font-bold text-[#003B3A] flex items-center gap-2">
+                <BookOpen className="w-3.5 h-3.5 text-[#00736E]" />
+                <span>2. Chọn danh sách môn học cần xuất</span>
+                <span className="text-[#003B3A] bg-[#F0FDFA] border border-[#00A19A]/30 px-2.5 py-0.5 rounded-full font-semibold text-[11px] tabular-nums">
+                  Đã chọn: {effectiveSelectedIds.length}/{displayedSubjects.length} môn
                 </span>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -424,12 +589,12 @@ export function BulkExportModal({
                     type="button"
                     onClick={handleSelectOnlyPeriodSubjects}
                     disabled={isExporting}
-                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors shadow-2xs ${
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer tabular-nums ${
                       onlyPeriodSubjects
-                        ? "bg-teal-700 text-white border-teal-700"
-                        : "text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-300"
+                        ? "bg-[#003B3A] text-white border-[#003B3A]"
+                        : "text-[#00736E] bg-[#F0FDFA] hover:bg-teal-100 border-[#00A19A]/40"
                     }`}
-                    title="Chỉ chọn các môn đã được cấu hình trong kỳ này"
+                    title="Chỉ chọn các môn đã được cấu hình trong kỳ và khối đang chọn"
                   >
                     Môn theo kỳ ({periodSubjectIds.size})
                   </button>
@@ -438,7 +603,7 @@ export function BulkExportModal({
                   type="button"
                   onClick={handleSelectAll}
                   disabled={isExporting}
-                  className="text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 transition-colors shadow-2xs"
+                  className="text-[11px] font-semibold text-[#00736E] hover:text-[#003B3A] bg-[#F0FDFA] hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-[#00A19A]/30 transition-colors cursor-pointer tabular-nums"
                 >
                   Chọn tất cả ({displayedSubjects.length})
                 </button>
@@ -446,7 +611,7 @@ export function BulkExportModal({
                   type="button"
                   onClick={handleDeselectAll}
                   disabled={isExporting}
-                  className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition-colors shadow-2xs"
+                  className="text-[11px] font-semibold text-[#E11D48] hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition-colors cursor-pointer"
                 >
                   Bỏ chọn tất cả
                 </button>
@@ -463,7 +628,7 @@ export function BulkExportModal({
                   onChange={(e) => setSubjectSearch(e.target.value)}
                   placeholder="Tìm nhanh môn học theo tên hoặc mã môn..."
                   disabled={isExporting}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#005B58] outline-none shadow-2xs"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-[#E2E8F0] rounded-xl focus:ring-2 focus:ring-[#00A19A] outline-none"
                 />
               </div>
 
@@ -471,10 +636,10 @@ export function BulkExportModal({
                 <button
                   type="button"
                   onClick={handleToggleOnlyPeriod}
-                  className={`text-[11px] px-3 py-1.5 rounded-xl border font-bold transition-all shrink-0 cursor-pointer shadow-2xs ${
+                  className={`text-[11px] px-3 py-1.5 rounded-xl border font-semibold transition-all shrink-0 cursor-pointer tabular-nums ${
                     onlyPeriodSubjects
-                      ? "bg-teal-800 text-white border-teal-800"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                      ? "bg-[#003B3A] text-white border-[#003B3A]"
+                      : "bg-white text-slate-700 border-[#E2E8F0] hover:bg-[#F8FAFC]"
                   }`}
                 >
                   {onlyPeriodSubjects ? `✓ Đang lọc: Môn theo kỳ (${periodSubjectIds.size})` : `Hiện tất cả (${subjects.length} môn)`}
@@ -482,8 +647,8 @@ export function BulkExportModal({
               )}
             </div>
 
-            {/* Danh sách nút chọn môn học - Click mượt mà */}
-            <div className="max-h-56 overflow-y-auto p-2.5 border border-slate-200 rounded-2xl bg-white grid grid-cols-2 sm:grid-cols-3 gap-2 shadow-inner">
+            {/* Danh sách môn học */}
+            <div className="max-h-52 overflow-y-auto p-2.5 border border-[#E2E8F0] rounded-2xl bg-[#F8FAFC] grid grid-cols-2 sm:grid-cols-3 gap-2">
               {displayedSubjects.length === 0 ? (
                 <div className="col-span-full py-6 text-center text-xs text-slate-400 font-medium">
                   Không tìm thấy môn học nào phù hợp với bộ lọc
@@ -507,31 +672,28 @@ export function BulkExportModal({
                       }}
                       className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer select-none transition-all ${
                         isSelected
-                          ? "bg-teal-50 border-teal-400 text-teal-950 font-bold shadow-xs ring-1 ring-teal-400/40"
-                          : "bg-slate-50/70 border-slate-200 text-slate-600 hover:bg-slate-100/90"
+                          ? "bg-[#F0FDFA] border-[#00A19A] text-[#003B3A] font-semibold ring-1 ring-[#00A19A]/30"
+                          : "bg-white border-[#E2E8F0] text-slate-600 hover:bg-slate-50"
                       }`}
                     >
-                      {/* Checkbox Icon */}
                       <div
                         className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-all ${
                           isSelected
-                            ? "bg-[#005B58] border-[#005B58] text-white"
+                            ? "bg-[#003B3A] border-[#003B3A] text-white"
                             : "border-slate-300 bg-white"
                         }`}
                       >
                         {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
 
-                      {/* Tên môn học */}
                       <div className="truncate flex-1">
                         <span className="truncate">{s.subjectName}</span>
-                        <span className="text-[10px] text-slate-400 ml-1">({s.subjectCode})</span>
+                        <span className="text-[11px] text-slate-400 ml-1">({s.subjectCode})</span>
                       </div>
 
-                      {/* Badge nếu là môn theo kỳ */}
                       {isPeriodSubj && (
                         <span
-                          className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0"
+                          className="w-1.5 h-1.5 rounded-full bg-[#00A19A] shrink-0"
                           title="Môn đã được cấu hình trong kỳ này"
                         />
                       )}
@@ -542,39 +704,39 @@ export function BulkExportModal({
             </div>
           </div>
 
-          {/* SECTION 3: TÙY CHỌN NÂNG CAO */}
-          <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80 space-y-2.5">
-            <div className="text-xs font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              3. Tùy Chọn Bổ Sung Cho Báo Cáo
+          {/* SECTION 3: TÙY CHỌN BỔ SUNG */}
+          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] space-y-2.5">
+            <div className="text-xs font-bold text-[#003B3A] flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#D97706]" />
+              3. Tùy chọn bổ sung cho báo cáo
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className={`grid grid-cols-1 ${periodScoreLabel ? "sm:grid-cols-3" : "sm:grid-cols-2"} gap-3 pt-1`}>
               <div
                 role="button"
                 tabIndex={0}
                 onClick={() => !isExporting && setIncludeOverviewSheet(!includeOverviewSheet)}
                 className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none transition-all ${
                   includeOverviewSheet
-                    ? "bg-white border-teal-400 shadow-xs ring-1 ring-teal-400/30"
-                    : "bg-white/60 border-amber-200 hover:bg-white"
+                    ? "bg-[#F0FDFA]/60 border-[#00A19A] ring-1 ring-[#00A19A]/20"
+                    : "bg-[#F8FAFC] border-[#E2E8F0] hover:bg-white"
                 }`}
               >
                 <div
                   className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center shrink-0 transition-all ${
                     includeOverviewSheet
-                      ? "bg-[#005B58] border-[#005B58] text-white"
+                      ? "bg-[#003B3A] border-[#003B3A] text-white"
                       : "border-slate-300 bg-white"
                   }`}
                 >
                   {includeOverviewSheet && <Check className="w-3 h-3 stroke-[3]" />}
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-800">
-                    Kèm Sheet "00_Tổng quan Báo cáo"
+                  <div className="text-xs font-semibold text-slate-800">
+                    Kèm Sheet &quot;00_Tổng quan Báo cáo&quot;
                   </div>
-                  <div className="text-[10px] text-slate-500 leading-relaxed mt-0.5">
-                    Thống kê tỷ lệ nhập điểm, điểm trung bình và phổ điểm (Giỏi / Khá / Đạt) từng môn toàn trường.
+                  <div className="text-[11px] text-slate-500 leading-relaxed mt-0.5">
+                    Thống kê tỷ lệ nhập điểm, điểm TB và phổ điểm{periodScoreLabel ? ` theo cột ${periodScoreLabel}` : ""} từng môn.
                   </div>
                 </div>
               </div>
@@ -585,44 +747,75 @@ export function BulkExportModal({
                 onClick={() => !isExporting && setIncludeMasterSummarySheet(!includeMasterSummarySheet)}
                 className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none transition-all ${
                   includeMasterSummarySheet
-                    ? "bg-white border-teal-400 shadow-xs ring-1 ring-teal-400/30"
-                    : "bg-white/60 border-amber-200 hover:bg-white"
+                    ? "bg-[#F0FDFA]/60 border-[#00A19A] ring-1 ring-[#00A19A]/20"
+                    : "bg-[#F8FAFC] border-[#E2E8F0] hover:bg-white"
                 }`}
               >
                 <div
                   className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center shrink-0 transition-all ${
                     includeMasterSummarySheet
-                      ? "bg-[#005B58] border-[#005B58] text-white"
+                      ? "bg-[#003B3A] border-[#003B3A] text-white"
                       : "border-slate-300 bg-white"
                   }`}
                 >
                   {includeMasterSummarySheet && <Check className="w-3 h-3 stroke-[3]" />}
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-800">
-                    Kèm Sheet "Bảng điểm Tổng hợp Toàn Môn"
+                  <div className="text-xs font-semibold text-slate-800">
+                    Kèm Sheet &quot;Bảng điểm Tổng hợp&quot;
                   </div>
-                  <div className="text-[10px] text-slate-500 leading-relaxed mt-0.5">
-                    Mỗi học sinh 1 dòng kèm điểm số của tất cả các môn ngang hàng, thuận tiện xét thi đua và xếp loại.
+                  <div className="text-[11px] text-slate-500 leading-relaxed mt-0.5">
+                    Mỗi học sinh 1 dòng kèm điểm {periodScoreLabel || "tổng hợp"} tất cả các môn ngang hàng.
                   </div>
                 </div>
               </div>
+
+              {periodScoreLabel && (
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => !isExporting && setOnlyPeriodScoreColumn(!onlyPeriodScoreColumn)}
+                  className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none transition-all ${
+                    onlyPeriodScoreColumn
+                      ? "bg-[#F0FDFA]/60 border-[#00A19A] ring-1 ring-[#00A19A]/20"
+                      : "bg-[#F8FAFC] border-[#E2E8F0] hover:bg-white"
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-md border mt-0.5 flex items-center justify-center shrink-0 transition-all ${
+                      onlyPeriodScoreColumn
+                        ? "bg-[#003B3A] border-[#003B3A] text-white"
+                        : "border-slate-300 bg-white"
+                    }`}
+                  >
+                    {onlyPeriodScoreColumn && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-800">
+                      Chỉ xuất cột <span className="text-[#00736E] font-bold">{periodScoreLabel}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 leading-relaxed mt-0.5">
+                      Sheet từng môn chỉ giữ cột {periodScoreLabel} và Nhận xét (ẩn các cột TX/thành phần khác).
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* PROGRESS BAR KHI ĐANG XUẤT */}
           {isExporting && (
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2 animate-in fade-in">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span className="flex items-center gap-1.5 text-teal-800">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-teal-600" />
+            <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-700 tabular-nums">
+                <span className="flex items-center gap-1.5 text-[#003B3A]">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#00A19A]" />
                   {progressMessage}
                 </span>
-                <span className="text-teal-900 font-black">{progressPercent}%</span>
+                <span className="text-[#003B3A] font-bold">{progressPercent}%</span>
               </div>
-              <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-teal-500 to-emerald-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                  className="bg-[#00A19A] h-2 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -631,10 +824,11 @@ export function BulkExportModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-slate-500 font-medium">
-            Xuất cho: <strong className="text-slate-800">{targetCampus?.campusName || "Toàn trường"}</strong> •{" "}
-            Kỳ: <strong className="text-teal-700">{targetPeriod?.name || selectedPeriod}</strong>
+        <div className="px-6 py-4 bg-white border-t border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-slate-600 font-medium tabular-nums">
+            Xuất cho: <strong className="text-slate-900">{targetCampus?.campusName || "Toàn trường"}</strong> •{" "}
+            Kỳ: <strong className="text-[#00736E]">{targetPeriod?.name || selectedPeriod}</strong> •{" "}
+            Khối: <strong className="text-[#003B3A]">{gradeSummaryText}</strong>
           </div>
 
           <div className="flex items-center gap-2">
@@ -642,15 +836,15 @@ export function BulkExportModal({
               type="button"
               onClick={onClose}
               disabled={isExporting}
-              className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-xs font-semibold text-slate-600 hover:bg-[#F8FAFC] transition-colors disabled:opacity-50 cursor-pointer"
             >
               Đóng
             </button>
             <button
               type="button"
               onClick={handleExport}
-              disabled={isExporting || effectiveSelectedIds.length === 0}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#005B58] hover:bg-[#004845] text-white text-xs font-bold shadow-lg shadow-teal-900/10 hover:shadow-xl transition-all disabled:opacity-50 cursor-pointer"
+              disabled={isExporting || effectiveSelectedIds.length === 0 || selectedGrades.length === 0}
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#002E2D] text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50 cursor-pointer tabular-nums"
             >
               {isExporting ? (
                 <>
@@ -660,7 +854,7 @@ export function BulkExportModal({
               ) : (
                 <>
                   <Download className="w-4 h-4" />
-                  Tiến hành Xuất Excel ({effectiveSelectedIds.length} môn)
+                  Tiến hành xuất Excel ({effectiveSelectedIds.length} môn)
                 </>
               )}
             </button>

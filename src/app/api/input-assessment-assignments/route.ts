@@ -4,8 +4,18 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
 import { auth } from "@/lib/auth";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
-import { getCampusGiaovuEmail } from "@/lib/orientation/service";
-import { requireStaffSession, writeSecurityAuditLog } from "@/lib/security-guard";
+import {
+  K12_ASSIGNMENT_PERMISSION_MODULES,
+  isBatchAllowedForSender,
+  resolveAssignmentSenderContext,
+  resolveEmailCampusBranding,
+} from "@/lib/entrance-assignment-mail";
+import {
+  getClientIpFromRequest,
+  requireStaffSession,
+  requireEntranceOperationsSession,
+  writeSecurityAuditLog,
+} from "@/lib/security-guard";
 
 export async function GET(req) {
   try {
@@ -44,10 +54,14 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const ctx = await requireStaffSession();
-    if (!ctx) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const senderCtx = await resolveAssignmentSenderContext(K12_ASSIGNMENT_PERMISSION_MODULES);
+    if (!senderCtx) {
+      return NextResponse.json(
+        { error: "Tài khoản của bạn không có quyền thực hiện thao tác phân công / gửi email." },
+        { status: 403 }
+      );
     }
+    const ctx = senderCtx.auth;
     const body = await req.json();
     const { action, periodId, batchId, sessionId, assignments } = body;
     
@@ -370,23 +384,40 @@ export async function POST(req) {
                    }
                 },
                 period: true,
-                batch: true,
+                batch: {
+                   include: {
+                      campus: {
+                         select: { id: true, campusCode: true, campusName: true }
+                      }
+                   }
+                },
                 subject: true
              }
           });
        } else {
           // NOTIFY_ALL
-          const { periodId, batchId } = body;
-          if (!periodId) {
+          const { periodId, batchId, assignmentIds, confirmAllBatches } = body;
+          if (!periodId && (!Array.isArray(assignmentIds) || assignmentIds.length === 0)) {
              return NextResponse.json({ error: "Missing periodId" }, { status: 400 });
           }
           
-          const whereClause: any = { periodId };
-          if (batchId && batchId !== "all") {
-             if (batchId === "none") {
-                whereClause.batchId = null;
-             } else {
-                whereClause.batchId = batchId;
+          const whereClause: any = {};
+          if (Array.isArray(assignmentIds) && assignmentIds.length > 0) {
+             whereClause.id = { in: assignmentIds };
+             if (periodId) whereClause.periodId = periodId;
+          } else {
+             whereClause.periodId = periodId;
+             if (batchId && batchId !== "all") {
+                if (batchId === "none") {
+                   whereClause.batchId = null;
+                } else {
+                   whereClause.batchId = batchId;
+                }
+             } else if (!confirmAllBatches) {
+                return NextResponse.json(
+                  { error: "Vui lòng chọn Đợt khảo sát cụ thể hoặc xác nhận gửi email toàn kỳ trước khi thực hiện." },
+                  { status: 400 }
+                );
              }
           }
           targetAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
@@ -398,7 +429,13 @@ export async function POST(req) {
                    }
                 },
                 period: true,
-                batch: true,
+                batch: {
+                   include: {
+                      campus: {
+                         select: { id: true, campusCode: true, campusName: true }
+                      }
+                   }
+                },
                 subject: true
              }
           });
@@ -408,16 +445,30 @@ export async function POST(req) {
           return NextResponse.json({ success: true, sentCount: 0, message: "No assignments found to notify" });
        }
 
-       // Group assignments by teacher
+       // Enforce campus scoping according to the logged-in teacher/staff permissions
+       const allowedAssignments = targetAssignments.filter((a: any) =>
+          isBatchAllowedForSender(senderCtx, a.batch, a.period?.name)
+       );
+       if (allowedAssignments.length === 0) {
+          return NextResponse.json(
+             { error: "Tài khoản của bạn không có quyền gửi email cho đợt khảo sát thuộc cơ sở khác." },
+             { status: 403 }
+          );
+       }
+       targetAssignments = allowedAssignments;
+
+       // Group assignments by (teacher, batch) so multi-batch sends never mix students across batches
        const teacherGroups: Record<string, any> = {};
        
        for (const a of targetAssignments) {
-          const key = a.userId;
+          const key = `${a.userId}__${a.batchId || "none"}`;
           if (!teacherGroups[key]) {
              teacherGroups[key] = {
+                userId: a.userId,
                 user: a.user,
                 periodId: a.periodId,
                 batchId: a.batchId,
+                batch: a.batch || null,
                 periodName: a.period?.name || "Kỳ khảo sát",
                 batchName: a.batch?.name || "Tất cả các đợt",
                 grades: new Set<string>(),
@@ -458,7 +509,8 @@ export async function POST(req) {
        let failedCount = 0;
        const errors = [];
        
-       for (const [userId, group] of Object.entries(teacherGroups)) {
+       for (const [, group] of Object.entries(teacherGroups)) {
+          const userId = group.userId;
           const user = group.user;
           const teacher = user?.teacher;
           // Robust email resolution
@@ -542,11 +594,13 @@ export async function POST(req) {
              return name.includes("định hướng") || code.includes("pdhdv") || code.includes("pvdh") || name.includes("phỏng vấn");
           });
 
+          const branding = resolveEmailCampusBranding(senderCtx, group.batch, group.periodName);
+
           const emailSubject = isOnlyOrientation
-             ? `[Sky-line SMS] Thông báo Phân công Phỏng vấn Định hướng Học sinh Phổ thông`
+             ? `${branding.subjectPrefix} Thông báo Phân công Phỏng vấn Định hướng Học sinh Phổ thông`
              : hasOrientation
-             ? `[Sky-line SMS] Thông báo Phân công Khảo sát & Phỏng vấn Định hướng Học sinh Phổ thông`
-             : `[Sky-line SMS] Thông báo Phân công Khảo sát Năng lực Học sinh Phổ thông`;
+             ? `${branding.subjectPrefix} Thông báo Phân công Khảo sát & Phỏng vấn Định hướng Học sinh Phổ thông`
+             : `${branding.subjectPrefix} Thông báo Phân công Khảo sát Năng lực Học sinh Phổ thông`;
 
           const headerTitle = isOnlyOrientation
              ? "THÔNG BÁO PHÂN CÔNG PHỎNG VẤN ĐỊNH HƯỚNG"
@@ -561,10 +615,10 @@ export async function POST(req) {
              : "HỆ PHỔ THÔNG • KHẢO SÁT NĂNG LỰC ĐẦU VÀO";
 
           const introLead = isOnlyOrientation
-             ? `Ban Khảo thí trân trọng thông báo Thầy/Cô đã được phân công thực hiện <strong>phỏng vấn định hướng học sinh và trao đổi phối hợp giáo dục với phụ huynh (Phiếu định hướng 2 Tab)</strong> cho học sinh bậc Phổ thông. Chi tiết thông tin phân công như sau:`
+             ? `${branding.announcerPhrase} Thầy/Cô đã được phân công thực hiện <strong>phỏng vấn định hướng học sinh và trao đổi phối hợp giáo dục với phụ huynh (Phiếu định hướng 2 Tab)</strong> cho học sinh bậc Phổ thông. Chi tiết thông tin phân công như sau:`
              : hasOrientation
-             ? `Ban Khảo thí trân trọng thông báo Thầy/Cô đã được phân công thực hiện khảo sát năng lực và phỏng vấn định hướng đầu vào cho học sinh bậc Phổ thông. Chi tiết thông tin phân công như sau:`
-             : `Ban Khảo thí trân trọng thông báo Thầy/Cô đã được phân công thực hiện chấm/khảo sát năng lực đầu vào cho học sinh bậc Phổ thông. Chi tiết thông tin phân công như sau:`;
+             ? `${branding.announcerPhrase} Thầy/Cô đã được phân công thực hiện khảo sát năng lực và phỏng vấn định hướng đầu vào cho học sinh bậc Phổ thông. Chi tiết thông tin phân công như sau:`
+             : `${branding.announcerPhrase} Thầy/Cô đã được phân công thực hiện chấm/khảo sát năng lực đầu vào cho học sinh bậc Phổ thông. Chi tiết thông tin phân công như sau:`;
 
           const periodLabel = isOnlyOrientation
              ? "KỲ PHỎNG VẤN:"
@@ -687,7 +741,7 @@ export async function POST(req) {
                             <tr>
                               <td align="center" style="padding-bottom: 6px;">
                                 <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                                  🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                                  <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                                 </span>
                               </td>
                             </tr>
@@ -736,6 +790,10 @@ export async function POST(req) {
                             <tr>
                               <td style="padding: 4px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">SỐ LƯỢNG HS:</td>
                               <td style="padding: 4px 0; font-size: 13px; font-weight: 800; color: #B45309;">${studentCountBadge}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 4px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">ĐƠN VỊ THÔNG BÁO:</td>
+                              <td style="padding: 4px 0; font-size: 13px; font-weight: 700; color: #1E293B;">Giáo vụ cơ sở ${branding.cleanCampusLabel || "Sky-Line"} <span style="font-weight: 500; color: #64748B;">(${senderCtx.senderName})</span></td>
                             </tr>
                           </table>
                         </td>
@@ -817,10 +875,10 @@ export async function POST(req) {
                             HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
                           </p>
                           <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 600; color: #CCFBF1;">
-                            BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                            ${branding.footerDeptLabel}
                           </p>
                           <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
-                            Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                            Email liên hệ: <a href="mailto:${branding.replyTo}" style="color: #FDE047; text-decoration: none; font-weight: 600;">${branding.replyTo}</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
                           </p>
                           <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                             ${isOnlyOrientation ? "Email gửi tự động từ Phân hệ Phỏng vấn Định hướng & Tuyển sinh Sky-Line." : "Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line."}
@@ -856,16 +914,22 @@ export async function POST(req) {
           }
 
           try {
-             const campusHint = group.batchName || group.periodName || "";
-             const giaovuCcEmail = getCampusGiaovuEmail(campusHint);
-             const ccList = Array.from(new Set(["ktdbcl@skylineschool.edu.vn", giaovuCcEmail].filter(Boolean)));
+             const ccList = Array.from(
+                new Set(
+                   ["ktdbcl@skylineschool.edu.vn", branding.giaovuCcEmail, senderCtx.senderEmail]
+                      .flatMap((entry) => String(entry || "").split(/[,;]/))
+                      .map((e) => e.trim())
+                      .filter((e) => e && e.includes("@") && e.toLowerCase() !== targetEmail.toLowerCase())
+                )
+             );
 
              const mailRes = await sendEmail({
+                from: branding.fromDisplayName,
                 to: targetEmail,
                 cc: ccList,
                 subject: emailSubject,
                 html: emailHtml,
-                replyTo: "ktdbcl@skylineschool.edu.vn"
+                replyTo: branding.replyTo
              });
 
              if (mailRes && mailRes.success) {
@@ -879,15 +943,27 @@ export async function POST(req) {
              errors.push(`Lỗi khi gửi cho ${user.fullName} (${targetEmail}): ${err.message}`);
           }
        }
+
+       try {
+          await writeSecurityAuditLog({
+             userId: senderCtx.userId,
+             userEmail: senderCtx.senderEmail || ctx.userEmail,
+             action: "SEND_INPUT_ASSESSMENT_ASSIGNMENT_EMAIL",
+             targetTable: "InputAssessmentTeacherAssignment",
+             targetId: body.batchId || body.periodId || "BATCH_NOTIFY",
+             newValues: {
+                action,
+                senderName: senderCtx.senderName,
+                senderCampus: senderCtx.primaryCampus?.campusName || senderCtx.primaryCampus?.campusCode || null,
+                sentCount,
+                failedCount,
+             },
+             ipAddress: getClientIpFromRequest(req),
+          });
+       } catch {}
        
        try {
-          const session = await auth();
-          const actorUser = (session?.user as any) || {
-             id: "system_giaovu",
-             fullName: "Giáo vụ / Ban KT&ĐBCL",
-             role: "GIAO_VU",
-          };
-          for (const [userId, group] of Object.entries(teacherGroups)) {
+          for (const [, group] of Object.entries(teacherGroups)) {
              await executeEntranceWorkflowAction({
                 action: "CONFIRM",
                 targetScope: group.batchId ? "BATCH" : "PERIOD",
@@ -897,10 +973,10 @@ export async function POST(req) {
                 status: "COMPLETED",
                 note: `Công bố & thông báo phân công khảo sát cho GV ${group.user?.fullName || ""}`,
                 actor: {
-                   id: actorUser.id || "system_giaovu",
-                   fullName: actorUser.fullName || actorUser.name || "Giáo vụ",
-                   role: actorUser.role || "GIAO_VU",
-                   isSuperAdmin: Boolean(actorUser.isSuperAdmin || actorUser.role === "ADMIN"),
+                   id: senderCtx.userId,
+                   fullName: senderCtx.senderName,
+                   role: senderCtx.role || "GIAO_VU",
+                   isSuperAdmin: senderCtx.isSystemWide,
                 },
              });
           }
@@ -923,9 +999,9 @@ export async function POST(req) {
 
 export async function DELETE(req) {
   try {
-    const ctx = await requireStaffSession();
+    const ctx = await requireEntranceOperationsSession();
     if (!ctx) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
@@ -1004,9 +1080,9 @@ export async function DELETE(req) {
 
 export async function PUT(req) {
   try {
-    const ctx = await requireStaffSession();
+    const ctx = await requireEntranceOperationsSession();
     if (!ctx) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const body = await req.json();
     const { action, id, status } = body;

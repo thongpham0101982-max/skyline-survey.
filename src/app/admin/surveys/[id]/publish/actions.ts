@@ -1,10 +1,16 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { getAdminSession } from "@/lib/session"
+import { requireAdminOrLeadershipSession } from "@/lib/security-guard"
 
 // ... (applyEmergencyDbFix remains same) ...
 export async function applyEmergencyDbFix() {
   try {
+    const session = await getAdminSession()
+    if (!session.userId || !session.isFullAccess) {
+      return { error: "Forbidden: Chỉ Quản trị viên cấp cao mới có quyền thực thi cập nhật cấu trúc CSDL." }
+    }
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SurveyForm_backup" AS SELECT * FROM "SurveyForm"`)
     await prisma.$executeRawUnsafe(`DROP TABLE "SurveyForm"`)
     await prisma.$executeRawUnsafe(`
@@ -35,6 +41,8 @@ export async function applyEmergencyDbFix() {
 
 export async function dispatchSurveyAction(surveyPeriodId: string, classIds: string[]) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { error: "Unauthorized" }
     const period = await prisma.surveyPeriod.findUnique({ where: { id: surveyPeriodId } })
     if (!period) return { error: "Không tìm thấy đợt khảo sát" }
 
@@ -104,6 +112,8 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
 
 export async function revokeSurveyAction(surveyPeriodId: string, classIds: string[]) {
   try {
+    const ctx = await requireAdminOrLeadershipSession()
+    if (!ctx) return { error: "Unauthorized" }
     const res = await prisma.surveyForm.deleteMany({
       where: { surveyPeriodId, classId: { in: classIds } }
     })

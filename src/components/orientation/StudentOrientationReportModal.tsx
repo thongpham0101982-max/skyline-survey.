@@ -38,6 +38,14 @@ import {
   EvidenceSource
 } from "@/lib/orientation/criteria-config"
 import { questionsData, defaultQuestions } from "@/lib/orientation/psychologyQuestions"
+import {
+  BM_SHEET_STATUS_OPTIONS,
+  PVDH_SEED_TEMPLATES,
+  getDefaultPvdhCodeForGrade,
+  normalizeK12GradeNumber,
+  type PvdhFieldConfig,
+} from "@/lib/pvdh/constants"
+import { parseTeacherSummary } from "@/lib/pvdh/validation"
 import { PvdhOrientationModal } from "./PvdhOrientationModal"
 
 interface StudentOrientationReportModalProps {
@@ -401,8 +409,33 @@ export function StudentOrientationReportModal({
     }
   }
 
-  // Hợp nhất danh sách 10 nhóm phỏng vấn Học sinh theo đúng cấu hình khối (gradeConfig.criteria)
-  if (gradeConfig?.criteria && gradeConfig.criteria.length > 0) {
+  const pvdhRec = pvdhState?.record || null
+  const pvdhVerFields: any[] = Array.isArray(pvdhState?.version?.fields) ? pvdhState.version.fields : []
+  const pvdhStudentFields = pvdhVerFields.filter((f: any) => f.sectionCode === "II_STUDENT").sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+  const pvdhParentFields = pvdhVerFields.filter((f: any) => f.sectionCode === "IV_PARENT").sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+
+  // Hợp nhất danh sách nhóm phỏng vấn Học sinh bám sát cấu hình Mẫu định hướng HS và PHHS (PVDH-01..05)
+  if (pvdhStudentFields.length > 0) {
+    const rawList = [...interviewList]
+    interviewList = pvdhStudentFields.map((f: any, idx: number) => {
+      const recVal = pvdhRec?.studentResponses?.[f.fieldKey]
+      const matched = rawList[idx] || {}
+      const ans = recVal?.responseText?.trim() || matched.studentNotes || matched.answer || matched.a || matched.notes || ""
+      return {
+        questionId: f.fieldKey,
+        criterionId: f.fieldKey,
+        code: f.fieldKey,
+        questionText: f.label,
+        category: f.sectionCode,
+        categoryLabel: `${f.itemNumber || idx + 1}. ${f.label}`,
+        focus: f.promptQuestion || f.guideline || "",
+        rating: matched.rating || "NORMAL",
+        studentNotes: ans || (recVal?.notRecorded ? `Chưa ghi nhận${recVal?.notRecordedReason ? `: ${recVal.notRecordedReason}` : ""}` : ""),
+        teacherComment: matched.teacherComment || "",
+        notes: ans
+      }
+    })
+  } else if (gradeConfig?.criteria && gradeConfig.criteria.length > 0) {
     const rawList = [...interviewList]
     interviewList = gradeConfig.criteria.map((c, idx) => {
       const matched = rawList.find((it: any) =>
@@ -426,8 +459,25 @@ export function StudentOrientationReportModal({
     })
   }
 
-  // Hợp nhất danh sách 5 nhóm trao đổi Phụ huynh theo đúng cấu hình khối (gradeConfig.parentGroups)
-  if (gradeConfig?.parentGroups && gradeConfig.parentGroups.length > 0) {
+  // Hợp nhất danh sách 5 nhóm trao đổi Phụ huynh bám sát cấu hình Mẫu định hướng HS và PHHS (PVDH-01..05)
+  if (pvdhParentFields.length > 0) {
+    const rawPList = [...parentItemsList]
+    parentItemsList = pvdhParentFields.map((f: any, idx: number) => {
+      const recVal = pvdhRec?.parentResponses?.[f.fieldKey]
+      const matched = rawPList[idx] || {}
+      const ans = recVal?.responseText?.trim() || matched.answer || ""
+      return {
+        groupId: f.fieldKey,
+        code: f.fieldKey,
+        category: f.sectionCode,
+        categoryLabel: `${f.itemNumber || idx + 1}. ${f.label}`,
+        title: f.label,
+        focus: f.promptQuestion || f.guideline || "",
+        answer: ans || (recVal?.notRecorded ? `Chưa ghi nhận${recVal?.notRecordedReason ? `: ${recVal.notRecordedReason}` : ""}` : ""),
+        teacherNote: matched.teacherNote || ""
+      }
+    })
+  } else if (gradeConfig?.parentGroups && gradeConfig.parentGroups.length > 0) {
     const rawPList = [...parentItemsList]
     parentItemsList = gradeConfig.parentGroups.map((p, idx) => {
       const matched = rawPList.find((it: any) =>
@@ -447,17 +497,17 @@ export function StudentOrientationReportModal({
     })
   }
 
-  // Fallback 9 mục tổng hợp nếu chưa có
+  // Fallback mục tổng hợp từ PVDH Mục III & V hoặc dữ liệu cũ
   if (!summary9Items) {
     summary9Items = {
-      strongPoints: orientationData?.studentStrengths || orientationData?.strengths || "",
-      interestsMotivation: orientationData?.talents || "",
-      adaptabilityAutonomy: orientationData?.adaptationLevel === "CONFIDENT" ? "Thích nghi nhanh, tự tin và chủ động" : "",
-      difficultiesNeeds: orientationData?.studentNeedsSupport || orientationData?.growthAreas || "",
+      strongPoints: pvdhRec?.obsStrengthsInterests || pvdhRec?.planStrengthsPriority || orientationData?.studentStrengths || orientationData?.strengths || "",
+      interestsMotivation: pvdhRec?.obsCommunicationStyle || orientationData?.talents || "",
+      adaptabilityAutonomy: pvdhRec?.obsParticipationLevel || (orientationData?.adaptationLevel === "CONFIDENT" ? "Thích nghi nhanh, tự tin và chủ động" : ""),
+      difficultiesNeeds: pvdhRec?.obsSupportNeeds || orientationData?.studentNeedsSupport || orientationData?.growthAreas || "",
       studentExpectations: "",
       parentExpectations: orientationData?.parentExpectations || "",
       alignmentDifferences: "",
-      initialRecommendations: orientationData?.interviewerGeneralRemark || orientationData?.proposedPlacementRecommendation || "",
+      initialRecommendations: pvdhRec?.planGoalsActionsText || pvdhRec?.planHandoverNotes || orientationData?.interviewerGeneralRemark || orientationData?.proposedPlacementRecommendation || "",
       verificationItems: ""
     }
   }
@@ -636,11 +686,12 @@ export function StudentOrientationReportModal({
               if (firstVal !== undefined) {
                 scoreVal = String(firstVal)
                 if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
+                  const numScore = parseFloat(scoreVal)
                   if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("oral") || subCode.includes("vd")) {
-                    const maxOral = (numGrade && numGrade <= 5 && parseFloat(scoreVal) <= 10) ? 10 : (numGrade === 1 ? 100 : (numGrade && numGrade >= 7 ? 20 : 30))
+                    const maxOral = (!isNaN(numScore) && numScore > 10) ? (numScore <= 30 ? 30 : 100) : 10
                     if (!scoreVal.includes("/")) scoreVal = `${scoreVal}/${maxOral}`
                   } else if (sNameLower.includes("viết") || subCode.includes("written") || subCode.includes("vt")) {
-                    const maxWrit = (numGrade && numGrade >= 7) ? 80 : 70
+                    const maxWrit = (!isNaN(numScore) && numScore > 10) ? (numScore <= 70 ? 70 : 100) : 10
                     if (!scoreVal.includes("/")) scoreVal = `${scoreVal}/${maxWrit}`
                   }
                 }
@@ -1122,82 +1173,88 @@ export function StudentOrientationReportModal({
         </div>
         )}
 
-        {/* THANH ĐIỀU PHỐI PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & PHHS (PVDH-01..05) */}
-        {!onlySubjectMode && (
-          <div className="px-4 sm:px-6 py-2.5 bg-[#F0FDFA] border-b border-teal-200/80 flex flex-wrap items-center justify-between gap-2 print:hidden tabular-nums">
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <HeartHandshake className="w-4 h-4 text-[#00736E]" />
-              <span className="font-bold text-[#003B3A]">
-                Phiếu phỏng vấn định hướng HS &amp; trao đổi PHHS:
-              </span>
-              {pvdhState?.record ? (
-                <>
-                  <span className="px-2 py-0.5 rounded bg-[#003B3A] text-white text-[11px] font-bold">
-                    {pvdhState.record.templateCode} • v{pvdhState.record.versionNumber || "1.0"}
-                  </span>
-                  <span className="px-2 py-0.5 rounded bg-white border border-teal-200 text-[#00736E] text-[11px] font-semibold">
-                    {pvdhState.record.workflowStatus === "VERIFIED_LOCKED"
-                      ? "Đã xác nhận & khóa"
-                      : pvdhState.record.workflowStatus === "RETURNED"
-                        ? "Trả lại bổ sung"
-                        : pvdhState.record.workflowStatus === "COMPLETED" || pvdhState.record.workflowStatus === "SUBMITTED"
-                          ? "Đã hoàn tất"
-                          : "Bản nháp / Hoàn tất 1 phần"}
-                  </span>
-                </>
-              ) : (
-                <span className="text-slate-600">
-                  {pvdhState?.resolvedTemplate?.templateCode
-                    ? `Mẫu áp dụng: ${pvdhState.resolvedTemplate.templateCode} (Chưa nhập phiếu mới)`
-                    : "Chưa có phiếu định hướng PVDH"}
+        {/* THANH ĐIỀU PHỐI PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HS & TRAO ĐỔI VỚI PHỤ HUYNH (BM.KTĐBCL.31..42) */}
+        {!onlySubjectMode && (() => {
+          const barGradeNum = normalizeK12GradeNumber(sData?.grade || student?.grade) || "1"
+          const barBmCode =
+            pvdhState?.record?.templateCode ||
+            pvdhState?.version?.templateCode ||
+            pvdhState?.resolvedTemplate?.templateCode ||
+            getDefaultPvdhCodeForGrade(sData?.grade || student?.grade) ||
+            "BM.KTĐBCL.31"
+          const barBmSum =
+            pvdhState?.record?.teacherSummary ||
+            parseTeacherSummary(pvdhState?.record?.teacherSummaryJson)
+          const barSheetOpt = BM_SHEET_STATUS_OPTIONS.find(o => o.code === barBmSum.sheetStatus)
+          return (
+            <div className="px-4 sm:px-6 py-2.5 bg-[#F0FDFA] border-b border-teal-200/80 flex flex-wrap items-center justify-between gap-2 print:hidden tabular-nums">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <HeartHandshake className="w-4 h-4 text-[#00736E]" />
+                <span className="font-bold text-[#003B3A]">
+                  Phiếu phỏng vấn định hướng HS &amp; trao đổi với phụ huynh:
                 </span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {pvdhState?.record && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setReportViewMode(prev => (prev === "PVDH_A4" ? "ALL" : "PVDH_A4"))
-                    }
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
-                      reportViewMode === "PVDH_A4"
-                        ? "bg-[#003B3A] text-white border-[#003B3A]"
-                        : "bg-white text-[#003B3A] border-[#E2E8F0] hover:border-[#00A19A]"
-                    }`}
-                  >
-                    {reportViewMode === "PVDH_A4" ? "Quay lại báo cáo tổng hợp" : "Xem phiếu A4 PVDH"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const stId = pvdhState.record.studentId || student?.id || ""
-                      const pId = pvdhState.record.periodId || student?.periodId || ""
-                      window.open(
-                        `/api/pvdh/pdf?studentId=${encodeURIComponent(stId)}&periodId=${encodeURIComponent(pId)}&format=pdf&disposition=attachment`,
-                        "_blank"
-                      )
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#00736E] border border-teal-200 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Tải PDF PVDH</span>
-                  </button>
-                </>
-              )}
-              {(pvdhState?.student?.id || student?.id) && (
+                <span className="px-2 py-0.5 rounded bg-[#003B3A] text-[#5EEAD4] text-[11px] font-bold">
+                  {barBmCode} • Dành cho khối {barGradeNum}
+                </span>
+                {pvdhState?.record ? (
+                  <span className="px-2 py-0.5 rounded bg-white border border-teal-200 text-[#00736E] text-[11px] font-semibold">
+                    {pvdhState.record.workflowStatus === "VERIFIED_LOCKED" || pvdhState.record.isLocked
+                      ? "Đã xác nhận & khóa"
+                      : barSheetOpt?.label ||
+                        (pvdhState.record.workflowStatus === "RETURNED"
+                          ? "Trả lại bổ sung"
+                          : pvdhState.record.workflowStatus === "COMPLETED" || pvdhState.record.workflowStatus === "SUBMITTED"
+                            ? "Hoàn thành"
+                            : "Bản nháp")}
+                  </span>
+                ) : (
+                  <span className="text-slate-600 text-[11px]">
+                    Chưa nhập dữ liệu phiếu {barBmCode}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setIsPvdhFormOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                  onClick={() =>
+                    setReportViewMode(prev => (prev === "PVDH_A4" ? "ALL" : "PVDH_A4"))
+                  }
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer ${
+                    reportViewMode === "PVDH_A4"
+                      ? "bg-[#003B3A] text-white border-[#003B3A]"
+                      : "bg-white text-[#003B3A] border-[#E2E8F0] hover:border-[#00A19A]"
+                  }`}
                 >
-                  <span>{pvdhState?.record ? "Mở phiếu PVDH" : "Nhập định hướng PVDH"}</span>
+                  {reportViewMode === "PVDH_A4" ? "Quay lại báo cáo tổng hợp" : `Xem phiếu A4 (${barBmCode})`}
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const stId = pvdhState?.record?.studentId || student?.id || ""
+                    const pId = pvdhState?.record?.periodId || student?.periodId || ""
+                    window.open(
+                      `/api/pvdh/pdf?studentId=${encodeURIComponent(stId)}&periodId=${encodeURIComponent(pId)}&format=pdf&disposition=attachment`,
+                      "_blank"
+                    )
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#00736E] border border-teal-200 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải PDF ({barBmCode})</span>
+                </button>
+                {(pvdhState?.student?.id || student?.id) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPvdhFormOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{pvdhState?.record ? `Mở phiếu ${barBmCode}` : `Nhập phiếu ${barBmCode}`}</span>
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* PRINTABLE REPORT CONTENT (MULTI-PAGE A4 CANVAS) */}
         <div
@@ -1522,6 +1579,33 @@ export function StudentOrientationReportModal({
                   </table>
                 </div>
 
+                {/* 2.3b PHƯƠNG ÁN LÀM VIỆC GĐCS ĐÃ XÁC NHẬN (NẾU CÓ) */}
+                {parsedPsych?.gdcsResponse && (
+                  <div style={{ width: "100%", marginBottom: "10px", padding: "7px 9px", backgroundColor: "#f0fdfa", border: "1px solid #99f6e4", borderLeft: "3px solid #003B3A", borderRadius: "6px", fontSize: "9.5px" }}>
+                    <div style={{ fontWeight: "900", textTransform: "uppercase", color: "#003B3A", fontSize: "8.5px", marginBottom: "3px" }}>
+                      4.3. PHƯƠNG ÁN LÀM VIỆC CỦA GIÁM ĐỐC CƠ SỞ (ĐÃ XÁC NHẬN): {parsedPsych.gdcsResponse.responseLabel || parsedPsych.gdcsResponse.responseType || "Đã xác nhận"}
+                    </div>
+                    <div style={{ color: "#1e293b", lineHeight: "1.45" }}>
+                      <span><strong>GĐCS xác nhận:</strong> {parsedPsych.gdcsResponse.respondedBy || "Giám đốc Cơ sở"}</span>
+                      {parsedPsych.gdcsResponse.respondedAt && (
+                        <span> &bull; <strong>Thời điểm:</strong> {new Date(parsedPsych.gdcsResponse.respondedAt).toLocaleString("vi-VN")}</span>
+                      )}
+                      {parsedPsych.gdcsResponse.meetingTime && (
+                        <div><strong>Thời gian làm việc:</strong> {parsedPsych.gdcsResponse.meetingTime}{parsedPsych.gdcsResponse.meetingLocation ? ` — Địa điểm: ${parsedPsych.gdcsResponse.meetingLocation}` : ""}</div>
+                      )}
+                      {parsedPsych.gdcsResponse.participants && (
+                        <div><strong>Thành phần tham dự:</strong> {parsedPsych.gdcsResponse.participants}</div>
+                      )}
+                      {parsedPsych.gdcsResponse.delegatedTeacherName && (
+                        <div><strong>GV nhận ủy quyền:</strong> {parsedPsych.gdcsResponse.delegatedTeacherName}{parsedPsych.gdcsResponse.delegationDuration ? ` (${parsedPsych.gdcsResponse.delegationDuration})` : ""}</div>
+                      )}
+                      {(parsedPsych.gdcsResponse.parentWorkContent || parsedPsych.gdcsResponse.agenda || parsedPsych.gdcsResponse.delegationNote || parsedPsych.gdcsResponse.generalNote) && (
+                        <div><strong>Nội dung chỉ đạo:</strong> {parsedPsych.gdcsResponse.parentWorkContent || parsedPsych.gdcsResponse.agenda || parsedPsych.gdcsResponse.delegationNote || parsedPsych.gdcsResponse.generalNote}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* 2.4 MỤC 5: CHỨNG NHẬN KÝ ĐIỆN TỬ VÀ XÁC THỰC SQMS (TABLE 3 CỘT) */}
                 <div style={{ width: "100%", paddingTop: "4px", borderTop: "1.5px solid #cbd5e1" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "center", fontSize: "9.5px" }}>
@@ -1716,259 +1800,306 @@ export function StudentOrientationReportModal({
                 </div>
               </div>
 
-              {/* MỤC 2: PHIẾU ĐỊNH HƯỚNG HỌC SINH & PHỤ HUYNH (THEO CẤU HÌNH KHỐI) */}
-              <div className="print-section-flow space-y-1.5 pt-1">
-                <div className="flex items-center justify-between border-b border-teal-300 pb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
-                    <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                      2. Phiếu Định Hướng Học Sinh &amp; Phụ Huynh (Theo cấu hình {gradeConfig.label}) — 2.1. Phỏng Vấn Học Sinh (10 Nhóm)
-                    </h2>
+              {/* MỤC 2: PHIẾU PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH VÀ TRAO ĐỔI VỚI PHỤ HUYNH (BM.KTĐBCL.31..42) */}
+              {(() => {
+                const bmGradeNum = normalizeK12GradeNumber(sData?.grade || student?.grade) || "1"
+                const defaultBmCode = getDefaultPvdhCodeForGrade(sData?.grade || student?.grade) || "BM.KTĐBCL.31"
+                const seedTpl =
+                  PVDH_SEED_TEMPLATES.find(
+                    t => t.code === (pvdhState?.version?.templateCode || pvdhState?.record?.templateCode || defaultBmCode)
+                  ) ||
+                  PVDH_SEED_TEMPLATES.find(t => t.code === defaultBmCode) ||
+                  PVDH_SEED_TEMPLATES[0]
+                const bmCode = pvdhState?.version?.templateCode || pvdhState?.record?.templateCode || seedTpl.code
+                const bmFields: PvdhFieldConfig[] =
+                  Array.isArray(pvdhState?.version?.fields) && pvdhState.version.fields.length > 0
+                    ? pvdhState.version.fields
+                    : seedTpl.fields
+                const bmRec = pvdhState?.record || null
+                const bmSummary =
+                  bmRec?.teacherSummary ||
+                  parseTeacherSummary(bmRec?.teacherSummaryJson)
+
+                const fieldsA = bmFields
+                  .filter(f => f.sectionCode === "II_STUDENT")
+                  .sort((a, b) => a.sortOrder - b.sortOrder)
+                const fieldsB = bmFields
+                  .filter(f => f.sectionCode === "IV_PARENT")
+                  .sort((a, b) => a.sortOrder - b.sortOrder)
+                const fieldsC = bmFields
+                  .filter(f => f.sectionCode === "C_PARENT_GRADE")
+                  .sort((a, b) => a.sortOrder - b.sortOrder)
+
+                const d01Val =
+                  bmSummary.d01?.trim() ||
+                  bmRec?.obsStrengthsInterests?.trim() ||
+                  summary9Items?.strongPoints?.trim() ||
+                  orientationData?.studentStrengths?.trim() ||
+                  ""
+                const d02Val =
+                  bmSummary.d02?.trim() ||
+                  bmRec?.obsSupportNeeds?.trim() ||
+                  summary9Items?.difficultiesNeeds?.trim() ||
+                  orientationData?.studentNeedsSupport?.trim() ||
+                  ""
+                const d03Val =
+                  bmSummary.d03?.trim() ||
+                  summary9Items?.alignmentDifferences?.trim() ||
+                  orientationData?.parentExpectations?.trim() ||
+                  ""
+                const d04Val =
+                  bmSummary.d04?.trim() ||
+                  bmRec?.planGoalsActionsText?.trim() ||
+                  summary9Items?.initialRecommendations?.trim() ||
+                  proposedPlacementRecommendation?.trim() ||
+                  orientationData?.interviewerGeneralRemark?.trim() ||
+                  ""
+
+                return (
+                  <div className="space-y-2.5 pt-1">
+                    {/* 2.1: MỤC A — PHỎNG VẤN ĐỊNH HƯỚNG HỌC SINH */}
+                    <div className="print-section-flow space-y-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-300 pb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#003B3A]" />
+                          <h2 className="text-[11px] font-bold text-[#003B3A]">
+                            2. Phiếu phỏng vấn định hướng học sinh và trao đổi với phụ huynh ({bmCode} • Dành cho khối {bmGradeNum}) — A. Phỏng vấn định hướng học sinh
+                          </h2>
+                        </div>
+                        <span className="text-[9.5px] font-semibold text-[#00736E]">
+                          Đơn vị sở hữu: Ban Khảo thí &amp; Đảm bảo chất lượng • Không tự quy đổi thành điểm xét tuyển
+                        </span>
+                      </div>
+
+                      <div className="border border-[#E2E8F0] rounded-lg overflow-hidden text-xs tabular-nums" style={{ width: "100%", maxWidth: "100%" }}>
+                        <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
+                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                            <tr className="text-[10.5px] font-semibold">
+                              <th className="py-1.5 px-2 text-center border-r border-white/15 font-semibold" style={{ width: "9%" }}>Mã mục</th>
+                              <th className="py-1.5 px-2 border-r border-white/15 font-semibold text-teal-100" style={{ width: "43%" }}>Câu hỏi phỏng vấn định hướng ({bmCode})</th>
+                              <th className="py-1.5 px-2 font-semibold text-[#5EEAD4]" style={{ width: "48%" }}>Chia sẻ của học sinh &amp; ghi nhận</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E2E8F0] text-[10px] bg-white">
+                            {fieldsA.map((field, idx) => {
+                              const recItem = bmRec?.studentResponses?.[field.fieldKey]
+                              const legacyItem = interviewList[idx] || {}
+                              const ans =
+                                recItem?.responseText?.trim() ||
+                                legacyItem.studentNotes?.trim() ||
+                                legacyItem.answer?.trim() ||
+                                legacyItem.notes?.trim() ||
+                                ""
+                              return (
+                                <tr key={field.fieldKey} className="hover:bg-[#F8FAFC]">
+                                  <td className="py-1.5 px-2 text-center font-mono font-bold text-[#003B3A] border-r border-slate-100 align-top">
+                                    {String(field.fieldKey || "").toUpperCase()}
+                                  </td>
+                                  <td className="py-1.5 px-2 border-r border-slate-100 align-top">
+                                    <div className="font-semibold text-slate-900 leading-snug">{field.label}</div>
+                                    {field.promptQuestion && (
+                                      <div className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">{field.promptQuestion}</div>
+                                    )}
+                                  </td>
+                                  <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top whitespace-pre-wrap">
+                                    {ans ? (
+                                      <span className="text-slate-900">{ans}</span>
+                                    ) : recItem?.notRecorded ? (
+                                      <span className="text-amber-800 font-medium">
+                                        Chưa ghi nhận{recItem.notRecordedReason ? `: ${recItem.notRecordedReason}` : ""}
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400 italic">Chưa ghi nhận</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 2.2: MỤC B — TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH */}
+                    <div className="print-section-flow space-y-1.5 pt-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-300 pb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#003B3A]" />
+                          <h2 className="text-[11px] font-bold text-[#003B3A]">
+                            B. Trao đổi định hướng với phụ huynh ({bmCode})
+                          </h2>
+                        </div>
+                        <span className="text-[9.5px] text-slate-600 font-medium">
+                          Phụ huynh tham gia: <strong>{bmRec?.parentFullName || sData?.parentName || "—"}</strong>
+                          {bmRec?.parentRelationship ? ` (${bmRec.parentRelationship})` : ""}
+                        </span>
+                      </div>
+
+                      <div className="border border-[#E2E8F0] rounded-lg overflow-hidden text-xs tabular-nums" style={{ width: "100%", maxWidth: "100%" }}>
+                        <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
+                          <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                            <tr className="text-[10.5px] font-semibold">
+                              <th className="py-1.5 px-2 text-center border-r border-white/15 font-semibold" style={{ width: "9%" }}>Mã mục</th>
+                              <th className="py-1.5 px-2 border-r border-white/15 font-semibold text-teal-100" style={{ width: "43%" }}>Nội dung trao đổi với phụ huynh</th>
+                              <th className="py-1.5 px-2 font-semibold text-[#5EEAD4]" style={{ width: "48%" }}>Chia sẻ của phụ huynh</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E2E8F0] text-[10px] bg-white">
+                            {fieldsB.map((field, idx) => {
+                              const recItem = bmRec?.parentResponses?.[field.fieldKey]
+                              const legacyP = parentItemsList[idx] || {}
+                              const fallbackPAns =
+                                legacyP.answer ||
+                                (idx === 0
+                                  ? orientationData?.parentPersonalityNotes
+                                  : idx === 1
+                                    ? orientationData?.parentHealthNotes
+                                    : idx === 2
+                                      ? orientationData?.parentSpecialRequests
+                                      : idx === 3
+                                        ? orientationData?.cooperationCommitment
+                                        : orientationData?.parentExpectations) ||
+                                ""
+                              const ans = recItem?.responseText?.trim() || String(fallbackPAns).trim() || ""
+                              return (
+                                <tr key={field.fieldKey} className="hover:bg-[#F8FAFC]">
+                                  <td className="py-1.5 px-2 text-center font-mono font-bold text-[#003B3A] border-r border-slate-100 align-top">
+                                    {String(field.fieldKey || "").toUpperCase()}
+                                  </td>
+                                  <td className="py-1.5 px-2 border-r border-slate-100 align-top">
+                                    <div className="font-semibold text-slate-900 leading-snug">{field.label}</div>
+                                    {field.promptQuestion && (
+                                      <div className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">{field.promptQuestion}</div>
+                                    )}
+                                  </td>
+                                  <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top whitespace-pre-wrap">
+                                    {ans ? (
+                                      <span className="text-slate-900">{ans}</span>
+                                    ) : recItem?.notRecorded ? (
+                                      <span className="text-amber-800 font-medium">
+                                        Chưa ghi nhận{recItem.notRecordedReason ? `: ${recItem.notRecordedReason}` : ""}
+                                      </span>
+                                    ) : (
+                                      <span className="text-slate-400 italic">Chưa ghi nhận</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 2.3: MỤC C — CÂU HỎI PHÂN HÓA RIÊNG CHO KHỐI (PHỤ HUYNH) */}
+                    {fieldsC.length > 0 && (
+                      <div className="print-section-flow space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between border-b border-teal-300 pb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#003B3A]" />
+                            <h2 className="text-[11px] font-bold text-[#003B3A]">
+                              C. Câu hỏi phân hóa riêng cho khối {bmGradeNum} (Phụ huynh)
+                            </h2>
+                          </div>
+                          <span className="text-[9.5px] text-[#00736E] font-semibold">
+                            Mã biểu mẫu: {bmCode}
+                          </span>
+                        </div>
+
+                        <div className="border border-[#E2E8F0] rounded-lg overflow-hidden text-xs tabular-nums" style={{ width: "100%", maxWidth: "100%" }}>
+                          <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
+                            <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
+                              <tr className="text-[10.5px] font-semibold">
+                                <th className="py-1.5 px-2 text-center border-r border-white/15 font-semibold" style={{ width: "9%" }}>Mã mục</th>
+                                <th className="py-1.5 px-2 border-r border-white/15 font-semibold text-teal-100" style={{ width: "43%" }}>Câu hỏi phân hóa riêng khối {bmGradeNum}</th>
+                                <th className="py-1.5 px-2 font-semibold text-[#5EEAD4]" style={{ width: "48%" }}>Chia sẻ của phụ huynh</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#E2E8F0] text-[10px] bg-white">
+                              {fieldsC.map(field => {
+                                const recItem = bmRec?.parentResponses?.[field.fieldKey]
+                                const ans = recItem?.responseText?.trim() || ""
+                                return (
+                                  <tr key={field.fieldKey} className="hover:bg-[#F8FAFC]">
+                                    <td className="py-1.5 px-2 text-center font-mono font-bold text-[#003B3A] border-r border-slate-100 align-top">
+                                      {String(field.fieldKey || "").toUpperCase()}
+                                    </td>
+                                    <td className="py-1.5 px-2 border-r border-slate-100 align-top">
+                                      <div className="font-semibold text-slate-900 leading-snug">{field.label}</div>
+                                      {field.promptQuestion && (
+                                        <div className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">{field.promptQuestion}</div>
+                                      )}
+                                    </td>
+                                    <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top whitespace-pre-wrap">
+                                      {ans ? (
+                                        <span className="text-slate-900">{ans}</span>
+                                      ) : recItem?.notRecorded ? (
+                                        <span className="text-amber-800 font-medium">
+                                          Chưa ghi nhận{recItem.notRecordedReason ? `: ${recItem.notRecordedReason}` : ""}
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2.4: MỤC D — TỔNG HỢP VÀ ĐỊNH HƯỚNG CỦA GIÁO VIÊN */}
+                    <div className="print-section space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between border-b border-teal-300 pb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#003B3A]" />
+                          <h2 className="text-[11px] font-bold text-[#003B3A]">
+                            D. Tổng hợp và định hướng của giáo viên ({bmCode})
+                          </h2>
+                        </div>
+                        <span className="text-[9.5px] text-slate-600 font-medium">
+                          Giáo viên thực hiện: <strong>{bmRec?.studentInterviewerName || orientationData?.interviewerName || "—"}</strong>
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        {[
+                          { lbl: "D01. Điểm mạnh nổi bật của HS (nguồn HS / PHHS / quan sát)", val: d01Val, accent: "bg-slate-50/80 border-slate-200" },
+                          { lbl: "D02. Khó khăn, nhu cầu hỗ trợ và nội dung cần xác minh", val: d02Val, accent: "bg-slate-50/80 border-slate-200" },
+                          { lbl: "D03. Kỳ vọng của HS và gia đình (tương đồng / khác biệt)", val: d03Val, accent: "bg-slate-50/80 border-slate-200" },
+                          { lbl: "D04. Định hướng giáo dục, phối hợp và bước tiếp theo", val: d04Val, accent: "bg-[#F0FDFA]/70 border-[#CCFBF1]" },
+                        ].map(dItem => (
+                          <div key={dItem.lbl} className={`p-2 rounded-xl border ${dItem.accent}`}>
+                            <span className="text-[10px] font-bold text-[#003B3A] block mb-0.5">{dItem.lbl}</span>
+                            <p className="text-slate-800 text-[10px] leading-relaxed whitespace-pre-wrap">
+                              {dItem.val || <span className="text-slate-400 italic">Chưa ghi nhận</span>}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="px-3 py-2 bg-[#F0FDFA] rounded-xl border border-[#CCFBF1] flex flex-wrap items-center justify-between gap-2 text-[10.5px]">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="font-bold text-[#003B3A]">Trạng thái phiếu:</span>
+                          {BM_SHEET_STATUS_OPTIONS.map(opt => (
+                            <span
+                              key={opt.code}
+                              className={bmSummary.sheetStatus === opt.code ? "font-bold text-[#003B3A]" : "text-slate-600"}
+                            >
+                              {bmSummary.sheetStatus === opt.code ? "☑" : "☐"} {opt.label}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="font-bold text-[#003B3A]">
+                          Đề nghị phỏng vấn (tâm lí): {bmSummary.psychInterviewRequested ? "☑" : "☐"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[9.5px] font-bold text-teal-700">
-                    Nguyên tắc: Không chấm điểm số &bull; Quan sát 4 mức mô tả
-                  </span>
-                </div>
-
-                <div className="border border-teal-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
-                  <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
-                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                      <tr className="text-[9.5px] border-b text-[11px] font-semibold">
-                        <th className="py-1.5 px-1 text-center font-semibold" style={{ width: "5%" }}>STT</th>
-                        <th className="py-1.5 px-2 font-semibold" style={{ width: "27%" }}>Nhóm nội dung tìm hiểu</th>
-                        <th className="py-1.5 px-2 font-semibold" style={{ width: "27%" }}>Câu trả lời / Chia sẻ của HS</th>
-                        <th className="py-1.5 px-1 text-center font-semibold" style={{ width: "16%" }}>Mức quan sát</th>
-                        <th className="py-1.5 px-2 font-semibold" style={{ width: "25%" }}>Nhận xét của Giáo viên</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-teal-100 text-[10px]">
-                      {interviewList.map((item, idx) => {
-                        const r = ratingLabel(item.rating)
-                        const studentNote = item.studentNotes || item.answer || item.notes || ""
-                        const teacherCmt = item.teacherComment || (item.notes !== studentNote ? item.notes : "")
-                        return (
-                          <tr key={idx} className="hover:bg-teal-50/30">
-                            <td className="py-1.5 px-1 text-center text-teal-900 font-bold align-top">{idx + 1}</td>
-                            <td className="py-1.5 px-2 align-top">
-                              <div className="font-bold text-slate-900 leading-snug">
-                                {item.questionText || item.name}
-                              </div>
-                            </td>
-                            <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
-                              {studentNote.trim() ? (
-                                <span className="text-slate-900">{studentNote}</span>
-                              ) : (
-                                <span className="text-slate-400 italic">Chưa ghi nhận câu trả lời</span>
-                              )}
-                            </td>
-                            <td className="py-1.5 px-1 text-center align-top">
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] border inline-block leading-tight ${r.cls}`}>
-                                {r.label}
-                              </span>
-                            </td>
-                            <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
-                              {teacherCmt.trim() ? (
-                                <span className="font-medium text-teal-950">{teacherCmt}</span>
-                              ) : (
-                                <span className="text-slate-400 italic">—</span>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* MỤC 2.2: TRAO ĐỔI ĐỊNH HƯỚNG VỚI PHỤ HUYNH (5 NHÓM NỘI DUNG THEO CẤU HÌNH) */}
-              <div className="print-section-flow space-y-1.5 pt-2">
-                <div className="flex items-center justify-between border-b border-teal-300 pb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
-                    <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                      2.2. Trao Đổi Định Hướng Với Phụ Huynh Học Sinh (5 Nhóm Nội Dung Theo Cấu Hình {gradeConfig.label})
-                    </h2>
-                  </div>
-                  <span className="text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
-                    Lưu ý: Dữ liệu gia đình cung cấp là nguồn tham khảo, chưa kiểm chứng
-                  </span>
-                </div>
-
-                <div className="border border-teal-200 rounded-lg text-xs" style={{ width: "100%", maxWidth: "100%" }}>
-                  <table className="w-full text-left border-collapse" style={{ tableLayout: "fixed", width: "100%" }}>
-                    <thead className="bg-[#003B3A] text-white border-b border-[#003B3A]">
-                      <tr className="text-[9.5px] border-b text-[11px] font-semibold">
-                        <th className="py-1.5 px-1 text-center font-semibold" style={{ width: "5%" }}>STT</th>
-                        <th className="py-1.5 px-2 font-semibold" style={{ width: "28%" }}>Nhóm nội dung trao đổi với PHHS</th>
-                        <th className="py-1.5 px-2 font-semibold" style={{ width: "37%" }}>Nội dung Phụ huynh chia sẻ &amp; Kỳ vọng</th>
-                        <th className="py-1.5 px-2 font-semibold" style={{ width: "30%" }}>Ghi nhận / Quan sát của Giáo viên</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-teal-100 text-[10px]">
-                      {parentItemsList.map((pItem, idx) => {
-                        const pAns = pItem.answer || (
-                          idx === 0 ? orientationData?.parentPersonalityNotes :
-                          idx === 1 ? orientationData?.parentHealthNotes :
-                          idx === 2 ? orientationData?.parentSpecialRequests :
-                          idx === 3 ? orientationData?.cooperationCommitment :
-                          orientationData?.parentExpectations
-                        ) || ""
-                        const pNote = pItem.teacherNote || ""
-                        return (
-                          <tr key={idx} className="hover:bg-teal-50/30">
-                            <td className="py-1.5 px-1 text-center text-teal-900 font-bold align-top tabular-nums">{idx + 1}</td>
-                            <td className="py-1.5 px-2 align-top">
-                              <div className="font-bold text-slate-900 leading-snug">
-                                {pItem.title}
-                              </div>
-                            </td>
-                            <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
-                              {pAns.trim() ? (
-                                <span className="text-slate-900">{pAns}</span>
-                              ) : (
-                                <span className="text-slate-400 italic">Chưa có thông tin ghi nhận</span>
-                              )}
-                            </td>
-                            <td className="py-1.5 px-2 text-slate-800 leading-relaxed align-top">
-                              {pNote.trim() ? (
-                                <span className="font-medium text-teal-950">{pNote}</span>
-                              ) : (
-                                <span className="text-slate-400 italic">—</span>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* MỤC 2.3: TỔNG HỢP NHẬN DIỆN VÀ ĐỊNH HƯỚNG BAN ĐẦU (9 MỤC NỘI DUNG CHUẨN HÓA) */}
-              <div className="print-section space-y-1.5 pt-2">
-                <div className="flex items-center justify-between border-b border-teal-300 pb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-teal-700" />
-                    <h2 className="text-[11px] font-black uppercase tracking-wider text-teal-950">
-                      2.3. Tổng Hợp Nhận Diện &amp; Định Hướng Ban Đầu (9 Nội Dung Chuẩn Hóa)
-                    </h2>
-                  </div>
-                  <span className="text-[9.5px] text-teal-700 font-semibold">
-                    Cơ sở xây dựng kế hoạch đồng hành sau nhập học
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                  {/* 1. Điểm mạnh nổi bật */}
-                  <div className="p-2 bg-emerald-50/70 rounded-xl border border-emerald-200">
-                    <span className="text-[9.5px] font-black text-emerald-900 uppercase block mb-0.5">
-                      1. Điểm mạnh nổi bật của học sinh:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.strongPoints?.trim() || orientationData?.studentStrengths?.trim() || (
-                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 2. Sở thích & Động lực */}
-                  <div className="p-2 bg-blue-50/70 rounded-xl border border-blue-200">
-                    <span className="text-[9.5px] font-black text-blue-900 uppercase block mb-0.5">
-                      2. Sở thích &amp; Động lực học tập:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.interestsMotivation?.trim() || (
-                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 3. Thích nghi & Tự lập */}
-                  <div className="p-2 bg-teal-50/70 rounded-xl border border-teal-200">
-                    <span className="text-[9.5px] font-black text-teal-900 uppercase block mb-0.5">
-                      3. Khả năng thích nghi &amp; Tự lập:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.adaptabilityAutonomy?.trim() || (
-                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 4. Khó khăn, nhu cầu cần quan tâm */}
-                  <div className="p-2 bg-amber-50/70 rounded-xl border border-amber-200">
-                    <span className="text-[9.5px] font-black text-amber-900 uppercase block mb-0.5">
-                      4. Khó khăn, nhu cầu cần quan tâm:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.difficultiesNeeds?.trim() || orientationData?.studentNeedsSupport?.trim() || (
-                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 5. Kỳ vọng của học sinh */}
-                  <div className="p-2 bg-teal-50/70 rounded-xl border border-teal-200">
-                    <span className="text-[9.5px] font-black text-teal-900 uppercase block mb-0.5">
-                      5. Kỳ vọng của học sinh tại Sky-Line:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.studentExpectations?.trim() || (
-                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 6. Kỳ vọng của phụ huynh */}
-                  <div className="p-2 bg-teal-50/70 rounded-xl border border-teal-200">
-                    <span className="text-[9.5px] font-black text-teal-900 uppercase block mb-0.5">
-                      6. Kỳ vọng của phụ huynh đối với học sinh:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.parentExpectations?.trim() || orientationData?.parentExpectations?.trim() || (
-                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 7. Điểm tương đồng / khác biệt */}
-                  <div className="p-2 bg-rose-50/60 rounded-xl border border-rose-200">
-                    <span className="text-[9.5px] font-black text-rose-900 uppercase block mb-0.5">
-                      7. Tương đồng / Khác biệt giữa 2 nguồn:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.alignmentDifferences?.trim() || (
-                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 8. Đề xuất hỗ trợ & Định hướng ban đầu */}
-                  <div className="p-2 bg-emerald-50/70 rounded-xl border border-emerald-200">
-                    <span className="text-[9.5px] font-black text-emerald-900 uppercase block mb-0.5">
-                      8. Đề xuất hỗ trợ &amp; Định hướng ban đầu:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.initialRecommendations?.trim() || proposedPlacementRecommendation?.trim() || orientationData?.interviewerGeneralRemark?.trim() || (
-                        <span className="text-slate-400 italic">Chưa ghi nhận</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* 9. Nội dung cần xác minh chuyên môn */}
-                  <div className="p-2 bg-teal-50/70 rounded-xl border border-teal-200">
-                    <span className="text-[9.5px] font-black text-teal-900 uppercase block mb-0.5">
-                      9. Nội dung cần xác minh chuyên môn:
-                    </span>
-                    <p className="text-slate-800 text-[10px] leading-relaxed font-medium">
-                      {summary9Items?.verificationItems?.trim() || (
-                        <span className="text-slate-400 italic">Không có nội dung bất thường</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </div>
+                )
+              })()}
 
               {/* MỤC 3: KẾT QUẢ KHẢO SÁT CÁC MÔN */}
               <div className="print-section-flow space-y-1.5 pt-2">
@@ -2090,6 +2221,108 @@ export function StudentOrientationReportModal({
                         </p>
                       </div>
                     </div>
+
+                    {(() => {
+                      const gdcsResp = parsedPsych?.gdcsResponse
+                      const reportedInfo = parsedPsych?.reportedToGdcs
+                      const details = gdcsResp?.details || {}
+                      const respTitle =
+                        gdcsResp?.responseTypeName ||
+                        gdcsResp?.responseLabel ||
+                        (gdcsResp?.responseType === "DIRECT_PARENT_MEETING"
+                          ? "1. GĐCS Gặp trực tiếp PHHS"
+                          : gdcsResp?.responseType === "DELEGATE_TEACHER"
+                          ? "2. Ủy quyền cho NTCM / GV phụ trách"
+                          : gdcsResp?.responseType === "SCHEDULE_MEETING"
+                          ? "3. Đặt lịch hẹn với PHHS"
+                          : gdcsResp?.responseType)
+                      const meetingTimeDisplay = details.meetingTime || gdcsResp?.meetingTime
+                      const meetingLocationDisplay = details.meetingLocation || gdcsResp?.meetingLocation
+                      const participantsDisplay = details.meetingParticipants || gdcsResp?.participants
+                      const delegatedNameDisplay = details.delegatedTeacherName || gdcsResp?.delegatedTeacherName
+                      const delegatedRoleDisplay = details.delegatedTeacherRole || ""
+                      const delegatedDurationDisplay = details.delegationDuration || gdcsResp?.delegationDuration
+                      const directiveContentDisplay =
+                        details.parentMeetingContent ||
+                        details.meetingAgenda ||
+                        details.delegationNote ||
+                        gdcsResp?.generalDirectiveNote ||
+                        gdcsResp?.parentWorkContent ||
+                        gdcsResp?.agenda ||
+                        gdcsResp?.delegationNote ||
+                        gdcsResp?.generalNote
+
+                      if (gdcsResp) {
+                        return (
+                          <div className="p-2.5 bg-white rounded-lg border border-[#99F6E4] border-l-4 border-l-[#003B3A] text-[10px] space-y-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="font-bold text-[#003B3A] text-[10px]">
+                                Trạng thái chỉ đạo GĐCS (Đã xác nhận): <span className="text-[#00736E]">{respTitle || "Đã xác nhận"}</span>
+                              </span>
+                              <span className="text-[9.5px] text-slate-500 tabular-nums">
+                                {gdcsResp.directorName || gdcsResp.respondedBy || "Giám đốc Cơ sở"}
+                                {gdcsResp.respondedAtFormatted
+                                  ? ` • ${gdcsResp.respondedAtFormatted}`
+                                  : gdcsResp.respondedAt
+                                  ? ` • ${new Date(gdcsResp.respondedAt).toLocaleString("vi-VN")}`
+                                  : ""}
+                              </span>
+                            </div>
+                            {meetingTimeDisplay && (
+                              <div className="text-slate-700">
+                                <strong>Thời gian / Địa điểm hẹn PHHS:</strong> {meetingTimeDisplay}
+                                {meetingLocationDisplay ? ` — ${meetingLocationDisplay}` : ""}
+                              </div>
+                            )}
+                            {participantsDisplay && (
+                              <div className="text-slate-700">
+                                <strong>Thành phần tham dự:</strong> {participantsDisplay}
+                              </div>
+                            )}
+                            {delegatedNameDisplay && (
+                              <div className="text-slate-700">
+                                <strong>NTCM / GV phụ trách được ủy quyền:</strong> {delegatedNameDisplay}
+                                {delegatedRoleDisplay ? ` (${delegatedRoleDisplay})` : ""}
+                                {delegatedDurationDisplay ? ` • Thời hạn: ${delegatedDurationDisplay}` : ""}
+                              </div>
+                            )}
+                            {directiveContentDisplay && (
+                              <div className="text-slate-800">
+                                <strong>Nội dung chỉ đạo GĐCS:</strong> {directiveContentDisplay}
+                              </div>
+                            )}
+                            {gdcsResp.generalDirectiveNote && gdcsResp.generalDirectiveNote !== directiveContentDisplay && (
+                              <div className="text-slate-700 italic">
+                                <strong>Ý kiến chung của GĐCS:</strong> &ldquo;{gdcsResp.generalDirectiveNote}&rdquo;
+                              </div>
+                            )}
+                            {gdcsResp.delegationFeedback?.agreementContent && (
+                              <div className="mt-1 pt-1 border-t border-emerald-200 text-emerald-900">
+                                <strong>Kết quả trao đổi PHHS ({gdcsResp.delegationFeedback.updatedBy || "GV phụ trách"}):</strong>{" "}
+                                {gdcsResp.delegationFeedback.agreementContent}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      if (reportedInfo || orientationData?.psychologyReferralStatus === "REQUESTED_DIRECTIVE") {
+                        return (
+                          <div className="p-2.5 bg-amber-50/80 rounded-lg border border-amber-200 border-l-4 border-l-[#D97706] text-[10px] space-y-0.5">
+                            <div className="font-bold text-amber-900">
+                              Trạng thái: Đã gửi Email báo cáo GĐCS ({reportedInfo?.gdcsName || "Ban Giám đốc Cơ sở"}) — Đang chờ GĐCS chỉ đạo
+                            </div>
+                            {reportedInfo?.proposedActionLabel && (
+                              <div className="text-amber-800">
+                                <strong>Đề xuất từ GV Tâm lý:</strong> {reportedInfo.proposedActionLabel}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      return null
+                    })()}
                   </div>
                 )
               })()}
@@ -2234,9 +2467,9 @@ export function StudentOrientationReportModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-0.5 text-[10.5px]">
                   <div className="p-2 bg-white rounded-lg border border-teal-200/80">
-                    <span className="text-slate-500 text-[9.5px] block font-semibold uppercase">Kết quả xét tuyển &amp; Người phê duyệt:</span>
-                    <p className="text-teal-950 font-black mt-0.5">
-                      {sData?.admissionResult || "Đạt"}
+                    <span className="text-slate-500 text-[9.5px] block font-semibold">Kết quả xét tuyển &amp; Người phê duyệt:</span>
+                    <p className={`font-black mt-0.5 ${sData?.admissionResult ? "text-teal-950" : "text-amber-700"}`}>
+                      {sData?.admissionResult || "Chờ phê duyệt"}
                     </p>
                     <span className="text-[9.5px] text-slate-600 block mt-0.5">
                       Người duyệt: <strong>{sData?.signatureName || (campusName && campusName !== "Sky-Line" ? `GĐCS ${campusName}` : "Hội đồng Tuyển sinh")}</strong>

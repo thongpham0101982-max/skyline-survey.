@@ -271,46 +271,103 @@ export const isQualitativeType = (type?: string) => {
 }
 
 export const SUBJECT_PRESETS: Record<string, any> = {
-  TAv_70_TIEU_HOC: {
+  TAv_10_TIEU_HOC: {
     columnCount: 3,
     columnNames: ["Reading (Đọc hiểu)", "Writing (Viết & Tự luận)", "Language Focus (Từ vựng & Ngữ pháp)"],
-    columnTypes: ["SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100"],
-    columnMaxScores: [25, 25, 20],
+    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnMaxScores: [4, 3, 3],
     hasComposite: true,
-    compositeColumnName: "Tổng điểm Viết (Max 70đ)",
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
     formulaType: "SUM",
     formulaCustom: "",
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
-    passScore: 35.0,
+    passScore: 5.0,
+    commitmentThreshold: null
+  },
+  TAv_10_THCS: {
+    columnCount: 3,
+    columnNames: ["Reading Comprehension", "Writing Sentence & Paragraph", "Language in Use"],
+    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnMaxScores: [4, 3, 3],
+    hasComposite: true,
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
+    formulaType: "SUM",
+    formulaCustom: "",
+    weights: [1, 1, 1],
+    roundingRule: "ROUND_1",
+    passScore: 5.0,
+    commitmentThreshold: null
+  },
+  TAv_10_THPT: {
+    columnCount: 3,
+    columnNames: ["Reading & Cloze test", "Writing & Essay", "Lexico-Grammar & Language"],
+    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnMaxScores: [4, 3, 3],
+    hasComposite: true,
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
+    formulaType: "SUM",
+    formulaCustom: "",
+    weights: [1, 1, 1],
+    roundingRule: "ROUND_1",
+    passScore: 5.0,
+    commitmentThreshold: null
+  },
+  TAv_10_KHOI_1: {
+    columnCount: 3,
+    columnNames: ["Reading (Đọc nhận biết từ)", "Writing (Viết từ & Câu đơn)", "Language Focus (Từ vựng cơ bản)"],
+    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnMaxScores: [4, 3, 3],
+    hasComposite: true,
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
+    formulaType: "SUM",
+    formulaCustom: "",
+    weights: [1, 1, 1],
+    roundingRule: "ROUND_1",
+    passScore: 5.0,
+    commitmentThreshold: null
+  },
+  // Giữ tương thích key cũ nhưng chuẩn hóa về thang 10đ
+  TAv_70_TIEU_HOC: {
+    columnCount: 3,
+    columnNames: ["Reading (Đọc hiểu)", "Writing (Viết & Tự luận)", "Language Focus (Từ vựng & Ngữ pháp)"],
+    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnMaxScores: [4, 3, 3],
+    hasComposite: true,
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
+    formulaType: "SUM",
+    formulaCustom: "",
+    weights: [1, 1, 1],
+    roundingRule: "ROUND_1",
+    passScore: 5.0,
     commitmentThreshold: null
   },
   TAv_70_THCS: {
     columnCount: 3,
     columnNames: ["Reading Comprehension", "Writing Sentence & Paragraph", "Language in Use"],
-    columnTypes: ["SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100"],
-    columnMaxScores: [25, 25, 20],
+    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnMaxScores: [4, 3, 3],
     hasComposite: true,
-    compositeColumnName: "Tổng điểm Viết (Max 70đ)",
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
     formulaType: "SUM",
     formulaCustom: "",
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
-    passScore: 35.0,
+    passScore: 5.0,
     commitmentThreshold: null
   },
   TAv_70_THPT: {
     columnCount: 3,
     columnNames: ["Reading & Cloze test", "Writing & Essay", "Lexico-Grammar & Language"],
-    columnTypes: ["SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100"],
-    columnMaxScores: [30, 25, 15],
+    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnMaxScores: [4, 3, 3],
     hasComposite: true,
-    compositeColumnName: "Tổng điểm Viết (Max 70đ)",
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
     formulaType: "SUM",
     formulaCustom: "",
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
-    passScore: 35.0,
+    passScore: 5.0,
     commitmentThreshold: null
   },
   TAv_10: {
@@ -319,7 +376,7 @@ export const SUBJECT_PRESETS: Record<string, any> = {
     columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
     columnMaxScores: [4, 3, 3],
     hasComposite: true,
-    compositeColumnName: "Điểm tổng hợp",
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
     formulaType: "SUM",
     formulaCustom: "",
     weights: [1, 1, 1],
@@ -330,15 +387,15 @@ export const SUBJECT_PRESETS: Record<string, any> = {
   TAvd_30: {
     columnCount: 3,
     columnNames: ["Fluency & Pronunciation", "Lexical & Grammar", "Interactive Communication"],
-    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnTypes: ["SCORE_10", "SCORE_10", "SCORE_10"],
     columnMaxScores: [10, 10, 10],
     hasComposite: true,
-    compositeColumnName: "Tổng điểm Vấn đáp (Max 30đ)",
-    formulaType: "SUM",
+    compositeColumnName: "Điểm Tiếng Anh vấn đáp (Max 10đ)",
+    formulaType: "AVERAGE",
     formulaCustom: "",
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
-    passScore: 15.0,
+    passScore: 5.0,
     commitmentThreshold: null
   },
   TAvd_10: {
@@ -347,7 +404,7 @@ export const SUBJECT_PRESETS: Record<string, any> = {
     columnTypes: ["SCORE_10", "SCORE_10", "SCORE_10"],
     columnMaxScores: [10, 10, 10],
     hasComposite: true,
-    compositeColumnName: "Điểm phỏng vấn",
+    compositeColumnName: "Điểm Tiếng Anh vấn đáp (Max 10đ)",
     formulaType: "AVERAGE",
     formulaCustom: "",
     weights: [1, 1, 1],
@@ -465,15 +522,15 @@ export const SUBJECT_PRESETS: Record<string, any> = {
   ESL_VD: {
     columnCount: 3,
     columnNames: ["Fluency & Pronunciation", "Lexical & Grammar", "Interactive Communication"],
-    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnTypes: ["SCORE_10", "SCORE_10", "SCORE_10"],
     columnMaxScores: [10, 10, 10],
     hasComposite: true,
-    compositeColumnName: "Tổng điểm Vấn đáp ESL (Max 30đ)",
-    formulaType: "SUM",
+    compositeColumnName: "Điểm Vấn đáp ESL (Max 10đ)",
+    formulaType: "AVERAGE",
     formulaCustom: "",
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
-    passScore: 15.0,
+    passScore: 5.0,
     commitmentThreshold: null
   },
   TOA: {
@@ -521,15 +578,15 @@ export const SUBJECT_PRESETS: Record<string, any> = {
   TAv_70_KHOI_1: {
     columnCount: 3,
     columnNames: ["Reading (Đọc nhận biết từ)", "Writing (Viết từ & Câu đơn)", "Language Focus (Từ vựng cơ bản)"],
-    columnTypes: ["SCORE_CUSTOM_100", "SCORE_CUSTOM_100", "SCORE_CUSTOM_100"],
-    columnMaxScores: [25, 25, 20],
+    columnTypes: ["SCORE_CUSTOM", "SCORE_CUSTOM", "SCORE_CUSTOM"],
+    columnMaxScores: [4, 3, 3],
     hasComposite: true,
-    compositeColumnName: "Tổng điểm Viết (Max 70đ)",
+    compositeColumnName: "Điểm Tiếng Anh viết (Max 10đ)",
     formulaType: "SUM",
     formulaCustom: "",
     weights: [1, 1, 1],
     roundingRule: "ROUND_1",
-    passScore: 35.0,
+    passScore: 5.0,
     commitmentThreshold: null
   },
   PHIEU_DINH_HUONG: {
@@ -561,13 +618,13 @@ export const resolvePresetDataForSubject = (subCode: string, gradeStr: string) =
     return getOrientationPresetByGrade(gradeStr)
   }
   if (subCode === "TAv") {
-    if (numG >= 10) return SUBJECT_PRESETS.TAv_70_THPT
-    if (numG >= 6) return SUBJECT_PRESETS.TAv_70_THCS
-    if (numG === 1) return SUBJECT_PRESETS.TAv_70_KHOI_1
-    return SUBJECT_PRESETS.TAv_70_TIEU_HOC
+    if (numG >= 10) return SUBJECT_PRESETS.TAv_10_THPT
+    if (numG >= 6) return SUBJECT_PRESETS.TAv_10_THCS
+    if (numG === 1) return SUBJECT_PRESETS.TAv_10_KHOI_1
+    return SUBJECT_PRESETS.TAv_10_TIEU_HOC
   }
-  if (subCode === "TAvd") return SUBJECT_PRESETS.TAvd_30
-  if (codeNorm.includes("ESL")) return SUBJECT_PRESETS.ESL_VD || SUBJECT_PRESETS.TAvd_30
+  if (subCode === "TAvd") return SUBJECT_PRESETS.TAvd_10
+  if (codeNorm.includes("ESL")) return SUBJECT_PRESETS.ESL_VD || SUBJECT_PRESETS.TAvd_10
   if (subCode === "TCI" || subCode === "CHILD_DEV_16") return SUBJECT_PRESETS.CHILD_DEV_16
   if (subCode === "NVA") return SUBJECT_PRESETS.NVA || SUBJECT_PRESETS.TVI
   return SUBJECT_PRESETS[subCode] || SUBJECT_PRESETS[codeNorm] || null

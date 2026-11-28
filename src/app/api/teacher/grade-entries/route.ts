@@ -5,11 +5,17 @@ import { auth } from "@/lib/auth"
 import {
   buildPrimaryVnEduDefaultConfig,
   buildSecondaryTt22VnEduDefaultConfig,
+  findExactPeriodInternalOverrideConfig,
   isKsdnEvaluationPeriod,
   isPrimaryGrade,
   resolveGradeConfigForScope,
 } from "@/lib/grading/vnedu-config-types"
 import { resolveVnEduCodeMap } from "@/lib/grading/vnedu-code-resolver"
+import { isPrivilegedGradebookRole, writeSecurityAuditLog } from "@/lib/security-guard"
+import {
+  computeCompositeFromComponentScores,
+  shouldAutoComputeFormulaComposite,
+} from "@/lib/grading/formula-calculator"
 
 export async function GET(request: Request) {
   try {
@@ -38,9 +44,12 @@ export async function GET(request: Request) {
       teacher = await prisma.teacher.findUnique({ where: { userId } })
     }
 
-    const isManage = searchParams.get("isManage") === "true" || searchParams.get("role") === "admin"
     const userRole = ((session?.user as any)?.role || "").toUpperCase().trim()
-    const isPrivileged = isManage || ["ADMIN", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "BAN_GIAM_HIEU", "BGH", "CM", "TO_TRUONG"].includes(userRole) || (userRole && userRole !== "TEACHER")
+    const userRoles = Array.isArray((session?.user as any)?.roles) ? (session?.user as any).roles : []
+    if (userRole === "PARENT") {
+      return NextResponse.json({ success: false, error: "Phụ huynh không có quyền truy cập phân hệ sổ điểm giáo viên" }, { status: 403 })
+    }
+    const isPrivileged = isPrivilegedGradebookRole(userRole, userRoles)
 
     // Action 1: Get list of assigned classes & subjects for teacher
     if (action === "getAssignments") {
@@ -210,7 +219,7 @@ export async function GET(request: Request) {
       prisma.gradebookLock.findMany({
         where: {
           academicYearId: targetAcademicYearId,
-          evaluationPeriod: { in: entryPeriodList },
+          evaluationPeriod: isKsdn ? { in: ["KSĐN", "KSDN"] } : evaluationPeriod,
           OR: [
             { classId, subjectId },
             { classId: "ALL", subjectId: "ALL" }
@@ -246,7 +255,27 @@ export async function GET(request: Request) {
       configType
     })
 
-    // Chỉ fallback sang cấu hình bên kia đối với kỳ KSĐN hoặc chế độ INTERNAL (khi ở chế độ VNEDU cho các kỳ GK1/CK1/GK2/CK2/CN thì giữ nguyên chuẩn VNEDU TT27/TT22, tuyệt đối không lấy nhầm mẫu INTERNAL 2 cột Speaking/Listening)
+    // Nếu quản trị viên đã cấu hình tường minh đúng (Môn + Khối + Kỳ) ở "2. Đánh giá nội bộ Sky-Line" (INTERNAL),
+    // tự động ưu tiên cấu hình đó khi VNEDU chưa lưu hoặc cấu hình INTERNAL được cập nhật mới hơn.
+    // Tuyệt đối không lấy nhầm mẫu chung (ALL / subjectId == null / KSĐN).
+    if (configType === "VNEDU" && !isKsdn) {
+      const exactInternal = findExactPeriodInternalOverrideConfig(configs, {
+        academicYearId: targetAcademicYearId,
+        program: targetClass.educationSystem || "ALL",
+        grade: rawGrade || targetClass.className || "ALL",
+        subjectId,
+        evaluationPeriod,
+      })
+      if (exactInternal) {
+        const vnTime = config?.updatedAt ? new Date(config.updatedAt).getTime() : 0
+        const intTime = exactInternal.updatedAt ? new Date(exactInternal.updatedAt).getTime() : 0
+        if (!config || intTime > vnTime) {
+          config = exactInternal
+        }
+      }
+    }
+
+    // Chỉ fallback sang cấu hình bên kia đối với kỳ KSĐN hoặc chế độ INTERNAL (khi ở chế độ VNEDU cho các kỳ GK1/CK1/GK2/CK2/CN thì giữ nguyên chuẩn VNEDU TT27/TT22, tuyệt đối không lấy nhầm mẫu INTERNAL chung)
     if (!config && (isKsdn || configType === "INTERNAL")) {
       config = resolveGradeConfigForScope(configs, {
         academicYearId: targetAcademicYearId,
@@ -626,6 +655,20 @@ export async function GET(request: Request) {
       } catch (_) {}
     })
 
+    // Ensure returned compositeScore always reflects the active formula & roundingRule
+    // (protects against stale compositeScore saved before a formula/rounding config change)
+    if (shouldAutoComputeFormulaComposite(config, evaluationPeriod) && Array.isArray(entries) && entries.length > 0) {
+      entries = entries.map((e: any) => {
+        if (!e?.componentScores) return e
+        const computed = computeCompositeFromComponentScores(e.componentScores, config)
+        if (!computed) return e
+        return {
+          ...e,
+          compositeScore: computed.value,
+        }
+      })
+    }
+
     return NextResponse.json({
       success: true,
       config,
@@ -633,6 +676,7 @@ export async function GET(request: Request) {
       entries,
       assignedTeacher,
       isLocked,
+      isPeriodLocked: Boolean(periodLock),
       lockInfo,
       unlockRequest: unlockRequest || null,
       homeroomCoordination
@@ -674,7 +718,11 @@ export async function POST(request: Request) {
     }
 
     const userRole = ((session?.user as any)?.role || "").toUpperCase().trim()
-    const isPrivileged = ["ADMIN", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "BAN_GIAM_HIEU", "BGH", "CM", "TO_TRUONG"].includes(userRole) || (userRole && userRole !== "TEACHER")
+    const userRoles = Array.isArray((session?.user as any)?.roles) ? (session?.user as any).roles : []
+    if (userRole === "PARENT") {
+      return NextResponse.json({ success: false, error: "Phụ huynh không có quyền chỉnh sửa sổ điểm" }, { status: 403 })
+    }
+    const isPrivileged = isPrivilegedGradebookRole(userRole, userRoles)
 
     let targetYearId = academicYearId
     if (!targetYearId && classId) {
@@ -682,7 +730,7 @@ export async function POST(request: Request) {
       targetYearId = cls?.academicYearId || ""
     }
     if (!targetYearId) {
-      const activeYear = await prisma.academicYear.findFirst({ where: { isDefault: true } })
+      const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
       targetYearId = activeYear?.id || ""
     }
     if (!targetYearId) {
@@ -697,8 +745,8 @@ export async function POST(request: Request) {
       if (teacher) teacherId = teacher.id
     }
 
-    // Authorization check: non-privileged teachers must be assigned to teach this class & subject
-    if (!isPrivileged && userRole === "TEACHER") {
+    // Authorization check: non-privileged users must be assigned to teach this class & subject
+    if (!isPrivileged) {
       if (!teacher) {
         return NextResponse.json({
           success: false,
@@ -841,6 +889,90 @@ export async function POST(request: Request) {
         })
       })
     )
+
+    await writeSecurityAuditLog({
+      userId: userId || "SYSTEM",
+      userEmail: (session?.user as any)?.email || (session?.user as any)?.name || "TEACHER",
+      action: "SCORE_UPDATE",
+      targetTable: "SubjectGradeEntry",
+      targetId: `${classId}:${subjectId}:${evaluationPeriod}`,
+      newValues: {
+        academicYearId: targetYearId,
+        classId,
+        subjectId,
+        evaluationPeriod,
+        configType,
+        updatedCount: cleanEntries.length
+      }
+    })
+
+    // Đồng bộ tự động sang StudentTermScore cho các kỳ cuối kỳ / cả năm (CK1/HK1 -> HK1, CK2/HK2 -> HK2, CN -> CN)
+    const periodUpper = String(evaluationPeriod || "").toUpperCase().trim()
+    const targetTermSemester =
+      periodUpper === "CK1" || periodUpper === "HK1"
+        ? "HK1"
+        : periodUpper === "CK2" || periodUpper === "HK2"
+        ? "HK2"
+        : periodUpper === "CN"
+        ? "CN"
+        : null
+
+    if (targetTermSemester && configType === "VNEDU" && cleanEntries.length > 0) {
+      try {
+        await prisma.$transaction(
+          cleanEntries.map(entry => {
+            let comp: Record<string, any> = {}
+            if (entry.componentScores) {
+              try {
+                comp =
+                  typeof entry.componentScores === "string"
+                    ? JSON.parse(entry.componentScores)
+                    : entry.componentScores
+              } catch {}
+            }
+            let scoreVal: number | null =
+              entry.compositeScore !== "" &&
+              entry.compositeScore !== null &&
+              entry.compositeScore !== undefined &&
+              !isNaN(Number(entry.compositeScore))
+                ? Math.round(Number(entry.compositeScore) * 10) / 10
+                : null
+            if (scoreVal === null) {
+              const rawKt = comp.kt_ck1 ?? comp.kt_ck2 ?? comp.col0 ?? ""
+              const parsedKt = parseFloat(String(rawKt).replace(",", "."))
+              if (String(rawKt).trim() !== "" && !isNaN(parsedKt)) {
+                scoreVal = Math.round(parsedKt * 10) / 10
+              }
+            }
+            const evalGrade =
+              String(entry.ratingValue || comp.xl_ck1 || comp.xl_ck2 || "").trim() || null
+
+            return prisma.studentTermScore.upsert({
+              where: {
+                studentId_subjectId_semester: {
+                  studentId: entry.studentId,
+                  subjectId,
+                  semester: targetTermSemester
+                }
+              },
+              update: {
+                score: scoreVal,
+                evaluationGrade: evalGrade
+              },
+              create: {
+                studentId: entry.studentId,
+                subjectId,
+                semester: targetTermSemester,
+                score: scoreVal,
+                evaluationGrade: evalGrade
+              }
+            })
+          })
+        )
+      } catch (syncErr) {
+        console.warn("Non-fatal warning syncing SubjectGradeEntry to StudentTermScore:", syncErr)
+      }
+    }
 
     return NextResponse.json({ success: true, message: "Lưu sổ điểm thành công" })
 

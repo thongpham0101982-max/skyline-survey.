@@ -3,8 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { sendEmail } from "@/lib/mail";
-import { getCampusGiaovuEmail } from "@/lib/orientation/service";
-import { requireEntranceOperationsSession } from "@/lib/security-guard";
+import {
+  PRESCHOOL_ASSIGNMENT_PERMISSION_MODULES,
+  isBatchAllowedForSender,
+  resolveAssignmentSenderContext,
+  resolveEmailCampusBranding,
+} from "@/lib/entrance-assignment-mail";
+import {
+  getClientIpFromRequest,
+  requireEntranceOperationsSession,
+  writeSecurityAuditLog,
+} from "@/lib/security-guard";
 import { executeEntranceWorkflowAction } from "@/lib/entrance-progress/entranceProgressEngine";
 
 export async function GET(req: NextRequest) {
@@ -70,8 +79,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const ctx = await requireEntranceOperationsSession();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const senderCtx = await resolveAssignmentSenderContext(PRESCHOOL_ASSIGNMENT_PERMISSION_MODULES);
+  if (!senderCtx) {
+    return NextResponse.json(
+      { error: "Tài khoản của bạn không có quyền thực hiện thao tác phân công / gửi email Mầm non." },
+      { status: 403 }
+    );
+  }
+  const ctx = senderCtx.auth;
 
   try {
     const body = await req.json();
@@ -244,26 +259,40 @@ export async function POST(req: NextRequest) {
               }
             },
             period: true,
-            batch: true
+            batch: {
+              include: {
+                campus: {
+                  select: { id: true, campusCode: true, campusName: true }
+                }
+              }
+            }
           }
         });
         if (single) targetAssignments.push(single);
       } else {
         // NOTIFY_ALL
-        if (!periodId || !grade) {
-          return NextResponse.json({ error: "Missing periodId or grade" }, { status: 400 });
-        }
-        const normalizedBatchId = (batchId && batchId !== "all" && batchId !== "null") ? batchId : null;
-        
-        let gradeQuery: any = grade;
-        if (typeof grade === "string" && grade.includes(",")) {
-          gradeQuery = { in: grade.split(",") };
-        } else if (Array.isArray(grade)) {
-          gradeQuery = { in: grade };
+        const { assignmentIds } = body;
+        let whereClause: any = {};
+
+        if (Array.isArray(assignmentIds) && assignmentIds.length > 0) {
+          whereClause = { id: { in: assignmentIds } };
+        } else {
+          if (!periodId || !grade) {
+            return NextResponse.json({ error: "Missing periodId or grade" }, { status: 400 });
+          }
+          const normalizedBatchId = (batchId && batchId !== "all" && batchId !== "null") ? batchId : null;
+          
+          let gradeQuery: any = grade;
+          if (typeof grade === "string" && grade.includes(",")) {
+            gradeQuery = { in: grade.split(",") };
+          } else if (Array.isArray(grade)) {
+            gradeQuery = { in: grade };
+          }
+          whereClause = { periodId, batchId: normalizedBatchId, grade: gradeQuery };
         }
 
         const list = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-          where: { periodId, batchId: normalizedBatchId, grade: gradeQuery },
+          where: whereClause,
           include: {
             user: {
               include: {
@@ -275,7 +304,13 @@ export async function POST(req: NextRequest) {
               }
             },
             period: true,
-            batch: true
+            batch: {
+              include: {
+                campus: {
+                  select: { id: true, campusCode: true, campusName: true }
+                }
+              }
+            }
           }
         });
         targetAssignments = list;
@@ -284,6 +319,18 @@ export async function POST(req: NextRequest) {
       if (targetAssignments.length === 0) {
         return NextResponse.json({ success: true, sentCount: 0, message: "No assignments found to notify" });
       }
+
+      // Enforce campus scoping according to the logged-in teacher/staff permissions
+      const allowedAssignments = targetAssignments.filter((a: any) =>
+        isBatchAllowedForSender(senderCtx, a.batch, a.period?.name)
+      );
+      if (allowedAssignments.length === 0) {
+        return NextResponse.json(
+          { error: "Tài khoản của bạn không có quyền gửi email cho đợt khảo sát thuộc cơ sở khác." },
+          { status: 403 }
+        );
+      }
+      targetAssignments = allowedAssignments;
 
       const host = req.headers.get("host") || "skyline-survey.vercel.app";
       const protocol = req.headers.get("x-forwarded-proto") || "https";
@@ -314,6 +361,8 @@ export async function POST(req: NextRequest) {
         const periodName = assign.period?.name || "Kỳ khảo sát";
         const batchName = assign.batch?.name || "Tất cả các đợt";
         const gradeLabel = assign.grade;
+        const branding = resolveEmailCampusBranding(senderCtx, assign.batch, periodName);
+        const emailSubject = `${branding.subjectPrefix} Phân công Khảo sát Năng lực Đầu vào Mầm non - Bé ${gradeLabel}`;
 
         const emailHtml = `
           <!DOCTYPE html>
@@ -321,7 +370,7 @@ export async function POST(req: NextRequest) {
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Thông báo Phân công Khảo sát Năng lực Mầm non</title>
+            <title>${emailSubject}</title>
           </head>
           <body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F1F5F9" style="table-layout: fixed;">
@@ -336,7 +385,7 @@ export async function POST(req: NextRequest) {
                           <tr>
                             <td align="center" style="padding-bottom: 8px;">
                               <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
-                                🏫 BẬC MẦM NON • HỆ THỐNG GIÁO DỤC SKY-LINE
+                                <img src="https://ssm.skylineschool.edu.vn/logo.png" alt="Sky-Line" height="16" style="height: 16px; width: auto; vertical-align: middle; margin-right: 6px; display: inline-block; border: 0;" /><span style="vertical-align: middle;">BẬC MẦM NON • HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                               </span>
                             </td>
                           </tr>
@@ -365,7 +414,7 @@ export async function POST(req: NextRequest) {
                           Kính gửi Thầy/Cô ${user.fullName},
                         </p>
                         <p style="margin: 0 0 18px 0; font-size: 14px; color: #475569; line-height: 1.6;">
-                          Ban Khảo thí trân trọng thông báo Thầy/Cô đã được phân công thực hiện đánh giá năng lực đầu vào cho các bé bậc Mầm non. Chi tiết thông tin phân công như sau:
+                          ${branding.announcerPhrase} Thầy/Cô đã được phân công thực hiện đánh giá năng lực đầu vào cho các bé bậc Mầm non. Chi tiết thông tin phân công như sau:
                         </p>
                       </td>
                     </tr>
@@ -393,6 +442,10 @@ export async function POST(req: NextRequest) {
                             <td style="padding: 6px 0; font-size: 14px; font-weight: 800; color: #1E293B;">
                               <span style="display: inline-block; padding: 4px 12px; background-color: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; border-radius: 50px; font-size: 12px; font-weight: 800;">${gradeLabel}</span>
                             </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 6px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">ĐƠN VỊ THÔNG BÁO:</td>
+                            <td style="padding: 6px 0; font-size: 13.5px; font-weight: 700; color: #1E293B;">Giáo vụ cơ sở ${branding.cleanCampusLabel || "Sky-Line"} <span style="font-weight: 500; color: #64748B;">(${senderCtx.senderName})</span></td>
                           </tr>
                         </table>
                       </td>
@@ -423,10 +476,10 @@ export async function POST(req: NextRequest) {
                           HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
                         </p>
                         <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 600; color: #CCFBF1;">
-                          BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                          ${branding.footerDeptLabel}
                         </p>
                         <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
-                          Email hỗ trợ: <a href="mailto:ktdbcl@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">ktdbcl@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                          Email liên hệ: <a href="mailto:${branding.replyTo}" style="color: #FDE047; text-decoration: none; font-weight: 600;">${branding.replyTo}</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
                         </p>
                         <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                           Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.
@@ -478,12 +531,22 @@ export async function POST(req: NextRequest) {
           console.error("Create preschool in-app notification on NOTIFY error:", inAppErr);
         }
 
+          const ccList = Array.from(
+            new Set(
+              ["ktdbcl@skylineschool.edu.vn", branding.giaovuCcEmail, senderCtx.senderEmail]
+                .flatMap((entry) => String(entry || "").split(/[,;]/))
+                .map((e) => e.trim())
+                .filter((e) => e && e.includes("@") && e.toLowerCase() !== targetEmail.toLowerCase())
+            )
+          );
+
           const mailRes = await sendEmail({
+            from: branding.fromDisplayName,
             to: targetEmail,
-            cc: ["ktdbcl@skylineschool.edu.vn", getCampusGiaovuEmail(gradeLabel)].filter(Boolean),
-            subject: `[Sky-line SMS - Mầm Non] Phân công Khảo sát Năng lực Đầu vào - Bé ${gradeLabel}`,
+            cc: ccList,
+            subject: emailSubject,
             html: emailHtml,
-            replyTo: "ktdbcl@skylineschool.edu.vn"
+            replyTo: branding.replyTo
           });
 
           if (mailRes && mailRes.success) {
@@ -498,6 +561,24 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      try {
+        await writeSecurityAuditLog({
+          userId: senderCtx.userId,
+          userEmail: senderCtx.senderEmail || ctx.userEmail,
+          action: "SEND_PRESCHOOL_ASSESSMENT_ASSIGNMENT_EMAIL",
+          targetTable: "PreschoolInputAssessmentTeacherAssignment",
+          targetId: batchId || periodId || "BATCH_NOTIFY",
+          newValues: {
+            action,
+            senderName: senderCtx.senderName,
+            senderCampus: senderCtx.primaryCampus?.campusName || senderCtx.primaryCampus?.campusCode || null,
+            sentCount,
+            failedCount,
+          },
+          ipAddress: getClientIpFromRequest(req),
+        });
+      } catch {}
+
       if (sentCount > 0 && periodId) {
         try {
           const normalizedBatchId = (batchId && batchId !== "all" && batchId !== "null") ? batchId : null;
@@ -511,10 +592,10 @@ export async function POST(req: NextRequest) {
             status: "COMPLETED",
             note: `Đã gửi thông báo phân công khảo sát Mầm non cho ${sentCount} giáo viên.`,
             actor: {
-              id: ctx.userId,
-              fullName: ctx.fullName || "Giáo vụ",
-              role: ctx.role,
-              isSuperAdmin: ["ADMIN", "SUPER_ADMIN", "KT_DBCL", "KHAO_THI", "ĐBCL", "DBCL"].includes(ctx.role),
+              id: senderCtx.userId,
+              fullName: senderCtx.senderName,
+              role: senderCtx.role,
+              isSuperAdmin: senderCtx.isSystemWide,
             },
           });
         } catch (wfErr) {

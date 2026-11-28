@@ -16,6 +16,7 @@ import {
 } from "@/lib/timetable/departmentHelper"
 import type { ManageableScopeGroup, QuotaReconcileItem } from "@/lib/timetable/types"
 import {
+  applyQd82CurriculumStandardAction,
   assignTeacherToClassSubjectAction,
   getTimetableQuotaPageAction,
   saveClassSubjectDualAssignmentAction,
@@ -253,7 +254,9 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
     currentVal: number,
     nextRaw: string
   ) => {
-    const parsed = Number(nextRaw)
+    const cleanRaw = String(nextRaw || "").trim().replace(/,/g, ".")
+    if (!cleanRaw) return
+    const parsed = Number(cleanRaw)
     if (Number.isNaN(parsed) || parsed < 0 || parsed === currentVal) return
     const key = `Q_${subjectId}_${studyProgram}_${grade}`
     setSavingKey(key)
@@ -319,8 +322,10 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
   ) => {
     const rowKey = `${row.classId}_${row.subjectId}`
     const draft = overrideDraft || dualDrafts[rowKey] || deriveInitialDualDraft(row)
-    const gvvnP = draft.gvvnPeriods === "" ? null : Math.max(0, Number(draft.gvvnPeriods || 0))
-    const gvnnP = draft.gvnnPeriods === "" ? null : Math.max(0, Number(draft.gvnnPeriods || 0))
+    const cleanVn = String(draft.gvvnPeriods ?? "").trim().replace(/,/g, ".")
+    const cleanNn = String(draft.gvnnPeriods ?? "").trim().replace(/,/g, ".")
+    const gvvnP = cleanVn === "" ? null : Math.max(0, Number(cleanVn || 0))
+    const gvnnP = cleanNn === "" ? null : Math.max(0, Number(cleanNn || 0))
 
     setSavingKey(`DUAL_${rowKey}`)
     const res = await saveClassSubjectDualAssignmentAction({
@@ -349,8 +354,8 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
   const handleApplyGradeDefaultSplit = async (row: QuotaReconcileItem) => {
     const rowKey = `${row.classId}_${row.subjectId}`
     const draft = dualDrafts[rowKey] || deriveInitialDualDraft(row)
-    const gvvnP = Math.max(0, Number(draft.gvvnPeriods || 0))
-    const gvnnP = Math.max(0, Number(draft.gvnnPeriods || 0))
+    const gvvnP = Math.max(0, Number(String(draft.gvvnPeriods || "0").replace(/,/g, ".")))
+    const gvnnP = Math.max(0, Number(String(draft.gvnnPeriods || "0").replace(/,/g, ".")))
     if (Number.isNaN(gvvnP) || Number.isNaN(gvnnP)) return
 
     setSavingKey(`SPLIT_${rowKey}`)
@@ -453,7 +458,7 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
               const res = await syncScopeDraftsFromAssignmentsAction({
                 academicYearId: data.filterContext.selectedYearId,
                 semester: data.filterContext.semester,
-                campusId: data.filterContext.selectedCampusId,
+                campusId: data.filterContext.selectedCampusFilter || "ALL",
                 scopeGroup: data.filterContext.selectedScopeGroup as ManageableScopeGroup,
               })
               setSyncingFromAssignments(false)
@@ -484,7 +489,7 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
             )}&scopeGroup=${encodeURIComponent(
               data.filterContext.selectedScopeGroup
             )}&campusId=${encodeURIComponent(
-              data.filterContext.selectedCampusId
+              data.filterContext.selectedCampusFilter || "ALL"
             )}${
               data.filterContext.selectedVersionId
                 ? `&versionId=${encodeURIComponent(data.filterContext.selectedVersionId)}`
@@ -709,6 +714,24 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
             )
             await reloadWithPatch({})
           }}
+          onApplyQd82Standard={async () => {
+            const ok = window.confirm(
+              "Áp dụng Khung thời lượng giáo dục chuẩn 40 tiết/tuần (K1–K12, cả Hệ S & Hệ I) theo Quyết định số 82/2026/QĐ-SKL ngày 12/06/2026 cho năm học đang chọn?"
+            )
+            if (!ok) return
+            const res = await applyQd82CurriculumStandardAction({
+              academicYearId: data.filterContext.selectedYearId,
+              campusId: data.filterContext.selectedCampusId,
+            })
+            if (!res.success) {
+              toast.error(res.error)
+              return
+            }
+            toast.success(
+              `Đã đồng bộ chuẩn QĐ 82/2026/QĐ-SKL (${res.updatedSubjects} môn, đủ 40 tiết/tuần cho Hệ S & Hệ I).`
+            )
+            await reloadWithPatch({})
+          }}
         />
       )}
 
@@ -765,8 +788,14 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
                   savingKey === `Q_${row.subjectId}_${row.studyProgram}_${row.grade}`
 
                 const draft = dualDrafts[rowKey] || deriveInitialDualDraft(row)
-                const draftGvvnNum = Math.max(0, Number(draft.gvvnPeriods || 0) || 0)
-                const draftGvnnNum = Math.max(0, Number(draft.gvnnPeriods || 0) || 0)
+                const draftGvvnNum = Math.max(
+                  0,
+                  Number(String(draft.gvvnPeriods || "0").replace(/,/g, ".")) || 0
+                )
+                const draftGvnnNum = Math.max(
+                  0,
+                  Number(String(draft.gvnnPeriods || "0").replace(/,/g, ".")) || 0
+                )
                 const draftSum = Math.round((draftGvvnNum + draftGvnnNum) * 100) / 100
                 const sumDiff = Math.round((draftSum - row.weeklyQuota) * 100) / 100
                 const hasDualDraftChanges =
@@ -835,10 +864,8 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
                       <div className="inline-flex flex-col items-end gap-0.5">
                         <input
                           key={`q_${row.classId}_${row.subjectId}_${row.weeklyQuota}`}
-                          type="number"
-                          step="0.5"
-                          min={0}
-                          max={20}
+                          type="text"
+                          inputMode="decimal"
                           defaultValue={row.weeklyQuota}
                           onBlur={(e) =>
                             handleQuotaBlur(
@@ -849,6 +876,11 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
                               e.target.value
                             )
                           }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              ;(e.target as HTMLInputElement).blur()
+                            }
+                          }}
                           title={`Sửa định mức môn ${row.subjectName} cho toàn khối ${row.grade} (${row.studyProgram})`}
                           className={`w-16 text-right rounded-lg border px-2 py-1 text-xs font-bold focus:outline-none ${
                             isOverQuota
@@ -930,16 +962,18 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
                             </select>
                             <div className="flex items-center gap-1 shrink-0">
                               <input
-                                type="number"
-                                step="0.5"
-                                min={0}
-                                max={20}
+                                type="text"
+                                inputMode="decimal"
                                 value={draft.gvvnPeriods}
                                 onChange={(e) => {
                                   const rawVal = e.target.value
-                                  const numVal = Number(rawVal)
+                                  if (rawVal !== "" && !/^[0-9]*[.,]?[0-9]*$/.test(rawVal)) return
+                                  const normStr = rawVal.replace(/,/g, ".")
+                                  const numVal = Number(normStr)
                                   if (
                                     rawVal !== "" &&
+                                    !rawVal.endsWith(".") &&
+                                    !rawVal.endsWith(",") &&
                                     !Number.isNaN(numVal) &&
                                     numVal >= 0 &&
                                     numVal <= row.weeklyQuota
@@ -986,16 +1020,18 @@ export function QuotaAssignClient({ initialData }: { initialData: QuotaPageData 
                             </select>
                             <div className="flex items-center gap-1 shrink-0">
                               <input
-                                type="number"
-                                step="0.5"
-                                min={0}
-                                max={20}
+                                type="text"
+                                inputMode="decimal"
                                 value={draft.gvnnPeriods}
                                 onChange={(e) => {
                                   const rawVal = e.target.value
-                                  const numVal = Number(rawVal)
+                                  if (rawVal !== "" && !/^[0-9]*[.,]?[0-9]*$/.test(rawVal)) return
+                                  const normStr = rawVal.replace(/,/g, ".")
+                                  const numVal = Number(normStr)
                                   if (
                                     rawVal !== "" &&
+                                    !rawVal.endsWith(".") &&
+                                    !rawVal.endsWith(",") &&
                                     !Number.isNaN(numVal) &&
                                     numVal >= 0 &&
                                     numVal <= row.weeklyQuota

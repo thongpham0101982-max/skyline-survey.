@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireStaffSession } from "@/lib/security-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,10 @@ const MILESTONES = [
 
 export async function GET(request: NextRequest) {
   try {
+    const ctx = await requireStaffSession();
+    if (!ctx) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get("studentId");
     const classId = searchParams.get("classId");
@@ -31,6 +36,9 @@ export async function GET(request: NextRequest) {
 
       if (!student) {
         return NextResponse.json({ success: false, error: "Không tìm thấy học sinh" }, { status: 404 });
+      }
+      if (ctx.isGDCS && ctx.allowedCampusIds.length > 0 && student.campusId && !ctx.allowedCampusIds.includes(student.campusId)) {
+        return NextResponse.json({ success: false, error: "Bạn không có quyền xem bảng điểm của học sinh ngoài cơ sở phụ trách" }, { status: 403 });
       }
 
       const gradeEntries = await prisma.subjectGradeEntry.findMany({
