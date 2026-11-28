@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import {
+  ArrowUpRight,
   BarChart3,
   Bell,
   Bot,
@@ -9,11 +10,13 @@ import {
   Clock,
   Download,
   FileSpreadsheet,
+  Layers,
   Mail,
   RefreshCw,
   Send,
   ShieldAlert,
   Sparkles,
+  Target,
   TrendingUp,
   Users,
 } from "lucide-react"
@@ -95,6 +98,25 @@ export function QualityDashboardTab({
   const [aiSubView, setAiSubView] = useState<"OVERVIEW" | "GROUPS" | "INDIVIDUALS">("OVERVIEW")
   const [memberSearch, setMemberSearch] = useState("")
   const [groupFilter, setGroupFilter] = useState<string>("ALL")
+  const [activeSliceGroupName, setActiveSliceGroupName] = useState<string>(
+    aiReport.groupAnalyses[0]?.groupName || ""
+  )
+
+  const activeSliceGroup =
+    aiReport.groupAnalyses.find((g) => g.groupName === activeSliceGroupName) ||
+    aiReport.groupAnalyses[0] ||
+    null
+
+  const SLICE_PALETTE = [
+    { bar: "bg-[#003B3A]", dot: "bg-[#003B3A]", ring: "#003B3A" },
+    { bar: "bg-[#00736E]", dot: "bg-[#00736E]", ring: "#00736E" },
+    { bar: "bg-[#00A19A]", dot: "bg-[#00A19A]", ring: "#00A19A" },
+    { bar: "bg-[#059669]", dot: "bg-[#059669]", ring: "#059669" },
+    { bar: "bg-[#D97706]", dot: "bg-[#D97706]", ring: "#D97706" },
+  ]
+
+  const totalGroupItems = aiReport.groupAnalyses.reduce((sum, g) => sum + g.totalItems, 0)
+  const totalGroupMembers = aiReport.groupAnalyses.reduce((sum, g) => sum + g.memberCount, 0)
 
   const ds = aiReport.departmentSummary
   const unsubmittedCount = Math.max(0, ds.totalMembers - ds.submittedMembers)
@@ -312,99 +334,336 @@ export function QualityDashboardTab({
 
       {/* 3. Lưới 2 cột: Tiến độ & Hiệu suất 5 Nhóm chuyên môn + AI Agent Phân tích Chất lượng */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-        {/* Cột Trái (7/12): Tiến độ & Hiệu suất từng Nhóm chuyên môn Ban KT&ĐBCL */}
-        <div className="xl:col-span-7 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5 flex flex-col">
-          <div className="flex items-center justify-between gap-3 pb-3.5 border-b border-[#F1F5F9]">
+        {/* Cột Trái (7/12): Tiến độ & Hiệu suất từng Nhóm chuyên môn Ban KT&ĐBCL — Dạng lát cắt trực quan */}
+        <div className="xl:col-span-7 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5 flex flex-col gap-4 tabular-nums">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-[#F1F5F9]">
             <div className="border-l-4 border-[#003B3A] pl-3">
               <h3 className="text-sm font-bold text-[#003B3A]">
-                Tiến độ & Hiệu suất theo Nhóm chuyên môn Ban KT&ĐBCL
+                Tiến độ &amp; Hiệu suất theo Nhóm chuyên môn Ban KT&amp;ĐBCL
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Nhấn vào từng nhóm để lọc và xác nhận các đầu việc trực thuộc nhóm đó
+                Lát cắt đa chiều theo nhóm chuyên môn — chọn từng lát cắt để soi chi tiết và lọc đầu việc
               </p>
             </div>
-            <span className="text-xs font-semibold text-[#00736E] bg-[#F0FDFA] px-2.5 py-1 rounded-lg border border-teal-200 tabular-nums">
-              {aiReport.groupAnalyses.length} nhóm chuyên môn
-            </span>
+            <div className="flex items-center gap-2 text-[11px] font-semibold">
+              <span className="inline-flex items-center gap-1.5 text-[#00736E] bg-[#F0FDFA] px-2.5 py-1 rounded-lg border border-teal-200">
+                <Layers className="w-3.5 h-3.5" />
+                {aiReport.groupAnalyses.length} lát cắt nhóm
+              </span>
+            </div>
           </div>
 
-          <div className="mt-4 space-y-3.5 flex-1">
-            {aiReport.groupAnalyses.map((g) => {
+          {/* Lát cắt 1: Thanh tỷ trọng phân bổ toàn Ban */}
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+              <span className="font-semibold text-slate-600">
+                {totalGroupItems > 0
+                  ? `Phân bổ khối lượng công việc toàn Ban (${totalGroupItems} đầu việc)`
+                  : `Cơ cấu nhân sự theo nhóm chuyên môn (${totalGroupMembers} lượt phân công)`}
+              </span>
+              <div className="flex items-center gap-3 text-slate-500">
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#059669]" /> Hoàn thành
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#D97706]" /> Đang làm
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#E11D48]" /> Trễ hạn
+                </span>
+              </div>
+            </div>
+
+            <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden flex gap-0.5 p-0.5 border border-[#E2E8F0]">
+              {aiReport.groupAnalyses.map((g, idx) => {
+                const palette = SLICE_PALETTE[idx % SLICE_PALETTE.length]
+                const weight =
+                  totalGroupItems > 0
+                    ? (g.totalItems / totalGroupItems) * 100
+                    : totalGroupMembers > 0
+                    ? (g.memberCount / totalGroupMembers) * 100
+                    : 100 / Math.max(1, aiReport.groupAnalyses.length)
+                const isSelected = activeSliceGroup?.groupName === g.groupName
+
+                return (
+                  <button
+                    key={g.groupName}
+                    type="button"
+                    onClick={() => setActiveSliceGroupName(g.groupName)}
+                    style={{ width: `${Math.max(weight, 6)}%` }}
+                    title={`${g.groupName}: ${g.totalItems} đầu việc · ${g.memberCount} nhân sự · Hoàn thành ${g.completionRate}%`}
+                    className={`h-full rounded-full transition-all cursor-pointer ${palette.bar} ${
+                      isSelected ? "opacity-100 ring-2 ring-[#003B3A]/30" : "opacity-55 hover:opacity-90"
+                    }`}
+                  />
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Lát cắt 2: 5 Cột lát cắt nhóm với biểu đồ vòng (Donut Slice) song song */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+            {aiReport.groupAnalyses.map((g, idx) => {
               const badge = getQualityStatusBadge(g.qualityStatus)
-              const completedPct = g.totalItems > 0 ? (g.completedItems / g.totalItems) * 100 : 0
-              const doingPct = g.totalItems > 0 ? (g.doingItems / g.totalItems) * 100 : 0
+              const palette = SLICE_PALETTE[idx % SLICE_PALETTE.length]
+              const isSelected = activeSliceGroup?.groupName === g.groupName
+
+              // SVG Donut Ring calculations (r = 24, circumference ≈ 150.8)
+              const radius = 24
+              const circumference = 2 * Math.PI * radius
+              const completedRatio = g.totalItems > 0 ? Math.min(1, g.completedItems / g.totalItems) : 0
+              const doingRatio = g.totalItems > 0 ? Math.min(1 - completedRatio, g.doingItems / g.totalItems) : 0
+              const overdueRatio =
+                g.totalItems > 0
+                  ? Math.min(1 - completedRatio - doingRatio, g.overdueItems / g.totalItems)
+                  : 0
+
+              const completedLen = completedRatio * circumference
+              const doingLen = doingRatio * circumference
+              const overdueLen = overdueRatio * circumference
 
               return (
-                <div
+                <button
                   key={g.groupName}
-                  onClick={() => onSelectGroupToReview(g.groupName)}
-                  className="group rounded-xl border border-[#E2E8F0] hover:border-[#00A19A] bg-[#F8FAFC]/60 hover:bg-white p-3.5 transition-all cursor-pointer tabular-nums"
+                  type="button"
+                  onClick={() => setActiveSliceGroupName(g.groupName)}
+                  className={`text-left rounded-xl border p-3 transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                    isSelected
+                      ? "bg-[#F0FDFA]/70 border-[#003B3A] ring-1 ring-[#003B3A]/20 shadow-xs"
+                      : "bg-[#F8FAFC]/70 border-[#E2E8F0] hover:border-[#00A19A] hover:bg-white"
+                  }`}
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-[#003B3A] group-hover:text-[#008B85] transition-colors">
+                  {/* Group Header */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${palette.dot}`} />
+                      <span className="text-xs font-bold text-[#003B3A] leading-tight line-clamp-2">
                         {g.groupName}
                       </span>
-                      <span className="text-[11px] text-slate-500">
-                        ({g.memberCount} nhân sự • {g.totalItems} đầu việc)
-                      </span>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-[#003B3A]">
-                        Hiệu suất: <strong className="text-[#008B85]">{g.efficiencyScore}%</strong>
-                      </span>
-                      <span className="text-xs text-slate-400">•</span>
-                      <span className="text-xs font-semibold text-slate-700">
-                        CL: <strong>{g.avgQualityScore}/10</strong>
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${badge.cls}`}
-                      >
-                        {badge.label}
-                      </span>
+                    <div className="text-[11px] text-slate-500">
+                      {g.memberCount} NS · {g.totalItems} việc
                     </div>
                   </div>
 
-                  {/* Thanh tiến độ phân tầng */}
-                  <div className="mt-2.5 flex items-center gap-3">
-                    <div className="flex-1 h-2.5 rounded-full bg-slate-200/80 overflow-hidden flex">
-                      <div
-                        className="h-full bg-[#059669] transition-all"
-                        style={{ width: `${completedPct}%` }}
-                        title={`Hoàn thành: ${g.completedItems}`}
-                      />
-                      <div
-                        className="h-full bg-[#D97706] transition-all"
-                        style={{ width: `${doingPct}%` }}
-                        title={`Đang thực hiện: ${g.doingItems}`}
-                      />
-                    </div>
-                    <span className="text-xs font-bold text-[#003B3A] w-11 text-right">
-                      {g.completionRate}%
-                    </span>
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-[#059669] font-medium">
-                        Hoàn thành: {g.completedItems} (Đã duyệt: {g.confirmedItems})
-                      </span>
-                      <span className="text-[#D97706] font-medium">
-                        Đang làm: {g.doingItems}
-                      </span>
-                      {g.overdueItems > 0 && (
-                        <span className="text-[#E11D48] font-semibold">
-                          Trễ hạn: {g.overdueItems}
+                  {/* Donut Progress Slice */}
+                  <div className="flex items-center justify-center py-0.5">
+                    <div className="relative w-16 h-16">
+                      <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r={radius}
+                          fill="none"
+                          stroke="#E2E8F0"
+                          strokeWidth="6"
+                        />
+                        {completedLen > 0 && (
+                          <circle
+                            cx="32"
+                            cy="32"
+                            r={radius}
+                            fill="none"
+                            stroke="#059669"
+                            strokeWidth="6"
+                            strokeDasharray={`${completedLen} ${circumference}`}
+                            strokeDashoffset={0}
+                            strokeLinecap="round"
+                          />
+                        )}
+                        {doingLen > 0 && (
+                          <circle
+                            cx="32"
+                            cy="32"
+                            r={radius}
+                            fill="none"
+                            stroke="#D97706"
+                            strokeWidth="6"
+                            strokeDasharray={`${doingLen} ${circumference}`}
+                            strokeDashoffset={-completedLen}
+                            strokeLinecap="round"
+                          />
+                        )}
+                        {overdueLen > 0 && (
+                          <circle
+                            cx="32"
+                            cy="32"
+                            r={radius}
+                            fill="none"
+                            stroke="#E11D48"
+                            strokeWidth="6"
+                            strokeDasharray={`${overdueLen} ${circumference}`}
+                            strokeDashoffset={-(completedLen + doingLen)}
+                            strokeLinecap="round"
+                          />
+                        )}
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-xs font-bold text-[#003B3A] leading-none">
+                          {g.completionRate}%
                         </span>
-                      )}
+                        <span className="text-[9px] text-slate-400 mt-0.5">HT</span>
+                      </div>
                     </div>
-                    <span className="text-slate-500 truncate max-w-md">{g.recommendedAction}</span>
                   </div>
-                </div>
+
+                  {/* Compact Slice Metrics */}
+                  <div className="space-y-1.5 pt-1.5 border-t border-[#E2E8F0]/80">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">Hiệu suất</span>
+                      <span className="font-bold text-[#00736E]">{g.efficiencyScore}%</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">Chất lượng</span>
+                      <span className="font-bold text-[#003B3A]">{g.avgQualityScore}/10</span>
+                    </div>
+                    <div
+                      className={`mt-1 text-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border truncate ${badge.cls}`}
+                    >
+                      {badge.label}
+                    </div>
+                  </div>
+                </button>
               )
             })}
           </div>
+
+          {/* Lát cắt 3: Bảng soi chi tiết lát cắt nhóm đang chọn */}
+          {activeSliceGroup && (() => {
+            const badge = getQualityStatusBadge(activeSliceGroup.qualityStatus)
+            const remainingItems = Math.max(
+              0,
+              activeSliceGroup.totalItems - activeSliceGroup.completedItems - activeSliceGroup.doingItems
+            )
+            const qualityPct = Math.min(100, Math.round(activeSliceGroup.avgQualityScore * 10))
+
+            return (
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-3.5 mt-auto">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[#E2E8F0]">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-[#003B3A]">
+                      Lát cắt chi tiết: {activeSliceGroup.groupName}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${badge.cls}`}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => onSelectGroupToReview(activeSliceGroup.groupName)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#003B3A] hover:bg-[#005250] text-white transition-colors cursor-pointer"
+                  >
+                    Lọc &amp; xác nhận đầu việc
+                    <ArrowUpRight className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                  </button>
+                </div>
+
+                {/* 4 ô lát cắt trạng thái đầu việc */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
+                    <div className="text-[11px] text-slate-500">Hoàn thành</div>
+                    <div className="text-sm font-bold text-[#059669] mt-0.5">
+                      {activeSliceGroup.completedItems}
+                      <span className="text-[11px] font-normal text-slate-500 ml-1">
+                        (Duyệt: {activeSliceGroup.confirmedItems})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
+                    <div className="text-[11px] text-slate-500">Đang thực hiện</div>
+                    <div className="text-sm font-bold text-[#D97706] mt-0.5">
+                      {activeSliceGroup.doingItems}
+                      <span className="text-[11px] font-normal text-slate-500 ml-1">việc</span>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
+                    <div className="text-[11px] text-slate-500">Chưa bắt đầu</div>
+                    <div className="text-sm font-bold text-slate-700 mt-0.5">
+                      {remainingItems}
+                      <span className="text-[11px] font-normal text-slate-500 ml-1">việc</span>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
+                    <div className="text-[11px] text-slate-500">Trễ hạn</div>
+                    <div
+                      className={`text-sm font-bold mt-0.5 ${
+                        activeSliceGroup.overdueItems > 0 ? "text-[#E11D48]" : "text-[#059669]"
+                      }`}
+                    >
+                      {activeSliceGroup.overdueItems}
+                      <span className="text-[11px] font-normal text-slate-500 ml-1">việc</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3 thanh lát cắt chỉ số so với mục tiêu 85% */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-600 font-medium">Tiến độ hoàn thành</span>
+                      <span className="font-bold text-[#059669]">{activeSliceGroup.completionRate}%</span>
+                    </div>
+                    <div className="relative h-2 rounded-full bg-slate-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#059669] transition-all"
+                        style={{ width: `${Math.min(100, activeSliceGroup.completionRate)}%` }}
+                      />
+                      <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-[#003B3A]/40"
+                        style={{ left: "85%" }}
+                        title="Mục tiêu 85%"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-600 font-medium">Chỉ số hiệu suất</span>
+                      <span className="font-bold text-[#00736E]">{activeSliceGroup.efficiencyScore}%</span>
+                    </div>
+                    <div className="relative h-2 rounded-full bg-slate-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#008B85] transition-all"
+                        style={{ width: `${Math.min(100, activeSliceGroup.efficiencyScore)}%` }}
+                      />
+                      <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-[#003B3A]/40"
+                        style={{ left: "85%" }}
+                        title="Mục tiêu 85%"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-600 font-medium">Điểm chất lượng</span>
+                      <span className="font-bold text-[#003B3A]">{activeSliceGroup.avgQualityScore}/10</span>
+                    </div>
+                    <div className="relative h-2 rounded-full bg-slate-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#003B3A] transition-all"
+                        style={{ width: `${qualityPct}%` }}
+                      />
+                      <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-[#00A19A]/60"
+                        style={{ left: "85%" }}
+                        title="Mục tiêu 8.5/10"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Khuyến nghị hành động */}
+                <div className="flex items-start gap-2 text-xs text-slate-600 bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
+                  <Target className="w-3.5 h-3.5 text-[#00736E] shrink-0 mt-0.5" />
+                  <span className="leading-relaxed">{activeSliceGroup.recommendedAction}</span>
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* Cột Phải (5/12): AI Agent Phân tích Chất lượng Công việc */}
