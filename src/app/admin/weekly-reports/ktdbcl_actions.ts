@@ -701,12 +701,15 @@ export async function syncQaWorkspaceTasksToReportDraft(params: {
         contentParts.push(t.description.trim().slice(0, 220))
       }
 
+      const handlingDetail = contentParts.join(" — ")
       return {
         linkedWorkTaskId: t.id,
         taskGroup: t.taskGroup?.name || "ĐBCL",
         category: itemCode ? `RACI ${itemCode}` : t.category || "Chuyên môn",
         mainTask: displayTitle,
-        workContent: contentParts.length > 0 ? contentParts.join(" — ") : displayTitle,
+        taskTitle: t.title,
+        taskHandlingDetail: handlingDetail,
+        workContent: handlingDetail ? `[Task] ${t.title}\n${handlingDetail}` : `[Task] ${t.title}`,
         expectedCompletion: endDateStr,
         progress: mappedProgress,
         proposedSolution: "",

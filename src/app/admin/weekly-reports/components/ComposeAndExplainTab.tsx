@@ -36,11 +36,43 @@ export interface DraftReportRow {
   taskGroup: string
   category: string
   mainTask: string
+  taskTitle: string
+  taskHandlingDetail: string
   workContent: string
   expectedCompletion: string
   progress: string
   proposedSolution: string
   linkedWorkTaskId?: string | null
+}
+
+function parseWorkContentToTaskFields(workContent: string): {
+  taskTitle: string
+  taskHandlingDetail: string
+} {
+  const raw = String(workContent || "").trim()
+  if (!raw) return { taskTitle: "", taskHandlingDetail: "" }
+  if (raw.startsWith("[Task] ")) {
+    const nlIdx = raw.indexOf("\n")
+    if (nlIdx === -1) {
+      return { taskTitle: raw.slice(7).trim(), taskHandlingDetail: "" }
+    }
+    return {
+      taskTitle: raw.slice(7, nlIdx).trim(),
+      taskHandlingDetail: raw.slice(nlIdx + 1).trim(),
+    }
+  }
+  return { taskTitle: raw, taskHandlingDetail: "" }
+}
+
+function serializeTaskFieldsToWorkContent(
+  taskTitle: string,
+  taskHandlingDetail: string
+): string {
+  const t = taskTitle.trim()
+  const d = taskHandlingDetail.trim()
+  if (t && d) return `[Task] ${t}\n${d}`
+  if (t) return `[Task] ${t}`
+  return d
 }
 
 interface ComposeAndExplainTabProps {
@@ -102,13 +134,16 @@ function buildRowFromAssignedTask(
   } else if (task.description && task.description.trim() !== task.title.trim()) {
     contentParts.push(task.description.trim().slice(0, 220))
   }
+  const handlingText = contentParts.join("\n")
 
   return {
     linkedWorkTaskId: task.id,
     taskGroup: resolveGroupOption(task.taskGroupName, specialistGroups, defaultGroup),
     category: task.templateItemCode ? `RACI ${task.templateItemCode}` : task.category || "Chuyên môn",
     mainTask: displayTitle,
-    workContent: contentParts.join("\n"),
+    taskTitle: task.title,
+    taskHandlingDetail: handlingText,
+    workContent: serializeTaskFieldsToWorkContent(task.title, handlingText),
     expectedCompletion: task.endDateLabel || "",
     progress: mappedProgress,
     proposedSolution: "",
@@ -120,12 +155,15 @@ function buildRowFromRaciTemplate(
   specialistGroups: string[],
   defaultGroup: string
 ): DraftReportRow {
+  const handlingHint = tpl.deliverables ? `Đầu ra kỳ vọng: ${tpl.deliverables}` : ""
   return {
     linkedWorkTaskId: null,
     taskGroup: resolveGroupOption(tpl.taskGroupName, specialistGroups, defaultGroup),
     category: `RACI ${tpl.itemCode}`,
     mainTask: `[${tpl.itemCode}] ${tpl.title}`,
-    workContent: tpl.deliverables ? `Đầu ra kỳ vọng: ${tpl.deliverables}` : "",
+    taskTitle: "",
+    taskHandlingDetail: handlingHint,
+    workContent: serializeTaskFieldsToWorkContent("", handlingHint),
     expectedCompletion: "",
     progress: "DOING",
     proposedSolution: "",
@@ -203,17 +241,22 @@ export function ComposeAndExplainTab({
   useEffect(() => {
     if (existingWeekItems.length > 0) {
       setRows(
-        existingWeekItems.map((it) => ({
-          id: it.id,
-          taskGroup: it.taskGroup || defaultGroup,
-          category: it.category || it.mainTask || defaultCategory,
-          mainTask: it.mainTask,
-          workContent: it.workContent,
-          expectedCompletion: it.expectedCompletion || "",
-          progress: it.progress || "DOING",
-          proposedSolution: it.proposedSolution || "",
-          linkedWorkTaskId: it.meta.linkedWorkTaskId || null,
-        }))
+        existingWeekItems.map((it) => {
+          const parsed = parseWorkContentToTaskFields(it.workContent)
+          return {
+            id: it.id,
+            taskGroup: it.taskGroup || defaultGroup,
+            category: it.category || it.mainTask || defaultCategory,
+            mainTask: it.mainTask,
+            taskTitle: parsed.taskTitle,
+            taskHandlingDetail: parsed.taskHandlingDetail,
+            workContent: it.workContent,
+            expectedCompletion: it.expectedCompletion || "",
+            progress: it.progress || "DOING",
+            proposedSolution: it.proposedSolution || "",
+            linkedWorkTaskId: it.meta.linkedWorkTaskId || null,
+          }
+        })
       )
     } else {
       setRows([
@@ -221,6 +264,8 @@ export function ComposeAndExplainTab({
           taskGroup: defaultGroup,
           category: defaultCategory,
           mainTask: "",
+          taskTitle: "",
+          taskHandlingDetail: "",
           workContent: "",
           expectedCompletion: "",
           progress: "DOING",
@@ -265,14 +310,14 @@ export function ComposeAndExplainTab({
     return includedNormalizedTitles.has(rawTitle) || includedNormalizedTitles.has(codedTitle)
   }
 
-  const isTemplateInReport = (tpl: AssignedPositionTemplateOption) => {
+  const countTemplateTasksInReport = (tpl: AssignedPositionTemplateOption) => {
     const codeToken = `[${tpl.itemCode}]`.toLowerCase()
     const raciCat = `raci ${tpl.itemCode}`.toLowerCase()
-    return rows.some(
+    return rows.filter(
       (r) =>
         r.mainTask.toLowerCase().includes(codeToken) ||
         r.category.toLowerCase() === raciCat
-    )
+    ).length
   }
 
   const activeUnfinishedTasks = useMemo(
@@ -300,14 +345,17 @@ export function ComposeAndExplainTab({
     if (incoming.length === 0) return
     setRows((prev) => {
       const meaningful = prev.filter(
-        (r) => r.workContent.trim().length > 0 || r.mainTask.trim().length > 0 || Boolean(r.linkedWorkTaskId)
+        (r) =>
+          r.taskTitle.trim().length > 0 ||
+          r.taskHandlingDetail.trim().length > 0 ||
+          r.mainTask.trim().length > 0 ||
+          Boolean(r.linkedWorkTaskId)
       )
       return [...meaningful, ...incoming]
     })
   }
 
   const handleAddAssignedTask = (task: AssignedWorkTaskOption) => {
-    if (isTaskInReport(task)) return
     appendDraftRows([buildRowFromAssignedTask(task, specialistGroups, defaultGroup)])
   }
 
@@ -320,8 +368,26 @@ export function ComposeAndExplainTab({
   }
 
   const handleAddRaciTemplate = (tpl: AssignedPositionTemplateOption) => {
-    if (isTemplateInReport(tpl)) return
+    // Cho phép tạo nhiều task việc thuộc cùng một Nhiệm vụ mô tả công việc (MTCV)
     appendDraftRows([buildRowFromRaciTemplate(tpl, specialistGroups, defaultGroup)])
+  }
+
+  const handleAddSiblingTaskForSameMtcv = (idx: number) => {
+    const source = rows[idx]
+    if (!source) return
+    const sibling: DraftReportRow = {
+      taskGroup: source.taskGroup,
+      category: source.category,
+      mainTask: source.mainTask,
+      taskTitle: "",
+      taskHandlingDetail: "",
+      workContent: "",
+      expectedCompletion: source.expectedCompletion || "",
+      progress: "DOING",
+      proposedSolution: "",
+      linkedWorkTaskId: source.linkedWorkTaskId || null,
+    }
+    setRows((prev) => [...prev.slice(0, idx + 1), sibling, ...prev.slice(idx + 1)])
   }
 
   const handleAddRow = () => {
@@ -331,6 +397,8 @@ export function ComposeAndExplainTab({
         taskGroup: defaultGroup,
         category: defaultCategory,
         mainTask: "",
+        taskTitle: "",
+        taskHandlingDetail: "",
         workContent: "",
         expectedCompletion: "",
         progress: "DOING",
@@ -364,7 +432,16 @@ export function ComposeAndExplainTab({
         mainTask: built.mainTask,
         expectedCompletion: built.expectedCompletion || currentRow.expectedCompletion,
         progress: built.progress,
-        workContent: currentRow.workContent.trim() ? currentRow.workContent : built.workContent,
+        taskTitle: currentRow.taskTitle.trim() ? currentRow.taskTitle : built.taskTitle,
+        taskHandlingDetail: currentRow.taskHandlingDetail.trim()
+          ? currentRow.taskHandlingDetail
+          : built.taskHandlingDetail,
+        workContent: serializeTaskFieldsToWorkContent(
+          currentRow.taskTitle.trim() ? currentRow.taskTitle : built.taskTitle,
+          currentRow.taskHandlingDetail.trim()
+            ? currentRow.taskHandlingDetail
+            : built.taskHandlingDetail
+        ),
       })
       return
     }
@@ -379,7 +456,15 @@ export function ComposeAndExplainTab({
         taskGroup: built.taskGroup,
         category: built.category,
         mainTask: built.mainTask,
-        workContent: currentRow.workContent.trim() ? currentRow.workContent : built.workContent,
+        taskHandlingDetail: currentRow.taskHandlingDetail.trim()
+          ? currentRow.taskHandlingDetail
+          : built.taskHandlingDetail,
+        workContent: serializeTaskFieldsToWorkContent(
+          currentRow.taskTitle,
+          currentRow.taskHandlingDetail.trim()
+            ? currentRow.taskHandlingDetail
+            : built.taskHandlingDetail
+        ),
       })
       return
     }
@@ -417,10 +502,22 @@ export function ComposeAndExplainTab({
     try {
       const imported = await onSyncFromQaWorkspace(targetUserId)
       if (imported.length > 0) {
+        const normalizedImported: DraftReportRow[] = imported.map((imp: any) => {
+          const parsed = parseWorkContentToTaskFields(imp.workContent || "")
+          const tTitle = imp.taskTitle || imp.mainTask || parsed.taskTitle
+          const tDetail = imp.taskHandlingDetail || parsed.taskHandlingDetail
+          return {
+            ...imp,
+            taskTitle: tTitle,
+            taskHandlingDetail: tDetail,
+            workContent: serializeTaskFieldsToWorkContent(tTitle, tDetail),
+          }
+        })
         setRows((prev) => {
           const nonEmpty = prev.filter(
             (r) =>
-              r.workContent.trim().length > 0 ||
+              r.taskTitle.trim().length > 0 ||
+              r.taskHandlingDetail.trim().length > 0 ||
               r.mainTask.trim().length > 0 ||
               Boolean(r.linkedWorkTaskId)
           )
@@ -428,7 +525,7 @@ export function ComposeAndExplainTab({
             nonEmpty.map((r) => r.linkedWorkTaskId).filter(Boolean) as string[]
           )
           const existingTitles = new Set(nonEmpty.map((r) => r.mainTask.trim().toLowerCase()))
-          const fresh = imported.filter(
+          const fresh = normalizedImported.filter(
             (imp) =>
               !(imp.linkedWorkTaskId && existingTaskIds.has(imp.linkedWorkTaskId)) &&
               !existingTitles.has(imp.mainTask.trim().toLowerCase())
@@ -442,8 +539,16 @@ export function ComposeAndExplainTab({
   }
 
   const handleSave = async () => {
-    const meaningfulRows = rows.filter(
-      (r) => r.workContent.trim().length > 0 || r.mainTask.trim().length > 0 || Boolean(r.linkedWorkTaskId)
+    const serializedRows = rows.map((r) => ({
+      ...r,
+      workContent: serializeTaskFieldsToWorkContent(r.taskTitle, r.taskHandlingDetail),
+    }))
+    const meaningfulRows = serializedRows.filter(
+      (r) =>
+        r.taskTitle.trim().length > 0 ||
+        r.taskHandlingDetail.trim().length > 0 ||
+        r.mainTask.trim().length > 0 ||
+        Boolean(r.linkedWorkTaskId)
     )
     if (meaningfulRows.length === 0) {
       toast.error("Vui lòng chọn ít nhất 1 nhiệm vụ mô tả công việc để lập báo cáo tuần.")
@@ -451,9 +556,12 @@ export function ComposeAndExplainTab({
     }
     if (requiresJobDescBinding) {
       const unboundIdx: number[] = []
-      rows.forEach((r, idx) => {
+      serializedRows.forEach((r, idx) => {
         const hasContent =
-          r.workContent.trim().length > 0 || r.mainTask.trim().length > 0 || Boolean(r.linkedWorkTaskId)
+          r.taskTitle.trim().length > 0 ||
+          r.taskHandlingDetail.trim().length > 0 ||
+          r.mainTask.trim().length > 0 ||
+          Boolean(r.linkedWorkTaskId)
         if (hasContent && !isRowBoundToJobDesc(r)) {
           unboundIdx.push(idx + 1)
         }
@@ -469,7 +577,7 @@ export function ComposeAndExplainTab({
     setShowBindingErrors(false)
     setIsSaving(true)
     try {
-      await onSaveReport(targetUserId, rows)
+      await onSaveReport(targetUserId, serializedRows)
     } finally {
       setIsSaving(false)
     }
@@ -897,12 +1005,12 @@ export function ComposeAndExplainTab({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1 tabular-nums">
                   {filteredRaciTemplates.map((tpl) => {
-                    const alreadyIn = isTemplateInReport(tpl)
+                    const taskCount = countTemplateTasksInReport(tpl)
                     return (
                       <div
                         key={tpl.id}
                         className={`rounded-xl border p-3 flex flex-col justify-between gap-2 transition-colors ${
-                          alreadyIn
+                          taskCount > 0
                             ? "border-emerald-200 bg-emerald-50/30"
                             : "border-[#E2E8F0] bg-white hover:border-[#00A19A]"
                         }`}
@@ -925,22 +1033,23 @@ export function ComposeAndExplainTab({
                             </p>
                           )}
                         </div>
-                        <div className="flex items-center justify-end pt-1 border-t border-[#F1F5F9]">
-                          {alreadyIn ? (
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#F1F5F9]">
+                          {taskCount > 0 ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#059669]">
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              Đã có trong báo cáo
+                              {taskCount} task
                             </span>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleAddRaciTemplate(tpl)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-[#00A19A] hover:text-white transition-colors"
-                            >
-                              <Plus className="w-3 h-3" />
-                              Đưa vào báo cáo
-                            </button>
+                            <span />
                           )}
+                          <button
+                            type="button"
+                            onClick={() => handleAddRaciTemplate(tpl)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-[#00A19A] hover:text-white transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                            {taskCount > 0 ? "Thêm task nữa" : "Đưa vào báo cáo"}
+                          </button>
                         </div>
                       </div>
                     )
@@ -964,11 +1073,14 @@ export function ComposeAndExplainTab({
                 <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-44">
                   Nhóm chuyên môn
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-72">
+                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-64">
                   Nhiệm vụ mô tả công việc (MTCV) <span className="text-[#5EEAD4]">*</span>
                 </th>
-                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white min-w-[280px]">
-                  Nội dung công việc thực hiện chi tiết
+                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white min-w-[210px]">
+                  Task việc
+                </th>
+                <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white min-w-[260px]">
+                  Nội dung xử lý task việc
                 </th>
                 <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100 w-36">
                   Dự kiến hoàn thành
@@ -990,7 +1102,8 @@ export function ComposeAndExplainTab({
                 const selectVal = resolveRowSelectValue(row)
                 const isBound = isRowBoundToJobDesc(row)
                 const hasAnyInput =
-                  row.workContent.trim().length > 0 ||
+                  row.taskTitle.trim().length > 0 ||
+                  row.taskHandlingDetail.trim().length > 0 ||
                   row.mainTask.trim().length > 0 ||
                   Boolean(row.linkedWorkTaskId)
                 const isMissingBinding = requiresJobDescBinding && !isBound && (showBindingErrors || hasAnyInput)
@@ -1076,8 +1189,8 @@ export function ComposeAndExplainTab({
                           Bắt buộc gắn nhiệm vụ MTCV hoặc việc được giao
                         </div>
                       ) : (
-                        (row.linkedWorkTaskId || row.category.startsWith("RACI ")) && (
-                          <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                        <div className="flex flex-wrap items-center justify-between gap-1 pt-0.5">
+                          <div className="flex flex-wrap items-center gap-1">
                             {row.linkedWorkTaskId && (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200">
                                 <Link2 className="w-3 h-3" />
@@ -1092,16 +1205,52 @@ export function ComposeAndExplainTab({
                               </span>
                             )}
                           </div>
-                        )
+                          {isBound && (
+                            <button
+                              type="button"
+                              onClick={() => handleAddSiblingTaskForSameMtcv(idx)}
+                              title="Thêm 1 task việc khác thuộc cùng Nhiệm vụ mô tả công việc (MTCV) này"
+                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-[#00A19A] hover:text-white transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                              Thêm task
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="py-3 px-3">
                       <textarea
                         rows={3}
-                        value={row.workContent}
-                        onChange={(e) => updateRow(idx, { workContent: e.target.value })}
-                        placeholder="Mô tả kết quả thực hiện trong tuần, số liệu hoặc đường dẫn minh chứng..."
-                        className="w-full rounded-xl border border-[#E2E8F0] px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#00A19A]"
+                        value={row.taskTitle}
+                        onChange={(e) =>
+                          updateRow(idx, {
+                            taskTitle: e.target.value,
+                            workContent: serializeTaskFieldsToWorkContent(
+                              e.target.value,
+                              row.taskHandlingDetail
+                            ),
+                          })
+                        }
+                        placeholder="Nhập tên task việc cụ thể thuộc MTCV này..."
+                        className="w-full rounded-xl border border-[#E2E8F0] px-2.5 py-2 text-xs font-medium text-[#003B3A] focus:outline-none focus:border-[#00A19A]"
+                      />
+                    </td>
+                    <td className="py-3 px-3">
+                      <textarea
+                        rows={3}
+                        value={row.taskHandlingDetail}
+                        onChange={(e) =>
+                          updateRow(idx, {
+                            taskHandlingDetail: e.target.value,
+                            workContent: serializeTaskFieldsToWorkContent(
+                              row.taskTitle,
+                              e.target.value
+                            ),
+                          })
+                        }
+                        placeholder="Nội dung xử lý, kết quả đạt được, số liệu hoặc link minh chứng..."
+                        className="w-full rounded-xl border border-[#E2E8F0] px-2.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-[#00A19A]"
                       />
                     </td>
                     <td className="py-3 px-3">

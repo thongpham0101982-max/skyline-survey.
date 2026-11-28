@@ -548,10 +548,30 @@ export function ReviewAndConfirmTab({
                         </div>
                         <div className="mt-1 font-medium text-slate-700">{it.mainTask}</div>
                       </td>
-                      <td className="py-3 px-3 align-middle min-w-[260px] max-w-[360px]">
-                        <p className="text-slate-700 whitespace-pre-line leading-relaxed">
-                          {it.workContent}
-                        </p>
+                      <td className="py-3 px-3 align-middle min-w-[260px] max-w-[380px]">
+                        {(() => {
+                          const raw = String(it.workContent || "").trim()
+                          if (raw.startsWith("[Task] ")) {
+                            const nl = raw.indexOf("\n")
+                            const tTitle = nl === -1 ? raw.slice(7).trim() : raw.slice(7, nl).trim()
+                            const tDetail = nl === -1 ? "" : raw.slice(nl + 1).trim()
+                            return (
+                              <div className="space-y-1">
+                                <div className="font-semibold text-[#003B3A]">{tTitle}</div>
+                                {tDetail && (
+                                  <p className="text-slate-600 whitespace-pre-line leading-relaxed text-[11px]">
+                                    {tDetail}
+                                  </p>
+                                )}
+                              </div>
+                            )
+                          }
+                          return (
+                            <p className="text-slate-700 whitespace-pre-line leading-relaxed">
+                              {raw}
+                            </p>
+                          )
+                        })()}
                       </td>
                       <td className="py-3 px-3 align-middle text-center whitespace-nowrap space-y-1">
                         <div>{renderProgressBadge(it.progress)}</div>
