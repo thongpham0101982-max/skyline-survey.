@@ -112,6 +112,13 @@ function resolveGroupOption(
   return exact || fallback
 }
 
+function formatMtcvLabel(itemCode: string, title: string): string {
+  const cleanTitle = String(title || "").trim()
+  const escaped = itemCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const stripped = cleanTitle.replace(new RegExp(`^\\[?${escaped}\\]?\\.?\\s*`, "i"), "").trim()
+  return `[${itemCode}] ${stripped || cleanTitle}`
+}
+
 function buildRowFromAssignedTask(
   task: AssignedWorkTaskOption,
   specialistGroups: string[],
@@ -123,10 +130,9 @@ function buildRowFromAssignedTask(
       : task.progress === "IN_PROGRESS"
       ? "DOING"
       : "NOT_STARTED"
-  const displayTitle =
-    task.templateItemCode && !task.title.includes(task.templateItemCode)
-      ? `[${task.templateItemCode}] ${task.title}`
-      : task.title
+  const displayTitle = task.templateItemCode
+    ? formatMtcvLabel(task.templateItemCode, task.title)
+    : task.title
 
   const contentParts: string[] = []
   if (task.deliverables) {
@@ -160,7 +166,7 @@ function buildRowFromRaciTemplate(
     linkedWorkTaskId: null,
     taskGroup: resolveGroupOption(tpl.taskGroupName, specialistGroups, defaultGroup),
     category: `RACI ${tpl.itemCode}`,
-    mainTask: `[${tpl.itemCode}] ${tpl.title}`,
+    mainTask: formatMtcvLabel(tpl.itemCode, tpl.title),
     taskTitle: "",
     taskHandlingDetail: handlingHint,
     workContent: serializeTaskFieldsToWorkContent("", handlingHint),
@@ -1150,7 +1156,7 @@ export function ComposeAndExplainTab({
                           <optgroup label={`Nhiệm vụ mô tả công việc theo vị trí RACI (${positionTemplates.length})`}>
                             {positionTemplates.map((tpl) => (
                               <option key={tpl.id} value={`RACI:${tpl.id}`}>
-                                [{tpl.itemCode}] {tpl.title}
+                                {formatMtcvLabel(tpl.itemCode, tpl.title)}
                               </option>
                             ))}
                           </optgroup>
@@ -1159,8 +1165,7 @@ export function ComposeAndExplainTab({
                           <optgroup label={`Công việc được giao trên QA Workspace (${assignedTasks.length})`}>
                             {assignedTasks.map((t) => (
                               <option key={t.id} value={`TASK:${t.id}`}>
-                                {t.templateItemCode ? `[${t.templateItemCode}] ` : ""}
-                                {t.title}
+                                {t.templateItemCode ? formatMtcvLabel(t.templateItemCode, t.title) : t.title}
                                 {t.endDateLabel ? ` (Hạn ${t.endDateLabel})` : ""}
                               </option>
                             ))}
@@ -1176,21 +1181,19 @@ export function ComposeAndExplainTab({
                           </optgroup>
                         )}
                       </select>
-                      <input
-                        type="text"
-                        value={row.mainTask}
-                        onChange={(e) => updateRow(idx, { mainTask: e.target.value })}
-                        placeholder="Tên đầu việc bám theo nhiệm vụ MTCV..."
-                        className="w-full rounded-xl border border-[#E2E8F0] px-2.5 py-1.5 text-xs font-medium text-[#003B3A] focus:outline-none focus:border-[#00A19A]"
-                      />
+                      {row.mainTask && isBound && (
+                        <p className="text-[11px] font-medium text-[#003B3A] leading-snug line-clamp-2 px-0.5">
+                          {row.mainTask}
+                        </p>
+                      )}
                       {isMissingBinding ? (
                         <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-50 text-[#E11D48] border border-rose-200">
                           <AlertTriangle className="w-3 h-3 shrink-0" />
-                          Bắt buộc gắn nhiệm vụ MTCV hoặc việc được giao
+                          Bắt buộc chọn nhiệm vụ MTCV hoặc việc được giao
                         </div>
                       ) : (
-                        <div className="flex flex-wrap items-center justify-between gap-1 pt-0.5">
-                          <div className="flex flex-wrap items-center gap-1">
+                        (row.linkedWorkTaskId || row.category.startsWith("RACI ")) && (
+                          <div className="flex flex-wrap items-center gap-1 pt-0.5">
                             {row.linkedWorkTaskId && (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200">
                                 <Link2 className="w-3 h-3" />
@@ -1205,18 +1208,7 @@ export function ComposeAndExplainTab({
                               </span>
                             )}
                           </div>
-                          {isBound && (
-                            <button
-                              type="button"
-                              onClick={() => handleAddSiblingTaskForSameMtcv(idx)}
-                              title="Thêm 1 task việc khác thuộc cùng Nhiệm vụ mô tả công việc (MTCV) này"
-                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-[#00A19A] hover:text-white transition-colors cursor-pointer"
-                            >
-                              <Plus className="w-2.5 h-2.5" />
-                              Thêm task
-                            </button>
-                          )}
-                        </div>
+                        )
                       )}
                     </td>
                     <td className="py-3 px-3">
