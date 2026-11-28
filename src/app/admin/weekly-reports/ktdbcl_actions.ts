@@ -36,7 +36,12 @@ import {
   sendReportItemsCompletedEmail,
 } from "@/lib/qa-workspace/weeklyReportEmailService"
 import { getQaMetadataMapForTasks } from "@/lib/qa-workspace/schemaInit"
-import { getPositionRaciCatalogData } from "@/lib/qa-workspace/positionRaciSchema"
+import {
+  ensurePositionRaciSchema,
+  getAllLeaderManagedMembersMap,
+  getManagedMemberIdsForLeader,
+  getPositionRaciCatalogData,
+} from "@/lib/qa-workspace/positionRaciSchema"
 
 export interface AssignedWorkTaskOption {
   id: string
@@ -125,8 +130,11 @@ async function resolveCallerAuthority() {
   const userId = String(session.user.id)
   const userName = String((session.user as any).name || (session.user as any).fullName || "Quản lý")
   const role = String((session.user as any).role || "STAFF").toUpperCase()
-  const opScope = await getOperationalScope()
-  const roster = await resolveKtdbclRoster()
+  const [opScope, roster, explicitManagedIds] = await Promise.all([
+    getOperationalScope(),
+    resolveKtdbclRoster(),
+    getManagedMemberIdsForLeader(userId).catch(() => []),
+  ])
   const memberInKt = roster.members.find((m) => m.id === userId)
 
   // Báo cáo Tuần Giáo viên & Nhân sự CHỈ áp dụng cho BP/Tổ chuyên môn Ban KT&ĐBCL (và Admin hệ thống), KHÔNG áp dụng cho các Tổ khác
@@ -140,30 +148,29 @@ async function resolveCallerAuthority() {
       ["ADMIN", "SUPER_ADMIN", "SUPERADMIN"].includes(role) ||
       Boolean(memberInKt?.isDirector))
 
+  const ledGroups = roster.taskGroups.filter((g) => g.leaderUserId === userId)
+  const hasManagedTeam = explicitManagedIds.length > 0 || ledGroups.length > 0
+
   const isLeadership =
     isAuthorizedKtdbcl &&
     (isDirectorAuthority ||
       opScope.isDirectTTCM ||
+      hasManagedTeam ||
       Boolean(memberInKt?.isManager))
 
   // Xác định phạm vi nhân sự mà tài khoản đăng nhập được phép xem:
   // - Admin / GĐB / TBP: toàn bộ Ban KT&ĐBCL
-  // - Trưởng nhóm (leaderUserId của TaskGroup): các thành viên trong nhóm mình phụ trách + bản thân
+  // - Nhóm trưởng (được gán thành viên quản lý hoặc leaderUserId của TaskGroup): các thành viên mình quản lý + bản thân
   // - Nhân sự (NV): CHỈ thấy dữ liệu công việc, vị trí RACI và báo cáo của chính mình
   let scopedMemberIds: string[] | null = null
   if (!isDirectorAuthority) {
     if (isLeadership) {
-      const ledGroups = roster.taskGroups.filter((g) => g.leaderUserId === userId)
-      if (ledGroups.length > 0) {
-        const ids = new Set<string>([userId])
-        ledGroups.forEach((g) => g.memberUserIds.forEach((id) => ids.add(id)))
-        scopedMemberIds = Array.from(ids)
-      } else if (opScope.scopedUserIds && opScope.scopedUserIds.length > 0) {
-        const ids = new Set<string>([userId, ...opScope.scopedUserIds])
-        scopedMemberIds = Array.from(ids)
-      } else {
-        scopedMemberIds = [userId]
+      const ids = new Set<string>([userId, ...explicitManagedIds])
+      ledGroups.forEach((g) => g.memberUserIds.forEach((id) => ids.add(id)))
+      if (ids.size === 1 && opScope.scopedUserIds && opScope.scopedUserIds.length > 0) {
+        opScope.scopedUserIds.forEach((id) => ids.add(id))
       }
+      scopedMemberIds = Array.from(ids)
     } else {
       scopedMemberIds = [userId]
     }
@@ -277,7 +284,10 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
       })),
     ])
 
-    const qaTaskMetaMap = await getQaMetadataMapForTasks(workTasks)
+    const [qaTaskMetaMap, leaderManagedMap] = await Promise.all([
+      getQaMetadataMapForTasks(workTasks),
+      getAllLeaderManagedMembersMap().catch(() => ({} as Record<string, string[]>)),
+    ])
 
     const allItemIds = monthReports.flatMap((r) => r.items.map((i) => i.id))
     const itemMetaMap = await getWeeklyItemMetaMap(allItemIds)
@@ -614,6 +624,7 @@ export async function getKtdbclWorkspaceSnapshot(params?: {
       monthItems: JSON.parse(JSON.stringify(monthItems)),
       memberWeeklyTimeline: JSON.parse(JSON.stringify(memberWeeklyTimeline)),
       memberAssignmentMap: JSON.parse(JSON.stringify(memberAssignmentMap)),
+      leaderManagedMap,
       weeklyAnalysis: cachedWeeklyAi || weeklyBaseline,
       monthlyAnalysis: cachedMonthlyAi || monthlyBaseline,
       automationConfig,
@@ -1563,5 +1574,62 @@ export async function updateKtdbclSpecialistGroupMembersAction(params: {
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err?.message || "Lỗi cập nhật nhóm chuyên môn" }
+  }
+}
+
+/**
+ * Gán danh sách thành viên quản lý cho Nhóm trưởng (cho phép Nhóm trưởng xem kết quả & báo cáo của các thành viên này)
+ */
+export async function saveKtdbclLeaderManagedMembersAction(params: {
+  leaderUserId: string
+  memberUserIds: string[]
+  positionCode?: string | null
+}) {
+  try {
+    const authCtx = await resolveCallerAuthority()
+    if (!authCtx.authenticated || !authCtx.isDirectorAuthority) {
+      return {
+        success: false,
+        error: "Chỉ Admin / Giám đốc Ban / Trưởng phòng mới có quyền gán thành viên quản lý cho Nhóm trưởng.",
+      }
+    }
+
+    await ensurePositionRaciSchema()
+    const pAny = prisma as any
+    const leaderId = String(params.leaderUserId || "").trim()
+    if (!leaderId) {
+      return { success: false, error: "Chưa chọn Nhóm trưởng." }
+    }
+
+    const cleanMemberIds = Array.from(
+      new Set((params.memberUserIds || []).filter((id) => Boolean(id) && id !== leaderId))
+    )
+    const nowIso = new Date().toISOString()
+
+    await pAny.$executeRawUnsafe(
+      `DELETE FROM "qa_leader_managed_members" WHERE "leaderUserId" = ?`,
+      leaderId
+    )
+
+    for (const memberId of cleanMemberIds) {
+      const id = `ldr_mem_${leaderId}_${memberId}`
+      await pAny.$executeRawUnsafe(
+        `INSERT INTO "qa_leader_managed_members"
+          ("id", "leaderUserId", "memberUserId", "positionCode", "assignedByName", "updatedAt")
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        id,
+        leaderId,
+        memberId,
+        params.positionCode || null,
+        authCtx.userName,
+        nowIso
+      )
+    }
+
+    revalidatePath("/admin/weekly-reports")
+    revalidatePath("/admin/tasks")
+    return { success: true, managedCount: cleanMemberIds.length }
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Lỗi lưu thành viên quản lý" }
   }
 }

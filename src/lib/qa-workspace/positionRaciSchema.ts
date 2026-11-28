@@ -18,6 +18,14 @@ export interface PositionStaffMapping {
   isPrimary: boolean
 }
 
+export interface LeaderManagedMemberMapping {
+  leaderUserId: string
+  memberUserId: string
+  memberFullName: string
+  memberEmail: string | null
+  positionCode: string | null
+}
+
 export interface PositionTaskTemplateRecord {
   id: string
   unitScope: string
@@ -122,6 +130,16 @@ const POSITION_RACI_DDL: string[] = [
     UNIQUE("templateId", "positionCode")
   )`,
   `CREATE INDEX IF NOT EXISTS "qa_pos_raci_pos_idx" ON "qa_position_template_raci"("positionCode", "raciRole")`,
+  `CREATE TABLE IF NOT EXISTS "qa_leader_managed_members" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "leaderUserId" TEXT NOT NULL,
+    "memberUserId" TEXT NOT NULL,
+    "positionCode" TEXT,
+    "assignedByName" TEXT,
+    "updatedAt" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE("leaderUserId", "memberUserId")
+  )`,
+  `CREATE INDEX IF NOT EXISTS "qa_leader_managed_leader_idx" ON "qa_leader_managed_members"("leaderUserId")`,
 ]
 
 export async function ensurePositionRaciSchema(): Promise<void> {
@@ -308,6 +326,7 @@ export async function getPositionRaciCatalogData() {
       positions: KTDBCL_POSITION_CATALOG,
       staffMappings: [] as PositionStaffMapping[],
       templates: [] as PositionTaskTemplateRecord[],
+      leaderManagedMembers: [] as LeaderManagedMemberMapping[],
     }
   }
 
@@ -320,7 +339,7 @@ export async function getPositionRaciCatalogData() {
     await seedKtdbclPositionRaciCatalog({ forceUpdateExisting: false })
   }
 
-  const [posRows, staffRows, tplRows, raciRows] = await Promise.all([
+  const [posRows, staffRows, tplRows, raciRows, managedRows] = await Promise.all([
     pAny.$queryRawUnsafe(
       `SELECT * FROM "qa_position_catalog" WHERE "unitScope" = ? AND "isManagedPosition" = 1 ORDER BY "displayOrder" ASC`,
       KTDBCL_UNIT_SCOPE
@@ -331,11 +350,15 @@ export async function getPositionRaciCatalogData() {
       KTDBCL_UNIT_SCOPE
     ),
     pAny.$queryRawUnsafe(`SELECT * FROM "qa_position_template_raci"`),
+    pAny.$queryRawUnsafe(`SELECT * FROM "qa_leader_managed_members" ORDER BY "updatedAt" DESC`).catch(() => []),
   ])
 
-  // Enrich staff mappings with User names/emails
+  // Enrich staff mappings & leader-managed mappings with User names/emails
   const staffUserIds = Array.from(
-    new Set((staffRows || []).map((r: any) => String(r.userId)).filter(Boolean))
+    new Set([
+      ...(staffRows || []).map((r: any) => String(r.userId)),
+      ...(managedRows || []).map((r: any) => String(r.memberUserId)),
+    ].filter(Boolean))
   ) as string[]
   const users =
     staffUserIds.length > 0
@@ -356,6 +379,19 @@ export async function getPositionRaciCatalogData() {
         fullName: u.fullName || "Nhân sự",
         email: u.email || null,
         isPrimary: Boolean(Number(r.isPrimary)),
+      }
+    })
+
+  const leaderManagedMembers: LeaderManagedMemberMapping[] = (managedRows || [])
+    .filter((r: any) => userMap.has(String(r.memberUserId)))
+    .map((r: any) => {
+      const u = userMap.get(String(r.memberUserId))!
+      return {
+        leaderUserId: String(r.leaderUserId),
+        memberUserId: u.id,
+        memberFullName: u.fullName || "Nhân sự",
+        memberEmail: u.email || null,
+        positionCode: r.positionCode ? String(r.positionCode) : null,
       }
     })
 
@@ -430,6 +466,47 @@ export async function getPositionRaciCatalogData() {
     positions,
     staffMappings,
     templates,
+    leaderManagedMembers,
+  }
+}
+
+export async function getManagedMemberIdsForLeader(leaderUserId: string): Promise<string[]> {
+  if (!leaderUserId) return []
+  await ensurePositionRaciSchema()
+  const pAny = prisma as any
+  if (typeof pAny.$queryRawUnsafe !== "function") return []
+  try {
+    const rows: any[] = await pAny.$queryRawUnsafe(
+      `SELECT "memberUserId" FROM "qa_leader_managed_members" WHERE "leaderUserId" = ?`,
+      leaderUserId
+    )
+    return Array.from(
+      new Set((rows || []).map((r: any) => String(r.memberUserId)).filter(Boolean))
+    )
+  } catch {
+    return []
+  }
+}
+
+export async function getAllLeaderManagedMembersMap(): Promise<Record<string, string[]>> {
+  await ensurePositionRaciSchema()
+  const pAny = prisma as any
+  if (typeof pAny.$queryRawUnsafe !== "function") return {}
+  try {
+    const rows: any[] = await pAny.$queryRawUnsafe(
+      `SELECT "leaderUserId", "memberUserId" FROM "qa_leader_managed_members"`
+    )
+    const map: Record<string, string[]> = {}
+    for (const r of rows || []) {
+      const lid = String(r.leaderUserId || "")
+      const mid = String(r.memberUserId || "")
+      if (!lid || !mid) continue
+      if (!map[lid]) map[lid] = []
+      if (!map[lid].includes(mid)) map[lid].push(mid)
+    }
+    return map
+  } catch {
+    return {}
   }
 }
 

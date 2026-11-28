@@ -20,6 +20,7 @@ import {
   flagOverdueAndRequestExplanationAction,
   getKtdbclWorkspaceSnapshot,
   MemberAssignmentContext,
+  saveKtdbclLeaderManagedMembersAction,
   saveKtdbclWeeklyReport,
   scanAndRequestOverdueExplanationsAction,
   sendKtdbclDirectorReportNowAction,
@@ -81,6 +82,7 @@ interface SnapshotData {
   monthItems: EnrichedWeeklyReportItem[]
   memberWeeklyTimeline: any[]
   memberAssignmentMap?: Record<string, MemberAssignmentContext>
+  leaderManagedMap?: Record<string, string[]>
   weeklyAnalysis: KtdbclAiQualityReport
   monthlyAnalysis: KtdbclAiQualityReport
   automationConfig: KtdbclWeeklyAutomationConfig
@@ -808,6 +810,19 @@ export function WeeklyReportClient({
           taskGroups={snapshot.taskGroups}
           specialistGroupNames={snapshot.specialistGroupNames}
           isLeadership={snapshot.authority.isLeadership}
+          isDirectorAuthority={snapshot.authority.isDirectorAuthority}
+          leaderManagedMap={snapshot.leaderManagedMap || {}}
+          onSaveLeaderManagedMembers={async (payload) => {
+            const res = await saveKtdbclLeaderManagedMembersAction(payload)
+            if (res.success) {
+              toast.success(
+                `Đã cập nhật ${res.managedCount ?? payload.memberUserIds.length} thành viên quản lý cho Nhóm trưởng`
+              )
+              await reloadSnapshot()
+            } else {
+              toast.error(res.error || "Lỗi lưu thành viên quản lý")
+            }
+          }}
           onSaveConfig={async (patch) => {
             const res = await updateKtdbclAutomationSettingsAction(patch)
             if (res.success) {

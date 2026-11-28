@@ -41,18 +41,27 @@ export async function getPositionRaciCatalogAction() {
     }
     const data = await getPositionRaciCatalogData()
     if (!authCtx.canConfigure) {
-      const myMappings = data.staffMappings.filter((m) => m.userId === authCtx.userId)
-      const myPosCodes = new Set(myMappings.map((m) => m.positionCode))
-      const myPositions = data.positions.filter((p: any) => myPosCodes.has(p.positionCode))
-      const myTemplates = data.templates.filter((t) =>
-        t.raciLinks.some((l) => myPosCodes.has(l.positionCode))
+      const managedIds = new Set<string>([
+        authCtx.userId,
+        ...(data.leaderManagedMembers || [])
+          .filter((lm) => lm.leaderUserId === authCtx.userId)
+          .map((lm) => lm.memberUserId),
+      ])
+      const visibleMappings = data.staffMappings.filter((m) => managedIds.has(m.userId))
+      const visiblePosCodes = new Set(visibleMappings.map((m) => m.positionCode))
+      const visiblePositions = data.positions.filter((p: any) => visiblePosCodes.has(p.positionCode))
+      const visibleTemplates = data.templates.filter((t) =>
+        t.raciLinks.some((l) => visiblePosCodes.has(l.positionCode))
       )
       return {
         success: true,
         data: {
-          positions: myPositions,
-          staffMappings: myMappings,
-          templates: myTemplates,
+          positions: visiblePositions,
+          staffMappings: visibleMappings,
+          templates: visibleTemplates,
+          leaderManagedMembers: (data.leaderManagedMembers || []).filter(
+            (lm) => lm.leaderUserId === authCtx.userId
+          ),
         },
       }
     }
@@ -136,10 +145,67 @@ export async function savePositionStaffAssignmentsAction(params: {
 
     const catalog = await getPositionRaciCatalogData()
     revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
     return { success: true, data: catalog }
   } catch (err: any) {
     console.error("[savePositionStaffAssignmentsAction] Error:", err)
     return { success: false, error: err?.message || "Lỗi cập nhật nhân sự theo vị trí" }
+  }
+}
+
+export async function saveLeaderManagedMembersAction(params: {
+  leaderUserId: string
+  memberUserIds: string[]
+  positionCode?: string | null
+}) {
+  try {
+    const authCtx = await resolveAdminAuthority()
+    if (!authCtx.authenticated || !authCtx.canConfigure) {
+      return {
+        success: false,
+        error: "Chỉ Quản trị / Giám đốc Ban / Trưởng phòng mới có quyền gán thành viên quản lý cho Nhóm trưởng.",
+      }
+    }
+
+    await ensurePositionRaciSchema()
+    const pAny = prisma as any
+    const leaderId = String(params.leaderUserId || "").trim()
+    if (!leaderId) {
+      return { success: false, error: "Chưa chọn Nhóm trưởng." }
+    }
+
+    const cleanMemberIds = Array.from(
+      new Set((params.memberUserIds || []).filter((id) => Boolean(id) && id !== leaderId))
+    )
+    const nowIso = new Date().toISOString()
+
+    await pAny.$executeRawUnsafe(
+      `DELETE FROM "qa_leader_managed_members" WHERE "leaderUserId" = ?`,
+      leaderId
+    )
+
+    for (const memberId of cleanMemberIds) {
+      const id = `ldr_mem_${leaderId}_${memberId}`
+      await pAny.$executeRawUnsafe(
+        `INSERT INTO "qa_leader_managed_members"
+          ("id", "leaderUserId", "memberUserId", "positionCode", "assignedByName", "updatedAt")
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        id,
+        leaderId,
+        memberId,
+        params.positionCode || null,
+        authCtx.userName,
+        nowIso
+      )
+    }
+
+    const catalog = await getPositionRaciCatalogData()
+    revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
+    return { success: true, managedCount: cleanMemberIds.length, data: catalog }
+  } catch (err: any) {
+    console.error("[saveLeaderManagedMembersAction] Error:", err)
+    return { success: false, error: err?.message || "Lỗi lưu danh sách thành viên quản lý" }
   }
 }
 

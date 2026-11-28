@@ -31,6 +31,12 @@ interface AutomationAndRosterTabProps {
   }>
   specialistGroupNames: string[]
   isLeadership: boolean
+  isDirectorAuthority?: boolean
+  leaderManagedMap?: Record<string, string[]>
+  onSaveLeaderManagedMembers?: (payload: {
+    leaderUserId: string
+    memberUserIds: string[]
+  }) => Promise<void>
   onSaveConfig: (patch: Partial<KtdbclWeeklyAutomationConfig>) => Promise<void>
   onSaveSpecialistGroup: (payload: {
     groupId?: string
@@ -62,6 +68,9 @@ export function AutomationAndRosterTab({
   taskGroups,
   specialistGroupNames,
   isLeadership,
+  isDirectorAuthority = false,
+  leaderManagedMap = {},
+  onSaveLeaderManagedMembers,
   onSaveConfig,
   onSaveSpecialistGroup,
   onTriggerSaturdayPlanReminderNow,
@@ -88,6 +97,30 @@ export function AutomationAndRosterTab({
   const [editLeaderId, setEditLeaderId] = useState<string>("")
   const [editMemberIds, setEditMemberIds] = useState<string[]>([])
   const [savingGroup, setSavingGroup] = useState(false)
+
+  // Leader -> Managed Members inline editing state
+  const [editingLeaderId, setEditingLeaderId] = useState<string | null>(null)
+  const [leaderMemberDraft, setLeaderMemberDraft] = useState<string[]>([])
+  const [savingLeaderManaged, setSavingLeaderManaged] = useState(false)
+
+  const startEditLeaderManaged = (leaderId: string) => {
+    setEditingLeaderId(leaderId)
+    setLeaderMemberDraft(leaderManagedMap[leaderId] || [])
+  }
+
+  const handleSaveLeaderManaged = async () => {
+    if (!editingLeaderId || !onSaveLeaderManagedMembers) return
+    setSavingLeaderManaged(true)
+    try {
+      await onSaveLeaderManagedMembers({
+        leaderUserId: editingLeaderId,
+        memberUserIds: leaderMemberDraft,
+      })
+      setEditingLeaderId(null)
+    } finally {
+      setSavingLeaderManaged(false)
+    }
+  }
 
   const toggleDirectorId = (uid: string) => {
     setSelectedDirectorIds((prev) =>
@@ -493,7 +526,167 @@ export function AutomationAndRosterTab({
         </div>
       )}
 
-      {/* 2. Bảng Nhật ký Tự động hóa & Gửi Email (Chuẩn Sky-Line Academic Ledger) */}
+      {/* 2. Phân công thành viên quản lý cho Nhóm trưởng */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-5 space-y-4">
+        <div className="border-l-4 border-[#003B3A] pl-3">
+          <h3 className="text-sm font-bold text-[#003B3A]">
+            Phân công thành viên quản lý cho Nhóm trưởng
+          </h3>
+          <p className="text-xs text-slate-600 mt-0.5">
+            Gán trực tiếp các thành viên thuộc phạm vi phụ trách để Nhóm trưởng xem được công việc, vị trí RACI và báo cáo tuần của thành viên.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#003B3A] border-b border-[#003B3A]">
+                  <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white">
+                    Nhân sự / Nhóm trưởng
+                  </th>
+                  <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-teal-100">
+                    Chức danh &amp; Nhóm
+                  </th>
+                  <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-[#5EEAD4]">
+                    Thành viên đang quản lý
+                  </th>
+                  <th className="py-3 px-3 text-[11px] font-semibold whitespace-nowrap text-white text-right">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E2E8F0] text-xs bg-white tabular-nums">
+                {members.map((m) => {
+                  const managedIds = leaderManagedMap[m.id] || []
+                  const managedNames = managedIds
+                    .map((uid) => members.find((x) => x.id === uid)?.fullName)
+                    .filter(Boolean) as string[]
+                  const isEditingThis = editingLeaderId === m.id
+
+                  return (
+                    <React.Fragment key={m.id}>
+                      <tr className="transition-colors align-middle hover:bg-[#F8FAFC]">
+                        <td className="py-3 px-3 align-middle font-semibold text-[#003B3A]">
+                          {m.fullName}
+                        </td>
+                        <td className="py-3 px-3 align-middle text-slate-600">
+                          {m.position}
+                          {m.specialistGroups.length > 0 && (
+                            <span className="text-slate-400"> · {m.specialistGroups.join(", ")}</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 align-middle">
+                          {managedNames.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {managedNames.map((name) => (
+                                <span
+                                  key={name}
+                                  className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#F0FDFA] text-[#00736E] border border-teal-200"
+                                >
+                                  {name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">Chưa gán (chỉ xem cá nhân)</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 align-middle text-right">
+                          {isDirectorAuthority && onSaveLeaderManagedMembers ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                isEditingThis ? setEditingLeaderId(null) : startEditLeaderManaged(m.id)
+                              }
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-teal-100 transition-colors cursor-pointer"
+                            >
+                              <Users className="w-3.5 h-3.5" />
+                              {isEditingThis ? "Đóng" : `Gán thành viên (${managedIds.length})`}
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+
+                      {isEditingThis && (
+                        <tr className="bg-[#F8FAFC]">
+                          <td colSpan={4} className="p-4">
+                            <div className="space-y-3">
+                              <div className="text-xs font-semibold text-[#003B3A]">
+                                Chọn các thành viên Ban KT&amp;ĐBCL do {m.fullName} trực tiếp quản lý:
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {members
+                                  .filter((cand) => cand.id !== m.id)
+                                  .map((cand) => {
+                                    const checked = leaderMemberDraft.includes(cand.id)
+                                    return (
+                                      <label
+                                        key={cand.id}
+                                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs cursor-pointer transition-colors ${
+                                          checked
+                                            ? "bg-[#F0FDFA] border-teal-300 text-[#003B3A] font-semibold"
+                                            : "bg-white border-[#E2E8F0] text-slate-700 hover:border-teal-200"
+                                        }`}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={() =>
+                                            setLeaderMemberDraft((prev) =>
+                                              prev.includes(cand.id)
+                                                ? prev.filter((id) => id !== cand.id)
+                                                : [...prev, cand.id]
+                                            )
+                                          }
+                                          className="rounded border-slate-300 text-[#00736E]"
+                                        />
+                                        <span className="truncate">
+                                          {cand.fullName}{" "}
+                                          <span className="text-[11px] text-slate-400 font-normal">
+                                            ({cand.position})
+                                          </span>
+                                        </span>
+                                      </label>
+                                    )
+                                  })}
+                              </div>
+                              <div className="flex items-center justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingLeaderId(null)}
+                                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 bg-white border border-[#E2E8F0] hover:bg-slate-50 cursor-pointer"
+                                >
+                                  Hủy
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={savingLeaderManaged}
+                                  onClick={handleSaveLeaderManaged}
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#003B3A] text-white hover:bg-[#005250] disabled:opacity-50 cursor-pointer"
+                                >
+                                  <Save className="w-3.5 h-3.5" />
+                                  {savingLeaderManaged
+                                    ? "Đang lưu..."
+                                    : `Lưu thành viên quản lý (${leaderMemberDraft.length})`}
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Bảng Nhật ký Tự động hóa & Gửi Email (Chuẩn Sky-Line Academic Ledger) */}
       <div className="space-y-3">
         <div className="border-l-4 border-[#003B3A] pl-3">
           <h3 className="text-sm font-bold text-[#003B3A]">

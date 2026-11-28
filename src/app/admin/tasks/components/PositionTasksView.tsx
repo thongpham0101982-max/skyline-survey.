@@ -25,6 +25,7 @@ import type {
 } from "@/lib/qa-workspace/positionRaciParser"
 import { POSITION_NAME_BY_CODE } from "@/lib/qa-workspace/positionRaciParser"
 import type {
+  LeaderManagedMemberMapping,
   PositionStaffMapping,
   PositionTaskTemplateRecord,
 } from "@/lib/qa-workspace/positionRaciSchema"
@@ -32,6 +33,7 @@ import {
   assignTemplatesToPositionAction,
   batchCreateTasksFromPositionTemplatesAction,
   reseedPositionRaciAction,
+  saveLeaderManagedMembersAction,
   savePositionStaffAssignmentsAction,
   updatePositionTaskTemplateAction,
 } from "../position_raci_actions"
@@ -40,6 +42,7 @@ export interface PositionCatalogBundle {
   positions: KtdbclPositionDef[]
   staffMappings: PositionStaffMapping[]
   templates: PositionTaskTemplateRecord[]
+  leaderManagedMembers?: LeaderManagedMemberMapping[]
 }
 
 interface PositionTasksViewProps {
@@ -90,6 +93,13 @@ export function PositionTasksView({
   const [staffModalPrimaryId, setStaffModalPrimaryId] = useState<string>("")
   const [staffSearch, setStaffSearch] = useState("")
   const [savingStaff, setSavingStaff] = useState(false)
+
+  // Leader -> Managed Members modal state
+  const [managedModalPosCode, setManagedModalPosCode] = useState<string | null>(null)
+  const [managedModalLeaderId, setManagedModalLeaderId] = useState<string>("")
+  const [managedModalMemberIds, setManagedModalMemberIds] = useState<string[]>([])
+  const [managedSearch, setManagedSearch] = useState("")
+  const [savingManaged, setSavingManaged] = useState(false)
 
   // Edit template modal state
   const [editingTpl, setEditingTpl] = useState<PositionTaskTemplateRecord | null>(null)
@@ -413,6 +423,53 @@ export function PositionTasksView({
     })
   }
 
+  const managedByLeader = useMemo(() => {
+    const map = new Map<string, LeaderManagedMemberMapping[]>()
+    for (const m of catalog.leaderManagedMembers || []) {
+      if (!map.has(m.leaderUserId)) map.set(m.leaderUserId, [])
+      map.get(m.leaderUserId)!.push(m)
+    }
+    return map
+  }, [catalog.leaderManagedMembers])
+
+  const openManagedMembersModal = (posCode: string, explicitLeaderId?: string) => {
+    const posStaff = staffByPosition.get(posCode) || []
+    const leaderId =
+      explicitLeaderId ||
+      posStaff.find((s) => s.isPrimary)?.userId ||
+      posStaff[0]?.userId ||
+      ""
+    if (!leaderId) {
+      toast.error("Vui lòng gán nhân sự giữ vị trí này trước khi gán thành viên quản lý.")
+      return
+    }
+    setManagedModalPosCode(posCode)
+    setManagedModalLeaderId(leaderId)
+    setManagedModalMemberIds((managedByLeader.get(leaderId) || []).map((x) => x.memberUserId))
+    setManagedSearch("")
+  }
+
+  const handleSaveManagedMembers = async () => {
+    if (!managedModalLeaderId) return
+    setSavingManaged(true)
+    try {
+      const res: any = await saveLeaderManagedMembersAction({
+        leaderUserId: managedModalLeaderId,
+        memberUserIds: managedModalMemberIds,
+        positionCode: managedModalPosCode,
+      })
+      if (res.success && res.data) {
+        onCatalogChange(res.data)
+        toast.success(`Đã cập nhật ${res.managedCount ?? managedModalMemberIds.length} thành viên quản lý cho Nhóm trưởng`)
+        setManagedModalPosCode(null)
+      } else {
+        toast.error(res.error || "Không lưu được danh sách thành viên quản lý")
+      }
+    } finally {
+      setSavingManaged(false)
+    }
+  }
+
   const filteredStaffOptions = useMemo(() => {
     const q = staffSearch.trim().toLowerCase()
     return (allStaffUsers || []).filter((u: any) => {
@@ -581,6 +638,27 @@ export function PositionTasksView({
               <p className="text-xs text-slate-700 leading-relaxed max-w-4xl">
                 {selectedPosition.description}
               </p>
+              {(() => {
+                const posStaff = staffByPosition.get(selectedPosition.positionCode) || []
+                const allManaged = posStaff.flatMap((st) => managedByLeader.get(st.userId) || [])
+                const uniqueManagedNames = Array.from(
+                  new Set(allManaged.map((m) => m.memberFullName))
+                )
+                if (uniqueManagedNames.length === 0) return null
+                return (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-[#00736E]">
+                    <span className="font-semibold">Thành viên quản lý ({uniqueManagedNames.length}):</span>
+                    {uniqueManagedNames.map((name) => (
+                      <span
+                        key={name}
+                        className="px-2 py-0.5 rounded-md bg-white border border-teal-200 text-[#003B3A] font-medium"
+                      >
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -616,6 +694,25 @@ export function PositionTasksView({
                     <UserPlus className="w-3.5 h-3.5 text-[#5EEAD4]" />
                     Gán nhân sự vị trí
                   </button>
+                  {(staffByPosition.get(selectedPosition.positionCode) || []).length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => openManagedMembersModal(selectedPosition.positionCode)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#003B3A] border border-teal-300 hover:bg-[#F0FDFA] transition-colors cursor-pointer"
+                      title="Gán danh sách thành viên để Nhóm trưởng xem được kết quả và báo cáo"
+                    >
+                      <Users className="w-3.5 h-3.5 text-[#00736E]" />
+                      Thành viên quản lý (
+                      {Array.from(
+                        new Set(
+                          (staffByPosition.get(selectedPosition.positionCode) || []).flatMap((st) =>
+                            (managedByLeader.get(st.userId) || []).map((m) => m.memberUserId)
+                          )
+                        )
+                      ).length}
+                      )
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -1416,6 +1513,148 @@ export function PositionTasksView({
                     ? "Đang phát hành..."
                     : `Xác nhận giao ${checkedTemplateIds.size} nhiệm vụ`}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. MODAL GÁN THÀNH VIÊN QUẢN LÝ CHO NHÓM TRƯỞNG */}
+      {managedModalPosCode && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xl w-full max-w-lg overflow-hidden">
+            <div className="px-5 py-4 bg-[#003B3A] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#5EEAD4]" />
+                <div>
+                  <h3 className="text-sm font-bold">
+                    Gán thành viên quản lý ({managedModalPosCode})
+                  </h3>
+                  <p className="text-[11px] text-teal-100">
+                    Nhóm trưởng sẽ xem được công việc, vị trí RACI và báo cáo tuần của các thành viên được chọn
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setManagedModalPosCode(null)}
+                className="p-1 rounded-lg hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3.5">
+              {(staffByPosition.get(managedModalPosCode) || []).length > 1 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Chọn tài khoản Nhóm trưởng
+                  </label>
+                  <select
+                    value={managedModalLeaderId}
+                    onChange={(e) => {
+                      const nextLeader = e.target.value
+                      setManagedModalLeaderId(nextLeader)
+                      setManagedModalMemberIds(
+                        (managedByLeader.get(nextLeader) || []).map((x) => x.memberUserId)
+                      )
+                    }}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs font-semibold text-[#003B3A] focus:outline-none focus:border-[#00A19A]"
+                  >
+                    {(staffByPosition.get(managedModalPosCode) || []).map((st) => (
+                      <option key={st.userId} value={st.userId}>
+                        {st.fullName} {st.isPrimary ? "(Chính)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={managedSearch}
+                  onChange={(e) => setManagedSearch(e.target.value)}
+                  placeholder="Tìm nhân sự Ban KT&ĐBCL..."
+                  className="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-[#E2E8F0] focus:outline-none focus:border-[#00A19A]"
+                />
+              </div>
+
+              <div className="max-h-64 overflow-y-auto divide-y divide-[#F1F5F9] border border-[#E2E8F0] rounded-xl">
+                {(allStaffUsers || [])
+                  .filter((u: any) => {
+                    if (u.id === managedModalLeaderId) return false
+                    const q = managedSearch.trim().toLowerCase()
+                    if (!q) return true
+                    return (
+                      String(u.fullName || "").toLowerCase().includes(q) ||
+                      String(u.email || "").toLowerCase().includes(q)
+                    )
+                  })
+                  .map((u: any) => {
+                    const checked = managedModalMemberIds.includes(u.id)
+                    return (
+                      <label
+                        key={u.id}
+                        className={`flex items-center justify-between gap-2 px-3 py-2.5 text-xs cursor-pointer transition-colors ${
+                          checked ? "bg-[#F0FDFA]" : "hover:bg-[#F8FAFC]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setManagedModalMemberIds((prev) =>
+                                prev.includes(u.id)
+                                  ? prev.filter((id) => id !== u.id)
+                                  : [...prev, u.id]
+                              )
+                            }
+                            className="rounded border-slate-300 text-[#00736E]"
+                          />
+                          <div className="min-w-0">
+                            <div className="font-semibold text-[#003B3A] truncate">
+                              {u.fullName}
+                            </div>
+                            <div className="text-[11px] text-slate-500 truncate">
+                              {u.position || u.email || ""}
+                            </div>
+                          </div>
+                        </div>
+                        {checked && (
+                          <span className="text-[10px] font-semibold text-[#059669] shrink-0">
+                            Đang quản lý
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })}
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-[#F1F5F9]">
+                <span className="text-xs text-slate-600 tabular-nums">
+                  Đã chọn <strong className="text-[#003B3A]">{managedModalMemberIds.length}</strong> thành viên
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setManagedModalPosCode(null)}
+                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savingManaged}
+                    onClick={handleSaveManagedMembers}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#003B3A] hover:bg-[#005250] text-white disabled:opacity-50 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                    {savingManaged ? "Đang lưu..." : "Lưu thành viên quản lý"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

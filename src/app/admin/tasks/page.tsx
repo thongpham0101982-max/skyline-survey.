@@ -14,7 +14,10 @@ import {
 } from "@/lib/qa-workspace/workflowEngine"
 import { inspectConnectedSourceModules } from "@/lib/qa-workspace/sourceSyncService"
 import { ensureCoordinationTables } from "@/lib/coordination/schemaInit"
-import { getPositionRaciCatalogData } from "@/lib/qa-workspace/positionRaciSchema"
+import {
+  getManagedMemberIdsForLeader,
+  getPositionRaciCatalogData,
+} from "@/lib/qa-workspace/positionRaciSchema"
 import { resolveKtdbclRoster } from "@/lib/qa-workspace/weeklyReportSchema"
 
 export const metadata = { title: "QA Workspace | KT&ĐBCL — Điều hành Công việc | SSM Sky-Line" }
@@ -31,7 +34,32 @@ export default async function TasksPage() {
     ensureCoordinationTables().catch(() => {}),
   ])
 
-  const opScope = await getOperationalScope()
+  const [opScope, explicitManagedMemberIds, ledTaskGroups] = await Promise.all([
+    getOperationalScope(),
+    getManagedMemberIdsForLeader(userId).catch(() => []),
+    prisma.taskGroup
+      .findMany({
+        where: { leaderUserId: userId },
+        select: { id: true, memberUserIds: true },
+      })
+      .catch(() => []),
+  ])
+
+  const leaderTeamMemberIds = new Set<string>([userId, ...explicitManagedMemberIds])
+  for (const g of ledTaskGroups) {
+    if (!g.memberUserIds) continue
+    try {
+      const parsed = JSON.parse(g.memberUserIds)
+      if (Array.isArray(parsed)) parsed.forEach((id) => id && leaderTeamMemberIds.add(String(id)))
+    } catch {
+      String(g.memberUserIds)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((id) => leaderTeamMemberIds.add(id))
+    }
+  }
+  const isAssignedTeamLeader = leaderTeamMemberIds.size > 1
 
   let whereClause: any = {}
   if (!opScope.isSuperAdmin && !opScope.isHeadOfAcademic) {
@@ -43,7 +71,7 @@ export default async function TasksPage() {
       ]
       whereClause = {
         OR: [
-          { assignedToUserId: { in: opScope.scopedUserIds } },
+          { assignedToUserId: { in: Array.from(new Set([...opScope.scopedUserIds, ...leaderTeamMemberIds])) } },
           { assignedById: userId },
           { collaborators: { contains: userId } },
           { assignedToRole: { in: allowedRoles }, assignedToUserId: null },
@@ -56,10 +84,19 @@ export default async function TasksPage() {
       ]
       whereClause = {
         OR: [
-          { assignedToUserId: { in: opScope.scopedUserIds } },
+          { assignedToUserId: { in: Array.from(new Set([...opScope.scopedUserIds, ...leaderTeamMemberIds])) } },
           { assignedById: userId },
           { collaborators: { contains: userId } },
           { assignedToRole: { in: allowedRoles }, assignedToUserId: null },
+        ],
+      }
+    } else if (isAssignedTeamLeader) {
+      // Nhóm trưởng được gán thành viên quản lý: xem công việc của bản thân và toàn bộ thành viên mình quản lý
+      whereClause = {
+        OR: [
+          { assignedToUserId: { in: Array.from(leaderTeamMemberIds) } },
+          { assignedById: userId },
+          { collaborators: { contains: userId } },
         ],
       }
     } else {
@@ -308,17 +345,20 @@ export default async function TasksPage() {
   const scopedPositionCatalog = canViewAllPositions
     ? positionCatalog
     : (() => {
-        const myMappings = (positionCatalog.staffMappings || []).filter(
-          (m: any) => m.userId === userId
+        const visibleMappings = (positionCatalog.staffMappings || []).filter((m: any) =>
+          leaderTeamMemberIds.has(m.userId)
         )
-        const myPosCodes = new Set(myMappings.map((m: any) => m.positionCode))
+        const visiblePosCodes = new Set(visibleMappings.map((m: any) => m.positionCode))
         return {
           positions: (positionCatalog.positions || []).filter((p: any) =>
-            myPosCodes.has(p.positionCode)
+            visiblePosCodes.has(p.positionCode)
           ),
-          staffMappings: myMappings,
+          staffMappings: visibleMappings,
           templates: (positionCatalog.templates || []).filter((t: any) =>
-            (t.raciLinks || []).some((l: any) => myPosCodes.has(l.positionCode))
+            (t.raciLinks || []).some((l: any) => visiblePosCodes.has(l.positionCode))
+          ),
+          leaderManagedMembers: ((positionCatalog as any).leaderManagedMembers || []).filter(
+            (lm: any) => lm.leaderUserId === userId
           ),
         }
       })()
