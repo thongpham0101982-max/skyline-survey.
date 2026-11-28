@@ -1319,6 +1319,8 @@ export function TasksClient({
           catalog={positionCatalog}
           onCatalogChange={setPositionCatalog}
           allStaffUsers={allStaffUsers}
+          years={years}
+          campuses={campuses}
           canConfigure={isAdmin}
           onAssignFromTemplate={(template, selectedPosCode) => {
             setEditingTaskForModal(null)
@@ -1330,6 +1332,9 @@ export function TasksClient({
               completionCriteria: template.completionCriteria,
             })
             setShowAssignmentModal(true)
+          }}
+          onBatchTasksCreated={() => {
+            setTimeout(() => window.location.reload(), 700)
           }}
         />
       )}

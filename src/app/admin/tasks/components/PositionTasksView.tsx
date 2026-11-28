@@ -5,12 +5,15 @@ import {
   AlertTriangle,
   Briefcase,
   CheckCircle2,
+  ClipboardCheck,
   Edit3,
+  ListChecks,
   PauseCircle,
   PlayCircle,
   Plus,
   RefreshCw,
   Search,
+  Send,
   UserPlus,
   Users,
   X,
@@ -26,6 +29,8 @@ import type {
   PositionTaskTemplateRecord,
 } from "@/lib/qa-workspace/positionRaciSchema"
 import {
+  assignTemplatesToPositionAction,
+  batchCreateTasksFromPositionTemplatesAction,
   reseedPositionRaciAction,
   savePositionStaffAssignmentsAction,
   updatePositionTaskTemplateAction,
@@ -41,11 +46,14 @@ interface PositionTasksViewProps {
   catalog: PositionCatalogBundle
   onCatalogChange: (next: PositionCatalogBundle) => void
   allStaffUsers: any[]
+  years?: any[]
+  campuses?: any[]
   canConfigure: boolean
   onAssignFromTemplate: (
     template: PositionTaskTemplateRecord,
     selectedPositionCode?: string | null
   ) => void
+  onBatchTasksCreated?: () => void
 }
 
 const CADENCE_LABELS: Record<string, string> = {
@@ -60,8 +68,11 @@ export function PositionTasksView({
   catalog,
   onCatalogChange,
   allStaffUsers,
+  years = [],
+  campuses = [],
   canConfigure,
   onAssignFromTemplate,
+  onBatchTasksCreated,
 }: PositionTasksViewProps) {
   const [selectedPositionCode, setSelectedPositionCode] = useState<string>(
     catalog.positions[0]?.positionCode || "VT293"
@@ -90,6 +101,27 @@ export function PositionTasksView({
   const [editCriteria, setEditCriteria] = useState("")
   const [editAdminNote, setEditAdminNote] = useState("")
   const [savingTpl, setSavingTpl] = useState(false)
+
+  // Assign templates to position modal state
+  const [assignTplPosCode, setAssignTplPosCode] = useState<string | null>(null)
+  const [assignTplRole, setAssignTplRole] = useState<"R" | "C" | "I">("R")
+  const [assignTplIds, setAssignTplIds] = useState<string[]>([])
+  const [assignTplSearch, setAssignTplSearch] = useState("")
+  const [savingAssignTpls, setSavingAssignTpls] = useState(false)
+
+  // Multi-select checkboxes & Batch Create Tasks modal state
+  const [checkedTemplateIds, setCheckedTemplateIds] = useState<Set<string>>(new Set())
+  const [showBatchModal, setShowBatchModal] = useState(false)
+  const [batchAssigneeId, setBatchAssigneeId] = useState("")
+  const [batchStartDate, setBatchStartDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [batchEndDate, setBatchEndDate] = useState(() =>
+    new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+  )
+  const [batchYearId, setBatchYearId] = useState<string>(years[0]?.id || "")
+  const [batchCampusId, setBatchCampusId] = useState<string>("")
+  const [batchPeriodNote, setBatchPeriodNote] = useState<string>("")
+  const [batchSendMail, setBatchSendMail] = useState<boolean>(true)
+  const [submittingBatch, setSubmittingBatch] = useState(false)
 
   const staffByPosition = useMemo(() => {
     const map = new Map<string, PositionStaffMapping[]>()
@@ -266,6 +298,121 @@ export function PositionTasksView({
     }
   }
 
+  const openAssignTemplatesModal = (posCode: string, role: "R" | "C" | "I" = "R") => {
+    setAssignTplPosCode(posCode)
+    setAssignTplRole(role)
+    const matched = catalog.templates
+      .filter((t) => t.raciLinks.some((l) => l.positionCode === posCode && l.raciRole === role))
+      .map((t) => t.id)
+    setAssignTplIds(matched)
+    setAssignTplSearch("")
+  }
+
+  const handleChangeAssignTplRole = (nextRole: "R" | "C" | "I") => {
+    if (!assignTplPosCode) return
+    setAssignTplRole(nextRole)
+    const matched = catalog.templates
+      .filter((t) =>
+        t.raciLinks.some((l) => l.positionCode === assignTplPosCode && l.raciRole === nextRole)
+      )
+      .map((t) => t.id)
+    setAssignTplIds(matched)
+  }
+
+  const handleSaveAssignTemplates = async () => {
+    if (!assignTplPosCode) return
+    setSavingAssignTpls(true)
+    try {
+      const res: any = await assignTemplatesToPositionAction({
+        positionCode: assignTplPosCode,
+        templateIds: assignTplIds,
+        raciRole: assignTplRole,
+      })
+      if (res.success && res.data) {
+        onCatalogChange(res.data)
+        toast.success(
+          `Đã gán ${res.assignedCount} mẫu nhiệm vụ (vai trò ${assignTplRole}) cho vị trí ${assignTplPosCode}`
+        )
+        setAssignTplPosCode(null)
+      } else {
+        toast.error(res.error || "Không lưu được danh sách nhiệm vụ cho vị trí")
+      }
+    } finally {
+      setSavingAssignTpls(false)
+    }
+  }
+
+  const openBatchAssignModal = () => {
+    const posCode = selectedPositionCode !== "ALL" ? selectedPositionCode : "VT293"
+    const staffForPos = staffByPosition.get(posCode) || []
+    const defaultStaff = staffForPos.find((s) => s.isPrimary)?.userId || staffForPos[0]?.userId || ""
+    setBatchAssigneeId(defaultStaff)
+    setBatchYearId(years[0]?.id || "")
+    setShowBatchModal(true)
+  }
+
+  const handleSubmitBatchCreate = async () => {
+    const posCode = selectedPositionCode !== "ALL" ? selectedPositionCode : "VT293"
+    if (!batchAssigneeId) {
+      toast.error("Vui lòng chọn nhân sự phụ trách chính")
+      return
+    }
+    const ids = Array.from(checkedTemplateIds)
+    if (ids.length === 0) return
+
+    setSubmittingBatch(true)
+    try {
+      const res: any = await batchCreateTasksFromPositionTemplatesAction({
+        positionCode: posCode,
+        templateIds: ids,
+        assignedToUserId: batchAssigneeId,
+        startDate: batchStartDate,
+        endDate: batchEndDate,
+        academicYearId: batchYearId || null,
+        scopeCampusId: batchCampusId || null,
+        scopeSurveyPeriod: batchPeriodNote.trim() || null,
+        sendEmailNotification: batchSendMail,
+      })
+      if (res.success) {
+        toast.success(
+          `Đã giao thành công ${res.createdCount} nhiệm vụ chuẩn RACI cho vị trí ${posCode} (${res.emailsSentCount || 0} email)`
+        )
+        setCheckedTemplateIds(new Set())
+        setShowBatchModal(false)
+        if (onBatchTasksCreated) onBatchTasksCreated()
+      } else {
+        toast.error(res.error || "Không thể giao việc hàng loạt")
+      }
+    } finally {
+      setSubmittingBatch(false)
+    }
+  }
+
+  const allFilteredActiveIds = useMemo(
+    () => filteredTemplates.filter((t) => t.isActive).map((t) => t.id),
+    [filteredTemplates]
+  )
+  const allChecked =
+    allFilteredActiveIds.length > 0 &&
+    allFilteredActiveIds.every((id) => checkedTemplateIds.has(id))
+
+  const toggleCheckAll = () => {
+    if (allChecked) {
+      setCheckedTemplateIds(new Set())
+    } else {
+      setCheckedTemplateIds(new Set(allFilteredActiveIds))
+    }
+  }
+
+  const toggleCheckOne = (id: string) => {
+    setCheckedTemplateIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const filteredStaffOptions = useMemo(() => {
     const q = staffSearch.trim().toLowerCase()
     return (allStaffUsers || []).filter((u: any) => {
@@ -430,14 +577,24 @@ export function PositionTasksView({
                 ))}
               </div>
               {canConfigure && (
-                <button
-                  type="button"
-                  onClick={() => openStaffModal(selectedPosition.positionCode)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#003B3A] text-white hover:bg-[#005250] transition-colors cursor-pointer"
-                >
-                  <UserPlus className="w-3.5 h-3.5 text-[#5EEAD4]" />
-                  Gán nhân sự vị trí
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => openAssignTemplatesModal(selectedPosition.positionCode, "R")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#00736E] text-white hover:bg-[#005B58] transition-colors cursor-pointer"
+                  >
+                    <ListChecks className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                    Gán nhiệm vụ cho vị trí
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openStaffModal(selectedPosition.positionCode)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#003B3A] text-white hover:bg-[#005250] transition-colors cursor-pointer"
+                  >
+                    <UserPlus className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                    Gán nhân sự vị trí
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -524,6 +681,17 @@ export function PositionTasksView({
             <span className="text-xs font-semibold text-[#003B3A] bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0]">
               {filteredTemplates.length} mẫu
             </span>
+
+            {canConfigure && checkedTemplateIds.size > 0 && (
+              <button
+                type="button"
+                onClick={openBatchAssignModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#059669] hover:bg-emerald-700 text-white shadow-2xs transition-colors cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Giao việc hàng loạt ({checkedTemplateIds.size} mẫu)
+              </button>
+            )}
           </div>
         </div>
 
@@ -531,6 +699,17 @@ export function PositionTasksView({
           <table className="w-full text-xs text-left border-collapse tabular-nums">
             <thead className="bg-[#003B3A] border-b border-[#003B3A]">
               <tr className="text-[11px] font-semibold whitespace-nowrap">
+                {canConfigure && (
+                  <th className="py-3 px-3 text-center w-10">
+                    <input
+                      type="checkbox"
+                      checked={allChecked}
+                      onChange={toggleCheckAll}
+                      title="Chọn tất cả mẫu đang hiển thị để giao việc hàng loạt"
+                      className="rounded border-white/40 text-[#00A19A] cursor-pointer"
+                    />
+                  </th>
+                )}
                 <th className="py-3 px-3 text-white w-24">Mã mục</th>
                 <th className="py-3 px-3 text-white min-w-[270px]">Nhiệm vụ chi tiết &amp; Nhóm nghiệp vụ</th>
                 <th className="py-3 px-3 text-[#5EEAD4] min-w-[190px]">Phân vai RACI</th>
@@ -542,22 +721,36 @@ export function PositionTasksView({
             <tbody className="divide-y divide-[#E2E8F0] bg-white">
               {filteredTemplates.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-slate-500 text-xs">
+                  <td colSpan={canConfigure ? 7 : 6} className="py-10 text-center text-slate-500 text-xs">
                     Không có mẫu nhiệm vụ nào khớp với bộ lọc hiện tại.
                   </td>
                 </tr>
               ) : (
                 filteredTemplates.map((tpl) => {
                   const isMultiR = tpl.rPositions.length > 1
+                  const isChecked = checkedTemplateIds.has(tpl.id)
                   return (
                     <tr
                       key={tpl.id}
                       className={`transition-colors align-top ${
                         !tpl.isActive
                           ? "bg-slate-50/70 opacity-65"
+                          : isChecked
+                          ? "bg-[#F0FDFA]/70 hover:bg-[#F0FDFA]"
                           : "hover:bg-[#F8FAFC]"
                       }`}
                     >
+                      {canConfigure && (
+                        <td className="py-3 px-3 text-center">
+                          <input
+                            type="checkbox"
+                            disabled={!tpl.isActive}
+                            checked={isChecked}
+                            onChange={() => toggleCheckOne(tpl.id)}
+                            className="rounded border-slate-300 text-[#00736E] cursor-pointer disabled:opacity-40"
+                          />
+                        </td>
+                      )}
                       <td className="py-3 px-3 whitespace-nowrap">
                         <div className="font-bold text-[#003B3A]">{tpl.itemCode}</div>
                         <div className="text-[10px] text-slate-400 mt-0.5">v{tpl.version}</div>
@@ -930,6 +1123,278 @@ export function PositionTasksView({
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#5EEAD4]" />
                 {savingTpl ? "Đang lưu..." : `Lưu phiên bản v${editingTpl.version + 1}`}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: GÁN DANH SÁCH MẪU NHIỆM VỤ CHO TỪNG VỊ TRÍ */}
+      {assignTplPosCode && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden">
+            <div className="px-5 py-4 bg-[#003B3A] text-white flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <ListChecks className="w-4 h-4 text-[#5EEAD4]" />
+                  Gán nhiệm vụ theo Ma trận chức năng cho {assignTplPosCode}
+                </h3>
+                <p className="text-[11px] text-teal-100 mt-0.5">
+                  {POSITION_NAME_BY_CODE[assignTplPosCode] || assignTplPosCode} · Đang chọn{" "}
+                  <strong>{assignTplIds.length}</strong> mẫu ở vai trò {assignTplRole}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssignTplPosCode(null)}
+                className="p-1.5 rounded-lg hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 border-b border-[#E2E8F0] bg-[#F8FAFC] flex flex-wrap items-center justify-between gap-2">
+              <div className="inline-flex bg-white p-1 rounded-xl border border-[#E2E8F0]">
+                {(
+                  [
+                    { id: "R", label: "Vai trò R (Thực hiện)" },
+                    { id: "C", label: "Vai trò C (Tham vấn)" },
+                    { id: "I", label: "Vai trò I (Nhận thông tin)" },
+                  ] as const
+                ).map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => handleChangeAssignTplRole(r.id)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                      assignTplRole === r.id
+                        ? "bg-[#003B3A] text-white"
+                        : "text-slate-600 hover:text-[#003B3A]"
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
+              <input
+                type="text"
+                value={assignTplSearch}
+                onChange={(e) => setAssignTplSearch(e.target.value)}
+                placeholder="Tìm mã mục (2.1.1, 4.6.2...) hoặc tên nhiệm vụ..."
+                className="px-3 py-1.5 text-xs bg-white border border-[#E2E8F0] rounded-xl w-64 focus:outline-none focus:border-[#00A19A]"
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto divide-y divide-[#F1F5F9] p-2">
+              {catalog.templates
+                .filter((t) => {
+                  const q = assignTplSearch.trim().toLowerCase()
+                  if (!q) return true
+                  return `${t.itemCode} ${t.detailTask} ${t.mainTask} ${t.deliverables}`
+                    .toLowerCase()
+                    .includes(q)
+                })
+                .map((t) => {
+                  const checked = assignTplIds.includes(t.id)
+                  return (
+                    <label
+                      key={t.id}
+                      className={`flex items-start gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${
+                        checked ? "bg-[#F0FDFA]" : "hover:bg-[#F8FAFC]"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setAssignTplIds((prev) => Array.from(new Set([...prev, t.id])))
+                          } else {
+                            setAssignTplIds((prev) => prev.filter((id) => id !== t.id))
+                          }
+                        }}
+                        className="mt-0.5 rounded border-slate-300 text-[#00736E]"
+                      />
+                      <div className="min-w-0 flex-1 text-xs">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-bold text-[#003B3A]">{t.itemCode}</span>
+                          <span className="font-semibold text-slate-800">{t.detailTask}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          Tần suất: {t.frequency} · Hiện R: {t.rPositions.join(", ") || "—"}
+                        </div>
+                      </div>
+                    </label>
+                  )
+                })}
+            </div>
+
+            <div className="px-5 py-3.5 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between">
+              <span className="text-xs text-slate-600">
+                Đã chọn <strong className="text-[#003B3A]">{assignTplIds.length}</strong> /{" "}
+                {catalog.templates.length} mẫu nhiệm vụ
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAssignTplPosCode(null)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-white border border-[#E2E8F0] hover:bg-slate-50 cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={savingAssignTpls}
+                  onClick={handleSaveAssignTemplates}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#003B3A] hover:bg-[#005250] text-white disabled:opacity-50 cursor-pointer"
+                >
+                  {savingAssignTpls ? "Đang lưu..." : `Lưu phân vai ${assignTplRole} cho ${assignTplPosCode}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: GIAO VIỆC HÀNG LOẠT THEO VỊ TRÍ */}
+      {showBatchModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xl w-full max-w-lg overflow-hidden">
+            <div className="px-5 py-4 bg-[#003B3A] text-white flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4 text-[#5EEAD4]" />
+                  Giao việc hàng loạt theo vị trí ({checkedTemplateIds.size} mẫu)
+                </h3>
+                <p className="text-[11px] text-teal-100 mt-0.5">
+                  Tự động gắn mã mục RACI, snapshot phiên bản mẫu, KPI &amp; chu kỳ báo cáo Tuần/Tháng/Kỳ học.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBatchModal(false)}
+                className="p-1.5 rounded-lg hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Nhân sự chịu trách nhiệm chính *
+                </label>
+                <select
+                  value={batchAssigneeId}
+                  onChange={(e) => setBatchAssigneeId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white font-semibold text-[#003B3A]"
+                >
+                  <option value="">-- Chọn nhân sự thực hiện --</option>
+                  {(allStaffUsers || []).map((u: any) => (
+                    <option key={u.id} value={u.id}>
+                      {u.fullName} {u.email ? `(${u.email})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Ngày bắt đầu *</label>
+                  <input
+                    type="date"
+                    value={batchStartDate}
+                    onChange={(e) => setBatchStartDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Hạn hoàn thành *</label>
+                  <input
+                    type="date"
+                    value={batchEndDate}
+                    onChange={(e) => setBatchEndDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Năm học</label>
+                  <select
+                    value={batchYearId}
+                    onChange={(e) => setBatchYearId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white"
+                  >
+                    <option value="">-- Chọn năm học --</option>
+                    {years.map((y: any) => (
+                      <option key={y.id} value={y.id}>
+                        {y.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Cơ sở áp dụng</label>
+                  <select
+                    value={batchCampusId}
+                    onChange={(e) => setBatchCampusId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] bg-white"
+                  >
+                    <option value="">Toàn hệ thống</option>
+                    {campuses.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {c.campusName || c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Kỳ kiểm tra / Đợt khảo sát (nếu có)
+                </label>
+                <input
+                  type="text"
+                  value={batchPeriodNote}
+                  onChange={(e) => setBatchPeriodNote(e.target.value)}
+                  placeholder="VD: Giữa kỳ 1, Đợt KSDV Tháng 11, Học kỳ 1..."
+                  className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0]"
+                />
+              </div>
+
+              <label className="inline-flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={batchSendMail}
+                  onChange={(e) => setBatchSendMail(e.target.checked)}
+                  className="rounded border-slate-300 text-[#00736E]"
+                />
+                Gửi email thông báo giao việc cho nhân sự nhận nhiệm vụ
+              </label>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#F1F5F9]">
+                <button
+                  type="button"
+                  onClick={() => setShowBatchModal(false)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={submittingBatch}
+                  onClick={handleSubmitBatchCreate}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#003B3A] hover:bg-[#005250] text-white disabled:opacity-50 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                  {submittingBatch
+                    ? "Đang phát hành..."
+                    : `Xác nhận giao ${checkedTemplateIds.size} nhiệm vụ`}
+                </button>
+              </div>
             </div>
           </div>
         </div>
