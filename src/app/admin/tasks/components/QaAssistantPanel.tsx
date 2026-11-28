@@ -16,6 +16,11 @@ import {
   ShieldAlert,
   CalendarClock,
   SlidersHorizontal,
+  Download,
+  Mail,
+  ExternalLink,
+  Eye,
+  Code2,
 } from "lucide-react"
 import type { NlpTaskDraft } from "@/lib/qa-workspace/types"
 import { createQaWorkspaceTask } from "../qa_workspace_actions"
@@ -71,11 +76,45 @@ export function QaAssistantPanel({
   const [confirmErrorMsg, setConfirmErrorMsg] = useState<string | null>(null)
 
   // Report generator state
+  const nowInit = new Date()
   const [reportPeriod, setReportPeriod] = useState<"WEEKLY" | "MONTHLY">("WEEKLY")
+  const [reportMonth, setReportMonth] = useState<number>(nowInit.getMonth() + 1)
+  const [reportYear, setReportYear] = useState<number>(nowInit.getFullYear())
+  const [reportWeekNum, setReportWeekNum] = useState<number>(
+    Math.min(5, Math.max(1, Math.ceil(nowInit.getDate() / 7)))
+  )
   const [reportGroupId, setReportGroupId] = useState<string>("ALL")
   const [reportMarkdown, setReportMarkdown] = useState<string>("")
+  const [reportPeriodLabel, setReportPeriodLabel] = useState<string>("")
+  const [reportViewTab, setReportViewTab] = useState<"PREVIEW" | "MARKDOWN">("PREVIEW")
   const [generatingReport, setGeneratingReport] = useState(false)
   const [copiedReport, setCopiedReport] = useState(false)
+  const [showSendEmailBox, setShowSendEmailBox] = useState(false)
+  const [reportEmailRecipients, setReportEmailRecipients] = useState("")
+  const [sendingReportEmail, setSendingReportEmail] = useState(false)
+  const [reportActionMsg, setReportActionMsg] = useState<string | null>(null)
+
+  // Compute weeks inside selected month/year for the Week selector
+  const reportMonthWeeks = React.useMemo(() => {
+    const daysInMonth = new Date(reportYear, reportMonth, 0).getDate()
+    const weeks: Array<{ weekNum: number; label: string }> = []
+    let startDay = 1
+    let wNum = 1
+    while (startDay <= daysInMonth) {
+      const startDt = new Date(reportYear, reportMonth - 1, startDay)
+      const dow = startDt.getDay() // 0=Sun..6=Sat
+      const daysUntilSun = dow === 0 ? 0 : 7 - dow
+      const endDay = Math.min(daysInMonth, startDay + daysUntilSun)
+      const pad = (n: number) => String(n).padStart(2, "0")
+      weeks.push({
+        weekNum: wNum,
+        label: `Tuần ${wNum} (${pad(startDay)}/${pad(reportMonth)} – ${pad(endDay)}/${pad(reportMonth)})`,
+      })
+      startDay = endDay + 1
+      wNum++
+    }
+    return weeks
+  }, [reportMonth, reportYear])
 
   // Personal + SSM live briefing state
   const [briefingTargetUserId, setBriefingTargetUserId] = useState<string>("")
@@ -279,6 +318,7 @@ export function QaAssistantPanel({
 
   const handleGenerateReport = async () => {
     setGeneratingReport(true)
+    setReportActionMsg(null)
     try {
       const res = await fetch("/api/admin/qa-workspace/assistant", {
         method: "POST",
@@ -286,15 +326,91 @@ export function QaAssistantPanel({
         body: JSON.stringify({
           action: "GENERATE_REPORT_DRAFT",
           periodType: reportPeriod,
+          month: reportMonth,
+          year: reportYear,
+          weekNumber: reportWeekNum,
+          taskGroupId: reportGroupId,
           groupId: reportGroupId,
         }),
       })
       const data = await res.json()
       if (data.success) {
         setReportMarkdown(data.reportMarkdown || "")
+        setReportPeriodLabel(data.periodLabel || "")
       }
     } finally {
       setGeneratingReport(false)
+    }
+  }
+
+  const handleDownloadWordReport = () => {
+    if (!reportMarkdown) return
+    const htmlBody = reportMarkdown
+      .split("\n")
+      .map((line) => {
+        const escaped = line
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.+?)\*/g, "<em>$1</em>")
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
+        if (escaped.startsWith("### ")) {
+          return `<h2 style="color:#003B3A;margin:14px 0 6px;">${escaped.slice(4)}</h2>`
+        }
+        if (escaped.startsWith("#### ")) {
+          return `<h3 style="color:#00736E;margin:12px 0 4px;">${escaped.slice(5)}</h3>`
+        }
+        if (!escaped.trim()) return `<p style="margin:4px 0;"></p>`
+        return `<p style="margin:3px 0;line-height:1.55;">${escaped}</p>`
+      })
+      .join("")
+
+    const docHtml = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" lang="vi"><head><meta charset="utf-8"><title>${
+      reportPeriodLabel || "BaoCao_KTDBCL"
+    }</title><style>body{font-family:'Times New Roman',serif;font-size:13pt;color:#111;margin:24px;}</style></head><body>${htmlBody}</body></html>`
+
+    const blob = new Blob(["\ufeff", docHtml], { type: "application/msword;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download =
+      reportPeriod === "WEEKLY"
+        ? `DuThao_BaoCao_Tuan${reportWeekNum}_T${reportMonth}_${reportYear}.doc`
+        : `DuThao_BaoCao_Thang${reportMonth}_${reportYear}.doc`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    setReportActionMsg("Đã tải xuống tệp Word (.doc) thành công.")
+  }
+
+  const handleSendReportByEmail = async () => {
+    if (!reportMarkdown) return
+    setSendingReportEmail(true)
+    setReportActionMsg(null)
+    try {
+      const res = await fetch("/api/admin/qa-workspace/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "SEND_REPORT_DRAFT_EMAIL",
+          reportMarkdown,
+          periodLabel: reportPeriodLabel,
+          recipientEmails: reportEmailRecipients,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setReportActionMsg(
+          `Đã gửi email báo cáo thành công tới ${(data.recipients || []).join(", ")} (${data.sentCount} email).`
+        )
+        setShowSendEmailBox(false)
+      } else {
+        setReportActionMsg(data.error || "Không gửi được email báo cáo.")
+      }
+    } finally {
+      setSendingReportEmail(false)
     }
   }
 
@@ -911,79 +1027,256 @@ export function QaAssistantPanel({
 
           {/* TAB 4: SOẠN DỰ THẢO BÁO CÁO TUẦN / THÁNG KÈM LIÊN KẾT NHIỆM VỤ & MINH CHỨNG */}
           {activeTab === "REPORT" && (
-            <div className="space-y-4">
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap items-end gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                    Kỳ báo cáo
-                  </label>
-                  <select
-                    value={reportPeriod}
-                    onChange={e => setReportPeriod(e.target.value as any)}
-                    className="px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white font-semibold"
-                  >
-                    <option value="WEEKLY">Báo cáo Tuần</option>
-                    <option value="MONTHLY">Báo cáo Tháng</option>
-                  </select>
+            <div className="space-y-4 tabular-nums">
+              <div className="bg-[#F8FAFC] p-4 rounded-2xl border border-[#E2E8F0] space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Loại kỳ báo cáo
+                    </label>
+                    <select
+                      value={reportPeriod}
+                      onChange={e => setReportPeriod(e.target.value as "WEEKLY" | "MONTHLY")}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] text-xs bg-white font-semibold text-[#003B3A]"
+                    >
+                      <option value="WEEKLY">Báo cáo Tuần</option>
+                      <option value="MONTHLY">Báo cáo Tháng</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Chọn Tháng
+                    </label>
+                    <select
+                      value={reportMonth}
+                      onChange={e => {
+                        setReportMonth(Number(e.target.value))
+                        setReportWeekNum(1)
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] text-xs bg-white font-semibold text-[#003B3A]"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                        <option key={m} value={m}>
+                          Tháng {m}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Chọn Năm
+                    </label>
+                    <select
+                      value={reportYear}
+                      onChange={e => setReportYear(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] text-xs bg-white font-semibold text-[#003B3A]"
+                    >
+                      {[reportYear - 1, reportYear, reportYear + 1].map(y => (
+                        <option key={y} value={y}>
+                          Năm {y}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {reportPeriod === "WEEKLY" && (
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                        Tuần trong Tháng
+                      </label>
+                      <select
+                        value={reportWeekNum}
+                        onChange={e => setReportWeekNum(Number(e.target.value))}
+                        className="w-full px-3 py-2 rounded-xl border border-teal-300 text-xs bg-[#F0FDFA] font-semibold text-[#003B3A]"
+                      >
+                        {reportMonthWeeks.map(w => (
+                          <option key={w.weekNum} value={w.weekNum}>
+                            {w.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex-1 min-w-[180px]">
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                    Phạm vi Nhóm chuyên môn
-                  </label>
-                  <select
-                    value={reportGroupId}
-                    onChange={e => setReportGroupId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white font-semibold"
-                  >
-                    <option value="ALL">Toàn Ban KT&ĐBCL</option>
-                    {taskGroups.map(g => (
-                      <option key={g.id} value={g.id}>
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <div className="flex flex-wrap items-end gap-2.5 pt-1">
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Phạm vi Nhóm chuyên môn
+                    </label>
+                    <select
+                      value={reportGroupId}
+                      onChange={e => setReportGroupId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] text-xs bg-white font-semibold text-[#003B3A]"
+                    >
+                      <option value="ALL">Toàn Ban KT&amp;ĐBCL</option>
+                      {taskGroups.map(g => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                <button
-                  type="button"
-                  disabled={generatingReport}
-                  onClick={handleGenerateReport}
-                  className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-500 text-white text-xs font-extrabold cursor-pointer"
-                >
-                  {generatingReport ? "Đang tổng hợp..." : "Tạo Dự thảo Báo cáo"}
-                </button>
+                  <button
+                    type="button"
+                    disabled={generatingReport}
+                    onClick={handleGenerateReport}
+                    className="px-4 py-2 rounded-xl bg-[#003B3A] hover:bg-[#005250] text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {generatingReport ? "Đang tổng hợp..." : "Tạo Dự thảo Báo cáo"}
+                  </button>
+                </div>
               </div>
 
               {reportMarkdown && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">
-                      Bản dự thảo Báo cáo (Kèm định nghĩa mẫu số N & liên kết nhiệm vụ/minh chứng):
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(reportMarkdown)
-                        setCopiedReport(true)
-                        setTimeout(() => setCopiedReport(false), 2000)
-                      }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer"
-                    >
-                      {copiedReport ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-600" /> Đã sao chép
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" /> Sao chép Markdown
-                        </>
-                      )}
-                    </button>
+                <div className="space-y-3">
+                  {/* Thanh thao tác đầu ra sau khi tạo dự thảo */}
+                  <div className="bg-white rounded-2xl border border-[#E2E8F0] p-3.5 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="inline-flex rounded-xl bg-[#F8FAFC] p-1 border border-[#E2E8F0]">
+                        <button
+                          type="button"
+                          onClick={() => setReportViewTab("PREVIEW")}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                            reportViewTab === "PREVIEW"
+                              ? "bg-[#003B3A] text-white"
+                              : "text-slate-600 hover:text-[#003B3A]"
+                          }`}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Xem bản đọc đẹp
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReportViewTab("MARKDOWN")}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                            reportViewTab === "MARKDOWN"
+                              ? "bg-[#003B3A] text-white"
+                              : "text-slate-600 hover:text-[#003B3A]"
+                          }`}
+                        >
+                          <Code2 className="w-3.5 h-3.5" />
+                          Markdown
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleDownloadWordReport}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#F0FDFA] hover:bg-teal-100 text-[#00736E] border border-teal-200 text-[11px] font-semibold cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Tải file Word (.doc)
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowSendEmailBox(prev => !prev)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#005250] text-white text-[11px] font-semibold cursor-pointer"
+                        >
+                          <Mail className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                          Gửi Email GĐB
+                        </button>
+
+                        <a
+                          href={`/admin/weekly-reports?tab=compose&week=${reportWeekNum}&month=${reportMonth}&year=${reportYear}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#059669] border border-emerald-200 text-[11px] font-semibold"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Mở BC Tuần
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(reportMarkdown)
+                            setCopiedReport(true)
+                            setTimeout(() => setCopiedReport(false), 2000)
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-semibold text-slate-700 cursor-pointer"
+                        >
+                          {copiedReport ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-[#059669]" /> Đã sao chép
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" /> Sao chép
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Hộp gửi email trực tiếp */}
+                    {showSendEmailBox && (
+                      <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <input
+                          type="text"
+                          value={reportEmailRecipients}
+                          onChange={e => setReportEmailRecipients(e.target.value)}
+                          placeholder="Nhập email người nhận (để trống sẽ gửi mặc định cho Giám đốc Ban)..."
+                          className="flex-1 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-xs text-slate-700 focus:outline-none focus:border-[#00A19A]"
+                        />
+                        <button
+                          type="button"
+                          disabled={sendingReportEmail}
+                          onClick={handleSendReportByEmail}
+                          className="px-3.5 py-1.5 rounded-lg bg-[#00736E] hover:bg-[#005B58] text-white text-xs font-semibold disabled:opacity-50 cursor-pointer shrink-0"
+                        >
+                          {sendingReportEmail ? "Đang gửi..." : "Gửi ngay"}
+                        </button>
+                      </div>
+                    )}
+
+                    {reportActionMsg && (
+                      <div className="px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-medium text-[#059669]">
+                        {reportActionMsg}
+                      </div>
+                    )}
+
+                    {/* Nội dung xem trước bản đọc đẹp hoặc mã nguồn Markdown */}
+                    {reportViewTab === "PREVIEW" ? (
+                      <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] max-h-[380px] overflow-y-auto space-y-1.5 text-xs text-slate-700 leading-relaxed">
+                        {reportMarkdown.split("\n").map((line, i) => {
+                          if (line.startsWith("### ")) {
+                            return (
+                              <h4
+                                key={i}
+                                className="text-sm font-bold text-[#003B3A] border-b border-[#E2E8F0] pb-1.5 mb-1"
+                              >
+                                {line.slice(4)}
+                              </h4>
+                            )
+                          }
+                          if (line.startsWith("#### ")) {
+                            return (
+                              <h5
+                                key={i}
+                                className="text-xs font-bold text-[#00736E] pt-2"
+                              >
+                                {line.slice(5)}
+                              </h5>
+                            )
+                          }
+                          if (!line.trim()) return <div key={i} className="h-1" />
+                          return (
+                            <p key={i} className="whitespace-pre-wrap">
+                              {line.replace(/\*\*/g, "").replace(/\*/g, "")}
+                            </p>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <pre className="p-4 rounded-xl bg-slate-900 text-slate-100 text-xs whitespace-pre-wrap font-mono max-h-[380px] overflow-y-auto leading-relaxed">
+                        {reportMarkdown}
+                      </pre>
+                    )}
                   </div>
-                  <pre className="p-4 rounded-xl bg-slate-900 text-slate-100 text-xs whitespace-pre-wrap font-mono max-h-96 overflow-y-auto leading-relaxed">
-                    {reportMarkdown}
-                  </pre>
                 </div>
               )}
             </div>

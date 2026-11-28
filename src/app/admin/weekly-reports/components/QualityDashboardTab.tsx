@@ -36,6 +36,7 @@ interface QualityDashboardTabProps {
   aiReport: KtdbclAiQualityReport
   isRefreshingAi: boolean
   onRefreshAiAnalysis: (scope: "WEEKLY" | "MONTHLY") => Promise<void>
+  onRemindSaturdayPlan?: (targetUserId?: string) => Promise<void>
   onRemindUnsubmitted: (targetUserId?: string) => Promise<void>
   onSendDirectorReport: (scope: "WEEKLY" | "MONTHLY") => Promise<void>
   onScanOverdueAndRequestExplanation: () => Promise<void>
@@ -84,6 +85,7 @@ export function QualityDashboardTab({
   aiReport,
   isRefreshingAi,
   onRefreshAiAnalysis,
+  onRemindSaturdayPlan,
   onRemindUnsubmitted,
   onSendDirectorReport,
   onScanOverdueAndRequestExplanation,
@@ -108,11 +110,56 @@ export function QualityDashboardTab({
     null
 
   const SLICE_PALETTE = [
-    { bar: "bg-[#003B3A]", dot: "bg-[#003B3A]", ring: "#003B3A" },
-    { bar: "bg-[#00736E]", dot: "bg-[#00736E]", ring: "#00736E" },
-    { bar: "bg-[#00A19A]", dot: "bg-[#00A19A]", ring: "#00A19A" },
-    { bar: "bg-[#059669]", dot: "bg-[#059669]", ring: "#059669" },
-    { bar: "bg-[#D97706]", dot: "bg-[#D97706]", ring: "#D97706" },
+    {
+      bar: "bg-[#003B3A]",
+      dot: "bg-[#003B3A]",
+      ring: "#003B3A",
+      topBand: "bg-[#003B3A]",
+      headerBg: "bg-[#003B3A]/8",
+      activeHeaderBg: "bg-[#003B3A]",
+      border: "border-[#003B3A]/25",
+      pillBg: "bg-[#003B3A]/10 text-[#003B3A]",
+    },
+    {
+      bar: "bg-[#00736E]",
+      dot: "bg-[#00736E]",
+      ring: "#00736E",
+      topBand: "bg-[#00736E]",
+      headerBg: "bg-teal-50/90",
+      activeHeaderBg: "bg-[#00736E]",
+      border: "border-teal-200",
+      pillBg: "bg-teal-100/80 text-[#00736E]",
+    },
+    {
+      bar: "bg-[#00A19A]",
+      dot: "bg-[#00A19A]",
+      ring: "#00A19A",
+      topBand: "bg-[#00A19A]",
+      headerBg: "bg-cyan-50/80",
+      activeHeaderBg: "bg-[#008B85]",
+      border: "border-cyan-200",
+      pillBg: "bg-cyan-100/80 text-[#00736E]",
+    },
+    {
+      bar: "bg-[#059669]",
+      dot: "bg-[#059669]",
+      ring: "#059669",
+      topBand: "bg-[#059669]",
+      headerBg: "bg-emerald-50/85",
+      activeHeaderBg: "bg-[#059669]",
+      border: "border-emerald-200",
+      pillBg: "bg-emerald-100/80 text-[#059669]",
+    },
+    {
+      bar: "bg-[#D97706]",
+      dot: "bg-[#D97706]",
+      ring: "#D97706",
+      topBand: "bg-[#D97706]",
+      headerBg: "bg-amber-50/85",
+      activeHeaderBg: "bg-[#D97706]",
+      border: "border-amber-200",
+      pillBg: "bg-amber-100/80 text-[#D97706]",
+    },
   ]
 
   const totalGroupItems = aiReport.groupAnalyses.reduce((sum, g) => sum + g.totalItems, 0)
@@ -163,7 +210,7 @@ export function QualityDashboardTab({
 
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#F0FDFA] text-[#00736E] border border-teal-200 tabular-nums">
             <Clock className="w-3.5 h-3.5" />
-            Nhắc tự động Thứ Tư • 14:00: {wednesdayReminderEnabled ? "Đang bật" : "Đang tắt"}
+            Lập KH Tuần: Sáng T7 (08:30) • BC công việc: T4 (14:00) — {wednesdayReminderEnabled ? "Đang bật" : "Đang tắt"}
           </span>
 
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#F8FAFC] text-slate-700 border border-[#E2E8F0]">
@@ -175,16 +222,30 @@ export function QualityDashboardTab({
         <div className="flex flex-wrap items-center gap-2">
           {isLeadership && (
             <>
+              {onRemindSaturdayPlan && (
+                <button
+                  type="button"
+                  disabled={actionBusyKey !== null}
+                  onClick={() => onRemindSaturdayPlan()}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-teal-100 transition-colors disabled:opacity-50 cursor-pointer tabular-nums"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  {actionBusyKey === "REMIND_SAT_PLAN"
+                    ? "Đang gửi nhắc KH..."
+                    : "Nhắc lập KH Tuần (Sáng T7)"}
+                </button>
+              )}
+
               <button
                 type="button"
                 disabled={actionBusyKey !== null}
                 onClick={() => onRemindUnsubmitted()}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 text-[#D97706] border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50 tabular-nums"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 text-[#D97706] border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50 cursor-pointer tabular-nums"
               >
                 <Bell className="w-3.5 h-3.5" />
                 {actionBusyKey === "REMIND_ALL"
                   ? "Đang gửi nhắc..."
-                  : `Nhắc nộp báo cáo (${unsubmittedCount})`}
+                  : `Nhắc nộp báo cáo T4 (${unsubmittedCount})`}
               </button>
 
               <button
@@ -401,7 +462,7 @@ export function QualityDashboardTab({
             </div>
           </div>
 
-          {/* Lát cắt 2: 5 Cột lát cắt nhóm với biểu đồ vòng (Donut Slice) song song */}
+          {/* Lát cắt 2: 5 Cột lát cắt nhóm giàu màu sắc & thể hiện rõ tiến độ công việc */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
             {aiReport.groupAnalyses.map((g, idx) => {
               const badge = getQualityStatusBadge(g.qualityStatus)
@@ -422,105 +483,161 @@ export function QualityDashboardTab({
               const doingLen = doingRatio * circumference
               const overdueLen = overdueRatio * circumference
 
+              const ringTrackColor =
+                g.overdueItems > 0
+                  ? "#FFE4E6"
+                  : g.totalItems === 0
+                  ? "#FEF3C7"
+                  : g.completionRate >= 80
+                  ? "#D1FAE5"
+                  : "#E2E8F0"
+
               return (
                 <button
                   key={g.groupName}
                   type="button"
                   onClick={() => setActiveSliceGroupName(g.groupName)}
-                  className={`text-left rounded-xl border p-3 transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                  className={`text-left rounded-2xl border overflow-hidden transition-all cursor-pointer flex flex-col justify-between ${
                     isSelected
-                      ? "bg-[#F0FDFA]/70 border-[#003B3A] ring-1 ring-[#003B3A]/20 shadow-xs"
-                      : "bg-[#F8FAFC]/70 border-[#E2E8F0] hover:border-[#00A19A] hover:bg-white"
+                      ? "bg-white border-[#003B3A] ring-2 ring-[#003B3A]/20 shadow-md -translate-y-0.5"
+                      : `bg-white ${palette.border} hover:border-[#00A19A] hover:shadow-xs`
                   }`}
                 >
-                  {/* Group Header */}
-                  <div className="space-y-1">
+                  {/* Colored Group Header Band */}
+                  <div
+                    className={`px-3 py-2.5 border-b transition-colors ${
+                      isSelected
+                        ? `${palette.activeHeaderBg} border-transparent text-white`
+                        : `${palette.headerBg} border-[#F1F5F9] text-[#003B3A]`
+                    }`}
+                  >
                     <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${palette.dot}`} />
-                      <span className="text-xs font-bold text-[#003B3A] leading-tight line-clamp-2">
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ${
+                          isSelected ? "bg-[#5EEAD4]" : palette.dot
+                        }`}
+                      />
+                      <span className="text-xs font-bold leading-tight line-clamp-1">
                         {g.groupName}
                       </span>
                     </div>
-                    <div className="text-[11px] text-slate-500">
-                      {g.memberCount} NS · {g.totalItems} việc
+                    <div
+                      className={`text-[10px] mt-1 font-medium ${
+                        isSelected ? "text-teal-100" : "text-slate-500"
+                      }`}
+                    >
+                      {g.memberCount} NS · {g.completedItems}/{g.totalItems} việc HT
                     </div>
                   </div>
 
-                  {/* Donut Progress Slice */}
-                  <div className="flex items-center justify-center py-0.5">
-                    <div className="relative w-16 h-16">
-                      <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
-                        <circle
-                          cx="32"
-                          cy="32"
-                          r={radius}
-                          fill="none"
-                          stroke="#E2E8F0"
-                          strokeWidth="6"
-                        />
-                        {completedLen > 0 && (
+                  {/* Body: Donut Progress + Dual Progress Bars */}
+                  <div className="p-3 flex-1 flex flex-col justify-between gap-2.5">
+                    {/* Donut Progress Slice */}
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="relative w-16 h-16">
+                        <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
                           <circle
                             cx="32"
                             cy="32"
                             r={radius}
                             fill="none"
-                            stroke="#059669"
-                            strokeWidth="6"
-                            strokeDasharray={`${completedLen} ${circumference}`}
-                            strokeDashoffset={0}
-                            strokeLinecap="round"
+                            stroke={ringTrackColor}
+                            strokeWidth="7.5"
                           />
-                        )}
-                        {doingLen > 0 && (
-                          <circle
-                            cx="32"
-                            cy="32"
-                            r={radius}
-                            fill="none"
-                            stroke="#D97706"
-                            strokeWidth="6"
-                            strokeDasharray={`${doingLen} ${circumference}`}
-                            strokeDashoffset={-completedLen}
-                            strokeLinecap="round"
-                          />
-                        )}
-                        {overdueLen > 0 && (
-                          <circle
-                            cx="32"
-                            cy="32"
-                            r={radius}
-                            fill="none"
-                            stroke="#E11D48"
-                            strokeWidth="6"
-                            strokeDasharray={`${overdueLen} ${circumference}`}
-                            strokeDashoffset={-(completedLen + doingLen)}
-                            strokeLinecap="round"
-                          />
-                        )}
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xs font-bold text-[#003B3A] leading-none">
-                          {g.completionRate}%
-                        </span>
-                        <span className="text-[9px] text-slate-400 mt-0.5">HT</span>
+                          {completedLen > 0 && (
+                            <circle
+                              cx="32"
+                              cy="32"
+                              r={radius}
+                              fill="none"
+                              stroke="#059669"
+                              strokeWidth="7.5"
+                              strokeDasharray={`${completedLen} ${circumference}`}
+                              strokeDashoffset={0}
+                              strokeLinecap="round"
+                            />
+                          )}
+                          {doingLen > 0 && (
+                            <circle
+                              cx="32"
+                              cy="32"
+                              r={radius}
+                              fill="none"
+                              stroke="#D97706"
+                              strokeWidth="7.5"
+                              strokeDasharray={`${doingLen} ${circumference}`}
+                              strokeDashoffset={-completedLen}
+                              strokeLinecap="round"
+                            />
+                          )}
+                          {overdueLen > 0 && (
+                            <circle
+                              cx="32"
+                              cy="32"
+                              r={radius}
+                              fill="none"
+                              stroke="#E11D48"
+                              strokeWidth="7.5"
+                              strokeDasharray={`${overdueLen} ${circumference}`}
+                              strokeDashoffset={-(completedLen + doingLen)}
+                              strokeLinecap="round"
+                            />
+                          )}
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span
+                            className={`text-xs font-extrabold leading-none ${
+                              g.completionRate >= 80
+                                ? "text-[#059669]"
+                                : g.overdueItems > 0
+                                ? "text-[#E11D48]"
+                                : "text-[#003B3A]"
+                            }`}
+                          >
+                            {g.completionRate}%
+                          </span>
+                          <span className="text-[9px] font-semibold text-slate-400 mt-0.5">
+                            Tiến độ
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Compact Slice Metrics */}
-                  <div className="space-y-1.5 pt-1.5 border-t border-[#E2E8F0]/80">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500">Hiệu suất</span>
-                      <span className="font-bold text-[#00736E]">{g.efficiencyScore}%</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500">Chất lượng</span>
-                      <span className="font-bold text-[#003B3A]">{g.avgQualityScore}/10</span>
-                    </div>
-                    <div
-                      className={`mt-1 text-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border truncate ${badge.cls}`}
-                    >
-                      {badge.label}
+                    {/* Visual Progress Bars: Hiệu suất & Chất lượng */}
+                    <div className="space-y-1.5 pt-1 border-t border-[#F1F5F9]">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-slate-500 font-medium">Hiệu suất</span>
+                          <span className="font-bold text-[#00736E]">{g.efficiencyScore}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-teal-50 overflow-hidden border border-teal-100">
+                          <div
+                            className="h-full rounded-full bg-[#00A19A] transition-all"
+                            style={{ width: `${Math.min(100, g.efficiencyScore)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-slate-500 font-medium">Chất lượng</span>
+                          <span className="font-bold text-[#003B3A]">{g.avgQualityScore}/10</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-emerald-50 overflow-hidden border border-emerald-100">
+                          <div
+                            className="h-full rounded-full bg-[#059669] transition-all"
+                            style={{
+                              width: `${Math.min(100, Math.round(g.avgQualityScore * 10))}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div
+                        className={`mt-1.5 text-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border truncate ${badge.cls}`}
+                      >
+                        {badge.label}
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -538,10 +655,10 @@ export function QualityDashboardTab({
             const qualityPct = Math.min(100, Math.round(activeSliceGroup.avgQualityScore * 10))
 
             return (
-              <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 space-y-3.5 mt-auto">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[#E2E8F0]">
+              <div className="rounded-2xl border border-[#003B3A]/20 bg-white overflow-hidden shadow-2xs mt-auto">
+                <div className="px-4 py-3 bg-[#003B3A] text-white flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-bold text-[#003B3A]">
+                    <span className="text-xs font-bold">
                       Lát cắt chi tiết: {activeSliceGroup.groupName}
                     </span>
                     <span
@@ -554,112 +671,132 @@ export function QualityDashboardTab({
                   <button
                     type="button"
                     onClick={() => onSelectGroupToReview(activeSliceGroup.groupName)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#003B3A] hover:bg-[#005250] text-white transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#00A19A] hover:bg-[#008B85] text-white transition-colors cursor-pointer"
                   >
                     Lọc &amp; xác nhận đầu việc
-                    <ArrowUpRight className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                {/* 4 ô lát cắt trạng thái đầu việc */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
-                    <div className="text-[11px] text-slate-500">Hoàn thành</div>
-                    <div className="text-sm font-bold text-[#059669] mt-0.5">
-                      {activeSliceGroup.completedItems}
-                      <span className="text-[11px] font-normal text-slate-500 ml-1">
-                        (Duyệt: {activeSliceGroup.confirmedItems})
-                      </span>
+                <div className="p-4 space-y-3.5 bg-[#F8FAFC]/60">
+                  {/* 4 ô lát cắt trạng thái đầu việc với sắc thái ngữ nghĩa */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="bg-emerald-50/70 rounded-xl border border-emerald-200 px-3 py-2">
+                      <div className="text-[11px] font-medium text-emerald-800">Hoàn thành</div>
+                      <div className="text-sm font-bold text-[#059669] mt-0.5">
+                        {activeSliceGroup.completedItems}
+                        <span className="text-[11px] font-normal text-emerald-700/80 ml-1">
+                          (Duyệt: {activeSliceGroup.confirmedItems})
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
-                    <div className="text-[11px] text-slate-500">Đang thực hiện</div>
-                    <div className="text-sm font-bold text-[#D97706] mt-0.5">
-                      {activeSliceGroup.doingItems}
-                      <span className="text-[11px] font-normal text-slate-500 ml-1">việc</span>
+                    <div className="bg-amber-50/70 rounded-xl border border-amber-200 px-3 py-2">
+                      <div className="text-[11px] font-medium text-amber-800">Đang thực hiện</div>
+                      <div className="text-sm font-bold text-[#D97706] mt-0.5">
+                        {activeSliceGroup.doingItems}
+                        <span className="text-[11px] font-normal text-amber-700/80 ml-1">việc</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
-                    <div className="text-[11px] text-slate-500">Chưa bắt đầu</div>
-                    <div className="text-sm font-bold text-slate-700 mt-0.5">
-                      {remainingItems}
-                      <span className="text-[11px] font-normal text-slate-500 ml-1">việc</span>
+                    <div className="bg-slate-50 rounded-xl border border-slate-200 px-3 py-2">
+                      <div className="text-[11px] font-medium text-slate-600">Chưa bắt đầu</div>
+                      <div className="text-sm font-bold text-slate-700 mt-0.5">
+                        {remainingItems}
+                        <span className="text-[11px] font-normal text-slate-500 ml-1">việc</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
-                    <div className="text-[11px] text-slate-500">Trễ hạn</div>
                     <div
-                      className={`text-sm font-bold mt-0.5 ${
-                        activeSliceGroup.overdueItems > 0 ? "text-[#E11D48]" : "text-[#059669]"
+                      className={`rounded-xl border px-3 py-2 ${
+                        activeSliceGroup.overdueItems > 0
+                          ? "bg-rose-50/80 border-rose-200"
+                          : "bg-teal-50/60 border-teal-200"
                       }`}
                     >
-                      {activeSliceGroup.overdueItems}
-                      <span className="text-[11px] font-normal text-slate-500 ml-1">việc</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3 thanh lát cắt chỉ số so với mục tiêu 85% */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-600 font-medium">Tiến độ hoàn thành</span>
-                      <span className="font-bold text-[#059669]">{activeSliceGroup.completionRate}%</span>
-                    </div>
-                    <div className="relative h-2 rounded-full bg-slate-200 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[#059669] transition-all"
-                        style={{ width: `${Math.min(100, activeSliceGroup.completionRate)}%` }}
-                      />
+                        className={`text-[11px] font-medium ${
+                          activeSliceGroup.overdueItems > 0 ? "text-rose-800" : "text-[#00736E]"
+                        }`}
+                      >
+                        Trễ hạn
+                      </div>
                       <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-[#003B3A]/40"
-                        style={{ left: "85%" }}
-                        title="Mục tiêu 85%"
-                      />
+                        className={`text-sm font-bold mt-0.5 ${
+                          activeSliceGroup.overdueItems > 0 ? "text-[#E11D48]" : "text-[#059669]"
+                        }`}
+                      >
+                        {activeSliceGroup.overdueItems}
+                        <span className="text-[11px] font-normal text-slate-500 ml-1">việc</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-600 font-medium">Chỉ số hiệu suất</span>
-                      <span className="font-bold text-[#00736E]">{activeSliceGroup.efficiencyScore}%</span>
+                  {/* 3 thanh lát cắt chỉ số so với mục tiêu 85% */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="bg-white rounded-xl border border-[#E2E8F0] p-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-600 font-semibold">Tiến độ hoàn thành</span>
+                        <span className="font-bold text-[#059669]">
+                          {activeSliceGroup.completionRate}%
+                        </span>
+                      </div>
+                      <div className="relative h-2.5 rounded-full bg-emerald-100/80 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#059669] to-emerald-400 transition-all"
+                          style={{ width: `${Math.min(100, activeSliceGroup.completionRate)}%` }}
+                        />
+                        <div
+                          className="absolute top-0 bottom-0 w-0.5 bg-[#003B3A]/50"
+                          style={{ left: "85%" }}
+                          title="Mục tiêu 85%"
+                        />
+                      </div>
                     </div>
-                    <div className="relative h-2 rounded-full bg-slate-200 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[#008B85] transition-all"
-                        style={{ width: `${Math.min(100, activeSliceGroup.efficiencyScore)}%` }}
-                      />
-                      <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-[#003B3A]/40"
-                        style={{ left: "85%" }}
-                        title="Mục tiêu 85%"
-                      />
+
+                    <div className="bg-white rounded-xl border border-[#E2E8F0] p-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-600 font-semibold">Chỉ số hiệu suất</span>
+                        <span className="font-bold text-[#00736E]">
+                          {activeSliceGroup.efficiencyScore}%
+                        </span>
+                      </div>
+                      <div className="relative h-2.5 rounded-full bg-teal-100/80 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#00736E] to-[#00A19A] transition-all"
+                          style={{ width: `${Math.min(100, activeSliceGroup.efficiencyScore)}%` }}
+                        />
+                        <div
+                          className="absolute top-0 bottom-0 w-0.5 bg-[#003B3A]/50"
+                          style={{ left: "85%" }}
+                          title="Mục tiêu 85%"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-[#E2E8F0] p-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-600 font-semibold">Điểm chất lượng</span>
+                        <span className="font-bold text-[#003B3A]">
+                          {activeSliceGroup.avgQualityScore}/10
+                        </span>
+                      </div>
+                      <div className="relative h-2.5 rounded-full bg-slate-200/80 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#003B3A] to-[#00736E] transition-all"
+                          style={{ width: `${qualityPct}%` }}
+                        />
+                        <div
+                          className="absolute top-0 bottom-0 w-0.5 bg-[#00A19A]/70"
+                          style={{ left: "85%" }}
+                          title="Mục tiêu 8.5/10"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-600 font-medium">Điểm chất lượng</span>
-                      <span className="font-bold text-[#003B3A]">{activeSliceGroup.avgQualityScore}/10</span>
-                    </div>
-                    <div className="relative h-2 rounded-full bg-slate-200 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[#003B3A] transition-all"
-                        style={{ width: `${qualityPct}%` }}
-                      />
-                      <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-[#00A19A]/60"
-                        style={{ left: "85%" }}
-                        title="Mục tiêu 8.5/10"
-                      />
-                    </div>
+                  {/* Khuyến nghị hành động */}
+                  <div className="flex items-start gap-2 text-xs text-slate-700 bg-[#F0FDFA] rounded-xl border border-teal-200 px-3 py-2.5">
+                    <Target className="w-3.5 h-3.5 text-[#00736E] shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{activeSliceGroup.recommendedAction}</span>
                   </div>
-                </div>
-
-                {/* Khuyến nghị hành động */}
-                <div className="flex items-start gap-2 text-xs text-slate-600 bg-white rounded-lg border border-[#E2E8F0] px-3 py-2">
-                  <Target className="w-3.5 h-3.5 text-[#00736E] shrink-0 mt-0.5" />
-                  <span className="leading-relaxed">{activeSliceGroup.recommendedAction}</span>
                 </div>
               </div>
             )

@@ -25,6 +25,8 @@ import {
   submitStaffOverdueExplanationAction,
   syncQaWorkspaceTasksToReportDraft,
   triggerKtdbclReminderNowAction,
+  triggerKtdbclSaturdayPlanReminderNowAction,
+  triggerOverdueAndDoingProgressRemindersAction,
   updateKtdbclAutomationSettingsAction,
   updateKtdbclSpecialistGroupMembersAction,
 } from "./ktdbcl_actions"
@@ -215,6 +217,25 @@ export function WeeklyReportClient({
     }
   }
 
+  const handleRemindSaturdayPlan = async (targetUserId?: string) => {
+    setActionBusyKey("REMIND_SAT_PLAN")
+    try {
+      const res: any = await triggerKtdbclSaturdayPlanReminderNowAction({
+        targetUserId,
+      })
+      if (res.success) {
+        toast.success(
+          `Đã gửi nhắc lập Kế hoạch Tuần ${res.nextWeekNumber}/T${res.nextMonth} (${res.remindedCount} thông báo, ${res.emailSentCount} email)`
+        )
+        await reloadSnapshot()
+      } else {
+        toast.error(res.error || "Không gửi được thông báo nhắc lập Kế hoạch Tuần")
+      }
+    } finally {
+      setActionBusyKey(null)
+    }
+  }
+
   const handleRemindUnsubmitted = async (targetUserId?: string) => {
     setActionBusyKey(targetUserId ? `REMIND_${targetUserId}` : "REMIND_ALL")
     try {
@@ -254,6 +275,33 @@ export function WeeklyReportClient({
         await reloadSnapshot()
       } else {
         toast.error(res.error || "Không gửi được báo cáo cho Giám đốc Ban")
+      }
+    } finally {
+      setActionBusyKey(null)
+    }
+  }
+
+  const handleRemindOverdueAndDoing = async (itemIds?: string[]) => {
+    setActionBusyKey("REMIND_PROGRESS")
+    try {
+      const res: any = await triggerOverdueAndDoingProgressRemindersAction({
+        weekNumber,
+        month,
+        year,
+        scopeType: scopeMode,
+        itemIds,
+      })
+      if (res.success) {
+        if (res.totalTargetItems === 0) {
+          toast.success("Không có đầu việc Quá hạn hoặc Đang thực hiện nào cần nhắc.")
+        } else {
+          toast.success(
+            `Đã gửi nhắc tiến độ & xác nhận HT cho ${res.remindedUsersCount} nhân sự (${res.overdueCount} quá hạn · ${res.doingCount} đang TH · ${res.emailSentCount} email)`
+          )
+          await reloadSnapshot()
+        }
+      } else {
+        toast.error(res.error || "Không gửi được email nhắc tiến độ")
       }
     } finally {
       setActionBusyKey(null)
@@ -404,7 +452,7 @@ export function WeeklyReportClient({
               </span>
             </div>
             <p className="text-xs text-slate-600">
-              Tự động nhắc báo cáo Thứ Tư 14:00 • Tự động gửi báo cáo Tuần & Tháng cho Giám đốc Ban • AI Agent phân tích hiệu suất Nhóm & Cá nhân
+              Lập Kế hoạch Tuần định kỳ Sáng Thứ Bảy (08:30) • Báo cáo công việc định kỳ Thứ Tư (14:00) • Tự động gửi GĐB Tuần &amp; Tháng • AI Agent phân tích hiệu suất
             </p>
           </div>
 
@@ -565,6 +613,7 @@ export function WeeklyReportClient({
           aiReport={activeAiReport}
           isRefreshingAi={isRefreshingAi}
           onRefreshAiAnalysis={handleRefreshAiAnalysis}
+          onRemindSaturdayPlan={handleRemindSaturdayPlan}
           onRemindUnsubmitted={handleRemindUnsubmitted}
           onSendDirectorReport={handleSendDirectorReport}
           onScanOverdueAndRequestExplanation={handleScanOverdue}
@@ -640,6 +689,9 @@ export function WeeklyReportClient({
               toast.error(res.error || "Lỗi gửi giải trình")
             }
           }}
+          onRemindOverdueAndDoing={handleRemindOverdueAndDoing}
+          remindingProgress={actionBusyKey === "REMIND_PROGRESS"}
+          overdueAutoEnabled={snapshot.automationConfig.overdueAutoFlagEnabled}
         />
       )}
 
@@ -768,6 +820,7 @@ export function WeeklyReportClient({
               toast.error(res.error || "Lỗi cập nhật nhóm")
             }
           }}
+          onTriggerSaturdayPlanReminderNow={() => handleRemindSaturdayPlan()}
           onTriggerWednesdayReminderNow={() => handleRemindUnsubmitted()}
           onTriggerDirectorReportNow={(scope) => handleSendDirectorReport(scope)}
         />

@@ -49,6 +49,9 @@ interface ReviewAndConfirmTabProps {
     explanationText: string
     recoveryDate: string
   }) => Promise<void>
+  onRemindOverdueAndDoing?: (itemIds?: string[]) => Promise<void>
+  remindingProgress?: boolean
+  overdueAutoEnabled?: boolean
 }
 
 type StatusFilter =
@@ -150,6 +153,9 @@ export function ReviewAndConfirmTab({
   onConfirmItems,
   onFlagOverdueItems,
   onSubmitExplanation,
+  onRemindOverdueAndDoing,
+  remindingProgress = false,
+  overdueAutoEnabled = true,
 }: ReviewAndConfirmTabProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -179,6 +185,17 @@ export function ReviewAndConfirmTab({
   const [staffExplainItem, setStaffExplainItem] = useState<EnrichedWeeklyReportItem | null>(null)
   const [staffExplanationText, setStaffExplanationText] = useState<string>("")
   const [staffRecoveryDate, setStaffRecoveryDate] = useState<string>("")
+
+  const overdueAndDoingStats = useMemo(() => {
+    let overdue = 0
+    let doing = 0
+    for (const it of items) {
+      if (it.progress === "COMPLETED") continue
+      if (it.isOverdue) overdue++
+      else if (it.progress === "DOING") doing++
+    }
+    return { overdue, doing, total: overdue + doing }
+  }, [items])
 
   const groupCounts = useMemo(() => {
     const map = new Map<string, number>()
@@ -343,29 +360,54 @@ export function ReviewAndConfirmTab({
             </select>
           </div>
 
-          {isLeadership && selectedIds.size > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-[#003B3A] tabular-nums">
-                Đã chọn {selectedIds.size} đầu việc:
-              </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {isLeadership && onRemindOverdueAndDoing && overdueAndDoingStats.total > 0 && (
               <button
                 type="button"
-                onClick={() => setConfirmModalIds(Array.from(selectedIds))}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#059669] text-white hover:bg-emerald-700 transition-colors"
+                disabled={remindingProgress}
+                onClick={() =>
+                  onRemindOverdueAndDoing(
+                    selectedIds.size > 0 ? Array.from(selectedIds) : undefined
+                  )
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#003B3A] text-white hover:bg-[#005250] transition-colors disabled:opacity-50 cursor-pointer tabular-nums"
+                title={
+                  overdueAutoEnabled
+                    ? "Tự động nhắc hằng ngày đang bật — nhấn để gửi email nhắc báo cáo tiến độ & đánh giá mức độ hoàn thành ngay"
+                    : "Gửi email nhắc báo cáo tiến độ & yêu cầu xác nhận hoàn thành cho các đầu việc Quá hạn và Đang thực hiện"
+                }
               >
-                <Check className="w-3.5 h-3.5" />
-                Xác nhận hoàn thành & Báo mail
+                <Mail className="w-3.5 h-3.5 text-[#5EEAD4]" />
+                {remindingProgress
+                  ? "Đang gửi nhắc tiến độ..."
+                  : `Nhắc tiến độ & đánh giá HT (${overdueAndDoingStats.overdue} quá hạn · ${overdueAndDoingStats.doing} đang TH)`}
               </button>
-              <button
-                type="button"
-                onClick={() => setOverdueModalIds(Array.from(selectedIds))}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#E11D48] text-white hover:bg-rose-700 transition-colors"
-              >
-                <FileWarning className="w-3.5 h-3.5" />
-                Báo trễ & Yêu cầu giải trình
-              </button>
-            </div>
-          )}
+            )}
+
+            {isLeadership && selectedIds.size > 0 && (
+              <>
+                <span className="text-xs font-semibold text-[#003B3A] tabular-nums">
+                  Đã chọn {selectedIds.size} đầu việc:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setConfirmModalIds(Array.from(selectedIds))}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#059669] text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Xác nhận hoàn thành &amp; Báo mail
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOverdueModalIds(Array.from(selectedIds))}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#E11D48] text-white hover:bg-rose-700 transition-colors cursor-pointer"
+                >
+                  <FileWarning className="w-3.5 h-3.5" />
+                  Báo trễ &amp; Yêu cầu giải trình
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Specialist Group Pills */}

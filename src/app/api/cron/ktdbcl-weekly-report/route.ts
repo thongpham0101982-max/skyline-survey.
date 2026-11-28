@@ -2,7 +2,9 @@ import { NextResponse } from "next/server"
 import { getVietnamDateParts } from "@/lib/qa-workspace/weeklyReportSchema"
 import {
   dispatchDirectorSummaryReport,
+  dispatchKtdbclSaturdayPlanReminders,
   dispatchKtdbclWednesdayReminders,
+  dispatchOverdueAndDoingProgressReminders,
 } from "@/lib/qa-workspace/weeklyReportEmailService"
 
 export const dynamic = "force-dynamic"
@@ -25,7 +27,18 @@ export async function GET(request: Request) {
 
     const executed: Record<string, any> = {}
 
-    // 1. Nhắc nộp báo cáo tuần cho thành viên Ban KT&ĐBCL (Định kỳ Thứ Tư 14:00 giờ Việt Nam)
+    // 1a. Nhắc lập Kế hoạch Tuần cho thành viên Ban KT&ĐBCL (Định kỳ Sáng Thứ Bảy 08:30 giờ Việt Nam)
+    if (
+      mode === "saturday_plan_reminder" ||
+      (mode === "auto" && vn.dayOfWeek === 6 && vn.hour >= 7 && vn.hour <= 10)
+    ) {
+      executed.saturdayPlanReminder = await dispatchKtdbclSaturdayPlanReminders({
+        force,
+        triggeredBy: "SYSTEM_CRON_SAT_0830",
+      })
+    }
+
+    // 1b. Nhắc nộp báo cáo tuần cho thành viên Ban KT&ĐBCL (Định kỳ Thứ Tư 14:00 giờ Việt Nam)
     if (
       mode === "wednesday_reminder" ||
       (mode === "auto" && vn.dayOfWeek === 3 && vn.hour >= 13 && vn.hour <= 15)
@@ -67,6 +80,20 @@ export async function GET(request: Request) {
           triggeredBy: "SYSTEM_CRON_MONTHLY_DIRECTOR",
         })
       }
+    }
+
+    // 4. Tự động nhắc email đối với đầu việc Quá hạn & Đang thực hiện (yêu cầu báo cáo tiến độ, xác nhận & đánh giá mức độ hoàn thành)
+    if (
+      mode === "progress_reminder" ||
+      (mode === "auto" && vn.dayOfWeek >= 1 && vn.dayOfWeek <= 5 && vn.hour >= 8 && vn.hour <= 17)
+    ) {
+      executed.progressReminder = await dispatchOverdueAndDoingProgressReminders({
+        scopeType: "MONTHLY",
+        month: vn.month,
+        year: vn.year,
+        force,
+        triggeredBy: "SYSTEM_CRON_OVERDUE_DOING",
+      })
     }
 
     return NextResponse.json({

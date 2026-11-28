@@ -59,6 +59,8 @@ export interface WeeklyAutomationLogRecord {
     | "ITEM_CONFIRMED_EMAIL"
     | "OVERDUE_EXPLANATION_EMAIL"
     | "EXPLANATION_SUBMITTED_EMAIL"
+    | "PROGRESS_CONFIRM_REMINDER_EMAIL"
+    | "SATURDAY_PLAN_REMINDER"
   dedupKey: string
   periodLabel: string
   recipientSummary: string

@@ -8,7 +8,13 @@ import {
 } from "@/lib/qa-workspace/nlpDraftParser"
 import { getQaMetadataMapForTasks } from "@/lib/qa-workspace/schemaInit"
 import { computeTaskDeadlineStatus, WORKFLOW_STATUS_CONFIG } from "@/lib/qa-workspace/workflowEngine"
-import { resolveCurrentWeekInMonth } from "@/lib/qa-workspace/weeklyReportSchema"
+import {
+  computeWeeksOfMonthSync,
+  getKtdbclAutomationConfig,
+  resolveCurrentWeekInMonth,
+} from "@/lib/qa-workspace/weeklyReportSchema"
+import { sendEmail } from "@/lib/mail"
+import { renderSkylineEmail } from "@/lib/email-templates"
 
 export const dynamic = "force-dynamic"
 
@@ -104,7 +110,7 @@ export async function POST(req: NextRequest) {
               year: currentPeriod.year,
               weekNumber: currentPeriod.weekNumber,
             },
-            include: { items: { select: { id: true, status: true } } },
+            include: { items: { select: { id: true, progress: true } } },
           })
           .catch(() => null),
         (prisma as any).inputAssessmentStudent
@@ -114,11 +120,11 @@ export async function POST(req: NextRequest) {
             },
           })
           .catch(() => 0) ?? Promise.resolve(0),
-        prisma.survey
-          .count({
+        (prisma as any).survey
+          ?.count({
             where: { status: { in: ["PUBLISHED", "ACTIVE", "OPEN"] } },
           })
-          .catch(() => 0),
+          .catch(() => 0) ?? Promise.resolve(0),
         (prisma as any).$queryRawUnsafe
           ? (prisma as any)
               .$queryRawUnsafe(
@@ -361,10 +367,34 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "GENERATE_REPORT_DRAFT") {
+      const now = new Date()
+      const currentPeriod = resolveCurrentWeekInMonth(now)
       const periodType = body.periodType === "MONTHLY" ? "MONTHLY" : "WEEKLY"
-      const groupFilter = body.taskGroupId || "ALL"
+      const selectedYear = Number(body.year) || currentPeriod.year
+      const selectedMonth = Number(body.month) || currentPeriod.month
+      const allWeeks = computeWeeksOfMonthSync(selectedMonth, selectedYear)
+      const selectedWeekNum =
+        Number(body.weekNumber) && allWeeks.some((w) => w.weekNum === Number(body.weekNumber))
+          ? Number(body.weekNumber)
+          : currentPeriod.year === selectedYear && currentPeriod.month === selectedMonth
+          ? currentPeriod.weekNumber
+          : allWeeks[0]?.weekNum || 1
+      const weekDef = allWeeks.find((w) => w.weekNum === selectedWeekNum) || allWeeks[0]
 
-      const rawTasks = await prisma.workTask.findMany({
+      const groupFilter = body.taskGroupId || body.groupId || "ALL"
+
+      // Compute exact date range of selected week or month
+      let rangeStart: Date
+      let rangeEnd: Date
+      if (periodType === "WEEKLY" && weekDef) {
+        rangeStart = new Date(`${weekDef.startYmd}T00:00:00.000+07:00`)
+        rangeEnd = new Date(`${weekDef.endYmd}T23:59:59.999+07:00`)
+      } else {
+        rangeStart = new Date(selectedYear, selectedMonth - 1, 1, 0, 0, 0, 0)
+        rangeEnd = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999)
+      }
+
+      const rawTasksAll = await prisma.workTask.findMany({
         where: {
           ...taskWhere,
           ...(groupFilter !== "ALL" ? { taskGroupId: groupFilter } : {}),
@@ -376,11 +406,23 @@ export async function POST(req: NextRequest) {
           comments: { select: { id: true, commentType: true, content: true, actionStatus: true } },
         },
         orderBy: { updatedAt: "desc" },
-        take: 100,
+        take: 150,
+      })
+
+      // Filter tasks overlapping the selected week/month period
+      const rawTasks = rawTasksAll.filter((t) => {
+        const s = t.startDate ? new Date(t.startDate) : null
+        const e = t.endDate ? new Date(t.endDate) : null
+        const u = t.updatedAt ? new Date(t.updatedAt) : null
+        if (s && e) {
+          return s <= rangeEnd && e >= rangeStart
+        }
+        if (e) return e >= rangeStart && e <= rangeEnd
+        if (u) return u >= rangeStart && u <= rangeEnd
+        return true
       })
 
       const metaMap = await getQaMetadataMapForTasks(rawTasks)
-      const now = new Date()
       const vnDateStr = now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })
 
       const completed: any[] = []
@@ -421,11 +463,17 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const titleLabel = periodType === "MONTHLY" ? "BÁO CÁO THÁNG" : "BÁO CÁO TUẦN"
-      let md = `### 📊 DỰ THẢO ${titleLabel} — BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG\n`
+      const periodHeading =
+        periodType === "MONTHLY"
+          ? `BÁO CÁO THÁNG ${selectedMonth}/${selectedYear}`
+          : `BÁO CÁO TUẦN ${selectedWeekNum} • THÁNG ${selectedMonth}/${selectedYear}${
+              weekDef ? ` (${weekDef.startDisplay} – ${weekDef.endDisplay})` : ""
+            }`
+
+      let md = `### DỰ THẢO ${periodHeading} — BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG\n`
       md += `*Thời điểm tổng hợp: ${vnDateStr} (Múi giờ Asia/Ho_Chi_Minh)*\n\n`
       md += `#### 1. Tóm tắt số liệu điều hành\n`
-      md += `- **Tổng số nhiệm vụ trong phạm vi**: **${rawTasks.length}** việc\n`
+      md += `- **Tổng số nhiệm vụ trong kỳ**: **${rawTasks.length}** việc\n`
       md += `- **Đã duyệt hoàn thành**: **${completed.length}** việc\n`
       md += `- **Đang chờ duyệt nghiệm thu**: **${pendingReview.length}** việc *(chưa tính là hoàn thành)*\n`
       md += `- **Đang thực hiện / Cần bổ sung**: **${inProgress.length}** việc\n`
@@ -435,7 +483,7 @@ export async function POST(req: NextRequest) {
       if (completed.length === 0) {
         md += `- Chưa có nhiệm vụ hoàn thành nghiệm thu trong kỳ.\n`
       } else {
-        completed.slice(0, 10).forEach((t, idx) => {
+        completed.slice(0, 12).forEach((t, idx) => {
           const evCount = (t.attachments?.length || 0) + (t.qaMeta?.evidenceLinks?.length || 0)
           md += `${idx + 1}. **[${t.taskGroup?.name || t.category}]** ${sanitizeUntrustedReferenceData(t.title, 140)} — *Phụ trách: ${t.assignedToUser?.fullName || t.assignedToRole}* • Minh chứng: **${evCount} tệp/liên kết** ➔ [Mở nhiệm vụ](/admin/tasks?taskId=${t.id})\n`
         })
@@ -445,7 +493,7 @@ export async function POST(req: NextRequest) {
       if (pendingReview.length === 0) {
         md += `- Không có nhiệm vụ tồn đọng chờ duyệt.\n`
       } else {
-        pendingReview.slice(0, 8).forEach((t, idx) => {
+        pendingReview.slice(0, 10).forEach((t, idx) => {
           const wfKey = t.qaMeta.workflowStatus as keyof typeof WORKFLOW_STATUS_CONFIG
           md += `${idx + 1}. **${sanitizeUntrustedReferenceData(t.title, 140)}** (${t.assignedToUser?.fullName || t.assignedToRole}) — Trạng thái: *${WORKFLOW_STATUS_CONFIG[wfKey]?.label}* ➔ [Duyệt kết quả](/admin/tasks?taskId=${t.id})\n`
         })
@@ -464,6 +512,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         reportMarkdown: md,
+        periodLabel: periodHeading,
+        periodMeta: {
+          periodType,
+          weekNumber: selectedWeekNum,
+          month: selectedMonth,
+          year: selectedYear,
+        },
         summaryCounts: {
           total: rawTasks.length,
           completed: completed.length,
@@ -473,6 +528,89 @@ export async function POST(req: NextRequest) {
           overdueReview: overdueRev.length,
           blockers: blockers.length,
         },
+      })
+    }
+
+    if (action === "SEND_REPORT_DRAFT_EMAIL") {
+      const markdown = String(body.reportMarkdown || "").trim()
+      const periodLabel = String(body.periodLabel || "BÁO CÁO CÔNG VIỆC BAN KT&ĐBCL").trim()
+      if (!markdown) {
+        return NextResponse.json(
+          { success: false, error: "Chưa có nội dung dự thảo báo cáo để gửi email." },
+          { status: 400 }
+        )
+      }
+
+      const rawRecipients = String(body.recipientEmails || "")
+        .split(/[,;\s]+/)
+        .map((s) => s.trim())
+        .filter((s) => s.includes("@"))
+
+      const recipients = new Set<string>(rawRecipients)
+      if (recipients.size === 0) {
+        const cfg = await getKtdbclAutomationConfig().catch(() => null)
+        cfg?.directorEmails?.forEach((e) => {
+          if (e && e.includes("@")) recipients.add(e.trim())
+        })
+      }
+
+      if (recipients.size === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Vui lòng nhập ít nhất 1 địa chỉ email người nhận hoặc cấu hình Email Giám đốc Ban.",
+          },
+          { status: 400 }
+        )
+      }
+
+      const escapedLines = markdown
+        .split("\n")
+        .map((line) =>
+          line
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\*(.+?)\*/g, "<em>$1</em>")
+        )
+        .map((line) => {
+          if (line.startsWith("### ")) {
+            return `<h3 style="margin:12px 0 6px;color:#003B3A;font-size:15px;">${line.slice(4)}</h3>`
+          }
+          if (line.startsWith("#### ")) {
+            return `<h4 style="margin:12px 0 4px;color:#00736E;font-size:13px;">${line.slice(5)}</h4>`
+          }
+          if (!line.trim()) return `<div style="height:6px;"></div>`
+          return `<div style="font-size:12.5px;color:#334155;line-height:1.6;">${line}</div>`
+        })
+        .join("")
+
+      const senderName = String((session.user as any)?.name || session.user.email || "Ban KT&ĐBCL")
+      const html = renderSkylineEmail({
+        headerBadge: "BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG",
+        headerTitle: periodLabel,
+        headerSubtitle: `Tổng hợp & gửi trực tiếp từ QA Assistant bởi ${senderName}`,
+        headerTheme: "teal",
+        recipientName: "Ban Lãnh đạo & Giám đốc Ban KT&ĐBCL",
+        introMessage: `Kính gửi **${periodLabel}** được tổng hợp tự động từ dữ liệu nhiệm vụ thực tế trên hệ thống SSM Sky-Line.`,
+        extraHtml: `<div style="margin-top:12px;padding:14px;border:1px solid #E2E8F0;border-radius:10px;background:#F8FAFC;">${escapedLines}</div>`,
+      })
+
+      let sentCount = 0
+      for (const email of recipients) {
+        const r = await sendEmail({
+          to: email,
+          subject: `[Ban KT&ĐBCL] ${periodLabel}`,
+          html,
+        })
+        if (r.success) sentCount++
+      }
+
+      return NextResponse.json({
+        success: true,
+        sentCount,
+        recipients: Array.from(recipients),
       })
     }
 

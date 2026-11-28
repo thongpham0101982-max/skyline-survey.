@@ -6,6 +6,7 @@ import {
   computeWeeksOfMonthSync,
   ensureKtdbclWeeklySchema,
   getKtdbclAutomationConfig,
+  getVietnamDateParts,
   getWeeklyItemMetaMap,
   hasAutomationDedupKey,
   KtdbclMemberProfile,
@@ -13,9 +14,11 @@ import {
   recordWeeklyAutomationLog,
   resolveCurrentWeekInMonth,
   resolveKtdbclRoster,
+  upsertWeeklyItemMeta,
 } from "./weeklyReportSchema"
 import {
   generateKtdbclAiQualityReport,
+  isReportItemPastDue,
   KtdbclAiQualityReport,
 } from "./weeklyAiQualityAgent"
 
@@ -1014,4 +1017,552 @@ export async function sendExplanationSubmittedToLeadershipEmail(params: {
   }
 
   return { emailSentCount }
+}
+
+/**
+ * 6. Tự động nhắc email đối với các đầu việc có trạng thái Hạn & Tiến độ là "Quá hạn" hoặc "Đang thực hiện"
+ *    yêu cầu nhân sự cập nhật báo cáo tiến độ, gửi xác nhận hoàn thành và đánh giá mức độ hoàn thành.
+ */
+export async function dispatchOverdueAndDoingProgressReminders(options?: {
+  weekNumber?: number
+  month?: number
+  year?: number
+  scopeType?: "WEEKLY" | "MONTHLY"
+  itemIds?: string[]
+  force?: boolean
+  triggeredBy?: string
+}): Promise<{
+  success: boolean
+  skipped?: boolean
+  skipReason?: string
+  totalTargetItems: number
+  overdueCount: number
+  doingCount: number
+  remindedUsersCount: number
+  emailSentCount: number
+  notificationCount: number
+}> {
+  await ensureKtdbclWeeklySchema()
+  const config = await getKtdbclAutomationConfig()
+  const now = new Date()
+  const currentPeriod = resolveCurrentWeekInMonth(now)
+  const vn = getVietnamDateParts(now)
+
+  const year = options?.year || currentPeriod.year
+  const month = options?.month || currentPeriod.month
+  const scopeType = options?.scopeType || "MONTHLY"
+  const weekNumber = options?.weekNumber || currentPeriod.weekNumber
+  const isManual = Boolean(options?.force || (options?.itemIds && options.itemIds.length > 0))
+  const triggeredBy = options?.triggeredBy || "SYSTEM_CRON_PROGRESS_REMINDER"
+
+  if (!isManual && !config.overdueAutoFlagEnabled) {
+    return {
+      success: true,
+      skipped: true,
+      skipReason: "Cấu hình tự động nhắc tiến độ đầu việc Quá hạn & Đang thực hiện đang tạm tắt.",
+      totalTargetItems: 0,
+      overdueCount: 0,
+      doingCount: 0,
+      remindedUsersCount: 0,
+      emailSentCount: 0,
+      notificationCount: 0,
+    }
+  }
+
+  const dedupKey = `PROGRESS_REMIND_${vn.year}_M${vn.month}_D${vn.day}`
+  if (!isManual && (await hasAutomationDedupKey(dedupKey))) {
+    return {
+      success: true,
+      skipped: true,
+      skipReason: `Đã gửi nhắc tiến độ tự động trong ngày ${vn.day}/${vn.month}/${vn.year}.`,
+      totalTargetItems: 0,
+      overdueCount: 0,
+      doingCount: 0,
+      remindedUsersCount: 0,
+      emailSentCount: 0,
+      notificationCount: 0,
+    }
+  }
+
+  const roster = await resolveKtdbclRoster()
+  const memberIds = roster.members.map((m) => m.id)
+  const memberMap = new Map(roster.members.map((m) => [m.id, m]))
+
+  const reports = await prisma.weeklyReport.findMany({
+    where: {
+      month,
+      year,
+      ...(scopeType === "WEEKLY" ? { weekNumber } : {}),
+      ...(memberIds.length > 0 ? { userId: { in: memberIds } } : {}),
+    },
+    include: {
+      items: { orderBy: { createdAt: "asc" } },
+      user: { select: { id: true, fullName: true, email: true } },
+    },
+    orderBy: [{ weekNumber: "asc" }, { createdAt: "asc" }],
+  })
+
+  const allItems = reports.flatMap((r) =>
+    r.items.map((it) => ({
+      ...it,
+      report: r,
+    }))
+  )
+  const metaMap = await getWeeklyItemMetaMap(allItems.map((i) => i.id))
+  const allowedIdSet =
+    options?.itemIds && options.itemIds.length > 0 ? new Set(options.itemIds) : null
+
+  type TargetEntry = {
+    item: (typeof allItems)[number]
+    isOverdue: boolean
+    isDoing: boolean
+  }
+
+  const targetsByUser = new Map<
+    string,
+    {
+      userId: string
+      fullName: string
+      email: string | null
+      items: TargetEntry[]
+    }
+  >()
+
+  let overdueCount = 0
+  let doingCount = 0
+
+  for (const it of allItems) {
+    if (allowedIdSet && !allowedIdSet.has(it.id)) continue
+    if (it.progress === "COMPLETED") continue
+
+    const meta = metaMap.get(it.id)
+    const overdue = isReportItemPastDue(it, meta, now, it.report.year, it.report.month)
+    const doing = it.progress === "DOING"
+
+    if (!overdue && !doing) continue
+
+    if (overdue) overdueCount++
+    else if (doing) doingCount++
+
+    const uid = it.report.userId
+    const mem = memberMap.get(uid)
+    if (!targetsByUser.has(uid)) {
+      targetsByUser.set(uid, {
+        userId: uid,
+        fullName: mem?.fullName || it.report.user?.fullName || "Thầy/Cô",
+        email: mem?.email || normalizeStaffEmail(it.report.user),
+        items: [],
+      })
+    }
+    targetsByUser.get(uid)!.items.push({
+      item: it,
+      isOverdue: overdue,
+      isDoing: doing,
+    })
+  }
+
+  const totalTargetItems = overdueCount + doingCount
+  if (totalTargetItems === 0) {
+    return {
+      success: true,
+      totalTargetItems: 0,
+      overdueCount: 0,
+      doingCount: 0,
+      remindedUsersCount: 0,
+      emailSentCount: 0,
+      notificationCount: 0,
+    }
+  }
+
+  const appBaseUrl = resolveQaAppBaseUrl()
+  const reviewUrl = `${appBaseUrl}/admin/weekly-reports?tab=review&month=${month}&year=${year}`
+  const nowIso = now.toISOString()
+
+  let emailSentCount = 0
+  let notificationCount = 0
+
+  for (const group of targetsByUser.values()) {
+    const userOverdue = group.items.filter((x) => x.isOverdue)
+    const userDoing = group.items.filter((x) => !x.isOverdue && x.isDoing)
+
+    // 1. In-app notification
+    await prisma.notification
+      .create({
+        data: {
+          userId: group.userId,
+          title: `[Ban KT&ĐBCL] Nhắc báo cáo tiến độ & đánh giá mức độ hoàn thành (${userOverdue.length} quá hạn, ${userDoing.length} đang thực hiện)`,
+          message: `Có ${group.items.length} đầu việc đang ở trạng thái Quá hạn / Đang thực hiện cần Thầy/Cô cập nhật tiến độ, yêu cầu xác nhận và đánh giá mức độ hoàn thành.`,
+          isRead: false,
+          link: `/admin/weekly-reports?tab=review&month=${month}&year=${year}`,
+        },
+      })
+      .then(() => {
+        notificationCount++
+      })
+      .catch(() => {})
+
+    // 2. Email reminder
+    if (group.email) {
+      const rowsHtml = group.items
+        .map((entry, idx) => {
+          const it = entry.item
+          const statusBadge = entry.isOverdue
+            ? `<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:#FFF1F2;color:#E11D48;font-weight:700;font-size:11px;border:1px solid #FECDD3;">Quá hạn dự kiến</span>`
+            : `<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:#FFFBEB;color:#D97706;font-weight:700;font-size:11px;border:1px solid #FDE68A;">Đang thực hiện</span>`
+
+          return `
+            <tr>
+              <td style="padding:8px 10px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#64748B;text-align:center;">${idx + 1}</td>
+              <td style="padding:8px 10px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#0F172A;">
+                <div style="font-weight:700;color:#003B3A;">${escapeHtml(it.mainTask)}</div>
+                <div style="font-size:11px;color:#475569;margin-top:2px;">${escapeHtml(it.workContent).slice(0, 140)}</div>
+              </td>
+              <td style="padding:8px 10px;border-bottom:1px solid #E2E8F0;font-size:11px;color:#00736E;white-space:nowrap;">
+                Tuần ${it.report.weekNumber} · ${escapeHtml(it.taskGroup || "KT&ĐBCL")}
+              </td>
+              <td style="padding:8px 10px;border-bottom:1px solid #E2E8F0;font-size:12px;color:${entry.isOverdue ? "#E11D48" : "#334155"};font-weight:600;white-space:nowrap;text-align:center;">
+                ${escapeHtml(it.expectedCompletion || "Chưa đặt hạn")}
+              </td>
+              <td style="padding:8px 10px;border-bottom:1px solid #E2E8F0;text-align:center;white-space:nowrap;">
+                ${statusBadge}
+              </td>
+            </tr>`
+        })
+        .join("")
+
+      const tableHtml = `
+        <div style="margin-top: 16px;">
+          <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: #003B3A;">
+            Danh sách đầu việc cần báo cáo tiến độ, xác nhận &amp; đánh giá mức độ hoàn thành:
+          </p>
+          <table style="width: 100%; border-collapse: collapse; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;">
+            <thead>
+              <tr style="background-color: #003B3A; color: #FFFFFF; text-align: left; font-size: 11px;">
+                <th style="padding: 8px 10px; text-align:center;">STT</th>
+                <th style="padding: 8px 10px;">Nội dung đầu việc</th>
+                <th style="padding: 8px 10px;">Kỳ &amp; Nhóm</th>
+                <th style="padding: 8px 10px; text-align:center;">Hạn dự kiến</th>
+                <th style="padding: 8px 10px; text-align:center;">Hạn &amp; Tiến độ</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>`
+
+      const html = renderSkylineEmail({
+        headerBadge: "BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG",
+        headerTitle: "Nhắc báo cáo tiến độ, xác nhận & đánh giá mức độ hoàn thành",
+        headerSubtitle: `Kỳ Tháng ${month}/${year} • ${userOverdue.length} việc quá hạn · ${userDoing.length} việc đang thực hiện`,
+        headerTheme: userOverdue.length > 0 ? "amber" : "teal",
+        recipientName: group.fullName,
+        introMessage: `Hệ thống Quản trị Chất lượng Công việc **Ban KT&ĐBCL** ghi nhận Thầy/Cô hiện có **${group.items.length} đầu việc** ở trạng thái **Quá hạn dự kiến (${userOverdue.length})** và **Đang thực hiện (${userDoing.length})**. Đề nghị Thầy/Cô cập nhật báo cáo tiến độ, gửi yêu cầu xác nhận và đánh giá mức độ hoàn thành.`,
+        detailsTitle: "Yêu cầu thực hiện",
+        details: [
+          {
+            label: "Đầu việc quá hạn dự kiến",
+            value: `${userOverdue.length} đầu việc`,
+            color: userOverdue.length > 0 ? "#E11D48" : "#059669",
+          },
+          {
+            label: "Đầu việc đang thực hiện",
+            value: `${userDoing.length} đầu việc`,
+            color: "#D97706",
+          },
+          {
+            label: "Nội dung cần cập nhật",
+            value: "Báo cáo tiến độ thực tế, gửi xác nhận hoàn thành hoặc giải trình mốc bù",
+            highlight: true,
+          },
+        ],
+        noticeBox: {
+          type: userOverdue.length > 0 ? "warning" : "info",
+          title: "Hướng dẫn xác nhận & đánh giá mức độ hoàn thành",
+          content:
+            "Nếu đầu việc đã hoàn tất, vui lòng cập nhật trạng thái sang Hoàn thành để Quản lý / Giám đốc Ban xác nhận và chấm điểm chất lượng. Với đầu việc quá hạn dự kiến, vui lòng cập nhật giải trình nguyên nhân và cam kết thời hạn hoàn thành mới.",
+        },
+        extraHtml: tableHtml,
+        button: {
+          text: "Cập nhật tiến độ & Yêu cầu xác nhận ngay",
+          url: reviewUrl,
+          color: "#003B3A",
+        },
+      })
+
+      const mailRes = await sendEmail({
+        to: group.email,
+        subject: `[Ban KT&ĐBCL] Nhắc báo cáo tiến độ & đánh giá mức độ hoàn thành (${userOverdue.length} quá hạn, ${userDoing.length} đang TH) — Tháng ${month}/${year}`,
+        html,
+      })
+      if (mailRes.success) emailSentCount++
+    }
+
+    // Update item metadata tracking last reminder email
+    for (const entry of group.items) {
+      await upsertWeeklyItemMeta({
+        itemId: entry.item.id,
+        reportId: entry.item.reportId,
+        userId: entry.item.report.userId,
+        lastEmailType: "PROGRESS_CONFIRM_REMINDER",
+        lastEmailSentAt: nowIso,
+      }).catch(() => {})
+    }
+  }
+
+  await recordWeeklyAutomationLog({
+    jobType: "PROGRESS_CONFIRM_REMINDER_EMAIL",
+    dedupKey: isManual ? `${dedupKey}_MANUAL_${Date.now()}` : dedupKey,
+    periodLabel:
+      scopeType === "WEEKLY"
+        ? `Tuần ${weekNumber} • Tháng ${month}/${year}`
+        : `Tháng ${month}/${year}`,
+    recipientSummary: `${targetsByUser.size} nhân sự (${overdueCount} quá hạn, ${doingCount} đang TH · ${emailSentCount} email)`,
+    emailSentCount,
+    notificationCount,
+    triggeredBy,
+    status: emailSentCount > 0 || notificationCount > 0 ? "SUCCESS" : "PARTIAL",
+    details: {
+      overdueCount,
+      doingCount,
+      remindedUsers: Array.from(targetsByUser.values()).map((u) => u.fullName),
+    },
+  })
+
+  return {
+    success: true,
+    totalTargetItems,
+    overdueCount,
+    doingCount,
+    remindedUsersCount: targetsByUser.size,
+    emailSentCount,
+    notificationCount,
+  }
+}
+
+/**
+ * 7. Tự động nhắc Lập Kế hoạch Tuần định kỳ vào Sáng Thứ Bảy (08:30 giờ Việt Nam)
+ *    cho toàn bộ thành viên Ban KT&ĐBCL để chuẩn bị kế hoạch đầu việc cho tuần kế tiếp.
+ */
+export async function dispatchKtdbclSaturdayPlanReminders(options?: {
+  targetUserId?: string
+  force?: boolean
+  triggeredBy?: string
+}): Promise<{
+  success: boolean
+  skipped?: boolean
+  skipReason?: string
+  nextWeekNumber: number
+  nextMonth: number
+  nextYear: number
+  totalStaff: number
+  remindedCount: number
+  emailSentCount: number
+}> {
+  await ensureKtdbclWeeklySchema()
+  const config = await getKtdbclAutomationConfig()
+  const now = new Date()
+
+  // Tính tuần kế tiếp (Thứ Hai tuần tới) để lập Kế hoạch Tuần
+  const nextMonday = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)
+  const nextPeriod = resolveCurrentWeekInMonth(nextMonday)
+  const nextWeeks = computeWeeksOfMonthSync(nextPeriod.month, nextPeriod.year)
+  const nextWeekDef =
+    nextWeeks.find((w) => w.weekNum === nextPeriod.weekNumber) ||
+    nextWeeks[0] || {
+      weekNum: nextPeriod.weekNumber,
+      label: `Tuần ${nextPeriod.weekNumber} (Tháng ${nextPeriod.month}/${nextPeriod.year})`,
+    }
+
+  const triggeredBy = options?.triggeredBy || "SYSTEM_CRON_SAT_0830"
+  const isManual = Boolean(options?.force || options?.targetUserId)
+
+  if (!isManual && !config.wednesdayReminderEnabled) {
+    return {
+      success: true,
+      skipped: true,
+      skipReason: "Cấu hình nhắc định kỳ tuần (Lập KH Sáng Thứ Bảy & Báo cáo Thứ Tư) đang tạm tắt.",
+      nextWeekNumber: nextPeriod.weekNumber,
+      nextMonth: nextPeriod.month,
+      nextYear: nextPeriod.year,
+      totalStaff: 0,
+      remindedCount: 0,
+      emailSentCount: 0,
+    }
+  }
+
+  const dedupKey = `SAT_PLAN_REMIND_${nextPeriod.year}_M${nextPeriod.month}_W${nextPeriod.weekNumber}`
+  if (!isManual && (await hasAutomationDedupKey(dedupKey))) {
+    return {
+      success: true,
+      skipped: true,
+      skipReason: `Đã gửi nhắc Lập Kế hoạch ${nextWeekDef.label} sáng Thứ Bảy trước đó.`,
+      nextWeekNumber: nextPeriod.weekNumber,
+      nextMonth: nextPeriod.month,
+      nextYear: nextPeriod.year,
+      totalStaff: 0,
+      remindedCount: 0,
+      emailSentCount: 0,
+    }
+  }
+
+  const roster = await resolveKtdbclRoster()
+  const targetMembers = options?.targetUserId
+    ? roster.members.filter((m) => m.id === options.targetUserId)
+    : roster.members
+
+  if (targetMembers.length === 0) {
+    return {
+      success: true,
+      nextWeekNumber: nextPeriod.weekNumber,
+      nextMonth: nextPeriod.month,
+      nextYear: nextPeriod.year,
+      totalStaff: 0,
+      remindedCount: 0,
+      emailSentCount: 0,
+    }
+  }
+
+  const memberIds = targetMembers.map((m) => m.id)
+  const openTasks = await prisma.workTask.findMany({
+    where: {
+      assignedToUserId: { in: memberIds },
+      progress: { in: ["PENDING", "ASSIGNED", "IN_PROGRESS", "NEEDS_REVISION"] },
+    },
+    select: {
+      id: true,
+      title: true,
+      progress: true,
+      endDate: true,
+      assignedToUserId: true,
+      taskGroup: { select: { name: true } },
+    },
+    orderBy: { endDate: "asc" },
+    take: 150,
+  })
+
+  const appBaseUrl = resolveQaAppBaseUrl()
+  const planUrl = `${appBaseUrl}/admin/workhub/plans`
+  let notificationCount = 0
+  let emailSentCount = 0
+
+  for (const member of targetMembers) {
+    const myTasks = openTasks.filter((t) => t.assignedToUserId === member.id).slice(0, 6)
+
+    // 1. In-app Notification
+    await prisma.notification
+      .create({
+        data: {
+          userId: member.id,
+          title: `[Ban KT&ĐBCL] Nhắc lập Kế hoạch Tuần ${nextPeriod.weekNumber}/Tháng ${nextPeriod.month} (Sáng Thứ Bảy)`,
+          message: `Lịch định kỳ Sáng Thứ Bảy (08:30): Vui lòng lập Kế hoạch công tác ${nextWeekDef.label} và chuẩn bị báo cáo tiến độ định kỳ vào Thứ Tư (14:00).`,
+          isRead: false,
+          link: `/admin/workhub/plans`,
+        },
+      })
+      .then(() => {
+        notificationCount++
+      })
+      .catch(() => {})
+
+    // 2. Email Reminder
+    if (member.email) {
+      let taskRowsHtml = ""
+      if (myTasks.length > 0) {
+        const rows = myTasks
+          .map(
+            (t, idx) => `
+            <tr>
+              <td style="padding:8px 10px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#334155;">${idx + 1}. <strong>${escapeHtml(t.title)}</strong></td>
+              <td style="padding:8px 10px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#00736E;">${escapeHtml(t.taskGroup?.name || "KT&ĐBCL")}</td>
+              <td style="padding:8px 10px;border-bottom:1px solid #E2E8F0;font-size:12px;color:#475569;text-align:center;">${t.endDate ? new Date(t.endDate).toLocaleDateString("vi-VN") : "—"}</td>
+            </tr>`
+          )
+          .join("")
+
+        taskRowsHtml = `
+          <div style="margin-top: 16px;">
+            <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; color: #003B3A;">
+              Các đầu việc đang mở trên QA Workspace cần đưa vào Kế hoạch ${escapeHtml(nextWeekDef.label)}:
+            </p>
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;">
+              <thead>
+                <tr style="background-color: #003B3A; color: #FFFFFF; text-align: left; font-size: 11px;">
+                  <th style="padding: 8px 10px;">Nội dung nhiệm vụ</th>
+                  <th style="padding: 8px 10px;">Nhóm chuyên môn</th>
+                  <th style="padding: 8px 10px; text-align:center;">Hạn dự kiến</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`
+      }
+
+      const html = renderSkylineEmail({
+        headerBadge: "BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG",
+        headerTitle: `Nhắc lập Kế hoạch công tác ${nextWeekDef.label}`,
+        headerSubtitle: "Lịch định kỳ Sáng Thứ Bảy (08:30) • Báo cáo công việc định kỳ Thứ Tư (14:00)",
+        headerTheme: "teal",
+        recipientName: member.fullName,
+        introMessage: `Hệ thống Quản trị Công việc **Ban KT&ĐBCL** trân trọng nhắc Thầy/Cô hoàn thiện **Kế hoạch công tác ${nextWeekDef.label}** vào **Sáng Thứ Bảy** để chủ động triển khai từ đầu tuần mới và làm cơ sở **báo cáo tiến độ công việc vào Thứ Tư (14:00)**.`,
+        detailsTitle: "Chu kỳ điều hành định kỳ Ban KT&ĐBCL",
+        details: [
+          { label: "Lập Kế hoạch Tuần", value: "Sáng Thứ Bảy hằng tuần (08:30)", highlight: true },
+          { label: "Báo cáo công việc Tuần", value: "Thứ Tư hằng tuần (14:00)", color: "#D97706" },
+          { label: "Kỳ kế hoạch", value: `${nextWeekDef.label} — Năm ${nextPeriod.year}` },
+          {
+            label: "Nhóm chuyên môn",
+            value:
+              member.specialistGroups.length > 0
+                ? member.specialistGroups.join(", ")
+                : "Chuyên viên Ban KT&ĐBCL",
+          },
+        ],
+        noticeBox: {
+          type: "info",
+          title: "Lưu ý phối hợp định kỳ",
+          content:
+            "Đề nghị Thầy/Cô rà soát các đầu việc đang thực hiện, bổ sung mục tiêu trọng tâm của tuần tới vào Kế hoạch công tác để Lãnh đạo Ban theo dõi và kịp thời hỗ trợ nguồn lực.",
+        },
+        extraHtml: taskRowsHtml,
+        button: {
+          text: "Mở trang Lập Kế hoạch Tuần ngay",
+          url: planUrl,
+          color: "#003B3A",
+        },
+      })
+
+      const mailRes = await sendEmail({
+        to: member.email,
+        subject: `[Ban KT&ĐBCL] Nhắc lập Kế hoạch Tuần ${nextPeriod.weekNumber}/Tháng ${nextPeriod.month} (Sáng Thứ Bảy 08:30)`,
+        html,
+      })
+      if (mailRes.success) emailSentCount++
+    }
+  }
+
+  await recordWeeklyAutomationLog({
+    jobType: "SATURDAY_PLAN_REMINDER",
+    dedupKey: isManual ? `${dedupKey}_MANUAL_${Date.now()}` : dedupKey,
+    periodLabel: `KH Tuần ${nextPeriod.weekNumber} • Tháng ${nextPeriod.month}/${nextPeriod.year}`,
+    recipientSummary: `${targetMembers.length} thành viên Ban KT&ĐBCL (${emailSentCount} email)`,
+    emailSentCount,
+    notificationCount,
+    triggeredBy,
+    status: emailSentCount > 0 || notificationCount > 0 ? "SUCCESS" : "PARTIAL",
+    details: {
+      nextWeekNumber: nextPeriod.weekNumber,
+      nextMonth: nextPeriod.month,
+      nextYear: nextPeriod.year,
+      memberNames: targetMembers.map((m) => m.fullName),
+    },
+  })
+
+  return {
+    success: true,
+    nextWeekNumber: nextPeriod.weekNumber,
+    nextMonth: nextPeriod.month,
+    nextYear: nextPeriod.year,
+    totalStaff: targetMembers.length,
+    remindedCount: notificationCount,
+    emailSentCount,
+  }
 }

@@ -28,7 +28,9 @@ import {
 } from "@/lib/qa-workspace/weeklyAiQualityAgent"
 import {
   dispatchDirectorSummaryReport,
+  dispatchKtdbclSaturdayPlanReminders,
   dispatchKtdbclWednesdayReminders,
+  dispatchOverdueAndDoingProgressReminders,
   sendExplanationSubmittedToLeadershipEmail,
   sendOverdueExplanationRequestEmail,
   sendReportItemsCompletedEmail,
@@ -1066,6 +1068,34 @@ export async function submitStaffOverdueExplanationAction(params: {
 }
 
 /**
+ * Kích hoạt nhắc lập Kế hoạch Tuần (Sáng Thứ Bảy định kỳ) ngay lập tức
+ */
+export async function triggerKtdbclSaturdayPlanReminderNowAction(params?: {
+  targetUserId?: string
+}) {
+  try {
+    const authCtx = await resolveCallerAuthority()
+    if (!authCtx.authenticated || !authCtx.isLeadership) {
+      return {
+        success: false,
+        error: "Chỉ Quản lý / Giám đốc Ban mới có quyền phát lệnh nhắc lập Kế hoạch Tuần.",
+      }
+    }
+
+    const result = await dispatchKtdbclSaturdayPlanReminders({
+      targetUserId: params?.targetUserId,
+      force: true,
+      triggeredBy: authCtx.userName,
+    })
+
+    revalidatePath("/admin/weekly-reports")
+    return result
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Lỗi gửi email nhắc lập Kế hoạch Tuần" }
+  }
+}
+
+/**
  * Kích hoạt nhắc nộp báo cáo tuần ngay lập tức (hoặc nhắc riêng 1 thành viên Ban KT&ĐBCL)
  */
 export async function triggerKtdbclReminderNowAction(params: {
@@ -1191,6 +1221,46 @@ export async function scanAndRequestOverdueExplanationsAction(params: {
     })
   } catch (err: any) {
     return { success: false, error: err?.message || "Lỗi quét đầu việc quá hạn" }
+  }
+}
+
+/**
+ * Quét & gửi email nhắc báo cáo tiến độ, yêu cầu xác nhận & đánh giá mức độ hoàn thành
+ * đối với các đầu việc có trạng thái Quá hạn dự kiến hoặc Đang thực hiện.
+ */
+export async function triggerOverdueAndDoingProgressRemindersAction(params: {
+  weekNumber: number
+  month: number
+  year: number
+  scopeType: "WEEKLY" | "MONTHLY"
+  itemIds?: string[]
+}) {
+  try {
+    const authCtx = await resolveCallerAuthority()
+    if (!authCtx.authenticated || !authCtx.isLeadership) {
+      return {
+        success: false,
+        error: "Chỉ Quản lý / Giám đốc Ban mới có quyền phát lệnh nhắc tiến độ & xác nhận hoàn thành.",
+      }
+    }
+
+    const res = await dispatchOverdueAndDoingProgressReminders({
+      weekNumber: params.weekNumber,
+      month: params.month,
+      year: params.year,
+      scopeType: params.scopeType,
+      itemIds: params.itemIds,
+      force: true,
+      triggeredBy: authCtx.userName,
+    })
+
+    revalidatePath("/admin/weekly-reports")
+    return res
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || "Lỗi gửi email nhắc tiến độ & xác nhận hoàn thành",
+    }
   }
 }
 

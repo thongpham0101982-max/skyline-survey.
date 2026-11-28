@@ -38,17 +38,20 @@ interface AutomationAndRosterTabProps {
     leaderUserId: string | null
     memberUserIds: string[]
   }) => Promise<void>
+  onTriggerSaturdayPlanReminderNow?: () => Promise<void>
   onTriggerWednesdayReminderNow: () => Promise<void>
   onTriggerDirectorReportNow: (scope: "WEEKLY" | "MONTHLY") => Promise<void>
 }
 
 const JOB_LABELS: Record<string, string> = {
-  WEDNESDAY_REMINDER: "Nhắc nộp BC Tuần (Thứ Tư 14:00)",
+  SATURDAY_PLAN_REMINDER: "Nhắc lập Kế hoạch Tuần (Sáng Thứ Bảy 08:30)",
+  WEDNESDAY_REMINDER: "Nhắc nộp BC công việc Tuần (Thứ Tư 14:00)",
   DIRECTOR_WEEKLY_REPORT: "Gửi Báo cáo Tuần cho Giám đốc Ban",
   DIRECTOR_MONTHLY_REPORT: "Gửi Báo cáo Tháng cho Giám đốc Ban",
   ITEM_CONFIRMED_EMAIL: "Mail xác nhận hoàn thành đầu việc",
   OVERDUE_EXPLANATION_EMAIL: "Mail cảnh báo trễ & yêu cầu giải trình",
   EXPLANATION_SUBMITTED_EMAIL: "Mail báo nhân sự đã nộp giải trình",
+  PROGRESS_CONFIRM_REMINDER_EMAIL: "Tự động nhắc tiến độ & xác nhận HT (Quá hạn / Đang TH)",
 }
 
 export function AutomationAndRosterTab({
@@ -61,12 +64,14 @@ export function AutomationAndRosterTab({
   isLeadership,
   onSaveConfig,
   onSaveSpecialistGroup,
+  onTriggerSaturdayPlanReminderNow,
   onTriggerWednesdayReminderNow,
   onTriggerDirectorReportNow,
 }: AutomationAndRosterTabProps) {
   const [wedEnabled, setWedEnabled] = useState(config.wednesdayReminderEnabled)
   const [weeklyDirEnabled, setWeeklyDirEnabled] = useState(config.weeklyDirectorReportEnabled)
   const [monthlyDirEnabled, setMonthlyDirEnabled] = useState(config.monthlyDirectorReportEnabled)
+  const [overdueAutoEnabled, setOverdueAutoEnabled] = useState(config.overdueAutoFlagEnabled)
   const [selectedDirectorIds, setSelectedDirectorIds] = useState<string[]>(
     config.directorUserIds || []
   )
@@ -106,6 +111,7 @@ export function AutomationAndRosterTab({
         wednesdayReminderEnabled: wedEnabled,
         weeklyDirectorReportEnabled: weeklyDirEnabled,
         monthlyDirectorReportEnabled: monthlyDirEnabled,
+        overdueAutoFlagEnabled: overdueAutoEnabled,
         directorUserIds: selectedDirectorIds,
         directorEmails,
         ccManagerEmails,
@@ -163,10 +169,10 @@ export function AutomationAndRosterTab({
               <div>
                 <div className="font-bold text-[#003B3A] flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#00A19A]" />
-                  Tự động nhắc thành viên Ban KT&ĐBCL hằng tuần vào Thứ Tư, 14:00
+                  Tự động nhắc Lập Kế hoạch Tuần (Sáng Thứ Bảy 08:30) &amp; Báo cáo công việc (Thứ Tư 14:00)
                 </div>
                 <p className="text-slate-600 mt-1">
-                  Đúng 14:00 chiều Thứ Tư mỗi tuần trong tháng, hệ thống tự động rà soát và gửi Email + thông báo nhắc các thành viên Ban KT&ĐBCL chưa nộp báo cáo tuần.
+                  Định kỳ Sáng Thứ Bảy (08:30) hệ thống tự động gửi Email + thông báo yêu cầu lập Kế hoạch Tuần tiếp theo; và 14:00 Thứ Tư hằng tuần tự động nhắc nộp Báo cáo công việc tuần đối với các thành viên Ban KT&amp;ĐBCL chưa nộp.
                 </p>
               </div>
               <input
@@ -212,6 +218,25 @@ export function AutomationAndRosterTab({
                 disabled={!isLeadership}
                 checked={monthlyDirEnabled}
                 onChange={(e) => setMonthlyDirEnabled(e.target.checked)}
+                className="mt-1 rounded border-slate-300 text-[#00A19A] h-4 w-4"
+              />
+            </label>
+
+            <label className="flex items-start justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50/40 p-3.5 cursor-pointer">
+              <div>
+                <div className="font-bold text-[#003B3A] flex items-center gap-1.5">
+                  <Bell className="w-3.5 h-3.5 text-[#D97706]" />
+                  Tự động nhắc email đầu việc Quá hạn &amp; Đang thực hiện (Hạn &amp; Tiến độ)
+                </div>
+                <p className="text-slate-600 mt-1">
+                  Hằng ngày làm việc (Thứ Hai – Thứ Sáu), hệ thống tự động rà soát các đầu việc có trạng thái Quá hạn dự kiến hoặc Đang thực hiện để gửi email nhắc báo cáo tiến độ, yêu cầu xác nhận và đánh giá mức độ hoàn thành.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                disabled={!isLeadership}
+                checked={overdueAutoEnabled}
+                onChange={(e) => setOverdueAutoEnabled(e.target.checked)}
                 className="mt-1 rounded border-slate-300 text-[#00A19A] h-4 w-4"
               />
             </label>
@@ -276,13 +301,23 @@ export function AutomationAndRosterTab({
             {isLeadership && (
               <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                 <div className="flex flex-wrap items-center gap-2">
+                  {onTriggerSaturdayPlanReminderNow && (
+                    <button
+                      type="button"
+                      onClick={onTriggerSaturdayPlanReminderNow}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#F0FDFA] text-[#00736E] border border-teal-200 hover:bg-teal-100 cursor-pointer"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      Gửi nhắc lập KH Tuần (Sáng T7)
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={onTriggerWednesdayReminderNow}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 text-[#D97706] border border-amber-200 hover:bg-amber-100"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 text-[#D97706] border border-amber-200 hover:bg-amber-100 cursor-pointer"
                   >
                     <Bell className="w-3.5 h-3.5" />
-                    Chạy thử nhắc nộp ngay
+                    Chạy thử nhắc nộp BC (T4)
                   </button>
                   <button
                     type="button"
